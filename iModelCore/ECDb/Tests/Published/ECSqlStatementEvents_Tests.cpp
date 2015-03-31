@@ -323,7 +323,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteEvent)
     ASSERT_EQ (2, deleteEventHandler.GetRowsAffected ());
 
 
-    ECClassCP psaClass = ecdb. GetSchemaManager ().GetECClass ("ECSqlTest", "PSA");
+    ECClassCP psaClass = ecdb. Schemas ().GetECClass ("ECSqlTest", "PSA");
     ASSERT_TRUE (psaClass != nullptr);
     for (auto const& instanceKey : deleteEventHandler.GetInstanceKeys ())
         {
@@ -398,7 +398,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateEvent)
     ASSERT_EQ (1, updateEventHandler.GetTimesEventOccurred ());
     ASSERT_EQ (2, updateEventHandler.GetRowsAffected ());
 
-    ECClassCP pClass = ecdb. GetSchemaManager ().GetECClass ("ECSqlTest", "P");
+    ECClassCP pClass = ecdb. Schemas ().GetECClass ("ECSqlTest", "P");
     ASSERT_TRUE (pClass != nullptr);
 
     for (auto const& instanceKey : updateEventHandler.GetInstanceKeys ())

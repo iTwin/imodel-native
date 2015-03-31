@@ -155,7 +155,7 @@ bool ImportECSchema (ECDbR ecDB, ECSchemaReadContextPtr contextPtr)
     {
     if (contextPtr.IsValid ())
         {
-        BentleyStatus state = ecDB. GetSchemaManager ().ImportECSchemas (contextPtr->GetCache ());
+        BentleyStatus state = ecDB. Schemas ().ImportECSchemas (contextPtr->GetCache ());
         return (SUCCESS == state);
         }
     return false;
@@ -218,7 +218,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
     auto readContext = ECSchemaReadContext::CreateContext ();
     ECSchema::ReadFromXmlString (orderSchema, schema, *readContext);
     ASSERT_TRUE (orderSchema != nullptr);
-    auto importStatus = db. GetSchemaManager ().ImportECSchemas (readContext->GetCache ());
+    auto importStatus = db. Schemas ().ImportECSchemas (readContext->GetCache ());
     ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
     
     Statement stmt1;
@@ -294,10 +294,10 @@ TEST(ECDbSchemas, UpdatingExistingECSchema)
     modifiedECSchema->SetVersionMajor(1); //Major version should match
     modifiedECSchema->SetVersionMinor(1); //Minor version should be greater then existing schema minor version
 
-    auto importSchemaStatus = db. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, true));
+    auto importSchemaStatus = db. Schemas ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, true));
     ASSERT_EQ (SUCCESS, importSchemaStatus);
 
-    ECSchemaCP  updatedECSchema = db.GetSchemaManager().GetECSchema("RSComponents");
+    ECSchemaCP  updatedECSchema = db.Schemas().GetECSchema("RSComponents");
 
     ECDiffPtr diff = ECDiff::Diff(*updatedECSchema, *modifiedECSchema);
     ASSERT_EQ (diff->GetStatus() , DIFFSTATUS_Success);
@@ -312,7 +312,7 @@ TEST(ECDbSchemas, UpdatingExistingECSchema)
         }
     //Read back schema and generate some new instance with additional properties
     //ECSchemaP storedSchema;
-    //db.GetSchemaManager().GetECSchema(storedSchema, "RSComponents", true);
+    //db.Schemas().GetECSchema(storedSchema, "RSComponents", true);
     for(auto ecClass : modifiedECSchema->GetClasses())
         {
         if (ecClass->GetRelationshipClassCP() || ecClass->GetIsStruct() || ecClass->GetIsCustomAttributeClass())
@@ -354,7 +354,7 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     auto schemaCache12 = ECSchemaCache::Create ();
     schemaCache12->AddSchema (*schema12);
 
-    auto importSchemaStatus = db.GetSchemaManager().ImportECSchemas (*schemaCache12);
+    auto importSchemaStatus = db.Schemas().ImportECSchemas (*schemaCache12);
     ASSERT_EQ (SUCCESS, importSchemaStatus);
 
     Utf8String ecdbFileName = Utf8String(db.GetDbFileName ());
@@ -374,7 +374,7 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
 
     auto schemaCache11 = ECSchemaCache::Create ();
     schemaCache11->AddSchema (*schema11);
-    importSchemaStatus = db.GetSchemaManager ().ImportECSchemas (*schemaCache11, ECDbSchemaManager::ImportOptions (true, true));
+    importSchemaStatus = db.Schemas ().ImportECSchemas (*schemaCache11, ECDbSchemaManager::ImportOptions (true, true));
     ASSERT_EQ(ERROR, importSchemaStatus);
 
     ECSchemaPtr schema13;
@@ -394,12 +394,12 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
 
     auto schemaCache13 = ECSchemaCache::Create ();
     schemaCache13->AddSchema (*schema13);
-    importSchemaStatus = db. GetSchemaManager ().ImportECSchemas (*schemaCache13, ECDbSchemaManager::ImportOptions (true, true));
+    importSchemaStatus = db. Schemas ().ImportECSchemas (*schemaCache13, ECDbSchemaManager::ImportOptions (true, true));
     ASSERT_EQ(SUCCESS, importSchemaStatus);
     db.CloseDb();
     db.OpenBeSQLiteDb(ecdbFileName.c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
 
-    ECSchemaCP updatedECSchema = db. GetSchemaManager ().GetECSchema ("TestSchema");
+    ECSchemaCP updatedECSchema = db. Schemas ().GetECSchema ("TestSchema");
     ASSERT_TRUE (updatedECSchema != nullptr);
 
     ECClassCP updatedGadget = updatedECSchema->GetClassCP(L"GADGET");
@@ -479,7 +479,7 @@ TEST (ECDbSchemas, UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes)
     ECSchema::ReadFromXmlFile (schemaOut, dsCacheSchema1_3.GetName (), *readContext);
     ECSchemaCacheR  schemaCache = readContext->GetCache ();
 
-    auto status = ecDb. GetSchemaManager ().ImportECSchemas (schemaCache, ECDbSchemaManager::ImportOptions (true, true));
+    auto status = ecDb. Schemas ().ImportECSchemas (schemaCache, ECDbSchemaManager::ImportOptions (true, true));
     ASSERT_EQ (SUCCESS, status);
 
 
@@ -594,10 +594,10 @@ TEST(ECDbSchemas, VerifyEmptyECSchemaCanBeRead)
     ECSchema::CreateSchema(emptySchema,L"EmptyECSchema", 1, 0);
     auto cache = ECSchemaCache::Create();
     cache->AddSchema (*emptySchema);
-    auto schemaStat = ecdb.GetSchemaManager().ImportECSchemas(*cache);
+    auto schemaStat = ecdb.Schemas().ImportECSchemas(*cache);
     ASSERT_EQ (SUCCESS, schemaStat) << "Importing empty ECSchema failed";
     ecdb.ClearECDbCache();
-    ECSchemaCP stroedEmptySchema = ecdb. GetSchemaManager ().GetECSchema ("EmptyECSchema");
+    ECSchemaCP stroedEmptySchema = ecdb. Schemas ().GetECSchema ("EmptyECSchema");
     ASSERT_TRUE (stroedEmptySchema != nullptr);
     }
 /*---------------------------------------------------------------------------------**//**
@@ -1346,7 +1346,7 @@ TEST(ECDbSchemas, CreateCloseOpenImport)
     ECSchemaReadContextPtr schemaContext = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    ASSERT_EQ (SUCCESS, db. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema should have imported successfully after closing and re-opening the database.";
+    ASSERT_EQ (SUCCESS, db. Schemas ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema should have imported successfully after closing and re-opening the database.";
 
     }
 //---------------------------------------------------------------------------------------
@@ -1365,7 +1365,7 @@ TEST(ECDbSchemas, ImportSchemaAgainstExistingTableWithoutECInstanceIdColumn)
     //now import test schema where the table already exists for the ECClass. This is expected to fail.
     BeTest::SetFailOnAssert (false);
         {
-        ASSERT_EQ (ERROR, ecdb. GetSchemaManager ().ImportECSchemas (*testSchemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+        ASSERT_EQ (ERROR, ecdb. Schemas ().ImportECSchemas (*testSchemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
         }
     BeTest::SetFailOnAssert (true);
 
@@ -1387,7 +1387,7 @@ TEST(ECDbSchemas, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
 
     auto testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema ();
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ (SUCCESS, ecdb. GetSchemaManager ().ImportECSchemas (*testSchemaCache, 
+    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (*testSchemaCache, 
         ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
@@ -1415,14 +1415,14 @@ TEST (ECDbSchemas, DeigoRelationshipTest)
 
 
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ (SUCCESS, ecdb. GetSchemaManager ().ImportECSchemas (ctx->GetCache(),
+    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (ctx->GetCache(),
         ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
 
-    auto aCivilModel = ecdb. GetSchemaManager ().GetECClass ("DiegoSchema1", "CivilModel");
-    auto aDatasetModel = ecdb. GetSchemaManager ().GetECClass ("DiegoSchema1", "DataSetModel");
-    auto aCivilModelHasDataSetModel = ecdb. GetSchemaManager ().GetECClass ("DiegoSchema1", "CivilModelHasDataSetModel");
-    auto aGeometricModel = ecdb. GetSchemaManager ().GetECClass ("DiegoSchema2", "GeometricModel");
+    auto aCivilModel = ecdb. Schemas ().GetECClass ("DiegoSchema1", "CivilModel");
+    auto aDatasetModel = ecdb. Schemas ().GetECClass ("DiegoSchema1", "DataSetModel");
+    auto aCivilModelHasDataSetModel = ecdb. Schemas ().GetECClass ("DiegoSchema1", "CivilModelHasDataSetModel");
+    auto aGeometricModel = ecdb. Schemas ().GetECClass ("DiegoSchema2", "GeometricModel");
     ASSERT_TRUE (aCivilModel != nullptr);
     ASSERT_TRUE (aDatasetModel != nullptr);
     ASSERT_TRUE (aCivilModelHasDataSetModel != nullptr);
@@ -1494,10 +1494,10 @@ TEST (ECDbSchemas, DeigoRelationshipTest2)
         }
 
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ (SUCCESS, ecdb. GetSchemaManager ().ImportECSchemas (ctx->GetCache(),
+    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (ctx->GetCache(),
         ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
-    auto& schemaManager = ecdb. GetSchemaManager ();
+    auto& schemaManager = ecdb. Schemas ();
     auto aCivilModel = schemaManager.GetECClass ("HW_Bentley_Civil__Model_Base", "CivilModel");
     auto aDataSetModel = schemaManager.GetECClass ("HW_Bentley_Civil__Model_Base", "DataSetModel");
     auto aCivilModel__DataSetModel = schemaManager.GetECClass ("HW_Bentley_Civil__Model_Base", "CivilModel__DataSetModel");
@@ -1577,7 +1577,7 @@ TEST(ECDbSchemas, ImportSchemaWithRelationshipAgainstExistingTable)
     auto testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema ();
     //now import test schema where the table already exists for the ECClass
     //missing link tables are created if true is passed for createTables
-    ASSERT_EQ (SUCCESS, ecdb. GetSchemaManager ().ImportECSchemas (*testSchemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (*testSchemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "ECInstanceId")) << "Existing column is expected to still be in the table after ImportECSchemas.";
@@ -1729,7 +1729,7 @@ TEST(ECDbSchemas, ReadCustomAttributesTest)
         {
         ECDbTestProject testProject;
         ECDbR db = testProject.Create ("customattributestest.ecdb");
-        auto importStat = db. GetSchemaManager ().ImportECSchemas (*testSchemaCache);
+        auto importStat = db. Schemas ().ImportECSchemas (*testSchemaCache);
         ASSERT_EQ (SUCCESS, importStat) << L"Could not import test schema into ECDb file";
 
         dbPath = testProject.GetECDbPath ();
@@ -1740,7 +1740,7 @@ TEST(ECDbSchemas, ReadCustomAttributesTest)
     DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Could not open test ECDb file";
 
-    ECSchemaCP readSchema = db. GetSchemaManager ().GetECSchema (Utf8String (testSchema->GetName().c_str ()).c_str ());
+    ECSchemaCP readSchema = db. Schemas ().GetECSchema (Utf8String (testSchema->GetName().c_str ()).c_str ());
     ASSERT_TRUE (readSchema != nullptr) << L"Could not read test schema from reopened ECDb file.";
     //*** assert custom attribute instance with instance id
     ECClassCP domainClass1 = readSchema->GetClassCP (L"domain1");
@@ -1784,7 +1784,7 @@ TEST(ECDbSchemas, CheckCustomAttributesXmlFormatTest)
 
     ECDbTestProject testProject;
     ECDbR db = testProject.Create ("customattributestest.ecdb");
-    auto importStat = db. GetSchemaManager ().ImportECSchemas (*testSchemaCache);
+    auto importStat = db. Schemas ().ImportECSchemas (*testSchemaCache);
     ASSERT_EQ (SUCCESS, importStat) << L"Could not import test schema into ECDb file";
 
     //now retrieve the persisted CA XML from ECDb directly
@@ -1833,7 +1833,7 @@ TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
         {
         ECDbTestProject testProject;
         ECDbR db = testProject.Create ("customattributestest.ecdb");
-        auto importStat = db. GetSchemaManager ().ImportECSchemas (*testSchemaCache);
+        auto importStat = db. Schemas ().ImportECSchemas (*testSchemaCache);
         ASSERT_EQ (SUCCESS, importStat) << L"Could not import test schema into ECDb file";
 
         //now remove one of the CA properties only in the CA class definition again
@@ -1852,7 +1852,7 @@ TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
     DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Could not open test ECDb file";
 
-    ECSchemaCP readSchema = db. GetSchemaManager ().GetECSchema (Utf8String (testSchema->GetName ().c_str ()).c_str ());
+    ECSchemaCP readSchema = db. Schemas ().GetECSchema (Utf8String (testSchema->GetName ().c_str ()).c_str ());
     ASSERT_TRUE (readSchema != nullptr) << L"Could not read test schema from reopened ECDb file.";
 
     //assert custom attribute instance with instance id
@@ -1932,7 +1932,7 @@ TEST(ECDbSchemas, ImportSupplementalSchemas)
     ECDb db;
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto schemaStatus = db. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache (),
+    auto schemaStatus = db. Schemas ().ImportECSchemas (schemaContext->GetCache (),
         ECDbSchemaManager::ImportOptions (true, false));
     ASSERT_EQ (SUCCESS, schemaStatus);
 
@@ -1940,7 +1940,7 @@ TEST(ECDbSchemas, ImportSupplementalSchemas)
     db.CloseDb ();
 
     db.OpenBeSQLiteDb (projectFile.GetNameUtf8 ().c_str (), Db::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes));
-    ECSchemaCP startupCompanySchema = db. GetSchemaManager ().GetECSchema ("StartupCompany");
+    ECSchemaCP startupCompanySchema = db. Schemas ().GetECSchema ("StartupCompany");
     ASSERT_TRUE (startupCompanySchema != nullptr);
     ECClassCP aaa2 = startupCompanySchema->GetClassCP (L"AAA");
 
@@ -1962,9 +1962,9 @@ TEST(ECDbSchemas, SystemSchemaTest)
    ECDbTestProject saveTestProject;
 
    ECDbR db = saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
-   ECSchemaCP startupCompanySchema = db.GetSchemaManager().GetECSchema ("StartupCompany");
+   ECSchemaCP startupCompanySchema = db.Schemas().GetECSchema ("StartupCompany");
    ASSERT_TRUE (startupCompanySchema != nullptr);
-   ECSchemaCP ecdbSystemSchema = db.GetSchemaManager().GetECSchema ("ECDbSystem");
+   ECSchemaCP ecdbSystemSchema = db.Schemas().GetECSchema ("ECDbSystem");
    ASSERT_TRUE (ecdbSystemSchema != nullptr);
 
    EXPECT_TRUE (ecdbSystemSchema->IsSystemSchema ());
@@ -1983,7 +1983,7 @@ TEST (ECDbSchemas, ArrayPropertyTest)
 
     ECDbR db = saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
     db.ClearECDbCache();
-    ECSchemaCP startupCompanySchema = db. GetSchemaManager ().GetECSchema ("StartupCompany", true);
+    ECSchemaCP startupCompanySchema = db. Schemas ().GetECSchema ("StartupCompany", true);
     ASSERT_TRUE (startupCompanySchema != nullptr);
 
     auto arrayTestClass = startupCompanySchema->GetClassCP (L"ArrayTestclass");
@@ -2073,7 +2073,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     //Get DbECSchemaKeys
     ECSchemaList ecDbSchemaList;
 
-    ECDbSchemaManagerCR schemaManager = db.GetSchemaManager ();
+    ECDbSchemaManagerCR schemaManager = db.Schemas ();
     ///////////////////////Load StartupCompany//////////////////////////////
     StopWatch s0 ("Loading StartupCompany Schema From Database", true);
     ECSchemaCP openPlant3D = schemaManager.GetECSchema ("StartupCompany", true /* Load full schemas*/);
@@ -2483,7 +2483,7 @@ TEST_F(ECDbSchemaFixture,ECDbSchemaHintTablePrefix)
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db. GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE(db.TableExists("Pre_A"));
     EXPECT_TRUE(db.TableExists("Pre_ArrayOfB"));
@@ -2508,7 +2508,7 @@ TEST_F(ECDbSchemaFixture,ecdbClassHintTableForClass)
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db. GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE(db.TableExists("sm_ArrayOfB"));
     }
@@ -2530,7 +2530,7 @@ TEST_F(ECDbSchemaFixture,ecdbClassHintTablePerClass)
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db. GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE(db.TableExists("sm_ArrayOfB"));
     }
@@ -2552,7 +2552,7 @@ TEST_F(ECDbSchemaFixture,ecdbClassHintDoNotMap)
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db. GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_FALSE(db.TableExists("sm_ArrayOfB"));
     }
@@ -2573,7 +2573,7 @@ TEST_F(ECDbSchemaFixture,ecDbClassHintTablePerHierarchy)
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db. GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE (db.TableExists ("sm_ArrayOfB"));
     EXPECT_FALSE(db.TableExists("sm_b"));
@@ -2599,7 +2599,7 @@ TEST_F (ECDbSchemaFixture, SchemaDbDefaultMapStrategyHint)
     deleteExistingDgnb (fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db.GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db.Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_FALSE (db.TableExists ("sm_ArrayOfB"));
     EXPECT_FALSE (db.TableExists ("sm_b"));
@@ -2630,7 +2630,7 @@ TEST_F (ECDbSchemaFixture, SchemaDbDefaultMapStrategyHint1)
     deleteExistingDgnb (fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db.GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db.Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE (db.TableExists ("sm_ArrayOfB"));
     EXPECT_FALSE (db.TableExists ("sm_b"));
@@ -2657,7 +2657,7 @@ TEST_F(ECDbSchemaFixture,ecDbClassHintDoNotMapHierarchy)
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db. GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_FALSE (db.TableExists ("sm_ArrayOfB"));
     EXPECT_FALSE(db.TableExists("sm_B"));
@@ -2730,7 +2730,7 @@ TEST_F(ECDbSchemaFixture,TestDuplicateNamespacePrefix)
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
 
-    auto status = db.GetSchemaManager ().ImportECSchemas (*cache, ECDbSchemaManager::ImportOptions (true, false));
+    auto status = db.Schemas ().ImportECSchemas (*cache, ECDbSchemaManager::ImportOptions (true, false));
     ASSERT_EQ (SUCCESS, status);
     db.ClearECDbCache();
     for(auto& x : data)
@@ -2738,7 +2738,7 @@ TEST_F(ECDbSchemaFixture,TestDuplicateNamespacePrefix)
         auto name       = x[0];
         auto prefix     = x[1];
         auto expected   = x[2];
-        ECSchemaCP out = db.GetSchemaManager().GetECSchema(Utf8String(name.c_str()).c_str(), true);
+        ECSchemaCP out = db.Schemas().GetECSchema(Utf8String(name.c_str()).c_str(), true);
         ASSERT_TRUE (out != nullptr);
         EXPECT_TRUE(out->GetNamespacePrefix().Equals(expected));
         if (out->GetNamespacePrefix().Equals(expected))
@@ -2770,21 +2770,21 @@ TEST(ECDbSchemas, Verify_TFS_14829_A)
     ECSchemaReadContextPtr schemaContext = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    auto schemaStatus = db. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, bUpdate));
+    auto schemaStatus = db. Schemas ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, bUpdate));
     ASSERT_EQ (SUCCESS, schemaStatus);
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"SimpleCompany.01.00.ecschema.xml");
-    schemaStatus = db. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, bUpdate));
+    schemaStatus = db. Schemas ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, bUpdate));
     ASSERT_EQ (SUCCESS, schemaStatus);
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"RSComponents.01.00.ecschema.xml");
-    schemaStatus = db. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, bUpdate));
+    schemaStatus = db. Schemas ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, bUpdate));
     ASSERT_EQ (SUCCESS, schemaStatus);
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"RSComponents.02.00.ecschema.xml");
     ecSchema->SetVersionMajor(1);
     ecSchema->SetVersionMinor(22);
-    schemaStatus = db. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, bUpdate));
+    schemaStatus = db. Schemas ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (true, bUpdate));
     ASSERT_EQ (SUCCESS, schemaStatus);
    }
 
@@ -2800,19 +2800,19 @@ TEST(ECDbSchemas, Verify_TFS_14829_B)
     ECSchemaReadContextPtr schemaContext = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    auto schemaStatus = db.GetSchemaManager().ImportECSchemas (schemaContext->GetCache());
+    auto schemaStatus = db.Schemas().ImportECSchemas (schemaContext->GetCache());
     ASSERT_EQ (SUCCESS, schemaStatus);
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"SimpleCompany.01.00.ecschema.xml");
-    schemaStatus = db.GetSchemaManager().ImportECSchemas (schemaContext->GetCache());
+    schemaStatus = db.Schemas().ImportECSchemas (schemaContext->GetCache());
     ASSERT_EQ (SUCCESS, schemaStatus);
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"RSComponents.01.00.ecschema.xml");
-    schemaStatus = db.GetSchemaManager().ImportECSchemas (schemaContext->GetCache());
+    schemaStatus = db.Schemas().ImportECSchemas (schemaContext->GetCache());
     ASSERT_EQ (SUCCESS, schemaStatus);
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"RSComponents.02.00.ecschema.xml");
-    schemaStatus = db.GetSchemaManager().ImportECSchemas (schemaContext->GetCache());
+    schemaStatus = db.Schemas().ImportECSchemas (schemaContext->GetCache());
     ASSERT_EQ (SUCCESS, schemaStatus);
    }
 
@@ -2948,7 +2948,7 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     auto readContext = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(simpleSchema, schema, *readContext);
     ASSERT_TRUE(simpleSchema != nullptr);
-    auto importStatus = db.GetSchemaManager().ImportECSchemas(readContext->GetCache());
+    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
     ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
     auto ecClass = simpleSchema->GetClassP(L"SimpleClass");
 

@@ -67,7 +67,7 @@ ECN::ECClassId ecClassid
         return nullptr;
 
     /* Create instance */
-    ECClassCP ecClass = m_ecSqlStatement.GetECDb ()->GetSchemaManager ().GetECClass (ecClassid);
+    ECClassCP ecClass = m_ecSqlStatement.GetECDb ()->Schemas ().GetECClass (ecClassid);
     if (ecClass == nullptr)
         return nullptr;
 
@@ -103,7 +103,7 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance() const
     if (-1 != m_ecClassIdColumnIndex)
         {
         IECSqlValue const& value = m_ecSqlStatement.GetValue (m_ecClassIdColumnIndex);
-        ecClass = m_ecSqlStatement.GetECDb()->GetSchemaManager().GetECClass(value.GetInt64());
+        ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(value.GetInt64());
         }
     else
         {
@@ -443,7 +443,7 @@ bool isSource
     {
     IECInstancePtr instance;
 
-    ECClassCP endpointClass = m_ecSqlStatement.GetECDb()->GetSchemaManager().GetECClass(endpointClassId);
+    ECClassCP endpointClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(endpointClassId);
     if (nullptr == endpointClass)
         return instance;
 

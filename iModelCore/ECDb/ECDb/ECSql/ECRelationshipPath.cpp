@@ -610,7 +610,7 @@ ECRelatedItemsDisplaySpecificationsCache* ECRelatedItemsDisplaySpecificationsCac
 //+---------------+---------------+---------------+---------------+---------------+------
 ECClassCP ECRelatedItemsDisplaySpecificationsCache::GetRelatedSpecificationsClass (ECDbCR ecDb)
     {
-    ECClassCP customAttributeClass = ecDb.GetSchemaManager ().GetECClass ("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
+    ECClassCP customAttributeClass = ecDb.Schemas ().GetECClass ("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
     POSTCONDITION (customAttributeClass != nullptr && "Unable to locate RelatedItemsDisplaySpecifications in standard schema", nullptr);
     return customAttributeClass;
     }
@@ -625,7 +625,7 @@ BentleyStatus ECRelatedItemsDisplaySpecificationsCache::Initialize ()
         return ERROR;
 
     ECSchemaList allSchemas;
-    BentleyStatus smStatus = m_ecDb.GetSchemaManager ().GetECSchemas (allSchemas, false);
+    BentleyStatus smStatus = m_ecDb.Schemas ().GetECSchemas (allSchemas, false);
     POSTCONDITION (smStatus == SUCCESS, ERROR);
 
     BentleyStatus status = SUCCESS;

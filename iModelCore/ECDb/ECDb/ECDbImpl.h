@@ -74,7 +74,7 @@ private:
     explicit Impl (ECDbR ecdb);
     static DbResult Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
 
-    ECDbSchemaManager const& GetSchemaManager () const;
+    ECDbSchemaManager const& Schemas () const;
     ECN::IECSchemaLocaterR GetSchemaLocater () const;
     ECN::IECClassLocaterR GetClassLocater () const;
 

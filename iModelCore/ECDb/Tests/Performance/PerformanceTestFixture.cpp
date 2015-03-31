@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Performance/PerformanceTestFixture.cpp $
+|     $Source: Tests/Performance/PerformanceTestFixture.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
@@ -92,7 +92,7 @@ ECSchemaReadContextPtr ecSchemaReadContext
 )
     {
     StopWatch stopwatch ("PerformanceTestFixture::ImportSchema", true);
-    auto stat = testDb. GetSchemaManager ().ImportECSchemas (ecSchemaReadContext->GetCache ());
+    auto stat = testDb. Schemas ().ImportECSchemas (ecSchemaReadContext->GetCache ());
     stopwatch.Stop();
     ASSERT_EQ (SUCCESS, stat);
     

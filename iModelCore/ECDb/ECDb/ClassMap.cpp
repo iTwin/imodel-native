@@ -161,7 +161,7 @@ void IClassMap::GetTables (bset<ECDbSqlTable const*>& tables, bool includeDerive
         }
 
 
-    auto const& derivedClasses = ecdbMap.GetECDbR ().GetSchemaManager ().GetDerivedECClasses (const_cast<ECClassR> (GetClass ()));
+    auto const& derivedClasses = ecdbMap.GetECDbR ().Schemas ().GetDerivedECClasses (const_cast<ECClassR> (GetClass ()));
     for (auto derivedClass : derivedClasses)
         {
         auto derivedClassMap = ecdbMap.GetClassMap (*derivedClass);
@@ -177,7 +177,7 @@ std::vector<IClassMap const*> IClassMap::GetDerivedClassMaps () const
     auto const& ecdbMap = GetECDbMap ();
 
     std::vector<IClassMap const*> derivedClassMaps;
-    auto const& derivedClasses = ecdbMap.GetECDbR ().GetSchemaManager ().GetDerivedECClasses (const_cast<ECClassR> (GetClass ()));
+    auto const& derivedClasses = ecdbMap.GetECDbR ().Schemas ().GetDerivedECClasses (const_cast<ECClassR> (GetClass ()));
     for (auto derivedClass : derivedClasses)
         {
         auto derivedClassMap = ecdbMap.GetClassMap (*derivedClass);
@@ -449,7 +449,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfoCR mapInfo, IClassMap const* p
         return MapStatus::Success;
 
     //does not exist yet
-    PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create (GetSchemaManager (), *this);
+    PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create (Schemas (), *this);
     if (ecInstanceIdPropertyMap == nullptr)
         //log and assert already done in child method
         return MapStatus::Error;
@@ -724,7 +724,7 @@ void ClassMap::CreateIndices ()
             if (error)
                 break;
 
-            auto resolveClass = GetECDbMap ().GetECDbR ().GetSchemaManager ().GetECClass (resolveSchemaName.c_str (), resolveClassName.c_str ());
+            auto resolveClass = GetECDbMap ().GetECDbR ().Schemas ().GetECClass (resolveSchemaName.c_str (), resolveClassName.c_str ());
             if (resolveClass == nullptr)
                 {
                 LOG.errorv (L"Reject user defined index on %ls. Failed to find class associated with property %ls", GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
@@ -903,9 +903,9 @@ PropertyMapCollection& ClassMap::GetPropertyMapsR ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-ECDbSchemaManagerCR ClassMap::GetSchemaManager () const
+ECDbSchemaManagerCR ClassMap::Schemas () const
     {
-    return GetECDbMap ().GetECDbR ().GetSchemaManager ();
+    return GetECDbMap ().GetECDbR ().Schemas ();
     }
 
 
@@ -943,7 +943,7 @@ BentleyStatus ClassMap::_Save (std::set<ClassMap const*>& savedGraph)
     if (GetId () == 0LL)
         {
         //auto baseClassMap = GetParentMapClassId () == 
-        auto baseClass = GetECDbMap ().GetECDbR ().GetSchemaManager ().GetECClass (GetParentMapClassId ());
+        auto baseClass = GetECDbMap ().GetECDbR ().Schemas ().GetECClass (GetParentMapClassId ());
         auto baseClassMap = baseClass == nullptr ? nullptr : (ClassMap*)GetECDbMap ().GetClassMap (*baseClass);
         if (baseClassMap != nullptr)
             {
@@ -992,7 +992,7 @@ BentleyStatus ClassMap::_Load (std::set<ClassMap const*>& loadGraph, ECDbClassMa
     if (GetECInstanceIdPropertyMap () != nullptr)
         return BentleyStatus::ERROR;
 
-    PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create (GetSchemaManager (), *this);
+    PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create (Schemas (), *this);
     if (ecInstanceIdPropertyMap == nullptr)
         return BentleyStatus::ERROR;
 

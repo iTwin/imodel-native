@@ -529,7 +529,7 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecdb, 
 //---------------------------------------------------------------------------------------
 BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, ECClassId classId, std::vector<ECInstanceKey> const& keyList) const
     {
-    ECClassCP ecClass = ecDb.GetSchemaManager ().GetECClass (classId);
+    ECClassCP ecClass = ecDb.Schemas ().GetECClass (classId);
     if (ecClass == nullptr)
         {
         LOG.errorv ("ECSQL cascade delete of related instances with ECClassId %lld failed: Could not retrieve ECClass for the ECClassId.", classId);

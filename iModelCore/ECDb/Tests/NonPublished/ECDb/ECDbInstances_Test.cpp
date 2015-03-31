@@ -115,7 +115,7 @@ TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     auto context = ECSchemaReadContext::CreateContext ();
     ECSchemaPtr schema;
     ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
-    ASSERT_EQ (SUCCESS, db.GetSchemaManager ().ImportECSchemas (context->GetCache ()));
+    ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (context->GetCache ()));
 
     ECClassCP rootClass = db.GetClassLocater ().LocateClass (L"DSCacheSchema", L"Root");
     ASSERT_NE (nullptr, rootClass);
@@ -320,7 +320,7 @@ void ExecuteRelationshipInsertionIntegrityTest (ECDbR ecdb, bool allowDuplicateR
         }
 
 
-    ASSERT_EQ (ecdb.GetSchemaManager ().ImportECSchemas (readContext->GetCache ()), BentleyStatus::SUCCESS);
+    ASSERT_EQ (ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()), BentleyStatus::SUCCESS);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
     const int maxFooInstances = 3;
@@ -653,7 +653,7 @@ TEST(ECDbInstances, ImportSchemaThenInsertInstances)
     ECSchemaReadContextPtr schemaContext = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    ASSERT_EQ (SUCCESS, db.GetSchemaManager ().ImportECSchemas (schemaContext->GetCache(), 
+    ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (schemaContext->GetCache(), 
         ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema should have imported successfully after closing and re-opening the database.";
 
     ECClassP building = ecSchema->GetClassP(L"Building");
@@ -742,7 +742,7 @@ TEST(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 
     auto schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema(*schema);
-    ASSERT_EQ (SUCCESS, db.GetSchemaManager ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (true, true)));
+    ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (true, true)));
 
     StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler ();
     StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler ();
@@ -880,7 +880,7 @@ TEST(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 
      ECDb ecdb;
      ASSERT_EQ (BE_SQLITE_OK, ecdb.CreateNewDb (":memory:"));
-     ASSERT_EQ (ecdb.GetSchemaManager ().ImportECSchemas (context->GetCache ()), BentleyStatus::SUCCESS);
+     ASSERT_EQ (ecdb.Schemas ().ImportECSchemas (context->GetCache ()), BentleyStatus::SUCCESS);
 
      ECInstanceKey classDKey1, classDKey2, classDKey3, classAKey, classBKey, classCKey;
 
@@ -919,7 +919,7 @@ TEST(ECDbInstances, UpdateArrayProperty)
     ECDbTestProject test;
     ECDbR db = test.Create ("updateArrayProperty.ecdb", L"KitchenSink.01.00.ecschema.xml", false);
 
-    ECN::ECClassCP testClass = db.GetSchemaManager ().GetECClass ("KitchenSink", "TestClass");
+    ECN::ECClassCP testClass = db.Schemas ().GetECClass ("KitchenSink", "TestClass");
     ASSERT_TRUE (testClass != nullptr);
 
     StandaloneECEnablerPtr testEnabler = testClass->GetDefaultStandaloneEnabler ();
@@ -1143,10 +1143,10 @@ TEST(ECDbInstances, FindECInstances)
     int              rows;
 
     ECClassKeys    classKeys;
-    db.GetSchemaManager().GetECClassKeys (classKeys, "StartupCompany");
+    db.Schemas().GetECClassKeys (classKeys, "StartupCompany");
     for (ECClassKey ecClassKey : classKeys)
         {
-        ECClassCP ecClass = db.GetSchemaManager().GetECClass (ecClassKey.GetECClassId());  // WIP_FNV: start taking ECSchemaName, ECClassName, instead
+        ECClassCP ecClass = db.Schemas().GetECClass (ecClassKey.GetECClassId());  // WIP_FNV: start taking ECSchemaName, ECClassName, instead
         ASSERT_TRUE (ecClass != nullptr);
 
         Utf8String className = ecClassKey.GetName();
@@ -1277,7 +1277,7 @@ TEST(ECDbInstances, SelectClause)
     DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
-    ECClassCP employee = db.GetSchemaManager().GetECClass("StartupCompany", "Employee");
+    ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
     ASSERT_TRUE (employee != nullptr);
 
     ECSqlStatement ecStatement;
@@ -1383,7 +1383,7 @@ TEST (ECDbInstances, DeleteWithRelationshipBetweenStructs)
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema (*structSchema);
 
-    ASSERT_EQ (SUCCESS, ecdb.GetSchemaManager ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
 
     auto struct1Inst = ECDbTestProject::CreateArbitraryECInstance(*struct1, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter1 (ecdb, *struct1);
@@ -1427,10 +1427,10 @@ TEST(ECDbInstances, AdapterCheckClassBeforeOperation)
     ASSERT_EQ(BE_SQLITE_OK, stat);
 
     //Get two classes and create instance of second
-    ECClassCP employee = db.GetSchemaManager().GetECClass("StartupCompany", "Employee");
+    ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
     ASSERT_TRUE (employee != nullptr);
 
-    ECClassCP project = db.GetSchemaManager().GetECClass("StartupCompany", "Project");
+    ECClassCP project = db.Schemas().GetECClass("StartupCompany", "Project");
     ASSERT_TRUE (project != nullptr);
     IECInstancePtr instance;
     instance = ECDbTestProject::CreateArbitraryECInstance(*project, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
@@ -1493,7 +1493,7 @@ TEST(ECDbInstances, DomainCustomAttributeStructCombinations)
     ASSERT_EQ(BE_SQLITE_OK, stat);
     
     //Trying all combinations where IsDomain is True. IsDomain False are Abstract classes and are not instantiated.
-    ECClassCP allTrue = db.GetSchemaManager().GetECClass("TryClassCombinations", "S_T_CA_T_D_T");
+    ECClassCP allTrue = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_T_D_T");
     ASSERT_TRUE (allTrue != nullptr);
     IECInstancePtr instance;
     instance = ECDbTestProject::CreateArbitraryECInstance(*allTrue, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
@@ -1502,14 +1502,14 @@ TEST(ECDbInstances, DomainCustomAttributeStructCombinations)
     auto sms = inserter.Insert(instanceKey, *instance);
     EXPECT_EQ(SUCCESS, sms);
 
-    ECClassCP Test1 = db.GetSchemaManager().GetECClass("TryClassCombinations", "S_T_CA_F_D_T");
+    ECClassCP Test1 = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_F_D_T");
     ASSERT_TRUE (Test1 != nullptr);
     instance = ECDbTestProject::CreateArbitraryECInstance (*Test1, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter2(db, *Test1);
     sms = inserter2.Insert(instanceKey, *instance);
     EXPECT_EQ(SUCCESS, sms);
 
-    ECClassCP Test2 = db.GetSchemaManager().GetECClass("TryClassCombinations", "S_F_CA_T_D_T");
+    ECClassCP Test2 = db.Schemas().GetECClass("TryClassCombinations", "S_F_CA_T_D_T");
     ASSERT_TRUE (Test2 != nullptr);
     instance = ECDbTestProject::CreateArbitraryECInstance (*Test2, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter3(db, *Test2);
@@ -1570,7 +1570,7 @@ TEST (ECDbInstances, VerifyAbstractClassWith_TablePerHierarchyAndSharedTableForT
     auto readContext = ECSchemaReadContext::CreateContext ();
     ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
     ASSERT_TRUE (testSchema != nullptr);
-    auto importStatus = db.GetSchemaManager ().ImportECSchemas (readContext->GetCache ());
+    auto importStatus = db.Schemas ().ImportECSchemas (readContext->GetCache ());
     ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
 
     //verify tables

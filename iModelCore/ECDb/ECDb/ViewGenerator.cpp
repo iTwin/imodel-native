@@ -126,7 +126,7 @@ BentleyStatus ViewGenerator::CreateNullView (NativeSqlBuilder& viewSql, ECSqlPre
 BentleyStatus ViewGenerator::GetRootClasses (std::vector<IClassMap const*>& rootClasses, ECDbR db)
     {
     ECSchemaList schemas;
-    if (db.GetSchemaManager ().GetECSchemas (schemas, true) != SUCCESS)
+    if (db.Schemas ().GetECSchemas (schemas, true) != SUCCESS)
         return ERROR;
         
     std::vector<IClassMap const*> rootClassMaps;
@@ -206,7 +206,7 @@ bool ensureDerivedClassesAreLoaded
 
     if (isPolymorphic)
         {
-        auto const& derivedClasses = ensureDerivedClassesAreLoaded ? map.GetECDbR ().GetSchemaManager ().GetDerivedECClasses (ecClass) : ecClass.GetDerivedClasses ();
+        auto const& derivedClasses = ensureDerivedClassesAreLoaded ? map.GetECDbR ().Schemas ().GetDerivedECClasses (ecClass) : ecClass.GetDerivedClasses ();
         for (auto derivedClass : derivedClasses)
             {
             auto status = ComputeViewMembers (viewMembers, map, *derivedClass, isPolymorphic, optimizeByIncludingOnlyRealTables, ensureDerivedClassesAreLoaded);
@@ -442,7 +442,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassLinkTableMap (Nat
     BentleyStatus ViewGenerator::GetAllChildRelationships (std::vector<RelationshipClassMapCP>& relationshipMaps, ECDbMapCR map, ECSqlPrepareContext const& prepareContext, IClassMap const& baseRelationMap)
     {
     auto& baseClass = baseRelationMap.GetClass();
-    for (auto childClass : map.GetECDbR ().GetSchemaManager ().GetDerivedECClasses (const_cast<ECClassR>(baseClass)))
+    for (auto childClass : map.GetECDbR ().Schemas ().GetDerivedECClasses (const_cast<ECClassR>(baseClass)))
         {
         auto childClassMap = map.GetClassMap (*childClass);
         if (childClassMap == nullptr)
@@ -802,7 +802,7 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap (NativeSqlBuilder& v
     {
     std::map<ECClassId, IClassMap const*> viewClasses;
 
-    ECDbSchemaManagerCR schemaManager = map.GetECDbR ().GetSchemaManager ();
+    ECDbSchemaManagerCR schemaManager = map.GetECDbR ().Schemas ();
 
     if (classesToInclude.empty ())
         {
@@ -961,7 +961,7 @@ void ViewGenerator::LoadDerivedClassMaps (std::map<ECClassId, IClassMap const *>
     if (viewClasses.find (classMap->GetClass().GetId ()) != viewClasses.end ())
         return;
 
-    ECDbSchemaManagerCR schemaManager = map.GetECDbR ().GetSchemaManager ();
+    ECDbSchemaManagerCR schemaManager = map.GetECDbR ().Schemas ();
     
     for (ECClassCP ecClass : schemaManager.GetDerivedECClasses (classMap->GetClass ()))
         {

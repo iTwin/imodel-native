@@ -303,7 +303,7 @@ TEST(ECDbTests, createEmptyProject)
     ECDbR ecdbr = testproject.Create("emptyecdb.ecdb");
     BeRepositoryId repositotyId = ecdbr.GetRepositoryId();
     ASSERT_TRUE(repositotyId.IsValid());
-    ASSERT_TRUE(ecdbr.GetSchemaManager().GetECSchema("ECDbSystem", true) != nullptr);
+    ASSERT_TRUE(ecdbr.Schemas().GetECSchema("ECDbSystem", true) != nullptr);
     }
 
 //---------------------------------------------------------------------------------------

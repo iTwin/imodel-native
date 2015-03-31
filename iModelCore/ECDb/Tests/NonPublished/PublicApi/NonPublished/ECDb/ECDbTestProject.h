@@ -30,7 +30,7 @@ private:
     ECN::ECSchemaPtr m_testSchema;
 
     Utf8StringCR GetTestSchemaName () const;
-    BeSQLite::EC::ECDbSchemaManagerCR GetSchemaManager () const;
+    BeSQLite::EC::ECDbSchemaManagerCR Schemas () const;
     BeSQLite::EC::ECDbR GetECDb () const;
 public:
     explicit ECDbTestSchemaManager (BeSQLite::EC::ECDb& ecdb);

@@ -55,7 +55,7 @@ BentleyStatus ECDb_ECSqlSelectBuilder ()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlSelectBuilder.sampleCode
     
     // Get class to perform ECSQL statement against
-    ECClassCP employeeClass = ecdb.GetSchemaManager ().GetECClass ("StartupCompany", "Employee");
+    ECClassCP employeeClass = ecdb.Schemas ().GetECClass ("StartupCompany", "Employee");
     if (employeeClass == nullptr)
         {
         // class not found. do error handling here...

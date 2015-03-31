@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 JsonReader::Impl::Impl (ECDbCR ecdb, ECN::ECClassId ecClassId)
 : m_ecDb (ecdb), m_statementCache (50, "JsonReader ECSqlStatement Cache")
     {
-    m_ecClass = m_ecDb.GetSchemaManager ().GetECClass (ecClassId);
+    m_ecClass = m_ecDb.Schemas ().GetECClass (ecClassId);
     BeAssert (m_ecClass != nullptr && "Could not retrieve class with specified id");
     m_isValid = m_ecClass != nullptr;
     }
@@ -333,14 +333,14 @@ const JsonECSqlSelectAdapter::FormatOptions& formatOptions
         return ERROR;
 
     // See note on "hack" below
-    ECClassCP dgnElementClass = m_ecDb.GetSchemaManager ().GetECClass ("dgn", "Element");
+    ECClassCP dgnElementClass = m_ecDb.Schemas ().GetECClass ("dgn", "Element");
     bool isRootClassDgnElement = (m_ecClass == dgnElementClass);
 
     ECInstanceKeyMultiMapConstIterator instanceIdIter;
     for (ECInstanceKeyMultiMapConstIterator classIdIter = instanceKeys.begin (); classIdIter != instanceKeys.end (); classIdIter = instanceIdIter)
         {
         ECClassId ecRelatedClassId = classIdIter->first;
-        ECClassCP ecRelatedClass = m_ecDb.GetSchemaManager ().GetECClass (ecRelatedClassId);
+        ECClassCP ecRelatedClass = m_ecDb.Schemas ().GetECClass (ecRelatedClassId);
         POSTCONDITION (ecRelatedClass != nullptr, ERROR);
 
         ECSqlSelectBuilder builder;
@@ -502,12 +502,12 @@ ECClassCP ECClassHelper::ResolveClass (Utf8CP schemaName, Utf8StringCR className
     {
     ECClassCP ecClass = nullptr;
     if (schemaName != nullptr)
-        ecClass = ecDb.GetSchemaManager ().GetECClass (schemaName, className.c_str ());
+        ecClass = ecDb.Schemas ().GetECClass (schemaName, className.c_str ());
     else
         {
         PRECONDITION (defaultSchema != nullptr && "Cannot resolve class without a specified namespace. or a default schema", nullptr);
         Utf8String defaultSchemaName (defaultSchema->GetName ().c_str ());
-        ecClass = ecDb.GetSchemaManager ().GetECClass (defaultSchemaName.c_str (), className.c_str ());
+        ecClass = ecDb.Schemas ().GetECClass (defaultSchemaName.c_str (), className.c_str ());
         }
 
     POSTCONDITION (ecClass != nullptr, nullptr);

@@ -186,7 +186,7 @@ std::vector<BeRepositoryBasedIdSequence const*> ECDb::Impl::GetSequences () cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan       06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaManagerCR ECDb::Impl::GetSchemaManager () const
+ECDbSchemaManagerCR ECDb::Impl::Schemas () const
     {
     return *m_schemaManager;
     }

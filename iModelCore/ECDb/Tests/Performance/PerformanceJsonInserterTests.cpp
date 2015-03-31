@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/PerformanceJsonInserterTests.cpp $
+|  $Source: Tests/Performance/PerformanceJsonInserterTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -72,7 +72,7 @@ TEST (PerformanceJsonInserter, Insert)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE (parseSuccessful);
 
-    ECClassCP documentClass = ecdb.GetSchemaManager().GetECClass ("eB_PW_CommonSchema_WSB", "Document");
+    ECClassCP documentClass = ecdb.Schemas().GetECClass ("eB_PW_CommonSchema_WSB", "Document");
     ASSERT_TRUE (documentClass != nullptr);
     JsonInserter inserter (ecdb, *documentClass);
 

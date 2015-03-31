@@ -245,7 +245,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
     DbResult result = ecDb.GetCachedStatement (stmt, sql);
     POSTCONDITION (result == BE_SQLITE_OK, result);
 
-    ECDbSchemaManagerCR ecDbSchemaManager = ecDb.GetSchemaManager ();
+    ECDbSchemaManagerCR ecDbSchemaManager = ecDb.Schemas ();
 
     auto anyClass = ecDbSchemaManager.GetECClass ("Bentley_Standard_Classes", "AnyClass");
     if (anyClass != nullptr)
@@ -321,7 +321,7 @@ void ECInstanceFinder::DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instance
         if (ids.size() == 0)
             continue;
 
-        ECClassCP ecClass = ecDb.GetSchemaManager ().GetECClass (classId);
+        ECClassCP ecClass = ecDb.Schemas ().GetECClass (classId);
 
         LOG.tracev (L"Class: %ls, Instances:%d", ecClass->GetName().c_str(), ids.size());
         for (ECInstanceId& id : ids)
@@ -487,7 +487,7 @@ uint8_t& currentDepth
         ECInstanceKeyMultiMapPair instanceEntry (iter->first, iter->second);
         if (instanceKeyMap.end() != std::find (instanceKeyMap.begin(), instanceKeyMap.end(), instanceEntry))
             {
-            ECClassCP ecClass = m_ecDb.GetSchemaManager ().GetECClass (iter->first);
+            ECClassCP ecClass = m_ecDb.Schemas ().GetECClass (iter->first);
             LOG.warningv (L"Detected a relationship cycle with instance id %lld of class %ls", iter->second.GetValue(),
                 ecClass->GetName().c_str());
             iter = newSeedInstanceKeyMap.erase (iter); // C++ 11 returns the next entry after erase

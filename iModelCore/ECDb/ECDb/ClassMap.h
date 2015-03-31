@@ -333,7 +333,7 @@ protected:
     virtual ClassDbView const& _GetDbView () const override { return *m_dbView; }
     PropertyMapCollection& GetPropertyMapsR ();
     
-    ECDbSchemaManagerCR GetSchemaManager () const;
+    ECDbSchemaManagerCR Schemas () const;
 public:
     static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
     //! Builds the list of PropertyMaps for this ClassMap

@@ -91,7 +91,7 @@ BentleyStatus SetupTestECDb(BeFileNameR ecdbPath, Utf8CP testECDbName)
 
     ECDbTestProject testProject;
     ECDbR ecdb = testProject.Create(testECDbName);
-    if (ecdb.GetSchemaManager().ImportECSchemas(*schemaCache) != SUCCESS)
+    if (ecdb.Schemas().ImportECSchemas(*schemaCache) != SUCCESS)
         return ERROR;
 
     ecdbPath = BeFileName(testProject.GetECDbPath());
@@ -400,13 +400,13 @@ void RunPerformanceComparison (bool& hasRun, double& insertTimingSecs, Utf8CP te
     std::vector<ECClassCP> testClasses;
     if (!Utf8String::IsNullOrEmpty (testClassName))
         {
-        ECClassCP testClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, testClassName);
+        ECClassCP testClass = ecdb. Schemas ().GetECClass (testSchemaName, testClassName);
         ASSERT_TRUE (testClass != nullptr);
         testClasses.push_back (testClass);
         }
     else
         {
-        ECSchemaCP schema = ecdb. GetSchemaManager ().GetECSchema (testSchemaName);
+        ECSchemaCP schema = ecdb. Schemas ().GetECSchema (testSchemaName);
         ASSERT_TRUE (schema != nullptr);
         for (auto ecClass : schema->GetClasses ())
             {

@@ -36,13 +36,13 @@ private:
 
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
-    ECDB_EXPORT virtual DbResult _OnDbOpened () override;
+    ECDB_EXPORT virtual DbResult _OnDbOpened() override;
     //! Fired when an ECDb file was created. Creates the %EC profile.
-    ECDB_EXPORT virtual DbResult _OnDbCreated (CreateParams const& params) override;
-    ECDB_EXPORT virtual DbResult _OnRepositoryIdChanged (BeRepositoryId newRepositoryId) override;
-    ECDB_EXPORT virtual void _OnDbClose () override;
-    ECDB_EXPORT virtual void _OnDbChangedByOtherConnection () override;
-    ECDB_EXPORT virtual DbResult _VerifySchemaVersion (Db::OpenParams const& params) override;
+    ECDB_EXPORT virtual DbResult _OnDbCreated(CreateParams const& params) override;
+    ECDB_EXPORT virtual DbResult _OnRepositoryIdChanged(BeRepositoryId newRepositoryId) override;
+    ECDB_EXPORT virtual void _OnDbClose() override;
+    ECDB_EXPORT virtual void _OnDbChangedByOtherConnection() override;
+    ECDB_EXPORT virtual DbResult _VerifySchemaVersion(Db::OpenParams const& params) override;
     ECDB_EXPORT virtual int _OnAddFunction(DbFunction& func) const override;
     ECDB_EXPORT virtual void _OnRemoveFunction(DbFunction& func) const override;
 #endif
@@ -63,30 +63,30 @@ public:
     //!            standard schemas cannot be located by ECDb.
     //! @param[in] logSqliteErrors If Yes, then SQLite error messages are logged. Note that some SQLite errors are intentional. Turn this option on only for limited debuging purposes.
     //! @return ::BE_SQLITE_OK in case of success, error code otherwise, e.g. if @p ecdbTempDir does not exist
-    ECDB_EXPORT static DbResult Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors=BeSQLiteLib::LogErrors::No);
+    ECDB_EXPORT static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors=BeSQLiteLib::LogErrors::No);
 
     //! Initializes a new instance of the ECDb class.
-    ECDB_EXPORT ECDb ();
-    ECDB_EXPORT virtual ~ECDb ();
+    ECDB_EXPORT ECDb();
+    ECDB_EXPORT virtual ~ECDb();
 
     //! Gets the schema manager for this @ref ECDbFile "ECDb file". With the schema manager clients can import @ref ECN::ECSchema "ECSchemas"
     //! into or retrieve @ref ECN::ECSchema "ECSchemas" or individual @ref ECN::ECClass "ECClasses" from the %ECDb file.
     //! @return Schema manager
-    ECDB_EXPORT ECDbSchemaManager const& GetSchemaManager () const;
+    ECDB_EXPORT ECDbSchemaManager const& Schemas() const;
 
     //! Gets the schema locator for schemas stored in this ECDb file.
     //! @return This ECDb file's schema locater
-    ECDB_EXPORT ECN::IECSchemaLocaterR GetSchemaLocater () const;
+    ECDB_EXPORT ECN::IECSchemaLocaterR GetSchemaLocater() const;
 
     //! Gets the ECClass locator for ECClasses whose schemas are stored in this ECDb file.
     //! @return This ECDb file's ECClass locater
-    ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater () const;
+    ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
     //! Clears the ECDb cache
     ECDB_EXPORT void ClearECDbCache() const;
 
     //__PUBLISH_SECTION_END__
-    Impl& GetECDbImplR () const;
+    Impl& GetECDbImplR() const;
     //__PUBLISH_SECTION_START__
 };
 

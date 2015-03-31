@@ -475,8 +475,8 @@ TEST_F (ECDbMapPersistenceTests, DGNSchemaStructureMapPersistence)
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"dgn.02.00.ecschema.xml", ecSchemaSearchPath.c_str ());
     ASSERT_TRUE (ecSchema != nullptr);
     ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
-    ASSERT_EQ (SUCCESS, ECDbMapPersistence.GetSchemaManager ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "Schema import Failed";
-    ECSchemaCP simpleCompany = ECDbMapPersistence.GetSchemaManager ().GetECSchema ("dgn");
+    ASSERT_EQ (SUCCESS, ECDbMapPersistence.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "Schema import Failed";
+    ECSchemaCP simpleCompany = ECDbMapPersistence.Schemas ().GetECSchema ("dgn");
     ASSERT_TRUE (simpleCompany != NULL);
 
     rapidjson::Document doc;
@@ -534,8 +534,8 @@ TEST_F (ECDbMapPersistenceTests, MappingStrategyTest)
 
     ASSERT_TRUE (ecSchema != nullptr);
     ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
-    ASSERT_EQ (SUCCESS, ECDbMapPersistence.GetSchemaManager ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "Schema import Failed \n";
-    ECSchemaCP tablePerHierarchySchema = ECDbMapPersistence.GetSchemaManager ().GetECSchema ("dgn");
+    ASSERT_EQ (SUCCESS, ECDbMapPersistence.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "Schema import Failed \n";
+    ECSchemaCP tablePerHierarchySchema = ECDbMapPersistence.Schemas ().GetECSchema ("dgn");
     ASSERT_TRUE (tablePerHierarchySchema != NULL);
     }
 
@@ -558,8 +558,8 @@ TEST_F (ECDbMapPersistenceTests, DGNSchemaTableColumnPropertyMapPersistence)
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"dgn.02.00.ecschema.xml", ecSchemaSearchPath.c_str ());
     ASSERT_TRUE (ecSchema != nullptr);
     ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
-    ASSERT_EQ (SUCCESS, ECDbMapPersistence.GetSchemaManager ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "Schema import Failed";
-    ECSchemaCP simpleCompany = ECDbMapPersistence.GetSchemaManager ().GetECSchema ("dgn");
+    ASSERT_EQ (SUCCESS, ECDbMapPersistence.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "Schema import Failed";
+    ECSchemaCP simpleCompany = ECDbMapPersistence.Schemas ().GetECSchema ("dgn");
     ASSERT_TRUE (simpleCompany != NULL);
 
     rapidjson::Document doc;

@@ -48,7 +48,7 @@ TEST (ECDbBrownBagDemo, CreateECDbFromScratch)
         }
 
     //** Import ECSchema into ECDb file
-    BentleyStatus importStat = ecdb. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache ());
+    BentleyStatus importStat = ecdb. Schemas ().ImportECSchemas (schemaContext->GetCache ());
     if (importStat != SUCCESS)
         {
         wprintf (L"Importing ECSchema failed.");
@@ -86,7 +86,7 @@ TEST (ECDbBrownBagDemo, SchemaManager)
         return;
         }
 
-    ECDbSchemaManagerCR schemaManager = ecdb. GetSchemaManager ();
+    ECDbSchemaManagerCR schemaManager = ecdb. Schemas ();
 
     //** Get ECSchema from ECDb file
     ECSchemaCP schema = schemaManager.GetECSchema ("StartupCompany");
@@ -248,7 +248,7 @@ TEST (ECDbBrownBagDemo, PopulateSampleECDb)
         return;
         }
 
-    ECSchemaCP schema = ecdb. GetSchemaManager ().GetECSchema ("StartupCompany", true);
+    ECSchemaCP schema = ecdb. Schemas ().GetECSchema ("StartupCompany", true);
 
     auto companyInst = InsertCompany (ecdb, schema, "Bentley Systems Inc.", "685 Stockton Drive", "Exton", "PA", "19341",
                                         "USA", 4000);

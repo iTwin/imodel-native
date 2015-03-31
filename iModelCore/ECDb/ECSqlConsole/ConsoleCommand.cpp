@@ -508,7 +508,7 @@ void ImportCommand::RunImportSchema (ECSqlConsoleSession& session, BeFileNameCR 
 
     Savepoint savepoint (session.GetECDbR (), "import ecschema");
     ECDbSchemaManager::ImportOptions options (true, true);
-    auto status = session.GetECDbR ().GetSchemaManager ().ImportECSchemas (context->GetCache (), options);
+    auto status = session.GetECDbR ().Schemas ().ImportECSchemas (context->GetCache (), options);
 
     Utf8CP schemaStr = isFolder ? "ECSchemas in folder" : "ECSchema";
 
@@ -584,7 +584,7 @@ void ExportCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const
 //---------------------------------------------------------------------------------------
 void ExportCommand::RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFolderStr) const
     {
-    auto const& schemaManager = session.GetECDbR ().GetSchemaManager();
+    auto const& schemaManager = session.GetECDbR ().Schemas();
     ECSchemaList schemas;
     auto status = schemaManager.GetECSchemas(schemas, true);
     if (status != SUCCESS)
@@ -660,7 +660,7 @@ void PopulateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> con
     if (argCount == 2)
         {
         auto schemaName = args[1].c_str ();
-        ECSchemaCP schema = session.GetECDbR ().GetSchemaManager ().GetECSchema (schemaName, true);
+        ECSchemaCP schema = session.GetECDbR ().Schemas ().GetECSchema (schemaName, true);
         if (schema == nullptr)
             {
             Console::WriteErrorLine ("Could not find ECSchema '%s' in ECDb file.", schemaName);
@@ -671,7 +671,7 @@ void PopulateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> con
         }
     else
         {
-        auto stat = session.GetECDbR ().GetSchemaManager ().GetECSchemas (schemaList,true);
+        auto stat = session.GetECDbR ().Schemas ().GetECSchemas (schemaList,true);
         if (stat != SUCCESS)
             {
             Console::WriteErrorLine ("Could not retrieve the ECSchemas from the ECDb file.");

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/PerformanceECSqlStatementTestFixture.cpp $
+|  $Source: Tests/Performance/PerformanceECSqlStatementTestFixture.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
@@ -235,7 +235,7 @@ ECClassCP PerformanceECSqlStatementTestFixture::GetTestClass
 ECDbR testDb
 )
     {
-    ECSchemaCP schema = testDb.GetSchemaManager().GetECSchema(TestSchemaHelper::TESTSCHEMA_NAME);
+    ECSchemaCP schema = testDb.Schemas().GetECSchema(TestSchemaHelper::TESTSCHEMA_NAME);
 
     ECClassCP testClass = schema->GetClassCP (TestSchemaHelper::TESTCLASS_NAME);
     POSTCONDITION (testClass != nullptr, nullptr);

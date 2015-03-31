@@ -94,7 +94,7 @@ NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicCla
 //---------------------------------------------------------------------------------------
 MapStatus SecondaryTableClassMap::EmbeddedTypeClassMap::Initialize ()
     {
-    auto const& schemaManager = GetECDbMap ().GetECDbR ().GetSchemaManager ();
+    auto const& schemaManager = GetECDbMap ().GetECDbR ().Schemas ();
     auto systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECInstanceId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 

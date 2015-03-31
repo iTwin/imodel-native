@@ -574,7 +574,7 @@ TEST(ECDbRelationships, TestRelationshipKeys)
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("relationshipKeystest.ecdb", L"UserWorkBench.01.00.ecschema.xml", true);
     ecdbr.ClearECDbCache();
-    ECSchemaCP ecSchema = ecdbr.GetSchemaManager().GetECSchema("UserWorkBench", true);
+    ECSchemaCP ecSchema = ecdbr.Schemas().GetECSchema("UserWorkBench", true);
     ASSERT_TRUE(ecSchema != NULL);
 
     ECRelationshipClassCP areaTown = ecSchema->GetClassCP(L"area_town")->GetRelationshipClassCP();
@@ -650,13 +650,13 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
     ASSERT_TRUE(ECSqlStepStatus::Done == statement.Step());
     statement.Finalize();
 
-    ECClassCP pClass = ecdb.GetSchemaManager().GetECClass("ecsqltestKeys", "P",ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
+    ECClassCP pClass = ecdb.Schemas().GetECClass("ecsqltestKeys", "P",ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
     IECInstancePtr pInstance = pClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     InsertInstance(ecdb, *pClass, *pInstance);
-    ECClassCP psaClass = ecdb.GetSchemaManager().GetECClass("ecsqltestKeys", "PSA", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
+    ECClassCP psaClass = ecdb.Schemas().GetECClass("ecsqltestKeys", "PSA", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
     IECInstancePtr psaInstance = psaClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     InsertInstance(ecdb, *psaClass, *psaInstance);
-    auto PSAHasPKey_N1Class = ecdb.GetSchemaManager().GetECClass("ecsqltestKeys", "PSAHasPKey_N1", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix)->GetRelationshipClassCP();
+    auto PSAHasPKey_N1Class = ecdb.Schemas().GetECClass("ecsqltestKeys", "PSAHasPKey_N1", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix)->GetRelationshipClassCP();
     IECInstancePtr PSAHasPKey_N1Instance = PSAHasPKey_N1Class->GetRelationshipClassCP()->GetDefaultStandaloneEnabler()->CreateInstance(0);
     auto relationshipInstance = CreateRelationship(*PSAHasPKey_N1Class, *psaInstance.get(),*pInstance.get());
     ASSERT_TRUE(relationshipInstance.IsValid());

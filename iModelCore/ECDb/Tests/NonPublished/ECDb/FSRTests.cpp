@@ -59,7 +59,7 @@ struct FSRTests : public ::testing::Test
         ecSchema = ECSchema::LocateSchema(key, *schemaReadContext);
         ASSERT_TRUE(ecSchema != NULL);
         LOG.infov(L"Loaded schema %ls", currentSchemaName.GetName());
-        auto importSchemaStatus = m_db.GetSchemaManager().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions(true, true));
+        auto importSchemaStatus = m_db.Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions(true, true));
         ASSERT_EQ(SUCCESS, importSchemaStatus);
 
 

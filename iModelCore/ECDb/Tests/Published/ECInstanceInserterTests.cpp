@@ -22,7 +22,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
     {
     SetTestProject(CreateTestProject("insertInstances.ecdb", L"KitchenSink.01.00.ecschema.xml"));
     ECDbR db = GetTestProject().GetECDb();
-    ECClassCP testClass = db.GetSchemaManager().GetECClass (schemaName, className);
+    ECClassCP testClass = db.Schemas().GetECClass (schemaName, className);
     
     ECInstanceInserter inserter(db, *testClass);
     bvector<IECInstancePtr> instances;
@@ -73,10 +73,10 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
     SetTestProject(CreateTestProject("insertInstances.ecdb", L"KitchenSink.01.00.ecschema.xml"));
     ECDbR db = GetTestProject().GetECDb();
 
-    ECClassCP sourceClass = db.GetSchemaManager().GetECClass (schemaName, sourceClassName);
-    ECClassCP targetClass = db.GetSchemaManager().GetECClass (schemaName, targetClassName);
+    ECClassCP sourceClass = db.Schemas().GetECClass (schemaName, sourceClassName);
+    ECClassCP targetClass = db.Schemas().GetECClass (schemaName, targetClassName);
 
-    ECClassCP tempClass = db. GetSchemaManager ().GetECClass (schemaName, relationshipClassName);
+    ECClassCP tempClass = db. Schemas ().GetECClass (schemaName, relationshipClassName);
     ECRelationshipClassCP relationshipClass = tempClass->GetRelationshipClassCP ();
 
     ECInstanceInserter sourceInserter(db, *sourceClass);
@@ -151,7 +151,7 @@ TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
     {
     SetTestProject(CreateTestProject("insertRulesInstances.ecdb", L"ECRules.01.00.ecschema.xml"));
     ECDbR db = GetTestProject().GetECDb();
-    ECSchemaCP rulesECSchema = db. GetSchemaManager ().GetECSchema ("ECRules");
+    ECSchemaCP rulesECSchema = db. Schemas ().GetECSchema ("ECRules");
     ASSERT_TRUE (rulesECSchema != nullptr);
 
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*rulesECSchema);
@@ -196,7 +196,7 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     SetTestProject (CreateTestProject ("insertwithuserprovidedecinstanceid.ecdb", L"ECSqlTest.01.00.ecschema.xml"));
     ECDbR ecdb = GetTestProject ().GetECDb ();
 
-    ECClassCP testClass = ecdb. GetSchemaManager ().GetECClass ("ECSqlTest", "P");
+    ECClassCP testClass = ecdb. Schemas ().GetECClass ("ECSqlTest", "P");
     ASSERT_TRUE (testClass != nullptr);
 
     ECInstanceInserter inserter (ecdb, *testClass);
@@ -308,7 +308,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
     SetTestProject (CreateTestProject ("insertwithcurrenttimestamptrigger.ecdb", L"ECSqlTest.01.00.ecschema.xml"));
     ECDbR ecdb = GetTestProject ().GetECDb ();
-    auto testClass = ecdb.GetSchemaManager ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
+    auto testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE (testClass != nullptr);
 
     //scenario 1: double-check what SQLite does with default values if the INSERT statement

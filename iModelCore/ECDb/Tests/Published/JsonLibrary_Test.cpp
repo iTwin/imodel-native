@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/JsonLibrary_Test.cpp $
+|  $Source: Tests/Published/JsonLibrary_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -280,7 +280,7 @@ TEST (RapidJson, InsertIntoECDb)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE (parseSuccessful);
 
-    ECClassCP documentClass = db.GetSchemaManager().GetECClass ("eB_PW_CommonSchema_WSB", "Document");
+    ECClassCP documentClass = db.Schemas().GetECClass ("eB_PW_CommonSchema_WSB", "Document");
     ASSERT_TRUE (documentClass != nullptr);
     JsonInserter inserter (db, *documentClass);
 

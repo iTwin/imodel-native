@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/FieldEngineer_Test.cpp $
+|  $Source: Tests/Published/FieldEngineer_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.r.h>
@@ -202,7 +202,7 @@ bool CreateSimpleCompany (ECDbR ecDb)
         return false;
 
     /* Import schema into Db */
-    auto importSchemaStatus = ecDb.GetSchemaManager().ImportECSchemas (context->GetCache());
+    auto importSchemaStatus = ecDb.Schemas().ImportECSchemas (context->GetCache());
     return (importSchemaStatus == SUCCESS);
     }
 
@@ -211,7 +211,7 @@ bool CreateSimpleCompany (ECDbR ecDb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PopulateSimpleCompany (ECDbR ecDb)
     {
-    ECSchemaCP schema = ecDb.GetSchemaManager().GetECSchema ("SimpleCompany", true);
+    ECSchemaCP schema = ecDb.Schemas().GetECSchema ("SimpleCompany", true);
     if (schema == nullptr)
         return false;
 
@@ -360,7 +360,7 @@ TEST (FieldEngineer, Workflow)
      * Read the instance from the Db by querying for it. 
      */
      
-    ECSchemaCP simpleCompanySchema = ecDb.GetSchemaManager().GetECSchema ("SimpleCompany", true);
+    ECSchemaCP simpleCompanySchema = ecDb.Schemas().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (simpleCompanySchema != nullptr);
     ECClassCP employeeClass = simpleCompanySchema->GetClassCP (L"Employee");
     ASSERT_TRUE (employeeClass != nullptr);
@@ -576,17 +576,17 @@ TEST (FieldEngineer, RelationshipIssue)
     ASSERT_TRUE (dscJoinSchema.IsValid());
 
     // Import schema into Db
-    auto importSchemaStatus = ecDb.GetSchemaManager().ImportECSchemas (context->GetCache());
+    auto importSchemaStatus = ecDb.Schemas().ImportECSchemas (context->GetCache());
     ASSERT_EQ (SUCCESS, importSchemaStatus);
 
     /* Import sample instances into Db */
-    ECClassCP cachedFileInfoClass = ecDb.GetSchemaManager().GetECClass ("DSCacheSchema", "CachedFileInfo");
+    ECClassCP cachedFileInfoClass = ecDb.Schemas().GetECClass ("DSCacheSchema", "CachedFileInfo");
     ASSERT_TRUE (cachedFileInfoClass != nullptr);
 
-    ECClassCP folderClass = ecDb.GetSchemaManager().GetECClass ("eB_PW_CommonSchema_WSB", "Folder");
+    ECClassCP folderClass = ecDb.Schemas().GetECClass ("eB_PW_CommonSchema_WSB", "Folder");
     ASSERT_TRUE (folderClass != nullptr);
 
-    ECClassCP tmpClass = ecDb.GetSchemaManager().GetECClass ("DSCacheJoinSchema", "CachedFileInfoRelationship");
+    ECClassCP tmpClass = ecDb.Schemas().GetECClass ("DSCacheJoinSchema", "CachedFileInfoRelationship");
     ECRelationshipClassCP cachedFileInfoRelClass = tmpClass->GetRelationshipClassCP();
     ASSERT_TRUE (cachedFileInfoRelClass != nullptr);
 
@@ -631,7 +631,7 @@ TEST (FieldEngineer, CircularReferences)
     status = CreateSimpleCompany (ecDb);
     ASSERT_TRUE (status);
 
-    ECSchemaCP schema = ecDb.GetSchemaManager().GetECSchema ("SimpleCompany", true);
+    ECSchemaCP schema = ecDb.Schemas().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (schema != nullptr);
 
     ECClassCP managerClass = schema->GetClassCP (L"Manager");
@@ -780,7 +780,7 @@ void CreateDeleteReferentialIntegrityTestDb (BeFileNameR testDbPath)
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema (*schema);
 
-    ASSERT_EQ (SUCCESS, ecdb. GetSchemaManager ().ImportECSchemas (*schemaCache));
+    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (*schemaCache));
     }
 
 void RunDeleteReferentialIntegrityTest (bool withRelationsToCachedInfo)
@@ -798,14 +798,14 @@ void RunDeleteReferentialIntegrityTest (bool withRelationsToCachedInfo)
         ECDb ecdb;
         ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OPEN_ReadWrite)));
 
-        ECClassCP testClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, testClassName);
+        ECClassCP testClass = ecdb. Schemas ().GetECClass (testSchemaName, testClassName);
 
-        ECClassCP cachedInfoClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, "CachedInfoClass");
+        ECClassCP cachedInfoClass = ecdb. Schemas ().GetECClass (testSchemaName, "CachedInfoClass");
 
-        ECClassCP tempClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, "TestClassRelationship");
+        ECClassCP tempClass = ecdb. Schemas ().GetECClass (testSchemaName, "TestClassRelationship");
         ECRelationshipClassCP testRelationshipClass = tempClass->GetRelationshipClassCP ();
 
-        tempClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, "CachedInfoClassRelationship");
+        tempClass = ecdb. Schemas ().GetECClass (testSchemaName, "CachedInfoClassRelationship");
         ECRelationshipClassCP cachedInfoRelationshipClass = tempClass->GetRelationshipClassCP ();
 
         // insert test data
@@ -828,7 +828,7 @@ void RunDeleteReferentialIntegrityTest (bool withRelationsToCachedInfo)
     ECDb ecdb;
     ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OPEN_ReadWrite)));
 
-    ECClassCP testClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, testClassName);
+    ECClassCP testClass = ecdb. Schemas ().GetECClass (testSchemaName, testClassName);
 
     //printf ("Attach to profiler\n");
     //getchar ();
@@ -867,14 +867,14 @@ void RunDeleteReferentialIntegrityTestUsingECSql (bool withRelationsToCachedInfo
         ECDb ecdb;
         ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OPEN_ReadWrite)));
 
-        ECClassCP testClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, testClassName);
+        ECClassCP testClass = ecdb. Schemas ().GetECClass (testSchemaName, testClassName);
 
-        ECClassCP cachedInfoClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, "CachedInfoClass");
+        ECClassCP cachedInfoClass = ecdb. Schemas ().GetECClass (testSchemaName, "CachedInfoClass");
 
-        ECClassCP tempClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, "TestClassRelationship");
+        ECClassCP tempClass = ecdb. Schemas ().GetECClass (testSchemaName, "TestClassRelationship");
         ECRelationshipClassCP testRelationshipClass = tempClass->GetRelationshipClassCP ();
 
-        tempClass = ecdb. GetSchemaManager ().GetECClass (testSchemaName, "CachedInfoClassRelationship");
+        tempClass = ecdb. Schemas ().GetECClass (testSchemaName, "CachedInfoClassRelationship");
         ECRelationshipClassCP cachedInfoRelationshipClass = tempClass->GetRelationshipClassCP ();
 
         // insert test data

@@ -97,7 +97,7 @@ BentleyStatus ECDbImportSchemaFromECSchemaXml ()
 
     // 2) Import ECSchema (and its references) into ECDb file. The schema and its references are available in the cache
     //    of the schema context from the XML deserialization step.
-    ECDbSchemaManagerCR schemaManager = ecdb.GetSchemaManager ();
+    ECDbSchemaManagerCR schemaManager = ecdb.Schemas ();
     BentleyStatus importStat = schemaManager.ImportECSchemas (schemaContext->GetCache ());
     if (SUCCESS != importStat)
         {
@@ -121,7 +121,7 @@ BentleyStatus ECDbSchemaManagerGetSchema ()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_SchemaManagerGetSchema.sampleCode
 
     // Get the schema manager
-    ECDbSchemaManagerCR schemaManager = ecdb.GetSchemaManager ();
+    ECDbSchemaManagerCR schemaManager = ecdb.Schemas ();
 
     // Retrieve a schema
     // (Passing false as third parameter indicates that classes of the schema should not be loaded along with the schema, 
@@ -150,7 +150,7 @@ BentleyStatus ECDbSchemaManagerGetClass ()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_SchemaManagerGetClass.sampleCode
 
     // Get the schema manager
-    ECDbSchemaManagerCR schemaManager = ecdb.GetSchemaManager ();
+    ECDbSchemaManagerCR schemaManager = ecdb.Schemas ();
 
     // Retrieve an ECClass
     ECClassCP addressClass = schemaManager.GetECClass ("fooschema", "Address");

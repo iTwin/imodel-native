@@ -139,9 +139,9 @@ void ECDb::_OnRemoveFunction (DbFunction& func) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaManagerCR ECDb::GetSchemaManager () const
+ECDbSchemaManagerCR ECDb::Schemas () const
     {
-    return m_pimpl->GetSchemaManager ();
+    return m_pimpl->Schemas();
     }
 
 //--------------------------------------------------------------------------------------

@@ -44,7 +44,7 @@ void ECSqlParseContext::PopFinalizeParseArg ()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus ECSqlParseContext::TryResolveClass (shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrPrefix, Utf8StringCR className) 
     {
-    ECClassCP resolvedClass = m_ecdb.GetSchemaManager ().GetECClass (schemaNameOrPrefix.c_str (), className.c_str (), ECDbSchemaManager::ResolveSchema::AutoDetect);
+    ECClassCP resolvedClass = m_ecdb.Schemas ().GetECClass (schemaNameOrPrefix.c_str (), className.c_str (), ECDbSchemaManager::ResolveSchema::AutoDetect);
 
     if (resolvedClass == nullptr)
         {
@@ -103,7 +103,7 @@ int ECSqlParseContext::TrackECSqlParameter (ParameterExp const& parameterExp)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlParseContext::GetSubclasses(ClassListById& classes, ECClassCR ecClass)
     {    
-    for (auto derivedClass : GetSchemaManager ().GetDerivedECClasses (const_cast<ECClassR>(ecClass)))
+    for (auto derivedClass : Schemas ().GetDerivedECClasses (const_cast<ECClassR>(ecClass)))
         {
         if (classes.find(derivedClass->GetId()) == classes.end())
             {
@@ -153,9 +153,9 @@ bool ECSqlParseContext::IsEndClassOfRelationship (ECClassCR searchClass, ECRelat
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     02/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECDbSchemaManagerCR ECSqlParseContext::GetSchemaManager () const
+ECDbSchemaManagerCR ECSqlParseContext::Schemas () const
     {
-    return GetECDb ().GetSchemaManager ();
+    return GetECDb ().Schemas ();
     }
 
 //-----------------------------------------------------------------------------------------

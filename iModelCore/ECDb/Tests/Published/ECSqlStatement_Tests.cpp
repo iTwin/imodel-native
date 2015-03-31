@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 bvector<IECInstancePtr> CreateECInstance_S4 (ECDbR ecdb, int n)
     {
-    ECClassCP s4 = ecdb. GetSchemaManager ().GetECClass ("NestedStructArrayTest", "S4");
+    ECClassCP s4 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S4");
     BeAssert (s4 != nullptr);
 
     bvector<IECInstancePtr> vect;
@@ -37,7 +37,7 @@ bvector<IECInstancePtr> CreateECInstance_S4 (ECDbR ecdb, int n)
 bvector<IECInstancePtr> CreateECInstance_S3 (ECDbR ecdb, int n)
     {
     int m = n + 1;
-    ECClassCP s3 = ecdb. GetSchemaManager ().GetECClass ("NestedStructArrayTest", "S3");
+    ECClassCP s3 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S3");
     BeAssert (s3 != nullptr);
 
     bvector<IECInstancePtr> vect;
@@ -67,7 +67,7 @@ bvector<IECInstancePtr> CreateECInstance_S3 (ECDbR ecdb, int n)
 bvector<IECInstancePtr> CreateECInstance_S2 (ECDbR ecdb, int n)
     {
     int m = n + 1;
-    ECClassCP s2 = ecdb. GetSchemaManager ().GetECClass ("NestedStructArrayTest", "S2");
+    ECClassCP s2 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S2");
     BeAssert (s2 != nullptr);
 
     bvector<IECInstancePtr> vect;
@@ -97,7 +97,7 @@ bvector<IECInstancePtr> CreateECInstance_S2 (ECDbR ecdb, int n)
 bvector<IECInstancePtr> CreateECInstance_S1 (ECDbR ecdb, int n)
     {
     int m = n + 1;
-    ECClassCP s1 = ecdb. GetSchemaManager ().GetECClass ("NestedStructArrayTest", "S1");
+    ECClassCP s1 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S1");
     BeAssert (s1 != nullptr);
 
     bvector<IECInstancePtr> vect;
@@ -128,7 +128,7 @@ bvector<IECInstancePtr> CreateECInstance_S1 (ECDbR ecdb, int n)
 bvector<IECInstancePtr> CreateECInstance_ClassP (ECDbR ecdb, int n)
     {
     int m = n + 1;
-    ECClassCP classP = ecdb. GetSchemaManager ().GetECClass ("NestedStructArrayTest", "ClassP");
+    ECClassCP classP = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "ClassP");
     BeAssert (classP != nullptr);
 
     bvector<IECInstancePtr> vect;
@@ -209,7 +209,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
         }
 
 
-    ECClassCP classP = ecdb. GetSchemaManager ().GetECClass ("NestedStructArrayTest", "ClassP");
+    ECClassCP classP = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "ClassP");
     BeAssert (classP != nullptr);
 
     ECInstanceDeleter deleter(ecdb, *classP);

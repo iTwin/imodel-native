@@ -384,7 +384,7 @@ bool InstanceCRUDTests::importSchema (WString schemaNameWithoutVerionAndExtensio
                 LOG1.infov ("[SRF] Schema Read Failed :%ls \n", entry.GetName ());
             }
         }
-    auto importSchemaStatus = m_db.GetSchemaManager ().ImportECSchemas (*cache, ECDbSchemaManager::ImportOptions (true, true));
+    auto importSchemaStatus = m_db.Schemas ().ImportECSchemas (*cache, ECDbSchemaManager::ImportOptions (true, true));
     if (importSchemaStatus == SUCCESS)
         {
         LOG1.infov ("[SIS] Schema Import successful: %ls \n", m_schemaFullPath.c_str ());

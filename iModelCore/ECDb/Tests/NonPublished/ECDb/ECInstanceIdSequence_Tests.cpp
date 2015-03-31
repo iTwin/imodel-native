@@ -59,7 +59,7 @@ ECSchemaCP* schema = nullptr
         uint32_t minor, major;
         ECSchema::ParseSchemaFullName (name, minor, major, schemaFullName);
         Utf8String schemaName(name);
-        *schema = testDb. GetSchemaManager().GetECSchema (schemaName.c_str());
+        *schema = testDb. Schemas().GetECSchema (schemaName.c_str());
         }
     }
 

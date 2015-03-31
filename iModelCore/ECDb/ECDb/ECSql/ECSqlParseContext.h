@@ -38,7 +38,7 @@ public:
         {}
 
     ECDbCR GetECDb() const;
-    ECDbSchemaManagerCR GetSchemaManager() const;
+    ECDbSchemaManagerCR Schemas() const;
 
     void PushFinalizeParseArg (void const* const arg);
     void const* const GetFinalizeParseArg () const;

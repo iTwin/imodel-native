@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECInstanceUpdaterTests.cpp $
+|  $Source: Tests/Published/ECInstanceUpdaterTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -19,7 +19,7 @@ struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
             {
             SetTestProject(CreateTestProject("updateInstances.ecdb", L"KitchenSink.01.00.ecschema.xml"));
             ECDbR db = GetTestProject().GetECDb();
-            ECClassCP testClass = db.GetSchemaManager().GetECClass (schemaName, className);
+            ECClassCP testClass = db.Schemas().GetECClass (schemaName, className);
 
             ECInstanceInserter inserter(db, *testClass);
             ECInstanceUpdater* updater = nullptr;
@@ -106,7 +106,7 @@ TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     {
     SetTestProject (CreateTestProject ("updatewithcurrenttimestamptrigger.ecdb", L"ECSqlTest.01.00.ecschema.xml"));
     ECDbR ecdb = GetTestProject ().GetECDb ();
-    auto testClass = ecdb.GetSchemaManager ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
+    auto testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE (testClass != nullptr);
 
     auto tryGetLastMod = [] (DateTime& lastMod, ECDbR ecdb, ECInstanceId id)

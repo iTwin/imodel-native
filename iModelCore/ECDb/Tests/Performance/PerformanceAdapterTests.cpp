@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/PerformanceAdapterTests.cpp $
+|  $Source: Tests/Performance/PerformanceAdapterTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -85,7 +85,7 @@ struct PerformanceAdapterTestFixture : PerformanceTestFixture
             auto& ecdb = m_testProject.GetECDb();
             Utf8String schemaName("PerformanceSchema");
             Utf8String className("ClassOfArrays");
-            auto classP = ecdb. GetSchemaManager ().GetECClass (schemaName.c_str (), className.c_str ());
+            auto classP = ecdb. Schemas ().GetECClass (schemaName.c_str (), className.c_str ());
             EXPECT_TRUE (classP != nullptr);
             bmap<Utf8String, double> results;
             DoSelect(oneAtATime, ecdb, classP, "IntArray", results, Logtimer,TestDetails);

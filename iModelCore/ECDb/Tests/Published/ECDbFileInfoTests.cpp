@@ -24,7 +24,7 @@ TEST(ECDbFileInfo, EmptyECDbHasFileInfoSchema)
     ECDbTestProject testProject;
     auto& ecdb = testProject.Create("ecdbfileinfo.ecdb");
 
-    auto const& schemaManager = ecdb. GetSchemaManager ();
+    auto const& schemaManager = ecdb. Schemas ();
 
     ECSchemaCP fileinfoSchema = schemaManager.GetECSchema (ECDB_FILEINFO_SCHEMA_NAME, false);
     ASSERT_TRUE (fileinfoSchema != nullptr) << "Empty ECDb file is expected to contain the ECDb_FileInfo ECSchema.";
@@ -95,7 +95,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
 
         ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadECSchemaFromString(schemaContext, GetTestSchemaXml()));
 
-        ASSERT_EQ (SUCCESS, ecdb. GetSchemaManager ().ImportECSchemas (schemaContext->GetCache ()));
+        ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (schemaContext->GetCache ()));
     }
 
     ECDb ecdb;
@@ -119,7 +119,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step(fooKey));
     stmt.Finalize();
 
-    ECClassCP embeddedFileInfoClass = ecdb. GetSchemaManager ().GetECClass (ECDB_FILEINFO_SCHEMA_NAME, "EmbeddedFileInfo");
+    ECClassCP embeddedFileInfoClass = ecdb. Schemas ().GetECClass (ECDB_FILEINFO_SCHEMA_NAME, "EmbeddedFileInfo");
     ASSERT_TRUE (embeddedFileInfoClass != nullptr);
 
     //INSERT scenario

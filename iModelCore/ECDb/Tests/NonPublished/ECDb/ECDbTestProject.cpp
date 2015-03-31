@@ -34,7 +34,7 @@ ECClassCP ECDbTestSchemaManager::GetClass (Utf8CP className) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECClassCP ECDbTestSchemaManager::GetClass (Utf8CP schemaName, Utf8CP className) const
     {
-    return GetSchemaManager ().GetECClass (schemaName, className);
+    return Schemas ().GetECClass (schemaName, className);
     }
 
 //---------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ BentleyStatus ECDbTestSchemaManager::ImportTestSchema (WCharCP testSchemaFileNam
     LOG.infov (L"Loaded %ls from disk [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds ());
 
     s.Start ();
-    auto importSchemaStatus = GetSchemaManager ().ImportECSchemas (schemaReadContext->GetCache (), ECDbSchemaManager::ImportOptions (true, false));
+    auto importSchemaStatus = Schemas ().ImportECSchemas (schemaReadContext->GetCache (), ECDbSchemaManager::ImportOptions (true, false));
     s.Stop();
     LOG.infov (L"Imported %ls into DgnDb [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds());
     EXPECT_EQ (SUCCESS, importSchemaStatus);
@@ -93,9 +93,9 @@ Utf8StringCR ECDbTestSchemaManager::GetTestSchemaName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaManagerCR ECDbTestSchemaManager::GetSchemaManager () const
+ECDbSchemaManagerCR ECDbTestSchemaManager::Schemas () const
     {
-    return GetECDb (). GetSchemaManager ();
+    return GetECDb (). Schemas ();
     }
 
 //---------------------------------------------------------------------------------------

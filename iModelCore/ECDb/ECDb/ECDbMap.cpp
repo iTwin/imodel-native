@@ -93,7 +93,7 @@ ECDbMap::~ECDbMap()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType primitiveType) const
     {
-    ECSchemaCP ecdbSystemSchema = ECDbSystemSchemaHelper::GetSchema (m_ecdb.GetSchemaManager ());
+    ECSchemaCP ecdbSystemSchema = ECDbSystemSchemaHelper::GetSchema (m_ecdb.Schemas());
     EXPECTED_CONDITION (ecdbSystemSchema != nullptr);
  
     //WIP_ECDB: The hard coded names should become constants in ECDbSystemSchemaHelper eventually

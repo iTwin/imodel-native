@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECDbReadTests.cpp $
+|  $Source: Tests/Published/ECDbReadTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -353,7 +353,7 @@ TEST(ECDbTest, createECDbWithArbitraryNumberOfECInstances)
 {
     ECDbTestProject testproject;
     ECDbR ecdbr = testproject.Create("ecdbWithArbitratyInstances.ecdb", L"SimpleCompany.01.00.ecschema.xml", 1);
-    ECSchemaCP ecschemap = ecdbr. GetSchemaManager ().GetECSchema ("SimpleCompany", true);
+    ECSchemaCP ecschemap = ecdbr. Schemas ().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (ecschemap != nullptr);
     ECClassCP employee = ecschemap->GetClassCP(L"Employee");
     ASSERT_TRUE(employee != NULL);
