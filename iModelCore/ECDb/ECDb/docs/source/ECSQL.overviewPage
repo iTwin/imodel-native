@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECSQL.overviewPage $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,51 +81,51 @@
 
     @section ECSQLSamplesBasics Basics
 
-    SELECT AssetID FROM stco.Hardware
-    WHERE HasWarranty = True AND
-    WarrantyExpiryDate DATE '2014-01-01'
+        SELECT AssetID FROM stco.Hardware
+        WHERE HasWarranty = True AND
+        WarrantyExpiryDate DATE '2014-01-01'
 
-    SELECT count(*) FROM stco.Hardware
-    WHERE HasWarranty = True AND
-    WarrantyExpiryDate < DATE '2014-01-01'
+        SELECT count(*) FROM stco.Hardware
+        WHERE HasWarranty = True AND
+        WarrantyExpiryDate < DATE '2014-01-01'
 
-    SELECT AssetID, Length * Breadth AS Area FROM stco.Desk
-    WHERE Type = ?
+        SELECT AssetID, Length * Breadth AS Area FROM stco.Desk
+        WHERE Type = ?
 
 
     @section ECSQLSamplesStructs ECStructs
 
-    SELECT FirstName, LastName, Address FROM stco.Employee
+        SELECT FirstName, LastName, Address FROM stco.Employee
 
-    SELECT FirstName, LastName, Address.Street, Address.City, Address.Zip FROM stco.Employee
+        SELECT FirstName, LastName, Address.Street, Address.City, Address.Zip FROM stco.Employee
 
 
     @section ECSQLSamplesArrays ECArrays
 
-    SELECT EmployeeId, Certifications FROM stco.Employee
+        SELECT EmployeeId, Certifications FROM stco.Employee
 
 
     @section ECSQLSamplesECInstanceIdECClassId ECInstanceId and ECClassId
     See section @ref ECSqlECInstanceIdDetails and @ref ECSQLGetECClassIdDetails for the
     background on ECInstanceId and ECClassId.
 
-    SELECT ECInstanceId FROM stco.Employee
+        SELECT ECInstanceId FROM stco.Employee
 
-    SELECT FirstName, LastName FROM stco.Employee
-    WHERE ECInstanceId IN (123, 124, 125)
+        SELECT FirstName, LastName FROM stco.Employee
+        WHERE ECInstanceId IN (123, 124, 125)
 
-    SELECT ECInstanceId, GetECClassId() FROM stco.Employee
+        SELECT ECInstanceId, GetECClassId() FROM stco.Employee
 
-    SELECT e.ECInstanceId, e.GetECClassId(), c.ECInstanceId, c.GetECClassId()
-    FROM stco.Employee e
-    JOIN stco.Company c USING stco.CompanyHasEmployees
-    WHERE c.Name = ?
+        SELECT e.ECInstanceId, e.GetECClassId(), c.ECInstanceId, c.GetECClassId()
+        FROM stco.Employee e
+        JOIN stco.Company c USING stco.CompanyHasEmployees
+        WHERE c.Name = ?
 
     Specifying the ECInstanceId in an INSERT statement is not allowed as ECDb automatically generates the ECInstanceId implicitly.
     For the exceptional case of creating an empty instance, i.e. where only the ECInstanceId is generated, and all properties are set
     to NULL, the following ECSQL has to be used:
 
-    INSERT INTO stco.Employee (ECInstanceId) VALUES (NULL)
+        INSERT INTO stco.Employee (ECInstanceId) VALUES (NULL)
 
     This is in particular the only way to create instances for ECClasses that do not have any ECProperties defined.
     This cannot be used for ECRelationships as empty relationship instances would violate against the implicit NOT NULL
@@ -146,8 +146,8 @@
     <c>SELECT report.FirstName FROM stco.Employee report<br>JOIN stco.Employee manager USING stco.ManagerReports <b>REVERSE</b><br>WHERE manager.FirstName = ? AND manager.LastName = ?</c>|Determines all direct reports for a given manager
 
     @note The last two ECSQL examples show how to use the ECSQL keywords @c @b FORWARD and @c @b REVERSE for cases where it is ambiguous
-    whether the FROM or JOIN class is the source or target end of an ECN::ECRelationshipClass. In that example the manager is the source
-    and the report the target constraint of the relationship @c ManagerReports
+    whether the FROM or JOIN class is the source or target end of an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass". 
+    In that example the manager is the source and the report the target constraint of the relationship @c ManagerReports
     (see <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>).
 
 
@@ -158,25 +158,34 @@
 
     #####JOIN ON Style
 
-    SELECT h.AssetID FROM stco.Hardware h
-    INNER JOIN stco.HardwareUsedByEmployee r ON h.ECInstanceId = r.TargetECInstanceId AND
-    h.GetECClassId() = r.TargetECClassId
-    INNER JOIN stco.Employee e ON r.SourceECInstanceId = e.ECInstanceId AND
-    r.SourceECClassId = e.GetECClassId()
-    WHERE e.FirstName = 'John' AND e.Lastname = 'Smith'
+         SELECT h.AssetID FROM stco.Hardware h
+         INNER JOIN stco.HardwareUsedByEmployee r ON h.ECInstanceId = r.TargetECInstanceId AND
+         h.GetECClassId() = r.TargetECClassId
+         INNER JOIN stco.Employee e ON r.SourceECInstanceId = e.ECInstanceId AND
+         r.SourceECClassId = e.GetECClassId()
+         WHERE e.FirstName = 'John' AND e.Lastname = 'Smith'
 
 
     #####Theta Style
 
-    SELECT h.AssetID FROM stco.Hardware h, stco.HardwareUsedByEmployee r, stco.Employee e
-    WHERE h.ECInstanceId = r.TargetECInstanceId AND
-    h.GetECClassId() = r.TargetECClassId
-    r.SourceECInstanceId = e.ECInstanceId AND
-    r.SourceECClassId = e.GetECClassId() AND
-    e.FirstName = 'John' AND e.Lastname = 'Smith'
+         SELECT h.AssetID FROM stco.Hardware h, stco.HardwareUsedByEmployee r, stco.Employee e
+         WHERE h.ECInstanceId = r.TargetECInstanceId AND
+         h.GetECClassId() = r.TargetECClassId
+         r.SourceECInstanceId = e.ECInstanceId AND
+         r.SourceECClassId = e.GetECClassId() AND
+         e.FirstName = 'John' AND e.Lastname = 'Smith'
 
 
     @note Both examples <b>as well as the first from ECSQLSamplesJoinsConvenienceSyntax</b> are semantically equivalent.
+
+    @subsection ECSQLSamplesInsertRelationships Insert ECRelationship instances
+    As an ECRelationshipClass is an ECClass, inserting ECRelationship instances works like you'd insert a regular ECInstance. You
+    just have to include the special tokens @b SourceECInstanceId, @b SourceECClassId, @b TargetECInstanceId, @b TargetECClassId:
+        
+        INSERT INTO stco.HardwareUsedByEmployee (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (1, 61, 2, 65)
+
+        INSERT INTO stco.HardwareUsedByEmployee (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?,?,?,?)
+
 
     @section ECSQLSamplesPolymorphism Polymorphism
     - In ECSQL classes are treated polymorphically <b>by default</b>.
