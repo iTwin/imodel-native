@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bvector.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -198,6 +198,34 @@ public:
         this->swap (rhs);
         return *this;
         }
+
+// *** BENTLEY_CHANGE
+// Restrict use of std::initializer_list to VC12 or later.
+#if !defined(_MSC_VER) || (_MSC_VER >= 1800)      
+    bvector(std::initializer_list<value_type> _Ilist,
+                    const allocator_type& _Al = allocator_type())
+                    : _C_alloc(_Al)
+                    {              // construct from initializer_list
+                    insert(begin(), _Ilist.begin(), _Ilist.end());
+                    }
+
+    bvector& operator=(std::initializer_list<value_type> _Ilist)
+                    {              // assign initializer_list
+                    assign(_Ilist.begin(), _Ilist.end());
+                    return (*this);
+                    }
+
+    void assign(std::initializer_list<value_type> _Ilist)
+                    {              // assign initializer_list
+                    assign(_Ilist.begin(), _Ilist.end());
+                    }
+
+    void insert(iterator _Where,
+                    std::initializer_list<value_type> _Ilist)
+                    {              // insert initializer_list
+                    insert(_Where, _Ilist.begin(), _Ilist.end());
+                    }
+#endif
 
     ~bvector () { 
         _C_destroy (begin ());

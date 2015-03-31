@@ -46,11 +46,6 @@
 
     #define STD_TR1 std
 
-    #if defined (__GNUC__)
-        // GCC still does not support the override keyword
-        #define override
-    #endif
-
     #define ENUM_UNDERLYING_TYPE(T)   : T
 
     typedef void* ULONG_PTR;

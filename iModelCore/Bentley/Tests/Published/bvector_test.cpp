@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/bvector_test.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -1065,3 +1065,33 @@ TEST (BVectorTests, InitBVector)
     ASSERT_EQ(0, vector.size ());
     SUCCEED ();
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+TEST (BVectorTests, InitializerList)
+    {
+    bvector<int> numbers = { 2, 4, 6 };
+    ASSERT_TRUE(3 == numbers.size());
+    EXPECT_TRUE(2 == numbers[0]);
+    EXPECT_TRUE(4 == numbers[1]);
+    EXPECT_TRUE(6 == numbers[2]);
+
+    numbers = { 10 };
+    ASSERT_TRUE(1 == numbers.size());
+    EXPECT_TRUE(10 == numbers[0]);
+
+    numbers.assign({ 1, 3, 5 });
+    ASSERT_TRUE(3 == numbers.size());
+    EXPECT_TRUE(1 == numbers[0]);
+    EXPECT_TRUE(3 == numbers[1]);
+    EXPECT_TRUE(5 == numbers[2]);
+
+    numbers.insert(numbers.begin() + 1, { 7, 9 });
+    ASSERT_TRUE(5 == numbers.size());
+    EXPECT_TRUE(1 == numbers[0]);
+    EXPECT_TRUE(7 == numbers[1]);
+    EXPECT_TRUE(9 == numbers[2]);
+    EXPECT_TRUE(3 == numbers[3]);
+    EXPECT_TRUE(5 == numbers[4]);
+    }
