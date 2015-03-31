@@ -1362,7 +1362,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
             return rc;
 
         if (params.m_expirationDate.IsValid())
-            SetExpirationDate(params.m_expirationDate);
+            SaveExpirationDate(params.m_expirationDate);
 
         rc = BeSQLiteProfileManager::AssignProfileVersion(*this);
         if (rc != BE_SQLITE_OK)
@@ -1975,7 +1975,7 @@ DbResult Db::SaveExpirationDate(DateTime const& expirationDate)
 bool Db::IsExpired() const
     {
     DateTime expirationDate;
-    if (BE_SQLITE_OK != GetExpirationDate(expirationDate))
+    if (BE_SQLITE_OK != QueryExpirationDate(expirationDate))
         return false;
 
     return DateTime::Compare(DateTime::GetCurrentTimeUtc(), expirationDate) != DateTime::CompareResult::EarlierThan;
