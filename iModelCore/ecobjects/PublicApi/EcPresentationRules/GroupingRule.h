@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/GroupingRule.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -67,6 +67,10 @@ struct GroupingRule : public PresentationRule
         //! ECExpression condition that is used in order to define the node on which "Group By" context menu will be shown.
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
         ECOBJECTS_EXPORT WStringCR           GetContextMenuCondition (void) const;
+
+        //! Sets the ECExpression condition that is used in order to define the node on which "Group By" context menu will be shown.
+        //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
+        ECOBJECTS_EXPORT void                SetContextMenuCondition (WString value);
 
         //! Label of the parent context menu for choosing one of the predefined ProeprtyGroups.
         //! If this parameters is not set, the default name will be used - "Group By". 

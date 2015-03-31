@@ -2,7 +2,7 @@
 |
 |     $Source: tests/Published/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -2640,6 +2640,37 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
 TEST_F (MemoryLayoutTests, TestValueAccessor)
     {
     ECValueAccessor m_accessor;
+    }
+
+TEST_F (MemoryLayoutTests, GeometrySetGet)
+    {
+    ECSchemaPtr testSchema;
+    ECSchema::CreateSchema(testSchema, L"GeometrySchema", 1, 0);
+    ECClassP geomClass;
+    testSchema->CreateClass(geomClass, L"GeometryStore");
+
+    PrimitiveECPropertyP stringProp;
+    geomClass->CreatePrimitiveProperty(stringProp, L"Name");
+
+    PrimitiveECPropertyP geomProperty;
+    geomClass->CreatePrimitiveProperty(geomProperty, L"MyGeometry");
+    geomProperty->SetTypeName (L"Bentley.Geometry.Common.IGeometry");
+
+    IECInstancePtr instance = geomClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    DEllipse3d ellipse;
+    ellipse.Init (0.0, 0.0, 0.0, 10000, 0.0, 0.0, 0.0, 10000, 0.0, 0.0, msGeomConst_2pi);
+    ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (ellipse);
+    IGeometryPtr geometryPtr = IGeometry::Create (arc);
+    ECValue v;
+    BentleyStatus vStatus = v.SetIGeometry (*geometryPtr);
+    ASSERT_EQ(SUCCESS ,vStatus);
+
+    IGeometryPtr storedGeometryPtr1 = v.GetIGeometry ();
+    ASSERT_TRUE(storedGeometryPtr1.IsValid());
+    ECObjectsStatus status = instance->SetValue (L"MyGeometry", v);
+    ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
+
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

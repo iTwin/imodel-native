@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRule.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -102,6 +102,11 @@ void PresentationRule::_WriteXml (BeXmlNodeP xmlNode)
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR PresentationRule::GetCondition (void) const       { return m_condition; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Tom.Amon                        03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PresentationRule::SetCondition (WString value)         { m_condition = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

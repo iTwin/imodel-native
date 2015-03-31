@@ -966,6 +966,7 @@ bool IECTypeAdapter::ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR c
 bool IECTypeAdapter::GetPropertyNotSetValue (ECValueR v) const                                          { return _GetPropertyNotSetValue (v); }
 bool IECTypeAdapter::SupportsUnits() const                                                              { return _SupportsUnits(); }
 bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const                   { return _GetUnits (unit, context); }
+bool IECTypeAdapter::IsOrdinalType () const                                                             { return _IsOrdinalType (); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14

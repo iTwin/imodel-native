@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleSet.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -257,7 +257,7 @@ bool PresentationRuleSet::WriteToXmlFile (WCharCP xmlFilePath)
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
     WriteXml (*xmlDom.get());
 
-    return BEXML_Success == xmlDom->ToFile (xmlFilePath, BeXmlDom::TO_STRING_OPTION_Indent, BeXmlDom::FILE_ENCODING_Utf8);
+	return BEXML_Success == xmlDom->ToFile(xmlFilePath, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), BeXmlDom::FILE_ENCODING_Utf8);
     }
 
 /*---------------------------------------------------------------------------------**//**

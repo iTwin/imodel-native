@@ -181,6 +181,14 @@ WString        IECInstance::GetInstanceId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WString     IECInstance::GetInstanceIdForSerialization() const
+    {
+    return _GetInstanceIdForSerialization();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR       IECInstance::GetClass() const 
@@ -2473,6 +2481,17 @@ InstanceXmlReader (ECInstanceReadContextR context, BeXmlNodeR xmlNode)
     {
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                         Carole.MacDonald       03/15
+//+---------------+---------------+---------------+---------------+---------------+----
+ECSchemaCP GetSchema(WString schemaName)
+    {
+    SchemaKey key;
+    if (ECOBJECTS_STATUS_Success != SchemaKey::ParseSchemaFullName(key, schemaName.c_str()))
+        return NULL;
+
+    return m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2487,6 +2506,43 @@ ECSchemaCP       GetSchema()
     
     m_schema = m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     return m_schema; 
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                         Carole.MacDonald       03/15
+//+---------------+---------------+---------------+---------------+---------------+----
+StandaloneECInstancePtr CreateConstraintInstance( WString className, WString instanceId, ECSchemaCP defaultSchema)
+    {
+    // Classnames might be qualified by a schema name.
+    WString constraintSchemaName;
+    WString constraintClassName;
+    if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (constraintSchemaName, constraintClassName, className))
+        {
+        LOG.warningv ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a classname attribute with the value '%s' that can not be parsed.", 
+            Utf8String (className).c_str());
+        return nullptr;
+        }
+
+    ECSchemaCP constraintSchema = WString::IsNullOrEmpty(constraintSchemaName.c_str()) ? defaultSchema : GetSchema(constraintSchemaName);
+    if (nullptr == constraintSchema)
+        {
+        LOG.warningv  ("Invalid ECSchemaXML: ECRelationshipConstraint contains a classname attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+            Utf8String (constraintSchemaName).c_str());
+        return nullptr;
+        }
+
+    ECClassCP constraintClass = constraintSchema->GetClassCP (constraintClassName.c_str());
+    if (nullptr == constraintClass)
+        {
+        LOG.warningv  ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a classname attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+            Utf8String (className).c_str(), Utf8String (constraintClassName).c_str(), Utf8String (constraintSchema->GetName().c_str()).c_str());
+        return nullptr;
+        }
+
+    auto constraintInstance= constraintClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    constraintInstance->SetInstanceId(instanceId.c_str());
+
+    return constraintInstance;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2574,33 +2630,33 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
     if (NULL != relationshipInstance)
         {
         // see if we can find the attributes corresponding to the relationship instance ids.
-        WString relationshipClassName;
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, SOURCEINSTANCEID_ATTRIBUTE))
-            {
-#if defined (NEEDSWORK_RELATIONSHIP)
-            relationshipInstance->SetSourceInstanceId (sourceInstanceId);
-#endif
-            }
+        WString sourceInstanceId;
+        if (BEXML_Success != m_xmlNode.GetAttributeStringValue (sourceInstanceId, SOURCEINSTANCEID_ATTRIBUTE))
+            LOG.warningv (L"Source InstanceId not set on serialized relationship instance");
 
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (relationshipClassName, SOURCECLASS_ATTRIBUTE))
-            {
-#if defined (NEEDSWORK_RELATIONSHIP)
-            relationshipInstance->SetSourceClass (sourceClass);
-#endif
-            }
+        WString sourceClassName;
+        if (BEXML_Success != m_xmlNode.GetAttributeStringValue (sourceClassName, SOURCECLASS_ATTRIBUTE))
+            LOG.warningv (L"Source className not set on serialized relationship instance");
 
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, TARGETINSTANCEID_ATTRIBUTE))
-            {
-#if defined (NEEDSWORK_RELATIONSHIP)
-            relationshipInstance->SetTargetInstanceId (sourceInstanceId);
-#endif
-            }
+        WString targetInstanceId;
+        if (BEXML_Success != m_xmlNode.GetAttributeStringValue (targetInstanceId, TARGETINSTANCEID_ATTRIBUTE))
+            LOG.warningv (L"Target InstanceId not set on serialized relationship instance");
 
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (relationshipClassName, TARGETCLASS_ATTRIBUTE))
+        WString targetClassName;
+        if (BEXML_Success != m_xmlNode.GetAttributeStringValue (targetClassName, TARGETCLASS_ATTRIBUTE))
+            LOG.warningv (L"Target className not set on serialized relationship instance");
+
+        if (!WString::IsNullOrEmpty(sourceInstanceId.c_str()) && !WString::IsNullOrEmpty(sourceClassName.c_str()))
             {
-#if defined (NEEDSWORK_RELATIONSHIP)
-            relationshipInstance->SetTargetClass (sourceClass);
-#endif
+            IECInstancePtr source = CreateConstraintInstance(sourceClassName, sourceInstanceId, schema);
+            if (source.IsValid())
+                relationshipInstance->SetSource(source.get());
+            }
+        if (!WString::IsNullOrEmpty(targetInstanceId.c_str()) && !WString::IsNullOrEmpty(targetClassName.c_str()))
+            {
+            IECInstancePtr target = CreateConstraintInstance(targetClassName, targetInstanceId, schema);
+            if (target.IsValid())
+                relationshipInstance->SetTarget(target.get());
             }
         }
 
@@ -3200,7 +3256,7 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
         }
 
     if (writeInstanceId)
-        instanceNode->AddAttributeStringValue (INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceId().c_str());
+        instanceNode->AddAttributeStringValue (INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
 
     return WritePropertyValuesOfClassOrStructArrayMember (ecClass, ecInstance, NULL, *instanceNode);
     }

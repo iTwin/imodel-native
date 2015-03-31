@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -129,6 +129,9 @@ protected:
 
     //! Gets the unique ID for this instance
     virtual WString             _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
+    //! Gets the ID which should be written to ECInstance XML for this instance
+    virtual WString             _GetInstanceIdForSerialization() const { return GetInstanceId(); }
+
     //! Gets the value stored in the ECProperty referred to by the specified property index
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (property index is 1-based)
@@ -247,6 +250,8 @@ public:
 
     //! Gets the unique ID for this instance
     ECOBJECTS_EXPORT WString            GetInstanceId() const;
+    //! Gets the ID which should be serialized to ECInstance XML for this instance
+    ECOBJECTS_EXPORT WString            GetInstanceIdForSerialization() const;
     //! Sets the unique id for this instance
     ECOBJECTS_EXPORT ECObjectsStatus    SetInstanceId(WCharCP instanceId);
     //! Returns whether the ECInstance as a whole is ReadOnly

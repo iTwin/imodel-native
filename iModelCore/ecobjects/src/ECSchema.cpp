@@ -2478,7 +2478,6 @@ ECObjectsStatus ECSchemaCache::DropSchema  (SchemaKeyCR ecSchemaKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(ECSchemaR schema)
     {
-    
     for (SchemaMap::iterator iter = m_schemas.begin(); iter != m_schemas.end();)
         {
         bool removeSchema = false;

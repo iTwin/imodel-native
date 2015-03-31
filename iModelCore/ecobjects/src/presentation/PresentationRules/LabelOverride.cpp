@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/LabelOverride.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -67,6 +67,16 @@ void LabelOverride::_WriteXml (BeXmlNodeP xmlNode)
 WStringCR LabelOverride::GetLabel (void) const { return m_label; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Tom.Amon                        03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void LabelOverride::SetLabel (WString value) { m_label = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR LabelOverride::GetDescription (void) const { return m_description; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Tom.Amon                        03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void LabelOverride::SetDescription (WString value) { m_description = value; }
