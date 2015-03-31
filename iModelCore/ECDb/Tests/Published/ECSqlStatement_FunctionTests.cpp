@@ -13,11 +13,12 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ExpectedResult
     {
-    bool m_isSupported;
+    bool m_isPrepareSupported;
+    bool m_isStepSupported;
     ECN::PrimitiveType m_returnType;
 
-    ExpectedResult() : m_isSupported(false) {}
-    explicit ExpectedResult(ECN::PrimitiveType returnType) : m_isSupported(true), m_returnType(returnType) {}
+    ExpectedResult() : m_isPrepareSupported(false), m_isStepSupported (false) {}
+    explicit ExpectedResult(ECN::PrimitiveType returnType, bool isStepSupported = true) : m_isPrepareSupported(true), m_isStepSupported(isStepSupported), m_returnType(returnType) {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -47,7 +48,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BuiltinFunctions)
             {"SELECT LIKE(S,'Sample','/') FROM ecsql.P LIMIT 1", ExpectedResult()},//Not supported as LIKE is a reserved token, and the ECSQL grammar only has one rule yet for LIKe which is the standard X LIKE Y syntax}
             {"SELECT LTRIM(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT LTRIM(S, '$') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
-            {"SELECT MATCH(S, 'str') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
+            {"SELECT MATCH(S, 'str') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Boolean, false)},
             {"SELECT MAX(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
             {"SELECT MAX(123, 125, 512) FROM ecsql.P LIMIT 1", ExpectedResult()},//Not supported as MAX(arg) is a dedicated ECSQL grammar rule
             {"SELECT MIN(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
@@ -77,12 +78,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BuiltinFunctions)
         {
         Utf8CP ecsql = kvPair.first;
         ExpectedResult const& expectedResult = kvPair.second;
-        const ECSqlStatus expectedPrepareStat = expectedResult.m_isSupported ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
+        const ECSqlStatus expectedPrepareStat = expectedResult.m_isPrepareSupported ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
 
         ECSqlStatement stmt;
         ASSERT_EQ((int) expectedPrepareStat, (int) stmt.Prepare(ecdb, ecsql)) << ecsql;
 
-        if (!expectedResult.m_isSupported)
+        if (!expectedResult.m_isStepSupported)
             continue;
 
         ASSERT_EQ((int) ECSqlStepStatus::HasRow, (int) stmt.Step());
