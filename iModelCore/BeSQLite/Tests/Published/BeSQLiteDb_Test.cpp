@@ -979,7 +979,7 @@ TEST(BeSQLiteDbOpenTest, Expired2)
     ASSERT_TRUE( db.IsDbOpen() );
     ASSERT_TRUE( db.IsExpired() );
     DateTime xdate;
-    ASSERT_TRUE( db.GetExpirationDate (xdate) == BE_SQLITE_OK );
+    ASSERT_TRUE( db.QueryExpirationDate (xdate) == BE_SQLITE_ROW );
     ASSERT_TRUE( DateTime::Compare (DateTime::GetCurrentTimeUtc(), xdate) != DateTime::CompareResult::EarlierThan );
 
     db.CloseDb();

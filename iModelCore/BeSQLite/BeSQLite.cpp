@@ -1975,7 +1975,7 @@ DbResult Db::SaveExpirationDate(DateTime const& expirationDate)
 bool Db::IsExpired() const
     {
     DateTime expirationDate;
-    if (BE_SQLITE_OK != QueryExpirationDate(expirationDate))
+    if (BE_SQLITE_ROW != QueryExpirationDate(expirationDate))
         return false;
 
     return DateTime::Compare(DateTime::GetCurrentTimeUtc(), expirationDate) != DateTime::CompareResult::EarlierThan;
