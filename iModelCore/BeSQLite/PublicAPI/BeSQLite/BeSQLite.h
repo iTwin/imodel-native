@@ -310,7 +310,7 @@ struct BeRepositoryBasedId : BeInt64Id<BeRepositoryBasedId>
     BeRepositoryBasedId() {Invalidate();}
 
     //! Construct a BeRepositoryBasedId from a 64 bit value.
-    explicit BeRepositoryBasedId(int64_t u) : BeInt64Id(u) {}
+    explicit BeRepositoryBasedId(int64_t val) : BeInt64Id(val) {}
 
     //! Move constructor.
     BeRepositoryBasedId(BeRepositoryBasedId&& rhs) : BeInt64Id<BeRepositoryBasedId> (std::move(rhs)) {}
