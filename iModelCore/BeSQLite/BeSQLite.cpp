@@ -1909,7 +1909,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::GetExpirationDate(DateTime& expirationDate) const 
+DbResult Db::QueryExpirationDate (DateTime& expirationDate) const
     {
     Utf8String dateStr;
     DbResult rc = QueryProperty(dateStr, Properties::ExpirationDate());
@@ -1922,13 +1922,13 @@ DbResult Db::GetExpirationDate(DateTime& expirationDate) const
         return BE_SQLITE_ERROR;
         }
 
-    return BE_SQLITE_OK;
+    return BE_SQLITE_ROW;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SetExpirationDate(DateTime const& expirationDate)
+DbResult Db::SaveExpirationDate(DateTime const& expirationDate)
     {
     if (expirationDate.IsValid() && expirationDate.GetInfo().GetKind() != DateTime::Kind::Utc)
         return BE_SQLITE_ERROR;
