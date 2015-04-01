@@ -1348,6 +1348,39 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int Db::AddAggregateFunction(AggregateFunction& func) const
+    {
+    const int stat = m_dbFile->AddAggregateFunction(func);
+    if (stat != 0)
+        return stat;
+
+    return _OnAddFunction(func);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int Db::AddScalarFunction(ScalarFunction& func) const
+    {
+    const int stat = m_dbFile->AddScalarFunction(func);
+    if (stat != 0)
+        return stat;
+
+    return _OnAddFunction(func);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int Db::RemoveFunction(DbFunction& func) const
+    {
+    _OnRemoveFunction(func);
+    return m_dbFile->RemoveFunction(func);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::SaveMyProjectGuid (BeProjectGuid projectGuid)
@@ -2280,16 +2313,16 @@ void DbFunction::Context::SetResultValue(DbValue val){sqlite3_result_value((sqli
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)sqlite3_user_data(context))->m_aggregate->_StepAggregate((DbFunction::Context*) context, nArgs, (DbValue*)args);}
-static void aggregateFinal(sqlite3_context* context) {((AggregateFunction*)sqlite3_user_data(context))->m_aggregate->_FinishAggregate((DbFunction::Context*) context);}
-static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->m_scalar->_ComputeScalar((DbFunction::Context*) context, nArgs, (DbValue*)args);}
+static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args) {((AggregateFunction*) sqlite3_user_data(context))->GetAggregate()->_StepAggregate((DbFunction::Context*) context, nArgs, (DbValue*) args); }
+static void aggregateFinal(sqlite3_context* context) {((AggregateFunction*)sqlite3_user_data(context))->GetAggregate()->_FinishAggregate((DbFunction::Context*) context);}
+static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->GetScalar()->_ComputeScalar((DbFunction::Context*) context, nArgs, (DbValue*)args);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DbFile::AddAggregateFunction(AggregateFunction& function) const
     {
-    return sqlite3_create_function_v2 (m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, &function, NULL, aggregateStep, aggregateFinal, NULL);
+    return sqlite3_create_function_v2(m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, &function, NULL, aggregateStep, aggregateFinal, NULL);
     }
 
 int DbFile::AddScalarFunction(ScalarFunction& function) const
@@ -2538,23 +2571,23 @@ void DbValue::Dump() const
 
     switch (GetValueType())
         {
-        case BE_SQLITE_INTEGER:
+        case DbValueType::IntegerVal:
             printf ("%" PRId64, GetValueInt64());
             break;
 
-        case BE_SQLITE_FLOAT:
+        case DbValueType::FloatVal:
             printf ("%lg", GetValueDouble());
             break;
 
-        case BE_SQLITE_TEXT:
+        case DbValueType::TextVal:
             printf ("%s", GetValueText());
             break;
 
-        case BE_SQLITE_BLOB:
+        case DbValueType::BlobVal:
             printf ("%p", GetValueBlob());
             break;
 
-        case BE_SQLITE_NULL:
+        case DbValueType::NullVal:
             printf ("NULL");
             break;
         }
@@ -4764,7 +4797,7 @@ size_t DbEmbeddedFileTable::Iterator::QueryCount () const
 static int rTreeMatch(RTreeMatch::QueryInfo* info)
     {
     AggregateFunction* agg = (AggregateFunction*) info->m_context;
-    return ((RTreeMatch*) agg->m_aggregate)->_TestRange(*info);
+    return ((RTreeMatch*) agg->GetAggregate())->_TestRange(*info);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4789,7 +4822,7 @@ void DbFile::InitRTreeMatch() const
 void DbFile::SetRTreeMatch(RTreeMatch* tester) const
     {
     BeAssert (m_flags.m_rtreeMatchValid);
-    BeAssert (NULL == m_rtreeMatch.m_aggregate || NULL == tester);
+    BeAssert (NULL == m_rtreeMatch.GetAggregate () || NULL == tester);
     m_rtreeMatch.SetAggregate(tester);
     }
 

@@ -640,14 +640,14 @@ inline bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) ==
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
 //=======================================================================================
-enum DbValueType
-{
-    BE_SQLITE_INTEGER  = 1,
-    BE_SQLITE_FLOAT    = 2,
-    BE_SQLITE_TEXT     = 3,
-    BE_SQLITE_BLOB     = 4,
-    BE_SQLITE_NULL     = 5,
-};
+enum class DbValueType : int
+    {
+    IntegerVal = 1,
+    FloatVal = 2,
+    TextVal = 3,
+    BlobVal = 4,
+    NullVal = 5,
+    };
 
 //=======================================================================================
 // Utility class to initialize the BeSQLite library and directly use a few SQLite APIs.
@@ -891,7 +891,7 @@ public:
     BE_SQLITE_EXPORT DbValueType GetColumnType (int col);
 
     //! Determine whether the column value is NULL.
-    bool IsColumnNull (int col) {return BE_SQLITE_NULL == GetColumnType(col);}
+    bool IsColumnNull (int col) {return DbValueType::NullVal == GetColumnType(col);}
 
     //! Get the name of a column of the result of Step
     //! @param[in] col The column of interest
@@ -1096,7 +1096,7 @@ struct DbValue
     DbValue(SqlValueP val) : m_val(val)  {}
 
     bool IsValid () const {return NULL != m_val;}                    //!< return true if this value is valid
-    bool IsNull ()  const {return BE_SQLITE_NULL == GetValueType();} //!< return true if this value is null
+    bool IsNull ()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
     BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
     BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
     BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see sqlite3_value_bytes
@@ -1121,10 +1121,6 @@ struct DbValue
 //=======================================================================================
 struct DbFunction
 {
-private:
-    Utf8String m_name;
-    int        m_nArgs;
-
 public:
     //=======================================================================================
     //! The "context" supplied to DbFunctions that can be used to set result values.
@@ -1147,9 +1143,27 @@ public:
         BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
     };
 
-    DbFunction (Utf8CP name, int nArgs) : m_name(name), m_nArgs(nArgs) {}
-    Utf8CP GetName() const {return m_name.c_str();}
+private:
+    Utf8String m_name;
+    int m_nArgs;
+    DbValueType m_returnType;
+
+protected:
+    //! Initializes a new DbFunction instance
+    //! @param[in] name Function name
+    //! @param[in] nArgs Number of function args
+    //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
+    DbFunction(Utf8CP name, int nArgs, DbValueType returnType) : m_name(name), m_nArgs(nArgs), m_returnType(returnType) {}
+
+public:
+    virtual ~DbFunction() {}
+    Utf8CP GetName() const { return m_name.c_str(); }
     int GetNumArgs() const {return m_nArgs;}
+    //! Gets the return type of the function.
+    //! @remarks DbValueType::NullVal means that the return type is not specified and callers
+    //! have to rely on SQLite's auto type conversion.
+    //! @return Function return type
+    DbValueType GetReturnType() const { return m_returnType; }
 };
 
 //=======================================================================================
@@ -1160,14 +1174,23 @@ public:
 //=======================================================================================
 struct AggregateFunction : DbFunction
 {
+public:
     struct IAggregate
     {
         virtual void _StepAggregate(Context*, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
         virtual void _FinishAggregate(Context*) = 0;                         //<! see "xFinal" in sqlite3_create_function
     };
+
+private:
     IAggregate* m_aggregate;
 
-    AggregateFunction(Utf8CP name, int nArgs, IAggregate* val=nullptr) : DbFunction(name,nArgs), m_aggregate(val) {}
+public:
+    //! Initializes a new AggregateFunction instance
+    //! @param[in] name Function name
+    //! @param[in] nArgs Number of function args
+    //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
+    //! @param[in] val IAggregate implementation
+    AggregateFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal, IAggregate* val = nullptr) : DbFunction(name, nArgs, returnType), m_aggregate(val) {}
 
     void SetAggregate(IAggregate* val) {m_aggregate=val;}
     IAggregate* GetAggregate() const {return m_aggregate;}
@@ -1181,14 +1204,24 @@ struct AggregateFunction : DbFunction
 //=======================================================================================
 struct ScalarFunction : DbFunction
 {
+public:
     struct IScalar
     {
         virtual void _ComputeScalar(Context*, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
     };
+
+private:
     IScalar* m_scalar;
 
-    ScalarFunction(Utf8CP name, int nArgs, IScalar* val=nullptr) : DbFunction(name,nArgs), m_scalar(val) {}
-    void SetScalar(IScalar* val) {m_scalar=val;}
+public:
+    //! Initializes a new ScalarFunction instance
+    //! @param[in] name Function name
+    //! @param[in] nArgs Number of function args
+    //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
+    //! @param[in] val IScalar implementation
+    ScalarFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal, IScalar* val = nullptr) : DbFunction(name, nArgs, returnType), m_scalar(val) {}
+    virtual ~ScalarFunction() {}
+    void SetScalar(IScalar* val) { m_scalar = val; }
     IScalar* GetScalar() const {return m_scalar;}
 };
 
@@ -2275,7 +2308,11 @@ protected:
     //! @return Code indicating success or error.
     virtual DbResult _VerifySchemaVersion (OpenParams const& params) {return BE_SQLITE_OK;}
 
+    virtual int _OnAddFunction(DbFunction& func) const { return 0; }
+    virtual void _OnRemoveFunction(DbFunction& func) const {}
+
     //__PUBLISH_SECTION_END__
+
     friend struct Statement;
     friend struct Savepoint;
     friend struct RTreeMatch;
@@ -2668,14 +2705,14 @@ public:
 
     //! Add an AggreateFunction to this Db for use in SQL. See sqlite3_create_function for return values. The AggregateFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.
-    int AddAggregateFunction(AggregateFunction& func) const {return m_dbFile->AddAggregateFunction(func);}
+    BE_SQLITE_EXPORT int AddAggregateFunction(AggregateFunction& func) const;
 
     //! Add a ScalarFunction to this Db for use in SQL. See sqlite3_create_function for return values. The ScalarFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.
-    int AddScalarFunction(ScalarFunction& func) const {return m_dbFile->AddScalarFunction(func);}
+    BE_SQLITE_EXPORT int AddScalarFunction(ScalarFunction& func) const;
 
     //! Remove a previously added DbFunction from this Db. See sqlite3_create_function for return values.
-    int RemoveFunction (DbFunction& func) const {return m_dbFile->RemoveFunction(func);}
+    BE_SQLITE_EXPORT int RemoveFunction(DbFunction& func) const;
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeDbGuid);
     BE_SQLITE_EXPORT DbResult ChangeRepositoryId(BeRepositoryId);

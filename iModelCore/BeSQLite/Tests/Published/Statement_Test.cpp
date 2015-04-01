@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/Statement_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -66,8 +66,8 @@ TEST(StatementTests, NewStatement)
     EXPECT_EQ (BE_SQLITE_ROW, stat1.Step());
     //Verify data
     EXPECT_EQ (2, stat1.GetColumnCount()); //there are 2 columns in linestyles table
-    EXPECT_EQ (BE_SQLITE_INTEGER, stat1.GetColumnType(0));
-    EXPECT_EQ (BE_SQLITE_TEXT, stat1.GetColumnType(1));
+    EXPECT_EQ (DbValueType::IntegerVal, stat1.GetColumnType(0));
+    EXPECT_EQ (DbValueType::TextVal, stat1.GetColumnType(1));
     EXPECT_TRUE (stat1.IsColumnNull(2));
     EXPECT_FALSE (stat1.IsColumnNull(1));
     EXPECT_STREQ ("lsId", stat1.GetColumnName(0));
