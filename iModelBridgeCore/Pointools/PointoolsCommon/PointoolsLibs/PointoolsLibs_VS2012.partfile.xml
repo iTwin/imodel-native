@@ -162,11 +162,11 @@
   <Part Name="Format_Faro_5_2_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/VS2012/Formats/Faro/Format_Faro_5_2_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <Bindings>
 
-      <Assemblies ProductDirectoryName="PointoolsAssemblies" ExtractReg="false">
+      <Assemblies ProductDirectoryName="PointoolsAssemblies" ExtractReg="include">
         Delivery\IQOpen.dll
       </Assemblies>
 
-      <Assemblies ProductDirectoryName="PointoolsAssemblies" ExtractReg="false">
+      <Assemblies ProductDirectoryName="PointoolsAssemblies" ExtractReg="include">
         Delivery\FARO.LS.SDK.dll
       </Assemblies>
 
@@ -189,6 +189,11 @@
       <Files SubPartDirectory="PointoolsLibs_Faro_5_2_0">
         Delivery\_tbb.dll
       </Files>
+
+        <Files BindToWixBuild="true">
+            ComRegistry\IQOpen.dll.wxi
+            ComRegistry\FARO.LS.SDK.dll.wxi
+        </Files>
 
     </Bindings>
   </Part>
