@@ -102,14 +102,15 @@ bool ClassHintReader::TryReadMapStrategy (ECDbMapStrategy& mapStrategy, IECInsta
     {
     BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
     mapStrategy.Reset ();
-
-    ECValue v;
-    if (classHint.GetValue (v, BSCAP_MapStrategy) == ECOBJECTS_STATUS_Success && !v.IsNull ())
+    ECValue mapStrategyValue;
+    ECValue mapStrategyOptionValue;
+    auto strategyStatus = classHint.GetValue(mapStrategyValue, BSCAP_MapStrategy);
+    auto strategyOptionStatus = classHint.GetValue(mapStrategyOptionValue, BSCAP_MapStrategyOption);
+    if (strategyStatus == ECOBJECTS_STATUS_Success || strategyOptionStatus == ECOBJECTS_STATUS_Success)
         {
-        if (mapStrategy.Parse(mapStrategy, v.GetUtf8CP()) == BentleyStatus::SUCCESS)
+        mapStrategy.Parse(mapStrategy, mapStrategyValue.GetUtf8CP(), mapStrategyOptionValue.GetUtf8CP());
             return true;
         }
-
     return false;
     }
 

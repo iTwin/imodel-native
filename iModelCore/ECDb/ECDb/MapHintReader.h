@@ -39,6 +39,7 @@ private:
 public:
     static bool TryConvertToMapStrategy (ECDbMapStrategy& mapStrategy, WCharCP mapStrategyName);
     static ECN::IECInstancePtr ReadHint (ECN::ECClassCR ecClass);
+    static ECN::IECInstancePtr ReadHintOption(ECN::ECClassCR ecClass);
     static bool TryReadMapStrategy (ECDbMapStrategy& mapStrategy, ECN::IECInstanceCR classHint);
     static bool TryReadTableName (Utf8String& tableName, ECN::IECInstanceCR classHint);
     static bool TryReadECInstanceIdColumnName (Utf8String& ecInstanceIdColumnName, ECN::IECInstanceCR classHint);

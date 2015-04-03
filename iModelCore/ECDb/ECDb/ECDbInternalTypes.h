@@ -230,7 +230,8 @@ enum ECContainerType
 #define BSCAP_TablePrefix               L"TablePrefix"
 #define BSCAP_DefaultClassMapStrategy   L"DefaultClassMapStrategy"
 
-#define BSCAP_MapStrategy               L"MapStrategy"
+#define BSCAP_MapStrategy               L"MapStrategy" 
+#define BSCAP_MapStrategyOption         L"MapStrategyOption" 
 #define BSCAP_TableName                 L"TableName"
 #define BSCAP_ECInstanceIdColumn        L"ECIdColumn"
 #define BSCAP_Indexes                   L"Indexes"

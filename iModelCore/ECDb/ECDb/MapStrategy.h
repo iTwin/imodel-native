@@ -378,10 +378,25 @@ struct ECDbMapStrategy
             {
             Assign (Strategy::NoHint);
             }
-         BentleyStatus Parse (ECDbMapStrategy& out, Utf8CP mapStrategyHint)
+        BentleyStatus Parse(ECDbMapStrategy& out, Utf8CP mapStrategyHint, Utf8CP mapStrategyHintOption)
             {
+            Utf8String mapStrategy;
+            if (mapStrategyHint == nullptr)
+                {
+                mapStrategy = mapStrategyHintOption;
+                }
+            else if (mapStrategyHintOption==nullptr)
+                {
+                mapStrategy = mapStrategyHint;
+                }
+            else
+                {
+                mapStrategy = mapStrategyHint;
+                mapStrategy.append(" | ");
+                mapStrategy.append(mapStrategyHintOption);
+                }
             Strategy strategy;
-            if (Parse (strategy, mapStrategyHint) != BentleyStatus::SUCCESS)
+            if (Parse(strategy, mapStrategy.c_str()) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
 
             return out.Assign (strategy);
