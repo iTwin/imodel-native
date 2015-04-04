@@ -618,7 +618,6 @@ public:
 
 typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 
-//__PUBLISH_SECTION_END__
 
 //=======================================================================================
 //! A cache of shared ECSqlStatements that can be reused without re-preparing. 
@@ -685,7 +684,6 @@ public:
     ECDB_EXPORT void Log () const;
     };
 
-//__PUBLISH_SECTION_START__
 
 //__PUBLISH_SECTION_END__
 
