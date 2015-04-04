@@ -2,7 +2,7 @@
 |
 |     $Source: L10N.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/L10N.h>
@@ -10,7 +10,6 @@
 
 #define L10N_TABLE_Strings "l10n_strings"
 #define RUNONCE_CHECK(var)      {if(var) return; var=true;}
-#define DELETE_AND_CLEAR(ptr)   {if(ptr){delete (ptr); ptr=NULL;}}
 
 USING_NAMESPACE_BENTLEY_SQLITE
 

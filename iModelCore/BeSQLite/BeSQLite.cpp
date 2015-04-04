@@ -31,7 +31,6 @@
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
-#define DELETE_AND_CLEAR(ptr)   {if(ptr){delete (ptr); ptr=NULL;}}
 #define RUNONCE_CHECK(var,stat) {if(var) return stat; var=true;}
 
 using namespace std;
