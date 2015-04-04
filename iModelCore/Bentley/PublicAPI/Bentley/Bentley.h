@@ -188,6 +188,9 @@
 
 // this can be used to quiet compiler warnings for variables only used in asserts
 #define UNUSED_VARIABLE(x) (void)(x)
+#define FREE_AND_CLEAR(ptr)     {if(ptr){free(ptr);ptr=nullptr;}}
+#define DELETE_AND_CLEAR(ptr)   {if(ptr){delete (ptr);ptr=nullptr;}}
+#define RELEASE_AND_CLEAR(ptr)  {if(ptr){(ptr)->Release();ptr=nullptr;}}
 
 /*---------------------------------------------------------------------------------
  NOTE: This is here because the Windows header file WinGDI.h defines ERROR to 0, which is a disaster for

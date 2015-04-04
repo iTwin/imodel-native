@@ -32,8 +32,9 @@
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_new (size_t);
 extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_delete (void*, size_t);
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_malloc (size_t);
+inline void* bentleyAllocator_calloc (size_t size) {void* p=bentleyAllocator_malloc(size); memset(p,0,size); return p;}
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_realloc (void*, size_t);
-extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_free (void*, size_t);
+extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_free (void*, size_t=0);
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_getNullRefBuffer ();
 extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_enableLowFragmentationCRTHeap ();
 

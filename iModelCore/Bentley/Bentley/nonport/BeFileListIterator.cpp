@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFileListIterator.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -27,7 +27,6 @@
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeDebugLog.h>
 
-#define DELETE_AND_CLEAR(ptr)   {if(ptr){delete (ptr);ptr=NULL;}}
 #define TO_BOOL(x)              (0 != (x))
 
 BEGIN_BENTLEY_NAMESPACE
