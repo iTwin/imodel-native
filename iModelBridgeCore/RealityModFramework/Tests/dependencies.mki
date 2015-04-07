@@ -8,8 +8,9 @@
 #BEGTEST_LIBRARIES + $(BuildContext)SubParts/StaticLibs/BeXml.lib \
 #                    $(BuildContext)SubParts/StaticLibs/BeLibxml2.lib
                     
-# Additional assets needed by DgnDb unit tests
-#BEGTEST_ASSETS     + $(BuildContext)SubParts/ECSchemas/
+
+
+BEGTEST_ASSETS     + $(BuildContext)xsd/
 #BEGTEST_ASSETS     + $(ProductRoot)BeTestDocuments/
 
 # Required xliff files

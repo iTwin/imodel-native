@@ -67,4 +67,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
 
 %include dlmlink.mki
 
+$(BuildContext)xsd/RealityPackage.1.0.xsd : $(_MakeFilePath)RealityPackage.1.0.xsd
+    $(LinkFirstDepToFirstTarget)
+
 

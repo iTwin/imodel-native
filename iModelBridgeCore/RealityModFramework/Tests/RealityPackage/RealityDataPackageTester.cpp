@@ -25,6 +25,28 @@ USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 class PackageTestFixture : public testing::Test 
 {
 public:
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  4/2015
+    //----------------------------------------------------------------------------------------
+    BeFileName GetXsdDirectory()
+        {
+        BeFileName outDir;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory (outDir);
+        outDir.AppendToPath(L"xsd");
+        return outDir;
+        }  
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  4/2015
+    //----------------------------------------------------------------------------------------
+    BeFileName GetXsd_1_0()
+        {
+        BeFileName out = GetXsdDirectory();
+        out.AppendToPath(L"RealityPackage.1.0.xsd");
+        return out;
+        }  
+
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
     //----------------------------------------------------------------------------------------
@@ -209,7 +231,7 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     #define UNKNOWN_TERRAIN_ELEMENT "<NewTerrainElement>data</NewTerrainElement>"
     #define UNKNOWN_GROUP_ELEMENT "<NewGroupElement><NewGroupData>data</NewGroupData></NewGroupElement>"
 
-    Utf8CP package =
+    Utf8CP packageString =
         "<?xml version='1.0' encoding='UTF-8'?>"
         "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='1.0'>"
             "<Name>" RPACKAGE_NAME "</Name>"
@@ -267,12 +289,28 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
 
     WString parseError;
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
-    RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, package, &parseError);
+    RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, packageString, &parseError);
 
     ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
     ASSERT_EQ(RealityPackageStatus::Success, status);
     ASSERT_TRUE(pPackage.IsValid());
     ASSERT_TRUE(pPackage->HasUnknownElements());
+
+// Failed because we added unknown elements.
+//     // Validate against schema
+//         {
+//         BeXmlStatus status = BEXML_Success;
+//         BeXmlDomPtr pDom = BeXmlDom::CreateAndReadFromString (status, packageString);
+// 
+//         status = pDom->SchemaValidate(GetXsd_1_0().c_str());
+//         if(BEXML_Success != status) // report error string first.
+//             {
+//             WString errorString;
+//             BeXmlDom::GetLastErrorString (errorString);
+//             ASSERT_STREQ(L"", errorString.c_str());
+//             }
+//         ASSERT_EQ(BEXML_Success, status);
+//         }    
 
     ASSERT_EQ(1, pPackage->GetMajorVersion()); 
     ASSERT_EQ(0, pPackage->GetMinorVersion()); 
@@ -398,20 +436,20 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_EQ(RealityPackageStatus::Success, pPackage->Write(outfilename));
     ASSERT_TRUE(!pPackage->HasUnknownElements());
     
-    //&&MM needwork.
-    // Schema validation
-//         {
-//         BeXmlStatus status = BEXML_Success;
-//         BeXmlDomPtr pDom= BeXmlDom::CreateAndReadFromFile (status, outfilename.c_str(), NULL);
-// 
-//         status = pDom->SchemaValidate(L"C:/Users/Mathieu.Marchand/Desktop/PackageFile/package.xsd");
-// 
-//         WString errorString;
-//         BeXmlDom::GetLastErrorString (errorString);
-// 
-//         ASSERT_STREQ(L"", errorString.c_str());
-//         }
-    
+    // Validate against schema
+        {
+        BeXmlStatus status = BEXML_Success;
+        BeXmlDomPtr pDom = BeXmlDom::CreateAndReadFromFile (status, outfilename.c_str(), NULL);
+
+        status = pDom->SchemaValidate(GetXsd_1_0().c_str());
+        if(BEXML_Success != status) // report error string first.
+            {
+            WString errorString;
+            BeXmlDom::GetLastErrorString (errorString);
+            ASSERT_STREQ(L"", errorString.c_str());
+            }
+        ASSERT_EQ(BEXML_Success, status);
+        } 
 
     // Validate what we have created.
     WString parseError;
