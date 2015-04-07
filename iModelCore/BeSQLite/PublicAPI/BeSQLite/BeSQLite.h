@@ -1453,16 +1453,16 @@ private:
     mutable BeDbMutex m_mutex;
     mutable bvector<CachedStatementPtr> m_entries;
     bvector<CachedStatementPtr>::iterator FindEntry(Utf8CP) const;
+    BE_SQLITE_EXPORT CachedStatement& AddStatement(Utf8CP) const;
+    BE_SQLITE_EXPORT CachedStatement* FindStatement(Utf8CP) const;
 
 public:
     StatementCache(int size){m_entries.reserve(size);}
     ~StatementCache() {Empty();}
-    DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
 
+    BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
     BE_SQLITE_EXPORT void Dump();
     BE_SQLITE_EXPORT void Empty();
-    BE_SQLITE_EXPORT CachedStatement& AddStatement(Utf8CP) const;
-    BE_SQLITE_EXPORT CachedStatement* FindStatement(Utf8CP) const;
     bool IsEmpty() const {return m_entries.empty();}
 };
 
@@ -2124,7 +2124,6 @@ public:
 struct DbFile
 {
     friend struct Db;
-//__PUBLISH_SECTION_END__
     friend struct Statement;
     friend struct Savepoint;
     friend struct RTreeMatch;
@@ -2185,8 +2184,6 @@ public:
     bool UseSettingsTable(PropertySpecCR spec) const;
     SqlDbP GetSqlDb() const {return m_sqlDb;}
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 protected:
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -2423,8 +2420,6 @@ protected:
     virtual int _OnAddFunction(DbFunction& func) const { return 0; }
     virtual void _OnRemoveFunction(DbFunction& func) const {}
 
-    //__PUBLISH_SECTION_END__
-
     friend struct Statement;
     friend struct Savepoint;
     friend struct RTreeMatch;
@@ -2446,11 +2441,11 @@ private:
     //! @return BE_SQLITE_OK if successful, respective error code otherwise.
     DbResult DeleteRepositoryLocalValues();
 
-//__PUBLISH_SECTION_START__
-
 public:
     BE_SQLITE_EXPORT Db();
     BE_SQLITE_EXPORT virtual ~Db();
+
+    DbFile* GetDbFile() {return m_dbFile;}
 
     //! SQLite supports the concept of an "implicit" transaction. That is, if no explicit transaction is active when you execute an SQL statement,
     //! SQLite will create an implicit transaction whose scope is the execution of the statement. However, it is rarely a good idea to rely on that behavior,
@@ -2855,8 +2850,6 @@ public:
     BE_SQLITE_EXPORT DbResult SaveExpirationDate (DateTime const& xdate);
 };
 
-//__PUBLISH_SECTION_END__
-
 //=======================================================================================
 //! Creating an instance of HighPriorityOperationSequencer notifies HighPriorityOperationSequencer
 //! that the subsequent operations are high priority and should be allowed even if
@@ -3069,7 +3062,6 @@ public:
     BE_SQLITE_EXPORT void Finish() ;
 };
 
-//__PUBLISH_SECTION_START__
 //=======================================================================================
 //! Defines a callback for providing information on the progress of a compress or
 //! decompress operation.
