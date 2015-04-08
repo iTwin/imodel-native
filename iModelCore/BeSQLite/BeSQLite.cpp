@@ -1235,7 +1235,7 @@ int Db::AddScalarFunction(ScalarFunction& func) const
     const int stat = m_dbFile->AddScalarFunction(func);
     if (stat != 0)
         return stat;
-    
+
     return _OnAddFunction(func);
     }
 

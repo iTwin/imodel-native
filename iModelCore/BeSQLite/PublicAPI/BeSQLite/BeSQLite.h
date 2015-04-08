@@ -1138,7 +1138,7 @@ protected:
 
 public:
     virtual ~DbFunction() {}
-    Utf8CP GetName() const {return m_name.c_str();}
+    Utf8CP GetName() const { return m_name.c_str(); }
     int GetNumArgs() const {return m_nArgs;}
     //! Gets the return type of the function.
     //! @remarks DbValueType::NullVal means that the return type is not specified and callers
@@ -1202,7 +1202,7 @@ public:
     //! @param[in] val IScalar implementation
     ScalarFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal, IScalar* val = nullptr) : DbFunction(name, nArgs, returnType), m_scalar(val) {}
     virtual ~ScalarFunction() {}
-    void SetScalar(IScalar* val) {m_scalar=val;}
+    void SetScalar(IScalar* val) { m_scalar = val; }
     IScalar* GetScalar() const {return m_scalar;}
 };
 
