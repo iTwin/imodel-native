@@ -11,7 +11,10 @@
 #include <vector>
 #include <map>
 #include <ECDb/ECSqlStatement.h>
+#include <ECDb/ECDbApi.h>
+
 #include <ECObjects/ECObjectsAPI.h>
+#include <json/json.h>
 USING_NAMESPACE_BENTLEY
 
 //forward declaration
@@ -166,13 +169,16 @@ struct ExportCommand : public ConsoleCommand, NonCopyableClass
     {
 private:
     static Utf8CP const ECSCHEMA_SWITCH;
-
+    static Utf8CP const SQLDATA_SWITCH;
     virtual Utf8String _GetName () const override;
     virtual Utf8String _GetUsage () const override;
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
 
     void RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFolder) const;
+    void RunExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile) const;
 
+    void ExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile) const;
+    void ExportTableSqlData (ECSqlConsoleSession& session, Json::Value& out, Utf8CP tableName) const;
 public:
     ExportCommand () 
         : ConsoleCommand () 

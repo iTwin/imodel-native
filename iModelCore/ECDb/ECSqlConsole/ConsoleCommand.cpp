@@ -11,11 +11,68 @@
 #include "ECSqlConsole.h"
 #include "RandomECInstanceGenerator.h"
 #include <Bentley/BeDirectoryIterator.h>
-
+#include <json/json.h>
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+static const std::string base64_chars =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+"abcdefghijklmnopqrstuvwxyz"
+"0123456789+/";
+
+
+static inline bool is_base64 (unsigned char c) {
+    return (isalnum (c) || (c == '+') || (c == '/'));
+    }
+
+static Utf8String base64_encode (unsigned char const* bytes_to_encode, unsigned int in_len) {
+    Utf8String ret;
+    int i = 0;
+    int j = 0;
+    unsigned char char_array_3[3];
+    unsigned char char_array_4[4];
+
+    while (in_len--) {
+        char_array_3[i++] = *(bytes_to_encode++);
+        if (i == 3) {
+            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+            char_array_4[3] = char_array_3[2] & 0x3f;
+
+            for (i = 0; (i <4); i++)
+                ret += base64_chars[char_array_4[i]];
+            i = 0;
+            }
+        }
+
+    if (i)
+        {
+        for (j = i; j < 3; j++)
+            char_array_3[j] = '\0';
+
+        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        char_array_4[3] = char_array_3[2] & 0x3f;
+
+        for (j = 0; (j < i + 1); j++)
+            ret += base64_chars[char_array_4[j]];
+
+        while ((i++ < 3))
+            ret += '=';
+
+        }
+
+    return ret;
+
+    }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 //******************************* ConsoleCommand ******************
 //---------------------------------------------------------------------------------------
@@ -542,7 +599,8 @@ BentleyStatus ImportCommand::DeserializeECSchema (ECSchemaReadContextR readConte
 //---------------------------------------------------------------------------------------
 //static
 Utf8CP const ExportCommand::ECSCHEMA_SWITCH = "ecschema";
-
+//static
+Utf8CP const ExportCommand::SQLDATA_SWITCH = "sqldata";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
@@ -556,7 +614,10 @@ Utf8String ExportCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 Utf8String ExportCommand::_GetUsage () const
     {
-    return " .export ecschema <out folder>  Exports all ECSchemas of the ECDb file to disk";
+    return " .export ecschema <out folder>  Exports all ECSchemas of the ECDb file to disk\r\n"
+           " .export sqldata <jsonFile>  Exports raw data in tables as json to disk file"
+
+        ;
     }
 
 //---------------------------------------------------------------------------------------
@@ -564,7 +625,7 @@ Utf8String ExportCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 void ExportCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    if (args.size() < 3 || !args[1].EqualsI(ECSCHEMA_SWITCH))
+    if (args.size() < 3)
         {
         Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
         return;
@@ -574,11 +635,28 @@ void ExportCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const
         {
         return;
         }
+    if (args[1].EqualsI (ECSCHEMA_SWITCH))
+        {
+        RunExportSchema (session, args[2].c_str ());
+        return;
+        }
 
-    RunExportSchema (session, args[2].c_str ());
+    if (args[1].EqualsI (SQLDATA_SWITCH))
+        {
+        RunExportSqlData (session, args[2].c_str ());
+        return;
+        }
+
+    Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan        04/2015
+//---------------------------------------------------------------------------------------
+void ExportCommand::RunExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile) const
+    {
+    ExportSqlData (session, jsonFile);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
@@ -615,6 +693,75 @@ void ExportCommand::RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFol
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan        04/2015
+//---------------------------------------------------------------------------------------
+void ExportCommand::ExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile) const
+    {
+
+    BeFile file;
+    if (file.Create (jsonFile, true) != BeFileStatus::Success)
+        {
+        Console::WriteErrorLine ("Failed to create/open  file %s", jsonFile);
+        return;
+        }
+
+    Statement stmt;
+    stmt.Prepare (session.GetECDb (), "SELECT name FROM sqlite_master WHERE type ='table'");
+    Json::Value tableData (Json::ValueType::arrayValue);  
+
+    auto s2 = tableData.toStyledString ();
+    printf (s2.c_str ());
+    while (stmt.Step () == BE_SQLITE_ROW)
+        {
+        ExportTableSqlData (session, tableData, stmt.GetValueText (0));
+        }
+    
+    auto jsonString = tableData.toStyledString ();
+    if (file.Write (nullptr, jsonString.c_str (), static_cast<uint32_t>(jsonString.size ())) != BeFileStatus::Success)
+        {
+        Console::WriteErrorLine ("Failed to write to file %s", jsonFile);
+        return;
+        }
+
+    file.Flush ();
+    file.Close ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan        04/2015
+//---------------------------------------------------------------------------------------
+void ExportCommand::ExportTableSqlData (ECSqlConsoleSession& session, Json::Value& out, Utf8CP tableName) const
+    {
+    auto& tableObj = out.append(Json::ValueType::objectValue);
+    tableObj["Name"] = tableName;
+    tableObj["Rows"] = Json::Value (Json::ValueType::arrayValue);
+    auto& rows = tableObj["Rows"];
+    rows.clear ();
+    Statement stmt;
+    stmt.Prepare (session.GetECDb(), SqlPrintfString ("SELECT * FROM %s", tableName));
+    while (stmt.Step () == BE_SQLITE_ROW)
+        {
+        auto& row = rows.append (Json::ValueType::objectValue);
+        row.clear ();
+        for (auto i = 0; i < stmt.GetColumnCount (); i++)
+            {
+            switch (stmt.GetColumnType (i))
+                {
+                case DbValueType::BlobVal:
+                    row[stmt.GetColumnName (i)] = Json::Value (base64_encode ((unsigned char const*)stmt.GetValueBlob (i), stmt.GetColumnBytes (i))); break;
+                case DbValueType::FloatVal:
+                    row[stmt.GetColumnName (i)] = Json::Value (stmt.GetValueDouble (i)); break;
+                case DbValueType::IntegerVal:
+                    row[stmt.GetColumnName (i)] = Json::Value (stmt.GetValueInt64 (i)); break;
+                case DbValueType::NullVal:
+                    row[stmt.GetColumnName (i)] = Json::Value ("<null>"); break;
+                case DbValueType::TextVal:
+                    row[stmt.GetColumnName (i)] = Json::Value (stmt.GetValueText (i)); break;
+                }
+            }
+        }
+    }
 //******************************* PopulateCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -1153,5 +1300,4 @@ void ECSchemaDiffCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String>
         Console::WriteLine ("Written diff to '%s'.", out.GetNameUtf8());
         }
     }
-
 
