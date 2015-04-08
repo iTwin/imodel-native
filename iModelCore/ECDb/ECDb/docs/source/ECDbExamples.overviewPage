@@ -314,6 +314,18 @@
     @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
+    @section ECDbCodeSampleECSQLAndCustomSQLiteFunctions Write a custom SQLite function and use it in ECSQL
+
+    This sample shows how to write a custom SQLite function. Once registered it can be used in ECSQL
+    just like any other SQLite SQL function.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlAndCustomSQLiteFunctions,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlAndCustomSQLiteFunctions.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
     @section ECDbCodeSampleECInstanceAdapter Using the ECInstance ECSQL SELECT Adapter
 
     This sample shows how to use the @ref BentleyApi::BeSQLite::EC::ECInstanceECSqlSelectAdapter "ECInstanceECSqlSelectAdapter" 
