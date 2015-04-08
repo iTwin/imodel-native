@@ -172,6 +172,12 @@
     <ClCompile Include="Published\ECSqlStatement_FunctionTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlCustomFunction_Tests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlStatement_FunctionTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
