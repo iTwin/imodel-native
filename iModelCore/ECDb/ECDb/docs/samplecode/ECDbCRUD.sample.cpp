@@ -989,6 +989,7 @@ BentleyStatus ECDb_ECSqlInstancesAffected ()
     return SUCCESS;
     }
 
+#ifdef WIP_MERGE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1050,5 +1051,6 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;
     }
-
+#endif
+    
 END_BENTLEY_SQLITE_EC_NAMESPACE
