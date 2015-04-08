@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECSqlStatement.overviewPage $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -98,7 +98,7 @@
     ### Not yet implemented ECSQL features
     - Point, struct, array literals.
     - Polymorphical update and delete statements.
-    - Aggregation (e.g. <c>SELECT DISTINCT</c>, <c>GROUP BY</c>).
+    - <c>GROUP BY</c>
     - Nested select statements, e.g. <c>DELETE FROM myschema.Document WHERE ECInstanceId IN (SELECT ECInstanceId FROM myschema.Document JOIN myschema.Folder USING myschema.FolderHasDocuments WHERE folder.ECInstanceId = 42)</c>.
 
     @see @ref WorkingWithECDb

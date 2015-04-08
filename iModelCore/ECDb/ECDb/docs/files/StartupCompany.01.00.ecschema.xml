@@ -97,6 +97,11 @@
     <ECProperty propertyName="Breadth" typeName="double" />
   </ECClass>
 
+  <ECClass typeName="RoundTable" isDomainClass="True">
+    <BaseClass>Furniture</BaseClass>
+    <ECProperty propertyName="Radius" typeName="double" />
+  </ECClass>
+
   <ECClass typeName="Hardware" isDomainClass="True">
     <BaseClass>Asset</BaseClass>
     <ECProperty propertyName="HasTrackingDevice" typeName="boolean" displayLabel="Has Tracking Device" />
