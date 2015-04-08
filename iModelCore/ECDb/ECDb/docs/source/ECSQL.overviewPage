@@ -204,6 +204,25 @@
     <c>SELECT AssetID FROM stco.Desk</c>|Selects all desks and would include its subclasses, but it has none.
     <c>SELECT AssetID FROM <b>ONLY</b> stco.Desk</c>|@c ONLY does not have any effect here as @c Desk does not have any subclasses.
 
+    @section ECSQLSamplesSQLiteFunctions Using SQLite SQL Functions
+    Any built-in or custom SQLite SQL function can be used in ECSQL to operate on the primitive types
+    supported by SQLite (numeric, blob, text). See also
+    <a href="https://www.sqlite.org/lang_corefunc.html" target="_blank">SQLite's built-in SQL functions</a>.
+
+    Generates a list of all employee's last names separated by comma:
+
+        SELECT group_concat(LastName, ',') from stco.Employee ORDER BY LastName
+
+    Returns only the first five letters of all employee's last names:
+
+        SELECT substr(LastName,1,5) FROM stco.Employee
+
+    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statements.
+
+    For an example of writing a custom SQLite SQL function and how to use it in ECSQL see: 
+    @ref ECDbCodeSampleECSQLAndCustomSQLiteFunctions 
+
     @see @ref WorkingWithECDb
 
     */
