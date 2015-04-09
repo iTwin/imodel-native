@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
+#include <cmath> // for std::pow
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -890,43 +891,6 @@ BentleyStatus ECDb_ECSqlInsertRelation ()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   01/15
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlInstancesAffected ()
-    {
-    ECDb ecdb;
-
-    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlInstancesAffected.sampleCode
-
-    // Prepare statement
-    ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare (ecdb, "DELETE FROM ONLY stco.Computer WHERE WarrantyExpiryDate < CURRENT_DATE");
-    if (stat != ECSqlStatus::Success)
-        {
-        // do error handling here...
-        return ERROR;
-        }
-
-    // Enable the default event handler which reports the instances deleted
-    // (Could be done before the call to Prepare, too)
-    statement.EnableDefaultEventHandler ();
-
-    // Execute statement which calls the handler
-    ECSqlStepStatus stepStat = statement.Step ();
-    if (stepStat != ECSqlStepStatus::Done)
-        {
-        // do error handling here...
-        return ERROR;
-        }
-
-    //now do something with the count
-    printf("%d computers which no longer have warranty were deleted from the inventory system.", statement.GetDefaultEventHandler ()->GetInstancesAffectedCount());
-
-    //__PUBLISH_EXTRACT_END__
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/15
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
@@ -988,4 +952,105 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb_ECSqlInstancesAffected ()
+    {
+    ECDb ecdb;
+
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlInstancesAffected.sampleCode
+
+    // Prepare statement
+    ECSqlStatement statement;
+    ECSqlStatus stat = statement.Prepare (ecdb, "DELETE FROM ONLY stco.Computer WHERE WarrantyExpiryDate < CURRENT_DATE");
+    if (stat != ECSqlStatus::Success)
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    // Enable the default event handler which reports the instances deleted
+    // (Could be done before the call to Prepare, too)
+    statement.EnableDefaultEventHandler ();
+
+    // Execute statement which calls the handler
+    ECSqlStepStatus stepStat = statement.Step ();
+    if (stepStat != ECSqlStepStatus::Done)
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    //now do something with the count
+    printf("%d computers which no longer have warranty were deleted from the inventory system.", statement.GetDefaultEventHandler ()->GetInstancesAffectedCount());
+
+    //__PUBLISH_EXTRACT_END__
+    return SUCCESS;
+    }
+
+#ifdef WIP_MERGE
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
+    {
+    ECDb ecdb;
+
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlAndCustomSQLiteFunctions.sampleCode
+
+    // SQLite custom function that computes the power of a given number
+    struct PowSqlFunction : BeSQLite::ScalarFunction, BeSQLite::ScalarFunction::IScalar
+        {
+        private:
+
+            virtual void _ComputeScalar(BeSQLite::ScalarFunction::Context* ctx, int nArgs, BeSQLite::DbValue* args) override
+                {
+                if (nArgs != GetNumArgs())
+                    {
+                    ctx->SetResultError("Function POW expects 2 arguments.", -1);
+                    return;
+                    }
+
+                if (args[0].IsNull() || args[1].IsNull())
+                    {
+                    ctx->SetResultError("Arguments to POW must not be NULL", -1);
+                    return;
+                    }
+
+                double base = args[0].GetValueDouble();
+                double exp = args[1].GetValueDouble();
+
+                double res = std::pow(base, exp);
+                ctx->SetResultDouble(res);
+                }
+
+        public:
+            PowSqlFunction() : BeSQLite::ScalarFunction("POW", 2, BeSQLite::DbValueType::FloatVal, this) {}
+        };
+
+
+    //instantiate the function object. Must remain valid until it is unregistered or the ECDb file is closed.
+    PowSqlFunction powFunc;
+    if (ecdb.AddScalarFunction(powFunc) != 0)
+        return ERROR;
+
+    // ECSQL that computes the area of round tables based on the table radius
+    // This illustrates the use of the custom function POW
+    ECSqlStatement statement;
+    statement.Prepare(ecdb, "SELECT Radius, (3.1415 * POW(Radius,2)) AS Area from stco.RoundTable");
+
+    while (statement.Step() == ECSqlStepStatus::HasRow)
+        {
+        double radius = statement.GetValueDouble(0);
+        double area = statement.GetValueDouble(1);
+        // do something with the retrieved data of this row
+        printf("Radius: %f cm - Area: %f cm^2\n", radius, area);
+        }
+
+    //__PUBLISH_EXTRACT_END__
+    return SUCCESS;
+    }
+#endif
+    
 END_BENTLEY_SQLITE_EC_NAMESPACE
