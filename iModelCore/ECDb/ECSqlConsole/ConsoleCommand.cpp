@@ -161,7 +161,8 @@ void HelpCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& 
     Console::WriteLine ();
     Console::WriteLine (m_commandMap.at (".import")->GetUsage ().c_str ());
     Console::WriteLine (m_commandMap.at (".export")->GetUsage ().c_str ());
-    Console::WriteLine (m_commandMap.at (".diff")->GetUsage ().c_str ());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".diff")->GetUsage().c_str());
     Console::WriteLine ();
     Console::WriteLine (m_commandMap.at (".set")->GetUsage ().c_str ());
     Console::WriteLine ();
@@ -600,7 +601,7 @@ BentleyStatus ImportCommand::DeserializeECSchema (ECSchemaReadContextR readConte
 //static
 Utf8CP const ExportCommand::ECSCHEMA_SWITCH = "ecschema";
 //static
-Utf8CP const ExportCommand::SQLDATA_SWITCH = "sqldata";
+Utf8CP const ExportCommand::TABLES_SWITCH = "tables";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
@@ -615,9 +616,7 @@ Utf8String ExportCommand::_GetName () const
 Utf8String ExportCommand::_GetUsage () const
     {
     return " .export ecschema <out folder>  Exports all ECSchemas of the ECDb file to disk\r\n"
-           " .export sqldata <jsonFile>  Exports raw data in tables as json to disk file"
-
-        ;
+           "         tables <JSON file>     Exports the data in all tables of the ECDb file into a JSON file";
     }
 
 //---------------------------------------------------------------------------------------
@@ -641,9 +640,9 @@ void ExportCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const
         return;
         }
 
-    if (args[1].EqualsI (SQLDATA_SWITCH))
+    if (args[1].EqualsI (TABLES_SWITCH))
         {
-        RunExportSqlData (session, args[2].c_str ());
+        RunExportTables (session, args[2].c_str ());
         return;
         }
 
@@ -653,9 +652,9 @@ void ExportCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan        04/2015
 //---------------------------------------------------------------------------------------
-void ExportCommand::RunExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile) const
+void ExportCommand::RunExportTables (ECSqlConsoleSession& session, Utf8CP jsonFile) const
     {
-    ExportSqlData (session, jsonFile);
+    ExportTables (session, jsonFile);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -696,12 +695,12 @@ void ExportCommand::RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFol
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan        04/2015
 //---------------------------------------------------------------------------------------
-void ExportCommand::ExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile) const
+void ExportCommand::ExportTables (ECSqlConsoleSession& session, Utf8CP jsonFile) const
     {
     BeFile file;
     if (file.Create (jsonFile, true) != BeFileStatus::Success)
         {
-        Console::WriteErrorLine ("Failed to create/open  file %s", jsonFile);
+        Console::WriteErrorLine ("Failed to create JSON file %s", jsonFile);
         return;
         }
 
@@ -711,24 +710,24 @@ void ExportCommand::ExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile
 
     while (stmt.Step () == BE_SQLITE_ROW)
         {
-        ExportTableSqlData (session, tableData, stmt.GetValueText (0));
+        ExportTable (session, tableData, stmt.GetValueText (0));
         }
     
     auto jsonString = tableData.toStyledString ();
     if (file.Write (nullptr, jsonString.c_str (), static_cast<uint32_t>(jsonString.size ())) != BeFileStatus::Success)
         {
-        Console::WriteErrorLine ("Failed to write to file %s", jsonFile);
+        Console::WriteErrorLine ("Failed to write to JSON file %s", jsonFile);
         return;
         }
 
     file.Flush ();
-    file.Close ();
+    Console::WriteLine("Exported tables to '%s'", jsonFile);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan        04/2015
 //---------------------------------------------------------------------------------------
-void ExportCommand::ExportTableSqlData (ECSqlConsoleSession& session, Json::Value& out, Utf8CP tableName) const
+void ExportCommand::ExportTable (ECSqlConsoleSession& session, Json::Value& out, Utf8CP tableName) const
     {
     auto& tableObj = out.append(Json::ValueType::objectValue);
     tableObj["Name"] = tableName;
@@ -752,7 +751,7 @@ void ExportCommand::ExportTableSqlData (ECSqlConsoleSession& session, Json::Valu
                 case DbValueType::IntegerVal:
                     row[stmt.GetColumnName (i)] = Json::Value (stmt.GetValueInt64 (i)); break;
                 case DbValueType::NullVal:
-                    row[stmt.GetColumnName (i)] = Json::Value ("<null>"); break;
+                    row[stmt.GetColumnName (i)] = Json::Value (Json::nullValue); break;
                 case DbValueType::TextVal:
                     row[stmt.GetColumnName (i)] = Json::Value (stmt.GetValueText (i)); break;
                 }
