@@ -2,6 +2,7 @@
 
 #include <ptedit/editNodeDef.h>
 #include <ptedit/pointVisitors.h>
+#include <ptengine/userChannels.h>
 
 namespace ptedit
 {
@@ -314,4 +315,57 @@ namespace ptedit
 	private:
 		int		targetLyr;
 	};
+
+	struct FilterOpLayersFromUserChannel : public EditNodeDef
+	{
+		FilterOpLayersFromUserChannel() : EditNodeDef("LayersFromUserChannel"), m_currentUserChannel(NULL) { }
+
+		DECLARE_EDIT_NODE("LayersFromUserChannel", "Load Layers", 5, EditNodeMultithread );		
+
+		void setUserChannel( pointsengine::UserChannel* userChannel )
+		{			
+			if (!userChannel)
+				return;
+
+			char name[64] = {0};
+			sprintf(name, "layerUserChannel%d", s_layerFromChannelCount++);
+			pt::String channelName(name);	
+			m_currentUserChannel = userChannel; // the channel data will be copied when written to the branch in writeState() below
+		}
+	
+		bool apply()
+		{			
+			pointsengine::pauseEngine();
+			pointsengine::UserChannelManager::instance()->applyChannelToLayers( m_currentUserChannel );
+			pointsengine::unpauseEngine();
+
+			return true;
+		}
+		bool writeState( pt::datatree::Branch *b) const 
+		{ 	
+			if (m_currentUserChannel)
+			{
+				if (pt::datatree::Branch *layers = b->addBranch("layersUserChannel"))
+				{
+					m_currentUserChannel->writeToBranch(layers, true); // makes a copy of the data
+				}
+			}
+
+			return true; 
+		};
+		bool readState(const pt::datatree::Branch *b) 
+		{ 
+			if (pt::datatree::Branch *layers = b->getBranch("layersUserChannel"))
+			{
+				m_currentUserChannel = pointsengine::UserChannel::createFromBranch(layers);
+				return (m_currentUserChannel != NULL);
+			}
+			return true;
+		};	
+
+	private:
+		pointsengine::UserChannel* m_currentUserChannel;
+		static int s_layerFromChannelCount;
+	};
+
 } /* pt_edit */ 

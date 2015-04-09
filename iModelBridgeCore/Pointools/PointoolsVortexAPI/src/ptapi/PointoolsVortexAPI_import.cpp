@@ -247,6 +247,8 @@ PTRESTOREEDITBYINDEX ptRestoreEditByIndex = 0;
 PTNUMEDITS ptNumEdits = 0;
 PTEDITNAME ptEditName = 0;
 
+PTRESETSCENEEDITING ptResetSceneEditing = 0;
+
 PTDELETEEDIT ptDeleteEdit = 0;
 PTDELETEEDITBYINDEX ptDeleteEditByIndex = 0;
 PTDELETEALLEDITS ptDeleteAllEdits = 0;
@@ -599,6 +601,8 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptDeleteEdit = (PTDELETEEDIT) GetAPIFunc("ptDeleteEdit");
 		ptDeleteEditByIndex = (PTDELETEEDITBYINDEX) GetAPIFunc("ptDeleteEditByIndex");
 		ptDeleteAllEdits = (PTDELETEALLEDITS) GetAPIFunc("ptDeleteAllEdits");
+		
+		ptResetSceneEditing = (PTRESETSCENEEDITING) GetAPIFunc("ptResetSceneEditing");
 
 		ptSetSelectionDrawColor = (PTSETSELECTIONDRAWCOLOR) GetAPIFunc("ptSetSelectionDrawColor");
 		ptGetSelectionDrawColor = (PTGETSELECTIONDRAWCOLOR) GetAPIFunc("ptGetSelectionDrawColor");

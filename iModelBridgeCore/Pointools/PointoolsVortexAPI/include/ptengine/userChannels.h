@@ -65,7 +65,7 @@ struct OOCFile
 class VoxelChannelData
 {
 public:
-	VoxelChannelData( uint num_points, uint bytesPerPnt, uint full_num_points, ubyte setup_flags=0 );
+	VoxelChannelData( uint num_points, uint bytesPerPnt, uint full_num_points, ubyte setup_flags=0, uint user_0 = 0, uint user_1 = 0 );
 	~VoxelChannelData() {} /* do not destroy here */
 
 	/* flags */ 
@@ -226,24 +226,24 @@ struct CloudChannelData
 /* the user channel object */ 
 class UserChannel
 {
-	UserChannel( const pt::String &name, uint bitsize, uint multiple, void* defaultVal, ubyte flags=0 );
+	UserChannel( const pt::String &name, uint bitsize, uint multiple, void* defaultVal, ubyte flags=0, pcloud::Scene *scene=0 );
 	UserChannel( UserChannel *sourceChannel, const pt::String &destName, UserChannelFlags destFlags );
 	UserChannel();
 
 	~UserChannel();
-	friend class UserChannelManager;
+	friend class UserChannelManager;	
 
-	bool		writeToFile( ptds::Tracker *tracker, ptds::DataSourcePtr fhandle );
-	bool		writeToBranch( pt::datatree::Branch *branch, bool copy=true );
+	// removed to due to versioning issues
+//	bool		writeToFile( ptds::Tracker *tracker, ptds::DataSourcePtr fhandle );	
 
 	pt::String	m_name;
 	uint		m_bitsize;
 	uint		m_multiple;
 	void		*m_defaultValue;
 	uint		m_flags;
-
-	static UserChannel *createFromFile( ptds::DataSourcePtr fhandle );
-	static UserChannel *createFromBranch( pt::datatree::Branch *branch );
+	
+	// removed to due to versioning issues
+//	static UserChannel *createFromFile( ptds::DataSourcePtr fhandle );	
 
 public:
 	typedef  ChannelMapType<pcloud::PointCloudGUID, CloudChannelData*> MapByCloud;
@@ -257,6 +257,9 @@ public:
 
 	void				remFromChannel( const pcloud::Scene *scene );
 	void				addToChannel( const pcloud::Scene *scene );
+
+	bool				writeToBranch( pt::datatree::Branch *branch, bool copy=true );
+	static UserChannel*	createFromBranch( pt::datatree::Branch *branch );
 
 	inline VoxelChannelData *voxelChannel( VoxelID id ) 
 	{ 

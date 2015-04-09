@@ -73,11 +73,10 @@ void RenderVoxelDiagnosticInfo::renderVoxelEditState( const pcloud::Voxel *vox )
 
 	ptgl::Viewstore vs(true);
 
-	glPopMatrix();
-	glPopMatrix();
-	glPopMatrix();
-
 	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glPopMatrix();
+	glPopMatrix();
 
 	//
 
@@ -97,6 +96,7 @@ void RenderVoxelDiagnosticInfo::renderVoxelEditState( const pcloud::Voxel *vox )
 
 	vbb = vox->extents();
 	vbb.translateBy(-basepoint);
+	ptgl::Text::beginText();
 
 	/* fade by distance */ 
 	double pos[3];
@@ -187,7 +187,8 @@ void RenderVoxelDiagnosticInfo::renderVoxelEditState( const pcloud::Voxel *vox )
 		sprintf(buff, "off: %f, %f, %f", off[0], off[1], off[2]);
 		//ptgl::Text::textOut(pos[0], pos[1]-50, buff);
 	}
-
+	glMatrixMode(GL_TEXTURE);
+	glPopMatrix();
 }
 
 /*****************************************************************************/
@@ -225,7 +226,7 @@ void RenderVoxelDiagnosticInfo::renderVoxelOutline( const pcloud::Voxel *v )
 		if (v->flag(DebugShowGreen)) 	glColor3f(0, 1.0f, 0.3f);
 		if (v->flag(DebugShowPurple)) 	glColor3f(1.0f, 0.2f, 1.0f);
 
-		renderBox(&vbb);
+	renderBox(&vbb);
 
 		glPopMatrix(); //scene
 		glPopMatrix(); //offset
@@ -265,8 +266,6 @@ void RenderVoxelDiagnosticInfo::beginVoxelEditStateRender()
 	glMatrixMode(GL_TEXTURE);
 	glPushMatrix();
 	glLoadIdentity();
-
-	ptgl::Text::beginText();
 }
 
 /*****************************************************************************/

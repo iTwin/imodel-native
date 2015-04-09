@@ -31,7 +31,7 @@ public:
 	~OperationStack();
 
 	/* execute the operations stack on the engine data */ 
-	void execute();
+	void execute( bool pauseengine= true );
 	
 	/* global state management*/ 
 	static void addStateHandler( StateHandler *h );

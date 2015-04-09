@@ -394,8 +394,24 @@ void EditTool::command( int cmdId )
 			saveLayerChannels();
 			break;
 
+		case CmdLoadEditStack:
+			loadEditStack();
+			break;
+
+		case CmdSaveEditStack:
+			saveEditStack();
+			break;
+
 		case CmdCheckPointLayers:
 			doesLayerHavePoints();
+			break;
+
+		case CmdSaveScopeLayersFile:
+			saveLayerChannelsScope();
+			break;
+
+		case CmdLoadScopeLayersFile:
+			loadLayerChannelsScope();
 			break;
 	}
 }
@@ -877,13 +893,109 @@ void	EditTool::loadLayerChannels()
 		}	
 	}
 }
+//-----------------------------------------------------------------------------
+void	EditTool::loadLayerChannelsScope()
+//-----------------------------------------------------------------------------
+{
+	
+}
+//-----------------------------------------------------------------------------
+void	EditTool::saveLayerChannelsScope()
+//-----------------------------------------------------------------------------
+{
+	UI &ui = VortexExampleApp::instance()->getUI();
 
+	// get the first handle
+	int numScenes = ptNumScenes();
+	PThandle *handles = new PThandle[numScenes];
+	ptGetSceneHandles( handles );
+
+	// crate channel for POD 1 only
+	std::cout << "Creating channels from layers for first POD file...";
+	m_layersChannel = ptCreatePointChannelFromLayers( L"layers", handles[0] );
+	std::cout << "Done\n";
+
+	delete [] handles;
+
+	// save file picker
+	const wchar_t *filename = ui.getSaveFilePath( L"Layer channels File", L"layers" );
+
+	if (filename)
+	{
+		//PTuint64	PTAPI ptWriteChannelsFileToBuffer(PTint numChannels, const PThandle *channels, PTubyte *&buffer, PTuint64 &bufferSize);
+		//( const PTstr filename, PTint numChannels, const PThandle *channels );
+		if (ptWriteChannelsFile( filename, 1, &m_layersChannel) == PTV_SUCCESS)
+		{
+			std::cout << "Channels file written\n";
+		}
+		else 
+		{
+			std::cout << "Channels file failed to write\n";
+		}
+	}
+}
+//-----------------------------------------------------------------------------
+void	EditTool::saveEditStack()
+//-----------------------------------------------------------------------------
+{
+	UI &ui = VortexExampleApp::instance()->getUI();
+
+	// load file picker
+	const wchar_t *filename = ui.getSaveFilePath( L"Edit stack file", L"edit" );
+
+	if (filename)
+	{
+		FILE *file = _wfsopen( filename, L"wb", _SH_DENYNO );
+		
+		size_t stacksize = ptGetEditDataSize(0); 
+		unsigned char* stackdata = new unsigned char[ stacksize ];
+		ptGetEditData( 0, stackdata );
+
+		if (file!=NULL)
+		{
+			fwrite( &stacksize, sizeof(stacksize), 1, file );
+			fwrite( stackdata, stacksize, 1, file );
+			fclose ( file );
+		}
+		delete [] stackdata;
+	}
+}
+
+//-----------------------------------------------------------------------------
+void	EditTool::loadEditStack()
+//-----------------------------------------------------------------------------
+{
+	UI &ui = VortexExampleApp::instance()->getUI();
+
+	// load file picker
+	const wchar_t *filename = ui.getLoadFilePath( L"Edit stack file", L"edit" );
+
+	if (filename)
+	{
+		size_t stacksize = 0;
+		FILE *file = _wfsopen( filename, L"rb", _SH_DENYNO );
+		
+		if (file!=NULL)
+		{
+			fread( &stacksize, sizeof(stacksize), 1, file );
+			if (stacksize < 5e8)
+			{
+				unsigned char *stackdata = new unsigned char[ stacksize ];
+				fread( stackdata, stacksize, 1, file);
+				fclose (file);
+
+				ptCreateEditFromData( stackdata );
+				delete [] stackdata;
+			}
+		}
+	}
+}
 //-----------------------------------------------------------------------------
 void	EditTool::channelToLayers()
 //-----------------------------------------------------------------------------
 {
 	if (m_layersChannel) 
-	{
+	{	
 		ptLayersFromPointChannel( m_layersChannel, 0 );
 		ptDeletePointChannel( m_layersChannel );
 
@@ -1157,15 +1269,32 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		btn->set_w(90);
 		btn->set_back_col( &layerButtonCol );	
 
-		btn = new GLUI_Button( persistenceTests, "to File", CmdSaveLayersFile, &Tool::dispatchCmd );
+		btn = new GLUI_Button( persistenceTests, "to Ch File", CmdSaveLayersFile, &Tool::dispatchCmd );
 		btn->set_back_col( &layerButtonCol );	
 		btn->set_w(90);
 		col = new GLUI_Column( persistenceTests, false );
 
-		btn = new GLUI_Button( persistenceTests, "from File", CmdLoadLayersFile, &Tool::dispatchCmd );
+		btn = new GLUI_Button( persistenceTests, "from Ch File (S)", CmdLoadScopeLayersFile, &Tool::dispatchCmd );
+		btn->set_w(90);
+		btn->set_back_col( &layerButtonCol );
+
+		btn = new GLUI_Button( persistenceTests, "to Ch File (S)", CmdSaveScopeLayersFile, &Tool::dispatchCmd );
+		btn->set_back_col( &layerButtonCol );	
+		btn->set_w(90);
+		col = new GLUI_Column( persistenceTests, false );
+
+		btn = new GLUI_Button( persistenceTests, "from Ch File", CmdLoadLayersFile, &Tool::dispatchCmd );
 		btn->set_w(90);
 		btn->set_back_col( &layerButtonCol );
 
 
+		btn = new GLUI_Button( persistenceTests, "to Stack File", CmdSaveEditStack, &Tool::dispatchCmd );
+		btn->set_back_col( &layerButtonCol );	
+		btn->set_w(90);
+		col = new GLUI_Column( persistenceTests, false );
+
+		btn = new GLUI_Button( persistenceTests, "from Stack File", CmdLoadEditStack, &Tool::dispatchCmd );
+		btn->set_w(90);
+		btn->set_back_col( &layerButtonCol );
 	}
 }

@@ -400,8 +400,8 @@ PTres	PTAPI ptSelectPointsByOrientedBox( const PTdouble *lower, const PTdouble *
 PTres	PTAPI ptSelectPointsBySphere( const PTdouble *centre, PTdouble radius );
 PTres	PTAPI ptSelectCloud( PThandle cloud );
 PTres	PTAPI ptDeselectCloud( PThandle cloud );
-PTres	PTAPI ptSelectScene( PThandle cloud );
-PTres	PTAPI ptDeselectScene( PThandle cloud );
+PTres	PTAPI ptSelectScene( PThandle scene );
+PTres	PTAPI ptDeselectScene( PThandle scene );
 PTvoid  PTAPI ptInvertSelection( void );
 PTvoid  PTAPI ptInvertVisibility( void );
 PTvoid	PTAPI ptHideSelected( void );
@@ -413,9 +413,10 @@ PTvoid	PTAPI ptSelectAll( void );
 PTvoid	PTAPI ptSetSelectionScope( PThandle sceneOrCloudHandle );
 PTvoid	PTAPI ptSetSelectionDrawColor( const PTubyte *col3 );
 PTvoid  PTAPI ptGetSelectionDrawColor( PTubyte *col3 );
-
+PTres	PTAPI ptResetSceneEditing( PThandle scene );
 PTvoid	PTAPI ptRefreshEdit( void );
 PTvoid	PTAPI ptClearEdit( void );
+
 PTvoid	PTAPI ptStoreEdit( const PTstr name );
 PTbool	PTAPI ptRestoreEdit( const PTstr name );
 PTbool	PTAPI ptRestoreEditByIndex( PTint index );

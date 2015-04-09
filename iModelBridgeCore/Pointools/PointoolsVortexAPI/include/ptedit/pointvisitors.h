@@ -175,16 +175,40 @@ namespace ptedit
 		bool visitNode( const pcloud::Node *node );		
 	};
 
+
+	struct UnflagVisitor : public pcloud::Node::Visitor
+	{
+		bool visitNode( const pcloud::Node *node )
+		{
+			const_cast<pcloud::Node*>(node)->flag(pcloud::Flagged, false, true);
+			return false;
+		}
+		inline void point(const pt::vector3d &pnt, uint index, ubyte &f) { }
+		inline void mt_point(int t, const pt::vector3d &pnt, uint index, ubyte &f) {}
+
+		pcloud::Voxel *_currentVoxel;
+	};
+
 	/* consolidate visitor */ 
 	struct FlagPartEditedVisitor : public pcloud::Node::Visitor
 	{
 		bool visitNode( const pcloud::Node *node )
 		{
+			if (node->isLeaf())
+			{
+				// check despite flags this actually has an edit channel
+				if (!static_cast<const pcloud::Voxel*>(node)->channel(pcloud::PCloud_Filter))
+				{
+					return false;
+				}
+			}		
 			if (node->flag(pcloud::PartSelected) || node->layers(1) || node->flag(pcloud::Painted))
 			{
-				const_cast<pcloud::Node*>(node)->flag(pcloud::Flagged, true, true);
+				const_cast<pcloud::Node*>(node)->flag(pcloud::Flagged, true, false);
 				return true;
 			}
+			else const_cast<pcloud::Node*>(node)->flag(pcloud::Flagged, false, false);
+			
 			return node->isLeaf() ? false : true;
 		}
 		inline void point(const pt::vector3d &pnt, uint index, ubyte &f) { }

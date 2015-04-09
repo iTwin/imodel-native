@@ -59,7 +59,7 @@ void RenderPipelineI::setMethod( RenderMethodI *method )
 /*****************************************************************************/
 RenderMethodI	* RenderPipelineI::renderMethod()	//protected
 {
-	return m_method;
+	return m_method;   
 }
 
 /*****************************************************************************/

@@ -419,10 +419,14 @@ bool	PTAPI ptLayersFromPointChannel( PThandle userChannel, PThandle sceneHandle 
 		setLastErrorCode( PTV_INVALID_PARAMETER );
 	}
 	else
-	{
-		result = UserChannelManager::instance()->applyChannelToLayers( channel );
+	{		
+		// add a stack operation for loading the layers from this point channel
+		PointEditManager::instance()->layersFromUserChannel( channel );			
 
-		unpauseEngine();
+		result = true;
 	}
+
+	unpauseEngine();
+
 	return result;
 }

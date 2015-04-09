@@ -459,6 +459,8 @@ typedef PTvoid	(__stdcall * PTDELETEALLEDITS)( void );
 typedef PTvoid	(__stdcall * PTCREATEEDITFROMDATA)( const PTubyte *data );
 typedef PTint	(__stdcall * PTGETEDITDATASIZE)( PTint index );
 typedef PTint	(__stdcall * PTGETEDITDATA)( PTint index, PTubyte *data );
+	
+typedef PTres	(__stdcall * PTRESETSCENEEDITING)( PThandle scene );
 
 typedef PTvoid	(__stdcall *PTSETEDITWORKINGMODE)( PTenum mode );
 typedef PTenum	(__stdcall *PTGETEDITWORKINGMODE)( void );
@@ -855,6 +857,8 @@ extern PTGETSELECTIONDRAWCOLOR ptGetSelectionDrawColor;
 
 extern PTINVERTSELECTION ptInvertSelection;
 extern PTINVERTVISIBILITY ptInvertVisibility;
+
+extern PTRESETSCENEEDITING ptResetSceneEditing;
 
 extern PTREFRESHEDIT ptRefreshEdit;
 extern PTCLEAREDIT ptClearEdit;

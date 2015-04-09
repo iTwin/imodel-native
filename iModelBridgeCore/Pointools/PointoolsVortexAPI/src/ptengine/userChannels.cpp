@@ -11,10 +11,10 @@ using namespace pointsengine;
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-VoxelChannelData::VoxelChannelData( uint num_points, uint bytesPerPnt, uint full_num_points, ubyte setup_flags ) : 
+VoxelChannelData::VoxelChannelData( uint num_points, uint bytesPerPnt, uint full_num_points, ubyte setup_flags, uint user_0, uint user_1 ) : 
 		data(0), uniform_value(0), min_value(0), max_value(0), numPoints( num_points ), 
 			bytesPerPoint( (ubyte)bytesPerPnt ), filepos(PT_NULL_FILE_POS), flags(setup_flags),
-			fullNumPoints(full_num_points), user0(0), user1(0)
+			fullNumPoints(full_num_points), user0(user_0), user1(user_1)
 		{
 		}
 // if OOC
@@ -225,7 +225,7 @@ struct CopyChannelsVisitor : public CreateChannelsVisitor
 //-----------------------------------------------------------------------------
 // User Channel : Constructor
 //-----------------------------------------------------------------------------
-UserChannel::UserChannel(const pt::String &name, uint bitsize, uint multiple, void* defaultVal, ubyte flags )
+UserChannel::UserChannel(const pt::String &name, uint bitsize, uint multiple, void* defaultVal, ubyte flags, pcloud::Scene *scene )
 {
 	m_name = name;
 	m_bitsize = bitsize;
@@ -239,9 +239,18 @@ UserChannel::UserChannel(const pt::String &name, uint bitsize, uint multiple, vo
 		memcpy(m_defaultValue, defaultVal, BYTES_PER_ELEMENT);
 	}
 
-	/* iterate clouds and enter this in */ 
 	CreateChannelsVisitor v( m_data, bitsize, multiple, defaultVal, flags );
-	thePointsScene().visitPointClouds( &v );
+
+	/* iterate clouds and enter this in */ 
+	if (scene)
+	{
+		for (int c=0;c<scene->size();c++)
+			v.cloud( scene->cloud(c) );
+	}
+	else
+	{
+		thePointsScene().visitPointClouds( &v );
+	}
 }
 //-----------------------------------------------------------------------------
 // User Channel : Constructor
@@ -334,10 +343,13 @@ void UserChannel::update( VoxelChannelData *vcd, int numPoints )
 //=============================================================================
 //	write user channel to file
 //-----------------------------------------------------------------------------
-bool UserChannel::writeToFile( ptds::Tracker *tracker, ptds::DataSourcePtr fhandle )
+/*bool UserChannel::writeToFile( ptds::Tracker *tracker, ptds::DataSourcePtr fhandle )
 {
 	ptds::WriteBlock wb( fhandle, 65536, tracker );
 
+	// Note that a version check on reading was only added recently. This means that
+	// this file format is fixed and cannot be added to or changed without
+	// breaking loading of newer UserChannel files into older versions of Vortex	
 	int version = 1;
 	int bytesPerPoint = (m_bitsize / 8) * m_multiple;
 
@@ -406,15 +418,15 @@ bool UserChannel::writeToFile( ptds::Tracker *tracker, ptds::DataSourcePtr fhand
 		}
 	}
 	return true;
-}	
+}	*/
 //-----------------------------------------------------------------------------
 bool UserChannel::writeToBranch( pt::datatree::Branch *branch, bool copy )
 {
-	int version = 1;
+	int version = 2;
 	int bytesPerPoint = (m_bitsize / 8) * m_multiple;
 
 	// Meta Data
-	branch->addNode("version", (int)1);
+	branch->addNode("version", version);
 	branch->addNode("name", m_name );
 	branch->addNode("bitsize", m_bitsize );
 	branch->addNode("multiple", m_multiple );
@@ -480,7 +492,7 @@ UserChannel::UserChannel() :  m_multiple(0), m_defaultValue(0), m_flags(0)
 {
 }
 //-----------------------------------------------------------------------------
-UserChannel *UserChannel::createFromFile( ptds::DataSourcePtr fhandle )
+/*UserChannel *UserChannel::createFromFile( ptds::DataSourcePtr fhandle )
 {
 	UserChannel *userChannel = new UserChannel();
 
@@ -491,6 +503,13 @@ UserChannel *UserChannel::createFromFile( ptds::DataSourcePtr fhandle )
 	int numCHD = 0;
 
 	rb.read( version );	//basic header
+
+	// Note that this version check was only added recently. This means that
+	// this file format is fixed and cannot be added to or changed without
+	// breaking loading of newer UserChannel files into older versions of Vortex
+	if (version != 1)   
+		return NULL;
+
 	rb.read( userChannel->m_name );
 	rb.read( userChannel->m_bitsize );
 	rb.read( userChannel->m_multiple );
@@ -526,16 +545,17 @@ UserChannel *UserChannel::createFromFile( ptds::DataSourcePtr fhandle )
 			ptds::DataPointer filepos;
 			ubyte flags;
 			uint numPoints, fullNumPoints;
+			uint user0 = 0, user1 = 0; // note that this is incorrect, but due to the version issue mentioned above, user0 and user1 cannot be written or read from file
 
 			rb.read( fullNumPoints );	
 			rb.read( numPoints );	
-			rb.read( flags );
+			rb.read( flags );			
 
-			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, flags) );
+			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, flags, user0, user1) );
 			VoxelChannelData &chd = ccd->data.back();
 			/* do not set filepos here */ 
 
-			uint values = 0;
+		/*	uint values = 0;
 			rb.read( values );
 
 			
@@ -570,7 +590,7 @@ UserChannel *UserChannel::createFromFile( ptds::DataSourcePtr fhandle )
 		}
 	}
 	return userChannel;
-}
+}*/
 //-----------------------------------------------------------------------------
 /* static */
 UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
@@ -584,6 +604,8 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 
 	// Meta Data
 	branch->getNode("version", version);
+	if (version > 2)
+		return NULL;
 	branch->getNode("name", userChannel->m_name );
 	branch->getNode("bitsize", userChannel->m_bitsize );
 	branch->getNode("multiple", userChannel->m_multiple );
@@ -651,7 +673,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 			leaf->getNode( "user1", u1 );
 			
 			// add this to the cloud channel
-			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, flags) );
+			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, flags/*, u0, u1*/) );
 			VoxelChannelData &chd = ccd->data.back();
 			chd.setUser0( u0 );
 			chd.setUser1( u1 );

@@ -209,9 +209,9 @@ void OperationStack::clear()
 //-----------------------------------------------------------------------------
 // execute the operations in the stack
 //-----------------------------------------------------------------------------
-void OperationStack::execute()
+void OperationStack::execute( bool pauseengine )
 {
-	pointsengine::pauseEngine();
+	if (pauseengine) pointsengine::pauseEngine();
 
 	datatree::Branch save("save");	// store state to ensure invariance
 	writeStateBranch( &save );
@@ -226,7 +226,7 @@ void OperationStack::execute()
 
 	readStateBranch( &save );		// restore state
 	
-	pointsengine::unpauseEngine();
+	if (pauseengine) pointsengine::unpauseEngine();
 }
 //-----------------------------------------------------------------------------
 //

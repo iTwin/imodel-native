@@ -624,6 +624,100 @@ bool	PointEditManager::selectScene( pcloud::Scene *scene )
 	return false;
 }
 
+//-----------------------------------------------------------------------------
+// stores the state of all nodes in the point clouds - must be called for writing
+// in EXACTLY same order as read ie. only within same function
+//-----------------------------------------------------------------------------
+class StoreNodeStateAndPrepForRefresh : public pcloud::Node::Visitor
+{
+	public:
+		StoreNodeStateAndPrepForRefresh()	
+		{			
+			_readMode = true;
+		}
+		void writeMode() { _readMode = false; _pos = 0; }
+
+		bool visitNode( const pcloud::Node *node )
+		{
+			Node *mnode = const_cast<pcloud::Node*>(node);
+
+			if (_readMode)
+			{
+				NodeState ns;
+				ns.layers0 = node->layers(0);
+				ns.layers1 = node->layers(1);
+				ns.wholeSel = node->flag(pcloud::WholeSelected);
+				ns.partSel = node->flag(pcloud::PartSelected);
+
+				_nodes.push_back(ns);
+
+				if (node->layers(1) || node->flag( pcloud::PartSelected ))
+				{
+					mnode->flag( pcloud::Flagged, true, false );
+				}
+			}
+			else
+			{
+				mnode->layers(0) = _nodes[_pos].layers0;
+				mnode->layers(1) = _nodes[_pos].layers1;
+				mnode->flag(pcloud::WholeSelected, _nodes[_pos].wholeSel);
+				mnode->flag(pcloud::PartSelected, _nodes[_pos].partSel);
+				_pos++;
+
+				mnode->flag( pcloud::Flagged, false, false ); // clean up
+			}
+			return true;
+		}
+
+		inline void point(const pt::vector3d &pnt, uint index, ubyte &f) {}
+		inline void mt_point(int t, const pt::vector3d &pnt, uint index, ubyte &f) {}
+
+		struct NodeState
+		{
+			ubyte layers0;
+			ubyte layers1;
+			bool  wholeSel;
+			bool  partSel;
+		};
+
+		int						_pos;
+		pcloud::Voxel			*_currentVoxel;
+		bool					_readMode;
+		std::vector<NodeState>	_nodes;
+};
+
+
+//-----------------------------------------------------------------------------
+// sets the number of points edited to the current LOD
+// this is needed for a refresh run of the stack because a refresh
+// only processes the points from the last number of points edited to the
+// current LOD or end (if OOC)
+//-----------------------------------------------------------------------------
+class SetEditPointToLODVisitor : public pcloud::Node::Visitor
+{
+	public:
+		SetEditPointToLODVisitor() {}
+
+		bool visitNode( const pcloud::Node *node )
+		{
+			if (node->isLeaf())
+			{
+				pcloud::Voxel *v = 
+					const_cast<pcloud::Voxel*>( static_cast<const pcloud::Voxel*>(node) );
+				v->numPointsEdited( v->lodPointCount() * g_state.density );
+
+				if (g_editApplyMode & EditIncludeOOC)
+				{
+					v->numPointsEdited( v->fullPointCount() );
+				}
+			}
+			return true;
+		}
+
+		inline void point(const pt::vector3d &pnt, uint index, ubyte &f) {}
+		inline void mt_point(int t, const pt::vector3d &pnt, uint index, ubyte &f) {}
+};
+
 /*****************************************************************************/
 /**
 * @brief
@@ -635,38 +729,41 @@ void PointEditManager::regenEditQuick()
 	{
 		PreserveState save;
 
-		g_editApplyMode = EditIntentFlagged;
-
-		/* flag every leaf that needs a refresh */ 
-		FlagPartEditedVisitor fv;
-		TraverseScene::withVisitor(&fv);
-
-		/* clear those that have already been 100% processed */ 
-		ClearFlaggedIfProcessed cfv;
-		TraverseScene::withVisitor(&cfv);
-
-		/* consolidate octree, otherwise flagged status of parent nodes will not be updated */ 
-		TraverseScene::consolidateFlags();
-
-		/* remove RGB edits from these leaves */ 
-		//clearColourEdits();
-
-		/* clear the filter state from these nodes */ 
-		ClearFilterVisitor v;
-		TraverseScene::withVisitor(&v);
-
-		/* not sure this is needed */ 
-		//ClearFlagVisitor cf;
-		//TraverseScene::withVisitor(&cf);
-
-		/* run the ops on these leaves only */ 
-		m_currentEdit.execute();
+		pointsengine::pauseEngine();
 
 		g_editApplyMode = EditNormal;
 
+		// scope should not effect this, will be restored by PreserveState
+		g_state.scope = 0;
+
+		// flag nodes first - note this cannot be done any other way since node state will be changing
+		StoreNodeStateAndPrepForRefresh statev;
+		TraverseScene::withVisitor(&statev);
+
+		g_editApplyMode = EditIntentRefresh | EditIntentFlagged;
+		m_currentEdit.execute(false);
+
+		g_editApplyMode = EditNormal;
+
+		// need to set the edit points in voxels to current lod 
+		// because this is not done in refresh mode
+		SetEditPointToLODVisitor sep;
+		TraverseScene::withVisitor(&sep);
+
+		statev.writeMode();
+		TraverseScene::withVisitor(&statev);
+
+		//ClearFilterVisitor v;
+		//TraverseScene::withVisitor(&v);
+
 		EditNodeDef::applyByName( "ConsolidateAllLayers" );	
+		
+		setCurrentLayer( g_currentLayer, true );
+
+		pointsengine::unpauseEngine();
+
 	}
-	setCurrentLayer( g_currentLayer, true );
+	return;
 }
 /*****************************************************************************/
 /**
@@ -674,38 +771,79 @@ void PointEditManager::regenEditQuick()
 * @return void
 */
 /*****************************************************************************/
-void PointEditManager::regenEditComplete()
+void PointEditManager::regenEditComplete() // NOT TESTED
 {
-	//clearColourEdits();
+	PreserveState save;
 
-	g_editApplyMode = EditIntentRegen;
-
-	clearAll();
-
-	m_currentEdit.execute();
+	pointsengine::pauseEngine();
 
 	g_editApplyMode = EditNormal;
 
+	// scope should not effect this, will be restored by PreserveState
+	g_state.scope = 0;
+
+	// flag nodes first - note this cannot be done any other way since node state will be changing
+	StoreNodeStateAndPrepForRefresh statev;
+	TraverseScene::withVisitor(&statev);
+
+	g_editApplyMode =  EditIntentFlagged;
+	m_currentEdit.execute(false);
+
+	g_editApplyMode = EditNormal;
+
+
+	statev.writeMode();
+	TraverseScene::withVisitor(&statev);
+
+	//ClearFilterVisitor v;
+	//TraverseScene::withVisitor(&v);
+
 	EditNodeDef::applyByName( "ConsolidateAllLayers" );	
-
+	
 	setCurrentLayer( g_currentLayer, true );
-}
 
+	pointsengine::unpauseEngine();
+}
 //-----------------------------------------------------------------------------
 // complete regen from scratch - not optimised
 //-----------------------------------------------------------------------------
 void PointEditManager::regenOOCComplete()
 {
-	//clearColourEdits( g_visibleLayers );
+	PreserveState save;
 
-	g_editApplyMode = EditIntentRegen | EditIncludeOOC;
-
-	clearAll();
-	m_currentEdit.execute();
+	pointsengine::pauseEngine();
 
 	g_editApplyMode = EditNormal;
 
+	// scope should not effect this, will be restored by PreserveState
+	g_state.scope = 0;
+
+	// flag nodes first - note this cannot be done any other way since node state will be changing
+	StoreNodeStateAndPrepForRefresh statev;
+	TraverseScene::withVisitor(&statev);
+
+	g_editApplyMode =  EditIntentRefresh | EditIntentFlagged | EditIncludeOOC;
+	m_currentEdit.execute(false);
+
+	g_editApplyMode = EditNormal | EditIncludeOOC;
+
+	// this is ok here, has a hack to set to full if EditIncludeOOC
+	SetEditPointToLODVisitor sep;
+	TraverseScene::withVisitor(&sep);
+
+	g_editApplyMode = EditNormal;
+
+	statev.writeMode();
+	TraverseScene::withVisitor(&statev);
+
+	//ClearFilterVisitor v;
+	//TraverseScene::withVisitor(&v);
+
 	EditNodeDef::applyByName( "ConsolidateAllLayers" );	
+	
+	setCurrentLayer( g_currentLayer, true );
+
+	pointsengine::unpauseEngine();
 }
 
 /*****************************************************************************/
@@ -1011,7 +1149,20 @@ void PointEditManager::fenceSelect( const pt::Fence<int> &fence )
 	m_fenceSelect.buildFromScreenFence(fence, m_view, m_units);
 	m_currentEdit.addOperation(&m_fenceSelect);
 }
-
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::layersFromUserChannel( pointsengine::UserChannel* userChannel )
+{
+	if (userChannel)
+	{
+		m_layersFromUserChannel.setUserChannel(userChannel);
+		m_currentEdit.addOperation("LayersFromUserChannel");
+	}
+}
 /*****************************************************************************/
 /**
 * @brief
@@ -1021,6 +1172,13 @@ void PointEditManager::fenceSelect( const pt::Fence<int> &fence )
 /*****************************************************************************/
 pt::datatree::Branch *PointEditManager::_getEditDatatree( int index )
 {
+	// not supporting multiple edits
+	if (index == 0 && m_edits.size() == 0)
+	{
+		datatree::Branch *root = const_cast<datatree::Branch*>(m_currentEdit.stack());
+		return root;
+	}
+
 	int c=0;
 	EditMap::iterator i = m_edits.begin();
 
@@ -1049,4 +1207,9 @@ void PointEditManager::_createEditFromDatatree( pt::datatree::Branch * dtree )
 	pt::String name;
 	if (dtree->getNode( "name", name))
 		m_edits.insert(EditMap::value_type(name, edit));
+	else	// this is intended to replace the current edit stack
+	{
+		m_currentEdit.readStack( dtree );
+		m_currentEdit.execute();
+	}
 }

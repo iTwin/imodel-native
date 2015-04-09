@@ -97,7 +97,11 @@ public:
 		CmdChannelToLayers	 = 366,
 		CmdSaveLayersFile	 = 367,
 		CmdLoadLayersFile	 = 368,
-		CmdCheckPointLayers  = 369
+		CmdCheckPointLayers  = 369,
+		CmdSaveEditStack	 = 395,
+		CmdLoadEditStack	 = 396,
+		CmdSaveScopeLayersFile	 = 397,
+		CmdLoadScopeLayersFile	 = 398
 	};
 
 	EditTool(bool simple);	// simple = true, for no layers or scope 
@@ -153,7 +157,13 @@ private:
 	void	layersToChannel();
 	void	channelToLayers();
 
+	void	saveEditStack();
+	void	loadEditStack();
+
 	void	doesLayerHavePoints();
+
+	void    saveLayerChannelsScope();
+	void    loadLayerChannelsScope();
 
 };
 

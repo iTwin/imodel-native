@@ -429,7 +429,7 @@ UserChannel *UserChannelManager::createChannelFromLayers( const pt::String &name
 	// stop all paging first - no locking on a voxel level
 	try
 	{
-		UserChannel *channel = new UserChannel( name, 8, 1, 0, 0 );
+		UserChannel *channel = new UserChannel( name, 8, 1, 0, 0, const_cast<pcloud::Scene *>(scene) );
 		g_channels.insert( MapChannels::value_type( name, channel ) );
 
 		for (int s=0; s<thePointsScene().size();s++)
@@ -534,10 +534,14 @@ bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pclo
 							vdata->getVal(p, &layerval);
 							dc->set(p, &layerval);
 						}
-						vx->numPointsEdited( vdata->getNumPoints() );	// set the points edited to max
+						vx->numPointsEdited( 0 ); // this must be zero and not all points otherwise further editing will not get processed
 					}
-
-				}	
+					else
+					{
+						// destroy any existing edit channel if there is no corresponding one being loaded
+						vx->destroyEditChannel();
+					}
+				}					
 			}
 		}
 	}

@@ -509,6 +509,12 @@ PTvoid PTAPI ptResetLayers()
 
 }
 //-----------------------------------------------------------------------------
+PTres	PTAPI ptResetSceneEditing( PThandle scene )
+{
+	// to do
+	return PTV_NOT_IMPLEMENTED_IN_VERSION;
+}
+//-----------------------------------------------------------------------------
 PTbool PTAPI ptCopySelToCurrentLayer( PTbool deselect )
 {
 	return PointEditManager::instance()->copySelToLayer( deselect );

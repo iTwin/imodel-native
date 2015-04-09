@@ -88,6 +88,8 @@ public:
 	void	orientedBoxSelect( const pt::vector3d &lower, const pt::vector3d &upper, const pt::vector3d &position, const pt::vector3d &uAxis, const pt::vector3d &vAxis);
 	void	planeSelect( const pt::vector3d &origin, const pt::vector3d &normal, double thickness );
 
+	void	layersFromUserChannel( pointsengine::UserChannel* userChannel );
+
 	//editing operations
 	void	selectAll();
 	void	clearAll();
@@ -154,6 +156,8 @@ private:
 	CloudSelect			m_cloudSelect;
 	BoxSelect			m_boxSelect;
 	OrientedBoxSelect	m_orientedBoxSelect;
+
+	FilterOpLayersFromUserChannel m_layersFromUserChannel;
 
 };
 

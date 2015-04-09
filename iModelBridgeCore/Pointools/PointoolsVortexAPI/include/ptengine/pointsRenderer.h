@@ -56,6 +56,9 @@ private:
 	
 	void						flushBuffers( RenderContext *context, bool fullBuffersOnly, bool reset );
 	void						resetBuffers();
+
+	void						renderEditStackDebug();
+
 private:
 	bool						m_enabled;
 

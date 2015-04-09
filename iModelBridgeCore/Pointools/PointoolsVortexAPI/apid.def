@@ -251,6 +251,8 @@ EXPORTS
 	ptInvertSelection
 	ptInvertVisibility
 
+	ptResetSceneEditing
+
 	ptRefreshEdit
 	ptClearEdit
 	ptStoreEdit
