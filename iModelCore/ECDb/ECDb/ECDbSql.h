@@ -1136,7 +1136,7 @@ struct ECDbSqlPersistence : NonCopyableClass
         const Utf8CP Sql_SelectIndex = "SELECT I.Id, T.Name, I.Name, I.IsUnique, I.WhereClause FROM ec_Index I INNER JOIN ec_Table T ON T.Id = I.TableId";
         const Utf8CP Sql_SelectIndexColumn = "SELECT C.Name FROM ec_IndexColumn I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal";
         const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate, F.MatchType FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferenceTableId WHERE F.TableId = ?";
-        const Utf8CP Sql_SelectForeignKeyColumn = "SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId = A.Id INNER JOIN ec_Column B ON F.ReferenceColumnId = B.Id  WHERE ForeignKeyId = ? ORDER BY Ordinal";
+        const Utf8CP Sql_SelectForeignKeyColumn = "SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId = A.Id INNER JOIN ec_Column B ON F.ReferenceColumnId = B.Id  WHERE F.ForeignKeyId = ? ORDER BY F.Ordinal";
 
         enum class StatementType
             {
@@ -1169,19 +1169,16 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult ReadIndexes (ECDbSqlDb& o);
         DbResult ReadColumn (Statement& stmt, ECDbSqlTable& o, std::map<size_t, ECDbSqlColumn const*>& primaryKeys);
         DbResult ReadIndex (Statement& stmt, ECDbSqlDb& o);
-        DbResult ReadForiegnKeys (ECDbSqlTable& o);
-        DbResult ReadForiegnKey (Statement& stmt, ECDbSqlTable& o);
+        DbResult ReadForeignKeys (ECDbSqlTable& o);
+        DbResult ReadForeignKey (Statement& stmt, ECDbSqlTable& o);
         DbResult InsertTable (ECDbSqlTable const& o);
         DbResult InsertIndex (ECDbSqlIndex const& o);
         DbResult InsertColumn (ECDbSqlColumn const& o, int primaryKeyOrdianal);
         DbResult InsertConstraint (ECDbSqlConstraint const& o);
-        DbResult InsertForiegnKey (ECDbSqlForiegnKeyConstraint const& o);
+        DbResult InsertForeignKey (ECDbSqlForiegnKeyConstraint const& o);
 
     public:
-        ECDbSqlPersistence (ECDbR ecdb)
-            :m_ecdb (ecdb)
-            {
-            }
+        explicit ECDbSqlPersistence (ECDbR ecdb):m_ecdb (ecdb) {}
         ~ECDbSqlPersistence (){};
         DbResult Read (ECDbSqlDb& o);
         DbResult Insert (ECDbSqlDb const& db);

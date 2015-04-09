@@ -3100,7 +3100,7 @@ DbResult ECDbSqlPersistence::ReadTable (Statement& stmt, ECDbSqlDb& o)
         return stat;
 
     //read foriegn key
-    stat = ReadForiegnKeys (*n);
+    stat = ReadForeignKeys (*n);
     if (stat != BE_SQLITE_DONE)
         return stat;
 
@@ -3261,7 +3261,7 @@ DbResult ECDbSqlPersistence::ReadIndex (Statement& stmt, ECDbSqlDb& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadForiegnKeys (ECDbSqlTable& o)
+DbResult ECDbSqlPersistence::ReadForeignKeys (ECDbSqlTable& o)
     {
     DbResult stat = BE_SQLITE_DONE;
     auto stmt = GetStatement (StatementType::SqlSelectForeignKey);
@@ -3271,7 +3271,7 @@ DbResult ECDbSqlPersistence::ReadForiegnKeys (ECDbSqlTable& o)
     stmt->BindInt64 (1, o.GetId ());
     while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
         {
-        stat = ReadForiegnKey (*stmt, o);
+        stat = ReadForeignKey (*stmt, o);
         if (stat != BE_SQLITE_DONE)
             return stat;
         }
@@ -3285,7 +3285,7 @@ DbResult ECDbSqlPersistence::ReadForiegnKeys (ECDbSqlTable& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadForiegnKey (Statement& stmt, ECDbSqlTable& o)
+DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
     {
     //F.Id, P.Name, R.Name, F.Name, F.OnDelete, F.OnUpdate, F.MatchType
     auto id = stmt.GetValueInt64 (0);
@@ -3491,7 +3491,7 @@ DbResult ECDbSqlPersistence::InsertColumn (ECDbSqlColumn const& o, int primaryKe
 DbResult ECDbSqlPersistence::InsertConstraint (ECDbSqlConstraint const& o)
     {
     if (auto c = dynamic_cast<ECDbSqlForiegnKeyConstraint const*>(&o))
-        return InsertForiegnKey (*c);
+        return InsertForeignKey (*c);
 
     if (dynamic_cast<ECDbSqlPrimaryKeyConstraint const*>(&o))
         return BE_SQLITE_DONE;
@@ -3502,7 +3502,7 @@ DbResult ECDbSqlPersistence::InsertConstraint (ECDbSqlConstraint const& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::InsertForiegnKey (ECDbSqlForiegnKeyConstraint const& o)
+DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForiegnKeyConstraint const& o)
     {
     if (o.Count () == 0)
         {
