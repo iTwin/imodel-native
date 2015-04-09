@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/BaseManagedGCS.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
@@ -7621,7 +7621,7 @@ ECS::IECClass^  organizationClass
         CreateGroupStruct (root);
 
         SIO::FileStream^                    instanceFile      = gcnew SIO::FileStream (m_orgFileName, SIO::FileMode::Create);
-        ECXML::ECInstanceXmlStreamWriter^   instanceWriter    = gcnew ECXML::ECInstanceXmlStreamWriter (instanceFile, System::Text::Encoding::UTF8);
+        ECXML::ECInstanceXmlStreamWriter^   instanceWriter    = gcnew ECXML::ECInstanceXmlStreamWriter (instanceFile, System::Text::Encoding::UTF8, true);
         instanceWriter->Unformatted = false;
         instanceWriter->Indent      = 2;
         instanceWriter->Serialize (instance);
@@ -8415,7 +8415,7 @@ String^     favoriteFileName
     try
         {
         SIO::FileStream^                    instanceFile      = gcnew SIO::FileStream (favoriteFileName, SIO::FileMode::Create);
-        ECXML::ECInstanceXmlStreamWriter^   instanceWriter    = gcnew ECXML::ECInstanceXmlStreamWriter (instanceFile, System::Text::Encoding::UTF8);
+        ECXML::ECInstanceXmlStreamWriter^   instanceWriter    = gcnew ECXML::ECInstanceXmlStreamWriter (instanceFile, System::Text::Encoding::UTF8, true);
         instanceWriter->Unformatted = false;
         instanceWriter->Indent      = 2;
         instanceWriter->Serialize (instance);
