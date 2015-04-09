@@ -698,7 +698,6 @@ void ExportCommand::RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFol
 //---------------------------------------------------------------------------------------
 void ExportCommand::ExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile) const
     {
-
     BeFile file;
     if (file.Create (jsonFile, true) != BeFileStatus::Success)
         {
@@ -710,8 +709,6 @@ void ExportCommand::ExportSqlData (ECSqlConsoleSession& session, Utf8CP jsonFile
     stmt.Prepare (session.GetECDb (), "SELECT name FROM sqlite_master WHERE type ='table'");
     Json::Value tableData (Json::ValueType::arrayValue);  
 
-    auto s2 = tableData.toStyledString ();
-    printf (s2.c_str ());
     while (stmt.Step () == BE_SQLITE_ROW)
         {
         ExportTableSqlData (session, tableData, stmt.GetValueText (0));

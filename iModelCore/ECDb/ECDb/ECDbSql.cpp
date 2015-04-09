@@ -3546,7 +3546,7 @@ DbResult ECDbSqlPersistence::InsertForiegnKey (ECDbSqlForiegnKeyConstraint const
         stmt->BindInt64 (1, o.GetId ());
         stmt->BindInt64 (2, o.GetSourceColumns ().at (i)->GetId ());
         stmt->BindInt64 (3, o.GetTargetColumns ().at (i)->GetId ());
-        stmt->BindInt64 (3, i);
+        stmt->BindInt64 (4, i);
 
         stat = stmt->Step ();
         if (stat != BE_SQLITE_DONE)
