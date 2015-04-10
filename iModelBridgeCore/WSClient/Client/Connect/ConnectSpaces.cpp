@@ -72,6 +72,7 @@ void ConnectSpaces::Initialize ()
         sm_actionMap[CS_MESSAGE_DownloadFile] = DownloadFileAction;
         sm_actionMap[CS_MESSAGE_SetCredentials] = SetCredentialsAction;
         sm_actionMap[CS_MESSAGE_GetFileStatus] = GetFileStatusAction;
+        sm_actionMap[CS_MESSAGE_ResetEula] = ResetEulaAction;
         sm_actionMap[CS_MESSAGE_CheckEula] = CheckEulaAction;
         sm_actionMap[CS_MESSAGE_AcceptEula] = AcceptEulaAction;
         sm_actionMap[CS_MESSAGE_SetEulaToken] = SetEulaTokenAction;
@@ -312,7 +313,7 @@ BentleyStatus ConnectSpaces::GetNewTokenIfNeeded (bool getNewToken, StatusAction
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::FetchFileList(Utf8StringCR dsId, Utf8StringCR folderId, bool getNewToken)
     {
-    if (!GetNewTokenIfNeeded(getNewToken, FetchFileListAction, m_token))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, FetchFileListAction, m_token))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -380,7 +381,7 @@ void ConnectSpaces::FetchFileList(Utf8StringCR dsId, Utf8StringCR folderId, bool
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::FetchObjectList(Utf8StringCR dsId, Utf8StringCR objectClass, bool getNewToken)
     {
-    if (!GetNewTokenIfNeeded(getNewToken, FetchObjectListAction, m_token))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, FetchObjectListAction, m_token))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -543,7 +544,7 @@ bool ConnectSpaces::ParseLastModified(const std::string &lastModified, Bentley::
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::FetchDatasourceList(bool getNewToken)
     {
-    if (!GetNewTokenIfNeeded(getNewToken, FetchDatasourceListAction, m_token))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, FetchDatasourceListAction, m_token))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -613,11 +614,71 @@ void ConnectSpaces::FetchDatasourceList(bool getNewToken)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Rolandas.Rimkus    03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSpaces::ResetEula(bool getNewToken)
+    {    
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, ResetEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), Connect::GetStsUrl().c_str()))
+        {
+        // Note: error sent to UI thread in GetNewTokenIfNeeded().
+        return;
+        }
+    Utf8String url = Connect::GetEulaUrl() + "/Agreements/RevokeAgreementService/" + m_credentials.GetUsername ();
+    HttpRequest request = m_client.CreatePostRequest (url);
+    request.GetHeaders().SetValue("Content-Type", "application/json");
+    m_credentialsCriticalSection.Enter();
+    request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
+    bmap<Utf8String, Utf8String> attributes;
+    BentleyStatus attributeStatus = m_eulaToken.GetAttributes(attributes);
+    m_credentialsCriticalSection.Leave();
+    
+    if (SUCCESS != attributeStatus)
+        {
+        // The token we got is invalid.
+        SendStatusToUIThread(ResetEulaAction, CredentialsError);
+        return;
+        }
+    request.SetTimeoutSeconds (HTTP_DEFAULT_TIMEOUT);
+    request.SetCancellationToken(m_cancelToken);
+    HttpResponse httpResponse = request.Perform();
+    if (IsRedirectToStsLogin(httpResponse))
+        {
+        if (getNewToken)
+            {
+            // We already got a new token, but it's not working.
+            SendStatusToUIThread(ResetEulaAction, CredentialsError);
+            }
+        else
+            {
+            ResetEula(true);
+            }
+        }
+    else
+        {
+        if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
+            {
+            SendStatusToUIThread(ResetEulaAction, NetworkError);
+            }
+
+        if (httpResponse.GetHttpStatus() == HttpStatus::OK)
+            {
+            SendStatusToUIThread(ResetEulaAction, OK);
+            Json::Value dsData = httpResponse.GetBody().AsJson();
+            SendJsonMessageToUiThread(CS_MESSAGE_ResetEula, httpResponse.GetBody().AsJson().asString());  
+            }
+        else
+            {
+            SendStatusToUIThread(ResetEulaAction, UnknownError);
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::CheckEula(bool getNewToken)
     {
-    if (!GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -716,7 +777,7 @@ void ConnectSpaces::CheckEula(bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
     {
-    if (!GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return false;
@@ -786,7 +847,7 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::AcceptEula(bool getNewToken)
     {
-    if (!GetNewTokenIfNeeded(getNewToken, AcceptEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, AcceptEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -892,6 +953,22 @@ void ConnectSpaces::FetchDatasourceListAsync()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Rolandas.Rimkus    03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSpaces::ResetEulaAsync()
+    {
+    m_credentialsCriticalSection.Enter();
+    ConnectSpaces* spaces = new ConnectSpaces(*this);
+    m_credentialsCriticalSection.Leave();
+    s_threadPool->ExecuteAsync(
+        [=]()
+            {
+            spaces->ResetEula();
+            delete spaces;
+            });
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::CheckEulaAsync()
@@ -953,7 +1030,7 @@ void ConnectSpaces::DownloadFile(JsonValueCR messageObj, bool getNewToken)
     tempPathName.AppendToPath(wFilename.c_str());
     docsPathName.AppendToPath(wFilename.c_str());
 
-    if (!GetNewTokenIfNeeded(getNewToken, DownloadFileAction, m_token))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, DownloadFileAction, m_token))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -1197,6 +1274,9 @@ bool ConnectSpaces::OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj
                 break;
             case GetFileStatusAction:
                 GetFileStatus(messageObj);
+                break;
+            case ResetEulaAction:
+                ResetEulaAsync();
                 break;
             case CheckEulaAction:
                 CheckEulaAsync();

@@ -20,6 +20,7 @@ static bool s_connectInitialized = false;
 
 static Utf8String s_wsgUrl;
 static Utf8String s_eulaUrl;
+static Utf8String s_stsUrl;
 static Utf8String s_userAgent;
 static Utf8String s_appId;
 static Utf8String s_deviceId;
@@ -90,6 +91,20 @@ Utf8StringCR Connect::GetWsgUrl ()
 void Connect::SetWsgUrl (Utf8StringCR url)
     {
     s_wsgUrl = url;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Rolandas.Rimkus    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR Connect::GetStsUrl ()
+    {
+    if (s_stsUrl.empty ())
+        {
+        s_stsUrl = LEARN_STS_AUTH_URI;
+        if (UrlProvider::IsInitialized ())
+            s_stsUrl = UrlProvider::GetConnectLearnStsAuthUri ();
+        }
+    return s_stsUrl;
     }
 
 /*--------------------------------------------------------------------------------------+

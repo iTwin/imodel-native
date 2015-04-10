@@ -32,6 +32,10 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START (ConnectL10N, Connect)
     FIELDAPPS_SignInUsername,                // =="Signed in username:"==
     FIELDAPPS_SignOut,                       // =="Sign Out"==
     FIELDAPPS_SigningInDotDotDot,            // =="Signing In"==
+    FIELDAPPS_EulaAccept,                    // =="Accept"==
+    FIELDAPPS_EulaDecline,                   // =="Decline"==
+    FIELDAPPS_EulaAgree,                     // =="To continue you must accept the terms in the Licence Agreement"==
+    FIELDAPPS_EulaHeader,                    // =="End-user license agreement"==
     };
 MOBILEDGN_TRANSLATABLE_STRINGS_END
 

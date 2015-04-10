@@ -40,6 +40,7 @@ struct Connect
         WSCLIENT_EXPORT static Utf8StringCR GetWsgUrl ();
         WSCLIENT_EXPORT static void SetWsgUrl (Utf8StringCR url);
         WSCLIENT_EXPORT static Utf8StringCR GetEulaUrl ();
+        WSCLIENT_EXPORT static Utf8StringCR GetStsUrl ();
         WSCLIENT_EXPORT static void SetEulaUrl (Utf8StringCR url);
         WSCLIENT_EXPORT static Utf8StringCR GetUserAgent ();
         WSCLIENT_EXPORT static void SetUserAgent (Utf8StringCR url);
