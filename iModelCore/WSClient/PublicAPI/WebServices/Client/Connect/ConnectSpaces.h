@@ -41,6 +41,7 @@
 #define CS_MESSAGE_DownloadFile "ConnectSpaces.Message.DownloadFile"
 #define CS_MESSAGE_SetCredentials "ConnectSpaces.Message.SetCredentials"
 #define CS_MESSAGE_GetFileStatus "ConnectSpaces.Message.GetFileStatus"
+#define CS_MESSAGE_ResetEula "ConnectSpaces.Message.ResetEula"
 #define CS_MESSAGE_CheckEula "ConnectSpaces.Message.CheckEula"
 #define CS_MESSAGE_AcceptEula "ConnectSpaces.Message.AcceptEula"
 #define CS_MESSAGE_SetEulaToken "ConnectSpaces.Message.SetEulaToken"
@@ -98,6 +99,7 @@ public:
         CheckEulaAction,
         AcceptEulaAction,
         SetEulaTokenAction,
+        ResetEulaAction,
 #ifdef DEBUG
         DecreaseDatesAction,
 #endif
@@ -117,6 +119,7 @@ private:
     void FetchFileList(Utf8StringCR dsId, Utf8StringCR folderId, bool getNewToken = false);
     void FetchObjectList(Utf8StringCR dsId, Utf8StringCR objectClass, bool getNewToken = false);
     void FetchDatasourceList(bool getNewToken = false);
+    void ResetEula(bool getNewToken = false);
     void CheckEula(bool getNewToken = false);
     void AcceptEula(bool getNewToken = false);
     bool DownloadEula(Utf8StringR eulaString, bool getNewToken = false);
@@ -131,6 +134,7 @@ private:
     void SetCredentials(MobileDgn::Utils::Credentials credentials, Utf8StringCR token);
     void SetEulaToken(Utf8StringCR token);
     void FetchDatasourceListAsync();
+    void ResetEulaAsync();
     void CheckEulaAsync();
     void AcceptEulaAsync();
     void FetchFileListAsync(Utf8StringCR dsId, Utf8StringCR folderId);
