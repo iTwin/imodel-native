@@ -15,7 +15,7 @@ void StubInstances::Clear ()
     m_instances.clear ();
     }
 
-StubInstances::StubRelationshipInstances StubInstances::Add (ObjectIdCR objectId, std::map<Utf8String, Json::Value> properties, Utf8String eTag)
+StubInstances::StubRelationshipInstances StubInstances::Add (ObjectIdCR objectId, std::map<Utf8String, Json::Value> properties, Utf8StringCR eTag)
     {
     StubInstance instance;
 
