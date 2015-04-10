@@ -36,6 +36,8 @@ typedef MobileDgn::Utils::AsyncResult<void, WSError>                      WSUpda
 typedef MobileDgn::Utils::AsyncResult<void, WSError>                      WSDeleteObjectResult;
 typedef MobileDgn::Utils::AsyncResult<void, WSError>                      WSUpdateFileResult;
 
+#define WSQuery_CustomParameter_NavigationParentId      "navigationParentId"
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -64,6 +66,7 @@ struct IWSRepositoryClient
             MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
+        //! Send Navigation request. SendQueryRequest has backward support for WSG 1.x Navigation queries
         virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
@@ -94,6 +97,10 @@ struct IWSRepositoryClient
             MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
+        //! Send query request to retrieve ECInstances.
+        //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters. 
+        //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query. 
+        //!         Select will be used as property list to select
         virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
@@ -104,7 +111,7 @@ struct IWSRepositoryClient
         //! Create object with any relationships or related objects. Optionally attach file.
         //! Parameter objectCreationJson must follow WSG 2.0 format for creating objects.
         //! NOTES for different server versions:
-        //!     WSG 2.0: format is fully supported.
+        //!     WSG 2.0: changeset format is fully supported. When root instanceId is specified, POST will be done to that instance.
         //!     WSG 1.x: objectCreationJson can have only one relationship to existing object. This related object will be treated as "parent".
         //!     Server version can be checked by using GetWSClient()->GetServerInfo()
         virtual MobileDgn::Utils::AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest

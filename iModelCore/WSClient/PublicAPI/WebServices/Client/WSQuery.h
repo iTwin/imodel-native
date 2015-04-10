@@ -34,12 +34,14 @@ struct WSQuery
 
         uint64_t m_aliasNumber;
         std::map<Utf8String, Utf8String> m_aliases;
+        std::map<Utf8String, Utf8String> m_phrases;
         std::map<Utf8String, Utf8String> m_customParameters;
 
     private:
         Utf8String CreateNewAlias ();
         static void AppendOptionalParameter (Utf8StringR query, Utf8StringCR name, Utf8StringCR value);
         static void AppendOptionalParameter (Utf8StringR query, Utf8StringCR name, uint32_t value);
+        static void AppendParameter (Utf8StringR query, Utf8StringCR name, Utf8StringCR value);
 
     public:
         //! Construct query for given classes. If more than one schema is used, class name need to be prefixed with schema: "SchemaName.ClassName"
@@ -55,7 +57,7 @@ struct WSQuery
         WSCLIENT_EXPORT WSQuery (Utf8StringCR schemaName, Utf8StringCR className);
 
         //! Construct query for given class.
-        WSCLIENT_EXPORT WSQuery (ECN::ECClassCR ecClass);
+        WSCLIENT_EXPORT WSQuery (ECN::ECClassCR ecClass, bool polymorphic = false);
         
         //! Construct query for given object
         WSCLIENT_EXPORT WSQuery (ObjectIdCR objectId);
@@ -66,6 +68,9 @@ struct WSQuery
         //! Set $select option. Comma seperated list of: '*', property names, related classes.
         //! Spaces are not allowed.
         WSCLIENT_EXPORT WSQuery& SetSelect (Utf8StringCR select);
+        //! Add select to $select option. Seperating comma will be added if select was not empty
+        WSCLIENT_EXPORT WSQuery& AddSelect (Utf8StringCR select);
+        //! Get current select option
         WSCLIENT_EXPORT Utf8StringCR GetSelect () const;
 
         //! Set $filter option. OData expression.
@@ -94,16 +99,28 @@ struct WSQuery
 
         //! Get auto-generated alias for repeating phrase in a query. Will return same alias if for same phrase.
         WSCLIENT_EXPORT Utf8StringCR GetAlias (Utf8StringCR phrase);
+        
+        //! Get phrase for generated alias. Returns null if alias not found
+        WSCLIENT_EXPORT Utf8CP GetPhrase (Utf8StringCR alias);
 
         //! Get phrases-to-aliases map
         WSCLIENT_EXPORT const std::map<Utf8String, Utf8String>& GetAliasMapping () const;
 
         //! Set custom parameter for query. Will overwrite values with same name.
         WSCLIENT_EXPORT WSQuery& SetCustomParameter (Utf8StringCR name, Utf8StringCR value);
+
+        //! Remove custom parameter from query if it exists.
+        WSCLIENT_EXPORT WSQuery& RemoveCustomParameter (Utf8StringCR name);
+
         WSCLIENT_EXPORT const std::map<Utf8String, Utf8String>& GetCustomParameters () const;
 
-        //! Construct OData style query string. Schema and class list will not be included.
-        WSCLIENT_EXPORT Utf8String ToString () const;
+        //! Construct OData style query string (URL part after '?'). Schema and class list will not be included.
+        WSCLIENT_EXPORT Utf8String ToQueryString () const;
+
+        //! Construct string representing whole query. Includes schema, class list and query string.
+        WSCLIENT_EXPORT Utf8String ToFullString () const;
+
+        WSCLIENT_EXPORT bool operator== (const WSQuery& other) const;
     };
 
 typedef WSQuery& WSQueryR;

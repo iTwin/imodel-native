@@ -92,11 +92,18 @@ Utf8String WebApiV1::CreateObjectIdParam (ObjectIdCR objectId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String WebApiV1::CreatePropertiesQuery (const bset<Utf8String>& properties) const
     {
-    Utf8String value = StringUtils::Join (properties.begin (), properties.end (), ',');
+    return CreatePropertiesQuery (StringUtils::Join (properties.begin (), properties.end (), ","));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vinmcas.Razma   02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String WebApiV1::CreatePropertiesQuery (Utf8StringCR properties) const
+    {
     Utf8String query;
-    if (!value.empty ())
+    if (!properties.empty ())
         {
-        query.Sprintf ("properties=%s", value.c_str ());
+        query.Sprintf ("properties=%s", properties.c_str ());
         }
     return query;
     }
@@ -427,8 +434,20 @@ Utf8StringCR eTag,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    Utf8String propertiesQuery = CreatePropertiesQuery (propertiesToSelect);
+    return SendGetChildrenRequest (parentObjectId, CreatePropertiesQuery (propertiesToSelect), eTag, cancellationToken);
+    }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSObjectsResult> WebApiV1::SendGetChildrenRequest
+(
+ObjectIdCR parentObjectId,
+Utf8StringCR propertiesQuery,
+Utf8StringCR eTag,
+ICancellationTokenPtr cancellationToken
+) const
+    {
     if (!propertiesQuery.empty () && !m_info.IsWebApiSupported (BeVersion (1, 3)))
         {
         return CreateCompletedAsyncTask (WSObjectsResult::Error (WSError::CreateFunctionalityNotSupportedError ()));
@@ -839,10 +858,32 @@ Utf8StringCR eTag,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    auto it = query.GetCustomParameters ().find (WSQuery_CustomParameter_NavigationParentId);
+    if (it != query.GetCustomParameters ().end ())
+        {
+        ObjectId parentId;
+        parentId.remoteId = it->second;
+
+        if (!parentId.remoteId.empty ())
+            {
+            parentId.schemaName = query.GetSchemaName ();
+            if (query.GetClasses ().size () == 1)
+                {
+                parentId.className = *query.GetClasses ().begin ();
+                }
+            else
+                {
+                BeAssert (false && "Expected one parent instance class for navigation query");
+                }
+            }
+
+        return SendGetChildrenRequest (parentId, CreatePropertiesQuery (query.GetSelect ()), eTag, cancellationToken);
+        }
+
     Utf8String schemaName = query.GetSchemaName ();
     Utf8String classes = StringUtils::Join (query.GetClasses ().begin (), query.GetClasses ().end (), ',');
 
-    Utf8String url = GetUrl (SERVICE_Objects, classes, query.ToString ());
+    Utf8String url = GetUrl (SERVICE_Objects, classes, query.ToQueryString ());
     HttpRequest request = m_configuration->GetHttpClient ().CreateGetJsonRequest (url);
 
     request.SetConnectionTimeoutSeconds (WSRepositoryClient::Timeout::Connection::Default);
