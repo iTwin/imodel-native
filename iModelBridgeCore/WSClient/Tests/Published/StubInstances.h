@@ -31,7 +31,7 @@ struct StubInstances
         //! Clear any added instances
         void Clear ();
         //! Add instance with optional properties and eTag
-        StubRelationshipInstances Add (ObjectIdCR objectId, std::map<Utf8String, Json::Value> properties = {}, Utf8String eTag = "");
+        StubRelationshipInstances Add (ObjectIdCR objectId, std::map<Utf8String, Json::Value> properties = std::map<Utf8String, Json::Value>(), Utf8StringCR eTag = "");
         //! Create server objects result to be used in caching
         WSObjectsResponse ToWSObjectsResponse (Utf8StringCR eTag = "") const;
         //! Create success WS Client result
@@ -54,7 +54,7 @@ struct StubInstances::StubRelationshipInstances
             (
             ObjectIdCR relationshipObjectId,
             ObjectIdCR relatedObjectId,
-            std::map<Utf8String, Json::Value> relatedProperties = {},
+            std::map<Utf8String, Json::Value> relatedProperties = std::map<Utf8String, Json::Value>(),
             BentleyApi::ECN::ECRelatedInstanceDirection direction = BentleyApi::ECN::ECRelatedInstanceDirection::Forward
             );
     };
