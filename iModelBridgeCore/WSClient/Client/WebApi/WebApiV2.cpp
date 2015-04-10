@@ -401,7 +401,7 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     Utf8String classes = StringUtils::Join (query.GetClasses ().begin (), query.GetClasses ().end (), ",");
-    Utf8String url = GetUrl (CreateClassSubPath (query.GetSchemaName (), classes), query.ToString ());
+    Utf8String url = GetUrl (CreateClassSubPath (query.GetSchemaName (), classes), query.ToQueryString ());
     HttpRequest request = m_configuration->GetHttpClient ().CreateGetJsonRequest (url);
 
     request.GetHeaders ().SetIfNoneMatch (eTag);
@@ -428,8 +428,12 @@ ICancellationTokenPtr cancellationToken
     {
     Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString ();
     Utf8String className = objectCreationJson["instance"]["className"].asString ();
+    Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString ();
 
     Utf8String url = GetUrl (CreateClassSubPath (schemaName, className));
+    if (!instanceId.empty ())
+        url += "/" + instanceId;
+
     ChunkedUploadRequest request ("POST", url, m_configuration->GetHttpClient ());
 
     request.SetHandshakeRequestBody (HttpStringBody::Create (Json::FastWriter ().write (objectCreationJson)), "application/json");

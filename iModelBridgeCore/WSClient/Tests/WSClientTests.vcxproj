@@ -36,6 +36,7 @@
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
     <ClInclude Include="Published\Connect\StubLocalState.h" />
     <ClInclude Include="Published\MobileUtilsTests.h" />
+    <ClInclude Include="Published\StubInstances.h" />
     <ClInclude Include="Published\Utils\FSTest.h" />
     <ClInclude Include="Published\Utils\Http\AuthenticationHandlerTests.h" />
     <ClInclude Include="Published\Utils\Http\BaseMockHttpHandlerTest.h" />
@@ -124,6 +125,7 @@
     <ClCompile Include="Published\DgnXfTests.cpp" />
     <ClCompile Include="Published\MarkupTests.cpp" />
     <ClCompile Include="Published\MobileUtilsTests.cpp" />
+    <ClCompile Include="Published\StubInstances.cpp" />
     <ClCompile Include="Published\TaskManagerTests.cpp" />
     <ClCompile Include="Published\ThreadControllerTests.cpp" />
     <ClCompile Include="Published\UiTests.cpp" />
