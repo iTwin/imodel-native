@@ -15,7 +15,6 @@
 #include "MapStrategy.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 #define ECDBSQL_VERSION_MAJOR 1
 #define ECDBSQL_VERSION_MINOR 0
 #define ECDBSQL_NULLTABLENAME "ECDbNotMapped"
@@ -29,7 +28,6 @@ typedef int64_t ECDbIndexId;
 typedef int64_t ECDbConstraintId;
 typedef int64_t ECDbPropertyPathId;
 typedef int64_t ECDbClassMapId;
-
 
 enum class TriggerType
     {
@@ -505,7 +503,7 @@ struct ECDbSqlConstraint : NonCopyableClass
     enum class Type
         {
         PrimaryKey,
-        ForiegnKey
+        ForeignKey
         };
 
     private:
@@ -556,7 +554,7 @@ struct ECDbSqlPrimaryKeyConstraint : ECDbSqlConstraint
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct ECDbSqlForiegnKeyConstraint : ECDbSqlConstraint
+struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
     {
     enum class ActionType
         {
@@ -585,8 +583,8 @@ struct ECDbSqlForiegnKeyConstraint : ECDbSqlConstraint
         Utf8String m_name;
         ECDbConstraintId m_id;
     public:
-        ECDbSqlForiegnKeyConstraint (ECDbSqlTable const& sourceTable, ECDbSqlTable const& targetTable, ECDbConstraintId id)
-            :ECDbSqlConstraint (ECDbSqlConstraint::Type::ForiegnKey, sourceTable), m_id (id), m_targetTable (targetTable), m_matchType (MatchType::NotSpecified), m_onDeleteAction (ActionType::NotSpecified), m_onUpdateAction (ActionType::NotSpecified)
+        ECDbSqlForeignKeyConstraint (ECDbSqlTable const& sourceTable, ECDbSqlTable const& targetTable, ECDbConstraintId id)
+            :ECDbSqlConstraint (ECDbSqlConstraint::Type::ForeignKey, sourceTable), m_id (id), m_targetTable (targetTable), m_matchType (MatchType::NotSpecified), m_onDeleteAction (ActionType::NotSpecified), m_onUpdateAction (ActionType::NotSpecified)
             {}
 
         ECDbConstraintId GetId () const { return m_id; }
@@ -617,7 +615,7 @@ struct ECDbSqlForiegnKeyConstraint : ECDbSqlConstraint
         static MatchType ParseMatchType (WCharCP matchType);
         static Utf8CP ToSQL (ActionType actionType);
         static Utf8CP ToSQL (MatchType matchType);       
-        virtual ~ECDbSqlForiegnKeyConstraint (){}
+        virtual ~ECDbSqlForeignKeyConstraint (){}
     };
 
 
@@ -698,7 +696,7 @@ struct ECDbSqlTable : NonCopyableClass
         const std::vector<ECDbSqlIndex const*> GetIndexes () const;
         const std::vector<ECDbSqlIndex*> GetIndexesR ();
         ECDbSqlPrimaryKeyConstraint* GetPrimaryKeyConstraint (bool createIfDonotExist = true);
-        ECDbSqlForiegnKeyConstraint* CreateForiegnKeyConstraint (ECDbSqlTable const& targetTable);
+        ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const;
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, uint32_t userFlag) const;
@@ -772,7 +770,7 @@ struct DDLGenerator
 
     private:
         static Utf8String GetColumnList (std::vector<ECDbSqlColumn const*> const& columns);
-        static Utf8String GetForiegnKeyConstraintDDL (ECDbSqlForiegnKeyConstraint const& constraint);
+        static Utf8String GetForeignKeyConstraintDDL (ECDbSqlForeignKeyConstraint const& constraint);
         static Utf8String GetPrimarykeyConstraintDDL (ECDbSqlPrimaryKeyConstraint const& constraint);
         static Utf8String GetConstraintsDDL (std::vector<ECDbSqlConstraint const*> const& constraints);
         static Utf8String GetColumnsDDL (std::vector<ECDbSqlColumn const*> columns);
@@ -1175,7 +1173,7 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult InsertIndex (ECDbSqlIndex const& o);
         DbResult InsertColumn (ECDbSqlColumn const& o, int primaryKeyOrdianal);
         DbResult InsertConstraint (ECDbSqlConstraint const& o);
-        DbResult InsertForeignKey (ECDbSqlForiegnKeyConstraint const& o);
+        DbResult InsertForeignKey (ECDbSqlForeignKeyConstraint const& o);
 
     public:
         explicit ECDbSqlPersistence (ECDbR ecdb):m_ecdb (ecdb) {}

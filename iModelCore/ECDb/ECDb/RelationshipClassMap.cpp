@@ -301,7 +301,7 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan       02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSqlColumn* RelationshipClassEndTableMap::Configure_RCKey (RelationshipClassMapInfoCR mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTabelCount)
+ECDbSqlColumn* RelationshipClassEndTableMap::Configure_RCKey (RelationshipClassMapInfoCR mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
     {
     ECDbSqlColumn* otherEndECClassIdColumn = nullptr;
     Utf8String columnName;
@@ -312,7 +312,7 @@ ECDbSqlColumn* RelationshipClassEndTableMap::Configure_RCKey (RelationshipClassM
     if (columnName.empty () && !GetOtherEndECClassIdColumnName (columnName, GetTable (), true))
         return nullptr;
 
-    if (ConstraintIncludesAnyClass (otherEndConstraint.GetClasses ()) || otherEndTabelCount > 1)
+    if (ConstraintIncludesAnyClass (otherEndConstraint.GetClasses ()) || otherEndTableCount > 1)
         {
         //! We will create ECClassId column in this case
         otherEndECClassIdColumn = CreateConstraintColumn (columnName.c_str (), true);
@@ -352,18 +352,18 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
 
     auto thisEndClass = thisEndConstraint.GetClasses()[0];
     auto thisEndClassMap = GetECDbMap ().GetClassMapCP (*thisEndClass, true);
-    auto thisEndTabelCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, thisEndConstraint);
+    auto thisEndTableCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, thisEndConstraint);
 
-    if (thisEndTabelCount != 1)
+    if (thisEndTableCount != 1)
         {
         LOG.error ("Persistence End of relationship has more then one tables or has no table at all");
-        BeAssert (thisEndTabelCount == 1);
+        BeAssert (thisEndTableCount == 1);
         return MapStatus::Error;
         }
 
     auto otherEndClass = otherEndConstraint.GetClasses ()[0];
     auto otheEndClassMap = GetECDbMap ().GetClassMapCP (*otherEndClass, true);
-    auto otherEndTabelCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, otherEndConstraint);
+    auto otherEndTableCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, otherEndConstraint);
 
     //*** persistence end table
     SetTable (&thisEndClassMap->GetTable ());
@@ -372,7 +372,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
     const ECClassId defaultThisEndECClassId = thisEndClass->GetId ();
 
     //**** Other End
-    ECDbSqlColumn* otherEndECClassIdColumn = Configure_RCKey (relationshipClassMapInfo, otherEndConstraint, *otheEndClassMap, otherEndTabelCount);
+    ECDbSqlColumn* otherEndECClassIdColumn = Configure_RCKey (relationshipClassMapInfo, otherEndConstraint, *otheEndClassMap, otherEndTableCount);
     if (otherEndECClassIdColumn == nullptr)
         {
         BeAssert (false && "Failed to create RC_Key column for relationship");
@@ -413,22 +413,22 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
         if (otherEndTables.size () != 1)
             return MapStatus::Error;
 
-        auto forignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap ()->GetFirstColumn ();
-        auto& forignTable = GetTable ();
+        auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap ()->GetFirstColumn ();
+        auto& foreignTable = GetTable ();
         auto primaryKeyColumn = thisEndConstraintMap.GetECInstanceIdPropMap ()->GetFirstColumn ();
         auto& primaryTable = **(otherEndTables.begin());
         
-        BeAssert (forignKeyColumn != nullptr);
+        BeAssert (foreignKeyColumn != nullptr);
         BeAssert (primaryKeyColumn != nullptr);
-        if (forignKeyColumn == nullptr || primaryKeyColumn == nullptr)
+        if (foreignKeyColumn == nullptr || primaryKeyColumn == nullptr)
             return MapStatus::Error;
             
-        //Create forign key constraint
-        auto forignKey = forignTable.CreateForiegnKeyConstraint (primaryTable);
-        forignKey->Add (forignKeyColumn->GetName ().c_str (), primaryKeyColumn->GetName ().c_str ());
-        forignKey->SetOnDeleteAction (thisEndConstraintInfo.GetOnDeleteAction());
-        forignKey->SetOnUpdateAction (thisEndConstraintInfo.GetOnUpdateAction());
-        forignKey->SetMatchType(thisEndConstraintInfo.GetMatchType ());     
+        //Create foreign key constraint
+        auto foreignKey = foreignTable.CreateForeignKeyConstraint (primaryTable);
+        foreignKey->Add (foreignKeyColumn->GetName ().c_str (), primaryKeyColumn->GetName ().c_str ());
+        foreignKey->SetOnDeleteAction (thisEndConstraintInfo.GetOnDeleteAction());
+        foreignKey->SetOnUpdateAction (thisEndConstraintInfo.GetOnUpdateAction());
+        foreignKey->SetMatchType(thisEndConstraintInfo.GetMatchType ());     
         }
     
     return stat;

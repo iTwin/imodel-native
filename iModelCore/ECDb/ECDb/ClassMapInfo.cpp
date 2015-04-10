@@ -820,9 +820,9 @@ void RelationshipConstraintInfo::ReadFromConstraint (RelationshipConstraintInfo&
     info.m_ecClassIdColumn.clear ();
     info.m_ecInstanceIdColumn.clear ();
     info.m_enforceIntegrityCheck = false;
-    info.m_onDeleteAction = ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified;
-    info.m_onUpdateAction = ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified;
-    info.m_matchType = ECDbSqlForiegnKeyConstraint::MatchType::NotSpecified;
+    info.m_onDeleteAction = ECDbSqlForeignKeyConstraint::ActionType::NotSpecified;
+    info.m_onUpdateAction = ECDbSqlForeignKeyConstraint::ActionType::NotSpecified;
+    info.m_matchType = ECDbSqlForeignKeyConstraint::MatchType::NotSpecified;
     info.m_generateDefaultIndex = true;
     info.m_isEmpty = false;
 
@@ -857,13 +857,13 @@ void RelationshipConstraintInfo::ReadFromConstraint (RelationshipConstraintInfo&
     if (info.DoEnforceIntegrityCheck ())
         {
         if (hint->GetValue (v, kOnDeleteAction) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-            info.m_onDeleteAction = ECDbSqlForiegnKeyConstraint::ParseActionType (v.GetString ());
+            info.m_onDeleteAction = ECDbSqlForeignKeyConstraint::ParseActionType (v.GetString ());
 
         if (hint->GetValue (v, kOnUpdateAction) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-            info.m_onUpdateAction = ECDbSqlForiegnKeyConstraint::ParseActionType (v.GetString ());
+            info.m_onUpdateAction = ECDbSqlForeignKeyConstraint::ParseActionType (v.GetString ());
 
         if (hint->GetValue (v, kMatchType) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-            info.m_matchType = ECDbSqlForiegnKeyConstraint::ParseMatchType (v.GetString ());
+            info.m_matchType = ECDbSqlForeignKeyConstraint::ParseMatchType (v.GetString ());
         }
     }
    

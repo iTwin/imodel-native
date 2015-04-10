@@ -94,8 +94,6 @@ public:
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
-
-  
     };
 
 /*=================================================================================**//**
@@ -104,37 +102,32 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct RelationshipConstraintInfo
     {
-
-
     private:
         Utf8String m_ecClassIdColumn;
         Utf8String m_ecInstanceIdColumn;
         bool       m_enforceIntegrityCheck;
-        ECDbSqlForiegnKeyConstraint::ActionType m_onDeleteAction;
-        ECDbSqlForiegnKeyConstraint::ActionType m_onUpdateAction;
-        ECDbSqlForiegnKeyConstraint::MatchType  m_matchType;
+        ECDbSqlForeignKeyConstraint::ActionType m_onDeleteAction;
+        ECDbSqlForeignKeyConstraint::ActionType m_onUpdateAction;
+        ECDbSqlForeignKeyConstraint::MatchType  m_matchType;
         bool       m_generateDefaultIndex;
         bool       m_isEmpty;
 
-    private:
-
     public:
         RelationshipConstraintInfo ()
-            : m_enforceIntegrityCheck (false), m_onDeleteAction (ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified), m_isEmpty (true), m_generateDefaultIndex (true), m_matchType (ECDbSqlForiegnKeyConstraint::MatchType::NotSpecified)
+            : m_enforceIntegrityCheck (false), m_onDeleteAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_isEmpty (true), m_generateDefaultIndex (true), m_matchType (ECDbSqlForeignKeyConstraint::MatchType::NotSpecified)
             {}
 
         Utf8StringCR GetECClassIdColumn () const { return m_ecClassIdColumn; }
         Utf8StringCR GetECInstanceIdColumn () const { return m_ecInstanceIdColumn; }
         bool DoEnforceIntegrityCheck () const { return m_enforceIntegrityCheck; }
-        ECDbSqlForiegnKeyConstraint::ActionType GetOnDeleteAction () const { return m_onDeleteAction; }
-        ECDbSqlForiegnKeyConstraint::ActionType GetOnUpdateAction () const { return m_onUpdateAction; }
-        ECDbSqlForiegnKeyConstraint::MatchType  GetMatchType () const { return m_matchType; }
+        ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction () const { return m_onDeleteAction; }
+        ECDbSqlForeignKeyConstraint::ActionType GetOnUpdateAction () const { return m_onUpdateAction; }
+        ECDbSqlForeignKeyConstraint::MatchType  GetMatchType () const { return m_matchType; }
         bool IsEmpty () const { return m_isEmpty; }
         bool GenerateDefaultIndex () const { return m_generateDefaultIndex; }
 
         static void ReadFromConstraint (RelationshipConstraintInfo& info, ECN::ECRelationshipConstraintCR constraint);
     };
-
 
 /*=================================================================================**//**
 * This class grabs information from ECDbRelationshipClassHint ECCustomAttribute and evaluates

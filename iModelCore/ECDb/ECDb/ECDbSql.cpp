@@ -13,7 +13,6 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 #define ECDBSQL_NAME        "Name"
 #define ECDBSQL_DB          "Db"
 #define ECDBSQL_VERSION     "Version"
@@ -24,7 +23,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECDBSQL_PRIMARY_KEY "PrimaryKey"
 #define ECDBSQL_COLUMNS     "Columns"
 #define ECDBSQL_COLUMN      "Column"
-#define ECDBSQL_FORIEGNKEY  "ForiegnKey"
+#define ECDBSQL_FOREIGNKEY  "ForeignKey"
 #define ECDBSQL_SOURCE      "Source"
 #define ECDBSQL_TARGET      "Target"
 #define ECDBSQL_ID          "Id"
@@ -407,12 +406,12 @@ ECDbSqlPrimaryKeyConstraint* ECDbSqlTable::GetPrimaryKeyConstraint (bool createI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlForiegnKeyConstraint* ECDbSqlTable::CreateForiegnKeyConstraint (ECDbSqlTable const& targetTable)
+ECDbSqlForeignKeyConstraint* ECDbSqlTable::CreateForeignKeyConstraint (ECDbSqlTable const& targetTable)
     {
     if (GetEditHandleR ().AssertNotInEditMode ())
         return nullptr;
 
-    ECDbSqlForiegnKeyConstraint * constraint = new ECDbSqlForiegnKeyConstraint (*this, targetTable, GetDbDefR ().GetManagerR ().GetIdGenerator ().NextConstraintId ());
+    ECDbSqlForeignKeyConstraint * constraint = new ECDbSqlForeignKeyConstraint (*this, targetTable, GetDbDefR ().GetManagerR ().GetIdGenerator ().NextConstraintId ());
     m_constraints.push_back (std::unique_ptr<ECDbSqlConstraint> (constraint));
     return constraint;
     }
@@ -520,9 +519,9 @@ bool ECDbSqlTable::DeleteColumn (Utf8CP name)
         {
         for (auto& constraint : m_constraints)
             {
-            if (constraint->GetType () == ECDbSqlConstraint::Type::ForiegnKey)
+            if (constraint->GetType () == ECDbSqlConstraint::Type::ForeignKey)
                 {
-                auto fkc = static_cast<ECDbSqlForiegnKeyConstraint*>(constraint.get ());
+                auto fkc = static_cast<ECDbSqlForeignKeyConstraint*>(constraint.get ());
                 fkc->Remove (itor->second->GetName ().c_str (), nullptr);
                 }
             else if (constraint->GetType () == ECDbSqlConstraint::Type::PrimaryKey)
@@ -1479,12 +1478,12 @@ BentleyStatus ECDbSqlPrimaryKeyConstraint::ReadFrom (ECDbSqlTable& ecdbSqlTable,
     }
 
 //****************************************************************************************
-//ECDbSqlForiegnKeyConstraint
+//ECDbSqlForeignKeyConstraint
 //****************************************************************************************
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSqlForiegnKeyConstraint::ContainsInSource (Utf8CP columnName) const
+bool ECDbSqlForeignKeyConstraint::ContainsInSource (Utf8CP columnName) const
     {
     return std::find_if (m_sourceColumns.begin (), m_sourceColumns.end (), [columnName] (ECDbSqlColumn const* column){ return column->GetName ().EqualsI (columnName); }) != m_sourceColumns.end ();
     }
@@ -1492,7 +1491,7 @@ bool ECDbSqlForiegnKeyConstraint::ContainsInSource (Utf8CP columnName) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSqlForiegnKeyConstraint::ContainsInTarget (Utf8CP columnName) const
+bool ECDbSqlForeignKeyConstraint::ContainsInTarget (Utf8CP columnName) const
     {
     return std::find_if (m_targetColumns.begin (), m_targetColumns.end (), [columnName] (ECDbSqlColumn const* column){ return column->GetName ().EqualsI (columnName); }) != m_targetColumns.end ();
     }
@@ -1500,7 +1499,7 @@ bool ECDbSqlForiegnKeyConstraint::ContainsInTarget (Utf8CP columnName) const
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static 
-Utf8CP ECDbSqlForiegnKeyConstraint::ToSQL (ECDbSqlForiegnKeyConstraint::MatchType matchType)
+Utf8CP ECDbSqlForeignKeyConstraint::ToSQL (ECDbSqlForeignKeyConstraint::MatchType matchType)
     {
     switch (matchType)
         {
@@ -1518,7 +1517,7 @@ Utf8CP ECDbSqlForiegnKeyConstraint::ToSQL (ECDbSqlForiegnKeyConstraint::MatchTyp
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-Utf8CP ECDbSqlForiegnKeyConstraint::ToSQL (ECDbSqlForiegnKeyConstraint::ActionType actionType)
+Utf8CP ECDbSqlForeignKeyConstraint::ToSQL (ECDbSqlForeignKeyConstraint::ActionType actionType)
     {
     switch (actionType)
         {
@@ -1540,7 +1539,7 @@ Utf8CP ECDbSqlForiegnKeyConstraint::ToSQL (ECDbSqlForiegnKeyConstraint::ActionTy
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-ECDbSqlForiegnKeyConstraint::MatchType ECDbSqlForiegnKeyConstraint::ParseMatchType (WCharCP matchType)
+ECDbSqlForeignKeyConstraint::MatchType ECDbSqlForeignKeyConstraint::ParseMatchType (WCharCP matchType)
     {
     if (WString (L"Simple").EqualsI (matchType))
         return MatchType::Simple;
@@ -1557,7 +1556,7 @@ ECDbSqlForiegnKeyConstraint::MatchType ECDbSqlForiegnKeyConstraint::ParseMatchTy
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static 
-ECDbSqlForiegnKeyConstraint::ActionType ECDbSqlForiegnKeyConstraint::ParseActionType (WCharCP actionType)
+ECDbSqlForeignKeyConstraint::ActionType ECDbSqlForeignKeyConstraint::ParseActionType (WCharCP actionType)
     {
     if (WString (L"Cascade").EqualsI (actionType))
         return ActionType::Cascade;
@@ -1580,7 +1579,7 @@ ECDbSqlForiegnKeyConstraint::ActionType ECDbSqlForiegnKeyConstraint::ParseAction
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlForiegnKeyConstraint::Remove (Utf8CP sourceColumn, Utf8CP targetColumn)
+BentleyStatus ECDbSqlForeignKeyConstraint::Remove (Utf8CP sourceColumn, Utf8CP targetColumn)
     {
     bool cont;
     bool hasSouceColumn = !Utf8String::IsNullOrEmpty (sourceColumn);
@@ -1626,7 +1625,7 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::Remove (Utf8CP sourceColumn, Utf8CP t
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlForiegnKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targetColumn)
+BentleyStatus ECDbSqlForeignKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targetColumn)
     {
     if (Utf8String::IsNullOrEmpty (sourceColumn) || Utf8String::IsNullOrEmpty (targetColumn))
         {
@@ -1642,13 +1641,13 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targ
 
     if (source->GetPersistenceType () == PersistenceType::Virtual)
         {
-        BeAssert (false && "Virtual column cannot be use as foriegn key");
+        BeAssert (false && "Virtual column cannot be use as foreign key");
         return BentleyStatus::ERROR;
         }
 
     if (target->GetPersistenceType () == PersistenceType::Virtual)
         {
-        BeAssert (false && "Virtual column cannot be use as foriegn key");
+        BeAssert (false && "Virtual column cannot be use as foreign key");
         return BentleyStatus::ERROR;
         }
    
@@ -1669,7 +1668,7 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targ
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlForiegnKeyConstraint::Remove (size_t index)
+BentleyStatus ECDbSqlForeignKeyConstraint::Remove (size_t index)
     {
     if (index >= m_sourceColumns.size ())
         return BentleyStatus::ERROR;
@@ -1683,9 +1682,9 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::Remove (size_t index)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlForiegnKeyConstraint::WriteTo (BeXmlNodeR xmlNode) const
+BentleyStatus ECDbSqlForeignKeyConstraint::WriteTo (BeXmlNodeR xmlNode) const
     {
-    auto ecdbConstraintXml = xmlNode.AddEmptyElement (ECDBSQL_FORIEGNKEY);
+    auto ecdbConstraintXml = xmlNode.AddEmptyElement (ECDBSQL_FOREIGNKEY);
     if (GetMatchType () != MatchType::NotSpecified)
         {
         ecdbConstraintXml->AddAttributeUInt32Value ("MatchType", static_cast<uint32_t>(GetMatchType ()));
@@ -1719,9 +1718,9 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::WriteTo (BeXmlNodeR xmlNode) const
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static 
-BentleyStatus ECDbSqlForiegnKeyConstraint::ReadFrom (ECDbSqlTable& ecdbSqlTable, BeXmlNodeR xmlNode)
+BentleyStatus ECDbSqlForeignKeyConstraint::ReadFrom (ECDbSqlTable& ecdbSqlTable, BeXmlNodeR xmlNode)
     {
-    if (!xmlNode.IsIName (ECDBSQL_FORIEGNKEY))
+    if (!xmlNode.IsIName (ECDBSQL_FOREIGNKEY))
         return BentleyStatus::ERROR;
     uint32_t flag;
     MatchType matchType = MatchType::NotSpecified;
@@ -1765,7 +1764,7 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::ReadFrom (ECDbSqlTable& ecdbSqlTable,
                 }
             }
         auto table = ecdbSqlTable.GetDbDef ().FindTable (targetTable.c_str ());
-        auto constraint = ecdbSqlTable.CreateForiegnKeyConstraint (*table);
+        auto constraint = ecdbSqlTable.CreateForeignKeyConstraint (*table);
         constraint->SetMatchType (matchType);
         constraint->SetOnDeleteAction (onDelete);
         constraint->SetOnUpdateAction (onUpdate);
@@ -2195,7 +2194,7 @@ Utf8String DDLGenerator::GetColumnList (std::vector<ECDbSqlColumn const*> const&
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static 
-Utf8String DDLGenerator::GetForiegnKeyConstraintDDL (ECDbSqlForiegnKeyConstraint const& constraint)
+Utf8String DDLGenerator::GetForeignKeyConstraintDDL (ECDbSqlForeignKeyConstraint const& constraint)
     {
     if (constraint.GetSourceColumns ().size () != constraint.GetTargetColumns ().size ())
         {
@@ -2218,22 +2217,22 @@ Utf8String DDLGenerator::GetForiegnKeyConstraintDDL (ECDbSqlForiegnKeyConstraint
         .append (")");
 
 
-    if (constraint.GetMatchType () != ECDbSqlForiegnKeyConstraint::MatchType::NotSpecified)
+    if (constraint.GetMatchType () != ECDbSqlForeignKeyConstraint::MatchType::NotSpecified)
             {
             sql.append (" MATCH ");
-            sql.append (ECDbSqlForiegnKeyConstraint::ToSQL (constraint.GetMatchType ()));
+            sql.append (ECDbSqlForeignKeyConstraint::ToSQL (constraint.GetMatchType ()));
             }
     
-    if (constraint.GetOnDeleteAction () != ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified)
+    if (constraint.GetOnDeleteAction () != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
             {
             sql.append (" ON DELETE ");
-            sql.append (ECDbSqlForiegnKeyConstraint::ToSQL (constraint.GetOnDeleteAction ()));
+            sql.append (ECDbSqlForeignKeyConstraint::ToSQL (constraint.GetOnDeleteAction ()));
             }
     
-    if (constraint.GetOnUpdateAction () != ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified)
+    if (constraint.GetOnUpdateAction () != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
             {
             sql.append (" ON UPDATE ");
-            sql.append (ECDbSqlForiegnKeyConstraint::ToSQL (constraint.GetOnUpdateAction ()));
+            sql.append (ECDbSqlForeignKeyConstraint::ToSQL (constraint.GetOnUpdateAction ()));
             }
 
     return sql;
@@ -2266,9 +2265,9 @@ Utf8String DDLGenerator::GetConstraintsDDL (std::vector<ECDbSqlConstraint const*
     for (auto itor = constraints.begin (); itor != constraints.end (); ++itor)
         {
         auto constraint = (*itor);
-        if (constraint->GetType () == ECDbSqlConstraint::Type::ForiegnKey)
+        if (constraint->GetType () == ECDbSqlConstraint::Type::ForeignKey)
             {
-            constraintDDL.append (GetForiegnKeyConstraintDDL (*(static_cast<ECDbSqlForiegnKeyConstraint const*>(constraint))));
+            constraintDDL.append (GetForeignKeyConstraintDDL (*(static_cast<ECDbSqlForeignKeyConstraint const*>(constraint))));
             }
         else if (constraint->GetType () == ECDbSqlConstraint::Type::PrimaryKey)
             {
@@ -2590,8 +2589,8 @@ BentleyStatus ECDbSqlConstraint::WriteTo (BeXmlNodeR xmlNode) const
     {
     if (GetType () == Type::PrimaryKey)
         return static_cast<ECDbSqlPrimaryKeyConstraint const*>(this)->WriteTo (xmlNode);
-    else if (GetType () == Type::ForiegnKey)
-        return static_cast<ECDbSqlForiegnKeyConstraint const*>(this)->WriteTo (xmlNode);
+    else if (GetType () == Type::ForeignKey)
+        return static_cast<ECDbSqlForeignKeyConstraint const*>(this)->WriteTo (xmlNode);
 
     return BentleyStatus::ERROR;
     }
@@ -2604,8 +2603,8 @@ BentleyStatus ECDbSqlConstraint::ReadFrom (ECDbSqlTable& ecdbSqlTable, BeXmlNode
     {
     if (xmlNode.IsIName(ECDBSQL_PRIMARY_KEY))
         return ECDbSqlPrimaryKeyConstraint::ReadFrom (ecdbSqlTable, xmlNode);
-    else if (xmlNode.IsIName (ECDBSQL_FORIEGNKEY))
-        return ECDbSqlForiegnKeyConstraint::ReadFrom (ecdbSqlTable, xmlNode);
+    else if (xmlNode.IsIName (ECDBSQL_FOREIGNKEY))
+        return ECDbSqlForeignKeyConstraint::ReadFrom (ecdbSqlTable, xmlNode);
 
     return BentleyStatus::ERROR;
     }
@@ -3099,7 +3098,7 @@ DbResult ECDbSqlPersistence::ReadTable (Statement& stmt, ECDbSqlDb& o)
     if (stat != BE_SQLITE_DONE)
         return stat;
 
-    //read foriegn key
+    //read foreign key
     stat = ReadForeignKeys (*n);
     if (stat != BE_SQLITE_DONE)
         return stat;
@@ -3291,9 +3290,9 @@ DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
     auto id = stmt.GetValueInt64 (0);
     auto referenceTableName = stmt.GetValueText (1);
     auto name = stmt.IsColumnNull (2) ? nullptr : stmt.GetValueText (2);
-    auto onDelete = stmt.IsColumnNull (3) ? ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified : static_cast<ECDbSqlForiegnKeyConstraint::ActionType>(stmt.GetValueInt (3));
-    auto onUpdate = stmt.IsColumnNull (4) ? ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified : static_cast<ECDbSqlForiegnKeyConstraint::ActionType>(stmt.GetValueInt (4));
-    auto matchType = stmt.IsColumnNull (5) ? ECDbSqlForiegnKeyConstraint::MatchType::NotSpecified : static_cast<ECDbSqlForiegnKeyConstraint::MatchType>(stmt.GetValueInt (5));
+    auto onDelete = stmt.IsColumnNull (3) ? ECDbSqlForeignKeyConstraint::ActionType::NotSpecified : static_cast<ECDbSqlForeignKeyConstraint::ActionType>(stmt.GetValueInt (3));
+    auto onUpdate = stmt.IsColumnNull (4) ? ECDbSqlForeignKeyConstraint::ActionType::NotSpecified : static_cast<ECDbSqlForeignKeyConstraint::ActionType>(stmt.GetValueInt (4));
+    auto matchType = stmt.IsColumnNull (5) ? ECDbSqlForeignKeyConstraint::MatchType::NotSpecified : static_cast<ECDbSqlForeignKeyConstraint::MatchType>(stmt.GetValueInt (5));
 
     auto referenceTable = o.GetDbDef ().FindTable (referenceTableName);
     if (!referenceTable)
@@ -3302,10 +3301,10 @@ DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
         return BE_SQLITE_ERROR;
         }
 
-    auto n = o.CreateForiegnKeyConstraint (*referenceTable);
+    auto n = o.CreateForeignKeyConstraint (*referenceTable);
     if (!n)
         {
-        BeAssert (false && "Failed to create forign key constraint");
+        BeAssert (false && "Failed to create foreign key constraint");
         return BE_SQLITE_ERROR;
         }
 
@@ -3490,7 +3489,7 @@ DbResult ECDbSqlPersistence::InsertColumn (ECDbSqlColumn const& o, int primaryKe
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::InsertConstraint (ECDbSqlConstraint const& o)
     {
-    if (auto c = dynamic_cast<ECDbSqlForiegnKeyConstraint const*>(&o))
+    if (auto c = dynamic_cast<ECDbSqlForeignKeyConstraint const*>(&o))
         return InsertForeignKey (*c);
 
     if (dynamic_cast<ECDbSqlPrimaryKeyConstraint const*>(&o))
@@ -3502,11 +3501,11 @@ DbResult ECDbSqlPersistence::InsertConstraint (ECDbSqlConstraint const& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForiegnKeyConstraint const& o)
+DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForeignKeyConstraint const& o)
     {
     if (o.Count () == 0)
         {
-        BeAssert (false && "ForiegnKey constraint does not have any columns");
+        BeAssert (false && "ForeignKey constraint does not have any columns");
         return BE_SQLITE_ERROR;
         }
 
@@ -3520,20 +3519,18 @@ DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForiegnKeyConstraint const
     if (!o.GetName ().empty ())
         stmt->BindText (4, o.GetName ().c_str (), Statement::MakeCopy::No);
 
-
-    if (o.GetOnDeleteAction () != ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified)
+    if (o.GetOnDeleteAction () != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
         stmt->BindInt (5, static_cast<int>(o.GetOnDeleteAction ()));
 
-    if (o.GetOnUpdateAction () != ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified)
+    if (o.GetOnUpdateAction () != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
         stmt->BindInt (6, static_cast<int>(o.GetOnUpdateAction ()));
 
-    if (o.GetMatchType () != ECDbSqlForiegnKeyConstraint::MatchType::NotSpecified)
+    if (o.GetMatchType () != ECDbSqlForeignKeyConstraint::MatchType::NotSpecified)
         stmt->BindInt (7, static_cast<int>(o.GetMatchType ()));
 
     auto stat = stmt->Step ();
     if (stat != BE_SQLITE_DONE)
         return stat;
-
 
     stmt = GetStatement (StatementType::SqlInsertForeignKeyColumn);
     if (!stmt)
