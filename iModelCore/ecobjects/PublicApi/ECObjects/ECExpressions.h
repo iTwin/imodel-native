@@ -342,7 +342,7 @@ private:
 
 public:
     // This method is injected into ECObjects to provide symbols.
-    void InternalECSymbolProviderManager::PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets);
+    void PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets);
 
     // Register an IECSymbolProvider.
     void RegisterSymbolProvider (IECSymbolProviderCR provider);
