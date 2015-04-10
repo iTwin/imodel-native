@@ -2,7 +2,7 @@
 |
 |     $Source: tests/gtestmain.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -51,7 +51,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
         path.AppendSeparator ();
         }
 
-    virtual void*  _InvokeP (char const* function_and_args) override {BeAssert(false); return nullptr;}
+    virtual void*  _InvokeP (const char *,void *) override {BeAssert(false); return nullptr;}
 
     static RefCountedPtr<BeGTestHost> Create (char const* progDir) {return new BeGTestHost (progDir);}
     };

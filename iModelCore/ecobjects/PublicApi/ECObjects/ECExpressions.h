@@ -326,6 +326,35 @@ public:
     ECOBJECTS_EXPORT static InstanceListExpressionContextPtr    Create (bvector<IECInstancePtr> const& instances, ExpressionContextP outer = NULL);
     };
 
+//__PUBLISH_SECTION_END__
+
+/*---------------------------------------------------------------------------------**//**
+* Manager that holds symbol providers. For use only with internal Symbol Providers.
+* @bsistruct                                                    Bill.Steinbock  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct InternalECSymbolProviderManager
+    {
+private:
+    
+    bvector<IECSymbolProviderCP>         m_symbolProviders;
+
+    InternalECSymbolProviderManager();
+
+public:
+    // This method is injected into ECObjects to provide symbols.
+    void InternalECSymbolProviderManager::PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets);
+
+    // Register an IECSymbolProvider.
+    void RegisterSymbolProvider (IECSymbolProviderCR provider);
+
+    // Unregister an IECSymbolProvider.
+    void UnregisterSymbolProvider (IECSymbolProviderCR provider);
+
+    static InternalECSymbolProviderManager& GetManager ();
+    };
+
+//__PUBLISH_SECTION_START__
+
 /*---------------------------------------------------------------------------------**//**
 * An InstanceListExpressionContext which simply wraps one or more IECInstances.
 * @bsistruct                                                    Paul.Connelly   10/13
@@ -377,6 +406,9 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (wchar_t const* ident);
 
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets, ExpressionContextP outer = NULL);
+
+    //! Creates a new SymbolExpressionContext using requested symbol sets and if an ECInstance is passed in it will publish it for "this" access
+    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   CreateWithThis (bvector<WString> const& requestedSymbolSets, IECInstanceP instance = NULL);
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -852,6 +884,8 @@ public:
     //! Parses an assignment expression and returns the root node of the expression tree.
     ECOBJECTS_EXPORT static NodePtr  ParseAssignmentExpressionAndCreateTree(wchar_t const* expression);
 
+    // Parses and evaluate a value expression and returns the result
+    ECOBJECTS_EXPORT static ExpressionStatus  EvaluateExpression(EvaluationResult& result, WCharCP expr, ExpressionContextR context);
 };  // End of ECEvaluator class
 
 /*=================================================================================**//**

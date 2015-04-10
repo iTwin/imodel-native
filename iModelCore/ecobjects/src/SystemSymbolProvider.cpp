@@ -1,0 +1,660 @@
+/*--------------------------------------------------------------------------------------+ 
+|
+|     $Source: src/SystemSymbolProvider.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "ECObjectsPch.h"
+
+#include <ECObjects/ECExpressionNode.h>
+
+static ECN::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher;
+
+
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SystemSymbolProvider::ExtractArg (WCharCP& str, EvaluationResultCR ev, bool allowNull)
+    {
+    str = NULL;
+    ECValueCP v = ev.GetECValue();
+    if (NULL == v || v->IsNull())
+        return allowNull;
+    else if (!v->IsString())
+        return false;
+
+    str = v->GetString();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SystemSymbolProvider::ExtractArg (WStringR str, EvaluationResultCR ev, bool allowNull)
+    {
+    WCharCP strP;
+    if (SystemSymbolProvider::ExtractArg (strP, ev, allowNull))
+        {
+        str = strP ? strP : L"";
+        return true;
+        }
+    else
+        return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SystemSymbolProvider::ExtractArg (double& d, EvaluationResultCR ev)
+    {
+    ECValueCP v = ev.GetECValue();
+    if (NULL == v || v->IsNull())
+        return false;
+    else if (v->IsDouble())
+        {
+        d = v->GetDouble();
+        return true;
+        }
+    else if (v->IsInteger() || v->IsLong())
+        {
+        ECValue dv (*v);
+        if (dv.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
+            {
+            d = dv.GetDouble();
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SystemSymbolProvider::ExtractArg (int32_t& i, EvaluationResultCR ev)
+    {
+    if (!ev.IsECValue())
+        return false;
+
+    ECValueCR v = *ev.GetECValue();
+    if (v.IsNull())
+        return false;
+    else if (v.IsInteger())
+        {
+        i = v.GetInteger();
+        return true;
+        }
+    else if (v.IsDouble() || v.IsLong())
+        {
+        ECValue vv (v);
+        if (vv.ConvertToPrimitiveType (PRIMITIVETYPE_Integer))
+            {
+            i = vv.GetInteger();
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SystemSymbolProvider::ExtractArg (LambdaValueCP& lambda, EvaluationResultCR ev)
+    {
+    lambda = ev.GetLambda();
+    return ev.IsLambda();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct StringMethods
+    {
+    static ExpressionStatus compare (EvaluationResult& evalResult, EvaluationResultVector& args, bool ignoreCase)
+        {
+        WString a, b;
+        if (SystemSymbolProvider::ExtractArg (a, args, 0, true) && SystemSymbolProvider::ExtractArg (b, args, 1, true))
+            {
+            evalResult.InitECValue().SetBoolean (ignoreCase ? a.EqualsI (b) : a.Equals (b));
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus Compare (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        return compare (evalResult, args, false);
+        }
+
+    static ExpressionStatus CompareI (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        return compare (evalResult, args, true);
+        }
+
+    static ExpressionStatus convertCase (EvaluationResult& evalResult, EvaluationResultVector& args, void (WString::*transformFunc)())
+        {
+        WString str;
+        if (SystemSymbolProvider::ExtractArg (str, args, 0, true))
+            {
+            (str.*transformFunc)();
+            evalResult.InitECValue().SetString (str.c_str());
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus ToUpper (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        return convertCase (evalResult, args, &WString::ToUpper);
+        }
+
+    static ExpressionStatus ToLower (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        return convertCase (evalResult, args, &WString::ToLower);
+        }
+
+    static ExpressionStatus indexOf (EvaluationResult& evalResult, EvaluationResultVector& args, WCharCP (* findOccurrence )(WCharCP, WCharCP))
+        {
+        WCharCP str, token;
+        if (SystemSymbolProvider::ExtractArg (str, args, 0, true) && SystemSymbolProvider::ExtractArg (token, args, 1, true))
+            {
+            WCharCP found;
+            int32_t index = (str && token && NULL != (found = findOccurrence (str, token))) ? (int32_t)(found - str) : -1;
+            evalResult.InitECValue().SetInteger (index);
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static WCharCP findLastOccurrence (WCharCP str, WCharCP token)
+        {
+        WString s (str);
+        size_t foundPos = s.rfind (token);
+        return -1 != foundPos ? str + foundPos : NULL;
+        }
+
+    static ExpressionStatus IndexOf (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        return indexOf (evalResult, args, &wcsstr);
+        }
+
+    static ExpressionStatus LastIndexOf (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        return indexOf (evalResult, args, &findLastOccurrence);
+        }
+
+    static ExpressionStatus Contains (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        ExpressionStatus status = IndexOf (evalResult, args);
+        if (ExprStatus_Success == status)
+            evalResult.GetECValue()->SetBoolean (evalResult.GetECValue()->GetInteger() >= 0);
+
+        return status;
+        }
+
+    static ExpressionStatus ContainsI (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        WString str, token;
+        if (SystemSymbolProvider::ExtractArg (str, args, 0, true) && SystemSymbolProvider::ExtractArg (token, args, 1, true))
+            {
+            str.ToUpper();
+            token.ToUpper();
+            evalResult.InitECValue().SetBoolean (-1 != str.find (token));
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus ToString (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        if (args.size() == 1 && args[0].IsECValue())
+            {
+            evalResult.InitECValue().SetString (args[0].GetECValue()->ToString().c_str());
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus Length (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        WCharCP str;
+        if (SystemSymbolProvider::ExtractArg (str, args, 0, true))
+            {
+            evalResult.InitECValue().SetInteger (str ? (int32_t)wcslen (str) : 0);
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus SubString (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        WString str;
+        int32_t startIndex, length;
+        if (SystemSymbolProvider::ExtractArg (str, args, 0, true) && SystemSymbolProvider::ExtractArg (startIndex, args, 1) && SystemSymbolProvider::ExtractArg (length, args, 2))
+            {
+            if (str.empty() || startIndex < 0 || (size_t)startIndex >= str.length() || length < 0)
+                evalResult.InitECValue().SetString (L"");
+            else
+                evalResult.InitECValue().SetString (str.substr (startIndex, length).c_str());
+
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+#ifdef TODO
+    static ExpressionStatus Format (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        struct ValueList : IECInteropStringFormatter::IECValueList
+            {
+            EvaluationResultVector const& m_values;
+            ValueList (EvaluationResultVector const& values) : m_values(values) { }
+
+            virtual uint32_t      GetCount() const override                   { return (uint32_t)m_values.size() - 1; }
+            virtual ECValueCP   operator[](uint32_t index) const override     { return index < GetCount() ? m_values[index+1].GetECValue() : NULL; }
+            };
+
+        WCharCP fmtString;
+        if (SystemSymbolProvider::ExtractArg (fmtString, args, 0, true))
+            {
+            WString formatted;
+            if (DgnECManager::GetManager().GetInteropStringFormatter().Format (formatted, fmtString, ValueList (args)))
+                {
+                evalResult.InitECValue().SetString (formatted.c_str());
+                return ExprStatus_Success;
+                }
+            }
+
+        return ExprStatus_UnknownError;
+        }
+#endif
+
+    static ExpressionStatus Trim (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        WString str;
+        if (SystemSymbolProvider::ExtractArg (str, args, 0, true))
+            {
+            str.Trim();
+            evalResult.InitECValue().SetString (str.c_str());
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static void PublishSymbols (SymbolExpressionContextR systemContext)
+        {
+        SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create (NULL);
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Length", Length, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Compare", Compare, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"CompareI", CompareI, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"ToUpper", ToUpper, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"ToLower", ToLower, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"IndexOf", IndexOf, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"LastIndexOf", LastIndexOf, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Contains", Contains, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"ContainsI", ContainsI, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"ToString", ToString, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"SubString", SubString, NULL));
+#ifdef TODO
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Format", Format, NULL));
+#endif
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Trim", Trim, NULL));
+
+        systemContext.AddSymbol (*ContextSymbol::CreateContextSymbol (L"String", *methodContext));
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DateTimeMethods
+    {
+    static ExpressionStatus Now (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        uint64_t unixMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        DateTime dt;
+        DateTime::FromUnixMilliseconds (dt, (int64_t)unixMillis);
+        evalResult.InitECValue().SetDateTime (dt);
+        return ExprStatus_Success;
+        }
+
+    static void PublishSymbols (SymbolExpressionContextR systemContext)
+        {
+        SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create (NULL);
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Now", Now, NULL));
+
+        systemContext.AddSymbol (*ContextSymbol::CreateContextSymbol (L"DateTime", *methodContext));
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct PathMethods
+    {
+    // GetFileName
+    // GetDirectoryName - should not include terminating separator
+    // GetExtension - should include the '.'
+    // GetFullPath - uses present working directory
+    // GetFileNameWithoutExtension
+    // Combine
+
+    static ExpressionStatus getFileNamePart (EvaluationResult& evalResult, EvaluationResultVector& args, WString (* extractFunc)(WCharCP))
+        {
+        WCharCP arg;
+        if (SystemSymbolProvider::ExtractArg (arg, args, 0, false))
+            {
+            evalResult.InitECValue().SetString (extractFunc (arg).c_str());
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus GetFileName (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        return getFileNamePart (evalResult, args, BeFileName::GetFileNameAndExtension);
+        }
+
+    static ExpressionStatus GetDirectoryName (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        ExpressionStatus status = getFileNamePart (evalResult, args, BeFileName::GetDirectoryName);
+        if (ExprStatus_Success == status)
+            {
+            // Do not include terminating separator
+            WCharCP ret = evalResult.GetECValue()->GetString();
+            if (ret && *ret)
+                {
+                size_t len = wcslen (ret);
+                if (DIR_SEPARATOR_CHAR == ret[len-1])
+                    evalResult.GetECValue()->SetString (WString (ret, len-1).c_str());
+                }
+            }
+
+        return status;
+        }
+
+    static ExpressionStatus GetExtension(EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        ExpressionStatus status = getFileNamePart (evalResult, args, BeFileName::GetExtension);
+        if (ExprStatus_Success == status)
+            {
+            // Add the dot '.'
+            WCharCP ret = evalResult.GetECValue()->GetString();
+            if (ret && *ret)
+                {
+                WString ext (L".");
+
+                ext.append (ret);
+                evalResult.GetECValue()->SetString (ext.c_str());
+                }
+            }
+
+        return status;
+        }
+
+    static ExpressionStatus GetFileNameWithoutExtension (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        return getFileNamePart (evalResult, args, BeFileName::GetFileNameWithoutExtension);
+        }
+
+    static ExpressionStatus GetFullPath (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        WCharCP arg;
+        WString fullPath;
+        if (SystemSymbolProvider::ExtractArg (arg, args, 0, false) && BeFileNameStatus::Success == BeFileName::BeGetFullPathName (fullPath, arg))
+            {
+            evalResult.InitECValue().SetString (fullPath.c_str());
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus Combine (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        WCharCP nextPart;
+        if (!SystemSymbolProvider::ExtractArg (nextPart, args, 0, false))
+            return ExprStatus_UnknownError;
+
+        BeFileName filename (nextPart);
+        for (size_t i = 1; i < args.size(); i++)
+            {
+            if (!SystemSymbolProvider::ExtractArg (nextPart, args, i, false))
+                return ExprStatus_UnknownError;
+
+            filename.AppendToPath (nextPart);
+            }
+
+        evalResult.InitECValue().SetString (filename);
+        return ExprStatus_Success;
+        }
+
+    static void PublishSymbols (SymbolExpressionContextR systemContext)
+        {
+        SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create (NULL);
+        methodContext->AddSymbol (*MethodSymbol::Create (L"GetFileName", GetFileName, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"GetDirectoryName", GetDirectoryName, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"GetExtension", GetExtension, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"GetFileNameWithoutExtension", GetFileNameWithoutExtension, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"GetFullPath", GetFullPath, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Combine", Combine, NULL));
+
+        systemContext.AddSymbol (*ContextSymbol::CreateContextSymbol (L"Path", *methodContext));
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MathMethods
+    {
+    // All methods take double(s) except where specified. All angles in radians.
+    // E
+    // PI
+    // Acos
+    // Asin
+    // Atan
+    // Atan2
+    // BigMul(int32_t, int32_t)-->Int64
+    // Cos
+    // Cosh
+    // Exp
+    // IEEERemainder
+    // Abs
+    // Floor
+    // Ceiling
+    // Log
+    // Max(T, T)-->T
+    // Min(T, T)-->T
+    // Round
+    // Pow
+    // Log10
+    // Sin
+    // Sinh
+    // Sqrt
+    // Tan
+    // Tanh
+    
+    static ExpressionStatus eval1 (EvaluationResult& evalResult, EvaluationResultVector& args, double (* func)(double))
+        {
+        double arg;
+        if (SystemSymbolProvider::ExtractArg (arg, args, 0))
+            {
+            evalResult.InitECValue().SetDouble (func (arg));
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus eval2 (EvaluationResult& evalResult, EvaluationResultVector& args, double (* func)(double, double))
+        {
+        double arg1, arg2;
+        if (SystemSymbolProvider::ExtractArg (arg1, args, 0) && SystemSymbolProvider::ExtractArg (arg2, args, 1))
+            {
+            evalResult.InitECValue().SetDouble (func (arg1, arg2));
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static double roundToEven (double val)
+        {
+        double sign = val < 0 ? -1.0 : 1.0;
+        val += 0.5 * sign;
+        double intpart;
+        double fractionalpart = modf (val, &intpart);
+        if (DoubleOps::AlmostEqual (0.0, fractionalpart))
+            return 0.0 == fmod (intpart, 2.0) ? intpart : intpart + (sign * -1.0);
+        else
+            return intpart;
+        }
+
+    static double ieeeremainder (double dividend, double divisor)
+        {
+        return dividend - (divisor * roundToEven (dividend / divisor));
+        }
+
+    static ExpressionStatus Acos (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, acos); }
+    static ExpressionStatus Asin (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, asin); }
+    static ExpressionStatus Atan (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, atan); }
+    static ExpressionStatus Atan2 (EvaluationResult& evalResult, EvaluationResultVector& args)            { return eval2 (evalResult, args, atan2); }
+    static ExpressionStatus Cos (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, cos); }
+    static ExpressionStatus Cosh (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, cosh); }
+    static ExpressionStatus Exp (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, exp); }
+    static ExpressionStatus IEEERemainder (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval2 (evalResult, args, ieeeremainder); }
+    static ExpressionStatus Abs (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, fabs); }
+    static ExpressionStatus Floor (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, floor); }
+    static ExpressionStatus Ceiling (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, ceil); }
+    static ExpressionStatus Log (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, log); }
+    static ExpressionStatus Pow (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval2 (evalResult, args, pow); }
+    static ExpressionStatus Log10 (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, log10); }
+    static ExpressionStatus Sin (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, sin); }
+    static ExpressionStatus Sinh (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, sinh); }
+    static ExpressionStatus Sqrt (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, sqrt); }
+    static ExpressionStatus Tan (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, tan); }
+    static ExpressionStatus Tanh (EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1 (evalResult, args, tanh); }
+    static ExpressionStatus Round (EvaluationResult& evalResult, EvaluationResultVector& args)          { return eval1 (evalResult, args, roundToEven); }
+
+    static ExpressionStatus minOrMax (EvaluationResult& evalResult, EvaluationResultVector& args, bool doMax)
+        {
+        double a, b;
+        if (SystemSymbolProvider::ExtractArg (a, args, 0) && SystemSymbolProvider::ExtractArg (b, args, 1))
+            {
+            double result = doMax ? (a > b ? a : b) : (a < b ? a : b);
+            evalResult.InitECValue().SetDouble (result);
+            // evalResult.GetECValueR().ConvertToPrimitiveType (args[0].GetECValue().GetPrimitiveType());
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus Min (EvaluationResult& evalResult, EvaluationResultVector& args)              { return minOrMax (evalResult, args, false); }
+    static ExpressionStatus Max (EvaluationResult& evalResult, EvaluationResultVector& args)              { return minOrMax (evalResult, args, true); }
+
+    static ExpressionStatus almostEqual (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        double a, b;
+        if (SystemSymbolProvider::ExtractArg (a, args, 0) && SystemSymbolProvider::ExtractArg (b, args, 1))
+            {
+            bool result = DoubleOps::AlmostEqual (a, b);
+            evalResult.InitECValue().SetBoolean (result);
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static ExpressionStatus AlmostEqual (EvaluationResult& evalResult, EvaluationResultVector& args)      { return almostEqual (evalResult, args); }
+
+    static ExpressionStatus BigMul (EvaluationResult& evalResult, EvaluationResultVector& args)
+        {
+        int32_t a, b;
+        if (SystemSymbolProvider::ExtractArg (a, args, 0) && SystemSymbolProvider::ExtractArg (b, args, 1))
+            {
+            evalResult.InitECValue().SetLong ((int64_t)a * (int64_t)b);
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+
+    static void PublishSymbols (SymbolExpressionContextR systemContext)
+        {
+        SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create (NULL);
+
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Acos", Acos, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Asin", Asin, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Atan", Atan, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Atan2", Atan2, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Cos", Cos, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Cosh", Cosh, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Exp", Exp, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"IEEERemainder", IEEERemainder, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Abs", Abs, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Floor", Floor, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Ceiling", Ceiling, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Log", Log, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Pow", Pow, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Log10", Log10, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Sin", Sin, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Sinh", Sinh, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Sqrt", Sqrt, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Tan", Tan, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Tanh", Tanh, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Min", Min, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Max", Max, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"AlmostEqual", AlmostEqual, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"Round", Round, NULL));
+        methodContext->AddSymbol (*MethodSymbol::Create (L"BigMul", BigMul, NULL));
+
+        methodContext->AddSymbol (*ValueSymbol::Create (L"PI", ECValue (msGeomConst_pi)));
+        methodContext->AddSymbol (*ValueSymbol::Create (L"E", ECValue (exp (1.0))));
+
+        systemContext.AddSymbol (*ContextSymbol::CreateContextSymbol (L"Math", *methodContext));
+        }
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+SystemSymbolProvider::SystemSymbolProvider()
+    {
+    SymbolExpressionContextPtr systemContext = SymbolExpressionContext::Create (NULL);
+    
+    StringMethods::PublishSymbols (*systemContext);
+    DateTimeMethods::PublishSymbols (*systemContext);
+    PathMethods::PublishSymbols (*systemContext);
+    MathMethods::PublishSymbols (*systemContext);
+    m_systemNamespaceSymbol = ContextSymbol::CreateContextSymbol (L"System", *systemContext);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void SystemSymbolProvider::_PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const
+    {
+    // Note: managed impl publishes all symbols if requestedSymbolSets is empty, otherwise it publishes only those sets which are requested
+    // There doesn't seem to be a reason to limit the set of published symbols, and we avoid having to do any further processing/allocation
+    // by simply always publishing the full set of symbols.
+    context.AddSymbol (*m_systemNamespaceSymbol);
+    }
+
+
+END_BENTLEY_ECOBJECT_NAMESPACE

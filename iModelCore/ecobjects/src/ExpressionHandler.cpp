@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionHandler.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1476,6 +1476,18 @@ wchar_t const* expression
 
     delete evaluator;
     return theNode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus  ECEvaluator::EvaluateExpression (EvaluationResult& result, WCharCP expr, ExpressionContextR context)
+    {
+    NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
+    if (tree.IsNull ())
+        return ExpressionStatus::ExprStatus_UnknownSymbol;
+
+    return tree->GetValue (result, context);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublished/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -54,6 +54,26 @@ struct ExpressionTests : ECTestFixture
 
         return tree->GetValue (result, *symbolContext);
         }
+    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, bvector<WString>& requiredSymbolSets, IECInstanceP instance)
+        {
+        SymbolExpressionContextPtr contextWithThis = SymbolExpressionContext::CreateWithThis (requiredSymbolSets, instance);
+
+        return  ECEvaluator::EvaluateExpression (result, expr, *contextWithThis);
+        }
+
+        ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr)
+        {
+        // when a symbolset is passed in - published symbol providers will add their symbols to the context.
+        SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (NULL);
+
+        PublishSymbols (*symbolContext);
+
+        NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
+        EXPECT_NOT_NULL (tree.get());
+
+        return tree->GetValue (result, *symbolContext);
+        }
+
 
     void                TestExpressionEquals (IECInstanceR instance, WCharCP expr, ECValueCR expectVal)
         {
@@ -63,8 +83,49 @@ struct ExpressionTests : ECTestFixture
         if (SUCCESS == status)
             {
             EXPECT_TRUE (result.IsECValue());
+            if (result.IsECValue ())
+                {
+                if (expectVal.IsString())
+                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                else
+                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                }
+            }
+        }
+
+    void                TestExpressionEquals (bvector<WString>& requiredSymbolSets, WCharCP expr, ECValueCR expectVal, IECInstanceP instance=nullptr)
+        {
+        EvaluationResult result;
+        ExpressionStatus status = EvaluateExpression (result, expr, requiredSymbolSets, instance);
+        EXPECT_SUCCESS (status);
+        if (SUCCESS == status)
+            {
+            EXPECT_TRUE (result.IsECValue());
             if (result.IsECValue())
-                EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                {
+                if (expectVal.IsString())
+                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                else
+                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                }
+            }
+        }
+
+        void                TestExpressionEquals (WCharCP expr, ECValueCR expectVal)
+        {
+        EvaluationResult result;
+        ExpressionStatus status = EvaluateExpression (result, expr);
+        EXPECT_SUCCESS (status);
+        if (SUCCESS == status)
+            {
+            EXPECT_TRUE (result.IsECValue());
+            if (result.IsECValue())
+                {
+                if (expectVal.IsString())
+                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                else
+                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                }
             }
         }
 
@@ -183,6 +244,7 @@ public:
             L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             L"    <ECClass typeName=\"ClassA\" displayLabel=\"Class A\" isDomainClass=\"True\">"
             L"        <ECProperty propertyName=\"d\" typeName=\"double\" />"
+            L"        <ECProperty propertyName=\"s\" typeName=\"string\" />"
             L"    </ECClass>"
             L"</ECSchema>";
         }
@@ -193,6 +255,14 @@ public:
         instance->SetValue (L"d", ECValue (d));
         return instance;
         }
+
+    IECInstancePtr  CreateInstance (WString& s)
+        {
+        auto instance = InstanceExpressionTests::CreateInstance (L"ClassA");
+        instance->SetValue (L"s", ECValue (s.c_str()));
+        return instance;
+        }
+
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -217,6 +287,126 @@ TEST_F (LiteralExpressionTests, FloatComparisons)
     TestExpressionEquals (*instance, L"this.d > 12", ECValue (true));
     TestExpressionEquals (*instance, L"this.d < 12", ECValue (false));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (LiteralExpressionTests, EmptySymbolSet)
+    {
+    TestExpressionEquals (L"12.1 = 12", ECValue (false));
+    TestExpressionEquals (L"12.1 >= 12", ECValue (true));
+    TestExpressionEquals (L"12.1 <= 12", ECValue (false));
+    TestExpressionEquals (L"12.1 <> 12", ECValue (true));
+    TestExpressionEquals (L"12.1 > 12", ECValue (true));
+    TestExpressionEquals (L"12.1 < 12", ECValue (false));
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (LiteralExpressionTests, MathSymbols)
+    {
+    bvector<WString> requiredSymbolSets;  
+    
+    // native ECExpression processing ignores the list of requiredSymbolSets and publishes all symbols from all symbol providers.
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.E, 2.71828182846)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Acos(0.5) * 180.0 / System.Math.PI", ECValue(60.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Asin(0.5) * 180.0 / System.Math.PI", ECValue(30.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Atan(1) * 180 / System.Math.PI", ECValue(45.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Atan2(10, -10) * 180/System.Math.PI", ECValue(135.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.BigMul(2000000000, 2000000000), 4000000000000000000)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Cos(60.0*System.Math.PI/180)", ECValue(0.5));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Cosh(System.Math.Log(2.0))", ECValue(1.25));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.Exp(5.0), 148.4131591025766)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Abs(-2.5)", ECValue(2.5));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Floor(-3.1)", ECValue(-4.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Ceiling(-3.1)", ECValue(-3.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.Log(5.5), 1.7047480922384253)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Log10(1000)", ECValue(3.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Max (-5.5, 5.0)", ECValue(5.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Min (-5, 5)", ECValue(-5.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (1.4)", ECValue(1.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (1.6)", ECValue(2.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (1.5)", ECValue(2.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (2.5)", ECValue(2.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (-1.4)", ECValue(-1.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (-1.6)", ECValue(-2.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (-1.5)", ECValue(-2.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (-2.5)", ECValue(-2.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Pow(7,3)", ECValue(343.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.Pow(32.01,1.54), 208.03669140538651)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.Sin(30*System.Math.PI/180.0),0.50)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Sinh(System.Math.Log(2.0))", ECValue(0.75));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Sqrt (1024.0)", ECValue(32.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Tan(45.0*System.Math.PI/180.0)", ECValue(1.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.Tanh(System.Math.Log(2.0))", ECValue(0.6));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(3,2)", ECValue(-1.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(10, 3)", ECValue(1.0));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(17.8,4)", ECValue(1.8));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(17.8,4.1)", ECValue(1.4));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(17.8,-4.1)", ECValue(1.4));
+    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(-17.8,-4.1)", ECValue(-1.4));
+    }
+ 
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (LiteralExpressionTests, StringSymbols)
+    {
+    bvector<WString> requiredSymbolSets;  
+    
+    // native ECExpression processing ignores the list of requiredSymbolSets and publishes all symbols from all symbol providers.
+    TestExpressionEquals (requiredSymbolSets, L"System.String.ToUpper(\"loweR\")", ECValue(L"LOWER"));
+    TestExpressionEquals (requiredSymbolSets, L"System.String.ToLower(\"LOwEr\")", ECValue(L"lower"));
+    TestExpressionEquals (requiredSymbolSets, L"System.String.IndexOf(\"squid SQUID SQUID squid\", \"QUID\")", ECValue(7));
+    TestExpressionEquals (requiredSymbolSets, L"System.String.LastIndexOf(\"squid SQUID SQUID squid\", \"QUID\")", ECValue(13));
+    TestExpressionEquals (requiredSymbolSets, L"System.String.Length(\"12345678\")", ECValue(8));
+    TestExpressionEquals (requiredSymbolSets, L"System.String.SubString(\"dogCATdog\", 3, 3)", ECValue(L"CAT"));
+    TestExpressionEquals (requiredSymbolSets, L"System.String.Trim(\"  is \t trimmed\t\t\n\")", ECValue(L"is \t trimmed"));
+    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.Contains(\"thing\", \"in\"), \"true\", \"false\")", ECValue(L"true"));
+    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.Contains(\"thing\", \"In\"), \"true\", \"false\")", ECValue(L"false"));
+
+    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.ContainsI(\"thing\",\"In\"),\"true\",\"false\")",   ECValue(L"true"));
+    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.Compare(\"thing\",\"thing\"),\"true\",\"false\")",  ECValue(L"true"));
+    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.Compare(\"thing\",\"THING\"),\"true\",\"false\")",  ECValue(L"false"));
+    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.CompareI(\"thing\",\"THING\"),\"true\",\"false\")", ECValue(L"true"));
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (LiteralExpressionTests, MiscSymbols)
+    {
+    bvector<WString> requiredSymbolSets;  // to have expression processing use published symbols requiredSymbolSets must be passed in, even if empty
+    
+    // datetime
+    EvaluationResult result;
+
+    ExpressionStatus status = EvaluateExpression (result, L"System.DateTime.Now()", requiredSymbolSets, nullptr);
+    EXPECT_SUCCESS (status);
+    if (result.IsECValue ())
+        {
+        DateTime now = DateTime::GetCurrentTime ();
+        EXPECT_EQ (now.GetYear (), result.GetECValue ()->GetDateTime ().GetYear ());
+        }
+
+    // path
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetDirectoryName(\"c:\\dir\\subdir\\filename.ext\")",             ECValue(L"c:\\dir\\subdir"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetExtension(\"c:\\dir\\subdir\\filename.ext\")",                 ECValue(L".ext"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileNameWithoutExtension(\"c:\\dir\\subdir\\filename.ext\")",  ECValue(L"filename"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileName(\"c:\\dir\\subdir\\filename.ext\")",                  ECValue(L"filename.ext"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\")",                                           ECValue(L"c:\\dir"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\", \"subdir\")",                               ECValue(L"c:\\dir\\subdir"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\", \"subdir\\\", \"filename.ext\")",           ECValue(L"c:\\dir\\subdir\\filename.ext"));
+
+    WString fileName (L"c:\\dir\\subdir\\filename.ext");
+    auto instance = CreateInstance (fileName);       // set "s" property
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetDirectoryName(this.s)",             ECValue(L"c:\\dir\\subdir"), instance.get());
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetExtension(this.s)",                 ECValue(L".ext"),            instance.get());
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileNameWithoutExtension(this.s)",  ECValue(L"filename"),        instance.get());
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileName(this.s)",                  ECValue(L"filename.ext"),    instance.get());
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/13

@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECObjectsPch.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -19,6 +19,7 @@
 #include <Logging/bentleylogging.h>
 #include <ECObjects/CalculatedProperty.h>
 #include <ECObjects/ECInstanceIterable.h>
+#include <ECObjects/SystemSymbolProvider.h>
 #include <BeXml/BeXml.h>
 
 

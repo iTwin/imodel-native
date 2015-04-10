@@ -135,6 +135,8 @@ $(o)ExpressionContext$(oext)                               : $(baseDir)Expressio
 
 $(o)ExpressionHandler$(oext)                               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)ECExpressionNode.h ${MultiCompileDepends} 
 
+$(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSymbolProvider.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SystemSymbolProvider.h ${MultiCompileDepends} 
+
 $(o)ECDBuffer$(oext)                                       : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)StandaloneECInstance$(oext)                            : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h

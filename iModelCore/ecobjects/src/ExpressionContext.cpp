@@ -14,6 +14,63 @@ static ECN::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublish
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+InternalECSymbolProviderManager::InternalECSymbolProviderManager ()
+    {
+    static ECN::SystemSymbolProvider* s_systemSymbolProvider = nullptr;
+
+    if (nullptr == s_systemSymbolProvider)
+        s_systemSymbolProvider = new SystemSymbolProvider ();
+
+    if (nullptr != s_systemSymbolProvider)
+        RegisterSymbolProvider (*s_systemSymbolProvider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+InternalECSymbolProviderManager& InternalECSymbolProviderManager::GetManager ()
+    {
+    static ECN::InternalECSymbolProviderManager* s_manager = nullptr;
+
+    if (nullptr == s_manager)
+        s_manager = new InternalECSymbolProviderManager ();
+
+    return *s_manager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InternalECSymbolProviderManager::RegisterSymbolProvider (IECSymbolProviderCR provider)
+    {
+    if (m_symbolProviders.end() == std::find_if (m_symbolProviders.begin(), m_symbolProviders.end(), [&](IECSymbolProviderCP existing) { return existing == &provider; }))
+        m_symbolProviders.push_back (&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InternalECSymbolProviderManager::UnregisterSymbolProvider (IECSymbolProviderCR provider)
+    {
+    auto found = std::find_if (m_symbolProviders.begin(), m_symbolProviders.end(), [&](IECSymbolProviderCP existing) { return existing == &provider; });
+    if (found != m_symbolProviders.end())
+        m_symbolProviders.erase (found);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InternalECSymbolProviderManager::PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets)
+    {
+    for (IECSymbolProviderCP const& provider: m_symbolProviders)
+        {
+        provider->PublishSymbols (context, requestedSymbolSets);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex, IECInstanceCR rootInstance)
@@ -1192,11 +1249,35 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> con
     SymbolExpressionContextPtr context = Create (outer);
     if (context.IsValid())
         {
+        InternalECSymbolProviderManager::GetManager ().PublishSymbols (*context, requestedSymbolSets);
+
         if (NULL != s_externalSymbolPublisher)
             s_externalSymbolPublisher (*context, requestedSymbolSets);
         }
     
     return context;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolExpressionContextPtr  SymbolExpressionContext::CreateWithThis (bvector<WString> const& requestedSymbolSets, IECInstanceP instance)
+    {
+    SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (requestedSymbolSets, NULL);
+
+    // If we also have an ECInstance add it as "this"
+    if (symbolContext.IsValid() && NULL != instance)
+        {
+        InstanceExpressionContextPtr context = InstanceExpressionContext::Create (NULL);
+        if (context.IsValid ())
+            {
+            context->SetInstance (*instance);
+            ContextSymbolPtr instanceSymbol = ContextSymbol::CreateContextSymbol (L"this", *context);
+            symbolContext->AddSymbol (*instanceSymbol);
+            }
+        }
+
+    return symbolContext;
     }
 
 /*---------------------------------------------------------------------------------**//**
