@@ -591,6 +591,8 @@ public:
                                         { return _PublishSymbols (context, requestedSymbolSets); }
 
     ECOBJECTS_EXPORT static void    RegisterExternalSymbolPublisher (ExternalSymbolPublisher externalPublisher);
+
+    ECOBJECTS_EXPORT static void    UnRegisterExternalSymbolPublisher ();
     };
 
 /*__PUBLISH_SECTION_START__*/

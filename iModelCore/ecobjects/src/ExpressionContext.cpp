@@ -1244,6 +1244,14 @@ void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+void IECSymbolProvider::UnRegisterExternalSymbolPublisher ()
+    {
+    s_externalSymbolPublisher = NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
 SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> const& requestedSymbolSets, ExpressionContextP outer)
     {
     SymbolExpressionContextPtr context = Create (outer);
