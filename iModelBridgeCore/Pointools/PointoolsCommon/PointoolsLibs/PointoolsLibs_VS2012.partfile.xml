@@ -71,8 +71,6 @@
 
     <SubPart PartName="PointoolsLibsCommon_2_VS2012" Repository="PointoolsLibs"/>
 
-    <!-- SubPart PartName="FreeGlut_VS2012" Repository="PointoolsLibs"/ -->
-
     <SubPart PartName="GLUI_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="FastDelegate_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
@@ -81,6 +79,11 @@
   </Part>
 
   <Part Name="FreeGlut_VS2012" BMakeFile="PointoolsLibsVortex/VS2012/FreeGlut/FreeGlut.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\Freeglut.dll
+      </Assemblies>
+    </Bindings>
   </Part>
 
   <Part Name="GLUI_VS2012" BMakeFile="PointoolsLibsVortex/VS2012/GLUI/GLUI.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">

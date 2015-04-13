@@ -2,7 +2,7 @@
 #
 #     $Source: PointoolsLibs/PointoolsLibsCommon/VS2012/GL/GL.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
@@ -15,5 +15,6 @@ VendorAPIDir = $(OutBuildContexts)PointoolsLibs_VS2012/VendorAPI/GL
 
 always:
     @CreateSymLinks.py -f"$(VendorAPIDir)\glext.h=${PointoolsLibs}\GL\Include\glext.h"
+    @CreateSymLinks.py -f"$(VendorAPIDir)\wglext.h=${PointoolsLibs}\GL\Include\wglext.h"
 
 
