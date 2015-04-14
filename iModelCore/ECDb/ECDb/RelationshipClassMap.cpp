@@ -17,13 +17,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP const RelationshipClassMap::DEFAULT_SOURCEECINSTANCEID_COLUMNNAME = "RK_Source";
+Utf8CP const RelationshipClassMap::DEFAULT_SOURCEECINSTANCEID_COLUMNNAME = "SourceECInstanceId";
 //static
-Utf8CP const RelationshipClassMap::DEFAULT_SOURCEECCLASSID_COLUMNNAME = "RC_Source";
+Utf8CP const RelationshipClassMap::DEFAULT_SOURCEECCLASSID_COLUMNNAME = "SourceECClassId";
 //static
-Utf8CP const RelationshipClassMap::DEFAULT_TARGETECINSTANCEID_COLUMNNAME = "RK_Target";
+Utf8CP const RelationshipClassMap::DEFAULT_TARGETECINSTANCEID_COLUMNNAME = "TargetECInstanceId";
 //static
-Utf8CP const RelationshipClassMap::DEFAULT_TARGETECCLASSID_COLUMNNAME = "RC_Target";
+Utf8CP const RelationshipClassMap::DEFAULT_TARGETECCLASSID_COLUMNNAME = "TargetECClassId";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
@@ -301,7 +301,7 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan       02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSqlColumn* RelationshipClassEndTableMap::Configure_RCKey (RelationshipClassMapInfoCR mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
+ECDbSqlColumn* RelationshipClassEndTableMap::Configure_ForeignECClassIdKey (RelationshipClassMapInfoCR mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
     {
     ECDbSqlColumn* otherEndECClassIdColumn = nullptr;
     Utf8String columnName;
@@ -372,10 +372,10 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
     const ECClassId defaultThisEndECClassId = thisEndClass->GetId ();
 
     //**** Other End
-    ECDbSqlColumn* otherEndECClassIdColumn = Configure_RCKey (relationshipClassMapInfo, otherEndConstraint, *otheEndClassMap, otherEndTableCount);
+    ECDbSqlColumn* otherEndECClassIdColumn = Configure_ForeignECClassIdKey (relationshipClassMapInfo, otherEndConstraint, *otheEndClassMap, otherEndTableCount);
     if (otherEndECClassIdColumn == nullptr)
         {
-        BeAssert (false && "Failed to create RC_Key column for relationship");
+        BeAssert (false && "Failed to create foreign ECClassId column for relationship");
         return MapStatus::Error;
         }
     ECDbSqlColumn* otherEndECInstanceIdColumn = nullptr;
@@ -805,15 +805,7 @@ bool RelationshipClassEndTableMap::GetRelationshipColumnName (Utf8StringR column
     //! We can qualify all relation with schema name to avoid this but it will be breaking changes
     //! as older db will still construct the name by default without schema name. Thus we need the
     //! the persistence of column name for ECRelationship Keys.
-#if 0
-    Utf8String schemaNameUtf8 (m_ecClass.GetSchema().GetName());
-    columnName = prefix;
-    columnName.append (schemaNameUtf8);
-    columnName.append ("_");
-    columnName.append (classNameUtf8);
-    if (!table.GetColumn (columnName.c_str()))
-        return true;
-#endif
+
     if (mappingInProgress)
         {
         LOG.errorv ("Table %s already contains column named %s. ECRelationship %s has failed to map.", 
@@ -828,7 +820,7 @@ bool RelationshipClassEndTableMap::GetRelationshipColumnName (Utf8StringR column
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelationshipClassEndTableMap::GetOtherEndKeyColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const
     {
-    return GetRelationshipColumnName (columnName, table, "RK_", mappingInProgress);
+    return GetRelationshipColumnName (columnName, table, "ForeignECInstanceId_", mappingInProgress);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -836,7 +828,7 @@ bool RelationshipClassEndTableMap::GetOtherEndKeyColumnName (Utf8StringR columnN
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelationshipClassEndTableMap::GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const
     {
-    return GetRelationshipColumnName (columnName, table, "RC_", mappingInProgress);
+    return GetRelationshipColumnName (columnName, table, "ForeignECClassId_", mappingInProgress);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1213,25 +1205,21 @@ void RelationshipClassLinkTableMap::AddIndicesToRelationshipEnds (RelationshipIn
         {
         case RIDX_SourceOnly:
             {
-            // CREATE [UNIQUE] INDEX <Name> ON <TableName> (RK_Source, [RC_Source])
             AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
             break;
             }
         case RIDX_TargetOnly:
             {
-            // CREATE [UNIQUE] INDEX <Name> ON <TableName> (RK_Target, [RC_Target])
             AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
             break;
             }
         case RIDX_SourceToTarget:
             {
-            // CREATE [UNIQUE] INDEX <Name> ON <TableName> (RK_Source, [RC_Source], RK_Target, [RC_Target])
             AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
             break;
             }
         case RIDX_TargetToSource:
             {
-            // CREATE [UNIQUE] INDEX <Name> ON <TableName> (RK_Target, [RC_Target], RK_Source, [RC_Source])
             AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, sourceECInstanceIdColumn, sourceECClassIdColumn);
             break;
             }
