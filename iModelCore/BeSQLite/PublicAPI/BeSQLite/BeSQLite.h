@@ -2246,7 +2246,7 @@ public:
     //! Parameters for controlling aspects of the opening of a Db.
     // @bsiclass                                                    Keith.Bentley   11/10
     //=======================================================================================
-    struct OpenParams
+    struct EXPORT_VTABLE_ATTRIBUTE OpenParams
     {
         mutable OpenMode m_openMode;
         StartDefaultTransaction m_startDefaultTxn;
