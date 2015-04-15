@@ -660,8 +660,6 @@ void ECDbTestProject::PopulatePrimitiveValue (ECValueR value, PrimitiveType prim
     value.Clear();
     switch (primitiveType)
         {
-        case PRIMITIVETYPE_IGeometry:
-            break;
         case PRIMITIVETYPE_String  : 
             value.SetUtf8CP("Sample string"); break;
         case PRIMITIVETYPE_Integer : 
@@ -712,6 +710,13 @@ void ECDbTestProject::PopulatePrimitiveValue (ECValueR value, PrimitiveType prim
             point3d.y=22.14;
             point3d.z=33.12;
             value.SetPoint3D(point3d);
+            break;
+            }
+
+        case PRIMITIVETYPE_IGeometry:
+            {
+            IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+            value.SetIGeometry(*line);
             break;
             }
         }
@@ -783,6 +788,14 @@ void ECDbTestProject::PopulatePrimitiveValueWithRandomValues (ECValueR ecValue, 
             point3d.y=randomNumber * 1.8;
             point3d.z=randomNumber * 2.9;
             ecValue.SetPoint3D(point3d);
+            break;
+            }
+
+        case PRIMITIVETYPE_IGeometry:
+            {
+            IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(randomNumber, randomNumber*2.0, randomNumber*3.0, 
+                                                                                -randomNumber, randomNumber*(-2.0), randomNumber*(-3.0))));
+            ecValue.SetIGeometry(*line);
             break;
             }
 

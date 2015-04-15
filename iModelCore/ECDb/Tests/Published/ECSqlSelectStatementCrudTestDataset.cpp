@@ -494,7 +494,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::CommonGeometryTests (int rowCountPerCla
 
     ecsql = "SELECT PASpatialProp.Geometry_Array FROM ecsql.SSpatial";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
-
     return dataset;
     }
 
@@ -1205,11 +1204,65 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    Utf8CP ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY S";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    Utf8CP ecsql = "SELECT I, count(*) FROM ecsql.PSA GROUP BY I";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
 
-    ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING I > 0";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ecsql = "SELECT B, count(*) FROM ecsql.PSA GROUP BY B";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Bi";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT Hex(Bi), count(*) FROM ecsql.PSA GROUP BY Bi";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT DtUtc, count(*) FROM ecsql.PSA GROUP BY DtUtc";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT I, count(*) FROM ecsql.PSA GROUP BY ?";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT I, count(*) FROM ecsql.PSA GROUP BY NULL";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT I, count(*) FROM ecsql.PSA GROUP BY 1";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY Length(S)";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT P2D, count(*) FROM ecsql.PSA GROUP BY P2D";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT P3D, count(*) FROM ecsql.PSA GROUP BY P3D";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT PStructProp, count(*) FROM ecsql.PSA GROUP BY PStructProp";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT Bi_Array, count(*) FROM ecsql.PSA GROUP BY Bi_Array";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT PStruct_Array, count(*) FROM ecsql.PSA GROUP BY PStruct_Array";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING Length(S) > 1";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT Hex(Bi), count(*) FROM ecsql.P GROUP BY Bi HAVING Hex(Bi) like '0C0B%'";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT Hex(Bi), count(*) FROM ecsql.P GROUP BY Bi HAVING Hex(Bi) like '1C0B%'";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+
+    ecsql = "SELECT S, count(*) FROM ecsql.PSA HAVING Length(S) > 1";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid, "Although standard SQL allows, SQLite doesn't support HAVING without GROUP BY.");
 
     return dataset;
     }
@@ -2591,6 +2644,46 @@ ECSqlTestDataset ECSqlSelectTestDataset::SubqueryTests( int rowCountPerClass )
 
     ecsql = "SELECT ECInstanceId FROM (SELECT * FROM ecsql.P)";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    return dataset;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
+    {
+    ECSqlTestDataset dataset;
+
+    Utf8CP ecsql = "SELECT ECInstanceId FROM ecsql.P UNION SELECT ECInstanceId FROM ecsql.PSA";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "SELECT ECInstanceId FROM ecsql.P UNION ALL SELECT ECInstanceId FROM ecsql.PSA";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "SELECT B, Bi, I, L, S, P2D, P3D FROM ecsql.P UNION ALL SELECT B, Bi, I, L, S, P2D, P3D FROM ecsql.PSA";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "SELECT PStructProp FROM ecsql.PSA UNION SELECT PStructProp FROM ecsql.SAStruct";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "SELECT B_Array, Bi_Array, D_Array, Dt_Array, I_Array, S_Array, P2D_Array, P3D_Array FROM ecsql.PSA UNION ALL B_Array, Bi_Array, D_Array, Dt_Array, I_Array, S_Array, P2D_Array, P3D_Array FROM ecsql.PA";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT PStruct_Array FROM ecsql.SAStruct";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "SELECT S FROM ecsql.P UNION SELECT Dt FROM ecsql.PSA";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT Bi FROM ecsql.P UNION SELECT I_Array FROM ecsql.PSA";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT Bi_Array FROM ecsql.PSA UNION SELECT I_Array FROM ecsql.PA";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT * FROM ecsql.P UNION SELECT * FROM ecsql.PSA";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     return dataset;
     }

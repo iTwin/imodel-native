@@ -384,6 +384,7 @@ public:
         SubqueryTest,
         SubqueryValue,
         Unary,
+        Union,
         Update,
         Value,
         ValueBinary,
@@ -578,7 +579,5 @@ typedef Exp const& ExpCR;
 
 
 #define DEFINE_EXPR_TYPE(X) public: virtual Type GetType () const override { return Type::X;} 
-#define VF_NOT_IMPLEMENTED(X,Y) virtual X Y () const override  {BeAssert (false && "Virtual function not implemented"); return X (); }
-#define _NOT_IMP_EXPR_TOECSQL_    VF_NOT_IMPLEMENTED(Utf8String,ToECSql) 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

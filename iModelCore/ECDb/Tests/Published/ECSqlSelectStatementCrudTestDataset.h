@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlSelectStatementCrudTestDataset.h $
+|     $Source: Tests/Published/ECSqlSelectStatementCrudTestDataset.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,6 +43,7 @@ public:
     static ECSqlTestDataset SourceTargetConstraintTests (int rowCountPerClass);
     static ECSqlTestDataset StructTests (int rowCountPerClass);
     static ECSqlTestDataset SubqueryTests (int rowCountPerClass);
+    static ECSqlTestDataset UnionTests(int rowCountPerClass);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

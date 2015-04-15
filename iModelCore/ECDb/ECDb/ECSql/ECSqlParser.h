@@ -104,7 +104,8 @@ private:
 
     static SqlSetQuantifier                            parse_opt_all_distinct          (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static OrderBySpecExp::SortDirection               parse_opt_asc_desc              (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<WhereExp>                   parse_opt_where_clause          (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<PropertyNameListExp>        parse_opt_column_ref_commalist  (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<WhereExp>                   parse_opt_where_clause(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<OrderByExp>                 parse_order_by_clause           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static ECSqlJoinType                               parse_outer_join_type           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
@@ -129,6 +130,8 @@ private:
     static Utf8CP                                      parse_schema_name               (Utf8CP& className, ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<BooleanExp>                 parse_search_conditon           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static bool                                        parse_sql_not                   (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+
+    static std::unique_ptr<UnionStatementExp>          parse_union_statement           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<ValueExp>                   parse_value_exp                 (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<ValueListExp>               parse_value_exp_commalist       (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);

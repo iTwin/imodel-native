@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/WhereExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -25,7 +25,7 @@ WhereExp::WhereExp (unique_ptr<BooleanExp> expression)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BooleanExp const* WhereExp::GetExpression() const
+BooleanExp const* WhereExp::GetSearchConditionExp() const
     {
     return GetChild<BooleanExp> (0);
     }
@@ -35,7 +35,7 @@ BooleanExp const* WhereExp::GetExpression() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String WhereExp::ToECSql() const
     {
-    return "WHERE " + GetExpression ()->ToECSql();
+    return "WHERE " + GetSearchConditionExp ()->ToECSql();
     }
 
 //-----------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/WhereExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,7 @@ private:
 public:
     explicit WhereExp(std::unique_ptr<BooleanExp> expression);
 
-    BooleanExp const* GetExpression() const;
+    BooleanExp const* GetSearchConditionExp() const;
     virtual Utf8String ToECSql() const override;
     };
 

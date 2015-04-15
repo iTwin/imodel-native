@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlUpdateStatementCrudTestDataset.cpp $
+|     $Source: Tests/Published/ECSqlUpdateStatementCrudTestDataset.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlUpdateStatementCrudTestDataset.h"
@@ -43,7 +43,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::CommonGeometryTests (int rowCountPerCla
     ecsql = "UPDATE ONLY ecsql.PASpatial SET I = 123, Geometry_Array = NULL";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, rowCountPerClass, true);
 
-    ecsql = "UPDATE ONLY ecsql.PASpatial SET I = 123 WHERE Geometry IS NULL";
+    ecsql = "UPDATE ONLY ecsql.PASpatial SET I = 123 WHERE Geometry IS NOT NULL";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, rowCountPerClass, true);
 
     ecsql = "UPDATE ONLY ecsql.PASpatial SET I = 123 WHERE Geometry_Array IS NULL";

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SelectStatementExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,15 +72,10 @@ private:
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override
-        {
-        return "FromClause";
-        }
+    virtual Utf8String _ToString () const override { return "FromClause"; }
 
 public:
-    FromExp ()
-        : Exp ()
-        {}
+    FromExp () : Exp () {}
 
     ECSqlStatus TryAddClassRef(ECSqlParseContext&ctx, ClassRefExp* classRef);
 
@@ -97,34 +92,42 @@ public:
     };
 
 //=======================================================================================
-//! @bsiclass                                                Affan.Khan      03/2013
+//! @bsiclass                                                Krischan.Eberle      04/2015
 //+===============+===============+===============+===============+===============+======
 struct GroupByExp : Exp
     {
     DEFINE_EXPR_TYPE(GroupBy) 
-    private:
-        virtual Utf8String _ToString () const override
-            {
-            return "GroupBy";
-            }
-    public:
-        _NOT_IMP_EXPR_TOECSQL_
+private:
+    size_t m_propNameListExpIndex;
+
+    virtual Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual Utf8String _ToString () const override { return "GroupBy"; }
+    
+public:
+    explicit GroupByExp(std::unique_ptr<PropertyNameListExp> propertyNameListExp);
+    ~GroupByExp() {}
+
+    PropertyNameListExp const* GetPropertyNameListExp() const;
+    virtual Utf8String ToECSql() const override;
     };
 
 //=======================================================================================
-//! @bsiclass                                                Affan.Khan      03/2013
+//! @bsiclass                                                Krischan.Eberle      04/2015
 //+===============+===============+===============+===============+===============+======
 struct HavingExp : Exp
     {
     DEFINE_EXPR_TYPE(Having) 
-    private:
-        virtual Utf8String _ToString () const override
-            {
-            return "Having";
-            }
+private:
+    size_t m_searchConditionExpIndex;
 
-    public:
-        _NOT_IMP_EXPR_TOECSQL_
+    virtual Utf8String _ToString () const override { return "Having"; }
+
+public:
+    explicit HavingExp(std::unique_ptr<BooleanExp> searchConditionExp);
+    ~HavingExp() {}
+
+    BooleanExp const* GetSearchConditionExp() const;
+    virtual Utf8String ToECSql() const override;
     };
 
 //=======================================================================================
@@ -359,6 +362,29 @@ public :
 
     SqlSetQuantifier GetSelectionType() const {return m_selectionType;}
 
+    virtual Utf8String ToECSql() const override;
+    };
+
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2013
+//+===============+===============+===============+===============+===============+======
+struct UnionStatementExp : Exp
+    {
+    DEFINE_EXPR_TYPE(Union)
+private:
+    size_t m_lhsExpIndex;
+    size_t m_rhsExpIndex;
+    bool m_isUnionAll;
+
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual Utf8String _ToString() const override { return "Union"; }
+
+public:
+    UnionStatementExp(bool isUnionAll, std::unique_ptr<Exp> lhs, std::unique_ptr<SelectStatementExp> rhs);
+    bool IsUnionAll() const { return m_isUnionAll; }
+    Exp const* GetLhs() const { return GetChild<Exp>(m_lhsExpIndex); }
+    SelectStatementExp const* GetRhs() const { return GetChild<SelectStatementExp>(m_rhsExpIndex); }
     virtual Utf8String ToECSql() const override;
     };
 
