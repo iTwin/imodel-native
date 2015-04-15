@@ -204,11 +204,11 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
         {
         m_parentClassMap = tphMaps[0];
         auto enableColumnReuse = m_parentClassMap->GetMapStrategy().IsReuseColumns();
-        auto excludeFromColumnsReuse = GetMapStrategyR().IsWithDisableReuseColumnsForThisClass();
+        auto excludeFromColumnsReuse = GetMapStrategyR().IsDisableReuseColumnsForThisClass();
         GetMapStrategyR().SetInParentTable(enableColumnReuse);
         if (excludeFromColumnsReuse && enableColumnReuse)
             {
-            GetMapStrategyR().AddOption(Strategy::WithDisableReuseColumnsForThisClass);
+            GetMapStrategyR().AddOption(Strategy::DisableReuseColumnsForThisClass);
             }
         }
 

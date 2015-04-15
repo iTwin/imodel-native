@@ -49,6 +49,7 @@ protected:
 
         bool ClassIdMatchesConstraint (ECN::ECClassId candidateClassId) const;
         bool TryGetSingleClassIdFromConstraint (ECN::ECClassId& classId) const;
+        ECN::ECRelationshipConstraintCR GetRelationshipConstraint()const;
         };
 
     static Utf8CP const DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;

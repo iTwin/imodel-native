@@ -164,6 +164,13 @@ bool RelationshipClassMap::ConstraintMap::ClassIdMatchesConstraint (ECN::ECClass
 
     return m_ecClassIdCache.find (candidateClassId) != m_ecClassIdCache.end ();
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Muhammad.Zaighum                        04/13
+//---------------------------------------------------------------------------------------
+ECN::ECRelationshipConstraintCR RelationshipClassMap::ConstraintMap::GetRelationshipConstraint()const
+    {
+    return m_constraint;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                       12/13
@@ -402,7 +409,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
     if (thisEndConstraintInfo.DoEnforceIntegrityCheck () && relationshipClass.GetStrength () != StrengthType::STRENGTHTYPE_Holding && !thisEndConstraintInfo.IsEmpty())
         {
         //auto const& thisEndConstraint = thisEnd == ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
-        auto const& thisEndConstraintMap = thisEnd == ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
+       // auto const& thisEndConstraintMap = thisEnd == ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
         auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
         auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
 
@@ -413,10 +420,12 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
         if (otherEndTables.size () != 1)
             return MapStatus::Error;
 
-        auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap ()->GetFirstColumn ();
+        auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap()->GetFirstColumn();
         auto& foreignTable = GetTable ();
-        auto primaryKeyColumn = thisEndConstraintMap.GetECInstanceIdPropMap ()->GetFirstColumn ();
-        auto& primaryTable = **(otherEndTables.begin());
+        auto primaryClassMap = GetECDbMap().GetClassMap(*otherEndConstraintMap.GetRelationshipConstraint().GetClasses()[0]);
+        BeAssert(primaryClassMap!=nullptr && "Primary Class map is null");
+        auto primaryKeyColumn = primaryClassMap->GetTable().GetFilteredColumnFirst(ECDbSystemColumnECInstanceId);
+        auto& primaryTable = primaryKeyColumn->GetTable();
         
         BeAssert (foreignKeyColumn != nullptr);
         BeAssert (primaryKeyColumn != nullptr);

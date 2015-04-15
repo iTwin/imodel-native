@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__BENTLEY_INTERNAL_ONLY__
+//_BENTLEY_INTERNAL_ONLY_
 #include "ECDbInternalTypes.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -23,11 +23,11 @@ enum class Strategy : uint32_t //0xffffffff
     SharedTableForThisClass = 0x10,  //<TableName> must be provided
     MapToExistingTable = 0x20, //<TableName> must be provided
     TableForThisClass = 40, //This is not inhertied to children. 
-    //Options that can also be specified along with some map strategies
-    WithReuseColumns = 0x100,             //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass
-    WithExclusivelyStoredInThisTable = 0x200, //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass, MapToExistingTable, TablePerClass
-    WithReadonly = 0x400, //Applied to : MapToExistingTable
-    WithDisableReuseColumnsForThisClass = 0x800,
+    //Options that can also be specified along  some map strategies
+    ReuseColumns = 0x100,             //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass
+    ExclusivelyStoredInThisTable = 0x200, //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass, MapToExistingTable, TablePerClass
+    Readonly = 0x400, //Applied to : MapToExistingTable
+    DisableReuseColumnsForThisClass = 0x800,
     //For Relationship valid values are TablePerHierarchy, TableForThisClass, SharedTableForThisClass, DoNotMap
     //Private Strategies used by ECDb Internally
     //===========================================================================================
@@ -36,7 +36,7 @@ enum class Strategy : uint32_t //0xffffffff
     InParentTable = 0x1000,
     RelationshipTargetTable = 0x2000,
     RelationshipSourceTable = 0x4000,
-    Options = WithReuseColumns | WithExclusivelyStoredInThisTable | WithReadonly | WithDisableReuseColumnsForThisClass
+    Options = ReuseColumns | ExclusivelyStoredInThisTable | Readonly | DisableReuseColumnsForThisClass
     };
 
 #define STRATEGY_DO_NOT_MAP                                     "DoNotMap"
@@ -50,12 +50,12 @@ enum class Strategy : uint32_t //0xffffffff
 #define STRATEGY_MAP_TO_EXISTING_TABLE                          "MapToExistingTable"
 #define STRATEGY_IN_PARENT_TABLE                                "InParentTable"
 #define STRATEGY_SHARED_TABLE_FOR_THIS_CLASS                    "SharedTableForThisClass"
-#define STRATEGY_OPTION_WITH_REUSE_COLUMNS                      "WithReuseColumns"
-#define STRATEGY_OPTION_WITH_READONLY                           "WithReadonly"
-#define STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE   "WithExclusivelyStoredInThisTable"
+#define STRATEGY_OPTION_REUSE_COLUMNS                      "ReuseColumns"
+#define STRATEGY_OPTION_READONLY                           "Readonly"
+#define STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE   "ExclusivelyStoredInThisTable"
 #define STRATEGY_DEIMITER                                       "|"
 #define DEIMITER                                                " " STRATEGY_DEIMITER " "
-#define STRATEGY_OPTION_WITH_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS "WithDisableReuseColumnsForThisClass"
+#define STRATEGY_OPTION_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS "DisableReuseColumnsForThisClass"
 static inline Strategy operator | (Strategy a, Strategy b)
     {
     return static_cast<Strategy>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
@@ -90,41 +90,41 @@ struct ECDbMapStrategy
                         STRATEGY_TABLE_FOR_THIS_CLASS },
                     { Strategy::TablePerClass, 
                         STRATEGY_TABLE_PER_CLASS },
-                    { Strategy::TablePerClass | Strategy::WithExclusivelyStoredInThisTable, 
-                        STRATEGY_TABLE_PER_CLASS DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE },
+                    { Strategy::TablePerClass | Strategy::ExclusivelyStoredInThisTable, 
+                        STRATEGY_TABLE_PER_CLASS DEIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE },
                     { Strategy::TablePerHierarchy, 
                         STRATEGY_TABLE_PER_HIERARCHY },
-                    { Strategy::TablePerHierarchy | Strategy::WithExclusivelyStoredInThisTable, 
-                        STRATEGY_TABLE_PER_HIERARCHY DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE },
-                    { Strategy::TablePerHierarchy | Strategy::WithReuseColumns, 
-                        STRATEGY_TABLE_PER_HIERARCHY DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
-                    { Strategy::TablePerHierarchy | Strategy::WithExclusivelyStoredInThisTable | Strategy::WithReuseColumns, 
-                        STRATEGY_TABLE_PER_HIERARCHY DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
+                    { Strategy::TablePerHierarchy | Strategy::ExclusivelyStoredInThisTable, 
+                        STRATEGY_TABLE_PER_HIERARCHY DEIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE },
+                    { Strategy::TablePerHierarchy | Strategy::ReuseColumns, 
+                        STRATEGY_TABLE_PER_HIERARCHY DEIMITER STRATEGY_OPTION_REUSE_COLUMNS },
+                    { Strategy::TablePerHierarchy | Strategy::ExclusivelyStoredInThisTable | Strategy::ReuseColumns, 
+                        STRATEGY_TABLE_PER_HIERARCHY DEIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE DEIMITER STRATEGY_OPTION_REUSE_COLUMNS },
                     { Strategy::MapToExistingTable, 
                         STRATEGY_MAP_TO_EXISTING_TABLE },
-                    { Strategy::MapToExistingTable | Strategy::WithReadonly, 
-                        STRATEGY_MAP_TO_EXISTING_TABLE DEIMITER STRATEGY_OPTION_WITH_READONLY },
+                    { Strategy::MapToExistingTable | Strategy::Readonly, 
+                        STRATEGY_MAP_TO_EXISTING_TABLE DEIMITER STRATEGY_OPTION_READONLY },
                     { Strategy::InParentTable, 
                         STRATEGY_IN_PARENT_TABLE },
-                    { Strategy::InParentTable | Strategy::WithExclusivelyStoredInThisTable, 
-                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE },
-                    { Strategy::InParentTable | Strategy::WithReuseColumns, 
-                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
-                        { Strategy::InParentTable | Strategy::WithReuseColumns | Strategy::WithDisableReuseColumnsForThisClass,
-                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS DEIMITER STRATEGY_OPTION_WITH_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS },
+                    { Strategy::InParentTable | Strategy::ExclusivelyStoredInThisTable, 
+                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE },
+                    { Strategy::InParentTable | Strategy::ReuseColumns, 
+                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_REUSE_COLUMNS },
+                        { Strategy::InParentTable | Strategy::ReuseColumns | Strategy::DisableReuseColumnsForThisClass,
+                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_REUSE_COLUMNS DEIMITER STRATEGY_OPTION_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS },
 
-                    { Strategy::InParentTable | Strategy::WithExclusivelyStoredInThisTable | Strategy::WithReuseColumns, 
-                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
+                    { Strategy::InParentTable | Strategy::ExclusivelyStoredInThisTable | Strategy::ReuseColumns, 
+                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE DEIMITER STRATEGY_OPTION_REUSE_COLUMNS },
                     { Strategy::SharedTableForThisClass, 
                         STRATEGY_SHARED_TABLE_FOR_THIS_CLASS },
-                    { Strategy::SharedTableForThisClass | Strategy::WithExclusivelyStoredInThisTable, 
-                        STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE },
-                    { Strategy::SharedTableForThisClass | Strategy::WithReuseColumns, 
-                        STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
-                    { Strategy::SharedTableForThisClass | Strategy::WithExclusivelyStoredInThisTable | Strategy::WithReuseColumns, 
-                        STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
-                    { Strategy::WithDisableReuseColumnsForThisClass ,
-                    STRATEGY_OPTION_WITH_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS },
+                    { Strategy::SharedTableForThisClass | Strategy::ExclusivelyStoredInThisTable, 
+                        STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DEIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE },
+                    { Strategy::SharedTableForThisClass | Strategy::ReuseColumns, 
+                        STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DEIMITER STRATEGY_OPTION_REUSE_COLUMNS },
+                    { Strategy::SharedTableForThisClass | Strategy::ExclusivelyStoredInThisTable | Strategy::ReuseColumns, 
+                        STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DEIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE DEIMITER STRATEGY_OPTION_REUSE_COLUMNS },
+                    { Strategy::DisableReuseColumnsForThisClass ,
+                    STRATEGY_OPTION_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS },
 
             };
 
@@ -155,10 +155,10 @@ struct ECDbMapStrategy
                     { STRATEGY_TABLE_FOR_THIS_CLASS, Strategy::TableForThisClass },
                     { STRATEGY_SHARED_TABLE_FOR_THIS_CLASS, Strategy::SharedTableForThisClass },
                     { STRATEGY_MAP_TO_EXISTING_TABLE, Strategy::MapToExistingTable },
-                    { STRATEGY_OPTION_WITH_REUSE_COLUMNS, Strategy::WithReuseColumns },
-                    { STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE, Strategy::WithExclusivelyStoredInThisTable },
-                    { STRATEGY_OPTION_WITH_READONLY, Strategy::WithReadonly },
-                    { STRATEGY_OPTION_WITH_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS, Strategy::WithDisableReuseColumnsForThisClass }
+                    { STRATEGY_OPTION_REUSE_COLUMNS, Strategy::ReuseColumns },
+                    { STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE, Strategy::ExclusivelyStoredInThisTable },
+                    { STRATEGY_OPTION_READONLY, Strategy::Readonly },
+                    { STRATEGY_OPTION_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS, Strategy::DisableReuseColumnsForThisClass }
 
             };
 
@@ -232,12 +232,12 @@ struct ECDbMapStrategy
             m_strategy = strategy;
             return BentleyStatus::SUCCESS;
             }
-        BentleyStatus AddOption (Strategy withOption)
+        BentleyStatus AddOption (Strategy Option)
             {
-            if (!IsValid (withOption | m_strategy))
+            if (!IsValid (Option | m_strategy))
                 return BentleyStatus::ERROR;
 
-            m_strategy = m_strategy | withOption;
+            m_strategy = m_strategy | Option;
             return BentleyStatus::SUCCESS;
             }
 
@@ -281,41 +281,41 @@ struct ECDbMapStrategy
         void SetDoNotMap () { Assign (Strategy::DoNotMap); }
         void SetTableForThisClass () { Assign (Strategy::TableForThisClass); }
         void SetDoNotMapHierarchy (){ Assign (Strategy::DoNotMapHierarchy); }
-        void SetTablePerHierarchy (bool withReuseColumns, bool withExclusivelyStoreInThisTable)
+        void SetTablePerHierarchy (bool ReuseColumns, bool ExclusivelyStoreInThisTable)
             {
             Assign (Strategy::TablePerHierarchy);
-            if (withReuseColumns)
-                AddOption (Strategy::WithReuseColumns);
+            if (ReuseColumns)
+                AddOption (Strategy::ReuseColumns);
 
-            if (withExclusivelyStoreInThisTable)
-                AddOption (Strategy::WithExclusivelyStoredInThisTable);
+            if (ExclusivelyStoreInThisTable)
+                AddOption (Strategy::ExclusivelyStoredInThisTable);
             }
-        void SetTablePerClass (bool withExclusivelyStoreInThisTable)
+        void SetTablePerClass (bool ExclusivelyStoreInThisTable)
             {
             Assign (Strategy::TablePerClass);
-            if (withExclusivelyStoreInThisTable)
-                AddOption (Strategy::WithExclusivelyStoredInThisTable);
+            if (ExclusivelyStoreInThisTable)
+                AddOption (Strategy::ExclusivelyStoredInThisTable);
             }
-        void SetSharedTableForThisClass (bool withReuseColumns, bool withExclusivelyStoreInThisTable)
+        void SetSharedTableForThisClass (bool ReuseColumns, bool ExclusivelyStoreInThisTable)
             {
             Assign (Strategy::SharedTableForThisClass);
-            if (withReuseColumns)
-                AddOption (Strategy::WithReuseColumns);
+            if (ReuseColumns)
+                AddOption (Strategy::ReuseColumns);
 
-            if (withExclusivelyStoreInThisTable)
-                AddOption (Strategy::WithExclusivelyStoredInThisTable);
+            if (ExclusivelyStoreInThisTable)
+                AddOption (Strategy::ExclusivelyStoredInThisTable);
             }
-        void SetMapToExistingTable (bool withReadOnly)
+        void SetMapToExistingTable (bool ReadOnly)
             {
             Assign (Strategy::SharedTableForThisClass);
-            if (withReadOnly)
-                AddOption (Strategy::WithReadonly);
+            if (ReadOnly)
+                AddOption (Strategy::Readonly);
             }
-        void SetInParentTable (bool withReuseColumns)
+        void SetInParentTable (bool ReuseColumns)
             {
             Assign (Strategy::InParentTable);
-            if (withReuseColumns)
-                AddOption (Strategy::WithReuseColumns);
+            if (ReuseColumns)
+                AddOption (Strategy::ReuseColumns);
             }
         void SetRelationshipTargetTable ()
             {
@@ -327,17 +327,17 @@ struct ECDbMapStrategy
             }
         void SetToDefaultMapStrategy () { Assign (Strategy::Default); }
         //Getters
-        Strategy GetStrategy (bool withoutOptions = false) const 
+        Strategy GetStrategy (bool outOptions = false) const 
             { 
-            if (!withoutOptions)
+            if (!outOptions)
                 return m_strategy;
 
             return static_cast<Strategy>(ToUInt32 () & ~(static_cast<uint32_t>(Strategy::Options)));
             }
 
-        bool IsReuseColumns () const { return (GetStrategy () & Strategy::WithReuseColumns) == Strategy::WithReuseColumns; }
-        bool IsExclusiveyStoreInThisTable () const { return (GetStrategy () & Strategy::WithExclusivelyStoredInThisTable) == Strategy::WithExclusivelyStoredInThisTable; }
-        bool IsReadonly () const { return (GetStrategy () & Strategy::WithReadonly) == Strategy::WithReadonly; }
+        bool IsReuseColumns () const { return (GetStrategy () & Strategy::ReuseColumns) == Strategy::ReuseColumns; }
+        bool IsExclusiveyStoreInThisTable () const { return (GetStrategy () & Strategy::ExclusivelyStoredInThisTable) == Strategy::ExclusivelyStoredInThisTable; }
+        bool IsReadonly () const { return (GetStrategy () & Strategy::Readonly) == Strategy::Readonly; }
         bool IsDoNotMap () const { return GetStrategy (true) == Strategy::DoNotMap; }
         bool IsNoHint () const { return GetStrategy (false) == Strategy::NoHint; }
 
@@ -355,7 +355,7 @@ struct ECDbMapStrategy
         bool IsMapped () const { return !(IsDoNotMap () || IsDoNotMapHierarchy ()); }
         bool IsUnmapped () const { return IsDoNotMap () || IsDoNotMapHierarchy (); }
         bool IsEndTableMapping () const{ return IsRelationshipSourceTable () || IsRelationshipTargetTable (); }
-        bool IsWithDisableReuseColumnsForThisClass()const { return (GetStrategy() & Strategy::WithDisableReuseColumnsForThisClass) == Strategy::WithDisableReuseColumnsForThisClass; }
+        bool IsDisableReuseColumnsForThisClass()const { return (GetStrategy() & Strategy::DisableReuseColumnsForThisClass) == Strategy::DisableReuseColumnsForThisClass; }
         bool IsLinkTableStrategy () const
             {
             auto mapStrategy = GetStrategy (true);
@@ -367,9 +367,9 @@ struct ECDbMapStrategy
                 mapStrategy == Strategy::SharedTableForThisClass);
             }
 
-        Utf8CP ToString (bool withoutOptions = false) const
+        Utf8CP ToString (bool outOptions = false) const
             {
-            return ConvertToString (GetStrategy(withoutOptions));
+            return ConvertToString (GetStrategy(outOptions));
             }
         uint32_t ToUInt32 () const { return static_cast<uint32_t>(GetStrategy ()); }
         int32_t ToInt32 () const { return static_cast<int32_t>(GetStrategy ()); }

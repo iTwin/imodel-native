@@ -839,7 +839,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,Clas
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
     ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType (columnType);
   
-    if (!classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetMapStrategy().IsReuseColumns() && !classMapInfo->GetMapStrategy().IsWithDisableReuseColumnsForThisClass())
+    if (!classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetMapStrategy().IsReuseColumns() && !classMapInfo->GetMapStrategy().IsDisableReuseColumnsForThisClass())
         {
         strategy = ColumnFactory::Specification::Strategy::CreateOrReuseSharedColumn;
         requestedColumnType = ECDbSqlColumn::Type::Any; //If not set it will get set anyway
