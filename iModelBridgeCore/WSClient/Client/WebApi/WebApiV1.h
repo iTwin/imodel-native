@@ -52,6 +52,7 @@ struct WebApiV1 : public WebApi
         Utf8String GetUrl (Utf8StringCR service, Utf8StringCR params, Utf8StringCR queryString = nullptr, Utf8StringCR webApiVersion = "v1.1") const;
         Utf8String CreateObjectIdParam (ObjectIdCR objectId) const;
         Utf8String CreatePropertiesQuery (const bset<Utf8String>& properties) const;
+        Utf8String CreatePropertiesQuery (Utf8StringCR propertiesList) const;
         Utf8String CreateParentQuery (ObjectIdCR objectId) const;
         Utf8String CreateWebApiVersionPart (Utf8StringCR webApiVersion) const;
 
@@ -104,6 +105,14 @@ struct WebApiV1 : public WebApi
             ) const;
 
         virtual Utf8String GetSchemaUrl () const;
+
+        AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
+            (
+            ObjectIdCR parentObjectId,
+            Utf8StringCR propertiesQuery,
+            Utf8StringCR eTag = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
+            ) const;
 
     public:
         WebApiV1 (std::shared_ptr<const ClientConfiguration> configuration, WSInfoCR info);

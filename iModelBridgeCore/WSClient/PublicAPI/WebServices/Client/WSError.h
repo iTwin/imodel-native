@@ -86,7 +86,7 @@ struct WSError : public MobileDgn::Utils::AsyncError
     public:
         WSCLIENT_EXPORT WSError ();
         WSCLIENT_EXPORT WSError (MobileDgn::Utils::HttpResponseCR httpResponse);
-        // For testing purposes only
+        // Do not use in production code, this is for testing purposes only
         WSCLIENT_EXPORT WSError (Id errorId);
 
         WSCLIENT_EXPORT static WSError CreateServerNotSupportedError ();
