@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlInsertPreparer.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,7 +56,7 @@ private:
     //! If validation was successful, the class id is returned.
     static ECSqlStatus ValidateConstraintClassId (ECN::ECClassId& retrievedConstraintClassId, ECSqlPrepareContext& ctx, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECN::ECRelationshipEnd constraintEnd);
 
-    static ECSqlStatus GetConstraintClassIdExpValue (bool& isParameter, ECN::ECClassId& constraintClassId, ECSqlPrepareContext& ctx, RowValueConstructorListExp const& valueListExp, size_t valueExpIndex, Utf8CP constraintClassIdPropertyName);
+    static ECSqlStatus GetConstraintClassIdExpValue (bool& isParameter, ECN::ECClassId& constraintClassId, ECSqlPrepareContext& ctx, ValueExpListExp const& valueListExp, size_t valueExpIndex, Utf8CP constraintClassIdPropertyName);
     static int GetConstraintClassIdExpIndex (InsertStatementExp const& exp, ECN::ECRelationshipEnd constraintEnd);
 
     static void BuildNativeSqlInsertStatement (NativeSqlBuilder& insertBuilder, NativeSqlSnippets const& insertNativeSqlSnippets);

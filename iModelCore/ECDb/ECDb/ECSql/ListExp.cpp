@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ListExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -134,31 +134,45 @@ Utf8String PropertyNameListExp::ToECSql () const
     }
 
 
-//****************** RowValueConstructorListExp *************************
+//*************************** ValueListExp ******************************************
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   11/2013
+// @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-RowValueConstructorListExp::RowValueConstructorListExp () 
-    : Exp ()
-    {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-void RowValueConstructorListExp::AddRowValueConstructorExp (std::unique_ptr<ValueExp>& valueExp)
+void ValueExpListExp::AddValueExp (unique_ptr<ValueExp>& valueExp)
     {
     AddChild (move (valueExp));
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       08/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+Exp::FinalizeParseStatus ValueExpListExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    if (mode == FinalizeParseMode::BeforeFinalizingChildren)
+        //Indicate that the exp per se doesn't have a single type info, because in can vary across it children
+        SetTypeInfo (ECSqlTypeInfo (ECSqlTypeInfo::Kind::Varies));
+
+    return FinalizeParseStatus::Completed;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+ValueExp const* ValueExpListExp::GetValueExp(size_t index) const
+    {
+    return GetChild<ValueExp>(index);
+    }
+
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ParameterExp* RowValueConstructorListExp::TryGetAsParameterExpP (size_t index) const
+ParameterExp* ValueExpListExp::TryGetAsParameterExpP(size_t index) const
     {
-    auto exp = GetChildP<Exp> (index);
-    if (exp->GetType () != Exp::Type::Parameter)
+    ExpP exp = GetChildP<Exp>(index);
+    if (exp->GetType() != Exp::Type::Parameter)
         return nullptr;
-        
+
     return static_cast<ParameterExp*> (exp);
     }
 
@@ -166,7 +180,7 @@ ParameterExp* RowValueConstructorListExp::TryGetAsParameterExpP (size_t index) c
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //virtual
-Utf8String RowValueConstructorListExp::ToECSql () const
+Utf8String ValueExpListExp::ToECSql () const
     {
     Utf8String ecsql;
     bool isFirstItem = true;
@@ -179,50 +193,6 @@ Utf8String RowValueConstructorListExp::ToECSql () const
         isFirstItem = false;
         }
 
-    return ecsql;
-    }
-
-
-//*************************** ValueListExp ******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-void ValueListExp::AddValueExp (unique_ptr<ValueExp>& valueExp)
-    {
-    AddChild (move (valueExp));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus ValueListExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
-    {
-    if (mode == FinalizeParseMode::BeforeFinalizingChildren)
-        //Indicate that the exp per se doesn't have a single type info, because in can vary across it children
-        SetTypeInfo (ECSqlTypeInfo (ECSqlTypeInfo::Kind::Varies));
-
-    return FinalizeParseStatus::Completed;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//virtual
-Utf8String ValueListExp::ToECSql () const
-    {
-    Utf8String ecsql ("(");
-
-    bool isFirstItem = true;
-    for(auto childExp : GetChildren ())
-        {
-        if (!isFirstItem)
-            ecsql.append(", ");
-
-        ecsql.append(childExp->ToECSql ());
-        isFirstItem = false;
-        }
-
-    ecsql.append(")");
     return ecsql;
     }
 

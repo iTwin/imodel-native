@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ComputedExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -240,7 +240,22 @@ Exp::FinalizeParseStatus BooleanBinaryExp::CanCompareTypes (ECSqlParseContext& c
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String BooleanBinaryExp::ToECSql() const 
     {
-    return "(" + GetLeftOperand ()->ToECSql() + " " + ExpHelper::ToString(m_op) + " " + GetRightOperand ()->ToECSql() +")";
+    Utf8String ecsql("(");
+    ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ");
+
+    ComputedExp const* rhs = GetRightOperand();
+    const bool rhsNeedsParens = m_op == SqlBooleanOperator::NOT_IN || m_op == SqlBooleanOperator::IN;
+
+    if (rhsNeedsParens)
+        ecsql.append("(");
+
+    ecsql.append(rhs->ToECSql());
+
+    if (rhsNeedsParens)
+        ecsql.append(")");
+
+    ecsql.append (")");
+    return std::move(ecsql);
     }
 
 //-----------------------------------------------------------------------------------------

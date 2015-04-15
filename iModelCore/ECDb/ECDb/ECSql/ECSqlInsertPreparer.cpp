@@ -413,7 +413,7 @@ IClassMap const& classMap
     if (status != ECSqlStatus::Success)
         return status;
 
-    status = ECSqlExpPreparer::PrepareRowValueConstructorListExp (insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, exp.GetValuesExp (), propNameListExp, insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
+    status = ECSqlExpPreparer::PrepareValueExpListExp (insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, exp.GetValuesExp (), propNameListExp, insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
     if (status != ECSqlStatus::Success)
         return status;
 
@@ -579,7 +579,7 @@ int ECSqlInsertPreparer::GetConstraintClassIdExpIndex (InsertStatementExp const&
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue (bool& isParameter, ECClassId& constraintClassId, ECSqlPrepareContext& ctx, RowValueConstructorListExp const& valueListExp, size_t valueExpIndex, Utf8CP constraintClassIdPropertyName)
+ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter, ECClassId& constraintClassId, ECSqlPrepareContext& ctx, ValueExpListExp const& valueListExp, size_t valueExpIndex, Utf8CP constraintClassIdPropertyName)
     {
     auto constraintECClassIdValueExp = valueListExp.GetChildren ().Get<Exp> (valueExpIndex);
     const auto expType = constraintECClassIdValueExp->GetType ();

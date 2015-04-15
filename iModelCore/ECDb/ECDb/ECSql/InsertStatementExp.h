@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/InsertStatementExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,11 +42,11 @@ private:
 
 public :
     InsertStatementExp (std::unique_ptr<ClassNameExp> classNameExp, std::unique_ptr<PropertyNameListExp> propertyNameListExp,
-                         std::unique_ptr<RowValueConstructorListExp> valuesExp);
+                         std::unique_ptr<ValueExpListExp> valuesExp);
 
     ClassNameExp const* GetClassNameExp () const;
     PropertyNameListExp const* GetPropertyNameListExp () const;
-    RowValueConstructorListExp const* GetValuesExp () const;
+    ValueExpListExp const* GetValuesExp() const;
 
     virtual Utf8String ToECSql() const override;
     };

@@ -388,7 +388,7 @@ public:
         Update,
         Value,
         ValueBinary,
-        ValueList,
+        ValueExpList,
         Where
         };
 

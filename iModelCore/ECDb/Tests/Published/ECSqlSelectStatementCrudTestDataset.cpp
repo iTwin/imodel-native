@@ -1225,6 +1225,26 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     ecsql = "SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry";
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
 
+    //group by column not in select clause is supported (although against standard)
+    ecsql = "SELECT count(*) FROM ecsql.PSA GROUP BY S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 1);
+
+    //functions in group by is supported (although against standard)
+    ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY Length(S)";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT count(*) FROM ecsql.PSA GROUP BY Length(S)";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 1);
+
+    ecsql = "SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Hex(Bi)";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT I, L, count(*) FROM ecsql.PSA GROUP BY I + L";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 1);
+
+    ecsql = "SELECT count(*) FROM ecsql.THBase GROUP BY GetECClassId()";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 6);
+
     ecsql = "SELECT I, count(*) FROM ecsql.PSA GROUP BY ?";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
@@ -1233,10 +1253,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
 
     ecsql = "SELECT I, count(*) FROM ecsql.PSA GROUP BY 1";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY Length(S)";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
+    
     ecsql = "SELECT P2D, count(*) FROM ecsql.PSA GROUP BY P2D";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 

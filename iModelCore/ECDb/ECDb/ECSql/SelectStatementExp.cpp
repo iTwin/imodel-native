@@ -237,17 +237,17 @@ Utf8String FromExp::ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-GroupByExp::GroupByExp(std::unique_ptr<PropertyNameListExp> propertyNameListExp) : Exp()
+GroupByExp::GroupByExp(std::unique_ptr<ValueExpListExp> groupingValueListExp) : Exp()
     {
-    m_propNameListExpIndex = AddChild(std::move(propertyNameListExp));
+    m_groupingValueListExpIndex = AddChild(std::move(groupingValueListExp));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameListExp const* GroupByExp::GetPropertyNameListExp() const
+ValueExpListExp const* GroupByExp::GetGroupingValueListExp() const
     {
-    return GetChild<PropertyNameListExp>(m_propNameListExpIndex);
+    return GetChild<ValueExpListExp>(m_groupingValueListExpIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -255,20 +255,21 @@ PropertyNameListExp const* GroupByExp::GetPropertyNameListExp() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    BeAssert(GetPropertyNameListExp() != nullptr);
+    BeAssert(GetGroupingValueListExp() != nullptr);
 
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    PropertyNameListExp const* propNameListExp = GetPropertyNameListExp();
-    const size_t propNameExpCount = propNameListExp->GetChildrenCount();
-    for (size_t i = 0; i < propNameExpCount; i++)
+    ValueExpListExp const* groupingValueListExp = GetGroupingValueListExp();
+    const size_t listCount = groupingValueListExp->GetChildrenCount();
+    for (size_t i = 0; i < listCount; i++)
         {
-        PropertyNameExp const* propNameExp = propNameListExp->GetPropertyNameExp(i);
-        ECSqlTypeInfo const& typeInfo = propNameExp->GetTypeInfo();
-        if (!typeInfo.IsPrimitive() || typeInfo.IsPoint())
+        ValueExp const* groupingValueExp = groupingValueListExp->GetValueExp(i);
+        const Exp::Type expType = groupingValueExp->GetType();
+        ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
+        if (expType == Exp::Type::Parameter || expType == Exp::Type::ConstantValue || !typeInfo.IsPrimitive() || typeInfo.IsPoint())
             {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid expression '%s' in GROUP BY: Points, structs and arrays are not supported.", ToECSql().c_str());
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid expression '%s' in GROUP BY: Parameters, constants, points, structs and arrays are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -283,7 +284,7 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
 Utf8String GroupByExp::ToECSql() const
     {
     Utf8String str("GROUP BY ");
-    str.append(GetPropertyNameListExp()->ToECSql());
+    str.append(GetGroupingValueListExp()->ToECSql());
     return str;
     }
 

@@ -1948,6 +1948,35 @@ unique_ptr<ValueExp> ECSqlParser::parse_row_value_constructor(ECSqlParseContext&
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+unique_ptr<ValueExpListExp> ECSqlParser::parse_row_value_constructor_commalist(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+    {
+    if (!SQL_ISRULE(parseNode, row_value_constructor_commalist))
+        {
+        BeAssert(false && "Invalid grammar. Expecting row_value_constructor_commalist");
+        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. Expecting row_value_constructor_commalist");
+        return nullptr;
+        }
+
+
+    auto valueListExp = unique_ptr<ValueExpListExp>(new ValueExpListExp());
+    const size_t childCount = parseNode->count();
+    for (size_t i = 0; i < childCount; i++)
+        {
+        auto valueExp = parse_row_value_constructor(ctx, parseNode->getChild(i));
+        if (!ctx.IsSuccess())
+            {
+            return nullptr;
+            }
+
+        valueListExp->AddValueExp(valueExp);
+        }
+
+    return valueListExp;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 SqlBooleanOperator ECSqlParser::parse_comparison(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
@@ -2048,11 +2077,11 @@ unique_ptr<GroupByExp> ECSqlParser::parse_group_by_clause (ECSqlParseContext& ct
     if (parseNode->count () == 0) 
         return nullptr; //User never provided a GROUP BY clause 
     
-    auto propertyNameListExp = parse_column_ref_commalist(ctx, parseNode->getChild(2));
+    unique_ptr<ValueExpListExp> listExp = parse_value_exp_commalist(ctx, parseNode->getChild(2));
     if (!ctx.IsSuccess())
         return nullptr;
 
-    return unique_ptr<GroupByExp>(new GroupByExp(move(propertyNameListExp)));
+    return unique_ptr<GroupByExp>(new GroupByExp(move(listExp)));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2326,7 +2355,7 @@ unique_ptr<ValueExp> ECSqlParser::parse_value_exp (ECSqlParseContext& ctx, OSQLP
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-unique_ptr<ValueListExp> ECSqlParser::parse_value_exp_commalist (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+unique_ptr<ValueExpListExp> ECSqlParser::parse_value_exp_commalist (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE(parseNode, value_exp_commalist))
         {
@@ -2335,7 +2364,7 @@ unique_ptr<ValueListExp> ECSqlParser::parse_value_exp_commalist (ECSqlParseConte
         return nullptr;
         }
 
-    auto valueListExp = unique_ptr<ValueListExp> (new ValueListExp ());
+    auto valueListExp = unique_ptr<ValueExpListExp> (new ValueExpListExp ());
     const size_t childCount = parseNode->count ();
     for (size_t i = 0; i < childCount; i++)
         {
@@ -2356,7 +2385,7 @@ unique_ptr<ValueListExp> ECSqlParser::parse_value_exp_commalist (ECSqlParseConte
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-unique_ptr<RowValueConstructorListExp> ECSqlParser::parse_values_or_query_spec (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+unique_ptr<ValueExpListExp> ECSqlParser::parse_values_or_query_spec(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE(parseNode, values_or_query_spec))
         {
@@ -2365,23 +2394,10 @@ unique_ptr<RowValueConstructorListExp> ECSqlParser::parse_values_or_query_spec (
         return nullptr;
         }
 
-    //1st: VALUES, 2nd:(, 3rd: table_value_const_list, 4th:)
+    //1st: VALUES, 2nd:(, 3rd: row_value_constructor_commalist, 4th:)
     BeAssert (parseNode->count () == 4);
-    auto tableValueConstListNode = parseNode->getChild (2);
-    auto valuesExp = unique_ptr<RowValueConstructorListExp> (new RowValueConstructorListExp ());
-    const size_t valuesCount = tableValueConstListNode->count ();
-    for (size_t i = 0; i < valuesCount; i++)
-        {
-        auto rowValueCtorExp = parse_row_value_constructor(ctx, tableValueConstListNode->getChild (i));
-        if (!ctx.IsSuccess ())
-            {
-            return nullptr;
-            }
-
-        valuesExp->AddRowValueConstructorExp (rowValueCtorExp);
-        }
-
-    return valuesExp;
+    OSQLParseNode const* listNode = parseNode->getChild(2);
+    return parse_row_value_constructor_commalist(ctx, listNode);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

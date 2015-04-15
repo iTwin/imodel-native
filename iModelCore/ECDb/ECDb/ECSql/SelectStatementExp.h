@@ -98,16 +98,16 @@ struct GroupByExp : Exp
     {
     DEFINE_EXPR_TYPE(GroupBy) 
 private:
-    size_t m_propNameListExpIndex;
+    size_t m_groupingValueListExpIndex;
 
     virtual Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     virtual Utf8String _ToString () const override { return "GroupBy"; }
     
 public:
-    explicit GroupByExp(std::unique_ptr<PropertyNameListExp> propertyNameListExp);
+    explicit GroupByExp(std::unique_ptr<ValueExpListExp> groupingValueListExpIndex);
     ~GroupByExp() {}
 
-    PropertyNameListExp const* GetPropertyNameListExp() const;
+    ValueExpListExp const* GetGroupingValueListExp() const;
     virtual Utf8String ToECSql() const override;
     };
 

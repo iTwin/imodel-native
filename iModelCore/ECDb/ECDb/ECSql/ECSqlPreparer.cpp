@@ -499,8 +499,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareComputedExp (NativeSqlBuilder::List& native
     if (valueExp != nullptr)
         return PrepareValueExp (nativeSqlSnippets, ctx, valueExp);
 
-    if (exp->GetType () == Exp::Type::ValueList)
-        return PrepareValueListExp (nativeSqlSnippets, ctx, static_cast<ValueListExp const*> (exp));
+    if (exp->GetType () == Exp::Type::ValueExpList)
+        return PrepareValueExpListExp (nativeSqlSnippets, ctx, static_cast<ValueExpListExp const*> (exp));
 
     BeAssert (false && "ECSqlPreparer::PrepareComputedExp: Unhandled ComputedExp subclass.");
     return ctx.SetError (ECSqlStatus::ProgrammerError, "ECSqlPreparer::PrepareComputedExp: Unhandled ComputedExp subclass.");
@@ -717,12 +717,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp (ECSqlPrepareContext& ctx, Group
 
     ctx.GetSqlBuilderR().Append(" GROUP BY ");
 
-    NativeSqlBuilder::List propNameExpSnippetList;
-    const ECSqlStatus stat = PreparePropertyNameListExp(propNameExpSnippetList, ctx, exp->GetPropertyNameListExp());
+    NativeSqlBuilder::List groupingValuesSnippetList;
+    const ECSqlStatus stat = PrepareValueExpListExp(groupingValuesSnippetList, ctx, exp->GetGroupingValueListExp());
     if (ECSqlStatus::Success != stat)
         return stat;
 
-    ctx.GetSqlBuilderR().Append(propNameExpSnippetList);
+    ctx.GetSqlBuilderR().Append(groupingValuesSnippetList);
     return ECSqlStatus::Success;
     }
 
@@ -1207,67 +1207,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     return ECSqlStatus::Success;
     }       
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareRowValueConstructorListExp (NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, RowValueConstructorListExp const* exp, PropertyNameListExp const* targetExp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists)
-    {
-    BeAssert (nativeSqlSnippetLists.empty ());
-    size_t index = 0;
-    for (auto valueExp : exp->GetChildren ())
-        {
-        ECSqlStatus stat = ECSqlStatus::Success;
-        BeAssert (valueExp != nullptr);
-
-        const auto targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size ();
-        bool targetIsVirtual = false;
-        bool targetIsStructArrayProp = false;
-        if (targetNativeSqlSnippetCount == 0)
-            {
-            //Both struct array props as well as virtual props result in 0 native sql snippets. For parameter preparation
-            //we need to know whether it is a virtual prop or not. Preparation of struct array parameters
-            //works implicitly
-            auto targetPropNameExp = targetExp->GetPropertyNameExp (index);
-            BeAssert (targetPropNameExp != nullptr);
-            targetIsStructArrayProp = targetPropNameExp->GetTypeInfo ().GetKind () == ECSqlTypeInfo::Kind::StructArray;
-            targetIsVirtual = !targetIsStructArrayProp;
-            }
-
-        NativeSqlBuilder::List nativeSqlSnippets;
-
-        //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
-        //In that case the respective value exp does not need to be prepared either.
-
-        if (valueExp->GetType () == Exp::Type::Parameter)
-            {
-            //Parameter exp needs to be prepared even if target exp is virtual, i.e. doesn't have a column in the SQLite SQL
-            //because we need a (noop) binder for it so that the binding API corresponds to the parameters in the incoming
-            //ECSQL.
-            BeAssert (dynamic_cast<ParameterExp const*> (valueExp) != nullptr);
-            stat = PrepareParameterExp (nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (valueExp), targetIsVirtual, true);
-            }
-        else if (IsNullExp (*valueExp))
-            {
-            if (targetNativeSqlSnippetCount > 0)
-                {
-                //if value is null exp, we need to pass target operand snippets
-                BeAssert (dynamic_cast<ConstantValueExp const*> (valueExp) != nullptr);
-                stat = PrepareNullConstantValueExp (nativeSqlSnippets, ctx, static_cast<ConstantValueExp const*> (valueExp), targetNativeSqlSnippetCount);
-                }
-            }
-        else if (targetNativeSqlSnippetCount > 0 || targetIsStructArrayProp)
-            stat = PrepareValueExp (nativeSqlSnippets, ctx, static_cast<ValueExp const*> (valueExp));
-
-        if (stat != ECSqlStatus::Success)
-            return stat;
-
-        nativeSqlSnippetLists.push_back (move (nativeSqlSnippets));
-        index++;
-        }
-
-    return ECSqlStatus::Success;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
@@ -1514,7 +1453,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSql
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareValueListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueListExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const* exp)
     {
     BeAssert (nativeSqlSnippets.empty ());
     auto isFirstExp = true;
@@ -1545,6 +1484,68 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueListExp (NativeSqlBuilder::List& nativ
 
     //finally add closing parenthesis to all list snippets we created
     for_each (nativeSqlSnippets.begin (), nativeSqlSnippets.end (), [] (NativeSqlBuilder& builder) {builder.AppendParenRight ();});
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                11/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, ValueExpListExp const* exp, PropertyNameListExp const* targetExp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists)
+    {
+    BeAssert(nativeSqlSnippetLists.empty());
+    size_t index = 0;
+    for (auto valueExp : exp->GetChildren())
+        {
+        ECSqlStatus stat = ECSqlStatus::Success;
+        BeAssert(valueExp != nullptr);
+
+        const auto targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
+        bool targetIsVirtual = false;
+        bool targetIsStructArrayProp = false;
+        if (targetNativeSqlSnippetCount == 0)
+            {
+            //Both struct array props as well as virtual props result in 0 native sql snippets. For parameter preparation
+            //we need to know whether it is a virtual prop or not. Preparation of struct array parameters
+            //works implicitly
+            auto targetPropNameExp = targetExp->GetPropertyNameExp(index);
+            BeAssert(targetPropNameExp != nullptr);
+            targetIsStructArrayProp = targetPropNameExp->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::StructArray;
+            targetIsVirtual = !targetIsStructArrayProp;
+            }
+
+        NativeSqlBuilder::List nativeSqlSnippets;
+
+        //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
+        //In that case the respective value exp does not need to be prepared either.
+
+        if (valueExp->GetType() == Exp::Type::Parameter)
+            {
+            //Parameter exp needs to be prepared even if target exp is virtual, i.e. doesn't have a column in the SQLite SQL
+            //because we need a (noop) binder for it so that the binding API corresponds to the parameters in the incoming
+            //ECSQL.
+            BeAssert(dynamic_cast<ParameterExp const*> (valueExp) != nullptr);
+            stat = PrepareParameterExp(nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (valueExp), targetIsVirtual, true);
+            }
+        else if (IsNullExp(*valueExp))
+            {
+            if (targetNativeSqlSnippetCount > 0)
+                {
+                //if value is null exp, we need to pass target operand snippets
+                BeAssert(dynamic_cast<ConstantValueExp const*> (valueExp) != nullptr);
+                stat = PrepareNullConstantValueExp(nativeSqlSnippets, ctx, static_cast<ConstantValueExp const*> (valueExp), targetNativeSqlSnippetCount);
+                }
+            }
+        else if (targetNativeSqlSnippetCount > 0 || targetIsStructArrayProp)
+            stat = PrepareValueExp(nativeSqlSnippets, ctx, static_cast<ValueExp const*> (valueExp));
+
+        if (stat != ECSqlStatus::Success)
+            return stat;
+
+        nativeSqlSnippetLists.push_back(move(nativeSqlSnippets));
+        index++;
+        }
+
     return ECSqlStatus::Success;
     }
 

@@ -118,6 +118,7 @@ private:
     static std::unique_ptr<RelationshipJoinExp>        parse_relationship_join         (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<ValueExp>                   parse_result                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<ValueExp>                   parse_row_value_constructor     (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<ValueExpListExp>            parse_row_value_constructor_commalist(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<SubqueryExp>                parse_subquery                  (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
@@ -134,9 +135,9 @@ private:
     static std::unique_ptr<UnionStatementExp>          parse_union_statement           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<ValueExp>                   parse_value_exp                 (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<ValueListExp>               parse_value_exp_commalist       (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<ValueExpListExp>            parse_value_exp_commalist       (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<ValueExp>                   parse_value_exp_primary         (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<RowValueConstructorListExp> parse_values_or_query_spec      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<ValueExpListExp>            parse_values_or_query_spec      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<PropertyNameExp>            parse_property_path             (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static bool                                        isPredicate                     (connectivity::OSQLParseNode const* parseNode);
