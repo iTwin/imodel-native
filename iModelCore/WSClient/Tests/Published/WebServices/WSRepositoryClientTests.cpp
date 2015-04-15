@@ -14,11 +14,8 @@
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
-#ifdef MOBILEUTILS_PORT
-#include "../../Caching/StubInstances.h"
-#endif
-
 #include "WebServicesTestsHelper.h"
+#include "../StubInstances.h"
 
 using namespace ::testing;
 using namespace ::std;
@@ -289,7 +286,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndSpecificNavNo
     EXPECT_EQ (2, GetHandler ().GetRequestsPerformed ());
     }
 
-#ifdef MOBILEUTILS_PORT
+//#ifdef MOBILEUTILS_PORT
 TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseContainsInstance_SucceedsAndParsesInstance)
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
@@ -306,7 +303,56 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseConta
     ASSERT_TRUE (result.IsSuccess ());
     EXPECT_EQ (ObjectId ("TestSchema.TestClass", "A"), (*result.GetValue ().GetInstances ().begin ()).GetObjectId ());
     }
-#endif // MOBILEUTILS_PORT
+//#endif // MOBILEUTILS_PORT
+
+TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithEmptyNavigationParentIdCustomParameter_MappedToNavigationRootQuery)
+    {
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
+
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
+    GetHandler ().ForRequest (2, [&] (HttpRequestCR request)
+        {
+        EXPECT_EQ ("https://srv.com/ws/v1.1/DataSources/foo/Navigation", request.GetUrl ());
+        return StubHttpResponse ();
+        });
+
+    WSQuery query ("TestSchema", "TestClass");
+    query.SetCustomParameter (WSQuery_CustomParameter_NavigationParentId, "");
+    client->SendQueryRequest (query)->Wait ();
+    }
+
+TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithNavigationParentIdCustomParameter_MappedToNavigationQuery)
+    {
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
+
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
+    GetHandler ().ForRequest (2, [&] (HttpRequestCR request)
+        {
+        EXPECT_EQ ("https://srv.com/ws/v1.1/DataSources/foo/Navigation/TestClass/TestId", request.GetUrl ());
+        return StubHttpResponse ();
+        });
+
+    WSQuery query ("TestSchema", "TestClass");
+    query.SetCustomParameter (WSQuery_CustomParameter_NavigationParentId, "TestId");
+    client->SendQueryRequest (query)->Wait ();
+    }
+
+TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithNavigationParentIdAndSelectProperties_MappedToNavigationQueryWithProperties)
+    {
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
+
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
+    GetHandler ().ForRequest (2, [&] (HttpRequestCR request)
+        {
+        EXPECT_EQ ("https://srv.com/ws/v1.3/DataSources/foo/Navigation?properties=Foo,Boo", request.GetUrl ());
+        return StubHttpResponse ();
+        });
+
+    WSQuery query ("TestSchema", "TestClass");
+    query.SetCustomParameter (WSQuery_CustomParameter_NavigationParentId, "");
+    query.SetSelect ("Foo,Boo");
+    client->SendQueryRequest (query)->Wait ();
+    }
 
 TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithFollowRedirects)
     {
@@ -752,6 +798,35 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2
             })");
 
     EXPECT_EQ (expectedObject, response.GetValue ().GetObject ());
+    }
+
+TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModifications)
+    {
+    // TODO: unify WebApi 1 and 2 to have SendChangeRequest that would accept changeset. WebApi 1 would be limited to single instance changes.
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
+
+    Json::Value objectCreationJson = ToJson (
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "TestSchema",
+                "className" : "TestClass",
+                "instanceId" : "TestId",
+                "properties": {}
+                }
+            })");
+
+    GetHandler ().ExpectRequests (2);
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
+    GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ ("POST", request.GetMethod ().c_str ());
+        EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId", request.GetUrl ().c_str ());
+        EXPECT_EQ (objectCreationJson, request.GetRequestBody ()->AsJson ());
+        return StubHttpResponse ();
+        });
+
+    client->SendCreateObjectRequest (objectCreationJson)->Wait ();
     }
 
 TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJsonAsObject)
