@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECSqlStatementCrud_Tests.cpp $
+|  $Source: Tests/Published/ECSqlStatementCrud_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlCrudTestFixture.h"
@@ -228,6 +228,15 @@ TEST_F (ECSqlSelectTestFixture, SubqueryTests)
     {
     auto dataset = ECSqlSelectTestDataset::SubqueryTests (PerClassRowCount);
     RunTest (dataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectTestFixture, UnionTests)
+    {
+    auto dataset = ECSqlSelectTestDataset::UnionTests(PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlCommonTestDataset.cpp $
+|     $Source: Tests/Published/ECSqlCommonTestDataset.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -156,10 +156,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
         Utf8String ecsql;
 
         ecsql.Sprintf ("%s WHERE Geometry IS NULL", testClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
+        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
         ecsql.Sprintf ("%s WHERE Geometry IS NOT NULL", testClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
         ecsql.Sprintf ("%s WHERE Geometry_Array IS NULL", testClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
@@ -174,10 +174,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
         Utf8String ecsql;
 
         ecsql.Sprintf ("%s WHERE PASpatialProp.I = 123 AND PASpatialProp.Geometry IS NULL", testClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
+        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
         ecsql.Sprintf ("%s WHERE PASpatialProp.I = 123 AND PASpatialProp.Geometry IS NOT NULL", testClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
         ecsql.Sprintf ("%s WHERE PASpatialProp.I = 123 AND PASpatialProp.Geometry_Array IS NULL", testClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);

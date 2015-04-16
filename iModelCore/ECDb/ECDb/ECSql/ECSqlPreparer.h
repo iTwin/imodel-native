@@ -37,14 +37,15 @@ private:
     ECSqlExpPreparer ();
     ~ECSqlExpPreparer ();
 
-    static ECSqlStatus PrepareSetFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const& exp);
     static ECSqlStatus PrepareFunctionArgExpList(NativeSqlBuilder& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const& exp);
+    static ECSqlStatus PrepareSearchConditionExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, BooleanExp const& searchConditionExp);
+    static ECSqlStatus PrepareSetFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const& exp);
 
 public:
     static ECSqlStatus PrepareAllOrAnyExp (ECSqlPrepareContext& ctx, AllOrAnyExp const* exp);
     static ECSqlStatus PrepareBetweenRangeValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BetweenRangeValueExp const* exp);
     static ECSqlStatus PrepareBinaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryExp const* exp);
-    static ECSqlStatus PrepareBooleanExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanExp const* exp);
+    static ECSqlStatus PrepareBooleanExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanExp const& exp);
     static ECSqlStatus PrepareBooleanBinaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanBinaryExp const* exp);
     static ECSqlStatus PrepareBooleanUnaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanUnaryExp const* exp);
     static ECSqlStatus PrepareCastExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const* exp);
@@ -67,10 +68,12 @@ public:
     static ECSqlStatus PrepareOrderByExp (ECSqlPrepareContext& ctx, OrderByExp const* exp);
     static ECSqlStatus PrepareParameterExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const* exp, bool targetIsVirtual, bool enforceConstraints);
     static ECSqlStatus PreparePropertyNameListExp (NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, PropertyNameListExp const* exp);
-    static ECSqlStatus PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx, QualifiedJoinExp const* exp);
+    //! Prepares the PropertyNameListExp if each PropertyNameExp in the list will be prepared into a single SQL snippet.
+    //! Returns an error otherwise
+    static ECSqlStatus PreparePropertyNameListExp(NativeSqlBuilder::List& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, PropertyNameListExp const* exp);
+    static ECSqlStatus PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, QualifiedJoinExp const* exp);
     static ECSqlStatus PrepareQueryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, QueryExp const* exp);
     static ECSqlStatus PrepareRelationshipJoinExp (ECSqlPrepareContext& ctx, RelationshipJoinExp const* exp);
-    static ECSqlStatus PrepareRowValueConstructorListExp (NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, RowValueConstructorListExp const* exp, PropertyNameListExp const* targetExp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists);
     static ECSqlStatus PrepareSelectClauseExp (ECSqlPrepareContext& ctx, SelectClauseExp const* exp);
     static ECSqlStatus PrepareSubqueryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryExp const* exp);
     static ECSqlStatus PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, SubqueryRefExp const* exp);
@@ -78,8 +81,9 @@ public:
     static ECSqlStatus PrepareSubqueryValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const* exp);
     static ECSqlStatus PrepareUnaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryExp const* exp);
     static ECSqlStatus PrepareValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const* exp);
-    static ECSqlStatus PrepareValueListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueListExp const* exp);
-    static ECSqlStatus PrepareWhereExp (NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, WhereExp const* exp);
+    static ECSqlStatus PrepareValueExpListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const* exp);
+    static ECSqlStatus PrepareValueExpListExp(NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, ValueExpListExp const* exp, PropertyNameListExp const* targetExp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists);
+    static ECSqlStatus PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, WhereExp const* exp);
  
     static ECSqlStatus ResolveChildStatementsBinding (ECSqlPrepareContext& ctx);
     static ECSqlStatus ResolveParameterMappings (ECSqlPrepareContext& ctx);

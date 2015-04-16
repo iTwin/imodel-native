@@ -52,32 +52,48 @@ unique_ptr<Exp> ECSqlParser::Parse (Utf8CP ecsql, ECSqlParseContext& parseContex
         return nullptr;
         }
 
-    const auto rule = ecsqlParseTree->getKnownRuleID();
-    switch (rule)
+    unique_ptr<Exp> rootExp = nullptr;
+    switch (ecsqlParseTree->getKnownRuleID())
         {
         case OSQLParseNode::select_statement:
-            return parse_select_statement(parseContext, ecsqlParseTree);
+            rootExp = parse_select_statement(parseContext, ecsqlParseTree);
+            break;
 
         case OSQLParseNode::insert_statement:
-            return parse_insert_statement(parseContext, ecsqlParseTree);
+            rootExp = parse_insert_statement(parseContext, ecsqlParseTree);
+            break;
 
         case OSQLParseNode::update_statement_searched:
-            return parse_update_statement_searched (parseContext, ecsqlParseTree);
+            rootExp = parse_update_statement_searched(parseContext, ecsqlParseTree);
+            break;
 
         case OSQLParseNode::delete_statement_searched:
-            return parse_delete_statement_searched (parseContext, ecsqlParseTree);
+            rootExp = parse_delete_statement_searched(parseContext, ecsqlParseTree);
+            break;
 
         case OSQLParseNode::union_statement:
-            parseContext.SetError (ECSqlStatus::InvalidECSql, "UNION statement feature not yet implemented"); 
-            return nullptr;
+            rootExp = parse_union_statement(parseContext, ecsqlParseTree);
+            break;
+
         case OSQLParseNode::manipulative_statement:
-            parseContext.SetError (ECSqlStatus::InvalidECSql, "Manipulative statement feature not yet implemented"); 
+            parseContext.SetError (ECSqlStatus::InvalidECSql, "Manipulative statements are not supported."); 
             return nullptr;
+
         default:
             BeAssert (false && "Not a valid statement");
             parseContext.SetError (ECSqlStatus::ProgrammerError, "Not a valid statement");
             return nullptr;
         };
+
+    if (rootExp == nullptr)
+        return nullptr;
+
+    //resolve types and references now that first pass parsing is done and all nodes are available
+    const ECSqlStatus stat = rootExp->FinalizeParsing(parseContext);
+    if (stat == ECSqlStatus::Success)
+        return rootExp;
+
+    return nullptr;
     }
 
 //****************** Parsing SELECT statement ***********************************
@@ -105,7 +121,7 @@ unique_ptr<SelectStatementExp> ECSqlParser::parse_select_statement (ECSqlParseCo
     auto table_exp                =  parseNode->getChild(3);
     if (!ctx.IsSuccess ())
         return nullptr;
-    // {
+    
     auto from_clause              = parse_from_clause          (ctx, table_exp->getChild(0));
     if (!ctx.IsSuccess ())
         return nullptr;
@@ -121,7 +137,7 @@ unique_ptr<SelectStatementExp> ECSqlParser::parse_select_statement (ECSqlParseCo
     auto opt_having_clause        = parse_having_clause        (ctx, table_exp->getChild(3));
     if (!ctx.IsSuccess ())
         return nullptr;
-    //WindowExp*             opt_window_clause        = parse_window_clause        (ctx, table_exp->getChild(4));
+
     auto opt_order_by_clause      = parse_order_by_clause      (ctx, table_exp->getChild(5));
     if (!ctx.IsSuccess ())
         return nullptr;
@@ -129,16 +145,13 @@ unique_ptr<SelectStatementExp> ECSqlParser::parse_select_statement (ECSqlParseCo
     auto limit_offset_clause      = parse_limit_offset_clause  (ctx, table_exp->getChild(6));
     if (!ctx.IsSuccess ())
         return nullptr;
-    //ResultOffsetExp*       opt_result_offset_clause = parse_result_offset_clause (ctx, table_exp->getChild(7));
-    //FetchFirstExp*         opt_fetch_first_clause   = parse_fetch_first_clause   (ctx, table_exp->getChild(8));
-    //}
 
     if (!ctx.IsSuccess())
         return nullptr;
 
-    if (selection.get() && from_clause.get())
+    if (selection != nullptr && from_clause != nullptr)
         {
-        auto select = unique_ptr<SelectStatementExp>(
+        return unique_ptr<SelectStatementExp>(
                         new SelectStatementExp (
                             opt_all_distinct, 
                             move (selection), 
@@ -148,13 +161,6 @@ unique_ptr<SelectStatementExp> ECSqlParser::parse_select_statement (ECSqlParseCo
                             move (opt_group_by_clause), 
                             move (opt_having_clause),
                             move (limit_offset_clause)));
-
-        //resolve types and references now that first pass parsing is done and all nodes are available
-        auto stat = select->FinalizeParsing (ctx);
-        if (stat == ECSqlStatus::Success) 
-            return select;
-        
-        return nullptr;
         }
 
     BeAssert (false && "Wrong Grammar. selection and from_clause must be provided");
@@ -247,7 +253,7 @@ unique_ptr<InsertStatementExp> ECSqlParser::parse_insert_statement (ECSqlParseCo
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    auto insertPropertyNameListExp = parse_column_ref_commalist (ctx, parseNode->getChild(3));
+    auto insertPropertyNameListExp = parse_opt_column_ref_commalist (ctx, parseNode->getChild(3));
     if (!ctx.IsSuccess ())
         return nullptr;
 
@@ -255,14 +261,7 @@ unique_ptr<InsertStatementExp> ECSqlParser::parse_insert_statement (ECSqlParseCo
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    auto insertExp = unique_ptr<InsertStatementExp>(new InsertStatementExp (move (tableNodeExp), move (insertPropertyNameListExp), move (valuesOrQuerySpecExp)));
-
-    //resolve types and references now that first pass parsing is done and all nodes are available
-    auto stat = insertExp->FinalizeParsing (ctx);
-    if (stat == ECSqlStatus::Success) 
-        return insertExp;
-
-    return nullptr;
+    return unique_ptr<InsertStatementExp>(new InsertStatementExp (move (tableNodeExp), move (insertPropertyNameListExp), move (valuesOrQuerySpecExp)));
     }
 
 //****************** Parsing UPDATE statement ***********************************
@@ -293,14 +292,7 @@ unique_ptr<UpdateStatementExp> ECSqlParser::parse_update_statement_searched (ECS
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    auto updateExp = unique_ptr<UpdateStatementExp> (new UpdateStatementExp (move (classRefExp), move (assignmentListExp), move (opt_where_clause)));
-
-    //resolve types and references now that first pass parsing is done and all nodes are available
-    auto stat = updateExp->FinalizeParsing (ctx);
-    if (stat == ECSqlStatus::Success)
-        return updateExp;
-
-    return nullptr;
+    return unique_ptr<UpdateStatementExp> (new UpdateStatementExp (move (classRefExp), move (assignmentListExp), move (opt_where_clause)));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -353,14 +345,7 @@ unique_ptr<DeleteStatementExp> ECSqlParser::parse_delete_statement_searched (ECS
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    auto deleteExp = unique_ptr<DeleteStatementExp> (new DeleteStatementExp (move (classRefExp), move (opt_where_clause)));
-
-    //resolve types and references now that first pass parsing is done and all nodes are available
-    auto stat = deleteExp->FinalizeParsing (ctx);
-    if (stat == ECSqlStatus::Success)
-        return deleteExp;
-
-    return nullptr;
+    return unique_ptr<DeleteStatementExp> (new DeleteStatementExp (move (classRefExp), move (opt_where_clause)));
     }
 
 //****************** Parsing common expression ***********************************
@@ -385,7 +370,7 @@ unique_ptr<PropertyNameExp> ECSqlParser::parse_column (ECSqlParseContext& ctx, O
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-std::unique_ptr<PropertyNameListExp> ECSqlParser::parse_column_ref_commalist (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+std::unique_ptr<PropertyNameListExp> ECSqlParser::parse_opt_column_ref_commalist (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE(parseNode, opt_column_ref_commalist))
         {
@@ -400,20 +385,32 @@ std::unique_ptr<PropertyNameListExp> ECSqlParser::parse_column_ref_commalist (EC
 
     BeAssert (childCount == 3);
     //first and third nodes are ( and ). Second node is the the list node
-    auto columnListNode = parseNode->getChild (1);
-    BeAssert (SQL_ISRULE (columnListNode, column_ref_commalist));
+    return parse_column_ref_commalist(ctx, parseNode->getChild(1));
+    }
 
-    const size_t columnCount = columnListNode->count ();
-    auto listExp = unique_ptr<PropertyNameListExp> (new PropertyNameListExp ());
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+std::unique_ptr<PropertyNameListExp> ECSqlParser::parse_column_ref_commalist(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+    {
+    if (!SQL_ISRULE(parseNode, column_ref_commalist))
+        {
+        BeAssert(false && "Invalid grammar. Expecting column_ref_commalist");
+        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. Expecting column_ref_commalist");
+        return nullptr;
+        }
+
+    const size_t columnCount = parseNode->count();
+    auto listExp = unique_ptr<PropertyNameListExp>(new PropertyNameListExp());
     for (size_t i = 0; i < columnCount; i++)
         {
-        auto propertyNameExp = parse_column_ref (ctx, columnListNode->getChild (i));
-        if (!ctx.IsSuccess ())
+        auto propertyNameExp = parse_column_ref(ctx, parseNode->getChild(i));
+        if (!ctx.IsSuccess())
             {
             return nullptr;
             }
 
-        listExp->AddPropertyNameExp (propertyNameExp);
+        listExp->AddPropertyNameExp(propertyNameExp);
         }
 
     return listExp;
@@ -1873,7 +1870,7 @@ unique_ptr<QueryExp> ECSqlParser::parse_non_join_query_exp (ECSqlParseContext& c
             {
             auto query_exp = parse_query_exp(ctx, parseNode->getChild(0/*query_exp*/));
             auto non_join_query_operator = parse_non_join_query_operator(ctx, parseNode->getChild(1));
-            auto all = parse_all(ctx, parseNode->getChild(2));
+            bool all = parse_all(ctx, parseNode->getChild(2));
             auto query_term = parse_query_term(ctx, parseNode->getChild(3/*query_term*/));
             if (ctx.IsSuccess())
                 return unique_ptr<QueryExp>(new NonJoinQueryExp(query_exp.release(), non_join_query_operator,all, query_term.release()));
@@ -1948,6 +1945,35 @@ NonJoinQueryOperator ECSqlParser::parse_non_join_query_operator(ECSqlParseContex
 unique_ptr<ValueExp> ECSqlParser::parse_row_value_constructor(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     return parse_value_exp(ctx, parseNode);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+unique_ptr<ValueExpListExp> ECSqlParser::parse_row_value_constructor_commalist(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+    {
+    if (!SQL_ISRULE(parseNode, row_value_constructor_commalist))
+        {
+        BeAssert(false && "Invalid grammar. Expecting row_value_constructor_commalist");
+        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. Expecting row_value_constructor_commalist");
+        return nullptr;
+        }
+
+
+    auto valueListExp = unique_ptr<ValueExpListExp>(new ValueExpListExp());
+    const size_t childCount = parseNode->count();
+    for (size_t i = 0; i < childCount; i++)
+        {
+        auto valueExp = parse_row_value_constructor(ctx, parseNode->getChild(i));
+        if (!ctx.IsSuccess())
+            {
+            return nullptr;
+            }
+
+        valueListExp->AddValueExp(valueExp);
+        }
+
+    return valueListExp;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2031,10 +2057,9 @@ bool ECSqlParser::parse_all(ECSqlParseContext& ctx, OSQLParseNode const* parseNo
     {
     if (parseNode->getNodeType() == SQL_NODE_KEYWORD)
         return parseNode->getTokenID() == SQL_TOKEN_ALL;
-
-    BeAssert (false && "Invalid grammar");
-    ctx.SetError (ECSqlStatus::ProgrammerError, "Invalid grammar");
-    return false;
+    else
+        //if ALL wasn't specified, it is an rule node (and no keyword node)
+        return false;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2052,9 +2077,11 @@ unique_ptr<GroupByExp> ECSqlParser::parse_group_by_clause (ECSqlParseContext& ct
     if (parseNode->count () == 0) 
         return nullptr; //User never provided a GROUP BY clause 
     
-    //Provide implementation 
-    ctx.SetError (ECSqlStatus::InvalidECSql, "GROUP BY expression not yet supported");
-    return nullptr;
+    unique_ptr<ValueExpListExp> listExp = parse_value_exp_commalist(ctx, parseNode->getChild(2));
+    if (!ctx.IsSuccess())
+        return nullptr;
+
+    return unique_ptr<GroupByExp>(new GroupByExp(move(listExp)));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2072,9 +2099,11 @@ unique_ptr<HavingExp> ECSqlParser::parse_having_clause (ECSqlParseContext& ctx, 
     if (parseNode->count () == 0) 
         return nullptr; //User never provided a HAVING clause 
 
-    //Provide implementation 
-    ctx.SetError (ECSqlStatus::InvalidECSql, "HAVING expression not yet supported");
-    return nullptr; 
+    unique_ptr<BooleanExp> searchConditionExp = parse_search_conditon(ctx, parseNode->getChild(1));
+    if (!ctx.IsSuccess())
+        return nullptr;
+
+    return unique_ptr<HavingExp>(new HavingExp(move(searchConditionExp)));
     }
 
 
@@ -2182,6 +2211,39 @@ SqlSetQuantifier ECSqlParser::parse_opt_all_distinct (ECSqlParseContext& ctx, OS
     else if (SQL_ISTOKEN(parseNode, DISTINCT)) 
         return  SqlSetQuantifier::Distinct;       
     return SqlSetQuantifier::NotSpecified;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+unique_ptr<UnionStatementExp> ECSqlParser::parse_union_statement(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+    {
+    if (!SQL_ISRULE(parseNode, union_statement) || parseNode->count() != 4)
+        {
+        BeAssert(false && "Invalid grammar. Expecting union_statement with four child nodes");
+        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. Expecting union_statement with four child nodes.");
+        return nullptr;
+        }
+
+    OSQLParseNode const* lhsNode = parseNode->getChild(0);
+    BeAssert(lhsNode->isRule());
+    const OSQLParseNode::Rule lhsNodeRule = lhsNode->getKnownRuleID();
+    unique_ptr<Exp> lhsExp = nullptr;
+    if (lhsNodeRule == OSQLParseNode::select_statement)
+        lhsExp = parse_select_statement(ctx, lhsNode);
+    else if (lhsNodeRule == OSQLParseNode::union_statement)
+        lhsExp = parse_union_statement(ctx, lhsNode);
+    else
+        {
+        BeAssert(false && "wrong grammar. LHS of union statement can only be of select_statement or union_statement");
+        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. LHS of union statement can only be of select_statement or union_statement.");
+        return nullptr;
+        }
+
+    bool all = parse_all(ctx, parseNode->getChild(2));
+    unique_ptr<SelectStatementExp> rhsExp = parse_select_statement(ctx, parseNode->getChild(3));
+
+    return unique_ptr<UnionStatementExp>(new UnionStatementExp(all, move(lhsExp), move(rhsExp)));
     }
 
 
@@ -2293,7 +2355,7 @@ unique_ptr<ValueExp> ECSqlParser::parse_value_exp (ECSqlParseContext& ctx, OSQLP
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-unique_ptr<ValueListExp> ECSqlParser::parse_value_exp_commalist (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+unique_ptr<ValueExpListExp> ECSqlParser::parse_value_exp_commalist (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE(parseNode, value_exp_commalist))
         {
@@ -2302,7 +2364,7 @@ unique_ptr<ValueListExp> ECSqlParser::parse_value_exp_commalist (ECSqlParseConte
         return nullptr;
         }
 
-    auto valueListExp = unique_ptr<ValueListExp> (new ValueListExp ());
+    auto valueListExp = unique_ptr<ValueExpListExp> (new ValueExpListExp ());
     const size_t childCount = parseNode->count ();
     for (size_t i = 0; i < childCount; i++)
         {
@@ -2323,7 +2385,7 @@ unique_ptr<ValueListExp> ECSqlParser::parse_value_exp_commalist (ECSqlParseConte
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-unique_ptr<RowValueConstructorListExp> ECSqlParser::parse_values_or_query_spec (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+unique_ptr<ValueExpListExp> ECSqlParser::parse_values_or_query_spec(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE(parseNode, values_or_query_spec))
         {
@@ -2332,23 +2394,10 @@ unique_ptr<RowValueConstructorListExp> ECSqlParser::parse_values_or_query_spec (
         return nullptr;
         }
 
-    //1st: VALUES, 2nd:(, 3rd: table_value_const_list, 4th:)
+    //1st: VALUES, 2nd:(, 3rd: row_value_constructor_commalist, 4th:)
     BeAssert (parseNode->count () == 4);
-    auto tableValueConstListNode = parseNode->getChild (2);
-    auto valuesExp = unique_ptr<RowValueConstructorListExp> (new RowValueConstructorListExp ());
-    const size_t valuesCount = tableValueConstListNode->count ();
-    for (size_t i = 0; i < valuesCount; i++)
-        {
-        auto rowValueCtorExp = parse_row_value_constructor(ctx, tableValueConstListNode->getChild (i));
-        if (!ctx.IsSuccess ())
-            {
-            return nullptr;
-            }
-
-        valuesExp->AddRowValueConstructorExp (rowValueCtorExp);
-        }
-
-    return valuesExp;
+    OSQLParseNode const* listNode = parseNode->getChild(2);
+    return parse_row_value_constructor_commalist(ctx, listNode);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -321,14 +321,9 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     // Import another 1-to-1 relationships (with multiple classes on one end)
     // Foo_has_SomethingInOneOfManyTables
     //   Relates: Foo (1) -> Asset, Employee (1)
-    //   Should write to RK_Foo_has_SomethingInOneOfManyTables, RC_Foo_has_SomethingInOneOfManyTables in FOO_FIGHTERS table (Note: Foo is mapped to FOO_FIGHTERS)
     relInstance = CreateRelationship (test, L"Foo", L"Asset", L"Foo_has_SomethingInOneOfManyTables");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
-    //ValidatePersistingRelationship (db, "FOO_FIGHTERS", InstanceToId (*relInstance->GetSource()), 
-    //    "RK_Foo_has_SomethingInOneOfManyTables", InstanceToId (*relInstance->GetTarget()).GetValue ());
-    //ValidatePersistingRelationship (db, "FOO_FIGHTERS", InstanceToId (*relInstance->GetSource()), 
-    //    "RC_Foo_has_SomethingInOneOfManyTables", ClassToId (relInstance->GetTarget()->GetClass()));
 
     ValidateReadingRelationship (test, L"Foo_has_SomethingInOneOfManyTables", *relInstance);
     ValidateReadingRelated (test, L"Foo_has_SomethingInOneOfManyTables", relInstance->GetSource(), relInstance->GetTarget());
@@ -345,7 +340,6 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     // EmployeeFurniture
     //   Inherits: AssetRelationshipsBase, EmployeeRelationshipsBase
     //   Relates: Employee (1) -> Chair, Desk  (M)
-    //   Should write to RK_EmployeeFurniture columns in sc_Furniture table (for Chair, Desk)
     relInstance = CreateRelationship (test, L"Employee", L"Chair", L"EmployeeFurniture");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
@@ -366,7 +360,6 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     // EmployeeCompany
     //   Inherits: EmployeeRelationshipsBase
     //   Relates: Employee (M) -> Company (1)
-    //   Should write RK_EmployeeCompany column in sc_Employee table
     relInstance = CreateRelationship (test, L"Employee", L"Company", L"EmployeeCompany");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
@@ -379,7 +372,6 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     // EmployeeHardware
     //   Inherits: AssetRelationshipsBase, EmployeeRelationshipsBase
     //   Relates: Employee (M) -> Hardware (M)
-    //   Should write to a new link table RK_Source, RK_Target columns
     db.SaveChanges();
     relInstance = CreateRelationship (test, L"Employee", L"Hardware", L"EmployeeHardware");
     ASSERT_TRUE (relInstance.IsValid());
@@ -389,8 +381,6 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
         "Employee__src_0N_id", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidatePersistingRelationship (db, "sc_EmployeeHardware", InstanceToId (*relInstance), 
         "Hardware__trg_0N_id", InstanceToId (*relInstance->GetTarget()).GetValue ());
-    //ValidatePersistingRelationship (db, "sc_EmployeeHardware", InstanceToId (*relInstance), 
-    //    "RC_Target", ClassToId (relInstance->GetTarget()->GetClass()));
 
     ValidateReadingRelationship (test, L"EmployeeHardware", *relInstance);
     ValidateReadingRelated (test, L"EmployeeHardware", relInstance->GetSource(), relInstance->GetTarget());
@@ -425,7 +415,6 @@ TEST(ECDbRelationships, RelationshipProperties)
 
     ECRelationshipClassP laptopHasRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"LaptopHasRam")->GetRelationshipClassP();//1-1
     IECRelationshipInstancePtr rel1;
-   // rel1 = CreateRelationship(*laptopHasRam, *laptopInstance, *ramInstance);
     rel1 = CreateRelationshipWithProperty(*laptopHasRam, *laptopInstance, *ramInstance);
     InsertInstance(ecdb, *laptopHasRam, *rel1);
 
@@ -452,7 +441,6 @@ TEST(ECDbRelationships, RelationshipProperties)
     rel4 = CreateRelationship(*manyLaptopHaveManyRam, *laptopInstance2, *ramInstance2);
     InsertInstance(ecdb, *manyLaptopHaveManyRam, *rel4);
 
-    //stmt.Prepare(ecdb, "SELECT l.OS FROM TR.Laptop l JOIN TR.RAM r USING TR.LaptopHasRam");
     auto stat = stmt.Prepare(ecdb, "SELECT * FROM TR.LaptopHasRam");
     ASSERT_EQ(static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
     auto stepStat = stmt.Step();
@@ -460,13 +448,6 @@ TEST(ECDbRelationships, RelationshipProperties)
     int columncount = stmt.GetColumnCount();
     EXPECT_EQ(columncount, 5);
     WStringCR prop = stmt.GetColumnInfo(4).GetProperty()->GetName();
-    //for (int i = 0; i < columncount; i++)
-    //{
-    //    WStringCR prop = stmt.GetColumnInfo(i).GetProperty()->GetName();
-    //    WString a;
-    //    a.assign(prop.begin(), prop.end());
-    //    EXPECT_STREQ(L"price", a.c_str());
-    //}
     WString a;
     a.assign(prop.begin(), prop.end());
     EXPECT_STREQ(L"price", a.c_str());

@@ -660,8 +660,6 @@ void ECDbTestProject::PopulatePrimitiveValue (ECValueR value, PrimitiveType prim
     value.Clear();
     switch (primitiveType)
         {
-        case PRIMITIVETYPE_IGeometry:
-            break;
         case PRIMITIVETYPE_String  : 
             value.SetUtf8CP("Sample string"); break;
         case PRIMITIVETYPE_Integer : 
@@ -712,6 +710,13 @@ void ECDbTestProject::PopulatePrimitiveValue (ECValueR value, PrimitiveType prim
             point3d.y=22.14;
             point3d.z=33.12;
             value.SetPoint3D(point3d);
+            break;
+            }
+
+        case PRIMITIVETYPE_IGeometry:
+            {
+            IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+            value.SetIGeometry(*line);
             break;
             }
         }
@@ -783,6 +788,14 @@ void ECDbTestProject::PopulatePrimitiveValueWithRandomValues (ECValueR ecValue, 
             point3d.y=randomNumber * 1.8;
             point3d.z=randomNumber * 2.9;
             ecValue.SetPoint3D(point3d);
+            break;
+            }
+
+        case PRIMITIVETYPE_IGeometry:
+            {
+            IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(randomNumber, randomNumber*2.0, randomNumber*3.0, 
+                                                                                -randomNumber, randomNumber*(-2.0), randomNumber*(-3.0))));
+            ecValue.SetIGeometry(*line);
             break;
             }
 
@@ -1620,82 +1633,5 @@ BentleyStatus ECDbTestUtility::SetECInstanceId (ECN::IECInstanceR instance, ECIn
     const auto ecstat = instance.SetInstanceId (instanceIdStr);
     return ecstat == ECOBJECTS_STATUS_Success ? SUCCESS : ERROR;
     }
-
-
-/*
-
-Relationships in startup schema
-===============================
-
-AAFoo_references_Widget_11
-  AAFoo (1) -> Widget (1)
-  RK_AAFoo_references_Widget_11 in AAFooTable
-
-Foo_has_Bars
-  Foo (1) -> Bar (n)
-  RK_Foo_has_Bars in BarTable
-
-Foo_has_Bars_implicit
-  Foo (1, FooTag) -> Bar (n, FooTagOfMyOwner)
-  RK_Foo_has_Bars_implicit in BarTable
-
-Foo_has_Bars_hint
-  Hint: TargetToSource, Middle persistence
-  Foo (1) -> Bar (n)
-  RK_Foo_has_Bars_hint in BarTable
-
-Foo_has_SomethingInOneOfManyTables
-  Foo (1) -> Asset, Employee (1)
-  RK_Foo_has_SomethingInOneOfManyTables in FooTable
-  RC_Foo_has_SomethingInOneOfManyTables in FooTable
-  Note that Foo is mapped to FOO_FIGHTERS
-
-AssetRelationshipsBase
-  1 -> 1
-
-EmployeeRelationshipsBase
-  1 -> 1
-
-BuildingFloorRelationship
-  Building (1) -> BuildingFloor (N)
-  RK_BuildingFloorRelationship in BuildingFloorTable
-
-CompanyProject
-  Company (1) -> Project (N)
-  RK_CompanyProject in Project
-
-EmployeeCompany -> EmployeeRelationshipsBase
-  Employee (N) -> Company (1)
-  RK_EmployeeCompany in EmployeeTable
-
-EmployeeFurniture -> AssetRelationshipsBase, EmployeeRelationshipsBase
-  Employee (1) -> Chair, Desk  (N)
-  RK_EmployeeFurniture in FurnitureTable (for Chair, Desk)
-
-EmployeeHardware -> AssetRelationshipsBase, EmployeeRelationshipsBase
-  Employee (N) -> Hardware (N)
-
-EmployeeOffice -> EmployeeRelationshipsBase
-  Employee (N) -> Cubicle (N)
-
-EmployeePhone -> AssetRelationshipsBase, EmployeeRelationshipsBase
-  Employee (1) -> Phone (1)
-  RK_EmployeePhone in EmployeeTable
-
-EmployeeProject -> EmployeeRelationshipsBase
-  Employee (N) -> Project (N)
-
-FloorCubicle
-  BuildingFloor (1) -> Cubicle (N)
-  RK_FloorCubicle in CubicleTable
-
-Classes in startup schema
-==========================
-
-Chair -> Furniture (TablePerHierarchy)
-Desk  -> Furniture
-Employee
-
-*/
 
 END_ECDBUNITTESTS_NAMESPACE

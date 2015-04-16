@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SelectStatementExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -230,6 +230,89 @@ Utf8String FromExp::ToECSql() const
         }
 
     return tmp;
+    }
+
+
+//****************************** GroupByExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+GroupByExp::GroupByExp(std::unique_ptr<ValueExpListExp> groupingValueListExp) : Exp()
+    {
+    m_groupingValueListExpIndex = AddChild(std::move(groupingValueListExp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ValueExpListExp const* GroupByExp::GetGroupingValueListExp() const
+    {
+    return GetChild<ValueExpListExp>(m_groupingValueListExpIndex);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    BeAssert(GetGroupingValueListExp() != nullptr);
+
+    if (mode == FinalizeParseMode::BeforeFinalizingChildren)
+        return FinalizeParseStatus::NotCompleted;
+
+    ValueExpListExp const* groupingValueListExp = GetGroupingValueListExp();
+    const size_t listCount = groupingValueListExp->GetChildrenCount();
+    for (size_t i = 0; i < listCount; i++)
+        {
+        ValueExp const* groupingValueExp = groupingValueListExp->GetValueExp(i);
+        const Exp::Type expType = groupingValueExp->GetType();
+        ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
+        if (expType == Exp::Type::Parameter || expType == Exp::Type::ConstantValue || !typeInfo.IsPrimitive() || typeInfo.IsPoint())
+            {
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid expression '%s' in GROUP BY: Parameters, constants, points, structs and arrays are not supported.", ToECSql().c_str());
+            return FinalizeParseStatus::Error;
+            }
+        }
+
+    return FinalizeParseStatus::Completed;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String GroupByExp::ToECSql() const
+    {
+    Utf8String str("GROUP BY ");
+    str.append(GetGroupingValueListExp()->ToECSql());
+    return str;
+    }
+
+//****************************** HavingExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+HavingExp::HavingExp(std::unique_ptr<BooleanExp> searchConditionExp) : Exp()
+    {
+    m_searchConditionExpIndex = AddChild(std::move(searchConditionExp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BooleanExp const* HavingExp::GetSearchConditionExp() const
+    {
+    return GetChild<BooleanExp>(m_searchConditionExpIndex);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String HavingExp::ToECSql() const
+    {
+    Utf8String str("HAVING ");
+    str.append(GetSearchConditionExp()->ToECSql());
+    return str;
     }
 
 
@@ -750,5 +833,40 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing (ECSqlParseContext& 
     return FinalizeParseStatus::Completed;
     }
 
+//****************************** UnionStatementExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+UnionStatementExp::UnionStatementExp(bool isUnionAll, std::unique_ptr<Exp> lhs, std::unique_ptr<SelectStatementExp> rhs)
+    : Exp(), m_isUnionAll(isUnionAll)
+    {
+    m_lhsExpIndex = AddChild(move(lhs));
+    m_rhsExpIndex = AddChild(move(rhs));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus UnionStatementExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    ctx.SetError(ECSqlStatus::InvalidECSql, "UNION not supported yet by ECSQL.");
+    return FinalizeParseStatus::Error;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String UnionStatementExp::ToECSql() const
+    {
+    Utf8String ecsql = GetLhs()->ToECSql();
+    ecsql.append(" UNION ");
+    if (m_isUnionAll)
+        ecsql.append("ALL ");
+
+    ecsql.append(GetRhs()->ToECSql());
+    return move(ecsql);
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/InsertStatementExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -16,8 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-InsertStatementExp::InsertStatementExp (unique_ptr<ClassNameExp> classNameExp, unique_ptr<PropertyNameListExp> propertyNameListExp,
-                                          unique_ptr<RowValueConstructorListExp> valuesExp) 
+InsertStatementExp::InsertStatementExp (unique_ptr<ClassNameExp> classNameExp, unique_ptr<PropertyNameListExp> propertyNameListExp, unique_ptr<ValueExpListExp> valuesExp)
     : Exp (), m_isOriginalPropertyNameListUnset (propertyNameListExp == nullptr || propertyNameListExp->GetChildrenCount() == 0)
     {
     m_classNameExpIndex = AddChild (move(classNameExp));
@@ -166,9 +165,9 @@ PropertyNameListExp* InsertStatementExp::GetPropertyNameListExpP() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-RowValueConstructorListExp const* InsertStatementExp::GetValuesExp() const
+ValueExpListExp const* InsertStatementExp::GetValuesExp() const
     {
-    return GetChild<RowValueConstructorListExp> (m_valuesExpIndex);
+    return GetChild<ValueExpListExp>(m_valuesExpIndex);
     }
 
 //-----------------------------------------------------------------------------------------

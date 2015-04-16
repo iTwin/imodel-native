@@ -98,7 +98,6 @@
     ### Not yet implemented ECSQL features
     - Point, struct, array literals.
     - Polymorphical update and delete statements.
-    - <c>GROUP BY</c>
     - Nested select statements, e.g. <c>DELETE FROM myschema.Document WHERE ECInstanceId IN (SELECT ECInstanceId FROM myschema.Document JOIN myschema.Folder USING myschema.FolderHasDocuments WHERE folder.ECInstanceId = 42)</c>.
 
     @see @ref WorkingWithECDb

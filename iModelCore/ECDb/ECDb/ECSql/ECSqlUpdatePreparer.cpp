@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlUpdatePreparer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -73,7 +73,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
         {
         nativeSqlBuilder.AppendSpace ();
-        status = ECSqlExpPreparer::PrepareWhereExp (nativeSqlBuilder, ctx, whereClauseExp);
+        status = ECSqlExpPreparer::PrepareWhereExp(nativeSqlBuilder, ctx, whereClauseExp);
         if (status != ECSqlStatus::Success)
             return status;
 

@@ -40,10 +40,10 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SelectStatem
 
     auto& sqlGenerator = ctx.GetSqlBuilderR ();
     sqlGenerator.Append ("SELECT ");
-    //1. Append DISTINCT | ALL if any
+    // Append DISTINCT | ALL if any
     sqlGenerator.Append (exp.GetSelectionType ());
 
-    //2. Append selection.
+    // Append selection.
     auto status = ECSqlExpPreparer::PrepareSelectClauseExp (ctx, exp.GetSelection ());
     if (status != ECSqlStatus::Success)
         return status;
@@ -51,20 +51,20 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SelectStatem
     ExtractPropertyRefs (ctx, &exp);
 
     sqlGenerator.AppendSpace ();
-    //3. Append FROM
+    // Append FROM
     status = ECSqlExpPreparer::PrepareFromExp (ctx, exp.GetFrom ());
     if (status != ECSqlStatus::Success)
         return status;
 
-    //4. Append WHERE
+    // Append WHERE
     if (auto e = exp.GetOptWhere ())
         {
         sqlGenerator.AppendSpace ();
-        status = ECSqlExpPreparer::PrepareWhereExp (sqlGenerator, ctx, e);
+        status = ECSqlExpPreparer::PrepareWhereExp(sqlGenerator, ctx, e);
         if (status != ECSqlStatus::Success)
             return status;
         }
-    //5. Append GROUP BY
+    // Append GROUP BY
     if (auto e = exp.GetOptGroupBy ())
         {
         sqlGenerator.AppendSpace ();
@@ -73,16 +73,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SelectStatem
             return status;
         }
 
-    //6. Append ORDER BY
-    if (auto e = exp.GetOptOrderBy ())
-        {
-        sqlGenerator.AppendSpace ();
-        status = ECSqlExpPreparer::PrepareOrderByExp (ctx, e);
-        if (status != ECSqlStatus::Success)
-            return status;
-        }
-
-    //7. Append HAVING
+    // Append HAVING
     if (auto e = exp.GetOptHaving ())
         {
         sqlGenerator.AppendSpace ();
@@ -91,7 +82,16 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SelectStatem
             return status;
         }
 
-    //8. Append LIMIT
+    // Append ORDER BY
+    if (auto e = exp.GetOptOrderBy())
+        {
+        sqlGenerator.AppendSpace();
+        status = ECSqlExpPreparer::PrepareOrderByExp(ctx, e);
+        if (status != ECSqlStatus::Success)
+            return status;
+        }
+
+    // Append LIMIT
     if (auto e = exp.GetLimitOffset ())
         {
         sqlGenerator.AppendSpace ();
@@ -102,6 +102,36 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SelectStatem
 
     ctx.PopScope ();
     return ECSqlStatus::Success;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, UnionStatementExp const& exp)
+    {
+    BeAssert(exp.IsComplete() && exp.GetLhs() != nullptr && exp.GetRhs() != nullptr);
+
+    ExpCP lhsExp = exp.GetLhs();
+    ECSqlStatus stat;
+    if (lhsExp->IsSelectStatement())
+        stat = Prepare(ctx, *static_cast<SelectStatementExp const*> (lhsExp));
+    else
+        {
+        BeAssert(lhsExp->GetType() == Exp::Type::Union);
+        stat = Prepare(ctx, *static_cast<UnionStatementExp const*> (lhsExp));
+        }
+
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    NativeSqlBuilder& sqlBuilder = ctx.GetSqlBuilderR();
+    sqlBuilder.Append(" UNION ");
+    if (exp.IsUnionAll())
+        sqlBuilder.Append(" ALL ");
+
+    return Prepare(ctx, *exp.GetRhs());
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -284,6 +284,12 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindId (int parameterIndex, BeRepositoryBasedId value);
 
+    //! Binds a BeInt64Id subclass to the parameter. Binds NULL if the id is not valid.
+    //! @param[in] parameterIndex Parameter index
+    //! @param[in] id Value to bind.
+    //! @return ECSqlStatus::Success or error codes
+    template <class T_Id> ECSqlStatus BindId(int parameterIndex, BeInt64Id<T_Id> id) {return id.IsValid() ? BindInt64(parameterIndex, id.GetValue()) : BindNull(parameterIndex);}
+
     //! Gets a binder which is used to bind a struct value to the specified parameter
     //! @param[in] parameterIndex Parameter index
     //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder

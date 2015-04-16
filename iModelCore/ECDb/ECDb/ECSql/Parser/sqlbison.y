@@ -212,7 +212,7 @@ using namespace connectivity;
 %type <pParseNode> position_exp extract_exp length_exp general_value_spec
 %type <pParseNode> general_set_fct set_fct_type query_exp non_join_query_exp joined_table relationship_join op_relationship_direction
 %type <pParseNode> non_join_query_term non_join_query_primary simple_table
-%type <pParseNode> table_value_const_list row_value_constructor  row_value_constructor_elem
+%type <pParseNode> row_value_constructor_commalist row_value_constructor  row_value_constructor_elem
 /* %type <pParseNode> row_value_const_list*/
 %type <pParseNode> qualified_join value_exp query_term join_type outer_join_type join_condition boolean_term
 %type <pParseNode> boolean_factor truth_value boolean_test boolean_primary named_columns_join join_spec
@@ -674,7 +674,7 @@ insert_statement:
             $$->append($5);}
     ;
 values_or_query_spec:
-        SQL_TOKEN_VALUES '(' table_value_const_list ')'
+        SQL_TOKEN_VALUES '(' row_value_constructor_commalist ')'
         {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
@@ -683,45 +683,24 @@ values_or_query_spec:
         }
     ;
 
-table_value_const_list:
+row_value_constructor_commalist:
         row_value_constructor
         {
             $$ = SQL_NEW_COMMALISTRULE;
             $$->append($1);
         }
-    |   table_value_const_list ',' row_value_constructor
+    |   row_value_constructor_commalist ',' row_value_constructor
         {    
             $1->append($3);
             $$ = $1;
         }
     ;
-/*ECSQL_USELESS
-row_value_const_list:
-        row_value_constructor_elem
-        {
-            $$ = SQL_NEW_COMMALISTRULE;
-            $$->append($1);
-        }
-    |       row_value_const_list ',' row_value_constructor_elem
-        {
-            $1->append($3);
-            $$ = $1;
-        }
-    ;
-    */
+
 row_value_constructor:
             row_value_constructor_elem
-/*      |    '(' row_value_const_list ')'
-            {
-                $$ = SQL_NEW_RULE;
-                $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
-                $$->append($2);
-                $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
-            }
-            */
     ;
 row_value_constructor_elem:
-        value_exp /*[^')']*/
+        value_exp
     /* ECSQL or SQL doesnt support DEFAULT in boolean expression
     |   SQL_TOKEN_DEFAULT
     */
@@ -1026,7 +1005,7 @@ where_clause:
 
 opt_group_by_clause:
         /* empty */      {$$ = SQL_NEW_RULE;}
-    |   SQL_TOKEN_GROUP SQL_TOKEN_BY column_ref_commalist
+    |   SQL_TOKEN_GROUP SQL_TOKEN_BY value_exp_commalist
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);

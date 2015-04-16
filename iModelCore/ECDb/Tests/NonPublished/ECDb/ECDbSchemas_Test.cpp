@@ -484,19 +484,19 @@ TEST (ECDbSchemas, UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes)
 
 
     ecDb.SaveChanges ();
-    ASSERT_EQ (ColumnExist (ecDb, L"DSC_CachedFileInfo", L"RC_CachedFileInfoRelationship"), true);
-    ASSERT_EQ (ColumnExist (ecDb, L"DSC_CachedFileInfo", L"RK_CachedFileInfoRelationship"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSC_CachedFileInfo", L"ForeignECClassId_CachedFileInfoRelationship"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSC_CachedFileInfo", L"ForeignECInstanceId_CachedFileInfoRelationship"), true);
 
-    ASSERT_EQ (ColumnExist (ecDb, L"DSC_CachedInstanceInfo", L"RK_CachedInstanceInfoRelationship"), true);
-    ASSERT_EQ (ColumnExist (ecDb, L"DSC_CachedInstanceInfo", L"RC_CachedInstanceInfoRelationship"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSC_CachedInstanceInfo", L"ForeignECInstanceId_CachedInstanceInfoRelationship"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSC_CachedInstanceInfo", L"ForeignECClassId_CachedInstanceInfoRelationship"), true);
 
-    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_RootRelationship", L"RK_Source"), true);
-    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_RootRelationship", L"RK_Target"), true);
-    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_RootRelationship", L"RC_Target"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_RootRelationship", L"SourceECInstanceId"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_RootRelationship", L"TargetECInstanceId"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_RootRelationship", L"TargetECClassId"), true);
 
-    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_NavigationBaseRelationship", L"RK_Source"), true);
-    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_NavigationBaseRelationship", L"RK_Target"), true);
-    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_NavigationBaseRelationship", L"RC_Target"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_NavigationBaseRelationship", L"SourceECInstanceId"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_NavigationBaseRelationship", L"TargetECInstanceId"), true);
+    ASSERT_EQ (ColumnExist (ecDb, L"DSCJS_NavigationBaseRelationship", L"TargetECClassId"), true);
 
     auto ecsql = "SELECT s.* FROM ONLY [DSC].[CachedInstanceInfo] s JOIN ONLY [DSC].[NavigationBase] t USING [DSCJS].[CachedInstanceInfoRelationship] FORWARD WHERE t.ECInstanceId = 8 LIMIT 1";
 
@@ -1176,9 +1176,9 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //Local properties
     EXPECT_TRUE (ColumnExist (db, tblBar, L"stringBar"));
     //Relations
-    EXPECT_TRUE (ColumnExist (db, tblBar, L"RK_Foo_has_Bars"));
-    EXPECT_TRUE (ColumnExist (db, tblBar, L"RK_Foo_has_Bars_hint"));
-    EXPECT_TRUE (ColumnExist (db, tblBar, L"RK_Foo_has_Bars_implicit"));
+    EXPECT_TRUE (ColumnExist (db, tblBar, L"ForeignECInstanceId_Foo_has_Bars"));
+    EXPECT_TRUE (ColumnExist (db, tblBar, L"ForeignECInstanceId_Foo_has_Bars_hint"));
+    EXPECT_TRUE (ColumnExist (db, tblBar, L"ForeignECInstanceId_Foo_has_Bars_implicit"));
     
     //========================[sc_Foo]===========================================================
     WCharCP tblFoo = L"FOO_FIGHTERS"; //this table has be renamed from tblFoo=>FOO_FIGHTERS
@@ -1208,9 +1208,6 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblFoo, L"arrayOfIntsFoo"));
     EXPECT_FALSE (ColumnExist (db, tblFoo, L"arrayOfAnglesStructsFoo"));
     EXPECT_FALSE (ColumnExist (db, tblFoo, L"anglesFoo"));
-    //relations
-    //EXPECT_TRUE (ColumnExist (db, tblFoo, L"RK_Foo_has_SomethingInOneOfManyTables"));
-    //EXPECT_TRUE (ColumnExist (db, tblFoo, L"RC_Foo_has_SomethingInOneOfManyTables"));
 
     //========================[sc_ArrayOfStructDomainClass]===========================================================
     WCharCP tbl = L"sc_ArrayOfStructDomainClass"; 
@@ -1582,7 +1579,7 @@ TEST(ECDbSchemas, ImportSchemaWithRelationshipAgainstExistingTable)
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "ECInstanceId")) << "Existing column is expected to still be in the table after ImportECSchemas.";
     EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "Price")) << "Existing column is expected to still be in the table after ImportECSchemas.";
-    EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "RK_FooHasGoo")) << "RK_FooHasGoo column not expected to be in the table after ImportECSchemas as ImportECSchemas is not expected to modify existing tables.";
+    EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "ForeignECInstanceId_FooHasGoo")) << "ForeignECInstanceId_FooHasGoo column not expected to be in the table after ImportECSchemas as ImportECSchemas is not expected to modify existing tables.";
     EXPECT_TRUE (ecdb.TableExists ("t_RelFooGoo")) << "Existence of Link table not as expected.";
     }
 

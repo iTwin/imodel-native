@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ListExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,55 +68,28 @@ public :
     virtual Utf8String ToECSql() const override;
     };
 
-//************************ RowValueConstructorListExp ******************************
-//=======================================================================================
-//! @bsiclass                                                Krischan.Eberle      11/2013
-//+===============+===============+===============+===============+===============+======
-struct RowValueConstructorListExp : Exp
-    {
-public:
-    DEFINE_EXPR_TYPE(RowValueConstructorList) 
 
-private:
-    virtual Utf8String _ToString () const override
-        {
-        return "RowValueConstructorList";
-        }
-
-public:
-    RowValueConstructorListExp ();
-
-    void AddRowValueConstructorExp (std::unique_ptr<ValueExp>& valueExp);
-    ParameterExp* TryGetAsParameterExpP (size_t index) const;
-
-    virtual Utf8String ToECSql () const override;  
-    };
-
-
-//************************ ValueListExp ******************************
+//************************ ValueExpListExp ******************************
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      04/2013
 //+===============+===============+===============+===============+===============+======
-struct ValueListExp : ComputedExp
+struct ValueExpListExp : ComputedExp
     {
-    public:
-        DEFINE_EXPR_TYPE(ValueList)
+public:
+    DEFINE_EXPR_TYPE(ValueExpList)
 
-    private:
-        virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+private:
+    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-        virtual Utf8String _ToString () const override
-            {
-            return "ValueList";
-            }
+    virtual Utf8String _ToString () const override { return "ValueExpList"; }
 
-    public:
-        ValueListExp ()
-            : ComputedExp ()
-            {}
+public:
+    ValueExpListExp () : ComputedExp () {}
 
-        void AddValueExp (std::unique_ptr<ValueExp>& valueExp);
-        virtual Utf8String ToECSql () const override;  
+    void AddValueExp (std::unique_ptr<ValueExp>& valueExp);
+    ParameterExp* TryGetAsParameterExpP(size_t index) const;
+    ValueExp const* GetValueExp(size_t index) const;
+    virtual Utf8String ToECSql() const override;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
