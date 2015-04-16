@@ -56,7 +56,7 @@
 #define SQLITE_API
 
 #if defined (__APPLE__)
-    #define SQLITE_HAVE_ISNAN
+    #define SQLITE_HAVE_ISNAN 1
 #endif
 
 #if !defined(NDEBUG)
