@@ -18,8 +18,8 @@
 ** separate file. This file contains only code for the core SQLite library.
 */
 
-#define SQLITE_OMIT_DEPRECATED
-#define SQLITE_ENABLE_COLUMN_METADATA
+#define SQLITE_OMIT_DEPRECATED 1
+#define SQLITE_ENABLE_COLUMN_METADATA 1
 #define SQLITE_DEFAULT_FOREIGN_KEYS 1
 #define SQLITE_OMIT_AUTOINIT 1
 #define SQLITE_ENABLE_SESSION 1
@@ -29,14 +29,9 @@
 #define SQLITE_USE_URI 1
 
 // include support for full text search
-#define SQLITE_ENABLE_FTS3
-#define SQLITE_ENABLE_FTS3_PARENTHESIS
-#define SQLITE_ENABLE_FTS4_UNICODE61
-
-// include support for full text search
-#define SQLITE_ENABLE_FTS3
-#define SQLITE_ENABLE_FTS3_PARENTHESIS
-#define SQLITE_ENABLE_FTS4_UNICODE61
+#define SQLITE_ENABLE_FTS3 1
+#define SQLITE_ENABLE_FTS3_PARENTHESIS 1
+#define SQLITE_ENABLE_FTS4_UNICODE61 1
 
 #define HAVE_STDINT_H
 
