@@ -2850,6 +2850,7 @@ TEST (ECDbSchema, Replace_TableWithNullView_And_ViewsWithTablesTest)
         views.insert (stmt2.GetValueText (0));
 
     views.insert ("bsca_ArrayOfECDbIndex"); //Exception
+    views.insert ("be_EmbedFile");
     for (auto& o : tables)
         {
         if (views.find (o) == views.end ())
