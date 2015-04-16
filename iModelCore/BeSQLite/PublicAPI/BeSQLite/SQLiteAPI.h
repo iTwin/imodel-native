@@ -7962,8 +7962,9 @@ struct sqlite3_rtree_query_info {
 extern "C" {
 #endif
 
+#ifndef _SQLITE3_H_
 #include "sqlite3.h"
-
+#endif
 /*
 ** CAPI3REF: Session Object Handle
 */
