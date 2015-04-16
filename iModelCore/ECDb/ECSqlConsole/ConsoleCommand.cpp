@@ -557,6 +557,7 @@ void ImportCommand::RunImportSchema (ECSqlConsoleSession& session, BeFileNameCR 
 
     for (auto const& ecschemaFilePath : ecschemaFilePaths)
         {
+        Console::WriteLine ("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8 ());
         if (SUCCESS != DeserializeECSchema (*context, ecschemaFilePath))
             {
             Console::WriteErrorLine ("Import failed. Could not read ECSchema '%s' into memory.", Utf8String (ecschemaFilePath).c_str ());
