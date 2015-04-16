@@ -33,9 +33,8 @@ public:
     static Utf8CP ToString(SqlSetQuantifier setQuantifier);
     static Utf8CP ToString(SubqueryTestOperator op);
     static Utf8CP ToString(SqlBinaryOperator op);
-    static Utf8CP ToString(SqlBooleanOperator op);
-    static Utf8CP ToString(SqlUnaryOperator op);
-    static Utf8CP ToString(SqlBooleanUnaryOperator op);
+    static Utf8CP ToString(BooleanSqlOperator op);
+    static Utf8CP ToString(UnarySqlOperator op);
     };
 
 

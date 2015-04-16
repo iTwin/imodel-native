@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-AllOrAnyExp::AllOrAnyExp(unique_ptr<ValueExp> operand, SqlBooleanOperator op, SqlCompareListType type, unique_ptr<SubqueryExp> subquery)
+AllOrAnyExp::AllOrAnyExp(unique_ptr<ValueExp> operand, BooleanSqlOperator op, SqlCompareListType type, unique_ptr<SubqueryExp> subquery)
     : BooleanExp (), m_type(type), m_operator(op)
     {
     m_operandExpIndex = AddChild (move (operand));
@@ -382,8 +382,8 @@ bool LimitOffsetExp::IsValidChildExp (ValueExp const& exp)
         {
             case Exp::Type::ConstantValue:
             case Exp::Type::Parameter:
-            case Exp::Type::Binary:
-            case Exp::Type::Unary:
+            case Exp::Type::BinaryValue:
+            case Exp::Type::UnaryValue:
                 return true;
 
             default:

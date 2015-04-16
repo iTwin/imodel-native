@@ -58,7 +58,7 @@ void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, E
         else
             assertMessage = "Preparation or binding did not fail with expected error code.";
 
-        ASSERT_FALSE (stat == ECSqlStatus::Success) << assertMessage << " Actual error code: " << static_cast<int> (stat) << " Actual status message: " << statement.GetLastStatusMessage ().c_str ();
+        ASSERT_FALSE (stat == ECSqlStatus::Success) << assertMessage << " " << ecsql;
         }
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlTypeInfo.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -269,6 +269,14 @@ bool ECSqlTypeInfo::IsExactNumeric () const
 bool ECSqlTypeInfo::IsApproximateNumeric() const
     {
     return IsPrimitive () && (GetPrimitiveType () == ECN::PRIMITIVETYPE_Double);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool ECSqlTypeInfo::IsBoolean() const
+    {
+    return IsPrimitive() && (GetPrimitiveType() == ECN::PRIMITIVETYPE_Boolean);
     }
 
 //-----------------------------------------------------------------------------------------

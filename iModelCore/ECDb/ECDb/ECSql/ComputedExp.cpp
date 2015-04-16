@@ -73,7 +73,7 @@ ECSqlStatus ComputedExp::DetermineOperandsTargetTypes (ECSqlParseContext& ctx, C
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BooleanBinaryExp::BooleanBinaryExp (std::unique_ptr<ComputedExp> left, SqlBooleanOperator op, std::unique_ptr<ComputedExp> right) 
+BinaryBooleanExp::BinaryBooleanExp (std::unique_ptr<ComputedExp> left, BooleanSqlOperator op, std::unique_ptr<ComputedExp> right) 
     : BooleanExp (), m_op(op)
     {
     m_leftOperandExpIndex = AddChild (std::move (left));
@@ -83,18 +83,15 @@ BooleanBinaryExp::BooleanBinaryExp (std::unique_ptr<ComputedExp> left, SqlBoolea
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus BooleanBinaryExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     auto lhs = GetLeftOperand ();
     auto rhs = GetRightOperand ();
 
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        //sets the type for the exp which is always Boolean
-        BooleanExp::_FinalizeParsing (ctx, mode);
-
         //if operands are parameters set the target exp in those expressions
-        if (m_op != SqlBooleanOperator::AND && m_op != SqlBooleanOperator::OR)
+        if (m_op != BooleanSqlOperator::AND && m_op != BooleanSqlOperator::OR)
             {
             if (DetermineOperandsTargetTypes (ctx, lhs, rhs) != ECSqlStatus::Success)
                 return FinalizeParseStatus::Error;
@@ -145,7 +142,7 @@ Exp::FinalizeParseStatus BooleanBinaryExp::_FinalizeParsing (ECSqlParseContext& 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus BooleanBinaryExp::CanCompareTypes (ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const
+Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const
     {
     auto const& lhsTypeInfo = lhs.GetTypeInfo ();
     auto const& rhsTypeInfo = rhs.GetTypeInfo ();
@@ -162,7 +159,7 @@ Exp::FinalizeParseStatus BooleanBinaryExp::CanCompareTypes (ECSqlParseContext& c
         return FinalizeParseStatus::Error;
         }
 
-    if ((m_op == SqlBooleanOperator::LIKE || m_op == SqlBooleanOperator::NOT_LIKE) &&
+    if ((m_op == BooleanSqlOperator::LIKE || m_op == BooleanSqlOperator::NOT_LIKE) &&
         (!lhsTypeInfo.IsPrimitive () || !rhsTypeInfo.IsPrimitive () ||
         lhsTypeInfo.GetPrimitiveType () != PRIMITIVETYPE_String || rhsTypeInfo.GetPrimitiveType () != PRIMITIVETYPE_String))
         {
@@ -176,12 +173,12 @@ Exp::FinalizeParseStatus BooleanBinaryExp::CanCompareTypes (ECSqlParseContext& c
         {
         switch (m_op)
             {
-            case SqlBooleanOperator::EQ:
-            case SqlBooleanOperator::NE:
-            case SqlBooleanOperator::IN:
-            case SqlBooleanOperator::NOT_IN:
-            case SqlBooleanOperator::IS:
-            case SqlBooleanOperator::IS_NOT:
+            case BooleanSqlOperator::EQ:
+            case BooleanSqlOperator::NE:
+            case BooleanSqlOperator::IN:
+            case BooleanSqlOperator::NOT_IN:
+            case BooleanSqlOperator::IS:
+            case BooleanSqlOperator::IS_NOT:
                 break;
 
             default:
@@ -197,7 +194,7 @@ Exp::FinalizeParseStatus BooleanBinaryExp::CanCompareTypes (ECSqlParseContext& c
     //cannot assume both sides have same types as one can still represent the SQL NULL
     if (lhsTypeInfo.IsGeometry () || rhsTypeInfo.IsGeometry ())
         {
-        if ((m_op != SqlBooleanOperator::IS && m_op != SqlBooleanOperator::IS_NOT) ||
+        if ((m_op != BooleanSqlOperator::IS && m_op != BooleanSqlOperator::IS_NOT) ||
             ((lhsTypeInfo.IsGeometry () && rhsTypeKind != ECSqlTypeInfo::Kind::Null) ||
             (lhsTypeKind != ECSqlTypeInfo::Kind::Null && rhsTypeInfo.IsGeometry ())))
             {
@@ -212,7 +209,7 @@ Exp::FinalizeParseStatus BooleanBinaryExp::CanCompareTypes (ECSqlParseContext& c
     if (lhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray ||
         rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray)
         {
-        if ((m_op != SqlBooleanOperator::IS && m_op != SqlBooleanOperator::IS_NOT) ||
+        if ((m_op != BooleanSqlOperator::IS && m_op != BooleanSqlOperator::IS_NOT) ||
             ((lhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray && rhsTypeKind != ECSqlTypeInfo::Kind::Null) ||
              (lhsTypeKind != ECSqlTypeInfo::Kind::Null && rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray)))
             {
@@ -238,13 +235,13 @@ Exp::FinalizeParseStatus BooleanBinaryExp::CanCompareTypes (ECSqlParseContext& c
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BooleanBinaryExp::ToECSql() const 
+Utf8String BinaryBooleanExp::ToECSql() const 
     {
     Utf8String ecsql("(");
     ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ");
 
     ComputedExp const* rhs = GetRightOperand();
-    const bool rhsNeedsParens = m_op == SqlBooleanOperator::NOT_IN || m_op == SqlBooleanOperator::IN;
+    const bool rhsNeedsParens = m_op == BooleanSqlOperator::NOT_IN || m_op == BooleanSqlOperator::IN;
 
     if (rhsNeedsParens)
         ecsql.append("(");
@@ -261,20 +258,20 @@ Utf8String BooleanBinaryExp::ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BooleanBinaryExp::_ToString() const 
+Utf8String BinaryBooleanExp::_ToString() const 
     {
-    Utf8String str ("BooleanBinary [Operator: ");
+    Utf8String str ("BinaryBoolean [Operator: ");
     str.append (ExpHelper::ToString (m_op)).append ("]");
     return str;
     }
 
 
-//*************************** BooleanUnaryExp ******************************************
+//*************************** BooleanFactorExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BooleanUnaryExp::BooleanUnaryExp (unique_ptr<BooleanExp> operand, SqlBooleanUnaryOperator op) 
-    : BooleanExp (), m_op (op)
+BooleanFactorExp::BooleanFactorExp (unique_ptr<BooleanExp> operand, bool notOperator) 
+    : BooleanExp(), m_notOperator(notOperator)
     {
     m_operandExpIndex = AddChild (std::move(operand));
     }
@@ -282,19 +279,67 @@ BooleanUnaryExp::BooleanUnaryExp (unique_ptr<BooleanExp> operand, SqlBooleanUnar
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BooleanUnaryExp::ToECSql() const 
+Utf8String BooleanFactorExp::ToECSql() const 
     {
-    return  ExpHelper::ToString(m_op) + Utf8String("(") + GetOperand ()->ToECSql() + ")";
+    Utf8String ecsql;
+    if (m_notOperator)
+        ecsql.append("NOT ");
+
+    ecsql.append("(").append(GetOperand()->ToECSql()).append(")");
+    return ecsql;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BooleanUnaryExp::_ToString() const 
+Utf8String BooleanFactorExp::_ToString() const 
     {
-    Utf8String str ("BooleanUnary [Operator: ");
-    str.append (ExpHelper::ToString (m_op)).append ("]");
+    Utf8String str ("BooleanFactor [Operator: ");
+    if (m_notOperator)
+        str.append("NOT");
+    else
+        str.append("-");
+
+    str.append ("]");
     return str;
+    }
+
+//*************************** UnaryPredicateExp ******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+UnaryPredicateExp::UnaryPredicateExp(unique_ptr<ValueExp> booleanValueExp)
+    : BooleanExp()
+    {
+    m_booleanValueExpIndex = AddChild(std::move(booleanValueExp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    if (mode == FinalizeParseMode::BeforeFinalizingChildren)
+        return FinalizeParseStatus::NotCompleted;
+
+    ValueExp const* valueExp = GetValueExp();
+    ECSqlTypeInfo const& valueExpTypeInfo = valueExp->GetTypeInfo();
+    if (valueExp->GetType () == Exp::Type::Parameter || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
+        {
+        ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in expression '%s'. Unary predicates can only have expressions of boolean or integral type and cannot be parametrized.", ToECSql().c_str());
+        return FinalizeParseStatus::Error;
+        }
+
+    return FinalizeParseStatus::Completed;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8String UnaryPredicateExp::ToECSql() const
+    {
+    return GetValueExp()->ToECSql();
     }
 
 

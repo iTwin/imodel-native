@@ -36,11 +36,11 @@ Exp::FinalizeParseStatus BetweenRangeValueExp::_FinalizeParsing (ECSqlParseConte
     return FinalizeParseStatus::Completed;
     }
 
-//*************************** BinaryExp ******************************************
+//*************************** BinaryValueExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus BinaryExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     auto lhs = GetLeftOperand ();
     auto rhs = GetRightOperand ();
@@ -133,7 +133,7 @@ Exp::FinalizeParseStatus BinaryExp::_FinalizeParsing (ECSqlParseContext& ctx, Fi
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String BinaryExp::ToECSql() const 
+Utf8String BinaryValueExp::ToECSql() const 
     {
     return "(" + GetLeftOperand ()->ToECSql() + " " + ExpHelper::ToString(m_op) + " " + GetRightOperand ()->ToECSql() +")";
     }
@@ -141,7 +141,7 @@ Utf8String BinaryExp::ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String BinaryExp::_ToString() const 
+Utf8String BinaryValueExp::_ToString() const 
     {
     Utf8String str ("Binary [Operator: ");
     str.append (ExpHelper::ToString (m_op)).append ("]");
@@ -957,7 +957,7 @@ Utf8CP FoldFunctionCallExp::ToString(FoldFunction foldFunction)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus UnaryExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
@@ -971,17 +971,17 @@ Exp::FinalizeParseStatus UnaryExp::_FinalizeParsing (ECSqlParseContext& ctx, Fin
 
     switch (m_op)
         {
-        case SqlUnaryOperator::MINUS:
-        case SqlUnaryOperator::PLUS:
+        case UnarySqlOperator::Minus:
+        case UnarySqlOperator::Plus:
             {
             SetTypeInfo (operandTypeInfo);
             break;
             }
-        case SqlUnaryOperator::BITWISE_NOT:
+        case UnarySqlOperator::BitwiseNot:
             {
             if (!operandTypeInfo.IsExactNumeric ())
                 {
-                ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid type in expression %s: Unary operator BITWISE_NOT expects a scalar exact numeric type expression", ToECSql().c_str());
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid type in expression %s: Bitwise not operator expects a scalar exact numeric type expression", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -1003,7 +1003,7 @@ Exp::FinalizeParseStatus UnaryExp::_FinalizeParsing (ECSqlParseContext& ctx, Fin
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String UnaryExp::ToECSql() const 
+Utf8String UnaryValueExp::ToECSql() const 
     {
     return ExpHelper::ToString(m_op) + Utf8String("(") + GetOperand ()->ToECSql() + ")";
     }
@@ -1011,9 +1011,9 @@ Utf8String UnaryExp::ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String UnaryExp::_ToString() const 
+Utf8String UnaryValueExp::_ToString() const 
     {
-    Utf8String str ("Unary [Operator: ");
+    Utf8String str ("UnaryValue [Operator: ");
     str.append (ExpHelper::ToString (m_op)).append ("]");
     return str;
     }

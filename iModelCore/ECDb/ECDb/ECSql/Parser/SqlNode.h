@@ -251,6 +251,7 @@ namespace connectivity
                 table_ref,
                 term,
                 test_for_null,
+                unary_predicate,
                 union_statement,
                 unique_test,
                 update_statement_positioned,
