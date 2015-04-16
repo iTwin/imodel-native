@@ -9,7 +9,7 @@
 
 #include <ECObjects/ECExpressionNode.h>
 
-static ECN::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher;
+// static ECN::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher; *** unused variable
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

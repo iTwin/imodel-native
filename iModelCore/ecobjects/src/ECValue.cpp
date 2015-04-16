@@ -1946,7 +1946,7 @@ bool              ECValue::Equals (ECValueCR v) const
         return false;
     if (IsString())
         return m_stringInfo.Equals (v.m_stringInfo, m_ownershipFlags);
-    if (IsBinary())
+    if (IsBinary() || IsIGeometry ())
         {
         if (m_binaryInfo.m_size != v.m_binaryInfo.m_size)
             return false;
