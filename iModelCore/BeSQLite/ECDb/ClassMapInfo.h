@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapInfo.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -96,6 +96,7 @@ public:
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
+    void RestoreSaveSettings (MapStrategy mapStrategy, Utf8CP tableName){ m_mapStrategy = mapStrategy; if (tableName != nullptr) m_tableName = tableName; }
 
     static MapStrategy GetDefaultMapStrategy () { return MapStrategy::TableForThisClass; }
     };

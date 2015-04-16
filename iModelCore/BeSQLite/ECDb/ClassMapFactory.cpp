@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapFactory.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -21,6 +21,8 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
     BeAssert (ecClass.HasId () && "ClassMapFactory::Load is expected to look up the class id if not present.");
     auto classId = ecClass.GetId ();
     DbECClassMapInfo info;
+    info.m_mapStrategy = MapStrategy::NoHint;
+    info.m_mapParentECClassId = 0;
     info.ColsWhere = DbECClassMapInfo::COL_ECClassId;
     info.ColsSelect =
         DbECClassMapInfo::COL_MapStrategy |
@@ -53,8 +55,11 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
 
     Utf8CP pk = (info.ColsNull & DbECClassMapInfo::COL_ECInstanceIdColumn) ? nullptr : info.m_primaryKeyColumnName.c_str ();
 
-    ClassMapInfoPtr classMapInfo = ClassMapInfoFactory::CreateInstance (ecClass, ecdbMap, info.m_mapToDbTable.c_str (), pk, 
-                                            info.m_mapStrategy);
+    ClassMapInfoPtr classMapInfo = ClassMapInfoFactory::CreateInstance (ecClass, ecdbMap, info.m_mapToDbTable.c_str (), pk, info.m_mapStrategy);
+
+    //restore saved map setting.
+    if (info.m_mapStrategy != MapStrategy::NoHint)
+        classMapInfo->RestoreSaveSettings (info.m_mapStrategy, info.m_mapToDbTable.c_str());
 
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP ();
     // Construct and initialize the class map

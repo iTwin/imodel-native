@@ -113,7 +113,7 @@ ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableNa
 : m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_mapToExistingTable (false),
 m_mapStrategy (mapStrategy), m_isMapToVirtualTable (IClassMap::IsAbstractECClass (ecClass)),m_replaceEmptyTableWithEmptyView(true)
     {
-    if (Utf8String::IsNullOrEmpty (tableName))
+  //  if (Utf8String::IsNullOrEmpty (tableName))
         InitializeFromSchema ();
 
     //Default values for table name and primary key column name

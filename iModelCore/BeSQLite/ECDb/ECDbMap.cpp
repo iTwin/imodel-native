@@ -179,9 +179,7 @@ MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext,
 ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
     {
     BeCriticalSectionHolder lock (m_criticalSection);
-
     BeAssert (GetClassMap (ecClass, false) == nullptr);
-
     m_classMapLoadAccessCounter++;
     MapStatus mapStatus;
     auto classMapPtr = ClassMapFactory::Load (mapStatus, ecClass, *this);
@@ -477,14 +475,15 @@ DbResult ECDbMap::ReplaceEmptyTablesWithEmptyViews () const
     bvector<DbTablePtr> candidatesToReplace;
     for (; it != m_tableCache.end (); ++it)
         {
-         DbTablePtr const& table = it->second;
-         if (table->IsAllowedToReplaceEmptyTableWithEmptyView() && 
-             !table->IsMappedToExistingTable() && !table->IsVirtual() &&
-             //pass false, so that non-existing tables are not treated as empty tables
-             table->IsEmpty (m_ecdb, false))
-             {
-             candidatesToReplace.push_back (table);
-             }
+        DbTablePtr const& table = it->second;
+
+        if (table->IsAllowedToReplaceEmptyTableWithEmptyView () &&
+            !table->IsMappedToExistingTable () && !table->IsVirtual () &&
+            //pass false, so that non-existing tables are not treated as empty tables
+            table->IsEmpty (m_ecdb, false))
+            {
+            candidatesToReplace.push_back (table);
+            }
         }
 
     const NativeLogging::SEVERITY debugSeverity = NativeLogging::LOG_DEBUG;

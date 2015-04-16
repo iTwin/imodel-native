@@ -2,7 +2,7 @@
 #
 #  $Source: ECSqlConsole/ECSqlConsole.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -69,6 +69,7 @@ LINKER_LIBRARIES               =    $(SubpartLibs)Bentley.lib \
                                     $(SubpartLibs)BeLibXml2.lib         \
                                     $(SubpartLibs)BentleyGeom.lib       \
                                     $(SubpartLibs)ECObjects.lib         \
+                                    $(SubpartLibs)BeJsonCpp.lib         \
                                     gdi32.lib                           \
                                     user32.lib                          \
 

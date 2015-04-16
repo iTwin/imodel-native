@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ConsoleCommand.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,9 @@
 #include <vector>
 #include <map>
 #include <BeSQLite/ECDb/ECSqlStatement.h>
+#include <BeSQLite/ECDb/ECDbApi.h>
 #include <ECObjects/ECObjectsAPI.h>
+#include <json/json.h>
 USING_NAMESPACE_BENTLEY
 
 //forward declaration
@@ -166,13 +168,16 @@ struct ExportCommand : public ConsoleCommand, NonCopyableClass
     {
 private:
     static Utf8CP const ECSCHEMA_SWITCH;
-
+    static Utf8CP const TABLES_SWITCH;
     virtual Utf8String _GetName () const override;
     virtual Utf8String _GetUsage () const override;
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
 
     void RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFolder) const;
+    void RunExportTables (ECSqlConsoleSession& session, Utf8CP jsonFile) const;
 
+    void ExportTables (ECSqlConsoleSession& session, Utf8CP jsonFile) const;
+    void ExportTable (ECSqlConsoleSession& session, Json::Value& out, Utf8CP tableName) const;
 public:
     ExportCommand () 
         : ConsoleCommand () 
