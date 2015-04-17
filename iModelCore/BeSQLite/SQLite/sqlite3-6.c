@@ -13645,6 +13645,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3session_diff(
   memset(&d, 0, sizeof(d));
   sessionDiffHooks(pSession, &d);
 
+  sqlite3_mutex_enter(sqlite3_db_mutex(pSession->db));
   if( pzErrMsg ) *pzErrMsg = 0;
   if( rc==SQLITE_OK ){
     char *zExpr = 0;
@@ -13711,6 +13712,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3session_diff(
 
  diff_out:
   sessionPreupdateHooks(pSession);
+  sqlite3_mutex_leave(sqlite3_db_mutex(pSession->db));
   return rc;
 }
 
