@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/valueformat_test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -862,10 +862,11 @@ void    doFormatDistanceTest (DistanceFormatTestData const& testData)
     formatter->SetSuppressZeroMasterUnits (testData.m_base.m_suppressZeroMasterUnits);
     formatter->SetSuppressZeroSubUnits (testData.m_base.m_suppressZeroSubUnits);
     formatter->SetScaleFactor (testData.m_base.m_scaleFactor);
-    WString outputStr = formatter->ToString (testData.m_inputValue);
+    WString outputStr = formatter->ToString(testData.m_inputValue / 1000.); // input is in millimters, storage units are meters
 
     ASSERT_STREQ (testData.m_base.m_expectedString, outputStr.c_str());
     }
+#define MM_TO_METERS(a) (a/1000.)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
@@ -875,11 +876,11 @@ TEST (DistanceFormatter, Format_TestGeneral)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
-        //uor           value               precision                       unitflag    leadingzero     trailingzero    insertthousands     thousandssep    decimalsep    suppresszeromaster  suppresszerosub   scalefactor format                master        sub         storage     
+        //millimeters           value               precision                       unitflag    leadingzero     trailingzero    insertthousands     thousandssep    decimalsep    suppresszeromaster  suppresszerosub   scalefactor format                master        sub         storage     
         { .1,          L"0.000",           PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
         { 100,         L"0.100",           PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
         { 1000,        L"1.000",           PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
@@ -892,10 +893,6 @@ TEST (DistanceFormatter, Format_TestGeneral)
         { 100,         L"0:100.000",       PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MUSU,     masterUnits,  subUnits,   storageUnits },
         { 1000,        L"1:0.000",         PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MUSU,     masterUnits,  subUnits,   storageUnits },
         { 10000,       L"10:0.000",        PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MUSU,     masterUnits,  subUnits,   storageUnits },
-        { .1,          L"0:0:0.100",       PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
-        { 100,         L"0:100:0.000",     PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
-        { 1000,        L"1:0:0.000",       PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
-        { 10000,       L"10:0:0.000",      PrecisionFormat::Decimal3Places,      false,      true,           true,           false,              ',',            '.',          false,              false,            0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
         };
 
     for (int iTest = 0; iTest < _countof(testDataArray); iTest++)
@@ -910,15 +907,14 @@ TEST (DistanceFormatter, Format_TestUnitLabelFlag)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
-        //uor           value                                    precision                         unitflag  leadingzero  trailingzero  insertthousands  thousandssep  decimalsep  suppresszeromaster  suppresszerosub  scalefactor  format                master        sub         storage     
+        //millimeters           value                                    precision                         unitflag  leadingzero  trailingzero  insertthousands  thousandssep  decimalsep  suppresszeromaster  suppresszerosub  scalefactor  format                master        sub         storage     
         { 1000,        L"1.000" LOCS(L"m"),                     PrecisionFormat::Decimal3Places,  true,     true,        true,         false,           ',',          '.',        false,              false,           0.0,         DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
         { 1000,        L"1000.000" LOCS(L"mm"),                 PrecisionFormat::Decimal3Places,  true,     true,        true,         false,           ',',          '.',        false,              false,           0.0,         DgnUnitFormat::SU,       masterUnits,  subUnits,   storageUnits },
         { 1000,        L"1" LOCS(L"m") L" 0.000" LOCS(L"mm"),   PrecisionFormat::Decimal3Places,  true,     true,        true,         false,           ',',          '.',        false,              false,           0.0,         DgnUnitFormat::MUSU,     masterUnits,  subUnits,   storageUnits },
-        { 1000,        L"1" LOCS(L"m") L" 0:0.000" LOCS(L"mm"), PrecisionFormat::Decimal3Places,  true,     true,        true,         false,           ',',          '.',        false,              false,           0.0,         DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
         };
 
     for (int iTest = 0; iTest < _countof(testDataArray); iTest++)
@@ -933,11 +929,11 @@ TEST (DistanceFormatter, Format_TestPrecision)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
-        //uor           value                      precision                         unitflag    leadingzero trailingzero  insertthousands  thousandssep  decimalseparator  suppresszeromaster  suppresszerosub  scalefactor format                master        sub         storage         
+        //meters           value                      precision                         unitflag    leadingzero trailingzero  insertthousands  thousandssep  decimalseparator  suppresszeromaster  suppresszerosub  scalefactor format                master        sub         storage         
         { .1,          L"0.00",                   PrecisionFormat::Decimal2Places,  false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
         { 100,         L"0.10",                   PrecisionFormat::Decimal2Places,  false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
         { 1000,        L"1.0",                    PrecisionFormat::Decimal1Place,   false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
@@ -945,7 +941,6 @@ TEST (DistanceFormatter, Format_TestPrecision)
         { 10000,       L"10",                     PrecisionFormat::DecimalWhole,    false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
         { 10000,       L"10.0000",                PrecisionFormat::Decimal4Places,  false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
         { 1000,        L"1000.00000" LOCS(L"mm"), PrecisionFormat::Decimal5Places,  true,       true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::SU,       masterUnits,  subUnits,   storageUnits },
-        { 100,         L"0:100:0.0",              PrecisionFormat::Decimal1Place,   false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
         { 1000,        L"1.0",                    PrecisionFormat::Decimal1Place,   false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits }, 
         { 1020,        L"1.0",                    PrecisionFormat::Decimal1Place,   false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits }, 
         { 1040,        L"1.0",                    PrecisionFormat::Decimal1Place,   false,      true,       true,         false,           ',',          '.',              false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits }, 
@@ -969,17 +964,13 @@ TEST (DistanceFormatter, Format_TestLeadingTrailingZeros)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
         //uor           value            precision                         unitflag    leadingzero trailingzero    insertthousands  thousandssep  decimalsep  suppresszeromaster  suppresszerosub  scalefactor format                master        sub         storage
         { 10000,       L"10.0",         PrecisionFormat::Decimal1Place,   false,      true,       true,           false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
         { 10000,       L"10",           PrecisionFormat::Decimal1Place,   false,      true,       false,          false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
-        { 100,         L"0:100:0.000",  PrecisionFormat::Decimal3Places,  false,      true,       true,           false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
-        { 100,         L"0:100:.000",   PrecisionFormat::Decimal3Places,  false,      false,      true,           false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
-        { 100,         L"0:100:0",      PrecisionFormat::Decimal3Places,  false,      true,       false,          false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
-        { 100,         L"0:100:0",      PrecisionFormat::Decimal3Places,  false,      false,      false,          false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
         };
 
     for (int iTest = 0; iTest < _countof(testDataArray); iTest++)
@@ -994,7 +985,7 @@ TEST (DistanceFormatter, Format_TestThousandsDecimalSeparator)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
@@ -1020,7 +1011,7 @@ TEST (DistanceFormatter, Format_TestSuppressZeroMasterSubUnits)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
@@ -1043,7 +1034,7 @@ TEST (DistanceFormatter, Format_TestScientific)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
@@ -1066,7 +1057,7 @@ TEST (DistanceFormatter, Format_TestFractions)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
@@ -1090,7 +1081,7 @@ TEST (DistanceFormatter, Format_TestScaleFactor)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     DistanceFormatTestData testDataArray[] =
         {
@@ -1099,8 +1090,6 @@ TEST (DistanceFormatter, Format_TestScaleFactor)
         { 100,         L"200.000",             PrecisionFormat::Decimal3Places,  false,    true,       true,         false,           ',',          '.',        false,              false,           2.0,        DgnUnitFormat::SU,       masterUnits,  subUnits,   storageUnits },
         { 100,         L"50.000",              PrecisionFormat::Decimal3Places,  false,    true,       true,         false,           ',',          '.',        false,              false,           0.5,        DgnUnitFormat::SU,       masterUnits,  subUnits,   storageUnits },
         { 1564555.4,   L"3129.111" LOCS(L"m"), PrecisionFormat::Decimal3Places,  true,     true,       true,         false,           ',',          '.',        false,              false,           2,          DgnUnitFormat::MU,       masterUnits,  subUnits,   storageUnits },
-        { 100000,      L"50:0:0.000",          PrecisionFormat::Decimal3Places,  false,    true,       true,         false,           ',',          '.',        false,              false,           0.5,        DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
-        { 100000,      L"200:0:0.000",         PrecisionFormat::Decimal3Places,  false,    true,       true,         false,           ',',          '.',        false,              false,           2,          DgnUnitFormat::MUSUPU,   masterUnits,  subUnits,   storageUnits },
         };
 
     for (int iTest = 0; iTest < _countof(testDataArray); iTest++)
@@ -1143,7 +1132,8 @@ void    doFormatPointTest (PointFormatTestData const& testData)
 
     formatter->SetIs3d (false);
 
-    WString outputStr = formatter->ToString (testData.m_point);
+    DPoint3d meters = DPoint3d::FromScale(testData.m_point, 1./1000.);
+    WString outputStr = formatter->ToString(meters);
 
     ASSERT_STREQ (testData.m_base.m_expectedString, outputStr.c_str());
     }
@@ -1156,7 +1146,7 @@ TEST (PointFormatter, Format_TestGeneral)
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     PointFormatTestData testDataArray[] =
         {
@@ -1204,7 +1194,7 @@ void    doFormatAreaTest (AreaOrVolumeFormatTestData const& testData)
     formatter->SetDecimalSeparator              (testData.m_decimalSeparator);
     formatter->SetScaleFactor                   (testData.m_scaleFactor);
     formatter->SetMasterUnit                    (testData.m_masterUnits);
-    WString outputStr = formatter->ToString (testData.m_inputValue);
+    WString outputStr = formatter->ToString (testData.m_inputValue / (1000. * 1000.));
 
     ASSERT_STREQ (testData.m_expectedString, outputStr.c_str());
     }
@@ -1216,7 +1206,7 @@ TEST (AreaFormatter, Format_TestGeneral)
     {
     ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits  = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
-    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
+    UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
 
     AreaOrVolumeFormatTestData testDataArray[] =
         {
@@ -1277,7 +1267,7 @@ void    doFormatVolumeTest (AreaOrVolumeFormatTestData const& testData)
     formatter->SetDecimalSeparator              (testData.m_decimalSeparator);
     formatter->SetScaleFactor                   (testData.m_scaleFactor);
     formatter->SetMasterUnit                    (testData.m_masterUnits);
-    WString outputStr = formatter->ToString (testData.m_inputValue);
+    WString outputStr = formatter->ToString (testData.m_inputValue / (1000.*1000.*1000.));
 
     printf ("%ls\n", outputStr.c_str());
 

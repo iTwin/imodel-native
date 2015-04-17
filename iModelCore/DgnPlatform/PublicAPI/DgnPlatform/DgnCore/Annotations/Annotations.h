@@ -7,7 +7,7 @@
 //__PUBLISH_SECTION_START__
 
 //! @defgroup Annotations Annotations
-//! Annotation elements are drawing elements (vs. physical) used for markup.
+//! The "annotations" group contains APIs related to representing graphical markup in a project, typically in a drawing model, of physical geometry. For example, a TextAnnotation is a piece of text with an optional frame and leaders/arrows.
 
 #include "AnnotationFrame.h"
 #include "AnnotationFrameDraw.h"

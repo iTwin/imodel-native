@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/PropertyProcessors.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -12,7 +12,7 @@
 *   PropertyCollection
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*------------------------------------------------------------23---------------------**//**
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PropertyCollection::AddPropertyTableCollection
@@ -64,7 +64,7 @@ void PropertyCollection::ReleaseAllTables ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddPropertyTable (IRefCountedP table, UInt32 key)
+void PropertyCollection::AddPropertyTable (IRefCountedP table, uint32_t key)
     {
     table->AddRef();
 
@@ -74,7 +74,7 @@ void PropertyCollection::AddPropertyTable (IRefCountedP table, UInt32 key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRefCountedP PropertyCollection::FindPropertyTable (UInt32 tableKey)
+IRefCountedP PropertyCollection::FindPropertyTable (uint32_t tableKey)
     {
     T_TableCollection::iterator iter = m_tableCollection.find (tableKey);
 
@@ -87,7 +87,7 @@ IRefCountedP PropertyCollection::FindPropertyTable (UInt32 tableKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Trefz   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PropertyCollection::RemovePropertyTable (UInt32 tableKey)
+StatusInt PropertyCollection::RemovePropertyTable (uint32_t tableKey)
     {
     T_TableCollection::iterator iter = m_tableCollection.find (tableKey);
     if (iter == m_tableCollection.end())
@@ -117,10 +117,9 @@ bool    PropertyCollection::IsEmpty ()
 
         switch (iter->first)
             {
-            case ELEMENT_PROPERTY_Level:
+            case ELEMENT_PROPERTY_Category:
             case ELEMENT_PROPERTY_Color:
             case ELEMENT_PROPERTY_Font:
-            case ELEMENT_PROPERTY_TextStyle:
             case ELEMENT_PROPERTY_Weight:
                 {
                 T_UInt32Table*   propTable = dynamic_cast <T_UInt32Table *> (table);
@@ -188,7 +187,7 @@ bool    PropertyCollection::IsEmpty ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddElementIDEntry (ElementId key, ElementId value, UInt32 flags, ElementProperties tableKey)
+void PropertyCollection::AddElementIDEntry (DgnElementId key, DgnElementId value, uint32_t flags, ElementProperties tableKey)
     {
     IRefCountedP        table;
     T_ElementIDTable*   propertyTable;
@@ -213,7 +212,7 @@ void PropertyCollection::AddElementIDEntry (ElementId key, ElementId value, UInt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddMaterialIdEntry (UInt64/*DgnMaterialId*/ key, UInt64/*DgnMaterialId*/ value, UInt32 flags, ElementProperties tableKey)
+void PropertyCollection::AddMaterialIdEntry (uint64_t/*DgnMaterialId*/ key, uint64_t/*DgnMaterialId*/ value, uint32_t flags, ElementProperties tableKey)
     {
     IRefCountedP                                        table;
     MaterialIdPropertyTable*     propertyTable;
@@ -238,7 +237,7 @@ void PropertyCollection::AddMaterialIdEntry (UInt64/*DgnMaterialId*/ key, UInt64
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddInt32Entry (Int32 key, Int32 value, UInt32 flags, ElementProperties tableKey)
+void PropertyCollection::AddInt32Entry (int32_t key, int32_t value, uint32_t flags, ElementProperties tableKey)
     {
     IRefCountedP    table;
     T_Int32Table*   propertyTable;
@@ -263,7 +262,7 @@ void PropertyCollection::AddInt32Entry (Int32 key, Int32 value, UInt32 flags, El
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddUInt32Entry (UInt32 key, UInt32 value, UInt32 flags, ElementProperties tableKey)
+void PropertyCollection::AddUInt32Entry (uint32_t key, uint32_t value, uint32_t flags, ElementProperties tableKey)
     {
     IRefCountedP    table;
     T_UInt32Table*  propertyTable;
@@ -288,7 +287,7 @@ void PropertyCollection::AddUInt32Entry (UInt32 key, UInt32 value, UInt32 flags,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddDoubleEntry (double key, double value, UInt32 flags, ElementProperties tableKey)
+void PropertyCollection::AddDoubleEntry (double key, double value, uint32_t flags, ElementProperties tableKey)
     {
     IRefCountedP    table;
     T_DoubleTable*  propertyTable;
@@ -313,7 +312,7 @@ void PropertyCollection::AddDoubleEntry (double key, double value, UInt32 flags,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PropertyCollection::FindElementIDEntry (ElementId* value, UInt32* flags, ElementId key, ElementProperties tableKey)
+StatusInt PropertyCollection::FindElementIDEntry (DgnElementId* value, uint32_t* flags, DgnElementId key, ElementProperties tableKey)
     {
     IRefCountedP    table;
 
@@ -331,7 +330,7 @@ StatusInt PropertyCollection::FindElementIDEntry (ElementId* value, UInt32* flag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater    11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PropertyCollection::FindMaterialIdEntry(UInt64/*DgnMaterialId*/* value, UInt32* flags, UInt64/*DgnMaterialId*/ key, ElementProperties tableKey)
+StatusInt PropertyCollection::FindMaterialIdEntry(uint64_t/*DgnMaterialId*/* value, uint32_t* flags, uint64_t/*DgnMaterialId*/ key, ElementProperties tableKey)
     {
     IRefCountedP    table;
 
@@ -349,7 +348,7 @@ StatusInt PropertyCollection::FindMaterialIdEntry(UInt64/*DgnMaterialId*/* value
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PropertyCollection::FindInt32Entry (Int32* value, UInt32* flags, Int32 key, ElementProperties tableKey)
+StatusInt PropertyCollection::FindInt32Entry (int32_t* value, uint32_t* flags, int32_t key, ElementProperties tableKey)
     {
     IRefCountedP    table;
 
@@ -367,7 +366,7 @@ StatusInt PropertyCollection::FindInt32Entry (Int32* value, UInt32* flags, Int32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PropertyCollection::FindUInt32Entry (UInt32* value, UInt32* flags, UInt32 key, ElementProperties tableKey)
+StatusInt PropertyCollection::FindUInt32Entry (uint32_t* value, uint32_t* flags, uint32_t key, ElementProperties tableKey)
     {
     IRefCountedP    table;
 
@@ -385,7 +384,7 @@ StatusInt PropertyCollection::FindUInt32Entry (UInt32* value, UInt32* flags, UIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PropertyCollection::FindDoubleEntry (double* value, UInt32* flags, double key, ElementProperties tableKey)
+StatusInt PropertyCollection::FindDoubleEntry (double* value, uint32_t* flags, double key, ElementProperties tableKey)
     {
     IRefCountedP    table;
 
@@ -403,7 +402,7 @@ StatusInt PropertyCollection::FindDoubleEntry (double* value, UInt32* flags, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddColor (UInt32 key, UInt32 value, UInt32 flags)
+void PropertyCollection::AddColor (uint32_t key, uint32_t value, uint32_t flags)
     {
     AddUInt32Entry (key, value, flags, ELEMENT_PROPERTY_Color);
     }
@@ -411,23 +410,25 @@ void PropertyCollection::AddColor (UInt32 key, UInt32 value, UInt32 flags)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddLineStyle (Int32 key, Int32 value, UInt32 flags)
+void PropertyCollection::AddLineStyle (int32_t key, int32_t value, uint32_t flags)
     {
     AddInt32Entry (key, value, flags, ELEMENT_PROPERTY_Linestyle);
     }
 
+#if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddLevel (LevelId key, LevelId value, UInt32 flags)
+void PropertyCollection::AddCategory (DgnCategoryId key, DgnCategoryId value, uint32_t flags)
     {
-    AddUInt32Entry (key.GetValue(), value.GetValue(), flags, ELEMENT_PROPERTY_Level);
+    AddUInt32Entry (key.GetValue(), value.GetValue(), flags, ELEMENT_PROPERTY_Category);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddFont (UInt32 key, UInt32 value, UInt32 flags)
+void PropertyCollection::AddFont (uint32_t key, uint32_t value, uint32_t flags)
     {
     AddUInt32Entry (key, value, flags, ELEMENT_PROPERTY_Font);
     }
@@ -435,15 +436,7 @@ void PropertyCollection::AddFont (UInt32 key, UInt32 value, UInt32 flags)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddTextStyle(DgnStyleId key, DgnStyleId value, UInt32 flags)
-    {
-    AddUInt32Entry(key.GetValue(), value.GetValue(), flags, ELEMENT_PROPERTY_TextStyle);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddDimStyle (ElementId key, ElementId value, UInt32 flags)
+void PropertyCollection::AddDimStyle (DgnElementId key, DgnElementId value, uint32_t flags)
     {
     AddElementIDEntry (key, value, flags, ELEMENT_PROPERTY_DimStyle);
     }
@@ -451,7 +444,7 @@ void PropertyCollection::AddDimStyle (ElementId key, ElementId value, UInt32 fla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddMLineStyle (ElementId key, ElementId value, UInt32 flags)
+void PropertyCollection::AddMLineStyle (DgnElementId key, DgnElementId value, uint32_t flags)
     {
     AddElementIDEntry (key, value, flags, ELEMENT_PROPERTY_MLineStyle);
     }
@@ -459,7 +452,7 @@ void PropertyCollection::AddMLineStyle (ElementId key, ElementId value, UInt32 f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddMaterial(UInt64/*DgnMaterialId*/ key, UInt64/*DgnMaterialId*/ value, UInt32 flags)
+void PropertyCollection::AddMaterial(uint64_t/*DgnMaterialId*/ key, uint64_t/*DgnMaterialId*/ value, uint32_t flags)
     {
     AddMaterialIdEntry(key, value, flags, ELEMENT_PROPERTY_Material);
     }
@@ -467,7 +460,7 @@ void PropertyCollection::AddMaterial(UInt64/*DgnMaterialId*/ key, UInt64/*DgnMat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddWeight (UInt32 key, UInt32 value, UInt32 flags)
+void PropertyCollection::AddWeight (uint32_t key, uint32_t value, uint32_t flags)
     {
     AddUInt32Entry (key, value, flags, ELEMENT_PROPERTY_Weight);
     }
@@ -475,7 +468,7 @@ void PropertyCollection::AddWeight (UInt32 key, UInt32 value, UInt32 flags)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddElementClass (Int32 key, Int32 value, UInt32 flags)
+void PropertyCollection::AddElementClass (int32_t key, int32_t value, uint32_t flags)
     {
     AddInt32Entry (key, value, flags, ELEMENT_PROPERTY_ElementClass);
     }
@@ -483,7 +476,7 @@ void PropertyCollection::AddElementClass (Int32 key, Int32 value, UInt32 flags)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddTransparency (double key, double value, UInt32 flags)
+void PropertyCollection::AddTransparency (double key, double value, uint32_t flags)
     {
     AddDoubleEntry (key, value, flags, ELEMENT_PROPERTY_Transparency);
     }
@@ -491,7 +484,7 @@ void PropertyCollection::AddTransparency (double key, double value, UInt32 flags
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddThickness (double key, double value, UInt32 flags)
+void PropertyCollection::AddThickness (double key, double value, uint32_t flags)
     {
     AddDoubleEntry (key, value, flags, ELEMENT_PROPERTY_Thickness);
     }
@@ -499,7 +492,7 @@ void PropertyCollection::AddThickness (double key, double value, UInt32 flags)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddDisplayPriority (Int32 key, Int32 value, UInt32 flags)
+void PropertyCollection::AddDisplayPriority (int32_t key, int32_t value, uint32_t flags)
     {
     AddInt32Entry (key, value, flags, ELEMENT_PROPERTY_DisplayPriority);
     }
@@ -507,7 +500,7 @@ void PropertyCollection::AddDisplayPriority (Int32 key, Int32 value, UInt32 flag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyCollection::AddElementTemplate (ElementId key, ElementId value, UInt32 flags)
+void PropertyCollection::AddElementTemplate (DgnElementId key, DgnElementId value, uint32_t flags)
     {
     AddElementIDEntry (key, value, flags, ELEMENT_PROPERTY_ElementTemplate);
     }
@@ -515,7 +508,7 @@ void PropertyCollection::AddElementTemplate (ElementId key, ElementId value, UIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindColor (UInt32* value, UInt32* flags, UInt32 key)
+StatusInt   PropertyCollection::FindColor (uint32_t* value, uint32_t* flags, uint32_t key)
     {
     return FindUInt32Entry (value, flags, key, ELEMENT_PROPERTY_Color);
     }
@@ -523,23 +516,25 @@ StatusInt   PropertyCollection::FindColor (UInt32* value, UInt32* flags, UInt32 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindLineStyle (Int32* value, UInt32* flags, Int32 key)
+StatusInt   PropertyCollection::FindLineStyle (int32_t* value, uint32_t* flags, int32_t key)
     {
     return FindInt32Entry (value, flags, key, ELEMENT_PROPERTY_Linestyle);
     }
 
+#if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindLevel (LevelId* value, UInt32* flags, LevelId key)
+StatusInt   PropertyCollection::FindCategory (DgnCategoryId* value, uint32_t* flags, DgnCategoryId key)
     {
-    return FindUInt32Entry ((UInt32*) value, flags, key.GetValue(), ELEMENT_PROPERTY_Level);
+    return FindUInt32Entry ((uint32_t*) value, flags, key.GetValue(), ELEMENT_PROPERTY_Category);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindFont (UInt32* value, UInt32* flags, UInt32 key)
+StatusInt   PropertyCollection::FindFont (uint32_t* value, uint32_t* flags, uint32_t key)
     {
     return FindUInt32Entry (value, flags, key, ELEMENT_PROPERTY_Font);
     }
@@ -547,21 +542,7 @@ StatusInt   PropertyCollection::FindFont (UInt32* value, UInt32* flags, UInt32 k
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindTextStyle(DgnStyleId* value, UInt32* flags, DgnStyleId key)
-    {
-    UInt32 valueU32 = 0;
-    StatusInt status = FindUInt32Entry((value ? &valueU32 : NULL), flags, key.GetValue(), ELEMENT_PROPERTY_TextStyle);
-
-    if ((SUCCESS == status) && (NULL != value))
-        *value = DgnStyleId(valueU32);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindDimStyle (ElementId* value, UInt32* flags, ElementId key)
+StatusInt   PropertyCollection::FindDimStyle (DgnElementId* value, uint32_t* flags, DgnElementId key)
     {
     return FindElementIDEntry (value, flags, key, ELEMENT_PROPERTY_DimStyle);
     }
@@ -569,7 +550,7 @@ StatusInt   PropertyCollection::FindDimStyle (ElementId* value, UInt32* flags, E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindMLineStyle (ElementId* value, UInt32* flags, ElementId key)
+StatusInt   PropertyCollection::FindMLineStyle (DgnElementId* value, uint32_t* flags, DgnElementId key)
     {
     return FindElementIDEntry (value, flags, key, ELEMENT_PROPERTY_MLineStyle);
     }
@@ -577,7 +558,7 @@ StatusInt   PropertyCollection::FindMLineStyle (ElementId* value, UInt32* flags,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindMaterial (UInt64/*DgnMaterialId*/* value, UInt32* flags, UInt64/*DgnMaterialId*/ key)
+StatusInt   PropertyCollection::FindMaterial (uint64_t/*DgnMaterialId*/* value, uint32_t* flags, uint64_t/*DgnMaterialId*/ key)
     {
     return FindMaterialIdEntry (value, flags, key, ELEMENT_PROPERTY_Material);
     }
@@ -585,7 +566,7 @@ StatusInt   PropertyCollection::FindMaterial (UInt64/*DgnMaterialId*/* value, UI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindWeight (UInt32* value, UInt32* flags, UInt32 key)
+StatusInt   PropertyCollection::FindWeight (uint32_t* value, uint32_t* flags, uint32_t key)
     {
     return FindUInt32Entry (value, flags, key, ELEMENT_PROPERTY_Weight);
     }
@@ -593,7 +574,7 @@ StatusInt   PropertyCollection::FindWeight (UInt32* value, UInt32* flags, UInt32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindElementClass (Int32* value, UInt32* flags, Int32 key)
+StatusInt   PropertyCollection::FindElementClass (int32_t* value, uint32_t* flags, int32_t key)
     {
     return FindInt32Entry (value, flags, key, ELEMENT_PROPERTY_ElementClass);
     }
@@ -601,7 +582,7 @@ StatusInt   PropertyCollection::FindElementClass (Int32* value, UInt32* flags, I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindTransparency (double* value, UInt32* flags, double key)
+StatusInt   PropertyCollection::FindTransparency (double* value, uint32_t* flags, double key)
     {
     return FindDoubleEntry (value, flags, key, ELEMENT_PROPERTY_Transparency);
     }
@@ -609,7 +590,7 @@ StatusInt   PropertyCollection::FindTransparency (double* value, UInt32* flags, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindThickness (double* value, UInt32* flags, double key)
+StatusInt   PropertyCollection::FindThickness (double* value, uint32_t* flags, double key)
     {
     return FindDoubleEntry (value, flags, key, ELEMENT_PROPERTY_Thickness);
     }
@@ -617,7 +598,7 @@ StatusInt   PropertyCollection::FindThickness (double* value, UInt32* flags, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindDisplayPriority (Int32* value, UInt32* flags, Int32 key)
+StatusInt   PropertyCollection::FindDisplayPriority (int32_t* value, uint32_t* flags, int32_t key)
     {
     return FindInt32Entry (value, flags, key, ELEMENT_PROPERTY_DisplayPriority);
     }
@@ -625,7 +606,7 @@ StatusInt   PropertyCollection::FindDisplayPriority (Int32* value, UInt32* flags
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PropertyCollection::FindElementTemplate (ElementId* value, UInt32* flags, ElementId key)
+StatusInt   PropertyCollection::FindElementTemplate (DgnElementId* value, uint32_t* flags, DgnElementId key)
     {
     return FindElementIDEntry (value, flags, key, ELEMENT_PROPERTY_ElementTemplate);
     }
@@ -640,25 +621,11 @@ EditPropertyPurpose StyleDependantRemapper::_GetEditPropertiesPurpose () {return
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    JoshSchifter    10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
- void    StyleDependantRemapper::_EachTextStyleCallback (EachTextStyleArg& arg)
-    {
-    UInt32   newStyleID;
-
-    if (SUCCESS != m_textStyleMap.FindProperty (&newStyleID, NULL, arg.GetStoredValue()))
-        return;
-
-    arg.SetRemappingAction (StyleParamsRemapping::ApplyStyle);
-    arg.SetStoredValue (newStyleID);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    JoshSchifter    10/13
-+---------------+---------------+---------------+---------------+---------------+------*/
  void    StyleDependantRemapper::_EachDimStyleCallback (EachDimStyleArg& arg)
     {
-    ElementId   newStyleID;
+    DgnElementId   newStyleID;
 
-    if (SUCCESS != m_dimStyleMap.FindProperty (&newStyleID, NULL, ElementId(arg.GetStoredValue())))
+    if (SUCCESS != m_dimStyleMap.FindProperty (&newStyleID, NULL, DgnElementId ((int64_t) arg.GetStoredValue())))
         return;
 
     arg.SetRemappingAction (StyleParamsRemapping::ApplyStyle);
@@ -670,9 +637,9 @@ EditPropertyPurpose StyleDependantRemapper::_GetEditPropertiesPurpose () {return
 +---------------+---------------+---------------+---------------+---------------+------*/
  void    StyleDependantRemapper::_EachMLineStyleCallback (EachMLineStyleArg& arg)
     {
-    ElementId   newStyleID;
+    DgnElementId   newStyleID;
 
-    if (SUCCESS != m_mlineStyleMap.FindProperty (&newStyleID, NULL, ElementId(arg.GetStoredValue())))
+    if (SUCCESS != m_mlineStyleMap.FindProperty (&newStyleID, NULL, DgnElementId ((int64_t) arg.GetStoredValue())))
         return;
 
     arg.SetRemappingAction (StyleParamsRemapping::ApplyStyle);
@@ -682,30 +649,20 @@ EditPropertyPurpose StyleDependantRemapper::_GetEditPropertiesPurpose () {return
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    JoshSchifter    10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
- void    StyleDependantRemapper::_EachLevelCallback (EachLevelArg& arg)
+ void    StyleDependantRemapper::_EachCategoryCallback (EachCategoryArg& arg)
     {
-    LevelId   newLevelID;
+    DgnCategoryId   newCategoryID;
 
-    if (SUCCESS != m_levelMap.FindProperty (&newLevelID, NULL, arg.GetStoredValue()))
+    if (SUCCESS != m_levelMap.FindProperty (&newCategoryID, NULL, arg.GetStoredValue()))
         return;
 
-    arg.SetStoredValue (newLevelID);
+    arg.SetStoredValue (newCategoryID);
     }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    JoshSchifter    10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    StyleDependantRemapper::AddTextStyleRemap (UInt32 fromID, UInt32 toID)
-    {
-    m_textStyleMap.AddProperty (fromID, toID, 0);
-
-    m_propertyMask  = (ElementProperties) (m_propertyMask | ELEMENT_PROPERTY_TextStyle);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    JoshSchifter    10/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    StyleDependantRemapper::AddDimStyleRemap (ElementId fromID, ElementId toID)
+void    StyleDependantRemapper::AddDimStyleRemap (DgnElementId fromID, DgnElementId toID)
     {
     m_dimStyleMap.AddProperty (fromID, toID, 0);
 
@@ -715,7 +672,7 @@ void    StyleDependantRemapper::AddDimStyleRemap (ElementId fromID, ElementId to
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    JoshSchifter    10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    StyleDependantRemapper::AddMLineStyleRemap (ElementId fromID, ElementId toID)
+void    StyleDependantRemapper::AddMLineStyleRemap (DgnElementId fromID, DgnElementId toID)
     {
     m_mlineStyleMap.AddProperty (fromID, toID, 0);
 
@@ -725,28 +682,28 @@ void    StyleDependantRemapper::AddMLineStyleRemap (ElementId fromID, ElementId 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    JoshSchifter    10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    StyleDependantRemapper::AddLevelRemap (LevelId fromID, LevelId toID)
+void    StyleDependantRemapper::AddCategoryRemap (DgnCategoryId fromID, DgnCategoryId toID)
     {
     m_levelMap.AddProperty (fromID, toID, 0);
 
-    m_propertyMask = (ElementProperties) (m_propertyMask | ELEMENT_PROPERTY_Level);
+    m_propertyMask = (ElementProperties) (m_propertyMask | ELEMENT_PROPERTY_Category);
     }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    JoshSchifter    10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32  StyleDependantRemapper::DoRemapping (DgnProjectR file)
+uint32_t StyleDependantRemapper::DoRemapping (DgnDbR file)
     {
 #ifdef WIP_VANCOUVER_MERGE // StyleDependantRemapper
-    UInt32  count = 0;
+    uint32_t count = 0;
 
     DgnFile::Collection collection  = file.GetAllElementsCollection();
-    for each (PersistentElementRefP const& elemRef in collection)
+    for each (PersistentDgnElementP const& element in collection)
         {
-        EditElementHandle eeh (elemRef, elemRef->GetDgnModelP());
+        EditElementHandle eeh (element, element->GetDgnModelP());
         if (PropertyContext::EditElementProperties (eeh, this))
             {
-            eeh.ReplaceInModel (elemRef);
+            eeh.ReplaceInModel (element);
             count++;
             }
         }
@@ -760,18 +717,18 @@ UInt32  StyleDependantRemapper::DoRemapping (DgnProjectR file)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    JoshSchifter    10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32  StyleDependantRemapper::DoRemapping (DgnModelR model)
+uint32_t StyleDependantRemapper::DoRemapping (DgnModelR model)
     {
-    UInt32  count = 0;
+    uint32_t count = 0;
 
 #if defined (NEEDS_WORK_DGNITEM)
     DgnModel::ElementsCollection collection  = model.GetElementsCollection();
-    for (auto elemRef : collection)
+    for (auto element : collection)
         {
-        EditElementHandle eeh (elemRef);
+        EditElementHandle eeh (element);
         if (PropertyContext::EditElementProperties (eeh, this))
             {
-            eeh.ReplaceInModel (elemRef);
+            eeh.ReplaceInModel (element);
             count++;
             }
         }

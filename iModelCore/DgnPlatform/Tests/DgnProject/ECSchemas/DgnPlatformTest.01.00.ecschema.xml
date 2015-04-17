@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="DgnPlatformTest" nameSpacePrefix="dptest" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
+
+    <ECClass typeName="TestElement" isDomainClass="True">
+        <BaseClass>dgn:Element</BaseClass>
+        <ECProperty propertyName="TestElementProperty" typeName="string" />
+    </ECClass>
+
+    <ECClass typeName="TestItem" isDomainClass="True">
+        <BaseClass>dgn:ElementItem</BaseClass>
+        <ECProperty propertyName="TestItemProperty" typeName="string" />
+    </ECClass>
+
+    <ECRelationshipClass typeName="TestElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
+        <BaseClass>dgn:ElementDrivesElement</BaseClass>
+        <Source cardinality="(0,1)" roleLabel="Element with datum plane" polymorphic="True">
+            <ECCustomAttributes>
+                <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <ECIdColumn>RootElementId</ECIdColumn>
+                    <ECClassIdColumn>RootElementClassId</ECClassIdColumn>
+                </ECDbRelationshipConstraintHint>
+            </ECCustomAttributes>
+            <Class class="dgn:Element" />
+        </Source>
+        <Target cardinality="(0,1)" roleLabel="Element to move" polymorphic="True">
+            <ECCustomAttributes>
+                <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <ECIdColumn>DependentElementId</ECIdColumn>
+                    <ECClassIdColumn>DependentElementClassId</ECClassIdColumn>
+                </ECDbRelationshipConstraintHint>
+            </ECCustomAttributes>
+            <Class class="dgn:Element" />
+        </Target>
+        <ECProperty propertyName="Property1" typeName="string" />
+    </ECRelationshipClass>
+
+</ECSchema>

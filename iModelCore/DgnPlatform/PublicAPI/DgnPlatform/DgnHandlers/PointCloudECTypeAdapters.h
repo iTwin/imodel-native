@@ -69,7 +69,7 @@ private:
     virtual bool            _HasStandardValues() const override     { return false; }
     virtual bool            _IsStruct() const                       { return false; }
 
-    void                    FormatThousandsSeparator(WCharP pOutValue, UInt64 inValue) const;
+    void                    FormatThousandsSeparator(WCharP pOutValue, uint64_t inValue) const;
 
 public:
     DGNPLATFORM_EXPORT static IDgnECTypeAdapterPtr   Create();

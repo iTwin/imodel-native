@@ -36,19 +36,19 @@ struct UpdateLogging
 #if defined (WANT_QUERYVIEW_UPDATE_LOGGING)
     static void RecordStartCycle();
     static void RecordStartQuery();
-    static void RecordDoneQuery(UInt32 nAcceptCalls, UInt32 nScores, UInt32 numElements);
+    static void RecordDoneQuery(uint32_t nAcceptCalls, uint32_t nScores, uint32_t numElements);
     static void RecordDoneLoad();
     static void RecordDetach();
     static void RecordAllowShowProgress();
-    static void RecordDoneUpdate(UInt32 numDrawn, DgnPlatform::DrawPurpose drawPurpose);
+    static void RecordDoneUpdate(uint32_t numDrawn, DgnPlatform::DrawPurpose drawPurpose);
 #else
     static void RecordStartCycle() {}
     static void RecordStartQuery() {}
-    static void RecordDoneQuery(UInt32 nAcceptCalls, UInt32 nScores, UInt32 numElements) {}
+    static void RecordDoneQuery(uint32_t nAcceptCalls, uint32_t nScores, uint32_t numElements) {}
     static void RecordDoneLoad() {}
     static void RecordDetach() {}
     static void RecordAllowShowProgress() {}
-    static void RecordDoneUpdate(UInt32 numDrawn, DgnPlatform::DrawPurpose drawPurpose) {}
+    static void RecordDoneUpdate(uint32_t numDrawn, DgnPlatform::DrawPurpose drawPurpose) {}
 #endif
     };
 

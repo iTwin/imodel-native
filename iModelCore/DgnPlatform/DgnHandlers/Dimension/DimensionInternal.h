@@ -2,7 +2,7 @@
 |
 |   $Source: DgnHandlers/Dimension/DimensionInternal.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -87,12 +87,12 @@ struct DimStackInfo
 struct DimAuxSymbol
     {
     double      width;            /* Symbol width                      */
-    UInt64   cellId;           /* Id of shared cell definition      */
+    uint64_t cellId;           /* Id of shared cell definition      */
 
-    byte        type;             /* Symbol type (AUXSYM_ ) 0 = none   */
-    byte        index;            /* Index of built in symbol          */
-    UShort      symbol;           /* Symbol character                  */
-    UInt32      font;             /* Symbol font                       */
+    Byte type;             /* Symbol type (AUXSYM_ ) 0 = none   */
+    Byte index;            /* Index of built in symbol          */
+    unsigned short symbol;           /* Symbol character                  */
+    uint32_t    font;             /* Symbol font                       */
     };
 
 struct DimStringData
@@ -130,8 +130,8 @@ struct DimStringData
 
 struct DimOptionBlockHeader
     {
-    byte            nWords;
-    byte            type;
+    Byte nWords;
+    Byte type;
     };
 
 /*---------------------------------------------------------------------------------------
@@ -156,49 +156,49 @@ enum DimMaterialIndex
 typedef struct
     {
     DimOverrideHdr      hdr;
-    UInt16              pointNo;
+    uint16_t            pointNo;
     DimPointOverrides   point;
     } PointOverride;
 
 typedef struct
     {
     DimOverrideHdr      hdr;
-    UInt16              segmentNo;
+    uint16_t            segmentNo;
     DimSegmentOverrides segment;
     } SegmentOverride;
 
 typedef struct
     {
     DimOverrideHdr          hdr;
-    UInt16                  segmentNo;
+    uint16_t                segmentNo;
     DimSegmentFlagOverrides sgmtflg;
     } SegmentFlagOverride;
 
 typedef struct
     {
     DimOverrideHdr      hdr;
-    UInt16              unused;
+    uint16_t            unused;
     DimOverallOverrides overall;
     } OverallOverride;
 
 typedef struct
     {
     DimOverrideHdr       hdr;
-    UInt16               unused;
+    uint16_t             unused;
     DimStyleExtensions   styleExt;
     } StyleExtension;
 
 typedef struct
     {
     DimOverrideHdr      hdr;
-    UInt16              unused;
+    uint16_t            unused;
     DimOrdinateOverrides ordinate;
     } OrdinateOverride;
 
 typedef struct
     {
     DimOverrideHdr      hdr;
-    UInt16              segmentNo;
+    uint16_t            segmentNo;
     DimMLText           *pText;
     } DimMLTextOverride;
 
@@ -241,24 +241,24 @@ public:
 
     struct
         {
-        UShort      allDontFit:1;       // text+margins+terminators do not fit (manual offset is not considered fit)
-        UShort      textNotFit:1;       // text alone does not fit
-        UShort      fitTermsInside:1;   // keep terminators inside even if allDontFit=true
-        UShort      pushTextOutside:1;  // push text outside if allDontFit=true
-        UShort      firstSeg:1;
-        UShort      lastSeg:1;
-        UShort      textBlockPopulated:1;
-        UShort      proxyStroked:1;
-        UShort      embed:1;
-        UShort      fitOption:3;
-        UShort      tightFitTextAbove:1;
-        UShort      ignoreMinLeader:1;  // ignore minimum leader dim->geom.margin and activates auto min leader
-        UShort      unused:2;
+        unsigned short allDontFit:1;       // text+margins+terminators do not fit (manual offset is not considered fit)
+        unsigned short textNotFit:1;       // text alone does not fit
+        unsigned short fitTermsInside:1;   // keep terminators inside even if allDontFit=true
+        unsigned short pushTextOutside:1;  // push text outside if allDontFit=true
+        unsigned short firstSeg:1;
+        unsigned short lastSeg:1;
+        unsigned short textBlockPopulated:1;
+        unsigned short proxyStroked:1;
+        unsigned short embed:1;
+        unsigned short fitOption:3;
+        unsigned short tightFitTextAbove:1;
+        unsigned short ignoreMinLeader:1;  // ignore minimum leader dim->geom.margin and activates auto min leader
+        unsigned short      unused:2;
         }           flags;
 
     DimStringData   strDat;
     double          stackHeight;
-    UInt32          partName;
+    uint32_t        partName;
     RotMatrix       vuMatrix;
     DimStackInfo    stack;
     DimOverrides    *pOverrides;
@@ -274,7 +274,7 @@ public:
     DimDerivedData  *pDerivedData;
     double          dProjectedTextWidth;
 
-    DimensionElm const* GetDimElementCP() const {return (DimensionElm const*) m_dimensionElement.GetElementCP();}
+    DimensionElm const* GetDimElementCP() const {return (DimensionElm const*) m_dimensionElement.GetGraphicsCP();}
     DgnModelP       GetDgnModelP() const {BeAssert(NULL != m_dimensionElement.GetDgnModelP()); return m_dimensionElement.GetDgnModelP();}
     ElementHandleCR    GetElemHandleCR() const {return m_dimensionElement;}
     
@@ -286,11 +286,11 @@ public:
 struct DimFormattedText
 {
 private:
-    typedef bvector<byte> ByteVector;
+    typedef bvector<Byte> ByteVector;
 
-    UInt16      m_component;
+    uint16_t    m_component;
 
-    UInt32      m_nodeNumber;         // stored only if text node
+    uint32_t    m_nodeNumber;         // stored only if text node
     DPoint2d    m_origin;
     DPoint2d    m_scale;              // text block width and height 'range'
     DPoint2d    m_size;               // text character width and height
@@ -319,30 +319,30 @@ public:
 DimFormattedText ();
 
 // Getters
-UInt16          GetComponentID () const    { return m_component; }
-WString         GetString (DgnProjectR file) const;
+uint16_t        GetComponentID () const    { return m_component; }
+WString         GetString (DgnDbR file) const;
 TextParamWide   GetTextParamWide () const;
 DPoint2d        GetOrigin () const         { return m_origin; }
 DPoint2d        GetScale () const          { return m_scale; }
 double          GetWidth () const          { return m_size.x; }
 double          GetHeight () const         { return m_size.y; }
 double          GetRotation () const       { return m_rotation; }
-UInt32          GetNodeNumber () const     { return m_nodeNumber; }
+uint32_t        GetNodeNumber () const     { return m_nodeNumber; }
 bool            IsNodeComponent () const   { return COMPONENTID_NodeProperties == GetComponentID(); }
 int             GetCrCount () const        { return m_textParams.exFlags.crCount; }
-UInt16          GetJustification () const  { return (UInt16)m_textParams.just; }
+uint16_t        GetJustification () const  { return (uint16_t)m_textParams.just; }
 DPoint2d        GetTileSize () const       { return m_size; }
 
 // Setters
-void            SetComponentID (UInt16 val)             { m_component  = val; }
-void            SetString (WCharCP val, DgnProjectR file);
+void            SetComponentID (uint16_t val)             { m_component  = val; }
+void            SetString (WCharCP val, DgnDbR file);
 void            SetTextParamWide (TextParamWideCR val);
 void            SetOrigin (DPoint2dCR val)              { m_origin     = val; }
 void            SetScale (DPoint2dR val)                { m_scale      = val; }
 void            SetWidth (double val)                   { m_size.x     = val; }
 void            SetHeight (double val)                  { m_size.y     = val; }
 void            SetRotation (double val)                { m_rotation   = val; }
-void            SetNodeNumber (UInt32 val)              { m_nodeNumber = val; }
+void            SetNodeNumber (uint32_t val)              { m_nodeNumber = val; }
 
 // Used for serialization / deserialization
 int             GetLinkageMaxNumBytes() const;
@@ -366,12 +366,12 @@ void            SetVariString (const char* pText, int nBytesIn);
 struct AdimStringUtil
 {
 //static size_t  MSWCharFromVariChar (WCharP outUnicodeString, UInt32 outNumChars, char const * inVariCharString, DgnFontCR effectiveFont);
-//static size_t  MSWCharFromVariChar (WCharP outUnicodeString, UInt32 outNumChars, char const * inVariCharString, UInt16 fontNumber, UInt16 shxBigFontNumber, DgnProjectR dgnFile);
+//static size_t  MSWCharFromVariChar (WCharP outUnicodeString, UInt32 outNumChars, char const * inVariCharString, UInt16 fontNumber, UInt16 shxBigFontNumber, DgnDbR dgnFile);
 static WString WStringFromVariChar (char const * inVariCharString, DgnFontCR effectiveFont);
-static WString WStringFromVariChar (char const * inVariCharString, UInt16 fontNumber, UInt16 shxBigFontNumber, DgnProjectR dgnFile);
+static WString WStringFromVariChar (char const * inVariCharString, uint16_t fontNumber, uint16_t shxBigFontNumber, DgnDbR dgnFile);
 
 static void VariCharFromMSWChar (char* outVariCharString, size_t outNumBytes, WCharCP inUnicodeString, DgnFontCR effectiveFont);
-static void VariCharFromMSWChar (char* outVariCharString, size_t outNumBytes, WCharCP inUnicodeString, UInt16 fontNumber, UInt16 shxBigFontNumber, DgnProjectR dgnFile);
+static void VariCharFromMSWChar (char* outVariCharString, size_t outNumBytes, WCharCP inUnicodeString, uint16_t fontNumber, uint16_t shxBigFontNumber, DgnDbR dgnFile);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -428,14 +428,14 @@ DPoint2dCP      pTileSize,
 AdimProcessP     pAdimProcess
 );
 
-void    adim_uorToDimString (WString&, DgnPlatform::DimUnitBlock*, WCharCP, WCharCP, double, bool, UInt16, UInt16, int, double *, bool, AdimProcessP, UShort primaryAccuracy);
+void    adim_uorToDimString (WString&, DgnPlatform::DimUnitBlock*, WCharCP, WCharCP, double, bool, uint16_t, uint16_t, int, double *, bool, AdimProcessP, unsigned short primaryAccuracy);
 void    adim_getTileSize (DPoint2dP, DPoint2dP, ElementHandleCR dimElement);
 
 void adim_getLengthStrings
 (
 AdimProcessP pAdimProcess,   /* <=> */
 double          dimLength,       /*  => Length of dimension line        */
-UShort          primaryAccuracy
+unsigned short  primaryAccuracy
 );
 
 int     adim_convertUnits
@@ -451,7 +451,7 @@ void adim_getEffectiveSymbology
 DgnPlatform::Symbology              *pSymbologyOut,
 ElementHandleCR            dimElement,
 DgnPlatform::DimMaterialIndex        materialIndex,
-UInt32                  partName,
+uint32_t                partName,
 DgnPlatform::DimOverrides           *pOverrides
 );
 
@@ -482,13 +482,13 @@ int  adim_generateTerminator (AdimProcessP , DPoint3dP , DVec3dP , int);
 int     adim_generateLine (AdimProcessP , DPoint3dP , DPoint3dP , DgnPlatform::DimMaterialIndex);
 int     adim_generateLineString (AdimProcessP , DPoint3dP , int, int, DgnPlatform::DimMaterialIndex);
 int     adim_generateText (AdimProcessP , WCharCP, DPoint3dP , DVec3dP , DgnPlatform::TextElementJustification, DPoint2dP);
-int     adim_generateSymbol (AdimProcessP , int, UInt16, DPoint3dP , RotMatrixP , DPoint2dP, DgnPlatform::TextElementJustification, DgnPlatform::DimMaterialIndex);
+int     adim_generateSymbol (AdimProcessP , int, uint16_t, DPoint3dP , RotMatrixP , DPoint2dP, DgnPlatform::TextElementJustification, DgnPlatform::DimMaterialIndex);
 int     adim_generateArc (AdimProcessCP , DPoint3dCP, double, double, RotMatrixCP, double, double, DgnPlatform::DimMaterialIndex material = DgnPlatform::DIM_MATERIAL_DimLine);
 int     adim_generateArcByPoints (AdimProcessP , DPoint3dP , DgnPlatform::DimMaterialIndex material);
 int     adim_generateCircle (AdimProcessP , DPoint3dP , double, RotMatrixP , bool, DgnPlatform::DimMaterialIndex);
-int     adim_generateCell (AdimProcessP , UInt64 , DPoint3dP , RotMatrixP , double, double, DgnPlatform::DimMaterialIndex);
-int     adim_generateCellScale (AdimProcessP , UInt64, DPoint3dP , RotMatrixP , double, DgnPlatform::DimMaterialIndex);
-int     adim_findSharedCellDef (double*, double*, ElementRefPtr*, UInt64, DgnModelP);
+int     adim_generateCell (AdimProcessP , uint64_t , DPoint3dP , RotMatrixP , double, double, DgnPlatform::DimMaterialIndex);
+int     adim_generateCellScale (AdimProcessP , uint64_t, DPoint3dP , RotMatrixP , double, DgnPlatform::DimMaterialIndex);
+int     adim_findSharedCellDef (double*, double*, DgnElementPtr*, uint64_t, DgnModelP);
 
 void    adim_updateTextBox
 (
@@ -505,7 +505,7 @@ DPoint2dCP      adSize
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool     adim_checkForLeader
 (
-UInt16                  *chainType,       /* <=  return the ball and chain type */
+uint16_t                *chainType,       /* <=  return the ball and chain type */
 AdimProcessCP  const ep,               /*  => working process data           */
 double const            offsetY,          /*  => text offset data               */
 DPoint2dCP              textSize          /*  => text size data                 */
@@ -559,7 +559,7 @@ AdimProcessP             pAdimProcess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    petri.niiranen  02/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16   adim_getDimTextJustification
+uint16_t adim_getDimTextJustification
 (
 AdimProcessCP  const pAdimProcess
 );
@@ -606,7 +606,7 @@ DPoint3dP currpoint
 void adim_dropDimension
 (
 DgnPlatform::DimensionElm *dim,
-UInt32       filePos,
+uint32_t     filePos,
 int          freeze
 );
 
@@ -735,7 +735,7 @@ bool                is3D
 
 int      adim_setStringLinkage
 (
-DgnElementP pElementIn,
+ElementGraphicsP pElementIn,
 const WChar  *pStringIn,
 int             categoryIn,
 int             linkageKeyIn,
@@ -744,7 +744,7 @@ int             maxStringSizeIn
 
 int      adim_setStringLinkageUsingDescr
 (
-MSElementDescrH ppDescrIn,
+DgnElementDescrH ppDescrIn,
 WChar         *pStringIn,
 int             categoryIn,
 int             linkageKeyIn,
@@ -754,7 +754,7 @@ int             maxStringSizeIn
 int      adim_getStringLinkage
 (
 WChar         *pStringOut,
-DgnElementCP  pElementIn,
+ElementGraphicsCP  pElementIn,
 int             categoryIn,
 int             linkageKeyIn,
 int             maxStringSizeIn
@@ -762,7 +762,7 @@ int             maxStringSizeIn
 
 int      adim_deleteStringLinkage
 (
-DgnElementP pElementIn,    /* <=> */
+ElementGraphicsP pElementIn,    /* <=> */
 int         categoryIn,     /* => */
 int         linkageKeyIn    /* => */
 );
@@ -774,21 +774,21 @@ AdimProcessCP ep             /* => Function used to process element    */
 
 int      mdlDim_setCellName
 (
-DgnElementP pElementIn,        /* <=> */
+ElementGraphicsP pElementIn,        /* <=> */
 WChar     *pCellNameIn,       /*  => */
 int         cellFlag            /* DIMCELL_xxx */
 );
 
 int      mdlDim_setCellNameUsingDescr
 (
-MSElementDescrH ppDescrIn,
+DgnElementDescrH ppDescrIn,
 WChar         *pCellNameIn,       /*  => */
 int             cellFlag                /* DIMCELL_xxx */
 );
 
 int      mdlDim_setCellName
 (
-DgnElementP pElementIn,        /* <=> */
+ElementGraphicsP pElementIn,        /* <=> */
 WChar     *pCellNameIn,       /*  => */
 int         cellFlag            /* DIMCELL_xxx */
 );
@@ -796,13 +796,13 @@ int         cellFlag            /* DIMCELL_xxx */
 int      mdlDim_getCellName
 (
 WChar     *pCellNameOut,  /* <= */
-DgnElementP pElementIn,    /* <=> */
+ElementGraphicsP pElementIn,    /* <=> */
 int         cellFlag        /* => DIMCELL_xxx */
 );
 
 int      mdlDim_removeCellName
 (
-DgnElementP pElementIn,
+ElementGraphicsP pElementIn,
 int         cellFlag
 );
 
@@ -863,10 +863,10 @@ DPoint3dCP  const endTangent              /*  => can be (0,0,0) */
 void     adim_changeTextHeapEncoding
 (
 EditElementHandleR dimElement,
-UInt32          newFont,
-UInt32          newShxBigFont,
-UInt32          oldFont,
-UInt32          oldShxBigFont
+uint32_t        newFont,
+uint32_t        newShxBigFont,
+uint32_t        oldFont,
+uint32_t        oldShxBigFont
 );
 
 /*------------------------------------------------------------------------------
@@ -919,16 +919,16 @@ DgnPlatform::DimOverrides    **ppOverridesIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool     mdlDim_extensionsGetPrimaryTolAccuracy
 (
-UInt16          *pProperty,
+uint16_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
-UInt16          defaultValueIn
+uint16_t        defaultValueIn
 );
 
 bool     mdlDim_extensionsGetSecondaryTolAccuracy
 (
-UInt16          *pProperty,
+uint16_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
-UInt16          defaultValueIn
+uint16_t        defaultValueIn
 );
 
 void     mdlDim_extensionsGetOrdinateUseDatumValueFlag
@@ -1156,16 +1156,16 @@ double          defaultValueIn
 
 bool     mdlDim_extensionsGetNoteTermChar
 (
-UInt16          *pProperty,
+uint16_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
-UInt16          defaultValueIn
+uint16_t        defaultValueIn
 );
 
 bool     mdlDim_extensionsGetNoteTermFont
 (
-UInt32          *pProperty,
+uint32_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
-UInt32          defaultValueIn
+uint32_t        defaultValueIn
 );
 
 bool     mdlDim_extensionsGetBncElbowLength
@@ -1183,9 +1183,9 @@ bool            defaultValueIn
 
 bool     mdlDim_extensionsGetFitOption
 (
-UInt16          *pProperty,
+uint16_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
-UInt16          defaultValueIn
+uint16_t        defaultValueIn
 );
 
 bool     mdlDim_extensionsGetSuppressUnfitTerminatorsFlag
@@ -1271,9 +1271,9 @@ double          defaultValueIn
 
 bool     mdlDim_overridesGetOverallAngleQuadrant
 (
-UInt16          *pProperty,
+uint16_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
-UInt16          defaultValueIn
+uint16_t        defaultValueIn
 );
 
 bool     mdlDim_overridesGetOverallSlantAngle
@@ -1311,18 +1311,18 @@ double          defaultValueIn
 
 bool     mdlDim_overridesGetPointWitnessColor
 (
-UInt32          *pProperty,
+uint32_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
 int             pointNo,
-UInt32          defaultValueIn
+uint32_t        defaultValueIn
 );
 
 bool     mdlDim_overridesGetPointWitnessWeight
 (
-UInt32          *pProperty,
+uint32_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
 int             pointNo,
-UInt32          defaultValueIn
+uint32_t        defaultValueIn
 );
 
 bool     mdlDim_overridesGetPointWitnessStyle
@@ -1353,10 +1353,10 @@ double          defaultValueIn
 
 bool     mdlDim_overridesGetSegmentTextJustification
 (
-UInt16          *pProperty,
+uint16_t        *pProperty,
 DgnPlatform::DimOverrides    *pOverridesIn,
 int             segmentNo,
-UInt16          defaultValueIn
+uint16_t        defaultValueIn
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -1485,7 +1485,7 @@ StatusInt     mdlDim_overridesClearSegmentPropertyBit
 (
 DgnPlatform::DimOverrides*   pOverridesIn,
 const int       segmentNo,
-const UInt32    propertyField
+const uint32_t  propertyField
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -1535,7 +1535,7 @@ AdimTextSizeOption  sizeOption
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    petri.niiranen  09/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSElementDescrPtr dimTextBlock_getTextDescr
+DgnElementDescrPtr dimTextBlock_getTextDescr
 (
 AdimProcessP pAdimProcess,
 DgnPlatform::DimMLText       *pText,
@@ -1608,8 +1608,8 @@ bool            modifyAllowed
 );
 
 
-void* mdlDim_getEditOptionBlock (EditElementHandleR dimElement, int reqType, UInt64*);
-void const* mdlDim_getEditOptionBlockFromElement (DgnElementCR , ElementHandleCR dimElement, int reqType, UInt64*);
+void* mdlDim_getEditOptionBlock (EditElementHandleR dimElement, int reqType, uint64_t*);
+void const* mdlDim_getEditOptionBlockFromElement (ElementGraphicsCR , ElementHandleCR dimElement, int reqType, uint64_t*);
 
 void     adim_setDimTextWitnessLineFromTemplate
 (
@@ -1639,25 +1639,25 @@ int adim_dimFracTypeFromText (DgnPlatform::StackedFractionType textFracType);
 void            adim_getMLNoteVerLeftAttachment
 (
 const DgnPlatform::DimStyleExtensions            *pExtensions,
-UInt16                              *pValue
+uint16_t                            *pValue
 );
 
 void            adim_setMLNoteVerLeftAttachment
 (
 DgnPlatform::DimStyleExtensions                  *pExtensions,
-UInt16                              eValue
+uint16_t                            eValue
 );
 
 void            adim_getMLNoteVerRightAttachment
 (
 const DgnPlatform::DimStyleExtensions            *pExtensions,
-UInt16                              *pValue
+uint16_t                            *pValue
 );
 
 void            adim_setMLNoteVerRightAttachment
 (
 DgnPlatform::DimStyleExtensions                  *pExtensions,
-UInt16                              eValue
+uint16_t                            eValue
 );
 
 void     adim_setCurrentSegmentTextIsOutside
@@ -1721,7 +1721,7 @@ DgnPlatform::DimStyleProp_FitOptions         fitOption
 
 bool                     mdlDim_isFrozenInSharedCell
 (
-DgnElementCP pDimElm
+ElementGraphicsCP pDimElm
 );
 
 int mdlDim_scale2
@@ -1851,7 +1851,7 @@ struct          LinearDimensionHelper: public IDimElementHelper
     friend struct DimensionHelperFactory;
     private:
     void    RecalcTextOffsetForLinearSingleDims(EditElementHandleR segmentDim, ElementHandleCR origDim,
-                    bvector<double> const& xTextOffsets, UInt32 iSegment) const;
+                    bvector<double> const& xTextOffsets, uint32_t iSegment) const;
     double  GetExtensionHeightDifference (int segNo) const;
     
     protected:

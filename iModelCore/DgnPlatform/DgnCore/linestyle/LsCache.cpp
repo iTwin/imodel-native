@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsCache.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -65,7 +65,7 @@ struct LsComponentTree : bset<LsComponentKey>
 public:
     void AddToCompCache (LsComponent* comp) {insert (comp);}
     void DeleteMatchingComponent (LsComponent* compareComponent) {erase (compareComponent); }
-    void GetComponentList (T_LsComponents& components, intptr_t fileKey, UInt32 componentType);
+    void GetComponentList (T_LsComponents& components, intptr_t fileKey, uint32_t componentType);
     void Empty ();
 };
 
@@ -74,7 +74,7 @@ static LsComponentTree    s_lsCompCache;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsComponentTree::GetComponentList (T_LsComponents& components, intptr_t fileKey, UInt32 componentType)
+void LsComponentTree::GetComponentList (T_LsComponents& components, intptr_t fileKey, uint32_t componentType)
     {
     for (auto it=begin(), done=end(); it!=done; ++it)
         {
@@ -83,7 +83,7 @@ void LsComponentTree::GetComponentList (T_LsComponents& components, intptr_t fil
         if (comp->GetLocation ()->GetFileKey () != fileKey)
             continue;
         
-        if (0 != componentType && (UInt32)comp->GetLocation ()->GetRscType () != componentType)
+        if (0 != componentType && (uint32_t)comp->GetLocation ()->GetRscType () != componentType)
             continue;
         
         components.push_back (comp);
@@ -123,18 +123,18 @@ static LsComponent* lookupComponent (LsComponent* in)
 //--------------+------------------------------------------------------------------------
 LsDgnDbReader::~LsDgnDbReader ()
     {
-    MEMUTIL_FREE_AND_CLEAR (m_rsc);
+    FREE_AND_CLEAR (m_rsc);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsRscReader*   LsRscReader::GetRscReader (const LsLocation* source, DgnProjectR project)
+LsRscReader*   LsRscReader::GetRscReader (const LsLocation* source, DgnDbR project)
     {
 
     switch (source->GetSourceType())
         {
-        case LsLocationType::DgnProject:
+        case LsLocationType::DgnDb:
             return  new LsDgnDbReader (source, project);
         }
 
@@ -146,7 +146,7 @@ LsRscReader*   LsRscReader::GetRscReader (const LsLocation* source, DgnProjectR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static LsComponent* cacheLoadComponent(LsLocation*location)
     {
-    LsRscReader* reader = LsRscReader::GetRscReader (location, *location->GetDgnProject());
+    LsRscReader* reader = LsRscReader::GetRscReader (location, *location->GetDgnDb());
 
     if (NULL == reader)
         return  NULL;
@@ -160,7 +160,7 @@ static LsComponent* cacheLoadComponent(LsLocation*location)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-void LsComponent::GetNextComponentId (UInt32& id, DgnProjectR project, PropertySpec spec)
+void LsComponent::GetNextComponentId (uint32_t& id, DgnDbR project, PropertySpec spec)
     {
     SqlPrintfString sql("SELECT  max(Id) from " BEDB_TABLE_Property " where Namespace='%s' and Name='%s'", spec.GetNamespace(), spec.GetName());
     Statement stmt;
@@ -172,13 +172,13 @@ void LsComponent::GetNextComponentId (UInt32& id, DgnProjectR project, PropertyS
         return;
         }
 
-    id = (UInt32)stmt.GetValueInt(0) + 1;
+    id = (uint32_t)stmt.GetValueInt(0) + 1;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2012
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsComponent::AddComponentAsProperty (UInt32& componentId, DgnProjectR project, PropertySpec spec, void const*data, UInt32 dataSize)
+LineStyleStatus LsComponent::AddComponentAsProperty (uint32_t& componentId, DgnDbR project, PropertySpec spec, void const*data, uint32_t dataSize)
     {
     GetNextComponentId (componentId, project, spec);
 
@@ -191,7 +191,7 @@ LineStyleStatus LsComponent::AddComponentAsProperty (UInt32& componentId, DgnPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-LineStyleStatus LsComponent::GetComponentList(T_LsComponents& components, intptr_t fileKey, UInt32 componentType)
+LineStyleStatus LsComponent::GetComponentList(T_LsComponents& components, intptr_t fileKey, uint32_t componentType)
     {
     s_lsCompCache.GetComponentList (components, fileKey, componentType);
     return LINESTYLE_STATUS_Success;
@@ -200,7 +200,7 @@ LineStyleStatus LsComponent::GetComponentList(T_LsComponents& components, intptr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LsComponent::LsComponent (DgnProjectR project, UInt32 componentType, UInt32 componentId) : m_isDirty (false)
+LsComponent::LsComponent (DgnDbR project, uint32_t componentType, uint32_t componentId) : m_isDirty (false)
     {
     m_location.SetLocation (project, componentType, componentId);
     }
@@ -238,8 +238,8 @@ void            LsStrokePatternComponent::SaveToResource (LineCodeRsc& resource)
     resource.orgAngle_unused = 90.0;
     resource.endAngle_unused = 90.0;
 
-    resource.nStrokes = static_cast <UInt32> (m_nStrokes > _countof (m_strokes) ? _countof (m_strokes) : m_nStrokes);
-    for (UInt32 i = 0; i < resource.nStrokes; i++)
+    resource.nStrokes = static_cast <uint32_t> (m_nStrokes > _countof (m_strokes) ? _countof (m_strokes) : m_nStrokes);
+    for (uint32_t i = 0; i < resource.nStrokes; i++)
         {
         m_strokes [i].SaveToResource (resource.stroke [i]);
         }
@@ -417,14 +417,14 @@ void            LsCompoundComponent::InitLineStyleResource (LineStyleRsc& lsRsc)
 
     // lsRsc = auxType -- not sure this is needed
 
-    lsRsc.nComp = (Int32)m_components.size ();
+    lsRsc.nComp = (int32_t)m_components.size ();
     
     ComponentInfo*   componentInfo = lsRsc.component;
     for (T_ComponentsCollectionIter curr = m_components.begin (); curr < m_components.end (); curr++, componentInfo++)
         {
         LsLocationCP        loc = curr->m_subComponent->GetLocation ();
 
-        componentInfo->type = (UInt32)loc->GetRscType ();
+        componentInfo->type = (uint32_t)loc->GetRscType ();
         componentInfo->id = loc->GetRscID ();
         componentInfo->offset = curr->m_offset;
         }
@@ -580,11 +580,11 @@ LsRscReader*    reader
 
     LsLocation  tmpLocation;
 
-    for (UInt32 i=0; i < lsRsc->nComp; i++)
+    for (uint32_t i=0; i < lsRsc->nComp; i++)
         {
         tmpLocation.GetCompoundComponentLocation (reader, i);
         
-        LsOffsetComponent offsetComp (lsRsc->component[i].offset, LineStyleCacheManager::GetSubComponent (&tmpLocation, reader->GetDgnProject()));
+        LsOffsetComponent offsetComp (lsRsc->component[i].offset, LineStyleCacheManager::GetSubComponent (&tmpLocation, reader->GetDgnDb()));
         
         if (offsetComp.m_subComponent.get () == compound)
             {
@@ -608,7 +608,7 @@ LsRscReader*    reader
 LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
             LsStrokePatternComponent (pLocation)
     {
-    UInt32  id = (UInt32) pLocation->GetIdentKey();
+    uint32_t id = (uint32_t) pLocation->GetIdentKey();
 
     m_hardwareLineCode = 0;
     // Linecode only if hardware bit is set and masked value is within range.
@@ -621,16 +621,19 @@ LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
     {
+#if defined (WIP_LINESTYLE)
     if (GetLocation ()->IsInternalDefault ())
         return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
 
-    Int32 style = GetHardwareStyle ();
+    int32_t style = GetHardwareStyle ();
 
     ElemMatSymb saveMatSymb;
     saveMatSymb = *context->GetElemMatSymb (); // Copy current ElemMatSymb
 
+#if defined (NEEDS_WORK_DGNITEM)
     // Keep ElemDisplayParams and ElemMatSymb in synch...operations like drop lstyle use ElemDisplayParams not ElemMatSymb.
     ElemDisplayParamsStateSaver saveState (*context->GetCurrentDisplayParams (), false, false, false, true, false);
+#endif
 
     // It's important to set the style via ElemDisplayParams, not ElemMatSymb, for printing to work correctly.
     context->GetCurrentDisplayParams ()->SetLineStyle (style);
@@ -639,7 +642,7 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
 
     // Style override that caused this linestyle to be used needs to be cleared in order to use the correct raster pattern for the strokes. 
     OvrMatSymbP ovrMatSymb = context->GetOverrideMatSymb ();
-    UInt32      saveFlags = ovrMatSymb->GetFlags ();
+    uint32_t    saveFlags = ovrMatSymb->GetFlags ();
 
     if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
         {
@@ -659,6 +662,9 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
         }
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -670,7 +676,7 @@ LsLocation&     location
 )
     {
     LsLocation  tmpLocation;
-    tmpLocation.SetFrom (&location, (UInt32)LsResourceType::Internal);
+    tmpLocation.SetFrom (&location, (uint32_t)LsResourceType::Internal);
 
     LsInternalComponent*  comp = new LsInternalComponent (&location);
     comp->m_isDirty = true;
@@ -684,9 +690,9 @@ LsLocation&     location
 //--------------+------------------------------------------------------------------------
 StatusInt LsDefinition::UpdateStyleTable () const
     {
-    DgnProjectP project = GetLocation()->GetDgnProject();
+    DgnDbP project = GetLocation()->GetDgnDb();
     project->Styles ().LineStyles().Update (DgnStyleId(m_styleNumber), _GetName(), GetLocation()->GetRscID(),
-                                        static_cast <UInt16> (GetLocation()->GetRscType()), GetAttributes(), m_unitDef);
+                                        static_cast <uint16_t> (GetLocation()->GetRscType()), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
     }
@@ -697,10 +703,10 @@ StatusInt LsDefinition::UpdateStyleTable () const
 //
 // @bsimethod                                                   John.Gooding    11/2012
 //--------------+------------------------------------------------------------------------
-StatusInt LsDefinition::TransferStyleTableEntry(DgnStyleId& newId, DgnProjectR targetProject) const
+StatusInt LsDefinition::TransferStyleTableEntry(DgnStyleId& newId, DgnDbR targetProject) const
     {
     targetProject.Styles ().LineStyles().Insert (newId, _GetName(), GetLocation()->GetRscID(),
-                                             static_cast <UInt16> (GetLocation()->GetRscType()), GetAttributes(), m_unitDef);
+                                             static_cast <uint16_t> (GetLocation()->GetRscType()), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
     }
@@ -708,7 +714,7 @@ StatusInt LsDefinition::TransferStyleTableEntry(DgnStyleId& newId, DgnProjectR t
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-void LsDefinition::RemapComponentId (UInt32 newId)
+void LsDefinition::RemapComponentId (uint32_t newId)
     {
     m_location.UpdateRscID(newId);
     }
@@ -724,7 +730,7 @@ LsRscReader*    reader
     const LsLocation* location = reader->GetSource();
 
     LsLocation  tmpLocation;
-    tmpLocation.SetFrom (location, (UInt32)LsResourceType::Internal);
+    tmpLocation.SetFrom (location, (uint32_t)LsResourceType::Internal);
     LsInternalComponent*  comp = new LsInternalComponent (location);
     
     comp->Init (NULL);
@@ -981,25 +987,25 @@ BentleyStatus       LsDgnDbReader::_LoadDefinition ()
         return SUCCESS;
 
     HighPriorityOperationBlock highPriority; // see comments in BeSQLite.h
-    m_rscType = (UInt32)m_source->GetRscType();
+    m_rscType = (uint32_t)m_source->GetRscType();
 
     switch ((LsElementType)m_rscType)
         {
         case LsElementType::LineCode:
-            LsStrokePatternComponent::CreateRscFromDgnDb ((LineCodeRsc**)&m_rsc, m_project, m_source->GetRscID());
+            LsStrokePatternComponent::CreateRscFromDgnDb ((LineCodeRsc**)&m_rsc, m_dgndb, m_source->GetRscID(), false);
             break;
 
         case LsElementType::Compound:
-            LsCompoundComponent::CreateRscFromDgnDb ((LineStyleRsc**)&m_rsc, m_project, m_source->GetRscID());
+            LsCompoundComponent::CreateRscFromDgnDb ((LineStyleRsc**)&m_rsc, m_dgndb, m_source->GetRscID(), false);
             break;
 
         case LsElementType::LinePoint:
-            LsPointComponent::CreateRscFromDgnDb ((LinePointRsc**)&m_rsc, m_project, m_source->GetRscID());
+            LsPointComponent::CreateRscFromDgnDb ((LinePointRsc**)&m_rsc, m_dgndb, m_source->GetRscID(), false);
             break;
 
         case LsElementType::PointSymbol:
         //  case LS_ELEMENT_POINTSYMBOLV7:
-            LsSymbolComponent::CreateRscFromDgnDb ((PointSymRsc**)&m_rsc, m_project, m_source->GetRscID());
+            LsSymbolComponent::CreateRscFromDgnDb ((PointSymRsc**)&m_rsc, m_dgndb, m_source->GetRscID(), false);
             break;
 
         case LsElementType::Internal:
@@ -1047,7 +1053,7 @@ static LsComponent*  _loadComponent (LsRscReader* reader)
 * Get a pointer to a component in the component cache. If the component is not in the cache it will be loaded.
 * @bsimethod                                                    JimBartlett     01/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsComponentP LineStyleCacheManager::GetSubComponent(LsLocationCP location, DgnProjectR project)
+LsComponentP LineStyleCacheManager::GetSubComponent(LsLocationCP location, DgnDbR project)
     {
     // A resource file handle of zero is illegal when loading sub-components
     if (!location->IsValid())
@@ -1110,9 +1116,9 @@ int             option      /* Currently unused */
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LineStyleCacheManager::CacheDelete
 (
-UInt32          rscFile,
-UInt32          rscType,
-UInt32          rscID,
+uint32_t        rscFile,
+uint32_t        rscType,
+uint32_t        rscID,
 int             option      /* Currently unsed */
 )
     {
@@ -1127,9 +1133,9 @@ int             option      /* Currently unsed */
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LineStyleCacheManager::CacheDelete
 (
-DgnProjectP        dgnFile,
+DgnDbP          dgnFile,
 long            lsType, 
-ElementId       elementID,
+DgnElementId    elementID,
 int             option      /* Currently unsed */
 )
     {
@@ -1144,7 +1150,7 @@ int             option      /* Currently unsed */
 * so it can be displayed in the preview window.
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LineStyleCacheManager::CacheInsert (DgnProjectP dgnFile, long compType, ElementId compID, void* pRsc, long option)
+BentleyStatus LineStyleCacheManager::CacheInsert (DgnDbP dgnFile, long compType, DgnElementId compID, void* pRsc, long option)
     {
 #ifdef DGNPROJECT_MODELS_CHANGES_WIP
     DgnModelP modelRef = dgnFile->GetFirstDgnModel();
@@ -1174,7 +1180,7 @@ BentleyStatus LineStyleCacheManager::CacheInsert (DgnProjectP dgnFile, long comp
 * so it can be displayed in the preview window.
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LineStyleCacheManager::CacheInsert (RscFileHandle rscFile, long rscType, UInt32 rscId, DgnProjectP dgnFile, void* pRsc, long option)
+BentleyStatus LineStyleCacheManager::CacheInsert (RscFileHandle rscFile, long rscType, uint32_t rscId, DgnDbP dgnFile, void* pRsc, long option)
     {
 #ifdef DGNPROJECT_MODELS_CHANGES_WIP
     DgnModelP modelRef = dgnFile->GetFirstDgnModel();
@@ -1212,7 +1218,7 @@ void            LineStyleCacheManager::CacheAdd (LsComponent* comp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsElementType BentleyApi::remapRscTypeToElmType  /* <= Elm type */
 (
-UInt32      rscType     /* => Resource type */
+uint32_t    rscType     /* => Resource type */
 )
     {
     LsElementType elmType = (LsElementType)rscType;
@@ -1247,13 +1253,13 @@ UInt32      rscType     /* => Resource type */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ChuckKirschman  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32  BentleyApi::remapElmTypeToRscType  /* <= Rsc type */
+uint32_t BentleyApi::remapElmTypeToRscType  /* <= Rsc type */
 (
 LsElementType    elmType     /* => Elm type */
 )
     {
     //  This function is a vestige of the support for line styles from resource files
     //  and from dgn files. In V10 they only come from projects.
-    return (UInt32)elmType;
+    return (uint32_t)elmType;
     }
 

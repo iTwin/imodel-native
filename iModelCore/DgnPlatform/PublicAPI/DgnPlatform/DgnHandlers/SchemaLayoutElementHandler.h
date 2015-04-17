@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/SchemaLayoutElementHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,7 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-typedef bpair<UInt16, UInt16>                               SchemaClassIndexPair;
+typedef bpair<uint16_t, uint16_t>                               SchemaClassIndexPair;
 
 /*=================================================================================**//**
 * @bsiclass                                                     JoshSchifter    12/09
@@ -30,27 +30,27 @@ private:
 
 struct  SchemaLayoutElementVisitor
     {
-    virtual bool VisitSchemaLayoutElement (WCharCP schemaName, ECN::SchemaIndex, ElementRefP) = 0;
+    virtual bool VisitSchemaLayoutElement (WCharCP schemaName, ECN::SchemaIndex, DgnElementP) = 0;
     };
 
-void                VisitSchemaLayoutElements (SchemaLayoutElementVisitor& visitor, DgnProjectCR dgnFile);
+void                VisitSchemaLayoutElements (SchemaLayoutElementVisitor& visitor, DgnDbCR dgnFile);
 
 DgnElementECInstancePtr     FindSchemaLayoutInstance (ElementHandleCR element);
 DgnElementECInstancePtr     FindClassLayoutInstance (ECN::ClassIndex, ElementHandleCR element);
-ElementRefP                 FindSchemaLayoutElement (ECN::SchemaIndex, DgnProjectCR);
+DgnElementP                 FindSchemaLayoutElement (ECN::SchemaIndex, DgnDbCR);
 
 BentleyStatus       DataFromSchemaLayoutInstance (WStringP schemaName, ECN::SchemaIndex*, IECInstanceCR);
 BentleyStatus       DataFromClassLayoutInstance  (WStringP className, ECN::ClassIndex*,  IECInstanceCR);
-BentleyStatus       DataFromPropertyLayoutInstance (WString& propertyName, UInt32& parentStructIndex, ECN::ECTypeDescriptor&, UInt32& offset, UInt32& nullFlagsOffset, ECN::NullflagsBitmask&, IECInstanceCR);
+BentleyStatus       DataFromPropertyLayoutInstance (WString& propertyName, uint32_t& parentStructIndex, ECN::ECTypeDescriptor&, uint32_t& offset, uint32_t& nullFlagsOffset, ECN::NullflagsBitmask&, IECInstanceCR);
 
-BentleyStatus       AddPropertyLayoutToClassLayoutInstance (PropertyLayoutCR propertyLayout, UInt32 propIndex, ECN::IECInstanceR classLayoutInstance);
+BentleyStatus       AddPropertyLayoutToClassLayoutInstance (PropertyLayoutCR propertyLayout, uint32_t propIndex, ECN::IECInstanceR classLayoutInstance);
 
-BentleyStatus       AddSchemaLayoutInstanceToElement (WCharCP schemaName, ECN::SchemaIndex schemaIndexIn, ElementRefP elem);
-BentleyStatus       AddClassLayoutInstanceToElement (ECN::ClassLayoutCR classLayout, ElementRefP elem);
+BentleyStatus       AddSchemaLayoutInstanceToElement (WCharCP schemaName, ECN::SchemaIndex schemaIndexIn, DgnElementP elem);
+BentleyStatus       AddClassLayoutInstanceToElement (ECN::ClassLayoutCR classLayout, DgnElementP elem);
 
 ClassLayoutP        CreateClassLayout (ECN::IECInstanceR classLayoutInstance, ECN::SchemaIndex);
 
-ElementRefP         AddNewSchemaLayoutElement (WCharCP schemaName, ECN::SchemaIndex schemaIndexIn, DgnProjectR dgnFile);
+DgnElementP         AddNewSchemaLayoutElement (WCharCP schemaName, ECN::SchemaIndex schemaIndexIn, DgnDbR dgnFile);
 
 void                OnUndoRedoSchemaLayoutInstance (XAttributeHandleCR xAttr, bool isUndo);
 
@@ -63,8 +63,8 @@ void                _OnUndoRedoXAttributeChange (XAttributeHandleCR xAttr, Chang
 protected:
 
 // Handler methods
-DGNPLATFORM_EXPORT virtual void _GetTypeName (WStringR string, UInt32 desiredLength) override;
-DGNPLATFORM_EXPORT virtual void _GetDescription (ElementHandleCR el, WStringR string, UInt32 desiredLength) override;
+DGNPLATFORM_EXPORT virtual void _GetTypeName (WStringR string, uint32_t desiredLength) override;
+DGNPLATFORM_EXPORT virtual void _GetDescription (ElementHandleCR el, WStringR string, uint32_t desiredLength) override;
 
 public:
 static void Register();
@@ -73,11 +73,11 @@ bool                IsInternalECClass (SchemaClassIndexPair& indexOut, ECN::ECCl
 bool                IsInternalECClass (SchemaClassIndexPair& indexOut, WCharCP schemaName, WCharCP className);
 //ECXDInstanceEnablerP GetInstanceEnabler (SchemaClassIndexPair const& index);
 
-ElementRefP         FindSchemaLayoutElement (ECN::SchemaIndex& schemaIndexOut, WCharCP schemaName, DgnProjectCR dgnFile);
+DgnElementP         FindSchemaLayoutElement (ECN::SchemaIndex& schemaIndexOut, WCharCP schemaName, DgnDbCR dgnFile);
 ECN::SchemaLayoutP   LoadSchemaLayout (ElementHandleCR elem);
 
-ECN::ClassLayoutP    ReadClassLayout (ECN::SchemaIndex schemaIndex, ECN::ClassIndex classIndex, DgnProjectR dgnFile);
-BentleyStatus       WriteClassLayout (ECN::ClassLayoutCR classLayout, WCharCP schemaName, DgnProjectR dgnFile);
+ECN::ClassLayoutP    ReadClassLayout (ECN::SchemaIndex schemaIndex, ECN::ClassIndex classIndex, DgnDbR dgnFile);
+BentleyStatus       WriteClassLayout (ECN::ClassLayoutCR classLayout, WCharCP schemaName, DgnDbR dgnFile);
 
 }; // SchemaLayoutElementHandler
 

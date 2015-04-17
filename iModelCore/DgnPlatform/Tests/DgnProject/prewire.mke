@@ -1,0 +1,14 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/DgnProject/prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
+%include mdl.mki
+
+baseDir = $(_makeFilePath)
+
+always:
+    @CreateSymLinks.py -d"$(BuildContext)Delivery/UnitTests/assets/DgnProject/ECSchemas=$(baseDir)ECSchemas"

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/thematicdisplay.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,11 +21,11 @@ DGNPLATFORM_TYPEDEFS (ThematicMeshDisplayStyleHandler)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-typedef bvector <Int32>            ThematicMeshIndexArray;
+typedef bvector <int32_t>            ThematicMeshIndexArray;
 typedef bvector <double>           ThematicMeshDoubleArray;
 typedef bvector <DPoint3d>         ThematicMeshPointArray;
 
-typedef UInt16                         ThematicDisplayMode;
+typedef uint16_t                       ThematicDisplayMode;
 
 /*=================================================================================**//**
 * @bsiclass                                                     BrandonBohrer   06/2011
@@ -41,8 +41,8 @@ private:
     unsigned    m_isolinesSteppedDisplay:1;
     unsigned    m_flatShading:1;
     unsigned    m_transparentMarginContribution:1;
-    Int32       m_displayStyleIndex;
-    UInt16      m_displayModeContribution;
+    int32_t     m_displayStyleIndex;
+    uint16_t    m_displayModeContribution;
 
 protected:
     DGNPLATFORM_EXPORT ThematicDisplayStyleHandlerKey (ThematicDisplaySettingsCR settings, ThematicDisplayStyleHandlerCR handler);
@@ -60,7 +60,7 @@ public:
 struct      ThematicDisplayStyleHandler  :  DisplayStyleHandler
 {
 private:
-    void    _DrawLegendForView (ViewContextR context, ViewportR vp, ThematicDisplaySettingsR settings) const;
+    void    _DrawLegendForView (ViewContextR context, DgnViewportR vp, ThematicDisplaySettingsR settings) const;
 protected:
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,8 +125,8 @@ virtual bool _CacheOnDisplayModeChange () const { return false; }
 virtual bool    _FixedRangeSupported (ThematicDisplaySettingsR settings) const { return true; }
 
 
-    DGNPLATFORM_EXPORT virtual StatusInt                        _GetHitInfoStringFromRawValue (WStringR string, double value, ThematicDisplaySettingsCR settings, ViewportR viewport, ElementHandleR el, WCharCP delimiter) const;
-    DGNPLATFORM_EXPORT virtual StatusInt                        _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, ViewportR viewport, ElementHandleR el, WCharCP delimiter) const { return ERROR; }
+    DGNPLATFORM_EXPORT virtual StatusInt                        _GetHitInfoStringFromRawValue (WStringR string, double value, ThematicDisplaySettingsCR settings, DgnViewportR viewport, ElementHandleR el, WCharCP delimiter) const;
+    DGNPLATFORM_EXPORT virtual StatusInt                        _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, DgnViewportR viewport, ElementHandleR el, WCharCP delimiter) const { return ERROR; }
     DGNPLATFORM_EXPORT virtual struct IViewHandlerHitInfo*      _GetViewHandlerHitInfo (DisplayStyleHandlerSettingsCP settings, DPoint3dCR hitPoint) const override { return NULL; } // NEEDS_WORK_HITINFO
     DGNPLATFORM_EXPORT virtual bool                             _DrawElement (ElementHandleCR el, ViewContextR viewContext) const override = 0;
     DGNPLATFORM_EXPORT virtual void                             _DrawLegend (ViewContextR viewContext) const;
@@ -134,7 +134,7 @@ virtual bool    _FixedRangeSupported (ThematicDisplaySettingsR settings) const {
     DGNPLATFORM_EXPORT virtual DisplayStyleHandlerSettingsPtr   _GetSettings () const override;
     DGNPLATFORM_EXPORT virtual DisplayStyleHandlerKeyPtr       _GetCacheKey (DgnModelR modelRef, DisplayStyleHandlerSettingsCP settings) const override;
     DGNPLATFORM_EXPORT virtual void                             _OnFrustumChange (DisplayStyleHandlerSettingsR settings, ViewContextR viewContext, DgnModelR modelRef) const override;
-    DGNPLATFORM_EXPORT virtual void                             _CookRange (ThematicDisplaySettingsR settings, ViewportR viewport, DgnModelR modelRef) const; 
+    DGNPLATFORM_EXPORT virtual void                             _CookRange (ThematicDisplaySettingsR settings, DgnViewportR viewport, DgnModelR modelRef) const; 
     DGNPLATFORM_EXPORT virtual bool                             _IsValidForDisplayStyle (DisplayStyleCR style) const override;
     DGNPLATFORM_EXPORT virtual bool                             _IsPeriodic () const { return false; }
     DGNPLATFORM_EXPORT virtual bool                             _SupportsPointColors () const { return false; }
@@ -143,15 +143,15 @@ virtual bool    _FixedRangeSupported (ThematicDisplaySettingsR settings) const {
 public:
     static void                                                 RegisterHandlers ();
     void                                                        InitDefaultSettings (ThematicDisplaySettingsR settings) const;
-    StatusInt                                                   GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, ViewportR viewport, ElementHandleR el, WCharCP delimiter) const { return _GetHitInfoString (string, hitPath, hitPoint, settings, viewport, el, delimiter); }
+    StatusInt                                                   GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, DgnViewportR viewport, ElementHandleR el, WCharCP delimiter) const { return _GetHitInfoString (string, hitPath, hitPoint, settings, viewport, el, delimiter); }
     StatusInt                                                   GetDisplayMode (WStringR label, ThematicDisplayMode mode, DgnModelR model) const { return _GetDisplayMode (label, mode, model); }
     bool                                                        CacheOnDisplayModeChange () const { return _CacheOnDisplayModeChange(); }
-    virtual void                                                CookRange (ThematicDisplaySettingsR settings, ViewportR viewport, DgnModelR modelRef) const          { _CookRange (settings, viewport, modelRef); }
+    virtual void                                                CookRange (ThematicDisplaySettingsR settings, DgnViewportR viewport, DgnModelR modelRef) const          { _CookRange (settings, viewport, modelRef); }
     StatusInt                                                   GetRawValueFromString (double& value,  ThematicDisplaySettingsCR  settings, WStringCR string, DgnModelR modelRef) const  { return _GetRawValueFromString (value, settings, string, modelRef); }
     WString                                                     GetStringFromRawValue (double value,  ThematicDisplaySettingsCR  settings, DgnModelR modelRef,  bool includeUnits = true) const    { return _GetStringFromRawValue (value, settings, modelRef, includeUnits); }
     bool                                                        FixedRangeSupported (ThematicDisplaySettingsR settings) const { return _FixedRangeSupported (settings); }
     DGNPLATFORM_EXPORT WString                                  GetStringFromNormalizedValue (double value, ThematicDisplaySettingsCR  settings, DgnModelR modelRef, bool includeUnits = true) const;
-    DGNPLATFORM_EXPORT void                                     DrawLegend (ViewContextR context, double maxHeight, bool exactHeight, UInt8* transparency)  const;
+    DGNPLATFORM_EXPORT void                                     DrawLegend (ViewContextR context, double maxHeight, bool exactHeight, uint8_t* transparency)  const;
     DGNPLATFORM_EXPORT void                                     ComputeLabelsAndSize (ThematicDisplaySettingsCR settings, double maxHeight, DgnModelR modelRef, bvector <WString>* outLabels, double* outMaxChars, size_t* outNValues, bool* outMaxHeightExceeded) const;
     DGNPLATFORM_EXPORT static bool                              NeverApplyThematic (DisplayHandlerCP handler);
     DGNPLATFORM_EXPORT bool                                     IsPeriodic () const { return _IsPeriodic (); }
@@ -180,7 +180,7 @@ protected:
 *  @param[in]   el
 *  @param[in]   viewport
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool                                        _GetElementValue (double& value, ElementHandleCR el, ViewportR viewport) const = 0;
+virtual bool                                        _GetElementValue (double& value, ElementHandleCR el, DgnViewportR viewport) const = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -193,10 +193,10 @@ virtual bool                                        _GetElementValue (double& va
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool                                        _GetModelRange (double& min, double& max, DgnModelR modelRef) const = 0;
 
-DGNPLATFORM_EXPORT virtual bool                     _IsValidForViewport (ViewportCR viewport) const override;
-DGNPLATFORM_EXPORT virtual void                     _CookRange (ThematicDisplaySettingsR settings, ViewportR viewport, DgnModelR modelRef) const;
+DGNPLATFORM_EXPORT virtual bool                     _IsValidForViewport (DgnViewportCR viewport) const override;
+DGNPLATFORM_EXPORT virtual void                     _CookRange (ThematicDisplaySettingsR settings, DgnViewportR viewport, DgnModelR modelRef) const;
 DGNPLATFORM_EXPORT virtual bool                     _DrawElement (ElementHandleCR el, ViewContextR viewContext) const override;
-DGNPLATFORM_EXPORT virtual StatusInt                _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, ViewportR viewport, ElementHandleR el, WCharCP delimiter) const;
+DGNPLATFORM_EXPORT virtual StatusInt                _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, DgnViewportR viewport, ElementHandleR el, WCharCP delimiter) const;
 
 };
 
@@ -207,7 +207,7 @@ DGNPLATFORM_EXPORT virtual StatusInt                _GetHitInfoString (WStringR 
 +===============+===============+===============+===============+===============+======*/
 struct      IThematicMeshStroker
 {
-    virtual void                    _StrokeThematicMesh (int polySize, size_t nIndices, Int32 const* pointIndices, Int32* valueIndices, size_t nPoints, DPoint3dCP points, double const* values, bool peroidic, double periodicMin, double periodicMax, ViewContextR context) = 0;
+    virtual void                    _StrokeThematicMesh (int polySize, size_t nIndices, int32_t const* pointIndices, int32_t* valueIndices, size_t nPoints, DPoint3dCP points, double const* values, bool peroidic, double periodicMin, double periodicMax, ViewContextR context) = 0;
 
 };
 
@@ -218,15 +218,15 @@ struct      ThematicMeshDisplayStyleHandler  :  ThematicDisplayStyleHandler
 {
 
 protected:
-    virtual StatusInt                     _ProcessMesh (IThematicMeshStroker& meshStroker, ViewContextR context, int polySize, size_t nIndices, Int32 const* pointIndices, Int32 const* normalIndices, size_t nPoints, DPoint3dCP points, DVec3dCP normals, bool isTwoSided, ThematicDisplaySettingsCR settings) const = 0;
-    DGNPLATFORM_EXPORT virtual StatusInt  _GetHitInfoStringFromFacet (WStringR string, double value, size_t facetIndex, size_t facetNumber, ThematicDisplaySettingsCR settings, ViewportR viewport, ElementHandleR el, WCharCP delimiter) const;
-    DGNPLATFORM_EXPORT virtual StatusInt  _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, ViewportR viewport, ElementHandleR el, WCharCP delimiter) const;
+    virtual StatusInt                     _ProcessMesh (IThematicMeshStroker& meshStroker, ViewContextR context, int polySize, size_t nIndices, int32_t const* pointIndices, int32_t const* normalIndices, size_t nPoints, DPoint3dCP points, DVec3dCP normals, bool isTwoSided, ThematicDisplaySettingsCR settings) const = 0;
+    DGNPLATFORM_EXPORT virtual StatusInt  _GetHitInfoStringFromFacet (WStringR string, double value, size_t facetIndex, size_t facetNumber, ThematicDisplaySettingsCR settings, DgnViewportR viewport, ElementHandleR el, WCharCP delimiter) const;
+    DGNPLATFORM_EXPORT virtual StatusInt  _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, DgnViewportR viewport, ElementHandleR el, WCharCP delimiter) const;
 
 public:
-    StatusInt                             ProcessMesh (IThematicMeshStroker& stroker, ViewContextR context, int polySize, size_t nIndices, Int32 const* pointIndices, Int32 const* normalIndices, size_t nPoints, DPoint3dCP points, DVec3dCP normals, bool twoSided, ThematicDisplaySettingsCR settings) const { return _ProcessMesh (stroker, context, polySize, nIndices, pointIndices, normalIndices, nPoints, points, normals, twoSided, settings); }
+    StatusInt                             ProcessMesh (IThematicMeshStroker& stroker, ViewContextR context, int polySize, size_t nIndices, int32_t const* pointIndices, int32_t const* normalIndices, size_t nPoints, DPoint3dCP points, DVec3dCP normals, bool twoSided, ThematicDisplaySettingsCR settings) const { return _ProcessMesh (stroker, context, polySize, nIndices, pointIndices, normalIndices, nPoints, points, normals, twoSided, settings); }
     static DGNPLATFORM_EXPORT WString     GetStringFromUors (double uors, DgnModelR modelRef, bool includeUnits);
     static DGNPLATFORM_EXPORT StatusInt   GetUorsFromString (double& uors, WStringCR string, DgnModelR modelRef); 
-    static DGNPLATFORM_EXPORT StatusInt   CalculateMeshNormals (ThematicMeshPointArray& normals, ThematicMeshDoubleArray* areas, ThematicMeshIndexArray& normalIndices, int polySize, size_t nIndices, Int32 const*  pointIndices, DPoint3dCP points);
+    static DGNPLATFORM_EXPORT StatusInt   CalculateMeshNormals (ThematicMeshPointArray& normals, ThematicMeshDoubleArray* areas, ThematicMeshIndexArray& normalIndices, int polySize, size_t nIndices, int32_t const*  pointIndices, DPoint3dCP points);
  
 };  // ThematicMeshDisplayStyleHandler
 
@@ -282,8 +282,8 @@ ThematicMeshDoubleArray&    values,
 ThematicDisplaySettingsCR   settings
 ) const = 0;
 
-                   virtual bool      _IsValidForViewport (ViewportCR viewport) const override= 0;
-DGNPLATFORM_EXPORT virtual StatusInt _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, ViewportR viewport, ElementHandleR el, WCharCP delimiter) const override;
+                   virtual bool      _IsValidForViewport (DgnViewportCR viewport) const override= 0;
+DGNPLATFORM_EXPORT virtual StatusInt _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, DgnViewportR viewport, ElementHandleR el, WCharCP delimiter) const override;
 DGNPLATFORM_EXPORT virtual bool      _DrawElement (ElementHandleCR el, ViewContextR viewContext) const override;
 
 
@@ -316,13 +316,13 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual double  _GetPointValue (DPoint3dCR point, ThematicDisplaySettingsCR settings) const = 0;
 
-    virtual StatusInt                       _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, ViewportR viewport, ElementHandleR el,  WCharCP delimiter) const override = 0;
-    virtual bool                            _IsValidForViewport (ViewportCR viewport) const override = 0;
+    virtual StatusInt                       _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR settings, DgnViewportR viewport, ElementHandleR el,  WCharCP delimiter) const override = 0;
+    virtual bool                            _IsValidForViewport (DgnViewportCR viewport) const override = 0;
 
     virtual bool                            _SupportsPointColors () const override { return true; }
     virtual DGNPLATFORM_EXPORT StatusInt    _GetPointColors (RgbColorDef* colors, DPoint3dCP points, int nPoints, ThematicDisplaySettingsCR settings, ViewContextR context) const override;
 
-DGNPLATFORM_EXPORT virtual StatusInt        _ProcessMesh (IThematicMeshStroker& meshStroker, ViewContextR context, int polySize, size_t nIndices, Int32 const* pointIndices, Int32 const* normalIndices, size_t nPoints, DPoint3dCP points, DVec3dCP normals, bool twoSided, ThematicDisplaySettingsCR settings) const override;
+DGNPLATFORM_EXPORT virtual StatusInt        _ProcessMesh (IThematicMeshStroker& meshStroker, ViewContextR context, int polySize, size_t nIndices, int32_t const* pointIndices, int32_t const* normalIndices, size_t nPoints, DPoint3dCP points, DVec3dCP normals, bool twoSided, ThematicDisplaySettingsCR settings) const override;
 
 };  // PointThematicMeshDisplayStyleHandler
 
@@ -333,11 +333,11 @@ struct     NormalThematicMeshDisplayStyleHandler  :  GeometricThematicMeshDispla
 {
 protected:
     virtual double                          _GetNormalValue (DVec3dCR normal, bool twoSided, ThematicDisplaySettingsCR settings) const = 0;
-    virtual bool                            _IsValidForViewport (ViewportCR viewport) const override = 0;;
+    virtual bool                            _IsValidForViewport (DgnViewportCR viewport) const override = 0;;
     virtual double                          _GetMinValue (ThematicDisplayMode) const = 0;
     virtual double                          _GetMaxValue (ThematicDisplayMode) const = 0;
 
-DGNPLATFORM_EXPORT virtual StatusInt       _ProcessMesh (IThematicMeshStroker& meshStroker, ViewContextR context, int polySize, size_t nIndices, Int32 const* pointIndices, Int32 const* normalIndices, size_t nPoints, DPoint3dCP points, DVec3dCP normals, bool twoSided, ThematicDisplaySettingsCR settings) const override;
+DGNPLATFORM_EXPORT virtual StatusInt       _ProcessMesh (IThematicMeshStroker& meshStroker, ViewContextR context, int polySize, size_t nIndices, int32_t const* pointIndices, int32_t const* normalIndices, size_t nPoints, DPoint3dCP points, DVec3dCP normals, bool twoSided, ThematicDisplaySettingsCR settings) const override;
 };  // PointThematicMeshDisplayStyleHandler
 
 
@@ -518,7 +518,7 @@ struct  ThematicLegend
 
     DGNPLATFORM_EXPORT RgbColorDef const&           GetRgbColor (size_t i, bool ordered) const;
     DGNPLATFORM_EXPORT double                       GetMinValue (size_t i, bool ordered) const;
-    UInt32                                          GetIntColor (size_t i, bool ordered) const                       { RgbColorDef color = GetRgbColor (i, ordered); return color.red + (color.green << 8) + (color.blue << 16); }
+    uint32_t                                        GetIntColor (size_t i, bool ordered) const                       { RgbColorDef color = GetRgbColor (i, ordered); return color.red + (color.green << 8) + (color.blue << 16); }
     DGNPLATFORM_EXPORT void                         SetRgbColor (size_t i, RgbColorDef const& color, bool ordered);
     DGNPLATFORM_EXPORT void                         SetMinValue (size_t i, double value, bool ordered);               
     DGNPLATFORM_EXPORT double                       GetMaxValue (size_t i, bool ordered) const;
@@ -542,9 +542,9 @@ struct  ThematicLegend
 +===============+===============+===============+===============+===============+======*/
  struct  ThematicDisplaySettingsData
  {
-    UInt16                          m_version;
-    UInt16                          m_unused;
-    UInt16                          m_mode;
+    uint16_t                        m_version;
+    uint16_t                        m_unused;
+    uint16_t                        m_mode;
     ThematicColorScheme             m_colorScheme;
     ThematicDisplayViewFlags        m_flags;
     ThematicRange                   m_range;
@@ -560,10 +560,10 @@ struct  ThematicLegend
 +===============+===============+===============+===============+===============+======*/
 struct ThematicMeshColorMap 
 {
-    bvector<UInt32>         m_colors;
+    bvector<uint32_t>         m_colors;
 
     void        Init (ThematicDisplaySettingsCR settings, size_t nColors);
-    UInt32      Get (double value, double min, double max) const;
+    uint32_t    Get (double value, double min, double max) const;
     void        Get (RgbColorDef& color, double value);
 
 };  // ThematicMeshColorMap;
@@ -592,25 +592,25 @@ struct	ThematicDisplaySettings : DisplayStyleHandlerSettings
     // Indirectly persisted.
     bvector <ThematicGradientKey>               m_gradientKeys;
     ThematicLegend                              m_legend;
-    UInt32                                      m_marginColor;
-    UInt32                                      m_legendTransparency;
+    uint32_t                                    m_marginColor;
+    uint32_t                                    m_legendTransparency;
     double                                      m_legendValueStep;
 
     // Not persisted.
     MaterialPtr                                 m_pMaterial;
     ThematicCookedRange                         m_cookedRange;
     ThematicMeshColorMap                        m_colorMap;
-    UInt32                                      m_texturePixels[THEMATIC_TEXTURE_SIZE];
+    uint32_t                                    m_texturePixels[THEMATIC_TEXTURE_SIZE];
     DgnModelP                                m_frustumModel;
 
-    static Int32 const                          s_defaultNLegendEntries = 10;
-    static UInt32 const                         s_defaultMarginColor = 0x003f3f3f;
+    static int32_t const                          s_defaultNLegendEntries = 10;
+    static uint32_t const                         s_defaultMarginColor = 0x003f3f3f;
 
     DGNPLATFORM_EXPORT                          ThematicDisplaySettings ();
     DGNPLATFORM_EXPORT                          ThematicDisplaySettings (ThematicDisplaySettingsCR other);
 
-    DGNPLATFORM_EXPORT virtual StatusInt        _Read (ElementRefP ElementRefP, int styleIndex) override;
-    DGNPLATFORM_EXPORT virtual StatusInt        _Save (ElementRefP ElementRefP, int styleIndex) override;
+    DGNPLATFORM_EXPORT virtual StatusInt        _Read (DgnElementP DgnElementP, int styleIndex) override;
+    DGNPLATFORM_EXPORT virtual StatusInt        _Save (DgnElementP DgnElementP, int styleIndex) override;
 
     DGNPLATFORM_EXPORT                          ~ThematicDisplaySettings ();
     ThematicColorScheme                         GetColorScheme () const                                     { return m_data.m_colorScheme; }
@@ -635,21 +635,21 @@ struct	ThematicDisplaySettings : DisplayStyleHandlerSettings
     bool                                        IsMinFixed () const                                         { return m_data.m_flags.m_fixedMinimum; }
     bool                                        IsMaxFixed () const                                         { return m_data.m_flags.m_fixedMaximum; }
     void                                        SetFixedRange (double min, double max)                      { m_data.m_range.Set (min, max); m_data.m_flags.m_fixedMinimum = m_data.m_flags.m_fixedMaximum = true; }   
-    UInt32                                      GetMarginColor () const                                     { return m_marginColor; }
-    void                                        SetMarginColor (UInt32 color)                               { m_marginColor = color; }
+    uint32_t                                    GetMarginColor () const                                     { return m_marginColor; }
+    void                                        SetMarginColor (uint32_t color)                               { m_marginColor = color; }
     void                                        SetMarginColorRGB (RgbColorDef color)                       { m_marginColor = color.red + (color.green << 8) + (color.green << 16); }
-    DGNPLATFORM_EXPORT UInt32                   GetColor (double value, double min=0.0, double max=1.0) const;
+    DGNPLATFORM_EXPORT uint32_t                 GetColor (double value, double min=0.0, double max=1.0) const;
     DGNPLATFORM_EXPORT void                     GetColor (RgbColorDef& color, double rawValue) const;
-    DGNPLATFORM_EXPORT UInt32                   GetLegendColor (double value) const;
-    void                                        ResizeLegend (UInt32 nLegendEntries)                        { m_data.m_flags.m_nLegendEntries = nLegendEntries;  RefreshLegend (); }
+    DGNPLATFORM_EXPORT uint32_t                 GetLegendColor (double value) const;
+    void                                        ResizeLegend (uint32_t nLegendEntries)                        { m_data.m_flags.m_nLegendEntries = nLegendEntries;  RefreshLegend (); }
     void                                        ResizeLegendByStep (double step)                            { SetLegendValueStep (step); RefreshLegend (); }
     bool                                        MaterialOverrideRequired () const                           { return ThematicSteppedDisplay_Isolines != GetFlags().m_steppedDisplay; }
     DGNPLATFORM_EXPORT void                     RefreshLegend ();
-    UInt32                                      GetSeedNLegendEntries () const                              { return (0 != m_data.m_flags.m_nLegendEntries) ? m_data.m_flags.m_nLegendEntries : s_defaultNLegendEntries; } 
-    UInt32                                      GetLegendOpacity () const                                   { return 255 - m_legendTransparency; }
-    void                                        SetLegendOpacity (UInt32 opacity)                           { m_legendTransparency = 255 - opacity; }
-    UInt32                                      GetLegendTransparency () const                              { return m_legendTransparency; }
-    void                                        SetLegendTransparency (UInt32 transparency)                 { m_legendTransparency = transparency; }
+    uint32_t                                    GetSeedNLegendEntries () const                              { return (0 != m_data.m_flags.m_nLegendEntries) ? m_data.m_flags.m_nLegendEntries : s_defaultNLegendEntries; }
+    uint32_t                                    GetLegendOpacity () const                                   { return 255 - m_legendTransparency; }
+    void                                        SetLegendOpacity (uint32_t opacity)                           { m_legendTransparency = 255 - opacity; }
+    uint32_t                                    GetLegendTransparency () const                              { return m_legendTransparency; }
+    void                                        SetLegendTransparency (uint32_t transparency)                 { m_legendTransparency = transparency; }
 
     ThematicLegendCR                            GetLegend () const                                          { return m_legend;   }
     ThematicLegendR                             GetLegendR ()                                               { return m_legend;   }
@@ -710,8 +710,8 @@ struct HillShadeDisplaySettings : ThematicDisplaySettings
 
                     HillShadeDisplaySettings ();
 
-    virtual StatusInt       _Save (ElementRefP ElementRefP, int styleIndex) override;
-    virtual StatusInt       _Read (ElementRefP ElementRefP, int styleIndex) override;
+    virtual StatusInt       _Save (DgnElementP DgnElementP, int styleIndex) override;
+    virtual StatusInt       _Read (DgnElementP DgnElementP, int styleIndex) override;
     virtual bool            _Equals (DisplayStyleHandlerSettingsCP rhs) const override;
 
 
@@ -740,15 +740,15 @@ struct      HeightDisplayHandler  :  PointThematicMeshDisplayStyleHandler
     
     virtual WString                     _GetName () const override;
     virtual XAttributeHandlerId         _GetHandlerId () const override; 
-    virtual bool                        _IsValidForViewport (ViewportCR viewport) const override;
+    virtual bool                        _IsValidForViewport (DgnViewportCR viewport) const override;
     virtual double                      _GetPointValue (DPoint3dCR point, ThematicDisplaySettingsCR settings) const override;
     virtual StatusInt                   _GetDisplayMode (WStringR label, ThematicDisplayMode mode, DgnModelR model) const override;
     virtual bool                        _CacheOnDisplayModeChange () const override { return true; }
     virtual DisplayStyleHandlerKeyPtr   _GetCacheKey  (DgnModelR modelRef, DisplayStyleHandlerSettingsCP settings) const override;
-    virtual void                        _CookRange (ThematicDisplaySettingsR settings, ViewportR viewport, DgnModelR modelRef) const override;
+    virtual void                        _CookRange (ThematicDisplaySettingsR settings, DgnViewportR viewport, DgnModelR modelRef) const override;
     virtual StatusInt                   _GetRawValueFromString (double& value, ThematicDisplaySettingsCR settings, WStringCR string, DgnModelR modelRef) const  override;
     virtual WString                     _GetStringFromRawValue (double value, ThematicDisplaySettingsCR settings, DgnModelR modelRef, bool includeUnits) const override;                   
-    virtual StatusInt                   _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR   settings, ViewportR viewport, ElementHandleR el,  WCharCP delimiter) const override;
+    virtual StatusInt                   _GetHitInfoString (WStringR string, HitPathCR hitPath, DPoint3dCR hitPoint, ThematicDisplaySettingsCR   settings, DgnViewportR viewport, ElementHandleR el,  WCharCP delimiter) const override;
 
 };  // HeightDisplayHandler
 

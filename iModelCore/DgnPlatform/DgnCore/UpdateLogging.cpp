@@ -69,10 +69,10 @@ static double s_finishQueryTime;
 static double s_allowShowProgress;
 static double s_finishLoadTime;
 static double s_finishDrawTime;
-static UInt32 s_numberElementsDrawn;
-static UInt32 s_nAcceptCalls;
-static UInt32 s_nScores;
-static UInt32 s_sizeofQueryResult;
+static uint32_t s_numberElementsDrawn;
+static uint32_t s_nAcceptCalls;
+static uint32_t s_nScores;
+static uint32_t s_sizeofQueryResult;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    04/2014
@@ -106,7 +106,7 @@ void UpdateLogging::RecordStartQuery()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    04/2014
 //---------------------------------------------------------------------------------------
-void UpdateLogging::RecordDoneQuery(UInt32 nAcceptCalls, UInt32 nScores, UInt32 numElements)
+void UpdateLogging::RecordDoneQuery(uint32_t nAcceptCalls, uint32_t nScores, uint32_t numElements)
     {
     if (!s_inLoadUpdateCycle)
         return;
@@ -154,7 +154,7 @@ extern "C" void OutputDebugStringA(CharCP);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    04/2014
 //---------------------------------------------------------------------------------------
-void UpdateLogging::RecordDoneUpdate(UInt32 numDrawn, DrawPurpose drawPurpose)
+void UpdateLogging::RecordDoneUpdate(uint32_t numDrawn, DrawPurpose drawPurpose)
     {
     if (!s_inLoadUpdateCycle)
         return;

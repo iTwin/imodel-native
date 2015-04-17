@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnHandlers.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -21,7 +21,6 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert (NULL == m_lineStyleAdmin);        m_lineStyleAdmin        = &_SupplyLineStyleAdmin();
     BeAssert (NULL == m_rasterAttachmentAdmin); m_rasterAttachmentAdmin = &_SupplyRasterAttachmentAdmin();
     BeAssert (NULL == m_pointCloudAdmin);       m_pointCloudAdmin       = &_SupplyPointCloudAdmin();
-    BeAssert (NULL == m_elementHandlerLoader);  m_elementHandlerLoader  = &_SupplyElementHandlerLoader();
     BeAssert (NULL == m_graphicsAdmin);         m_graphicsAdmin         = &_SupplyGraphicsAdmin();
     BeAssert (NULL == m_materialAdmin);         m_materialAdmin         = &_SupplyMaterialAdmin();
     BeAssert (NULL == m_solidsKernelAdmin);     m_solidsKernelAdmin     = &_SupplySolidsKernelAdmin();
@@ -47,7 +46,6 @@ void DgnPlatformLib::Host::Terminate (bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_lineStyleAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_rasterAttachmentAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_pointCloudAdmin, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_elementHandlerLoader, onProgramExit);
     TERMINATE_HOST_OBJECT(m_graphicsAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_materialAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_solidsKernelAdmin, onProgramExit);
@@ -57,6 +55,24 @@ void DgnPlatformLib::Host::Terminate (bool onProgramExit)
     TerminateDgnCore (onProgramExit);
 
     BeAssert (NULL == DgnPlatformLib::QueryHost());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnPlatformLib::StaticInitialize()
+    {
+    BeSystemMutexHolder holdBeSystemMutexInScope;
+
+    static bool s_staticInitialized = false;
+    if (s_staticInitialized)
+        return;
+
+    bentleyAllocator_enableLowFragmentationCRTHeap();
+
+    SectionClipObjectFactory::Register();
+
+    s_staticInitialized = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,7 +127,7 @@ void DgnPlatformLib::Initialize (Host& host, bool loadResources, bool adoptHost)
 struct DefaultLibraryHost : DgnPlatformLib::Host
 {
     virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override {return *new WindowsKnownLocationsAdmin();}
-    virtual void _SupplyProductName (WStringR name) override {name.assign (L"DefaultLibraryHost");}
+    virtual void _SupplyProductName (Utf8StringR name) override {name.assign ("DefaultLibraryHost");}
     virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() {return BeSQLite::L10N::SqlangFiles(BeFileName());} // no translatable strings
 };
 #endif
@@ -138,7 +154,6 @@ void DgnPlatformLib::Host::LoadResources()
     GetLineStyleManager().Initialize();
     }
 
-ElementHandlerLoaderR DgnPlatformLib::Host::_SupplyElementHandlerLoader()  {return *new ElementHandlerLoader();}
 DgnPlatformLib::Host::RasterAttachmentAdmin& DgnPlatformLib::Host::_SupplyRasterAttachmentAdmin() {return *new RasterAttachmentAdmin();}
 DgnPlatformLib::Host::PointCloudAdmin&       DgnPlatformLib::Host::_SupplyPointCloudAdmin()       {return *new PointCloudAdmin();}
 
@@ -148,73 +163,8 @@ DgnPlatformLib::Host::PointCloudAdmin&       DgnPlatformLib::Host::_SupplyPointC
 // ???  Why is this necessary? Who is referencing _wassert?
 // ???
 // ???
-void _wassert(wchar_t const*, wchar_t const*, int) {BeAssert (false);;}
+void _wassert(wchar_t const*, wchar_t const*, int) {BeAssert (false);}
 #endif
 
-///////////////////////////////////////////////////////////////////////////////////////////
-/////////// static initialization /////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
-static bool   s_inStaticInitialization;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnPlatformLib::InStaticInitialization ()
-    {
-    ___DGNPLATFORM_SERIALIZED___;
-    return s_inStaticInitialization;
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* *Private* method called by DgnPlatformLib::StaticInitialize. Never called directly by app.
-* @bsimethod                                    Keith.Bentley                   09/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void staticInitializeDgnCore()
-    {
-    XGraphicsOperations::StaticInitialize ();
-    SectionClipObjectFactory::Register();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void staticInitializeDgnHandlers()
-    {
-    s_inStaticInitialization = true;
-
-    staticInitializeDgnCore();
-
-    Handler::locked_StaticInitializeDomains ();
-    Handler::locked_StaticInitializeRegisterHandlers();
-    
-    s_inStaticInitialization = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      02/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::StaticInitialize()
-    {
-    ___DGNPLATFORM_SERIALIZED___;
-    static bool s_staticInitialized = false;
-    if (s_staticInitialized)
-        return;
-
-    bentleyAllocator_enableLowFragmentationCRTHeap();
-
-    staticInitializeDgnHandlers();
-    s_staticInitialized = true;
-    }
-
-DEFINE_KEY_METHOD(ICurvePathQuery)
-DEFINE_KEY_METHOD(ICurvePathEdit)
-DEFINE_KEY_METHOD(IBsplineSurfaceQuery)
-DEFINE_KEY_METHOD(IBsplineSurfaceEdit)
-DEFINE_KEY_METHOD(ISolidPrimitiveQuery)
-DEFINE_KEY_METHOD(ISolidPrimitiveEdit)
-DEFINE_KEY_METHOD(IMeshQuery)
-DEFINE_KEY_METHOD(IMeshEdit)
-DEFINE_KEY_METHOD(IBRepQuery)
-DEFINE_KEY_METHOD(ITextEdit)
-DEFINE_KEY_METHOD(IMaterialPropertiesExtension)
-DEFINE_KEY_METHOD(ITextQuery)
 DEFINE_KEY_METHOD(IDeleteManipulator)

@@ -62,10 +62,6 @@ UnitDefinition GenerateMeter_0_0 ()
 };
 
 using namespace UnitDefinitionSeeds;
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// UnitDefinition
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -75,47 +71,6 @@ TEST (UnitDefinition, DefaultConstructor)
     UnitDefinition def;
 
     ASSERT_FALSE (def.IsValid());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman  03/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, Constructor_UnitInfo)
-    {
-    ScopedDgnHost autoDgnHost;
-    DgnPlatform::UnitInfo ui;
-    WChar const *label = L"seed";
-    wcscpy (ui.label, label);
-
-    ui.denominator = 10.0;
-    ui.numerator = 1.0;
-    ui.flags.reserved = 0;
-    ui.flags.system = (UInt32)UnitSystem::Metric;
-    ui.flags.base = (UInt32)UnitBase::Meter;
-    UnitDefinition def(ui);
-
-    ASSERT_TRUE (ui.flags.base    == (Int32)def.GetBase() &&
-                 ui.flags.system  == (Int32)def.GetSystem() &&
-                 def.GetLabel()   == label &&
-                 ui.denominator   == def.GetDenominator() &&
-                 ui.numerator     == def.GetNumerator());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman  03/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, ToUnitInfo)
-    {
-    ScopedDgnHost autoDgnHost;
-    UnitDefinition def = GenerateMeter_1_10();
-    DgnPlatform::UnitInfo ui = def.ToUnitInfo();
-
-    ASSERT_TRUE (10.0 == ui.denominator &&
-                 def.GetLabel() == ui.label &&
-                 1.0  == ui.numerator &&
-                 0    == ui.flags.reserved &&
-                 UnitBase::Meter == (UnitBase)ui.flags.base &&
-                 UnitSystem::Metric == (UnitSystem)ui.flags.system);
     }
 
 /*---------------------------------------------------------------------------------**//**

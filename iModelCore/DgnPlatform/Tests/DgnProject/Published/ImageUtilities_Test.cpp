@@ -13,16 +13,16 @@
 //---------------------------------------------------------------------------------------
 TEST (ImageUtilities_Tests, Test1)
     {
-    bvector<UInt8> testImage;
+    bvector<uint8_t> testImage;
     ImageUtilities::RgbImageInfo info;
     info.isBGR = false;
     info.hasAlpha = true;
     info.isTopDown = true;
     info.width = 100;
     info.height = 200;
-    for (UInt8 y = 0; y<info.height; ++y)
+    for (uint8_t y = 0; y<info.height; ++y)
         {
-        for (UInt8 x = 0; x<info.width; ++x)
+        for (uint8_t x = 0; x<info.width; ++x)
             {
             testImage.push_back (y%256); // R
             testImage.push_back (x%256); // G
@@ -39,7 +39,7 @@ TEST (ImageUtilities_Tests, Test1)
 
     ASSERT_TRUE( ImageUtilities::WriteImageToPngFile (pngFile, testImage, info) == BSISUCCESS);
 
-    bvector<UInt8> imageRead;
+    bvector<uint8_t> imageRead;
     ImageUtilities::RgbImageInfo infoRead;
     memset (&infoRead, 0, sizeof(infoRead));
     pngFile.Close();
@@ -61,7 +61,7 @@ TEST (ImageUtilities_Tests, Test2)
     BeFile pngFile;
     ASSERT_TRUE( pngFile.Open (L"D:\\tmp\\test.png", BeFileAccess::Read) == BeFileStatus::Success );
 
-    bvector<UInt8> imageData;
+    bvector<uint8_t> imageData;
     ImageUtilities::RgbImageInfo info;
     ASSERT_TRUE( ImageUtilities::ReadImageFromPngFile (imageData, info, pngFile) == BSISUCCESS );
 

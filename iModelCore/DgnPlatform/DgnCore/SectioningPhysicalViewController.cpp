@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SectioningPhysicalViewController.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SectioningViewController::SectioningViewController (DgnProjectR project, DgnViewId viewId) : PhysicalViewController (project, viewId)
+SectioningViewController::SectioningViewController (DgnDbR project, DgnViewId viewId) : PhysicalViewController (project, viewId)
     {
     m_hasAnalyzedCutPlanes = false;
     m_foremostCutPlaneIndex = 0;
@@ -42,11 +42,9 @@ void SectioningViewController::AnalyzeCutPlanes() const
     //  Since you face the cut plane and the forward region beyond it, "closer to the eye" is the direction from cut plane toward the backward region.
     //  The clip plane normals point toward the forward section, that is, away from the eye.
 
-    DynamicViewSettings fakeSettings;
     NullContext fakeViewContext;
 
     ViewContextR context (fakeViewContext);
-    DynamicViewSettingsR settings (fakeSettings);
 
     DPlane3d cutPlane, closestPlane;
     DVec3d closestPlaneXDir, closestPlaneYDir;
@@ -55,14 +53,14 @@ void SectioningViewController::AnalyzeCutPlanes() const
     bool forwardFacing_unused;
 
     // *** NEEDS WORK: I am assuming that plane 0 is a cut plane (and not a crop plane or a dogleg transition plane).
-    m_clip->GetCuttingPlane (closestPlane, closestPlaneXDir, closestPlaneYDir, clipMask_unused, clipRange_unused, forwardFacing_unused, 0, context, settings);
+    m_clip->GetCuttingPlane (closestPlane, closestPlaneXDir, closestPlaneYDir, clipMask_unused, clipRange_unused, forwardFacing_unused, 0, context);
 
-    UInt32 closestPlaneIndex = 0;
+    uint32_t closestPlaneIndex = 0;
     m_cutPlaneCount = 1;
     for (size_t i=1; i < nCutPlanes; ++i)
         {
         DVec3d cutPlaneXDir, cutPlaneYDir;
-        m_clip->GetCuttingPlane (cutPlane, cutPlaneXDir, cutPlaneYDir, clipMask_unused, clipRange_unused, forwardFacing_unused, (int)i, context, settings);
+        m_clip->GetCuttingPlane (cutPlane, cutPlaneXDir, cutPlaneYDir, clipMask_unused, clipRange_unused, forwardFacing_unused, (int)i, context);
 
         if (cutPlane.normal.IsParallelTo (closestPlane.normal))
             { 
@@ -74,7 +72,7 @@ void SectioningViewController::AnalyzeCutPlanes() const
                 closestPlane = cutPlane;
                 closestPlaneXDir = cutPlaneXDir;
                 closestPlaneYDir = cutPlaneYDir;
-                closestPlaneIndex = (UInt32)i;
+                closestPlaneIndex = (uint32_t)i;
                 }
             }
         }
@@ -109,16 +107,15 @@ ClipVectorPtr SectioningViewController::GetClipVectorInternal (ClipVolumePass pa
     if (!m_clip.IsValid())
         return NULL;
 
-    DynamicViewSettings fakeSettings;   // WIP_DV
     DRange3d range (_GetProjectExtents());
 
     ClipVectorPtr insideForward;
-    m_clip->GetClipBoundary (insideForward, range, pass, &fakeSettings, /*displayCutGeometry*/true);
+    m_clip->GetClipBoundary (insideForward, range, pass, /*displayCutGeometry*/true);
     if (!insideForward.IsValid())
         return insideForward;
 
     Transform   auxTransform;
-    if (m_clip->GetAuxTransform (auxTransform, pass, fakeSettings))
+    if (m_clip->GetAuxTransform (auxTransform, pass))
         insideForward->TransformInPlace (auxTransform);
 
     return insideForward;
@@ -149,7 +146,7 @@ void SectioningViewController::_RestoreFromSettings (JsonValueCR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnModel* fillModel (DgnProjectR project, DgnModelId mid)
+static DgnModel* fillModel (DgnDbR project, DgnModelId mid)
     {
     auto model = project.Models().GetModelById (mid);
     if (model == NULL)
@@ -166,7 +163,7 @@ void SectioningViewController::DrawViewInternal (ViewContextR context)
     {
     for (auto modelId : m_viewedModels)
         {
-        auto model = fillModel (context.GetDgnProject(), modelId);
+        auto model = fillModel (context.GetDgnDb(), modelId);
         if (model != NULL)
             context.VisitDgnModel (model);
         }
@@ -204,21 +201,22 @@ void SectioningViewController::_DrawView (ViewContextR context)
     context.PopTransformClip();
 
     context.GetOverrideMatSymb()->Clear();
-    context.ActivateOverrideMatSymb ();
+    context.GetIDrawGeom ().ActivateOverrideMatSymb (context.GetOverrideMatSymb());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_DrawElement(ViewContextR context, ElementHandleCR elIter)
+void SectioningViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
     if (m_pass == ClipVolumePass::InsideForward)
-        T_Super::_DrawElement (context, elIter);
-    else
         {
-        SetOverrideMatSymb (context);
-        elIter.GetDisplayHandler()->Draw (elIter, context);
+        T_Super::_DrawElement(context, element);
+        return;
         }
+
+    SetOverrideMatSymb(context);
+    element.Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,13 +229,13 @@ void SectioningViewController::SetOverrideMatSymb (ViewContextR context) const
 
     //  Everything outside of the inside-forward clip volume is grayed out and transparent.
 
-    UInt32 color = (m_pass == ClipVolumePass::InsideBackward)? 0xcf00ffff: 0xcfffff00;
+    ColorDef color = (m_pass == ClipVolumePass::InsideBackward)? ColorDef(0xcf00ffff) : ColorDef(0xcfffff00);
 
     OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
     overrideMatSymb->Clear();
-    overrideMatSymb->SetLineColorTBGR (color);
-    overrideMatSymb->SetFillColorTBGR (color);
+    overrideMatSymb->SetLineColor (color);
+    overrideMatSymb->SetFillColor (color);
     overrideMatSymb->SetFlags (overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
     overrideMatSymb->SetWidth (0);
-    context.ActivateOverrideMatSymb ();
+    context.GetIDrawGeom ().ActivateOverrideMatSymb (overrideMatSymb);
     }

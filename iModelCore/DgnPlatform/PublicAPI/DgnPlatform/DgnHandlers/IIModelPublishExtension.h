@@ -13,7 +13,7 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-
+#if defined (V10_WIP_ELEMENTHANDLER)
 /*================================================================================**//**
 * Extension to provide handle I-Model Publishing for an element handler.
 * @bsiclass
@@ -55,7 +55,7 @@ struct IIModelPublishExtension : Handler::Extension
     virtual StatusInt   _RetrieveProvenance  (ElementHandleCR eh, WStringR originalSourceFilename, WStringR newSourceFilename) = 0;
 
 }; // IIModelPublishExtension
-
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

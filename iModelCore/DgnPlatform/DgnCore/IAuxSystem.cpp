@@ -12,13 +12,13 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          IAuxCoordSys::_GetTransparency
+uint32_t        IAuxCoordSys::_GetTransparency
 (
 bool                isFill,
 ACSDisplayOptions   options
 ) const
     {
-    UInt32      transparency;
+    uint32_t    transparency;
 
     if (isFill)
         transparency = (ACSDisplayOptions::None != (options & ACSDisplayOptions::Deemphasized) ? 215 : 150);
@@ -33,9 +33,9 @@ ACSDisplayOptions   options
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP       IAuxCoordSys::_GetAxisLabel
 (
-UInt32          axis,
+uint32_t        axis,
 WCharP        axisLabel,
-UInt32          length
+uint32_t        length
 ) const
     {
     switch (axis)

@@ -5,7 +5,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/checkhnd.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
@@ -16,7 +16,7 @@
 #ifdef _MSC_VER
 
 #ifndef CHECKHND_GLE
-#define CHECKHND_GLE UInt32 lastError = GetLastError()
+#define CHECKHND_GLE uint32_t lastError = GetLastError()
 #endif
 
 #ifndef CHECKHND_OUTPUT
@@ -41,7 +41,7 @@
 #else /* POSIX */
 
 #ifndef CHECKHND_GLE
-#define CHECKHND_GLE extern Int32 errno; Int32 lastError = errno
+#define CHECKHND_GLE extern int32_t errno; int32_t lastError = errno
 #endif
 
 #ifndef CHECKHND_OUTPUT

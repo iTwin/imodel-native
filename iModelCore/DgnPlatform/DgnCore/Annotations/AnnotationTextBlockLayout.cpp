@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationTextBlockLayout.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -130,7 +130,7 @@ BentleyStatus AnnotationLayoutRun::GetSubRange(DRange2dR subRange, SubRange subR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-static DRange2d computeRangeForText(DRange2dP justificationRange, Utf8CP chars, size_t numChars, AnnotationTextStyleCR effectiveStyle)
+static DRange2d computeRangeForText(DRange2dP justificationRange, Utf8CP chars, size_t numChars, AnnotationTextStyleCR effectiveStyle, AnnotationTextRunSubSuperScript subSuperScript)
     {
     // I'm doing this so that blank runs space correctly without special casing later.
     DRange2d range = createDRange2dWithHeight(effectiveStyle.GetHeight());
@@ -138,38 +138,34 @@ static DRange2d computeRangeForText(DRange2dP justificationRange, Utf8CP chars, 
     if (0 == numChars)
         return range;
 
-    DgnFontCP font = DgnFontManager::ResolveFont(effectiveStyle.GetFontId(), effectiveStyle.GetDgnProjectR(), DgnFontVariant::DGNFONTVARIANT_DontCare);
-    if (UNEXPECTED_CONDITION(NULL == font))
-        return range;
+    DgnFontCR font = DgnFontManager::ResolveFont(effectiveStyle.GetFontId(), effectiveStyle.GetDgnProjectR(), DgnFontVariant::DGNFONTVARIANT_DontCare);
     
-    DgnGlyphLayoutContext layoutContext(*font, NULL);
-    layoutContext.SetDisplaySize(DPoint2d::From(effectiveStyle.GetHeight(), (effectiveStyle.GetHeight() * effectiveStyle.GetWidthFactor())));
-    layoutContext.SetFontChars(chars, numChars);
+    DgnGlyphLayoutContext layoutContext(font, chars, numChars);
+    layoutContext.SetSize(DPoint2d::From(effectiveStyle.GetHeight(), (effectiveStyle.GetHeight() * effectiveStyle.GetWidthFactor())));
     layoutContext.SetIsBold(effectiveStyle.IsBold());
-    layoutContext.SetShouldIgnoreDisplayShifts(true);
-    layoutContext.SetShouldUseItalicTypeface(effectiveStyle.IsItalic());
+    layoutContext.SetShouldUseItalicTypeface(effectiveStyle.IsItalic() && DgnFontType::TrueType == font.GetType());
     
     DgnGlyphLayoutResult layoutResult;
-    if (UNEXPECTED_CONDITION(SUCCESS != font->LayoutGlyphs(layoutContext, layoutResult)))
+    if (UNEXPECTED_CONDITION(SUCCESS != font.LayoutGlyphs(layoutContext, layoutResult)))
         return range;
     
-    range = layoutResult.GetCellBoxRangeR();
+    range = layoutResult.GetRangeR();
 
     if (NULL != justificationRange)
-        *justificationRange = layoutResult.GetJustificationCellBoxRangeR();
+        *justificationRange = layoutResult.GetJustificationRangeR();
 
     // Completely ignore if both.
-    if (effectiveStyle.IsSubScript() ^ effectiveStyle.IsSuperScript())
+    if (AnnotationTextRunSubSuperScript::Neither != subSuperScript)
         {
         DVec2d offset = DVec2d::From(0.0, 0.0);
         double scale = 1.0;
         
-        if (effectiveStyle.IsSubScript())
+        if (AnnotationTextRunSubSuperScript::SubScript == subSuperScript)
             {
             offset = DVec2d::From(0.0, (effectiveStyle.GetHeight() * effectiveStyle.GetSubScriptOffsetFactor()));
             scale = effectiveStyle.GetSubScriptScale();
             }
-        else if (effectiveStyle.IsSuperScript())
+        else if (AnnotationTextRunSubSuperScript::SuperScript == subSuperScript)
             {
             offset = DVec2d::From(0.0, (effectiveStyle.GetHeight() * effectiveStyle.GetSuperScriptOffsetFactor()));
             scale = effectiveStyle.GetSuperScriptScale();
@@ -193,7 +189,7 @@ static DRange2d computeRangeForText(DRange2dP justificationRange, Utf8CP chars, 
 //---------------------------------------------------------------------------------------
 static DRange2d computeRangeForTextRun(DRange2dP justificationRange, AnnotationTextRunCR run, size_t charOffset, size_t numChars)
     {
-    return computeRangeForText(justificationRange, run.GetContent().c_str() + charOffset, numChars, *run.CreateEffectiveStyle());
+    return computeRangeForText(justificationRange, run.GetContent().c_str() + charOffset, numChars, *run.CreateEffectiveStyle(), run.GetSubSuperScript());
     }
 
 //---------------------------------------------------------------------------------------
@@ -202,10 +198,6 @@ static DRange2d computeRangeForTextRun(DRange2dP justificationRange, AnnotationT
 static DRange2d computeRangeForFractionRun(DRange2dP numeratorRange, DRange2dP denominatorRange, AnnotationFractionRunCR run)
     {
     AnnotationTextStylePtr effectiveStyle = run.CreateEffectiveStyle();
-    if (effectiveStyle->IsSubScript())
-        effectiveStyle->SetIsSubScript(false);
-    if (effectiveStyle->IsSuperScript())
-        effectiveStyle->SetIsSuperScript(false);
 
     DRange2d localNumeratorRange;
     if (NULL == numeratorRange)
@@ -215,10 +207,10 @@ static DRange2d computeRangeForFractionRun(DRange2dP numeratorRange, DRange2dP d
     if (NULL == denominatorRange)
         denominatorRange = &localDenominatorRange;
 
-    *numeratorRange = computeRangeForText(NULL, run.GetNumeratorContent().c_str(), run.GetNumeratorContent().size(), *effectiveStyle);
+    *numeratorRange = computeRangeForText(NULL, run.GetNumeratorContent().c_str(), run.GetNumeratorContent().size(), *effectiveStyle, AnnotationTextRunSubSuperScript::Neither);
     scaleRange(*numeratorRange, effectiveStyle->GetStackedFractionScale());
     
-    *denominatorRange = computeRangeForText(NULL, run.GetDenominatorContent().c_str(), run.GetDenominatorContent().size(), *effectiveStyle);
+    *denominatorRange = computeRangeForText(NULL, run.GetDenominatorContent().c_str(), run.GetDenominatorContent().size(), *effectiveStyle, AnnotationTextRunSubSuperScript::Neither);
     scaleRange(*denominatorRange, effectiveStyle->GetStackedFractionScale());
     
     switch (effectiveStyle->GetStackedFractionType())
@@ -346,7 +338,7 @@ bool AnnotationLayoutRun::Wrap(AnnotationLayoutRunPtr& leftOver, double availabl
         
         // If we don't fit, the previous break position is the split point.
         DRange2d justificationRange;
-        DRange2d testContentRange = computeRangeForText(&justificationRange, testContentU8.c_str(), testContentU8.size(), *effectiveStyle);
+        DRange2d testContentRange = computeRangeForText(&justificationRange, testContentU8.c_str(), testContentU8.size(), *effectiveStyle, textRun.GetSubSuperScript());
         if (!forceCurrentUnit && (runningWidth + justificationRange.XLength()) > availableWidth)
             break;
         

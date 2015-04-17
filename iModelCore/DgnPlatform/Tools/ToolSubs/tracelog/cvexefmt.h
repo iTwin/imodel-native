@@ -86,7 +86,7 @@ typedef enum OMFHash {
 
 typedef struct OMFSignature {
     char        Signature[4];   // "NBxx"
-    Int32        filepos;        // offset in file
+    int32_t      filepos;        // offset in file
 } OMFSignature ;
 
 
@@ -99,11 +99,11 @@ typedef struct OMFSignature {
 
 
 typedef struct OMFDirHeader {
-    UInt16  cbDirHeader;    // length of this structure
-    UInt16  cbDirEntry;     // number of bytes in each directory entry
-    UInt32  cDir;           // number of directorie entries
-    Int32            lfoNextDir;     // offset from base of next directory
-    UInt32  flags;          // status flags
+    uint16_t cbDirHeader;    // length of this structure
+    uint16_t cbDirEntry;     // number of bytes in each directory entry
+    uint32_t cDir;           // number of directorie entries
+    int32_t          lfoNextDir;     // offset from base of next directory
+    uint32_t flags;          // status flags
 } OMFDirHeader ;
 
 
@@ -118,10 +118,10 @@ typedef struct OMFDirHeader {
 
 
 typedef struct OMFDirEntry {
-    UInt16  SubSection;     // subsection type (sst...)
-    UInt16  iMod;           // module index
-    Int32            lfo;            // large file offset of subsection
-    UInt32  cb;             // number of bytes in subsection
+    uint16_t SubSection;     // subsection type (sst...)
+    uint16_t iMod;           // module index
+    int32_t          lfo;            // large file offset of subsection
+    uint32_t cb;             // number of bytes in subsection
 } OMFDirEntry ;
 
 
@@ -129,10 +129,10 @@ typedef struct OMFDirEntry {
 //  information decribing each segment in a module
 
 typedef struct OMFSegDesc {
-    UInt16  Seg;            // segment index
-    UInt16  pad;            // pad to maintain alignment
-    UInt32  Off;            // offset of code in segment
-    UInt32  cbSeg;          // number of bytes in segment
+    uint16_t Seg;            // segment index
+    uint16_t pad;            // pad to maintain alignment
+    uint32_t Off;            // offset of code in segment
+    uint32_t cbSeg;          // number of bytes in segment
 } OMFSegDesc ;
 
 
@@ -145,9 +145,9 @@ typedef struct OMFSegDesc {
 //  variable length module name.
 
 typedef struct OMFModule {
-    UInt16  ovlNumber;      // overlay number
-    UInt16  iLib;           // library that the module was linked from
-    UInt16  cSeg;           // count of number of segments in module
+    uint16_t ovlNumber;      // overlay number
+    uint16_t iLib;           // library that the module was linked from
+    uint16_t cSeg;           // count of number of segments in module
     char            Style[2];       // debugging style "CV"
     OMFSegDesc      SegInfo[1];     // describes segments in module
     char            Name[CV_ZEROLEN]; // length prefixed module name padded to
@@ -161,11 +161,11 @@ typedef struct OMFModule {
 //  and global symbol tables.
 
 typedef struct OMFSymHash {
-    UInt16  symhash;        // symbol hash function index
-    UInt16  addrhash;       // address hash function index
-    UInt32  cbSymbol;       // length of symbol information
-    UInt32  cbHSym;         // length of symbol hash data
-    UInt32  cbHAddr;        // length of address hashdata
+    uint16_t symhash;        // symbol hash function index
+    uint16_t addrhash;       // address hash function index
+    uint32_t cbSymbol;       // length of symbol information
+    uint32_t cbHSym;         // length of symbol hash data
+    uint32_t cbHAddr;        // length of address hashdata
 } OMFSymHash ;
 
 
@@ -177,15 +177,15 @@ typedef struct OMFSymHash {
 //  begin on a Int32 word boundary.
 
 typedef struct OMFTypeFlags {
-    UInt32  sig     :8;
-    UInt32  unused  :24;
+    uint32_t sig     :8;
+    uint32_t unused  :24;
 } OMFTypeFlags ;
 
 
 typedef struct OMFGlobalTypes {
     OMFTypeFlags    flags;
-    UInt32  cTypes;         // number of types
-    UInt32  typeOffset[CV_ZEROLEN];   // array of offsets to types
+    uint32_t cTypes;         // number of types
+    uint32_t typeOffset[CV_ZEROLEN];   // array of offsets to types
 } OMFGlobalTypes ;
 
 
@@ -197,18 +197,18 @@ typedef struct OMFGlobalTypes {
 
 
 typedef struct OMFPreCompMap_16t {
-    UInt16  FirstType;      // first precompiled type index
-    UInt16  cTypes;         // number of precompiled types
-    UInt32  signature;      // precompiled types signature
-    UInt16  pad;
+    uint16_t FirstType;      // first precompiled type index
+    uint16_t cTypes;         // number of precompiled types
+    uint32_t signature;      // precompiled types signature
+    uint16_t pad;
     CV_typ16_t      map[CV_ZEROLEN];          // mapping of precompiled types
 } OMFPreCompMap_16t ;
 
 typedef struct OMFPreCompMap_32t {
-    UInt16  FirstType;      // first precompiled type index
-    UInt16  cTypes;         // number of precompiled types
-    UInt32  signature;      // precompiled types signature
-    UInt16  pad;
+    uint16_t FirstType;      // first precompiled type index
+    uint16_t cTypes;         // number of precompiled types
+    uint32_t signature;      // precompiled types signature
+    uint16_t pad;
     CV_typ32_t      map[CV_ZEROLEN];          // mapping of precompiled types
 } OMFPreCompMap_32t ;
 
@@ -222,10 +222,10 @@ typedef struct OMFPreCompMap_32t {
 
 
 typedef struct OMFSourceLine {
-    UInt16  Seg;            // linker segment index
-    UInt16  cLnOff;         // count of line/offset pairs
-    UInt32  offset[1];      // array of offsets in segment
-    UInt16  lineNbr[1];     // array of line lumber in source
+    uint16_t Seg;            // linker segment index
+    uint16_t cLnOff;         // count of line/offset pairs
+    uint32_t offset[1];      // array of offsets in segment
+    uint16_t lineNbr[1];     // array of line lumber in source
 } OMFSourceLine ;
 
 typedef OMFSourceLine FAR * LPSL ;
@@ -236,14 +236,14 @@ typedef OMFSourceLine FAR * LPSL ;
 
 
 typedef struct OMFSourceFile {
-    UInt16  cSeg;           // number of segments from source file
-    UInt16  reserved;       // reserved
-    UInt32  baseSrcLn[1];   // base of OMFSourceLine tables
+    uint16_t cSeg;           // number of segments from source file
+    uint16_t reserved;       // reserved
+    uint32_t baseSrcLn[1];   // base of OMFSourceLine tables
                                     // this array is followed by array
                                     // of segment start/end pairs followed by
                                     // an array of linker indices
                                     // for each segment in the file
-    UInt16  cFName;         // length of source file name
+    uint16_t cFName;         // length of source file name
     char            Name;           // name of file padded to Int32 boundary
 } OMFSourceFile ;
 
@@ -257,9 +257,9 @@ typedef OMFSourceFile FAR * LPSF;
 
 
 typedef struct OMFSourceModule {
-    UInt16  cFile;          // number of OMFSourceTables
-    UInt16  cSeg;           // number of segments in module
-    UInt32  baseSrcFile[1]; // base of OMFSourceFile table
+    uint16_t cFile;          // number of OMFSourceTables
+    uint16_t cSeg;           // number of segments in module
+    uint32_t baseSrcFile[1]; // base of OMFSourceFile table
                                     // this array is followed by array
                                     // of segment start/end pairs followed
                                     // by an array of linker indices
@@ -271,7 +271,7 @@ typedef OMFSourceModule FAR * LPSM ;
 //  sstLibraries
 
 typedef struct OMFLibrary {
-    UChar   cbLibs;     // count of library names
+    unsigned char cbLibs;     // count of library names
     char            Libs[1];    // array of length prefixed lib names (first entry zero length)
 } OMFLibrary;
 
@@ -280,13 +280,13 @@ typedef struct OMFLibrary {
 //  executable.
 
 typedef struct OMFFileIndex {
-    UInt16  cmodules;       // Number of modules
-    UInt16  cfilerefs;      // Number of file references
-    UInt16  modulelist[1];  // Index to beginning of list of files
+    uint16_t cmodules;       // Number of modules
+    uint16_t cfilerefs;      // Number of file references
+    uint16_t modulelist[1];  // Index to beginning of list of files
                                     // for module i. (0 for module w/o files)
-    UInt16  cfiles[1];      // Number of file names associated
+    uint16_t cfiles[1];      // Number of file names associated
                                     // with module i.
-    UInt32  ulNames[1];     // Offsets from the beginning of this
+    uint32_t ulNames[1];     // Offsets from the beginning of this
                                     // table to the file names
     char            Names[CV_ZEROLEN];        // The length prefixed names of files
 } OMFFileIndex ;
@@ -298,29 +298,29 @@ typedef struct OMFFileIndex {
 //  described by the seg map table.
 
 typedef struct OMFOffsetMap16 {
-    UInt32  csegment;       // Count of physical segments
+    uint32_t csegment;       // Count of physical segments
 
     // The next six items are repeated for each segment
 
-    UInt32  crangeLog;      // Count of logical offset ranges
-    UInt16  rgoffLog[1];    // Array of logical offsets
+    uint32_t crangeLog;      // Count of logical offset ranges
+    uint16_t rgoffLog[1];    // Array of logical offsets
     short           rgbiasLog[1];   // Array of logical->physical bias
-    UInt32  crangePhys;     // Count of physical offset ranges
-    UInt16  rgoffPhys[1];   // Array of physical offsets
+    uint32_t crangePhys;     // Count of physical offset ranges
+    uint16_t rgoffPhys[1];   // Array of physical offsets
     short           rgbiasPhys[1];  // Array of physical->logical bias
 } OMFOffsetMap16 ;
 
 typedef struct OMFOffsetMap32 {
-    UInt32  csection;       // Count of physical sections
+    uint32_t csection;       // Count of physical sections
 
     // The next six items are repeated for each section
 
-    UInt32  crangeLog;      // Count of logical offset ranges
-    UInt32  rgoffLog[1];    // Array of logical offsets
-    Int32            rgbiasLog[1];   // Array of logical->physical bias
-    UInt32  crangePhys;     // Count of physical offset ranges
-    UInt32  rgoffPhys[1];   // Array of physical offsets
-    Int32            rgbiasPhys[1];  // Array of physical->logical bias
+    uint32_t crangeLog;      // Count of logical offset ranges
+    uint32_t rgoffLog[1];    // Array of logical offsets
+    int32_t          rgbiasLog[1];   // Array of logical->physical bias
+    uint32_t crangePhys;     // Count of physical offset ranges
+    uint32_t rgoffPhys[1];   // Array of physical offsets
+    int32_t          rgbiasPhys[1];  // Array of physical->logical bias
 } OMFOffsetMap32 ;
 
 //  Pcode support.  This subsection contains debug information generated
@@ -332,8 +332,8 @@ typedef struct OMFOffsetMap32 {
 //  in the future for profiler support.
 
 typedef struct OMFMpcDebugInfo {
-    UInt16  cSeg;           // number of segments in module
-    UInt16  mpSegFrame[1];  // map seg (zero based) to frame
+    uint16_t cSeg;           // number of segments in module
+    uint16_t mpSegFrame[1];  // map seg (zero based) to frame
 } OMFMpcDebugInfo ;
 
 //  The following structures and constants describe the format of the
@@ -359,19 +359,19 @@ typedef struct OMFMpcDebugInfo {
 
 
 typedef struct DirEntry{
-    UInt16  SubSectionType;
-    UInt16  ModuleIndex;
-    Int32            lfoStart;
-    UInt16  Size;
+    uint16_t SubSectionType;
+    uint16_t ModuleIndex;
+    int32_t          lfoStart;
+    uint16_t Size;
 } DirEntry ;
 
 
 //  information decribing each segment in a module
 
 typedef struct oldnsg {
-    UInt16  Seg;         // segment index
-    UInt16  Off;         // offset of code in segment
-    UInt16  cbSeg;       // number of bytes in segment
+    uint16_t Seg;         // segment index
+    uint16_t Off;         // offset of code in segment
+    uint16_t cbSeg;       // number of bytes in segment
 } oldnsg ;
 
 
@@ -379,27 +379,27 @@ typedef struct oldnsg {
 
 typedef struct oldsmd {
     oldnsg          SegInfo;     // describes first segment in module
-    UInt16  ovlNbr;      // overlay number
-    UInt16  iLib;
-    UChar   cSeg;        // Number of segments in module
+    uint16_t ovlNbr;      // overlay number
+    uint16_t iLib;
+    unsigned char cSeg;        // Number of segments in module
     char            reserved;
-    UChar   cbName[1];   // length prefixed name of module
+    unsigned char cbName[1];   // length prefixed name of module
     oldnsg          arnsg[CV_ZEROLEN];     // cSeg-1 structures exist for alloc text or comdat code
 } oldsmd ;
 
 typedef struct{
-    UInt16  Seg;
-    UInt32  Off;
-    UInt32  cbSeg;
+    uint16_t Seg;
+    uint32_t Off;
+    uint32_t cbSeg;
 } oldnsg32 ;
 
 typedef struct {
     oldnsg32        SegInfo;     // describes first segment in module
-    UInt16  ovlNbr;      // overlay number
-    UInt16  iLib;
-    UChar   cSeg;        // Number of segments in module
+    uint16_t ovlNbr;      // overlay number
+    uint16_t iLib;
+    unsigned char cSeg;        // Number of segments in module
     char            reserved;
-    UChar   cbName[1];   // length prefixed name of module
+    unsigned char cbName[1];   // length prefixed name of module
     oldnsg32        arnsg[CV_ZEROLEN];     // cSeg-1 structures exist for alloc text or comdat code
 } oldsmd32 ;
 
@@ -407,19 +407,19 @@ typedef struct {
 // used in the symbol table and the physical segments where the program is loaded
 
 typedef struct OMFSegMapDesc {
-    UInt16  flags;       // descriptor flags bit field.
-    UInt16  ovl;         // the logical overlay number
-    UInt16  group;       // group index into the descriptor array
-    UInt16  frame;       // logical segment index - interpreted via flags
-    UInt16  iSegName;    // segment or group name - index into sstSegName
-    UInt16  iClassName;  // class name - index into sstSegName
-    UInt32  offset;      // byte offset of the logical within the physical segment
-    UInt32  cbSeg;       // byte count of the logical segment or group
+    uint16_t flags;       // descriptor flags bit field.
+    uint16_t ovl;         // the logical overlay number
+    uint16_t group;       // group index into the descriptor array
+    uint16_t frame;       // logical segment index - interpreted via flags
+    uint16_t iSegName;    // segment or group name - index into sstSegName
+    uint16_t iClassName;  // class name - index into sstSegName
+    uint32_t offset;      // byte offset of the logical within the physical segment
+    uint32_t cbSeg;       // byte count of the logical segment or group
 } OMFSegMapDesc ;
 
 typedef struct OMFSegMap {
-    UInt16  cSeg;        // total number of segment descriptors
-    UInt16  cSegLog;     // number of logical segment descriptors
+    uint16_t cSeg;        // total number of segment descriptors
+    uint16_t cSegLog;     // number of logical segment descriptors
     OMFSegMapDesc   rgDesc[CV_ZEROLEN];   // array of segment descriptors
 } OMFSegMap ;
 

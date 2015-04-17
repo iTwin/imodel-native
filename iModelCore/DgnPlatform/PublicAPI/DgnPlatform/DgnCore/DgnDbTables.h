@@ -1,0 +1,1646 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/DgnPlatform/DgnCore/DgnDbTables.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+#define DGN_ECSCHEMA_NAME "dgn"
+#define DGN_TABLE_PREFIX  DGN_ECSCHEMA_NAME "_"
+#define DGN_SCHEMA(name)  DGN_ECSCHEMA_NAME "." name
+#define DGN_TABLE(name)   DGN_TABLE_PREFIX name
+
+//-----------------------------------------------------------------------------------------
+// ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
+//-----------------------------------------------------------------------------------------
+#define DGN_CLASSNAME_Color                         "Color"
+#define DGN_CLASSNAME_DrawingElement                "DrawingElement"
+#define DGN_CLASSNAME_Element                       "Element"
+#define DGN_CLASSNAME_ElementAspect                 "ElementAspect"
+#define DGN_CLASSNAME_ElementGeom                   "ElementGeom"
+#define DGN_CLASSNAME_ElementItem                   "ElementItem"
+#define DGN_CLASSNAME_GeomPart                      "GeomPart"
+#define DGN_CLASSNAME_Category                      "Category"
+#define DGN_CLASSNAME_Link                          "Link"
+#define DGN_CLASSNAME_Model                         "Model"
+#define DGN_CLASSNAME_PhysicalElement               "PhysicalElement"
+#define DGN_CLASSNAME_SubCategory                   "SubCategory"
+#define DGN_CLASSNAME_Style                         "Style"
+#define DGN_CLASSNAME_View                          "View"
+
+//-----------------------------------------------------------------------------------------
+// DgnDb table names
+//-----------------------------------------------------------------------------------------
+#define DGN_TABLE_Domain            DGN_TABLE("Domain")
+#define DGN_TABLE_Font              DGN_TABLE("Font")
+#define DGN_TABLE_Handler           DGN_TABLE("Handler")
+#define DGN_TABLE_RasterData        DGN_TABLE("RasterData")
+#define DGN_TABLE_RasterFile        DGN_TABLE("RasterFile")
+#define DGN_TABLE_Session           DGN_TABLE("Session")
+#define DGN_VTABLE_PrjRTree         DGN_TABLE("PrjRTree")
+
+//-----------------------------------------------------------------------------------------
+// ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
+//-----------------------------------------------------------------------------------------
+#define DGN_RELNAME_CategoryOwnsSubCategories       "CategoryOwnsSubCategories"
+#define DGN_RELNAME_ElementDrivesElement            "ElementDrivesElement"
+#define DGN_RELNAME_ElementHasLinks                 "ElementHasLinks"
+#define DGN_RELNAME_ElementGeomUsesParts            "ElementGeomUsesParts"
+#define DGN_RELNAME_ElementGroupsElements           "ElementGroupsElements"
+#define DGN_RELNAME_ElementOwnsAspects              "ElementOwnsAspects"
+#define DGN_RELNAME_ElementOwnsItem                 "ElementOwnsItem"
+#define DGN_RELNAME_ModelDrivesModel                "ModelDrivesModel"
+
+#include <DgnPlatform/DgnProperties.h>
+#include "DgnFontManager.h"
+#include "UnitDefinition.h"
+#include "DgnLink.h"
+#include "DgnCoreEvent.h"
+#include <Bentley/HeapZone.h>
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+struct TxnElementSummary;
+
+//! Map of ID to DgnFont object. See method FontNumberMap.
+typedef bmap<uint32_t, DgnFontCP> T_FontNumberMap;
+
+//=======================================================================================
+//! A base class for api's that access a table in a DgnDb
+//=======================================================================================
+struct DgnDbTable : NonCopyableClass
+{
+protected:
+    friend struct DgnDb;
+    DgnDbR m_dgndb;
+    explicit DgnDbTable(DgnDbR db) : m_dgndb(db) {}
+
+public:
+    DgnDbR GetDgnDb() const {return m_dgndb;}
+
+    //! Determine whether the supplied name contains any of the invalid characters.
+    //! @param[in] name the name to check
+    //! @param[in] invalidChars the list of character that may NOT appear in name.
+    //! @note names may also not start or end with a space.
+    DGNPLATFORM_EXPORT static bool IsValidName(Utf8StringCR name, Utf8CP invalidChars);
+
+    //! Replace any instances of the invalid characters in the supplied name with a replacement character.
+    //! @param[in] name the name to validate
+    //! @param[in] invalidChars the list of invalid characters. All instances of these characters are replaced.
+    //! @param[in] replacement the character to substitute for any invalid characters in name.
+    DGNPLATFORM_EXPORT static void ReplaceInvalidCharacters(Utf8StringR name, Utf8CP invalidChars, Utf8Char replacement);
+};
+
+//=======================================================================================
+//! Each Category has an entry in the Category table.
+//=======================================================================================
+struct DgnCategories : DgnDbTable
+    {
+    //! The Rank of a category indicates who created it and who may use it for elements
+    enum class Rank
+    {
+        System      = 0,    //!< This category is predefined by the system
+        Domain      = 1,    //!< This category is defined by a domain. Elements in this category may be unknown to system functionality.
+        Application = 2,    //!< This category is defined by an application. Elements in this category may be unknown to system and domain functionality.
+        User        = 3,    //!< This category is defined by a user. Elements in this category may be unknown to system, domain, and application functionality.
+    };
+
+    //! The Scope of a category determines what types of models may use it.
+    enum class Scope
+    {
+        Any         = 0,    //!< This category may be used in any type of model. Generally, this means it came from some external source (e.g. a dgn or dwg file)
+        Physical    = 1,    //!< This category may only be used in physical models
+        Annotation  = 2,    //!< This category may only be used in annotation models (e.g. sheets or drawings)
+        Analytical  = 3,    //!< This category may only be used in analytical models
+    };
+
+    //! A sub-category of a category.
+    struct SubCategory
+    {
+        //! The parameters that can determine how graphics on a SubCategory appear when drawn.
+        struct Appearance
+        {
+        private:
+            bool        m_invisible;    //!< Graphics on this SubCategory should not be visible
+            bool        m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
+            bool        m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
+            bool        m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
+            ColorDef    m_color;
+            uint32_t    m_weight;
+            DgnStyleId  m_style;
+            int32_t     m_displayPriority; // only valid for SubCategories in 2D models
+            DgnMaterialId m_material;
+            double      m_transparency;
+
+        public:
+            void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate();}
+            Appearance() {Init();}
+            explicit Appearance(Utf8StringCR val) {FromJson(val);}
+
+            void SetInvisible(bool val) {m_invisible=val;}
+            void SetDontPlot(bool val) {m_dontPlot=val;}
+            bool GetDontSnap() const {return m_dontSnap;}
+            void SetDontSnap(bool val) {m_dontSnap=val;}
+            bool GetDontLocate() const {return m_dontLocate;}
+            void SetDontLocate(bool val) {m_dontLocate=val;}
+            void SetColor(ColorDef val) {m_color=val;}
+            void SetWeight(uint32_t val) {m_weight=val;}
+            void SetStyle(DgnStyleId val) {m_style=val;}
+            void SetDisplayPriority(int32_t val) {m_displayPriority=val;}
+            void SetMaterial(DgnMaterialId val) {m_material=val;}
+            void SetTransparency(double val) {m_transparency=val;}
+            bool IsInvisible() const {return m_invisible;}
+            bool IsVisible() const {return !m_invisible;}
+            ColorDef GetColor() const {return m_color;}
+            uint32_t GetWeight() const {return m_weight;}
+            DgnStyleId GetStyle() const {return m_style;}
+            int32_t GetDisplayPriority() const {return m_displayPriority;}
+            DgnMaterialId GetMaterial() const {return m_material;}
+            double GetTransparency() const {return m_transparency;}
+            DGNPLATFORM_EXPORT bool operator==(Appearance const& other) const;
+            bool IsEqual(Appearance const& other) const {return *this==other;}
+            void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
+            Utf8String ToJson() const;   //!< convert this appearance to a json string
+        };// Appearance
+
+        //! View-specific overrides of the appearance of a SubCategory
+        struct Override
+        {
+        private:
+            union
+                {
+                uint32_t m_int32;
+                struct
+                    {
+                    uint32_t m_invisible:1;
+                    uint32_t m_color:1;
+                    uint32_t m_weight:1;
+                    uint32_t m_style:1;
+                    uint32_t m_material:1;
+                    uint32_t m_priority:1;
+                    uint32_t m_transparency:1;
+                    };
+                } m_flags;
+
+            Appearance m_value;
+
+        public:
+            Override() {Init();}
+            explicit Override(JsonValueCR val) {Init(); FromJson(val);}
+            void Init() {m_flags.m_int32 = 0; m_value.Init();}
+            void SetInvisible(bool val) {m_flags.m_invisible=true; m_value.SetInvisible(val);}
+            void SetColor(ColorDef val) {m_flags.m_color=true; m_value.SetColor(val);}
+            void SetWeight(uint32_t val) {m_flags.m_weight=true; m_value.SetWeight(val);}
+            void SetStyle(DgnStyleId val) {m_flags.m_style=true; m_value.SetStyle(val);}
+            void SetDisplayPriority(int32_t val) {m_flags.m_priority=true; m_value.SetDisplayPriority(val);}
+            void SetMaterial(DgnMaterialId val) {m_flags.m_material=true; m_value.SetMaterial(val);}
+            void SetTransparency(double val) {m_flags.m_transparency=true; m_value.SetTransparency(val);}
+            void ToJson(JsonValueR outValue) const;
+            void FromJson(JsonValueCR inValue);
+            void ApplyTo(Appearance&) const;
+        }; // Override
+
+    private:
+        friend struct DgnCategories;
+        DgnCategoryId      m_categoryId;
+        DgnSubCategoryId   m_subCategoryId;
+        Utf8String m_code;
+        Utf8String m_label; // defaults to code, but can be renamed
+        Utf8String m_description;
+        Appearance m_appearance;
+
+    public:
+        SubCategory() {} //!< Construct an invalid SubCategory.
+        SubCategory(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId, Utf8CP code, Appearance const& appearance, Utf8CP descr=nullptr, Utf8CP label=nullptr)
+                : m_categoryId(categoryId), m_subCategoryId(subCategoryId), m_code(code), m_appearance(appearance) {m_description.AssignOrClear(descr); m_label=label?label:code;}
+
+        Utf8CP GetCode() const {return m_code.c_str();} //!< The SubCategory code. Unique per category. Not translated. Default SubCategories will return an empty string.
+        Utf8CP GetLabel() const {return m_label.c_str();} //!< The SubCategory display label which may be translated.
+        Utf8CP GetDescription() const {return m_description.length()>0 ? m_description.c_str() : nullptr;} //!< The SubCategory description. May be empty.
+        DgnCategoryId GetCategoryId() const {return m_categoryId;} //!< This SubCategory's DgnCategoryId
+        DgnSubCategoryId GetSubCategoryId() const {return m_subCategoryId;} //!< The DgnSubCategoryId
+        Appearance const& GetAppearance() const {return m_appearance;} //!< The Appearance for this SubCategory.
+        Appearance& GetAppearanceR() {return m_appearance;} //!< Get a writeable reference to the Appearance for this SubCategory.
+        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the SubCategory display label.
+        void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);} //!< Set the SubCategory description. @param val the new description. May be nullptr.
+        void SetCode(Utf8CP val) {m_code = val;} //!< Set the SubCategory code. @param val the new code for this SubCategory. Must not be nullptr. Must be unique per category. Default SubCategories may not be recoded.
+        bool IsValid() const {return m_categoryId.IsValid() && m_subCategoryId.IsValid();} //!< Test if the SubCategory is valid. A failed query will return an invalid SubCategory.
+        bool IsDefaultSubCategory() const {return m_categoryId == m_subCategoryId;} //!< Determine if this is the default SubCategory for its category.
+    }; // SubCategory
+
+    //! A Category in the category table
+    struct Category
+        {
+    private:
+        friend struct DgnCategories;
+        DgnCategoryId  m_categoryId;
+        Rank        m_rank;
+        Scope       m_scope;
+        Utf8String  m_code;
+        Utf8String  m_label; // defaults to code, but can be renamed
+        Utf8String  m_description;
+
+        void Init(DgnCategoryId id, Utf8CP code, Scope scope, Utf8CP descr, Utf8CP label, Rank rank)
+            {m_categoryId=id; m_code=code; m_label=label?label:code; m_scope=scope; m_description.AssignOrClear(descr); m_rank=rank;}
+
+    public:
+        Category() {}// so that we can put Categories in a bmap
+
+        //! Ctor for a Category in the category table.
+        //! @param[in] code The category's code. Must be unique.
+        //! @param[in] scope The Scope of this category.
+        //! @param[in] descr The category's description. May be nullptr.
+        //! @param[in] label The display label for this category.  May be nullptr.
+        //! @param[in] rank The category's rank
+        Category(Utf8CP code, Scope scope, Utf8CP descr=nullptr, Utf8CP label=nullptr, Rank rank=Rank::User, DgnCategoryId id=DgnCategoryId()) {Init(id, code, scope, descr, label, rank);}
+
+        Utf8CP GetCode() const {return m_code.c_str();} //!< The category code. Never empty. Unique. Not translated.
+        Utf8CP GetLabel() const {return m_label.c_str();} //!< The category display label which may be translated.
+        Utf8CP GetDescription() const {return m_description.length()>0 ? m_description.c_str() : nullptr;} //!< The category description. May be empty.
+        DgnCategoryId GetCategoryId() const {return m_categoryId;} //!< The category id. Unique. This is an internal identifier and is not displayed in the GUI.
+        Scope GetScope() const {return m_scope;} //!< the category's scope.
+        Rank GetRank() const {return m_rank;} //!< the category's rank.
+        bool IsSystemCategory() const {return GetRank()==Rank::System;}
+        bool IsUserCategory() const {return GetRank()==Rank::User;}
+        bool IsValid() const {return m_categoryId.IsValid();} //!< Test if the Category is valid. A failed query will return an invalid Category. @see DgnCategories::QueryCategoryById.
+        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the category display label.
+        void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);} //!< Set the category description. @param val the new description. May be nullptr.
+        void SetCode(Utf8CP val) {m_code = val;} //!< Set the category code. @param val the new code. Must not be nullptr. Must be unique.
+        void SetScope(Scope val) {m_scope= val;} //!< Set the category's scope. @param[in] val the new category scope.
+        void SetRank(Rank val) {m_rank=val;} //!< Change the Rank of this category.
+        };
+
+    //! An iterator over the categories in the DgnDb.
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    public:
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR) db) {}
+
+        //! An entry in the table.
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+        public:
+            DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const; //!< The category id. Unique. This is an internal identifier and is not displayed in the GUI.
+            DGNPLATFORM_EXPORT Rank GetRank() const; //!< The category's rank
+            DGNPLATFORM_EXPORT Utf8CP GetCode() const; //!< The category's code. Never nullptr. Unique. Not translated.
+            DGNPLATFORM_EXPORT Utf8CP GetLabel() const; //!< The category's display label which may be translated.
+            DGNPLATFORM_EXPORT Utf8CP GetDescription() const; //!< The category's description, if any. May be nullptr.
+            DGNPLATFORM_EXPORT Scope GetScope() const; //!< The category's type.
+            Entry const& operator*() const {return *this;}
+            Category ToCategory() const {return Category(GetCode(), GetScope(), GetDescription(), GetLabel(), GetRank(), GetCategoryId());}
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT const_iterator begin() const;
+        const_iterator end() const {return Entry(m_stmt.get(), false);}
+        DGNPLATFORM_EXPORT size_t QueryCount() const;
+    }; // Iterator
+
+    //! An iterator over the SubCategories of a category
+    struct SubCategoryIterator : BeSQLite::DbTableIterator
+    {
+    private:
+        DgnCategoryId m_categoryId;
+    public:
+
+        //! construct a SubCategoryIterator
+        //! @param[in] db The database for the SubCategory table
+        //! @param[in] category Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
+        //! @param[in] whereClause an optional where clause
+        SubCategoryIterator(DgnDbCR db, DgnCategoryId category) : DbTableIterator((BeSQLiteDbCR)db), m_categoryId(category) {}
+
+        //! An entry in the table.
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct SubCategoryIterator;
+            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+        public:
+            DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const; //! The Category id.
+            DGNPLATFORM_EXPORT DgnSubCategoryId GetSubCategoryId() const; //!< The SubCategory id.
+            DGNPLATFORM_EXPORT SubCategory::Appearance GetAppearance() const; //!< The Appearance for this SubCategory
+            DGNPLATFORM_EXPORT Utf8CP GetCode() const; //!< The SubCategory's code. Never nullptr. Unique. Not translated.
+            DGNPLATFORM_EXPORT Utf8String GetLabel() const; //!< The SubCategory's display label which may be translated.
+            DGNPLATFORM_EXPORT Utf8CP GetDescription() const; //!< The SubCategory's description, if any. May be nullptr.
+            Entry const& operator*() const {return *this;}
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT const_iterator begin() const;
+        const_iterator end() const {return Entry(nullptr, false);}
+    }; // SubCategoryIterator
+
+//__PUBLISH_SECTION_END__
+private:
+    friend struct DgnDb;
+    explicit DgnCategories(DgnDbR db) : DgnDbTable(db) {}
+
+public:
+//__PUBLISH_SECTION_START__
+private:
+    DgnCategories(); // internal only
+    DgnCategories(DgnCategories const&); // no copying
+
+public:
+    ///@name Querying and manipulating categories
+    //@{
+    //! Add a new category to the DgnDb.
+    //! @param[in] row The definition of the category to create.
+    //! @param[in] the appearance for the default SubCategory for the new category
+    //! @return BE_SQLITE_OK if the category was added; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified DgnCategoryId and/or code is already used.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertCategory(Category& row, SubCategory::Appearance const&);
+
+    //! Remove a category from the DgnDb.
+    //! @param[in] id the id of the category to remove.
+    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the categoryId did not exist prior to this call.
+    //! @note Deleting a category can result in an inconsistent database. There is no checking that the category to be removed is not in use somehow, and
+    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
+    //! know for sure that the category is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
+    //! @note it is illegal to delete the default category. Any attempt to do so will fail.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteCategory(DgnCategoryId id);
+
+    //! Change properties of a category.
+    //! @param[in] row The new category data to apply.
+    //! @return BE_SQLITE_OK if the update was applied; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified code is used
+    //! by another category in the table.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateCategory(Category const& row);
+
+    //! Get the Id of a Category from its code.
+    //! @param[in] categoryCode The code of the category of interest.
+    //! @return the Id of the category. Will be invalid if no category by the specified code exists in the DgnDb.
+    DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId(Utf8CP categoryCode) const;
+
+    //! Query for the DgnCategoryId that owns the specified DgnSubCategoryId.
+    //! @param[in] subCategoryId The Id of the SubCategory of interest.
+    //! @return the Id of the category.  Will be invalid in the case of an unsuccessful query.
+    DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId(DgnSubCategoryId subCategoryId) const;
+
+    //! Get the DgnCategoryId from the specified element.
+    //! @param[in] elementId the element to query
+    //! @return the Id of the category. Will be invalid if there is no element whose Id equals elementId.
+    DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId(DgnElementId elementId) const;
+
+    //! Get the information about a category from its Id.
+    //! @param[in] id The Id of the category of interest.
+    //! @return The data for the category. Call IsValid() on the result to determine whether this method was successful.
+    DGNPLATFORM_EXPORT Category QueryCategoryById(DgnCategoryId id) const;
+
+    //! Look up a category by code.
+    //! @param[in] categoryCode the category code to look up
+    //! @return The data for the category. Call IsValid() on the result to determine whether this method was successful.
+    Category QueryCategoryByCode(Utf8CP categoryCode) const {return QueryCategoryById(QueryCategoryId(categoryCode));}
+
+    //! Get an iterator over the categories in this DgnDb.
+    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+
+    //! Query the highest DgnCategoryId used in this table
+    DGNPLATFORM_EXPORT DgnCategoryId QueryHighestId() const;
+    //@}
+
+    ///@name Querying and manipulating SubCategories of a category
+    //@{
+    //! Add a new SubCategory to a category.
+    //! @param[in] subCategory The definition of the SubCategory.
+    //! @return BE_SQLITE_OK if the SubCategory was added; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified DgnCategoryId does not exist or the SubCategory's code
+    //! or DgnSubCategoryId is already in use.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertSubCategory(SubCategory& subCategory);
+
+    //! Remove a SubCategory from a category.
+    //! @param[in] subCategoryId the Id of the SubCategory to be deleted.
+    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the subCategoryKey did not exist prior to this call.
+    //! @note Deleting a SubCategory from a category can result in an inconsistent database. There is no checking that the SubCategory to be removed is not in use somehow, and
+    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
+    //! know for sure that the category is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteSubCategory(DgnSubCategoryId subCategoryId);
+
+    //! Change properties of a SubCategory.
+    //! @param[in] subCategory The new SubCategory data to apply.
+    //! @return BE_SQLITE_OK if the update was applied; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified code is used
+    //! by another SubCategory for the category.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateSubCategory(SubCategory const& subCategory);
+
+    //! Get the Id of a SubCategory from its code.
+    //! @param[in] categoryId the category for which the code applies.
+    //! @param[in] subCategoryCode The code of the SubCategory of interest.
+    //! @return the Id of the SubCategory. Will be invalid if no SubCategory on that category by the specified code exists
+    DGNPLATFORM_EXPORT DgnSubCategoryId QuerySubCategoryId(DgnCategoryId categoryId, Utf8CP subCategoryCode) const;
+
+    //! Get the Id of the SubCategory associated with the specified DgnGeomPart.
+    //! @param[in] geomPartId the DgnGeomPart to query.
+    //! @return the Id of the SubCategory.  Will be invalid if the query fails.
+    DGNPLATFORM_EXPORT DgnSubCategoryId QuerySubCategoryId(DgnGeomPartId geomPartId) const;
+
+    //! Get the information about a SubCategory from its Id.
+    //! @param[in] subCategoryId The Id of the SubCategory of interest.
+    //! @return The data for the SubCategory. Call IsValid() on the result to determine whether this method was successful.
+    DGNPLATFORM_EXPORT SubCategory QuerySubCategory(DgnSubCategoryId subCategoryId) const;
+
+    //! Look up a SubCategory by code.
+    //! @param[in] categoryId the category for which the code applies.
+    //! @param[in] subCategoryCode the SubCategory code to look up
+    //! @return The data for the SubCategory. Call IsValid() on the result to determine whether this method was successful.
+    SubCategory QuerySubCategoryByCode(DgnCategoryId categoryId, Utf8CP subCategoryCode) const {return QuerySubCategory(QuerySubCategoryId(categoryId, subCategoryCode));}
+
+    //! Get an iterator over the SubCategories of a category or all SubCategories of all categories.
+    //! @param[in] categoryId Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
+    //! @param[in] whereClause an optional where clause
+    SubCategoryIterator MakeSubCategoryIterator(DgnCategoryId categoryId=DgnCategoryId()) const {return SubCategoryIterator(m_dgndb, categoryId);}
+    //@}
+
+    //! Get a string containing the list of characters that may NOT appear in category codes.
+    static Utf8CP GetIllegalCharacters() {return "<>\\/.\"?*|,='&\n\t";}
+
+    //! Determine whether the supplied code is a valid category code.
+    //! @param[in] code The candidate category code to check
+    //! @return true if the category code is valid, false otherwise.
+    //! @note Category codes may also not start or end with a space.
+    static bool IsValidCode(Utf8StringCR code) {return DgnDbTable::IsValidName(code, GetIllegalCharacters());}
+
+    //! Get the Id of the default SubCategory for a given categoryId.
+    //! @param[in] categoryId the category from which to get the default SubCategory.
+    //! @return the Id of the SubCategory.
+    static DgnSubCategoryId DefaultSubCategoryId(DgnCategoryId categoryId) {return DgnSubCategoryId(categoryId.GetValue());}
+};
+
+//=======================================================================================
+//! The types of views that can exist in a DgnDb.
+//=======================================================================================
+enum class DgnViewType
+{
+    None     = 0,           //!< do not return any views
+    Physical = 1<<0,        //!< a view of physical (3d) models
+    Drawing  = 1<<1,        //!< a view of a single drawing (2d) model
+    Sheet    = 1<<2,        //!< a view of a sheet.
+    Component = 1<<4,       //!< a view of a single component model
+    All    = (Physical | Drawing | Sheet | Component),
+};
+
+//=======================================================================================
+//! The source for the creation a DgnView.
+//=======================================================================================
+enum class DgnViewSource
+{
+    User      = 1<<0,      //!< created by a user
+    Generated = 1<<1,      //!< automatically generated by a program, may be relevant to user
+    Private   = 1<<2,      //!< used internally and should not be presented to user
+};
+
+//=======================================================================================
+//! Each View has an entry in the View table.
+//=======================================================================================
+struct DgnViews : DgnDbTable
+{
+private:
+    friend struct DgnDb;
+    explicit DgnViews(DgnDbR db) : DgnDbTable(db){}
+
+public:
+    //! An object that holds the values for a View in the DgnViews.
+    struct View
+    {
+    private:
+        friend struct DgnViews;
+        DgnViewId          m_viewId;
+        DgnClassId         m_classId;
+        DgnViewType        m_viewType;
+        DgnViewSource      m_viewSource;
+        DgnModelId         m_baseModelId;
+        Utf8String         m_name;
+        Utf8String         m_description;
+
+    public:
+        View() {m_viewType=DgnViewType::Physical;}
+        View(DgnViewType viewType, DgnClassId classId, DgnModelId baseId, Utf8CP name, Utf8CP descr=0, DgnViewSource source=DgnViewSource::User,DgnViewId id=DgnViewId()) : m_viewId(id), m_baseModelId(baseId),
+                    m_viewType(viewType), m_name(name), m_classId(classId)
+            {
+            m_description.AssignOrClear(descr);
+            m_viewSource = source;
+            }
+
+        DgnViewId GetId() const {return m_viewId;} //!< The DgnViewId of this view.
+        //! Get the DgnModelId of the base model for this view. Every view has one DgnModel designated its "base" model.
+        DgnModelId GetBaseModelId() const {return m_baseModelId;}
+        DgnViewType GetDgnViewType() const {return m_viewType;} //!< Get the DgnViewType for this view.
+        DgnClassId GetClassId() const {return m_classId;} //!< Get the DgnClassId of this View
+        DgnViewSource GetDgnViewSource() const {return m_viewSource;} //!< Get the DgnViewSource for this view.
+        Utf8CP GetName() const {return m_name.c_str();} //!< Get the name for this view.
+        Utf8CP GetDescription() const {return m_description.length()>0 ? m_description.c_str() : nullptr;} //!< Get the description (if present) for this view.
+
+        void SetDgnViewType(DgnClassId classId, DgnViewType val) {m_classId=classId, m_viewType = val;}    //!< Set the DgnViewType for this view.
+        void SetDgnViewSource(DgnViewSource val) {m_viewSource = val;} //!< Set the DgnViewSource for this view.
+        void SetBaseModelId(DgnModelId val) {m_baseModelId = val;} //!< Set the DgnModelId of the base model for this view.
+        void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);} //!< Set the description for this view.
+        void SetName(Utf8CP val) {m_name = val;}//!< Set the name for this view. View names must be unique for a DgnDb.
+        bool IsValid() const {return m_viewId.IsValid();}   //!< Determine whether this View is valid or not.
+    };
+
+    //! An iterator over the table.
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    private:
+        int  m_typeMask;
+
+    public:
+        Iterator(DgnDbCR db, int viewTypeMask) : DbTableIterator((BeSQLiteDbCR)db) {m_typeMask = viewTypeMask;}
+
+        //! An entry in the table
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+        public:
+            DGNPLATFORM_EXPORT DgnViewId GetDgnViewId() const;
+            DGNPLATFORM_EXPORT DgnModelId GetBaseModelId() const;
+            DGNPLATFORM_EXPORT DgnViewType GetDgnViewType() const;
+            DGNPLATFORM_EXPORT DgnViewSource GetDgnViewSource() const;
+            DGNPLATFORM_EXPORT Utf8CP GetName() const;
+            DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
+            DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
+            Entry const& operator* () const {return *this;}
+        }; // Entry
+
+    typedef Entry const_iterator;
+    typedef Entry iterator;
+    DGNPLATFORM_EXPORT size_t QueryCount() const;
+    DGNPLATFORM_EXPORT Entry begin() const;
+    Entry end() const {return Entry(nullptr, false);}
+    }; // Iterator
+
+public:
+    //! Add a new view to the database.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertView(View&);
+
+    //! Delete an existing view from the database.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteView(DgnViewId viewId);
+
+    //! Change the contents of an existing view in the database.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateView(View const&);
+
+    //! Get the DgnViewId for a view, by name
+    DGNPLATFORM_EXPORT DgnViewId QueryViewId(Utf8CP viewName) const;
+
+    //! Get the data for a view, by DgnViewId
+    DGNPLATFORM_EXPORT View QueryViewById(DgnViewId id) const;
+
+    enum class FillModels{No=0, Yes=1};
+    DGNPLATFORM_EXPORT ViewControllerPtr LoadViewController(DgnViewId id, FillModels fillModels=FillModels::No) const;
+
+    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(DgnViewId id, int resolution, DgnRenderMode renderModeOverride);
+
+    typedef DgnViewProperty::Spec const& DgnViewPropertySpecCR;
+
+    //! Query a view property
+    BeSQLite::DbResult QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id=0) const;
+
+    //! Query a view property string
+    BeSQLite::DbResult QueryProperty(Utf8StringR value, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id=0) const;
+
+    //! Query the size of a view property
+    BeSQLite::DbResult QueryPropertySize(uint32_t& size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id=0) const;
+
+    //! Change a view property
+    BeSQLite::DbResult SaveProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, void const* value, uint32_t size, uint64_t id=0);
+
+    //! Change a view property string
+    BeSQLite::DbResult SavePropertyString(DgnViewId viewId, DgnViewPropertySpecCR spec, Utf8StringCR value, uint64_t id=0);
+
+    //! Delete a view property
+    BeSQLite::DbResult DeleteProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id=0);
+
+    //! Get an iterator over the Views in this DgnDb.
+    Iterator MakeIterator(int viewTypeMask=(int)DgnViewType::All) const {return Iterator(m_dgndb, viewTypeMask);}
+};
+
+enum class ModelIterate
+    {
+    All = 1<<0,   //!< return all iterable models
+    Gui = 1<<1,   //!< return only models marked as visible in Model list GUI
+    };
+
+//=======================================================================================
+//! Each DgnModel has an entry in the DgnModels table
+//=======================================================================================
+struct DgnModels : DgnDbTable
+{
+private:
+    friend struct DgnDb;
+    friend struct DgnFile;
+    typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
+
+    T_DgnModelMap            m_models;
+    QvCache*                 m_qvCache;
+    bmap<DgnModelId,bpair<uint64_t,DgnModelType>> m_modelDependencyIndexAndType;
+
+    void ClearLoaded();
+    DgnModelP SupplyDgnModel(DgnModelId modelId);
+    bool FreeQvCache();
+    void Empty() {ClearLoaded(); FreeQvCache();}
+
+    DgnModels(DgnDbR db) : DgnDbTable(db) {m_qvCache= nullptr;}
+    ~DgnModels() {} // don't call empty on destructor, Elements() has already been deleted.
+
+public:
+    //! An object that holds a row from the DgnModel table.
+    struct Model
+    {
+        enum class CoordinateSpace
+        {
+            Local   = 0,    // the model has a local coordinate system
+            World   = 1,    // the model is in the world coordinate system (only applicable to physical models).
+            Aux     = 2,    // the model is in the an auxiliary coordinate system (only applicable to physical models).
+        };
+
+        friend struct DgnModels;
+
+    private:
+        DgnModelId   m_id;
+        DgnClassId   m_classId;
+        Utf8String   m_name;
+        Utf8String   m_description;
+        DgnModelType m_modelType;
+        CoordinateSpace  m_space;
+        uint32_t     m_visibility; //!< mask of values from ModelIterate
+
+    public:
+        Model()
+            {
+            m_modelType = DgnModelType::Physical;
+            m_space = CoordinateSpace::Local;
+            m_visibility = 0xff;
+            };
+
+        Model(Utf8CP name, DgnModelType modelType, CoordinateSpace space, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
+            {
+            m_modelType = modelType;
+            m_space = space;
+            m_visibility = 0xff;
+            }
+
+        Utf8StringR GetNameR() {return m_name;}
+        Utf8StringR GetDescriptionR() {return m_description;}
+        void SetName(Utf8CP val) {m_name.assign(val);}
+        void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);}
+        void SetVisibility(uint32_t val)   {m_visibility = val;}
+        void SetId(DgnModelId id) {m_id = id;}
+        void SetModelType(DgnClassId classId, DgnModelType val) {m_classId = classId; m_modelType = val;}
+        void SetCoordinateSpace(CoordinateSpace val) {m_space = val;}
+
+        DgnModelId GetId() const {return m_id;}
+        Utf8CP GetNameCP() const {return m_name.c_str();}
+        Utf8String GetName() const {return m_name;}
+        Utf8CP GetDescription() const {return m_description.c_str();}
+        DgnModelType GetModelType() const {return m_modelType;}
+        DgnClassId GetClassId() const {return m_classId;}
+        CoordinateSpace GetCoordinateSpace() const {return m_space;}
+        uint32_t GetVisibility() const {return m_visibility;}
+        bool IsIterable() const {return 0 != m_visibility;}
+        bool InModelGui() const {return 0 != ((int) ModelIterate::Gui & m_visibility);}
+        bool Is3d() const {return m_modelType==DgnModelType::Physical;}
+
+    }; // Model
+
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    private:
+        ModelIterate   m_itType;
+
+    public:
+        Iterator(DgnDbCR db, ModelIterate itType) : DbTableIterator((BeSQLiteDbCR)db) {m_itType = itType;}
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+
+        public:
+            DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+            DGNPLATFORM_EXPORT Utf8CP GetName() const;
+            DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
+            DGNPLATFORM_EXPORT DgnModelType GetModelType() const;
+            DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
+            DGNPLATFORM_EXPORT Model::CoordinateSpace GetCoordinateSpace() const;
+            DGNPLATFORM_EXPORT uint32_t GetVisibility() const;
+
+            bool Is3d() const {return GetModelType()==DgnModelType::Physical;}
+            bool InModelGui() const {return 0 != ((int)ModelIterate::Gui & GetVisibility());}
+            Entry const& operator* () const {return *this;}
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        void SetIterationType(ModelIterate itType) {m_stmt=0; m_itType = itType;}
+        DGNPLATFORM_EXPORT size_t QueryCount() const;
+        DGNPLATFORM_EXPORT const_iterator begin() const;
+        const_iterator end() const {return Entry(nullptr, false);}
+    };
+
+//__PUBLISH_SECTION_END__
+private:
+    DgnModelStatus InsertNewModel(Model& row);
+    BeSQLite::DbResult InsertModel(Model& row);
+
+public:
+//__PUBLISH_SECTION_START__
+    DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
+//__PUBLISH_SECTION_END__
+    void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
+
+
+//__PUBLISH_SECTION_START__
+    //! Determine the Id of the first model in this DgnDb.
+    DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;
+
+    //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
+    //! instance of the appropriate model type. If the model is already loaded, a pointer to the existing DgnModel is returned.
+    //! @param[in] modelId The Id of the model to load.
+    DGNPLATFORM_EXPORT DgnModelP GetModelById(DgnModelId modelId);
+
+    //! Query if the specified model has already been loaded.
+    //! @return a pointer to the model if found, or nullptr if the model has not been loaded.
+    //! @see GetLoadedModels
+    //! @see LoadModelById
+    DGNPLATFORM_EXPORT DgnModelP FindModelById(DgnModelId modelId);
+
+    //! Get the models currently loaded
+    //! Example:
+    //! \code
+    //! for (DgnModelP model : db.Models().GetLoadedModels())
+    //!     {
+    //!       ...
+    //!     }
+    //! \endcode
+    //! @see LoadModelById
+    T_DgnModelMap const& GetLoadedModels() const {return m_models;}
+
+    DGNPLATFORM_EXPORT BentleyStatus DeleteModel(DgnModelId id);
+    DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
+    DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
+
+    //! Find the ModelId of the model with the specified name name.
+    //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(Utf8CP name) const;
+
+    //! Query for the DgnModelId of the model that owns the specified element.
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId);
+
+    //! Query for the dependency index and type of the specified model
+    //! @param[out] didx    The model's DependencyIndex property value
+    //! @param[out] mtype   The model's type
+    //! @param[in] mid      The model's ID
+    //! @return non-zero if the model does not exist
+    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndexAndType(uint64_t& didx, DgnModelType& mtype, DgnModelId mid);
+
+    //! Make an iterator over the models in this DgnDb.
+    Iterator MakeIterator(ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, itType);}
+
+    //! Make an iterator over the physical models in this DgnDb.
+    Iterator MakePhysicalIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=0"); return it;}
+
+    //! Make an iterator over the drawing models in this DgnDb.
+    Iterator MakeDrawingIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=3"); return it;}
+
+    //! Make an iterator over the sheet models in this DgnDb.
+    Iterator MakeSheetIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=1"); return it;}
+
+    //! Make an iterator over the Redline models in this DgnDb.
+    Iterator MakeRedlineIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=2"); return it;}
+
+    //! Make an iterator over the PhysicalRedline models in this DgnDb.
+    Iterator MakePhysicalRedlineIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=12"); return it;}
+
+    //! Get the dictionary model for this file.
+    //! @see FillDictionaryModelSections
+    DGNPLATFORM_EXPORT struct DictionaryModel* GetDictionaryModel();
+
+    //@}
+
+    //! Create a new model.
+    //! @param[in,out] modelData The data that defines the model. On input, the name and model type at least must be defined. On output, the id and fileid fields will be set.
+    //! @return DGNMODEL_STATUS_Success if the new model was successfully create or non-zero if not.
+    //! @Note Only default settings and properties are created for the new model. The caller should update these values.
+    DGNPLATFORM_EXPORT DgnModelStatus CreateNewModel(Model& modelData);
+
+
+    //! Create a new model
+    //! @param result   If not nullptr, a non-zero error status if model creation is unsuccessful:
+    //!                 DGNMODEL_STATUS_BadSeedModel if the seed is specified but not found;
+    //!                 DGNMODEL_STATUS_ModelTableWriteError if the new model cannot be inserted;
+    //!                 DGNMODEL_STATUS_InvalidModelName if \a name is invalid;
+    //!                 DGNMODEL_STATUS_DuplicateModelName if \a name is already in use.
+    //! @param name     The name of the new model.
+    //! @param seedModel If valid, this function copies the properties of the the seed model in order to create the new model.
+    DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModel);
+
+    //! Generate a model name that is not currently in use in this file
+    //! @param[in]  baseName base model name to start with (optional)
+    //! @return unique name that was generated
+    DGNPLATFORM_EXPORT Utf8String GetUniqueModelName(Utf8CP baseName);
+    //@}
+
+    //! Get a string containing the list of characters that may NOT appear in model names.
+    static Utf8CP GetIllegalCharacters() {return "\\/:*?<>|\"\t\n,=&";}
+
+    //! Determine whether the supplied name is a valid model name.
+    //! @param[in] name The candidate model name to check
+    //! @return true if the model name is valid, false otherwise.
+    //! @note Model names may also not start or end with a space.
+    static bool IsValidName(Utf8StringCR name) {return DgnDbTable::IsValidName(name, GetIllegalCharacters());}
+};
+
+//=======================================================================================
+//! Each item has a row in the DgnItems table
+//=======================================================================================
+struct DgnItems : DgnDbTable
+{
+    friend struct DgnDb;
+
+private:
+    explicit DgnItems(DgnDbR db) : DgnDbTable(db) {}
+
+public:
+    //! Return the key of the item associated with the specified element.
+    //! @note an invalid key will be returned in the case of an error
+    //! @see ECInstanceKey::IsValid
+    DGNPLATFORM_EXPORT ElementItemKey QueryItemKey(DgnElementId);
+
+    //! Delete the item associated with the specified geometry aspect ID
+    DGNPLATFORM_EXPORT BentleyStatus DeleteItem(DgnElementId);
+
+    //! Query the DgnDb for the physical geometry of the specified geometry aspect
+    //! @param[in] geomKey the specified geometry aspect
+    DGNPLATFORM_EXPORT PhysicalGeometryPtr QueryPhysicalGeometry(ElementItemKeyCR itemKey);
+
+    //! Query the DgnDb for the placement of the specified geometry aspect
+    //! @param[out] origin the item's origin (world coordinates)
+    //! @param[out] angles the item's rotation (world coordinates)
+    //! @param[in] geomKey the specified geometry aspect
+    DGNPLATFORM_EXPORT BentleyStatus QueryItemPlacement(DPoint3dR origin, YawPitchRollAnglesR angles, ElementItemKeyCR geomKey);
+};
+
+//=======================================================================================
+//! A "pool" of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElementPool.
+//! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by the DgnElementPool
+//! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
+//! their reference count goes to 0 and the pool is subsequently purged.
+// @bsiclass                                                    Keith.Bentley   09/12
+//=======================================================================================
+struct DgnElementPool
+{
+    //! these values reflect the current state of the elements in the pool
+    struct Totals
+    {
+        uint32_t m_entries;        //! total number of elements (referenced and unreferenced) in the tree
+        uint32_t m_unreferenced;   //! total number of unreferenced elements in the tree
+        int64_t m_allocedBytes;   //! total number of bytes of data held by elements in the tree
+    };
+
+    //! these values can be reset at any point to gauge "element flux"
+    //! (note: the same element may become garbage and then be reclaimed, each such occurrence is reflected here.)
+    struct Statistics
+    {
+        uint32_t m_newElements;    //! number of newly created or loaded elements
+        uint32_t m_unReferenced;   //! number of elements that became garbage since last reset
+        uint32_t m_reReferenced;   //! number of garbage elements that were referenced
+        uint32_t m_purged;         //! number of garbage elements that were purged
+    };
+
+private:
+    DgnElementPool(DgnDbR);
+
+    friend struct ElementHandler;
+    friend struct DgnElement;
+    friend struct DgnModels;
+    friend struct DgnModel;
+    friend struct DgnElements;
+
+    DgnDbR              m_dgndb;
+    struct ElemIdTree*  m_tree;
+    HeapZone            m_heapZone;
+    BeSQLite::StatementCache m_stmts;
+    BeSQLite::SnappyFromBlob m_snappyFrom;
+    BeSQLite::SnappyToBlob   m_snappyTo;
+    mutable BeSQLite::BeDbMutex m_mutex;
+
+    void OnReclaimed(DgnElementCR);
+    void OnUnreferenced(DgnElementCR);
+    ~DgnElementPool();
+    void Destroy();
+    void OnDestroying();
+    void AddDgnElement(DgnElementR);
+
+public:
+    DgnDbR GetDgnDb() {return m_dgndb;}
+    BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
+    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
+    BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql);
+    DGNPLATFORM_EXPORT DgnElementPtr FindOrLoadElement(DgnElementId elementId);
+    void AllocatedMemory(int32_t);
+    void ReturnedMemory(int32_t);
+    void OnChangesetApplied(TxnSummary const&);
+    void OnChangesetCanceled(TxnSummary const&);
+    HeapZone& GetHeapZone() {return m_heapZone;}
+    void ReleaseAndCleanup(DgnElementPtr& element);
+
+    //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
+    //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
+    //! unreferenced elements are freed until the the pool uses no more than targetMem bytes. Least recently used elements are freed first.
+    //! If memTarget <= 0, all unreferenced elements are freed.
+    //! @note: There is no guarantee that the pool will not actually consume more than memTarget bytes after this call, since elements with
+    //! reference counts greater than 0 cannot be purged.
+    DGNPLATFORM_EXPORT void Purge(int64_t memTarget);
+
+    //! Get the total counts for the current state of the pool.
+    DGNPLATFORM_EXPORT Totals GetTotals() const;
+
+    //! Shortcut to get the Totals.m_allocatedBytes member
+    int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}
+
+    //! Get the statistics for the current state of the pool.
+    DGNPLATFORM_EXPORT Statistics GetStatistics() const;
+
+    //! Reset the statistics for the pool.
+    DGNPLATFORM_EXPORT void ResetStatistics();
+
+    //! Attempt to look up an element in the pool by DgnElementId.
+    //! @param[in] id The Id of the element of interest.
+    //! @return the DgnElement of the element or nullptr.
+    DGNPLATFORM_EXPORT DgnElementP FindElement(DgnElementId id) const;
+};
+
+//=======================================================================================
+//! Each graphic element has a row in the DgnElements table
+//=======================================================================================
+struct DgnElements : DgnDbTable
+{
+    friend struct DgnDb;
+
+    struct Listener
+    {
+        virtual ~Listener() {}
+        virtual void _OnElementLoaded(DgnElementR) = 0;
+    };
+
+private:
+    mutable DgnElementPool   m_elementPool;
+    DgnElementId             m_highestElementId;         // 0 means not yet valid. Highest DgnElementId (for current repositoryId)
+    EventHandlerList<Listener>* m_listeners;
+
+    explicit DgnElements(DgnDbR db) : DgnDbTable(db), m_elementPool(db) {m_listeners=nullptr;}
+
+public:
+    void SendOnLoadedEvent(DgnElementR elRef) const;
+
+    DGNPLATFORM_EXPORT bool IsElementIdUsed(DgnElementId id) const;
+    DGNPLATFORM_EXPORT DgnElementId GetHighestElementId();
+    DGNPLATFORM_EXPORT DgnElementId MakeNewElementId();
+
+    //! Get the DgnElementPool for this DgnDb.
+    DgnElementPool& GetPool() const {return m_elementPool;}
+
+    //! Load an element within this DgnDb by its Id. @remarks The element is loaded if necessary.
+    //! @return nullptr if the element does not exist.
+    DgnElementPtr GetElementById(DgnElementId id) const {return m_elementPool.FindOrLoadElement(id);}
+
+    //! Look up an element within this DgnDb by its Id.
+    //! @return nullptr if the element does not exist or is not currently loaded.
+    DgnElementP FindElementById(DgnElementId id) const {return m_elementPool.FindElement(id);}
+
+    HeapZone& GetHeapZone() {return m_elementPool.GetHeapZone();}
+
+        //! Return the key of the element from its ID.
+    //! @note used when you know the DgnElementId, but need a DgnElementKey which also contains the ECClassId.
+    //! @note an invalid key will be returned in the case of an error
+    //! @see ECInstanceKey::IsValid
+    DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId) const;
+
+    //! Delete the specified element.
+    DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
+
+    //! Update the last modified timestamp of the specified element
+    //! @note Updates to the element class automatically cause the last modified time to be updated (via a database trigger).
+    //! This method should only be used to indicate that aspect of the element has changed and that change should be
+    //! considered to be a change to the element itself for change propagation purposes.
+    DGNPLATFORM_EXPORT BentleyStatus UpdateLastModifiedTime(DgnElementId elementId);
+
+    //! Query the last modified time from the specified element
+    DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
+
+    //! Insert an ElementOwnsChildElements relationship between the specified parent element and child element
+    DGNPLATFORM_EXPORT BentleyStatus UpdateParentElementId(DgnElementId parentElementId, DgnElementId childElementId);
+
+    //! Query the ElementOwnsChildElements relationship to find the parent element of the specified (child) element.
+    //! @return the returned DgnElementId will be invalid if the specified element has no parent
+    DGNPLATFORM_EXPORT DgnElementId QueryParentElementId(DgnElementId childElementId) const;
+
+    //! Insert an ElementGroupsElements relationship between the specified element and the member element
+    DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey);
+
+    //! Add element-loaded-from-db event listener.
+    DGNPLATFORM_EXPORT void AddListener(Listener* listener);
+
+    //! Drop element-loaded-from-db event listener.
+    DGNPLATFORM_EXPORT void DropListener(Listener* listener);
+};
+
+//=======================================================================================
+//! Each GeomPart has a row in the DgnGeomParts table
+//=======================================================================================
+struct DgnGeomParts : DgnDbTable
+{
+//__PUBLISH_SECTION_END__
+    friend struct DgnDb;
+
+private:
+    explicit DgnGeomParts(DgnDbR db) : DgnDbTable(db) {}
+    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current repositoryId)
+
+public:
+    DgnGeomPartId GetHighestGeomPartId();
+    DgnGeomPartId MakeNewGeomPartId();
+
+//__PUBLISH_SECTION_START__
+public:
+    // WIP: waiting for IGeometryExt deserialization to be hooked up!
+    //! Query for a geometry part by ID.
+    //! @param[in] geomPartId the ID of the geometry part to load
+    DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
+
+    //! Query for geometry part data by ID.
+    //! @param[out] geometryBlob the binary geometry data of the specified geometry part.
+    //! @param[out] code the optional code of the specified geometry part.
+    //! @param[in] geomPartId the ID of the geometry part to select/load
+    //! @note This method is intended for importers.  Most applications will query for a DgnGeomPart.
+    //! @private
+    DGNPLATFORM_EXPORT BentleyStatus QueryGeomPart(bvector<Byte>& geometryBlob, Utf8StringR code, DgnGeomPartId geomPartId);
+
+    //! Insert a geometry part into the DgnDb.
+    //! @param[in] geomPart geometry part to insert
+    //! @return The DgnGeomPartId for the newly inserted part. Will be invalid if part could not be added.
+    //! @note This method will update the DgnGeomPartId in geomPart.
+    DGNPLATFORM_EXPORT BentleyStatus InsertGeomPart(DgnGeomPartR geomPart);
+
+    //! Insert a geometry part into the DgnDb.
+    //! @param[in] geometryBlob binary geometry data
+    //! @param[in] geometryBlobSize size of geometryBlob in bytes
+    //! @param[in] code the optional code for the specified geometry part
+    //! @note This method is intended for importers.  Most applications with insert a DgnGeomPart.
+    //! @private
+    DGNPLATFORM_EXPORT DgnGeomPartId InsertGeomPart(const void* geometryBlob, int geometryBlobSize, Utf8CP code=nullptr);
+
+    //! Update an existing geometry part in the DgnDb.
+    //! @param[in] geomPart geometry part. Its ID identifies the existing geom part. Its geometry is written to the DgnDb.
+    //! @return non-zero error status if the geom part does not exist or if its ID is invalid
+    DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartR geomPart);
+
+    //! Update an existing geometry part in the DgnDb.
+    //! @param[in] geomPartId ID of the part to update
+    //! @param[in] geometryBlob binary geometry data
+    //! @param[in] geometryBlobSize size of geometryBlob in bytes
+    //! @param[in] code the optional code for the specified geometry part
+    //! @return non-zero error status if the geom part does not exist or if its ID is invalid
+    //! @private
+    DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartId geomPartId, const void* geometryBlob, int geometryBlobSize, Utf8CP code=nullptr);
+
+    //! Insert the ElementGeomUsesParts relationship between an ElementGeom and the geom parts it uses.
+    //! @note Called from ElementItemHandler::InsertPhysicalGeometry, so most apps will not need to call directly.
+    //! @private
+    DGNPLATFORM_EXPORT BentleyStatus InsertElementGeomUsesParts(DgnElementId elementId, DgnGeomPartId geomPartId);
+
+    //! Delete the geometry part associated with the specified ID
+    DGNPLATFORM_EXPORT BentleyStatus DeleteGeomPart(DgnGeomPartId);
+};
+
+//=======================================================================================
+//! The DgnColors holds the Named Colors for a DgnDb. Named Colors are RGB values (no transparency) that may
+//! be named and from a "color book". The entries in the table are identified by DgnTrueColorId's.
+//! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
+//! However, if a book name is supplied, there may not be two entries with the same name.
+//=======================================================================================
+struct DgnColors : DgnDbTable
+{
+//__PUBLISH_SECTION_END__
+private:
+    friend struct DgnDb;
+    mutable DgnTrueColorId m_nextColorId;
+
+    explicit DgnColors(DgnDbR db) : DgnDbTable(db){}
+
+//__PUBLISH_SECTION_START__
+public:
+    //! Add a new entry to this DgnColors.
+    //! @param[in] color The RGB values for the new entry.
+    //! @param[in] name The name of the color (or nullptr).
+    //! @param[in] bookname The name of the colorbook (or nullptr).
+    //! @note For a given bookname, there may not be more than one color with the same name.
+    //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
+    DGNPLATFORM_EXPORT DgnTrueColorId InsertColor(ColorDef color, Utf8CP name=0, Utf8CP bookname=0);
+
+    //! Find the first DgnTrueColorId that has a given color value.
+    //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
+    //! @note If the table holds more than one entry with the same value, the "first" DgnTrueColorId is returned.
+    DGNPLATFORM_EXPORT DgnTrueColorId FindMatchingColor(ColorDef color) const;
+
+    //! Get a color by DgnTrueColorId.
+    //! @param[out] color The RGB value for the color
+    //! @param[out] name The name for the colorId. May be nullptr.
+    //! @param[out] bookname The bookName for the colorId. May be nullptr.
+    //! @param[in] colorId the true color id to query
+    //! @return SUCCESS if colorId was found in the table and the values are valid. ERROR otherwise.
+    DGNPLATFORM_EXPORT BentleyStatus QueryColorById(ColorDef& color, Utf8StringP name, Utf8StringP bookname, DgnTrueColorId colorId) const;
+
+    //! Get color by name and bookname.
+    //! @param[out] color The RGB value for the color
+    //! @param[in] name The name for the colorId.
+    //! @param[in] bookname The bookName for the colorId.
+    //! @return SUCCESS if color was found in the table and the RGB value is valid. ERROR otherwise.
+    DGNPLATFORM_EXPORT BentleyStatus QueryColorByName(ColorDef& color, Utf8StringCR name, Utf8StringCR bookname) const;
+
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    public:
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db) {}
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+        public:
+            DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
+            DGNPLATFORM_EXPORT ColorDef GetColorValue() const;
+            DGNPLATFORM_EXPORT Utf8CP GetName() const;
+            DGNPLATFORM_EXPORT Utf8CP GetBookName() const;
+            Entry const& operator* () const {return *this;}
+        };
+
+    typedef Entry const_iterator;
+    typedef Entry iterator;
+    DGNPLATFORM_EXPORT size_t QueryCount() const;
+    DGNPLATFORM_EXPORT Entry begin() const;
+    Entry end() const {return Entry(nullptr, false);}
+    };
+
+    //! Make an iterator over the named colors in this DgnDb.
+    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/13
+//=======================================================================================
+struct DgnFonts : DgnDbTable
+{
+//__PUBLISH_SECTION_END__
+private:
+    mutable T_FontNumberMap     m_fontNumberMap;
+    mutable bool                m_fontNumberMapLoaded;
+    mutable bool                m_embeddedFontsLoaded;
+    mutable T_FontCatalogMap    m_embeddedFonts;
+    mutable T_FontCatalogMap    m_missingFonts;
+
+    friend struct DgnDb;
+
+    // Ensures the font number map is loaded as a side effect.
+    T_FontNumberMap const& FontNumberMap() const;
+    explicit DgnFonts(DgnDbR db);
+
+//__PUBLISH_SECTION_START__
+private:
+    DgnFonts();
+    DgnFonts(DgnFonts const&); // no copying
+
+public:
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    public:
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db){}
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+        public:
+            DGNPLATFORM_EXPORT uint32_t GetFontId() const;
+            DGNPLATFORM_EXPORT DgnFontType GetFontType() const;
+            DGNPLATFORM_EXPORT Utf8CP GetName() const;
+            bool IsValid() const {return m_isValid && (nullptr!=m_sql->GetSqlStatementP());}
+            Entry const& operator*() const {return *this;}
+        };
+
+    typedef Entry const_iterator;
+    typedef Entry iterator;
+    DGNPLATFORM_EXPORT size_t QueryCount() const;
+    DGNPLATFORM_EXPORT const_iterator begin() const;
+    const_iterator end() const {return Entry(nullptr, false);}
+    };
+//__PUBLISH_SECTION_END__
+    //! Attempts to find a missing font object by the given type and name.
+    DGNPLATFORM_EXPORT DgnFontCP GetMissingFont(DgnFontType fontType, Utf8CP fontName) const;
+
+    //! First attempts to get a missing font object by the given type and name; if it does not exist, one is created.
+    //! v8FontNumber is optional, and is only used with DgnFontType is RSC.
+    DGNPLATFORM_EXPORT DgnFontCP GetOrCreateMissingFont(DgnFontType, Utf8CP fontName, uint32_t v8FontNumber = (uint32_t)-1) const;
+
+    // *** DO NOT USE *** Use AcquireFontNumber instead. This is a low-level method to support DgnV8ProjectImpoter.
+    DGNPLATFORM_EXPORT BentleyStatus InsertFontNumberMappingDirect(uint32_t id, DgnFontType, Utf8CP name);
+
+    // *** DO NOT USE *** This is used to coordinate with the DgnV8 importer.
+    DGNPLATFORM_EXPORT bool IsFontNumberMapLoaded() const;
+
+//__PUBLISH_SECTION_START__
+
+/** @cond BENTLEY_SDK_Publisher */
+    //! Embeds the given font in this DgnDb.
+    DGNPLATFORM_EXPORT DgnFontCP EmbedFont(DgnFontCR);
+
+    //! Provides a DgnDb-specific font number for the given font. A new number is added if a mapping does not already exist.
+    DGNPLATFORM_EXPORT BentleyStatus AcquireFontNumber(uint32_t& acquiredID, DgnFontCR);
+
+    //! Queries the DgnDb font map to resolve a font to a number. If a mapping does not already exist, one is <b>not</b> added.
+    DGNPLATFORM_EXPORT BentleyStatus FindFontNumber(uint32_t* foundID, DgnFontCR) const;
+
+    //! Queries the DgnDb font map to resolve a number to a font. If a mapping does not already exist, one is <b>not</b> added.
+    DGNPLATFORM_EXPORT DgnFontCP FindFont(uint32_t fontNumber) const;
+
+    //! Gets a collection of this DgnDb's embedded fonts. This DgnDb owns these font objects.
+    DGNPLATFORM_EXPORT T_FontCatalogMap const& EmbeddedFonts() const;
+/** @endcond */
+
+    //! Get an iterator over the fonts in this DgnDb.
+    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+};
+
+
+/** @cond BENTLEY_SDK_Internal */
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct DgnMaterials : DgnDbTable
+{
+private:
+    friend struct DgnDb;
+    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) { }
+
+public:
+    struct Row
+    {
+    private:
+        friend struct DgnMaterials;
+
+        DgnMaterialId       m_materialId;
+        Utf8String          m_name;
+        Utf8String          m_palette;
+
+    public:
+        Row() { }
+        Row(Utf8CP name, Utf8CP palette, DgnMaterialId id = DgnMaterialId()) : m_materialId(id), m_name(name), m_palette(palette) { }
+
+        DgnMaterialId GetId() const { return m_materialId; }
+        Utf8CP GetName() const { return m_name.c_str(); }
+        Utf8CP GetPalette() const { return m_palette.c_str(); }
+        void SetName(Utf8CP val) { m_name = val; }
+        void SetPalette(Utf8CP val) { m_palette = val; }
+        bool IsValid() const { return m_materialId.IsValid(); }
+    };
+
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    public:
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db) { }
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+        public:
+            DGNPLATFORM_EXPORT DgnMaterialId GetId() const;
+            DGNPLATFORM_EXPORT Utf8CP GetName() const;
+            DGNPLATFORM_EXPORT Utf8CP GetPalette() const;
+            Entry const& operator* () const {return *this;}
+        };
+
+    typedef Entry const_iterator;
+    typedef Entry iterator;
+    DGNPLATFORM_EXPORT size_t QueryCount() const;
+    DGNPLATFORM_EXPORT Entry begin() const;
+    Entry end() const {return Entry(nullptr, false);}
+    };
+
+    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertMaterial(Row& row);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteMaterial(DgnMaterialId materialId);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateMaterial(Row const& row);
+    DGNPLATFORM_EXPORT Row QueryMaterialById(DgnMaterialId id) const;
+};
+/** @endcond */
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/13
+//=======================================================================================
+struct DgnUnits : NonCopyableClass
+{
+    struct GeoTransform
+    {
+        RotMatrix   m_matrix;
+        double      m_xRadius;
+        double      m_yRadius;
+        bool        m_isValid;
+
+        GeoTransform() : m_isValid(false) {}
+        void Init(DgnUnits const& units);
+    };
+
+private:
+    friend struct DgnDb;
+    DgnDbR          m_dgndb;
+    double          m_azimuth;
+    double          m_latitude;
+    double          m_longitude;
+    DRange3d        m_extent;
+    DPoint3d        m_globalOrigin;      //!< in meters
+    DPoint2d        m_geoOriginBasis;
+    bool            m_hasCheckedForGCS;
+    bool            m_hasGeoOriginBasis;
+    mutable GeoTransform m_geoTransform;
+    GeoCoordinates::DgnGCS* m_gcs;
+    IGeoCoordinateServicesP m_geoServices;
+
+    DgnUnits(DgnDbR db);
+    void LoadProjectExtents();
+
+public:
+    DGNPLATFORM_EXPORT void Save();
+    DGNPLATFORM_EXPORT DgnFileStatus Load();
+
+    DgnDbR GetDgnDb() const {return m_dgndb;}
+
+    void SetGlobalOrigin(DPoint3dCR origin) {m_globalOrigin=origin;}
+    DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
+
+    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProjectExtents(DRange3dCR newExtents);
+
+    //! (Re-)compute the project extents by looking at the range tree.
+    DGNPLATFORM_EXPORT DRange3d ComputeProjectExtents();
+
+    //! Get the union of the range (axis-aligned bounding box) of all physical elements in this DgnDb
+    DGNPLATFORM_EXPORT DRange3d GetProjectExtents();
+
+    //! Convert a GeoPoint to an XYZ point
+    //! @param[out] outUors     The output XYZ point
+    //! @param[in] inLatLong    The input GeoPoint
+    //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
+    DGNPLATFORM_EXPORT BentleyStatus UorsFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong);
+
+    //! Convert a an XYZ point to a GeoPoint
+    //! @param[out] outLatLong  The output GeoPoint
+    //! @param[in] inUors    The input XYZ point
+    //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
+    DGNPLATFORM_EXPORT BentleyStatus LatLongFromUors(GeoPointR outLatLong, DPoint3dCR inUors);
+
+    //! Query the GCS of this DgnDb, if any.
+    //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
+    DGNPLATFORM_EXPORT GeoCoordinates::DgnGCS* GetDgnGCS();
+
+    //! Get the latitude of the origin in the global coordinate system of this DgnDb.
+    double GetOriginLatitude() const {return m_latitude;}
+
+    //! Get the longitude of the origin in the global coordinate system of this DgnDb.
+    double GetOriginLongitude() const {return m_longitude;}
+
+    //! Get the coordinates in DgnCoordSystem::World of the origin latitude and longitude.
+    DPoint2d GetGeoOriginBasis() const {return m_geoOriginBasis;}
+
+    //! Get the azimuth (true north offset) of the global coordinate system of this DgnDb.
+    double GetAzimuth() const {return m_azimuth;}
+
+    //! Set the latitude of the origin in the global coordinate system of this DgnDb.
+    void SetOriginLatitude(double originLat) {m_latitude = originLat; m_geoTransform.m_isValid = false;}
+
+    //! Set the longitude of the origin in the global coordinate system of this DgnDb.
+    void SetOriginLongitude(double originLong) {m_longitude = originLong;m_geoTransform.m_isValid = false;}
+
+    //! Set the coordinates in DgnCoordSystem::World of the origin latitude and longitude.
+    void SetGeoOriginBasis(DPoint2dCR basis) {m_geoOriginBasis = basis; m_hasGeoOriginBasis = true; m_geoTransform.m_isValid = false;}
+
+    //! Set the azimuth of the global coordinate system of this DgnDb.
+    void SetAzimuth(double azimuth) {m_azimuth = azimuth; m_geoTransform.m_isValid = false;}
+
+    //! Utility function to check if this DgnDb contains the necessary information to convert between
+    //! geographic and Cartesian coordinate systems.
+    //! @return true if ConvertToWorldPoint and ConvertToGeoPoint can succeed.
+    bool CanConvertBetweenGeoAndWorld() const{return m_hasGeoOriginBasis;}
+
+    //! @return true if point is close enough to this coordinate system's origin to be translated accurately.
+    DGNPLATFORM_EXPORT bool IsGeoPointWithinCoordinateSystem(GeoPointCR point) const;
+
+    //! Convert from WGS84 to storage units (millimeters).
+    //! @return ERROR if the DgnDb does not have a valid latitude and longitude, SUCCESS otherwise
+    DGNPLATFORM_EXPORT BentleyStatus ConvertToWorldPoint(DPoint3dR worldPoint, GeoPointCR geoPoint) const;
+
+    //! Convert from Storage units to WGS84.
+    //! @return ERROR if the DgnDb does not have a valid latitude and longitude, SUCCESS otherwise
+    DGNPLATFORM_EXPORT BentleyStatus ConvertToGeoPoint(GeoPointR geoPoint, DPoint3dCR worldPoint) const;
+};
+
+//__PUBLISH_SECTION_END__
+
+//=======================================================================================
+// Used in persistence; do not change values.
+// These are string defines so that they can be easily concatenated into queries.
+// @bsiclass
+//=======================================================================================
+#define DGN_STYLE_TYPE_Line "1"
+#define DGN_STYLE_TYPE_AnnotationText "2"
+#define DGN_STYLE_TYPE_AnnotationFrame "3"
+#define DGN_STYLE_TYPE_AnnotationLeader "4"
+#define DGN_STYLE_TYPE_TextAnnotationSeed "5"
+
+//__PUBLISH_SECTION_START__
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct DgnStyles : DgnDbTable
+{
+//__PUBLISH_SECTION_END__
+private:
+    friend struct DgnDb;
+
+    struct DgnLineStyles* m_lineStyles;
+    struct DgnAnnotationTextStyles* m_annotationTextStyles;
+    struct DgnAnnotationFrameStyles* m_annotationFrameStyles;
+    struct DgnAnnotationLeaderStyles* m_annotationLeaderStyles;
+    struct DgnTextAnnotationSeeds* m_textAnnotationSeeds;
+
+    explicit DgnStyles(DgnDbR);
+    ~DgnStyles();
+
+public:
+//__PUBLISH_SECTION_START__
+    //! Provides accessors for line styles.
+    DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
+
+    //! Provides accessors for annotation text styles.
+    DGNPLATFORM_EXPORT struct DgnAnnotationTextStyles& AnnotationTextStyles();
+
+    //! Provides accessors for annotation frame styles.
+    DGNPLATFORM_EXPORT struct DgnAnnotationFrameStyles& AnnotationFrameStyles();
+
+    //! Provides accessors for annotation leader styles.
+    DGNPLATFORM_EXPORT struct DgnAnnotationLeaderStyles& AnnotationLeaderStyles();
+
+    //! Provides accessors for text annotation seeds.
+    DGNPLATFORM_EXPORT struct DgnTextAnnotationSeeds& TextAnnotationSeeds();
+};
+
+//=======================================================================================
+// Links are shared resources, referenced by elements. As such, it doesn't make sense to expose an explicit API to create and delete them. Either the detach API will clean it up if it's the last use, or this will be part of a larger GC scheme for shared resources.
+// @bsiclass
+//=======================================================================================
+struct DgnLinks : public DgnDbTable
+{
+//__PUBLISH_SECTION_END__
+private:
+    DEFINE_T_SUPER(DgnDbTable);
+    friend struct DgnDb;
+
+    DgnLinks(DgnDbR db) : T_Super(db) {}
+
+public:
+//__PUBLISH_SECTION_START__
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct Iterator : public BeSQLite::DbTableIterator
+    {
+    private:
+        DEFINE_T_SUPER(BeSQLite::DbTableIterator);
+
+    public:
+        Iterator(DgnDbCR db) : T_Super((BeSQLiteDbCR)db) {}
+
+        //=======================================================================================
+        // @bsiclass
+        //=======================================================================================
+        struct Entry : public DbTableIterator::Entry, public std::iterator < std::input_iterator_tag, Entry const >
+        {
+        private:
+            DEFINE_T_SUPER(DbTableIterator::Entry);
+            friend struct Iterator;
+
+            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+
+        public:
+            DGNPLATFORM_EXPORT DgnLinkId GetId() const;
+            DGNPLATFORM_EXPORT DgnLinkType GetType() const;
+            DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
+            Entry const& operator* () const { return *this; }
+        }; // Entry
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(nullptr, false); }
+        DGNPLATFORM_EXPORT size_t QueryCount() const;
+    }; // Iterator
+
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct OnElementIterator : public BeSQLite::DbTableIterator
+    {
+    private:
+        DEFINE_T_SUPER(BeSQLite::DbTableIterator);
+
+        DgnElementKey m_elementKey;
+
+    public:
+        OnElementIterator(DgnDbCR db, DgnElementKey elementKey) : T_Super((BeSQLiteDbCR)db), m_elementKey(elementKey) {}
+
+        //=======================================================================================
+        // @bsiclass
+        //=======================================================================================
+        struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
+        {
+        private:
+            DEFINE_T_SUPER(DbTableIterator::Entry);
+            friend struct OnElementIterator;
+
+            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+
+        public:
+            DGNPLATFORM_EXPORT DgnLinkId GetId() const;
+            DGNPLATFORM_EXPORT DgnLinkType GetType() const;
+            DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
+            Entry const& operator* () const { return *this; }
+
+        }; // Entry
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(nullptr, false); }
+        DGNPLATFORM_EXPORT size_t QueryCount() const;
+    }; // OnElementIterator
+
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct ReferencesLinkIterator : public BeSQLite::DbTableIterator
+    {
+    private:
+        DEFINE_T_SUPER(BeSQLite::DbTableIterator);
+
+        DgnLinkId m_linkId;
+
+    public:
+        ReferencesLinkIterator(DgnDbCR db, DgnLinkId linkId) : T_Super((BeSQLiteDbCR)db), m_linkId(linkId) {}
+
+        //=======================================================================================
+        // @bsiclass
+        //=======================================================================================
+        struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
+        {
+        private:
+            DEFINE_T_SUPER(DbTableIterator::Entry);
+            friend struct OnElementIterator;
+
+            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+
+        public:
+            DGNPLATFORM_EXPORT DgnElementKey GetKey() const;
+            Entry const& operator* () const { return *this; }
+
+        }; // Entry
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(nullptr, false); }
+        DGNPLATFORM_EXPORT size_t QueryCount() const;
+    }; // ReferencesLinkIterator
+
+    DGNPLATFORM_EXPORT DgnLinkPtr QueryById(DgnLinkId) const;
+    Iterator MakeIterator() const { return Iterator(m_dgndb); }
+    OnElementIterator MakeOnElementIterator(DgnElementKey elementKey) const { return OnElementIterator(m_dgndb, elementKey); }
+    ReferencesLinkIterator MakeReferencesLinkIterator(DgnLinkId linkId) const { return ReferencesLinkIterator(m_dgndb, linkId); }
+    DGNPLATFORM_EXPORT BentleyStatus Update(DgnLinkCR);
+
+    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkR);
+    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkId);
+    DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
+    DGNPLATFORM_EXPORT void PurgeUnused();
+}; // DgnLinks
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

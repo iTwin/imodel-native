@@ -1,0 +1,15 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: docs/DgnPlatformOverviewDocs.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+PolicyFile = $(InternalSystemPolicy)
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------
+#   Link overview pages to build context so that consuming SDKs can use it to generate the final docs
+#----------------------------------------------------------------------------------------
+always:
+    @CreateSymLinks.py -d"$(BuildContext)Docs/Source/DgnPlatform=$(_MakeFilePath)overview"

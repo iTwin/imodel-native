@@ -16,12 +16,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! This base class is a specialized collection that maps an integer key to either an "integer" (Int64) or a "real" (double) value. It it meant to be used by the Annotation style and seed systems by providing a re-usable way to store style properties, which can be of varying types. It also provides an easy way to store either underlying property values, or overrides to a style with the same kind of collection. When created, this collection has no values in it; they are assumed to be default. In other words, this only stores deltas from defaults.
+//! @note While you can technically map a key to both value types, this should not be done in practice.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationPropertyBag : public RefCountedBase
 {
-    typedef Int32 T_Key;
-    typedef Int64 T_Integer;
+    typedef int32_t T_Key;
+    typedef int64_t T_Integer;
     typedef double T_Real;
 
 //__PUBLISH_SECTION_END__

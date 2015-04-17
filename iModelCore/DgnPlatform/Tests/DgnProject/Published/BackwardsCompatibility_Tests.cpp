@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/BackwardsCompatibility_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -19,25 +19,25 @@ struct BackwardsCompatibilityTests : public testing::Test
         {
         
         }
-        void verifyElements(DgnFileP dgnFile,DgnProjectR project,BeFileName name )
+        void verifyElements(DgnFileP dgnFile,DgnDbR project,BeFileName name )
             {
              bset<ElementId> elements;
 			// FileOpenMode f = 2;
 
         dgnFile->FillDictionaryModel();
-        FOR_EACH(PersistentElementRefP ref, dgnFile->GetDictionaryModel()->GetElementsCollection())
+        FOR_EACH(PersistentDgnElementP ref, dgnFile->GetDictionaryModel()->GetElementsCollection())
             elements.insert(ref->GetElementId());
 
         FOR_EACH(DgnModelTable::Iterator::Entry const& entry, dgnFile->MakeModelIterator(MODEL_ITERATE_All))
         {
             DgnModelP model = dgnFile->LoadModelById(entry.GetModelId());
 
-            FOR_EACH(PersistentElementRefP ref, model->GetElementsCollection())
+            FOR_EACH(PersistentDgnElementP ref, model->GetElementsCollection())
                 elements.insert(ref->GetElementId());
         }
 
         ECN::ECSchemaP dgnschema = NULL;
-        SchemaManagerStatus schemaStat = project.GetEC().GetSchemaManager().GetECSchema(dgnschema, "dgn");
+        SchemaManagerStatus schemaStat = project.Schemas().GetECSchema(dgnschema, "dgn");
         ASSERT_EQ(SCHEMAMANAGER_Success, schemaStat);
         ECN::ECClassP elementClass = dgnschema->GetClassP(L"Element");
         ASSERT_TRUE(elementClass != NULL);
@@ -58,7 +58,7 @@ struct BackwardsCompatibilityTests : public testing::Test
                 ASSERT_TRUE(status);
                //  dgnFile->isGraphicElement(ElementId(id));
                 BeTest::SetThrowOnAssert(false);// just to ignore few element with no 
-                ElementRefP ref = dgnFile->GetElementById(ElementId(id)).get();
+                DgnElementP ref = dgnFile->GetElementById(ElementId(id)).get();
                BeTest::SetThrowOnAssert(true);
                 if(ref!=NULL)
                 elementInstances.insert(ElementId(id));
@@ -106,7 +106,7 @@ TEST_F(BackwardsCompatibilityTests, openGraphite05In0501)
             }
         TestDataManager tdm(outFullFileName, OPENMODE_READWRITE, true);
         DgnFileP dgnFile = tdm.GetLoadedDgnPtr();
-        DgnProjectR project = dgnFile->GetDgnProject();
+        DgnDbR project = dgnFile->GetDgnDb();
         verifyElements(dgnFile,project,name);
         }
     } 
@@ -138,7 +138,7 @@ TEST_F(BackwardsCompatibilityTests, openGraphite05In0501)
             }
         TestDataManager tdm(outFullFileName, OPENMODE_READWRITE, true);
         DgnFileP dgnFile = tdm.GetLoadedDgnPtr();
-        DgnProjectR project = dgnFile->GetDgnProject();
+        DgnDbR project = dgnFile->GetDgnDb();
         verifyElements(dgnFile,project,name);
         }
     } 	

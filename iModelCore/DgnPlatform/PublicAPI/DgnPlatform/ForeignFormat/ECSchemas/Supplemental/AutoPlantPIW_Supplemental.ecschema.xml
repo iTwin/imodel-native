@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="autoplant_PIW_Supplemental_DgnDbConversion" nameSpacePrefix="sappdw" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.07" prefix="bsca" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.07">
+            <PrimarySchemaName>autoplant_PIW</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+            <Precedence>998</Precedence>
+            <Purpose>DgnProjectImporter hints for the AutoPlant schema. Convert specially marked NamedGroups to assemblies.</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+    <ECClass typeName="AUTOPLANT_TAGGED_ITEM" isStruct="True" isDomainClass="True">
+        <ECCustomAttributes>
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.07">
+                <NamedGroupIsAssembly>True</NamedGroupIsAssembly>
+            </ECDbClassHint>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+

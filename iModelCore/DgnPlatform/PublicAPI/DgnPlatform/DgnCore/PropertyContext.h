@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/PropertyContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -82,11 +82,10 @@ enum class StyleParamsRemapping
 enum ElementProperties
 {
     ELEMENT_PROPERTY_None               = (0),
-    ELEMENT_PROPERTY_Level              = (1<<0),
+    ELEMENT_PROPERTY_Category           = (1<<0),
     ELEMENT_PROPERTY_Color              = (1<<1),
     ELEMENT_PROPERTY_Linestyle          = (1<<2),
     ELEMENT_PROPERTY_Font               = (1<<3),
-    ELEMENT_PROPERTY_TextStyle          = (1<<4),
     ELEMENT_PROPERTY_DimStyle           = (1<<5),
     ELEMENT_PROPERTY_MLineStyle         = (1<<6),
     ELEMENT_PROPERTY_Material           = (1<<7),
@@ -133,28 +132,28 @@ public:
 //! @note Set methods ignored when using IQueryProperties. 
 // @bsiclass 
 //=======================================================================================
-class EachLevelArg : public EachPropertyBaseArg
+class EachCategoryArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    LevelId m_storedValue;
+    DgnCategoryId m_storedValue;
 
 public:
-    DGNPLATFORM_EXPORT EachLevelArg (LevelId stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachCategoryArg (DgnCategoryId stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
 public:
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT LevelId GetStoredValue ();
+    DGNPLATFORM_EXPORT DgnCategoryId GetStoredValue ();
 
     //! Get the effective value of the property that is used for display.  This is computed from
     //! the stored value considering header overrides.
-    DGNPLATFORM_EXPORT LevelId GetEffectiveValue ();
+    DGNPLATFORM_EXPORT DgnCategoryId GetEffectiveValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (LevelId newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (DgnCategoryId newVal);
 };
 
 //=======================================================================================
@@ -166,25 +165,25 @@ class EachColorArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    UInt32  m_storedValue;
+    uint32_t m_storedValue;
 
 public:
-    DGNPLATFORM_EXPORT EachColorArg (UInt32 stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachColorArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
 public:
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT UInt32 GetStoredValue ();
+    DGNPLATFORM_EXPORT uint32_t GetStoredValue ();
 
     //! Get the effective value of the property that is used for display.  This is computed from
     //! the stored value considering header overrides.  If the stored value is BYCELL or BYLEVEL,
     //! the effective value will resolve the value from the cell or level respectively.
-    DGNPLATFORM_EXPORT UInt32 GetEffectiveValue ();
+    DGNPLATFORM_EXPORT uint32_t GetEffectiveValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (UInt32 newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (uint32_t newVal);
 };
 
 //=======================================================================================
@@ -196,24 +195,24 @@ class EachLineStyleArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    Int32             m_storedValue;
+    int32_t           m_storedValue;
     LineStyleParams   m_params;
     bool              m_paramsChanged;
 
 public:
-    DGNPLATFORM_EXPORT EachLineStyleArg (Int32 stored, LineStyleParams const*, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachLineStyleArg (int32_t stored, LineStyleParams const*, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
 public:
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT Int32 GetStoredValue ();
+    DGNPLATFORM_EXPORT int32_t GetStoredValue ();
 
     //! Get the effective value of the property that is used for display.  This is computed from
     //! the stored value considering header overrides.  If the stored value is BYCELL or BYLEVEL,
     //! the effective value will resolve the value from the cell or level respectively.
-    DGNPLATFORM_EXPORT Int32 GetEffectiveValue ();
+    DGNPLATFORM_EXPORT int32_t GetEffectiveValue ();
 
     //! For this linestyle value stored on the element, get the corresponding stored line style parameters.
     DGNPLATFORM_EXPORT LineStyleParams const* GetParams ();
@@ -225,7 +224,7 @@ public:
     DGNPLATFORM_EXPORT bool GetParamsChanged ();
 
     //! Assign a linestyle in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (Int32 newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (int32_t newVal);
     
     //! Change the linestyle params.  If NULL is passed in, then the ACTIVE linestyle params are used.
     //! NOTE: You must set the line style using SetStoredValue() before setting the parameters.
@@ -244,20 +243,20 @@ class EachFontArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    UInt32  m_storedValue;
+    uint32_t m_storedValue;
 
 public:
-    DGNPLATFORM_EXPORT EachFontArg (UInt32 stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachFontArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
 public:
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT UInt32 GetStoredValue ();
+    DGNPLATFORM_EXPORT uint32_t GetStoredValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (UInt32 newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (uint32_t newVal);
 };
 
 //=======================================================================================
@@ -269,11 +268,11 @@ class EachTextStyleArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    UInt32                      m_storedValue;
+    uint32_t                    m_storedValue;
     StyleParamsRemapping        m_paramsRemapping;
 
 public:
-    DGNPLATFORM_EXPORT EachTextStyleArg (UInt32 stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachTextStyleArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
@@ -284,10 +283,10 @@ public:
     DGNPLATFORM_EXPORT StyleParamsRemapping GetRemappingAction ();
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT UInt32 GetStoredValue ();
+    DGNPLATFORM_EXPORT uint32_t GetStoredValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (UInt32 newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (uint32_t newVal);
 
     //! Assign an action to be applied to the element related to this style.
     //! Ignored for IQueryProperties.
@@ -303,11 +302,11 @@ class EachDimStyleArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    UInt64                   m_storedValue;
+    uint64_t                 m_storedValue;
     StyleParamsRemapping        m_paramsRemapping;
 
 public:
-    DGNPLATFORM_EXPORT EachDimStyleArg (UInt64 stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachDimStyleArg (uint64_t stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
@@ -316,8 +315,8 @@ public:
     //! Get the remapping action the will be applied to the element.
     //! Ignored for IQueryProperties.
     DGNPLATFORM_EXPORT StyleParamsRemapping GetRemappingAction ();
-    DGNPLATFORM_EXPORT UInt64 GetStoredValue ();
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (UInt64 newVal);
+    DGNPLATFORM_EXPORT uint64_t GetStoredValue ();
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (uint64_t newVal);
     DGNPLATFORM_EXPORT StatusInt SetRemappingAction (StyleParamsRemapping);
 };
 
@@ -330,11 +329,11 @@ class EachMLineStyleArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    UInt64                   m_storedValue;
+    uint64_t                 m_storedValue;
     StyleParamsRemapping        m_paramsRemapping;
 
 public:
-    DGNPLATFORM_EXPORT EachMLineStyleArg (UInt64 stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachMLineStyleArg (uint64_t stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
@@ -345,10 +344,10 @@ public:
     DGNPLATFORM_EXPORT StyleParamsRemapping GetRemappingAction ();
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT UInt64 GetStoredValue ();
+    DGNPLATFORM_EXPORT uint64_t GetStoredValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (UInt64 newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (uint64_t newVal);
 
     //! Assign an action to be applied to the element related to this style.
     //! Ignored for IQueryProperties.
@@ -387,55 +386,25 @@ class EachWeightArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    UInt32  m_storedValue;
+    uint32_t m_storedValue;
 
 public:
-    DGNPLATFORM_EXPORT EachWeightArg (UInt32 stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachWeightArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
 public:
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT UInt32 GetStoredValue ();
+    DGNPLATFORM_EXPORT uint32_t GetStoredValue ();
 
     //! Get the effective value of the property that is used for display.  This is computed from
     //! the stored value considering header overrides.  If the stored value is BYCELL or BYLEVEL,
     //! the effective value will resolve the value from the cell or level respectively.
-    DGNPLATFORM_EXPORT UInt32 GetEffectiveValue ();
+    DGNPLATFORM_EXPORT uint32_t GetEffectiveValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (UInt32 newVal);
-};
-
-//=======================================================================================
-//! Element class information supplied to "Each" callback.
-//! @note Set methods ignored when using IQueryProperties. 
-// @bsiclass 
-//=======================================================================================
-class EachElementClassArg : public EachPropertyBaseArg
-{
-//__PUBLISH_SECTION_END__
-private:
-
-DgnElementClass m_storedValue;
-
-public:
-    DGNPLATFORM_EXPORT EachElementClassArg (DgnElementClass stored, PropsCallbackFlags flags, PropertyContext&);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-public:
-
-    //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT  DgnElementClass GetStoredValue ();
-
-    //! Get the effective value of the property that is used for display.  This is computed from
-    //! the stored value considering header overrides.
-    DGNPLATFORM_EXPORT  DgnElementClass GetEffectiveValue ();
-
-    //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (DgnElementClass newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (uint32_t newVal);
 };
 
 //=======================================================================================
@@ -473,25 +442,25 @@ class EachDisplayPriorityArg : public EachPropertyBaseArg
 //__PUBLISH_SECTION_END__
 private:
 
-    Int32                       m_storedValue;
+int32_t                     m_storedValue;
 
 public:
-    DGNPLATFORM_EXPORT EachDisplayPriorityArg (Int32 stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachDisplayPriorityArg (int32_t stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
 public:
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT Int32 GetStoredValue ();
+DGNPLATFORM_EXPORT int32_t GetStoredValue ();
 
     //! Get the effective value of the property that is used for display.  This is computed from
     //! the stored value considering header overrides.  If the stored value is BYCELL,
     //! the effective value will resolve the value from the cell.
-    DGNPLATFORM_EXPORT Int32 GetEffectiveValue ();
+DGNPLATFORM_EXPORT int32_t GetEffectiveValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (Int32 newVal);
+DGNPLATFORM_EXPORT StatusInt SetStoredValue (int32_t newVal);
 };
 
 //=======================================================================================
@@ -504,11 +473,11 @@ class EachElementTemplateArg : public EachPropertyBaseArg
 //__PUBLISH_SECTION_END__
 private:
 
-    ElementId                   m_storedValue;
+    DgnElementId                m_storedValue;
     bool                        m_applyDefaultSymb;
 
 public:
-    DGNPLATFORM_EXPORT EachElementTemplateArg (ElementId stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachElementTemplateArg (DgnElementId stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
@@ -518,10 +487,10 @@ public:
     DGNPLATFORM_EXPORT bool GetApplyDefaultSymbology ();
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT ElementId GetStoredValue ();
+    DGNPLATFORM_EXPORT DgnElementId GetStoredValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (ElementId newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (DgnElementId newVal);
 
     //! Set to true to apply the template's default symbology to the element.
     DGNPLATFORM_EXPORT StatusInt SetApplyDefaultSymbology (bool);
@@ -585,7 +554,7 @@ public:
 struct  IProcessProperties
 {
     //! Called by the element handler to report levels stored on an element.
-    virtual void _EachLevelCallback (EachLevelArg&) {}
+    virtual void _EachCategoryCallback (EachCategoryArg&) {}
 
     //! Called by the element handler to report colors stored on an element.
     virtual void _EachColorCallback (EachColorArg&) {}
@@ -610,9 +579,6 @@ struct  IProcessProperties
 
     //! Called by the element handler to report weights stored on an element.
     virtual void _EachWeightCallback (EachWeightArg&) {}
-
-    //! Called by the element handler to report classes stored on an element.
-    virtual void _EachElementClassCallback (EachElementClassArg&) {}
 
     //! Called by the element handler to report transparencies stored on an element.
     virtual void _EachTransparencyCallback (EachTransparencyArg&) {}
@@ -699,16 +665,13 @@ struct PropertyContext
 //__PUBLISH_SECTION_END__
 private:
 
-typedef bvector<ElemHeaderOverrides> HeaderOvrArray;
-
 IQueryProperties*       m_queryObj;
 IEditProperties*        m_editObj;
 
 ElementHandleCP         m_elmHandle;
 HitPathCP               m_hitPath;
-HeaderOvrArray          m_headerOvr;
 bool                    m_elementChanged;
-LevelId                 m_currentLevel; // Needed for effective values...
+DgnCategoryId           m_currentCategory; // Needed for effective values...
 
 public:
 
@@ -748,42 +711,33 @@ DGNPLATFORM_EXPORT void SetCurrentElemHandleP (ElementHandleCP eh);
 HitPathCP GetQueryPath () {return m_hitPath;}
 void SetQueryPath (HitPathCP path) {m_hitPath = path;}
 
-LevelId GetCurrentLevelID () {return m_currentLevel;}
-void SetCurrentLevelID (LevelId level) {m_currentLevel = level;}
+DgnCategoryId GetCurrentCategoryID () {return m_currentCategory;}
+void SetCurrentCategoryID (DgnCategoryId level) {m_currentCategory = level;}
 
-DGNPLATFORM_EXPORT void PushOverrides (ElemHeaderOverridesP);
-DGNPLATFORM_EXPORT void PopOverrides ();
-DGNPLATFORM_EXPORT int GetOverridesStackDepth ();
-DGNPLATFORM_EXPORT ElemHeaderOverridesCP GetHeaderOverrides ();
-
-DGNPLATFORM_EXPORT bool DoColorCallback (UInt32* pNewColor, EachColorArg& arg);
-DGNPLATFORM_EXPORT bool DoColorCallback (UInt32* pNewColor, EachColorArg const& arg) {return DoColorCallback (pNewColor, const_cast<EachColorArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoLevelCallback (LevelId* pNewLevelID, EachLevelArg& arg);
-DGNPLATFORM_EXPORT bool DoLevelCallback (LevelId* pNewLevelID, EachLevelArg const& arg) {return DoLevelCallback (pNewLevelID, const_cast<EachLevelArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoLineStyleCallback (Int32* pNewStyleID, EachLineStyleArg& arg);
-DGNPLATFORM_EXPORT bool DoLineStyleCallback (Int32* pNewStyleID, EachLineStyleArg const& arg) {return DoLineStyleCallback (pNewStyleID, const_cast<EachLineStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoFontCallback (UInt32* pNewFontNo, EachFontArg& arg);
-DGNPLATFORM_EXPORT bool DoFontCallback (UInt32* pNewFontNo, EachFontArg const& arg) {return DoFontCallback (pNewFontNo, const_cast<EachFontArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoTextStyleCallback (UInt32* pNewStyleID, EachTextStyleArg& arg);
-DGNPLATFORM_EXPORT bool DoTextStyleCallback (UInt32* pNewStyleID, EachTextStyleArg const& arg) {return DoTextStyleCallback (pNewStyleID, const_cast<EachTextStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoDimStyleCallback (UInt64* pNewStyleID, EachDimStyleArg& arg);
-DGNPLATFORM_EXPORT bool DoDimStyleCallback (UInt64* pNewStyleID, EachDimStyleArg const& arg) {return DoDimStyleCallback (pNewStyleID, const_cast<EachDimStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoMLineStyleCallback (ElementId* pNewStyleID, EachMLineStyleArg& arg);
-DGNPLATFORM_EXPORT bool DoMLineStyleCallback (ElementId* pNewStyleID, EachMLineStyleArg const& arg) {return DoMLineStyleCallback (pNewStyleID, const_cast<EachMLineStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoColorCallback (uint32_t* pNewColor, EachColorArg& arg);
+DGNPLATFORM_EXPORT bool DoColorCallback (uint32_t* pNewColor, EachColorArg const& arg) {return DoColorCallback (pNewColor, const_cast<EachColorArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoCategoryCallback (DgnCategoryId* pNewCategoryID, EachCategoryArg& arg);
+DGNPLATFORM_EXPORT bool DoCategoryCallback (DgnCategoryId* pNewCategoryID, EachCategoryArg const& arg) {return DoCategoryCallback (pNewCategoryID, const_cast<EachCategoryArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoLineStyleCallback (int32_t* pNewStyleID, EachLineStyleArg& arg);
+DGNPLATFORM_EXPORT bool DoLineStyleCallback (int32_t* pNewStyleID, EachLineStyleArg const& arg) {return DoLineStyleCallback (pNewStyleID, const_cast<EachLineStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoFontCallback (uint32_t* pNewFontNo, EachFontArg& arg);
+DGNPLATFORM_EXPORT bool DoFontCallback (uint32_t* pNewFontNo, EachFontArg const& arg) {return DoFontCallback (pNewFontNo, const_cast<EachFontArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoDimStyleCallback (uint64_t* pNewStyleID, EachDimStyleArg& arg);
+DGNPLATFORM_EXPORT bool DoDimStyleCallback (uint64_t* pNewStyleID, EachDimStyleArg const& arg) {return DoDimStyleCallback (pNewStyleID, const_cast<EachDimStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoMLineStyleCallback (DgnElementId* pNewStyleID, EachMLineStyleArg& arg);
+DGNPLATFORM_EXPORT bool DoMLineStyleCallback (DgnElementId* pNewStyleID, EachMLineStyleArg const& arg) {return DoMLineStyleCallback (pNewStyleID, const_cast<EachMLineStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
 DGNPLATFORM_EXPORT bool DoMaterialCallback (DgnMaterialId* pNewID, EachMaterialArg& arg);
 DGNPLATFORM_EXPORT bool DoMaterialCallback (DgnMaterialId* pNewID, EachMaterialArg const& arg) {return DoMaterialCallback (pNewID, const_cast<EachMaterialArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoWeightCallback (UInt32* pNewVal, EachWeightArg& arg);
-DGNPLATFORM_EXPORT bool DoWeightCallback (UInt32* pNewVal, EachWeightArg const& arg) {return DoWeightCallback (pNewVal, const_cast<EachWeightArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoElementClassCallback (DgnElementClass * pNewVal, EachElementClassArg& arg);
-DGNPLATFORM_EXPORT bool DoElementClassCallback (DgnElementClass * pNewVal, EachElementClassArg const& arg) {return DoElementClassCallback (pNewVal, const_cast<EachElementClassArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoWeightCallback (uint32_t* pNewVal, EachWeightArg& arg);
+DGNPLATFORM_EXPORT bool DoWeightCallback (uint32_t* pNewVal, EachWeightArg const& arg) {return DoWeightCallback (pNewVal, const_cast<EachWeightArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
 DGNPLATFORM_EXPORT bool DoTransparencyCallback (double* pNewVal, EachTransparencyArg& arg);
 DGNPLATFORM_EXPORT bool DoTransparencyCallback (double* pNewVal, EachTransparencyArg const& arg) {return DoTransparencyCallback (pNewVal, const_cast<EachTransparencyArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
 DGNPLATFORM_EXPORT bool DoThicknessCallback (double* pNewVal, EachThicknessArg& arg);
 DGNPLATFORM_EXPORT bool DoThicknessCallback (double* pNewVal, EachThicknessArg const& arg) {return DoThicknessCallback (pNewVal, const_cast<EachThicknessArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoDisplayPriorityCallback (Int32* pNewVal, EachDisplayPriorityArg& arg);
-DGNPLATFORM_EXPORT bool DoDisplayPriorityCallback (Int32* pNewVal, EachDisplayPriorityArg const& arg) {return DoDisplayPriorityCallback (pNewVal, const_cast<EachDisplayPriorityArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoElementTemplateCallback (ElementId* pNewVal, EachElementTemplateArg& arg);
-DGNPLATFORM_EXPORT bool DoElementTemplateCallback (ElementId* pNewVal, EachElementTemplateArg const& arg) {return DoElementTemplateCallback (pNewVal, const_cast<EachElementTemplateArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoDisplayPriorityCallback (int32_t* pNewVal, EachDisplayPriorityArg& arg);
+DGNPLATFORM_EXPORT bool DoDisplayPriorityCallback (int32_t* pNewVal, EachDisplayPriorityArg const& arg) {return DoDisplayPriorityCallback (pNewVal, const_cast<EachDisplayPriorityArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoElementTemplateCallback (DgnElementId* pNewVal, EachElementTemplateArg& arg);
+DGNPLATFORM_EXPORT bool DoElementTemplateCallback (DgnElementId* pNewVal, EachElementTemplateArg const& arg) {return DoElementTemplateCallback (pNewVal, const_cast<EachElementTemplateArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
 
 //! Calls PropertyContext::QueryPathProperties. Property values supplied to "Each" callback have been cloned to ElementCopyContextP->GetDestinationDgnModel ().
 //DGNPLATFORM_EXPORT static void QueryClonedPathProperties (HitPathCR path, IQueryProperties& queryObj, ElementCopyContextP ccP = NULL); removed in graphite

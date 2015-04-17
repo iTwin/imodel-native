@@ -82,17 +82,12 @@ DPoint3dCR      point2,
 double          expandPlaneDistance
 )
     {
-    ClipPlane   *pPlane = pPlanes + *nPlanes;
+    DVec3d      normal;
 
-    pPlane->SetFlags (/*invisible*/false, /*interior*/false);
+    bsiDPoint3d_crossProduct3DPoint3d (&normal, &point2, &point1, &point0);
 
-    bsiDPoint3d_crossProduct3DPoint3d (&pPlane->m_normal, &point2, &point1, &point0);
-
-    if (0.0 != bsiDPoint3d_normalizeInPlace (&pPlane->m_normal))
-        {
-        pPlane->m_distance = pPlane->m_normal.dotProduct (&point0) - expandPlaneDistance;
-        (*nPlanes)++;
-        }
+    if (0.0 != bsiDPoint3d_normalizeInPlace (&normal))
+        pPlanes[(*nPlanes)++] = ClipPlane (normal, normal.DotProduct (point0) - expandPlaneDistance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,8 +141,8 @@ int             nPlanes
 
     for (i=0; i<nPlanes; i++, pPlane++)
         {
-        double     vD = pPlane->m_normal.dotProduct (&direction),
-                   vN = pPlane->m_normal.dotProduct (&origin) - pPlane->m_distance;
+        double     vD = pPlane->DotProduct (direction),
+                   vN = pPlane->EvaluatePoint (origin);
 
         if (0.0 == vD)
             {

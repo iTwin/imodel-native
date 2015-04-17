@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnModel_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -14,7 +14,7 @@ struct DgnModelTests : public testing::Test
     {
      public:
         ScopedDgnHost m_autoDgnHost;
-        DgnProjectPtr m_project;    
+        DgnDbPtr m_dgndb;    
         DgnModelP m_modelP;
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                   Julija Suboc     07/13
@@ -22,8 +22,8 @@ struct DgnModelTests : public testing::Test
         //---------------------------------------------------------------------------------------
         void SetUp()
             {
-            DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, OPENMODE_READWRITE);
-            m_project = tdm.GetDgnProjectP();
+            DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OPEN_ReadWrite);
+            m_dgndb = tdm.GetDgnProjectP();
            
             }
          //---------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ struct DgnModelTests : public testing::Test
         //---------------------------------------------------------------------------------------
         void LoadModel(Utf8CP name)
             {
-            DgnModels& modelTable =  m_project->Models();
+            DgnModels& modelTable =  m_dgndb->Models();
             DgnModelId id = modelTable.QueryModelId(name);
             m_modelP =  modelTable.GetModelById (id);
             }
@@ -43,22 +43,18 @@ struct DgnModelTests : public testing::Test
 TEST_F(DgnModelTests, GetGraphicElements)
     {
     LoadModel("Splines");
-    UInt32 graphicElementCount = m_modelP->GetElementCount();
+    uint32_t graphicElementCount = m_modelP->CountElements();
     ASSERT_TRUE(graphicElementCount > 0)<<"Please provide model with graphics elements, otherwise this test case makes no sense";
-    GraphicElementRefList* graphicList = m_modelP->GetGraphicElementsP();
     int count = 0;
-    if (graphicList != NULL)
+    for (DgnElementCP elm : *m_modelP)
         {
-        for(PersistentElementRefP elm: *graphicList)
-            {
-            EXPECT_TRUE(elm->GetDgnModelP() == m_modelP);
-            ++count;
-            }
+        EXPECT_TRUE(&elm->GetDgnModel() == m_modelP);
+        ++count;
         }
     EXPECT_EQ(graphicElementCount, count);
     //Try to get elements from empty model
     LoadModel("Default");
-    EXPECT_EQ(0, m_modelP->GetElementCount())<<"This model should be empty";
+    EXPECT_EQ(0, m_modelP->CountElements())<<"This model should be empty";
     }
 
 //---------------------------------------------------------------------------------------
@@ -72,7 +68,7 @@ TEST_F(DgnModelTests, GetName)
     Utf8String newName("New Long model name Longer than expectedNew Long model name Longer"
         " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
     DgnModelStatus status;
-    DgnModels& modelTable =  m_project->Models();
+    DgnModels& modelTable =  m_dgndb->Models();
     modelTable.CreateNewModelFromSeed(&status, newName.c_str(), m_modelP->GetModelId());
     EXPECT_TRUE(status == DGNMODEL_STATUS_Success)<<"Failed to create model";
     DgnModelId id = modelTable.QueryModelId(newName.c_str());
@@ -89,17 +85,17 @@ TEST_F(DgnModelTests, EmptyList)
     {
     LoadModel("Splines");
     m_modelP->Empty();
-    ASSERT_EQ(0, m_modelP->GetElementCount())<<"Failed to empty element list in model";
+    ASSERT_EQ(0, m_modelP->CountElements())<<"Failed to empty element list in model";
     LoadModel("Splines");
-    ASSERT_EQ(0, m_modelP->GetElementCount())<<"Failed to empty element list in model";
+    ASSERT_EQ(0, m_modelP->CountElements())<<"Failed to empty element list in model";
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Julija Suboc     07/13
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRange)
     {
-    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, OPENMODE_READWRITE);
-    m_project = tdm.GetDgnProjectP();
+    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OPEN_ReadWrite);
+    m_dgndb = tdm.GetDgnProjectP();
     LoadModel("RangeTest");
     //Use first function to get range
     DRange3d firstRange;
@@ -128,8 +124,8 @@ TEST_F(DgnModelTests, GetRange)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRangeOfEmptyModelFromFileWithElementsInAnotherModel)
     {
-    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, OPENMODE_READWRITE);
-    m_project = tdm.GetDgnProjectP();
+    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OPEN_ReadWrite);
+    m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
     //Use first function to get range
     DRange3d firstRange;
@@ -161,8 +157,8 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModelFromFileWithElementsInAnotherModel)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRangeOfEmptyModelFromFileWithNoElements)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, OPENMODE_READWRITE);
-    m_project = tdm.GetDgnProjectP();
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
+    m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
     //Use first function to get range
     DRange3d firstRange;

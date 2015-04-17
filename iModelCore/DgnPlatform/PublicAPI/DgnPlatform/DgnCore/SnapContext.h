@@ -76,16 +76,6 @@ DGNPLATFORM_EXPORT void GetSegmentKeypoint (DPoint3dR hitPoint, double& keyParam
 //! @bsimethod
 DGNPLATFORM_EXPORT bool GetParameterKeypoint (DPoint3dR hitPoint, double& keyParam, int divisor);
 
-//! Check if element at cursor index is snappable.
-//! @param[in]    snapPathIndex         Cursor index to test in snap path.
-//! @bsimethod
-DGNPLATFORM_EXPORT bool IsSnappableElement (int snapPathIndex);
-
-//! Give the next component element in path an opporunity to set the current snap.
-//! @param[in]    snapPathIndex         Cursor index to test in snap path.
-//! @bsimethod
-DGNPLATFORM_EXPORT SnapStatus DoSnapUsingNextInPath (int snapPathIndex);
-
 //! Define the current snap information for text using default processing.
 //! @param[in]    snapPathIndex         Cursor index to test in snap path.
 //! @bsimethod
@@ -118,7 +108,7 @@ DGNPLATFORM_EXPORT void ElmLocalToWorld (DPoint3dR); // WIP_V10_NO_SHARED_CELLS 
 //! @param[in]    nBytes                Size in bytes of customKeypointData, or 0 if none.
 //! @param[in]    customKeypointData    Pointer to customKeypointData to save for this snap or NULL.
 //! @bsimethod
-DGNPLATFORM_EXPORT void SetSnapInfo (int cursorIndex, SnapMode mode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, byte* customKeypointData = NULL);
+DGNPLATFORM_EXPORT void SetSnapInfo (int cursorIndex, SnapMode mode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = NULL);
 
 }; // SnapContext
 

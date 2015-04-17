@@ -60,7 +60,7 @@ public:
     //! Fills a VariChar buffer from a FontChar buffer. No transcoding takes place. Indicating Unicode controls the internal flags of the resulting VariChar.
     //! This is only meant to be used with the output of DgnFont::UnicodeStringToFontChars.
     //! The FontChar buffer must be NULL-terminated, and numFontChars cannot be 0.
-    DGNPLATFORM_EXPORT static BentleyStatus FontCharToVariChar(bvector<VariChar>&, UInt16 const* fontChars, size_t numFontChars, bool isUnicode, bool shouldNullTerminate);
+    DGNPLATFORM_EXPORT static BentleyStatus FontCharToVariChar(bvector<VariChar>&, uint16_t const* fontChars, size_t numFontChars, bool isUnicode, bool shouldNullTerminate);
 
     //! Converts a VariChar buffer into a Unicode string.
     //! If you know that your VariChar is Unicode, you can pass 0 or 1200 (LangCodePage::Unicode in DgnPlatform) for codePage.
@@ -90,7 +90,7 @@ public:
     //! This is only meant to be used as input to DgnFont::FontCharsToUnicodeString.
     //! The resulting FontChar buffer is NULL-terminated.
     //! numVariBytes cannot be 0; if you have a NULL-terminated VariChar and do not already know its size, use ComputeNumBytes.
-    DGNPLATFORM_EXPORT static BentleyStatus VariCharToFontChar(bvector<UInt16>& fontChars, VariCharCP, size_t numVariBytes);
+    DGNPLATFORM_EXPORT static BentleyStatus VariCharToFontChar(bvector<uint16_t>& fontChars, VariCharCP, size_t numVariBytes);
 
     //! Assuming that the VariChar string is NULL-terminated, computes the number of bytes it uses, including the inducers and terminating NULL.
     DGNPLATFORM_EXPORT static size_t ComputeNumBytes(VariCharCP);

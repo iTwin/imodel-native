@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/HitPath.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -82,7 +82,7 @@ HitGeomType GeomDetail::GetCurvePrimitiveType () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitGeomType GeomDetail::GetEffectiveHitGeomType () const
+HitGeomType GeomDetail::GetEffectiveHitGeomType() const
     {
     return (HitGeomType::Surface == m_geomType ? GetCurvePrimitiveType () : m_geomType);
     }
@@ -412,7 +412,7 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitiveInfoPtr MeshSegmentInfo::Create (UInt32 closeVertex, UInt32 segmentVertex)
+ICurvePrimitiveInfoPtr MeshSegmentInfo::Create (uint32_t closeVertex, uint32_t segmentVertex)
     {
     return new MeshSegmentInfo (closeVertex, segmentVertex);
     }
@@ -456,7 +456,7 @@ StatusInt HitPath::GetContextLocalToHitLocal (TransformR contextLocalToHitLocalT
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitPath::HitPath
 (
-ViewportP               viewport,
+DgnViewportP               viewport,
 DisplayPathCR           path,
 DPoint3dCR              testPoint,
 HitSource               source,
@@ -497,103 +497,14 @@ HitPath::HitPath (HitPath const& from) : SelectionPath (&from)
 HitPath::~HitPath ()
     {
     ClearElemTopology ();
-    //ClearViewHandlerHitInfo (); removed in graphite
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       HitPath::OnCreateAssociationToSnap (DgnModelP model)
-    {
-//    IViewHandlerHitInfo const* vhhinfo = GetViewHandlerHitInfo ();                                                                                                      removed in graphite
-//                                                                                                                                                                        removed in graphite
-//    if (NULL != vhhinfo &&                                                                                                                                              removed in graphite
-//        SUCCESS == vhhinfo->_OnCreateAssociationToSnap (*this, model))                                                                                                  removed in graphite
-//        return SUCCESS;                                                                                                                                                 removed in graphite
-//                                                                                                                                                                        removed in graphite
-//    CurvePrimitiveIdCP      curvePrimitiveId;                                                                                                                           removed in graphite
-//    ElementHandle           eh (GetCursorElem (), GetRoot());                                                                                                           removed in graphite
-//                                                                                                                                                                        removed in graphite
-//    if (NULL == dynamic_cast <ICurvePathQuery*> (&eh.GetHandler()) &&        // No need to modify path if it is already a path which can be associated to directly.     removed in graphite
-//        NULL == dynamic_cast <IMeshQuery*> (&eh.GetHandler()) &&             // ...                                                                                     removed in graphite
-//        NULL != (curvePrimitiveId = m_geomDetail.GetCurvePrimitiveId ()) &&                                                                                             removed in graphite
-//        SUCCESS == TopologyCurveAssociationGenerator::OnCreateAssociationToSnap (*this, *curvePrimitiveId, model))                                                      removed in graphite
-//        return SUCCESS;                                                                                                                                                 removed in graphite
-//                                                                                                                                                                        removed in graphite
-    return ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2011
-+--------------+---------------+---------------+---------------+---------------+------*/
-static bool displayAssociativityData ()
-    {
-#ifdef WIP_CFGVAR
-    static int          s_testConfigVar;
-
-    if (0 == s_testConfigVar)
-        {
-        WString     value;
-
-        s_testConfigVar = (SUCCESS == ConfigurationManager::GetVariable (value, L"MS_DEBUG_ASSOCIATION_IDS") && value != L"0") ? 1 : -1;
-        }
-
-    return s_testConfigVar > 0;
-#endif
-return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/2007
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            HitPath::_GetInfoString (WStringR pathDescr, WCharCP delimiter) const
+void HitPath::_GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const
     {
     T_Super::_GetInfoString (pathDescr, delimiter);
-
-//    IViewHandlerHitInfo const* vhhinfo = GetViewHandlerHitInfo ();   removed in graphite
-//    if (NULL != vhhinfo)                                             removed in graphite
-//        {                                                            removed in graphite
-//        vhhinfo->_OnGetInfoString (pathDescr, *this, delimiter);     removed in graphite
-//        }                                                            removed in graphite
-    if (displayAssociativityData())
-        {
-        CurvePrimitiveIdCP   curveId;
-     
-        pathDescr = pathDescr + WPrintfString (L"\nTail ID: %d", (int) GetTailElem()->GetElementId().GetValue());
-
-        if (NULL != (curveId = GetGeomDetail ().GetCurvePrimitiveId ()))
-            {
-            pathDescr = pathDescr + WString (delimiter) + curveId->GetDebugString();
-
-            switch (curveId->GetType())
-                {
-                case CurvePrimitiveId::Type_CachedEdge:
-                    {
-                    ProxyHLEdgeSegmentId        cachedEdgeId;
-
-                    if (SUCCESS == cachedEdgeId.Init (*curveId))
-                        pathDescr = pathDescr + WString (delimiter) + cachedEdgeId.ToString();
-
-                    break;
-                    }
-
-                case CurvePrimitiveId::Type_CachedCut:
-                case CurvePrimitiveId::Type_CachedUnderlay:
-                case CurvePrimitiveId::Type_ParaSolidBody:
-                case CurvePrimitiveId::Type_SolidPrimitive:
-                case CurvePrimitiveId::Type_CurveVector:
-                case CurvePrimitiveId::Type_PolyfaceCut:
-                case CurvePrimitiveId::Type_PolyfaceEdge:
-                    pathDescr = pathDescr + WString (L"\n") + curveId->GetCurveTopologyId().GetDebugString();
-                    break;
-
-                default:
-                    pathDescr = pathDescr + WString (L"\n") + curveId->GetRawIdString();
-
-                 break;
-                }
-            }
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -603,14 +514,6 @@ void            HitPath::ClearElemTopology()
     {
     DELETE_AND_CLEAR (m_elemTopo);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     04/2007
-+---------------+---------------+---------------+---------------+---------------+------*/
-//void            HitPath::ClearViewHandlerHitInfo () removed in graphite
-//    {                                               removed in graphite
-//    DELETE_AND_CLEAR (m_viewHandlerHitInfo);        removed in graphite
-//    }                                               removed in graphite
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
@@ -636,13 +539,6 @@ bool            HitPath::IsSamePath (DisplayPathCP otherPath, bool fullPath) con
     if (0 !=  thisTopo->_Compare (*otherTopo))
         return false;
 
-//    IViewHandlerHitInfo const *thisViewHandlerHitInfo, *otherViewHandlerHitInfo;        removed in graphite
-
-//    if (NULL == (thisViewHandlerHitInfo = GetViewHandlerHitInfo()) ||                   removed in graphite
-//        NULL == (otherViewHandlerHitInfo = otherHitPath->GetViewHandlerHitInfo()))      removed in graphite
-//        return true;                                                                    removed in graphite
-//                                                                                        removed in graphite
-//    return (0 == thisViewHandlerHitInfo->_Compare (*otherViewHandlerHitInfo));          removed in graphite
     return true;
     }
 
@@ -703,7 +599,7 @@ SnapPath::SnapPath (SnapPath const& from) : HitPath (from)
     else
         {
         m_customKeypointSize = from.m_customKeypointSize;
-        m_customKeypointData = (byte *) memutil_malloc (m_customKeypointSize, HEAPSIG_SNAP);
+        m_customKeypointData = (Byte *) bentleyAllocator_malloc(m_customKeypointSize);
 
         memcpy (m_customKeypointData, from.m_customKeypointData, m_customKeypointSize);
         }
@@ -718,7 +614,7 @@ SnapPath::~SnapPath ()
         m_sprite->Release ();
 
     if (NULL != m_customKeypointData)
-        memutil_free (m_customKeypointData);
+        bentleyAllocator_free(m_customKeypointData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -848,7 +744,7 @@ void            IntersectPath::SetHilited (ElementHiliteState  newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IntersectPath::_DrawInVp (ViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void            IntersectPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
     // start by drawing the first path normally
     T_Super::_DrawInVp (vp, drawMode, drawPurpose, stopFlag);
@@ -1024,41 +920,11 @@ static inline double tenthOfPixel (double inValue) {return ((int) ((inValue * 10
 static const double s_tooCloseTolerance = 1.0e-5;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    08/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnElementClass getElementClass (HitPathCR oHit)
-    {
-    DgnElementCP elm = oHit.GetCursorElem ()->GetUnstableMSElementCP ();
-
-    if (!elm)
-        return DgnElementClass::Primary;
-
-    DgnElementClass effectiveClass = static_cast<DgnElementClass>(elm->GetElementClass());
-
-    if (DgnElementClass::PrimaryRule == effectiveClass)
-        effectiveClass = DgnElementClass::Primary;
-    else if (DgnElementClass::ConstructionRule == effectiveClass)
-        effectiveClass = DgnElementClass::Construction;
-
-    return effectiveClass;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool is2dHitCompare (HitPathCR oHit1, HitPathCR oHit2)
     {
-    DgnElementCP elm1 = oHit1.GetCursorElem ()->GetUnstableMSElementCP ();
-
-    if (!elm1)
-        return false;
-
-    DgnElementCP elm2 = oHit2.GetCursorElem ()->GetUnstableMSElementCP ();
-
-    if (!elm2)
-        return false;
-
-    return (!elm1->Is3d() && !elm2->Is3d());
+    return (!oHit1.GetCursorElem()->GetDgnModel().Is3d() && !oHit2.GetCursorElem()->GetDgnModel().Is3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1066,7 +932,7 @@ static bool is2dHitCompare (HitPathCR oHit1, HitPathCR oHit2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int doZCompareOfSurfaceAndEdge (HitPathCR oHitSurf, HitPathCR oHitEdge)
     {
-    ViewportP   vp = oHitSurf.GetViewport ();
+    DgnViewportP   vp = oHitSurf.GetViewport ();
     DPoint4d    homogeneousPlane;
     
     if (!vp || !homogeneousPlane.PlaneFromOriginAndNormal (oHitSurf.GetGeomDetail ().GetClosestPointLocal (), oHitSurf.GetGeomDetail ().GetSurfaceNormal ()))
@@ -1182,7 +1048,7 @@ static int doZCompare (HitPathCR oHit1, HitPathCR oHit2)
 * calling GetLocatePriority() and then GetLocateDistance() on each.
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-int             HitList::Compare (HitPathCP oHit1, HitPathCP oHit2, bool comparePriority, bool compareElemClass, bool compareZ) const
+int HitList::Compare (HitPathCP oHit1, HitPathCP oHit2, bool comparePriority, bool compareElemClass, bool compareZ) const
     {
     if (NULL == oHit1 || NULL == oHit2)
         return 0;
@@ -1201,15 +1067,6 @@ int             HitList::Compare (HitPathCP oHit1, HitPathCP oHit2, bool compare
         int p2 = static_cast<int>(oHit2->GetGeomDetail ().GetLocatePriority ());
 
         COMPARE_RELATIVE (p1, p2);
-        }
-
-    if (compareElemClass)
-        {
-        DgnElementClass elClass1 = getElementClass (*oHit1);
-        DgnElementClass elClass2 = getElementClass (*oHit2);
-
-        // use the class of the element (primary has highest priority)
-        COMPARE_RELATIVE (elClass1, elClass2);
         }
 
     double dist1 = tenthOfPixel (oHit1->GetGeomDetail ().GetScreenDist ());
@@ -1337,7 +1194,7 @@ DisplayPathCP    path
 * search through hitlist and remove any hits that contain a specified elementRef.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitList::RemoveHitsContaining (ElementRefP elemRef)
+bool HitList::RemoveHitsContaining (DgnElementP element)
     {
     SelectionPath*  thisPath;
     bool         removedOne = false;
@@ -1345,7 +1202,7 @@ bool HitList::RemoveHitsContaining (ElementRefP elemRef)
     // walk backwards through list so we don't have to worry about what happens on remove
     for (int i=GetCount()-1; i>=0; i--)
         {
-        if ((NULL != (thisPath = GetHit (i))) && thisPath->Contains (elemRef))
+        if ((NULL != (thisPath = GetHit (i))) && thisPath->Contains (element))
             {
             removedOne = true;
             RemoveHit (i);
@@ -1418,7 +1275,7 @@ StatusInt       HitPath::GetLinearParameters (DSegment3dP hitSeg, int* vertex, i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnActionItemContext::DgnActionItemContext (HitPathCP hitPath, DPoint3dCP point, ViewportP view)
+DgnActionItemContext::DgnActionItemContext (HitPathCP hitPath, DPoint3dCP point, DgnViewportP view)
     :m_hitPathPtr(NULL), m_pointPtr (NULL), m_view (view)
     {
     if (NULL != point)
@@ -1471,7 +1328,7 @@ void    IEditActionSource::_GetCommand (bvector<ECN::IUICommandPtr>& cmds, ECN::
 * @bsimethod                                    Abeesh.Basheer                  09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitPathCP       DgnActionItemContext::GetHitPath() const {return  m_hitPathPtr.get();}
-ViewportP       DgnActionItemContext::GetView() const 
+DgnViewportP       DgnActionItemContext::GetView() const 
     {
     return (NULL == m_hitPathPtr.get()) ? m_view : m_hitPathPtr->GetViewport();
     }
@@ -1486,10 +1343,10 @@ ElementHandle   DgnActionItemContext::GetRootElement() const
     if (m_hitPathPtr.IsNull())
         return ElementHandle();
 
-    ElementRefP     elemRef = m_hitPathPtr->GetPathElem(0);
+    DgnElementP     element = m_hitPathPtr->GetPathElem(0);
     DgnModelP    modelRef = m_hitPathPtr->GetRoot ();
 
-    return ElementHandle(elemRef, modelRef);
+    return ElementHandle(element, modelRef);
     }
 
 /*---------------------------------------------------------------------------------**//**

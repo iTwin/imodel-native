@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnResourceURI.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -20,7 +20,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getEncodedTargetFile (DgnProjectR targetFile)
+static Utf8String getEncodedTargetFile (DgnDbR targetFile)
     {
     Utf8String filename (BeFileName (BeFileName::NameAndExt, targetFile.GetFileName().c_str()));
     filename.append (";");
@@ -31,12 +31,12 @@ static Utf8String getEncodedTargetFile (DgnProjectR targetFile)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus findElementIdByProvenance (ElementId& eid, Utf8CP oldFileName, Int64 oldElementId, DgnProjectR project)
+static BentleyStatus findElementIdByProvenance (ElementId& eid, Utf8CP oldFileName, int64_t oldElementId, DgnDbR project)
     {
     DgnProvenances prov = project.Provenance();
 
     //  Look up the file
-    UInt64 oldFileId;
+    uint64_t oldFileId;
     if (prov.QueryFileId (oldFileId, oldFileName) != SUCCESS)
         return ERROR;
 
@@ -64,8 +64,8 @@ Utf8String DgnResourceURI::UriToken::GetString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnResourceURI::ParserBase::ParseUInt64 ()
     {
-    UInt64 v;
-    if (1 != BE_STRING_UTILITIES_UTF8_SSCANF (m_curpos, "%lld", &v))
+    uint64_t v;
+    if (1 != BE_STRING_UTILITIES_UTF8_SSCANF (m_curpos, "%" PRId64, &v))
         return ERROR;
 
     m_curtok.SetUInt64 (v);        
@@ -204,16 +204,16 @@ BentleyStatus DgnResourceURI::QueryParser::ParseQueryParameter (UriToken& propna
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECHelper
     {
-    DgnProjectR m_file;
+    DgnDbR m_file;
 
-    ECHelper (DgnProjectR file) : m_file(file) {;}
+    ECHelper (DgnDbR file) : m_file(file) {;}
 
     ECN::ECClassId FindECClassIdByName (Utf8CP ecSchemaName, Utf8CP ecClassName)
         {
         Statement stmt;
         stmt.Prepare (m_file, "SELECT ECClassId FROM ec_Class JOIN ec_Schema WHERE ec_Class.ECSchemaId = ec_Schema.ECSchemaId AND (ec_Schema.Name = ?1 OR ec_Schema.NamespacePrefix = ?1) AND ec_Class.Name = ?2");
-        stmt.BindText (1, ecSchemaName, Statement::MAKE_COPY_No);
-        stmt.BindText (2, ecClassName, Statement::MAKE_COPY_No);
+        stmt.BindText (1, ecSchemaName, Statement::MakeCopy::No);
+        stmt.BindText (2, ecClassName, Statement::MakeCopy::No);
         DbResult r = stmt.Step();
         if (BE_SQLITE_ROW != r)
             return (ECN::ECClassId) 0;
@@ -224,7 +224,7 @@ struct ECHelper
     ECN::ECClassP FindECClassByName (Utf8CP ecSchemaName, Utf8CP ecClassName)
         {
         ECN::ECClassP ecClass = nullptr;
-        if (SUCCESS == m_file.GetEC().GetSchemaManager().GetECClass (ecClass, ecSchemaName, ecClassName))
+        if (SUCCESS == m_file.Schemas().GetECClass (ecClass, ecSchemaName, ecClassName))
             return ecClass;
         else
             return nullptr;
@@ -341,7 +341,7 @@ Utf8String DgnResourceURI::Builder::MakeFullECClassName (WStringCR schemaName, W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnResourceURI::Builder::SetTargetFile (DgnProjectR targetFile)
+void DgnResourceURI::Builder::SetTargetFile (DgnDbR targetFile)
     {
     m_schemeAndTargetFile = SCHEME_DgnResourceURI ":/";
     m_schemeAndTargetFile.append (getEncodedTargetFile (targetFile));
@@ -435,10 +435,10 @@ void DgnResourceURI::Builder::SetEncodedFragment (Utf8CP newFragment)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct URIBuilder
     {
-    DgnProjectR m_file;
+    DgnDbR m_file;
     DgnResourceURICreationStrategy m_strategy;
 
-    URIBuilder (DgnProjectR f, DgnResourceURICreationStrategy s): m_file(f), m_strategy(s) {;}
+    URIBuilder (DgnDbR f, DgnResourceURICreationStrategy s): m_file(f), m_strategy(s) {;}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
@@ -492,7 +492,7 @@ struct URIBuilder
     BentleyStatus MakeElementByPrimaryInstancePropertyValue (DgnResourceURI& uri, ECN::ECClassId ecClassId, ECInstanceId ecInstanceId)
         {
         ECN::ECClassP ecClass = nullptr;
-        if (m_file.GetEC().GetSchemaManager().GetECClass (ecClass, ecClassId) != SUCCESS)
+        if (m_file.Schemas().GetECClass (ecClass, ecClassId) != SUCCESS)
             return ERROR;
 
         Utf8String className = DgnResourceURI::Builder::MakeFullECClassName (ecClass->GetSchema().GetName(), ecClass->GetName());
@@ -647,7 +647,7 @@ DgnResourceURI::ParseStatus DgnResourceURI::FromEncodedString (Utf8CP uriString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnResourceURI::SetTargetFile (DgnProjectR targetFile)
+void DgnResourceURI::SetTargetFile (DgnDbR targetFile)
     {
     m_targetFile = getEncodedTargetFile (targetFile);
     }
@@ -675,7 +675,7 @@ BentleyStatus DgnResourceURI::GetTargetFile (Utf8StringR filename, BeGuid& guid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnResourceURI::CheckTargetFileMatches (DgnProjectR file) const
+BentleyStatus DgnResourceURI::CheckTargetFileMatches (DgnDbR file) const
     {
     Utf8String filename;
     BeGuid guid;

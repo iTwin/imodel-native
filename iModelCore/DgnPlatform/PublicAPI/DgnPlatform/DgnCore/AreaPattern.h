@@ -2,18 +2,13 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/AreaPattern.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#define  PATTERN_ID                 32040       // Pattern linkage ID
-#define  PATTERN_CONTROL            "Pattern Control Element"
-
-#define  MAX_DWG_HATCH_LINES            50
-#define  MAX_DWG_EXPANDEDHATCH_LINES    400
 #define  MAX_DWG_HATCH_LINE_DASHES      20
 
 #if !defined(__midl) // For a MIDL compile, all we care about are the values of the #define constants.
@@ -37,9 +32,9 @@ double          dashes[MAX_DWG_HATCH_LINE_DASHES];
 
 struct DwgHatchDef
 {
-short           nDefLines;
-double          pixelSize;
-short           islandStyle;
+double                      pixelSize;
+short                       islandStyle;
+bvector<DwgHatchDefLine>    hatchLines;
 };
 
 //! PatternParams compare flags.
@@ -60,52 +55,50 @@ enum PatternParamsCompareFlags
 
 //! Selects Pattern Hole Style.
 enum class PatternParamsHoleStyleType
-{
-    Normal        = 0,        //!< Normal rules....Hatch if in outer, but not hole.
-    Parity        = 1,        //!< Parity
-};
+    {
+    Normal = 0, //!< Normal rules....Hatch if in outer, but not hole.
+    Parity = 1, //!< Parity
+    };
 
 //! @ingroup AreaPattern
 //! Flags indicating modification of corresponding field in PatternParams.                  
 enum class PatternParamsModifierFlags
-{
-    None                     = 0,        //!< No flags set.
-    Space1                   = 0x0001,   //!< patternParams.space1 present
-    Angle1                   = 0x0002,   //!< patternParams.angle1 present
-    Space2                   = 0x0004,   //!< patternParams.space2 present
-    Angle2                   = 0x0008,   //!< patternParams.angle2 present
-    Scale                    = 0x0010,   //!< patternParams.scale present
-    Cell                     = 0x0020,   //!< patternParams.cellId present
-    Tolerance                = 0x0040,   //!< patternParams.tolerance present
-    Style                    = 0x0080,   //!< patternParams.style present
-    Weight                   = 0x0100,   //!< patternParams.weight present
-    Color                    = 0x0200,   //!< patternParams.color present
-    Snap                     = 0x0400,   //!< set if pattern is snappable
-    RotMatrix                = 0x0800,   //!< patternParams.rMatrix present
-    Offset                   = 0x1000,   //!< patternParams.offset present
-    HoleStyle                = 0x2000,   //!< patternParams.holeStyle present
-    DwgHatchDef              = 0x4000,   //!< patternParams.dwgHatchDef present
-    Multiline                = 0x8000,   //!< patternParams.minLine, patternParams.maxLine present
-    Origin                   = 0x10000,  //!< patternParams.origin present
-    PixelSize                = 0x20000,  //!< patternParams.dwgHatchDef.pixelSize set
-    IslandStyle              = 0x40000,  //!< patternParams.dwgHatchDef.islandStyle set
-    TrueScale                = 0x80000,  //!< set if pattern cell is true scaled
-    RawDwgLoops              = 0x100000, //!< pattern contains raw DWG loop data
-    DwgHatchOrigin           = 0x200000, //!< dwg hatch origin has been specified as pattern origin
-    AnnotationScale          = 0x400000, //!< PatternParams.annotationscale present
-};
+    {
+    None                = 0,        //!< No flags set.
+    Space1              = 0x0001,   //!< patternParams.space1 present
+    Angle1              = 0x0002,   //!< patternParams.angle1 present
+    Space2              = 0x0004,   //!< patternParams.space2 present
+    Angle2              = 0x0008,   //!< patternParams.angle2 present
+    Scale               = 0x0010,   //!< patternParams.scale present
+    Cell                = 0x0020,   //!< patternParams.cellId present
+    Tolerance           = 0x0040,   //!< patternParams.tolerance present
+    Style               = 0x0080,   //!< patternParams.style present
+    Weight              = 0x0100,   //!< patternParams.weight present
+    Color               = 0x0200,   //!< patternParams.color present
+    Snap                = 0x0400,   //!< set if pattern is snappable
+    RotMatrix           = 0x0800,   //!< patternParams.rMatrix present
+    Offset              = 0x1000,   //!< patternParams.offset present
+    HoleStyle           = 0x2000,   //!< patternParams.holeStyle present
+    DwgHatchDef         = 0x4000,   //!< patternParams.dwgHatchDef present
+    Multiline           = 0x8000,   //!< patternParams.minLine, patternParams.maxLine present
+    Origin              = 0x10000,  //!< patternParams.origin present
+    PixelSize           = 0x20000,  //!< patternParams.dwgHatchDef.pixelSize set
+    IslandStyle         = 0x40000,  //!< patternParams.dwgHatchDef.islandStyle set
+    TrueScale           = 0x80000,  //!< set if pattern cell is true scaled
+    RawDwgLoops         = 0x100000, //!< pattern contains raw DWG loop data
+    DwgHatchOrigin      = 0x200000, //!< dwg hatch origin has been specified as pattern origin
+    AnnotationScale     = 0x400000, //!< PatternParams.annotationscale present
+    };
 
 ENUM_IS_FLAGS(PatternParamsModifierFlags)
 
-
 //! Selects Pattern Placement Type.
 enum PatternPlacementTypes
-{
-    PATTERN_HATCH                   = 0x0,
-    PATTERN_CROSSHATCH              = 0x1,
-    PATTERN_AREA                    = 0x2,
-};
-
+    {
+    PATTERN_HATCH           = 0x0,
+    PATTERN_CROSSHATCH      = 0x1,
+    PATTERN_AREA            = 0x2,
+    };
 
 //! @ingroup AreaPattern
 //! Each member of the PatternParams structure has a corresponding bit in
@@ -127,15 +120,15 @@ double                      angle2;                         //!< The angle of se
 double                      scale;                          //!< The pattern scale.
 double                      tolerance;                      //!< The pattern tolerance.
 double                      annotationscale;                //!< The annotation scale.
-WChar                       cellName[DGNPLATFORM_RESOURCE_MAX_CELLNAME_LENGTH];  //!< The name of cell - used for create, stored as dependency id.
-Int64                       cellId;                         //!< The ID of shared cell definition.
+WChar                       cellName[512];                  //!< The name of cell - used for create, stored as id.
+int64_t                     cellId;                         //!< The ID of shared cell definition.
 PatternParamsModifierFlags  modifiers;                      //!< The pattern modifiers bit field.
-Int32                       minLine;                        //!< The min line of multi-line element.
-Int32                       maxLine;                        //!< The max line of multi-line element.
-UInt32                      color;                          //!< The pattern / hatch color.
-UInt32                      weight;                         //!< The pattern / hatch weight.
-UInt32                      style;                          //!< The pattern / hatch line style.
-Int16                       holeStyle;                      //!< The hole parity style.
+int32_t                     minLine;                        //!< The min line of multi-line element.
+int32_t                     maxLine;                        //!< The max line of multi-line element.
+ColorDef                    color;                          //!< The pattern / hatch color.
+uint32_t                    weight;                         //!< The pattern / hatch weight.
+uint32_t                    style;                          //!< The pattern / hatch line style.
+int16_t                     holeStyle;                      //!< The hole parity style.
 DwgHatchDef                 dwgHatchDef;                    //!< The DWG style hatch definition.
 DPoint3d                    origin;                         //!< The hatch origin.
 
@@ -190,26 +183,26 @@ DGNPLATFORM_EXPORT double GetTolerance () const;
 DGNPLATFORM_EXPORT WCharCP GetCellName () const;
 
 //! Get pattern cell element id. Used if PatternParamsModifierFlags::Cell is set.
-DGNPLATFORM_EXPORT ElementId GetCellId () const;
+DGNPLATFORM_EXPORT DgnElementId GetCellId () const;
 
 //! Get pattern min multiline boundary index. Used if PatternParamsModifierFlags::Multiline is set.
-DGNPLATFORM_EXPORT Int32 GetMinLine () const;
+DGNPLATFORM_EXPORT int32_t GetMinLine () const;
 
 //! Get pattern max multiline boundary index. Used if PatternParamsModifierFlags::Multiline is set.
-DGNPLATFORM_EXPORT Int32 GetMaxLine () const;
+DGNPLATFORM_EXPORT int32_t GetMaxLine () const;
 
 //! Get pattern color. Used if PatternParamsModifierFlags::Color is set.
 //! @note Uses element color if not set. Ignored for area pattern using a graphic cell not a point cell.
-DGNPLATFORM_EXPORT UInt32 GetColor () const;
+DGNPLATFORM_EXPORT ColorDef GetColor () const;
 
 //! Get pattern weight. Used if PatternParamsModifierFlags::Weight is set.
 //! @note Uses element weight if not set. Ignored for area pattern using a graphic cell not a point cell.
-DGNPLATFORM_EXPORT UInt32 GetWeight () const;
+DGNPLATFORM_EXPORT uint32_t GetWeight () const;
 
 //! Get pattern line style. Used if PatternParamsModifierFlags::Style is set.
 //! @note Uses element line style if not set. Ignored for area pattern using a graphic cell not a point cell.
 //! @note Only line styles 0-7 are supported.
-DGNPLATFORM_EXPORT Int32 GetStyle () const;
+DGNPLATFORM_EXPORT int32_t GetStyle () const;
 
 //! Get pattern dwg hole style. Used if PatternParamsModifierFlags::HoleStyle is set.
 DGNPLATFORM_EXPORT PatternParamsHoleStyleType GetHoleStyle () const;
@@ -259,26 +252,26 @@ DGNPLATFORM_EXPORT void SetTolerance (double);
 DGNPLATFORM_EXPORT void SetCellName (WCharCP);
 
 //! Set pattern cell by supplying the element id of an existing shared cell definition. Sets modifier bit for PatternParamsModifierFlags::Cell.
-DGNPLATFORM_EXPORT void SetCellId (ElementId);
+DGNPLATFORM_EXPORT void SetCellId (DgnElementId);
 
 //! Set pattern min multiline boundary index. Sets modifier bit for PatternParamsModifierFlags::Multiline. Valid only for multiline elements.
-DGNPLATFORM_EXPORT void SetMinLine (Int32);
+DGNPLATFORM_EXPORT void SetMinLine (int32_t);
 
 //! Set pattern max multiline boundary index. Sets modifier bit for PatternParamsModifierFlags::Multiline. Valid only for multiline elements.
-DGNPLATFORM_EXPORT void SetMaxLine (Int32);
+DGNPLATFORM_EXPORT void SetMaxLine (int32_t);
 
 //! Set pattern color. Sets modifier bit for PatternParamsModifierFlags::Color.
 //! @note Use to set a pattern color that is different than element color. Ignored for area pattern using a graphic cell not a point cell.
-DGNPLATFORM_EXPORT void SetColor (UInt32);
+DGNPLATFORM_EXPORT void SetColor (ColorDef);
 
 //! Set pattern weight. Sets modifier bit for PatternParamsModifierFlags::Weight.
 //! @note Use to set a pattern weight that is different than element weight. Ignored for area pattern using a graphic cell not a point cell.
-DGNPLATFORM_EXPORT void SetWeight (UInt32);
+DGNPLATFORM_EXPORT void SetWeight (uint32_t);
 
 //! Set pattern line style. Sets modifier bit for PatternParamsModifierFlags::Style.
 //! @note Use to set a pattern line style that is different than element line style. Ignored for area pattern using a graphic cell not a point cell.
 //! @note Only line styles 0-7 are supported.
-DGNPLATFORM_EXPORT void SetStyle (Int32);
+DGNPLATFORM_EXPORT void SetStyle (int32_t);
 
 //! Set pattern dwg hole style. Sets modifier bit for PatternParamsModifierFlags::HoleStyle.
 DGNPLATFORM_EXPORT void SetHoleStyle (PatternParamsHoleStyleType);
@@ -300,23 +293,9 @@ DGNPLATFORM_EXPORT void SetAnnotationScale (double);
 
 enum PatternPlacementFlags
 {
-    PATTERN_FLAGS_OverideTrueScale  = (1<<0),       //!< If false ignore UseTrueScale flag, use active setting
-    PATTERN_FLAGS_UseTrueScale      = (1<<1),       //!< Apply true scale
-    PATTERN_FLAGS_Default           = (0),          //!< Use active setting by default
-};
-
-/*----------------------------------------------------------------------+
-|   Pattern Linkage                                                     |
-+----------------------------------------------------------------------*/
-struct HatchLinkage
-{
-    LinkageHeader   linkHeader;
-
-    //! Anything below here added to the element incrementally as needed.
-    UInt32          modifiers;
-
-    //! Reserve enough space for maximum number of parameters.
-    byte            modData[sizeof (PatternParams) + MAX_DWG_EXPANDEDHATCH_LINES * sizeof(DwgHatchDefLine)];
+PATTERN_FLAGS_OverideTrueScale  = (1<<0),       //!< If false ignore UseTrueScale flag, use active setting
+PATTERN_FLAGS_UseTrueScale      = (1<<1),       //!< Apply true scale
+PATTERN_FLAGS_Default           = (0),          //!< Use active setting by default
 };
 
 //__PUBLISH_SECTION_START__

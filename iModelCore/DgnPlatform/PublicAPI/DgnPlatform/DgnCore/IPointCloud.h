@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/IPointCloud.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,12 +71,12 @@ private:
 
     typedef union
         {
-        UInt32 s;
+        uint32_t s;
         struct 
             {
-            UInt32     ignoreLocate:1;
-            UInt32     unlockedGeoRef:1;
-            UInt32     reserved:30;
+            uint32_t   ignoreLocate:1;
+            uint32_t   unlockedGeoRef:1;
+            uint32_t   reserved:30;
             } b;
         } AttributeFlags;
 
@@ -89,7 +89,7 @@ private:
     float                   m_viewDensity;      // [0,1], default 1.0.
     double                  m_uorPerMeter;
     DPoint3d                m_globalOrigin;
-    UInt32                  m_reserved[4];
+    uint32_t                m_reserved[4];
     WString                 m_wktString;        // Well Known Text string representing the spatial reference
     UnknownAttributes       m_unknownAttributes;
 
@@ -136,7 +136,7 @@ public:
     //! Creates an instance of a PointCloudProperties from an existing persistent element.
     //! @param[in]      eRef    The element from which the instance of a PointCloudProperties is created.
     //! @return         An instance of a PointCloudProperties.
-    DGNPLATFORM_EXPORT static PointCloudPropertiesPtr Create(ElementRefP eRef);
+    DGNPLATFORM_EXPORT static PointCloudPropertiesPtr Create(DgnElementP eRef);
 
     //! Gets the transformation matrix. 
     //! @return         A transformation matrix.

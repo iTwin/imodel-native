@@ -191,7 +191,7 @@ struct RasterResolution : public RefCountedBase
         |   Public Member Functions
         +----------------------------------------------------------------------------*/
         DGNPLATFORM_EXPORT static RasterResolutionPtr Create(DgnModelP dgnCache);
-        DGNPLATFORM_EXPORT static RasterResolutionPtr CreateFromRasterAttachment(ElementHandleCR eh,UInt64 nbOfPixelX,UInt64 nbOfPixelY);
+        DGNPLATFORM_EXPORT static RasterResolutionPtr CreateFromRasterAttachment(ElementHandleCR eh,uint64_t nbOfPixelX,uint64_t nbOfPixelY);
 
         /*----------------------------------------------------------------------------+
         |       settings getter / setter
@@ -210,10 +210,10 @@ struct RasterResolution : public RefCountedBase
         bool           GetAspectRatioLockState() const              {return m_aspectRatioLock;}
         void           SetAspectRatioLockState(const bool value)    {m_aspectRatioLock = value;}
 
-        const UInt64& GetNbOfPixelX() const                     {return m_nbOfPixelX;}
-        const UInt64& GetNbOfPixelY() const                     {return m_nbOfPixelY;}
-        void          SetNbOfPixelX(const UInt64& value)        {m_nbOfPixelX = value;}
-        void          SetNbOfPixelY(const UInt64& value)        {m_nbOfPixelY = value;}
+        const uint64_t& GetNbOfPixelX() const                     {return m_nbOfPixelX;}
+        const uint64_t& GetNbOfPixelY() const                     {return m_nbOfPixelY;}
+        void          SetNbOfPixelX(const uint64_t& value)        {m_nbOfPixelX = value;}
+        void          SetNbOfPixelY(const uint64_t& value)        {m_nbOfPixelY = value;}
 
         DGNPLATFORM_EXPORT DPoint2d       GetDPI() const;
         DGNPLATFORM_EXPORT void           SetDPI(const DPoint2d & value);
@@ -261,8 +261,8 @@ struct RasterResolution : public RefCountedBase
         bool                        m_aspectRatioLock; //When aspect is locked, pixel size X must equal pixel size Y
         DPoint2d                    m_extent;  //Internal value is always in UOR
         DPoint2d                    m_pixelSize; //Internal value is always in UOR
-        UInt64                      m_nbOfPixelX;
-        UInt64                      m_nbOfPixelY;
+        uint64_t                    m_nbOfPixelX;
+        uint64_t                    m_nbOfPixelY;
         DPoint2d                    m_DPI;       //Internal value is always in UOR, value is converted to inches on Get/Set
         DPoint2d                    m_scale;
         DPoint2d                    m_sheetSize; //Internal value is always in UOR, value is converted to m_sheetUnit on Get/Set

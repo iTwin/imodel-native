@@ -2,7 +2,7 @@
 |
 |   $Source: PrivateApi/DgnPlatformInternal/DgnHandlers/MarkupPlacemarkHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -24,8 +24,8 @@ private:
     void    DrawPickGeometry (DPoint3dCR spritePt, ViewContextP pViewContext) const;
 
 protected:
-    virtual void                    _GetTypeName (WStringR, UInt32 desiredLength) override;
-    virtual void                    _GetDescription (ElementHandleCR, WStringR, UInt32 desiredLength) override;
+    virtual void                    _GetTypeName (WStringR, uint32_t desiredLength) override;
+    virtual void                    _GetDescription (ElementHandleCR, WStringR, uint32_t desiredLength) override;
     virtual void                    _Draw (ElementHandleCR el, ViewContextP) override;
     virtual void                    _DrawFiltered (ElementHandleCR elemHandle, ViewContextP pViewContext, DPoint3dCP pPoints, double size) override;
     virtual bool                    _IsRenderable (ElementHandleCR) const override {return true;}
@@ -34,7 +34,7 @@ protected:
     void                            DrawPlacemark(ElementHandleCR elemHandle, ViewContextP pViewContext);
 
 public:
-    DGNPLATFORM_EXPORT static ElementHandlerId  GetHandlerId ();
+    DGNPLATFORM_EXPORT static DgnClassId  GetHandlerId ();
 
 }; // MarkupPlacemarkHandler
 #endif

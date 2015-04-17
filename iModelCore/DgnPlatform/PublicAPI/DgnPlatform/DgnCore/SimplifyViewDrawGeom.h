@@ -2,14 +2,13 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/SimplifyViewDrawGeom.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 #include    "ViewContext.h"
-#include    "DisplayHandler.h"
 #include    <Bentley/bvector.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -20,14 +19,13 @@ struct  SimplifyDrawUnClippedProcessor;
 //! Re-interpret complex geometry types as simple types
 // @bsiclass                                                      Brien.Bastings  06/05
 //=======================================================================================
-struct SimplifyViewDrawGeom : IViewDraw, IDgnGlyphLayoutListener
+struct SimplifyViewDrawGeom : IViewDraw
 {
 protected:
 
 ViewContextP                        m_context;
 ViewFlags                           m_viewFlags;
 
-EditElementHandle                   m_currentElement;
 ElemMatSymb                         m_currentMatSymb;
 OvrMatSymb                          m_overrideMatSymb;
 
@@ -41,16 +39,11 @@ bool                                m_inTextDraw;
 bool                                m_inThicknessDraw;
 
 bool                                m_processingMaterialGeometryMap;
-DisplayPath                         m_currentDisplayPath;
-std::stack <CookedDisplayStyleCP>   m_displayStyles;
 size_t                              m_elementTransformStackIndex;
-    
+
 private:
-
-DGNPLATFORM_EXPORT virtual void     _OnGlyphAnnounced (DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset) override;
-virtual UInt32                      _OnFontAnnounced (TextStringCR) override {return 0;}
-virtual bool                        _DidCacheGlyphs () override {return true;}
-
+void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
+    
 protected:
 
 // Functions implemented by sub-classes to allow them to control output.
@@ -82,10 +75,7 @@ virtual StatusInt                   _ProcessBody            (ISolidKernelEntityC
 virtual StatusInt                   _ProcessFacetSet        (PolyfaceQueryCR, bool filled) {return ERROR;} 
 virtual StatusInt                   _ProcessLinearSegments  (DPoint3dCP points, size_t numPoints, bool closed, bool filled) {return ERROR;}
 
-DGNPLATFORM_EXPORT virtual StatusInt    _OnOutputElement        (ElementHandleCR eh);
-
 // IViewDraw...these typically would not be implemented/overridden by sub-classes!
-virtual CookedDisplayStyleCP        _GetDrawDisplayStyle        () const override {return m_displayStyles.empty () ? NULL : m_displayStyles.top ();}
 virtual ViewFlagsCP                 _GetDrawViewFlags           () override {return &m_viewFlags;}
 virtual void                        _SetDrawViewFlags           (ViewFlagsCP flags) override {m_viewFlags = *flags;}
 
@@ -98,8 +88,8 @@ DGNPLATFORM_EXPORT virtual void         _DrawPointString3d          (int numPoin
 DGNPLATFORM_EXPORT virtual void         _DrawPointString2d          (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
 DGNPLATFORM_EXPORT virtual void         _DrawShape3d                (int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) override;
 DGNPLATFORM_EXPORT virtual void         _DrawShape2d                (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override;
-DGNPLATFORM_EXPORT virtual void         _DrawTriStrip3d             (int numPoints, DPoint3dCP points, Int32 usageFlags, DPoint3dCP range) override;
-DGNPLATFORM_EXPORT virtual void         _DrawTriStrip2d             (int numPoints, DPoint2dCP points, Int32 usageFlags, double zDepth, DPoint2dCP range) override;
+DGNPLATFORM_EXPORT virtual void         _DrawTriStrip3d             (int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) override;
+DGNPLATFORM_EXPORT virtual void         _DrawTriStrip2d             (int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) override;
 DGNPLATFORM_EXPORT virtual void         _DrawArc3d                  (DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) override;
 DGNPLATFORM_EXPORT virtual void         _DrawArc2d                  (DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) override;
 DGNPLATFORM_EXPORT virtual void         _DrawBSplineCurve           (MSBsplineCurveCR curve, bool filled) override;
@@ -111,8 +101,8 @@ DGNPLATFORM_EXPORT virtual void         _DrawBSplineSurface         (MSBsplineSu
 DGNPLATFORM_EXPORT virtual void         _DrawPolyface               (PolyfaceQueryCR meshData, bool filled = false) override;
 DGNPLATFORM_EXPORT virtual StatusInt    _DrawBody                   (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0) override;
 DGNPLATFORM_EXPORT virtual void         _DrawTextString             (TextStringCR text, double* zDepth) override;
-DGNPLATFORM_EXPORT virtual void         _DrawRaster                 (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, byte const* texels, DPoint3dCP range) override;
-DGNPLATFORM_EXPORT virtual void         _DrawRaster2d               (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, byte const* texels, double zDepth, DPoint2d const *range) override;
+DGNPLATFORM_EXPORT virtual void         _DrawRaster                 (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override;
+DGNPLATFORM_EXPORT virtual void         _DrawRaster2d               (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override;
 DGNPLATFORM_EXPORT virtual void         _DrawDgnOle                 (IDgnOleDraw*) override;
 DGNPLATFORM_EXPORT virtual void         _DrawPointCloud             (IPointCloudDrawParams* drawParams) override;
 DGNPLATFORM_EXPORT virtual void         _DrawMosaic                 (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override;
@@ -123,37 +113,30 @@ virtual void                        _PopTransClip () override {}
 virtual void                        _PushClipStencil (QvElem*) override {BeAssert (false && "Stencil only supported for QvOutput...");}
 virtual void                        _PopClipStencil () override {}
 
-DGNPLATFORM_EXPORT virtual void         _PushRenderOverrides        (ViewFlags, CookedDisplayStyleCP) override;
-DGNPLATFORM_EXPORT virtual void         _PopRenderOverrides         () override;
-
-
 virtual RangeResult                 _PushBoundingRange3d (DPoint3dCP) override {return RangeResult::Overlap;}
 virtual RangeResult                 _PushBoundingRange2d (DPoint2dCP, double zDepth) override {return RangeResult::Overlap;}
 virtual void                        _PopBoundingRange () override {}
 
-virtual void                        _SetToViewCoords            (bool yesNo) override {}
-virtual void                            _SetSymbology               (UInt32 lineColorTBGR, UInt32 fillColorTBGR, int lineWidth, UInt32 linePattern) override {}
-virtual void                        _DrawGrid                   (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, UInt32 gridsPerRef, Point2dCR repetitions) override {}
-virtual bool                        _DrawSprite                 (ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override {return false;}
-virtual void                        _DrawTiledRaster            (ITiledRasterP tiledRaster) override {}
-virtual void                        _DrawQvElem3d               (QvElemP qvElem, int subElemIndex) override {}
-virtual void                        _DrawQvElem2d               (QvElemP qvElem, double zDepth, int subElemIndex) override {}
-virtual bool                        _IsOutputQuickVision        () const override {return false;}
-virtual bool                        _DeferShadowsToHeal         () const override {return false;}
-virtual bool                        _ApplyMonochromeOverrides   (ViewFlagsCR) const override{return true;}
-virtual StatusInt                   _TestOcclusion              (int numVolumes, DPoint3dP verts, int* results) override { return ERROR; }
-virtual void                        _ClearZ                     () override {}
-
+virtual void _SetToViewCoords (bool yesNo) override {}
+virtual void _SetSymbology (ColorDef lineColorTBGR, ColorDef fillColorTBGR, int lineWidth, uint32_t linePattern) override {}
+virtual void _DrawGrid (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) override {}
+virtual bool _DrawSprite (ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override {return false;}
+virtual void _DrawTiledRaster (ITiledRasterP tiledRaster) override {}
+virtual void _DrawQvElem (QvElemP qvElem, int subElemIndex) override {}
+virtual bool _IsOutputQuickVision () const override {return false;}
+virtual bool _ApplyMonochromeOverrides (ViewFlagsCR) const override{return true;}
+virtual StatusInt _TestOcclusion (int numVolumes, DPoint3dP verts, int* results) override { return ERROR; }
+virtual void _ClearZ () override {}
 
 public:
 
 DGNPLATFORM_EXPORT                  SimplifyViewDrawGeom (bool addNormals = false, bool addParameters = false);
 DGNPLATFORM_EXPORT virtual          ~SimplifyViewDrawGeom ();
 
-ViewContextP                    GetViewContext () {return m_context;};
-void                            SetViewContext (ViewContextP context) {m_context = context;} // NOTE: Required!!!
+ViewContextP                        GetViewContext () {return m_context;};
+void                                SetViewContext (ViewContextP context) {m_context = context;} // NOTE: Required!!!
 
-bool                            PerformClip ();
+bool                                PerformClip ();
 DGNPLATFORM_EXPORT ClipVectorCP     GetCurrClip ();
 
 DGNPLATFORM_EXPORT void             ClipAndProcessCurveVector       (CurveVectorCR, bool filled);
@@ -176,23 +159,17 @@ StatusInt                       ProcessBody                     (ISolidKernelEnt
 StatusInt                       ProcessFacetSet                 (PolyfaceQueryCR facets, bool filled) {return _ProcessFacetSet (facets, filled);}
 StatusInt                       ProcessGeometryMapOrFacetSet    (PolyfaceQueryCR facets, bool filled);
 
-DGNPLATFORM_EXPORT void             SetCurrentElement               (ElementHandleCR eh);
-ElementHandleCR                 GetCurrentElement               () {return m_currentElement;}
-DisplayPathCR                   GetCurrentDisplayPath           () {return m_currentDisplayPath;}
-
 void                            SetCurrentMatSymb               (ElemMatSymbCR matSymb) {m_currentMatSymb = matSymb;}
-DGNPLATFORM_EXPORT ElemMatSymbR     GetCurrentMatSymb               (ElemMatSymbR matSymb);
+DGNPLATFORM_EXPORT ElemMatSymbR GetCurrentMatSymb               (ElemMatSymbR matSymb);
 
-UInt32                          GetCurrentOverrideFlags         () {return m_overrideMatSymb.GetFlags ();}
+uint32_t                        GetCurrentOverrideFlags         () {return m_overrideMatSymb.GetFlags ();}
 
 IFacetOptionsP                  GetFacetOptions                 () {return _GetFacetOptions ();}
 
-DGNPLATFORM_EXPORT bool             IsRangeTotallyInside            (DRange3dCR range);
-DGNPLATFORM_EXPORT bool             IsRangeTotallyInsideClip        (DRange3dCR range);
-DGNPLATFORM_EXPORT bool             ArePointsTotallyInsideClip      (DPoint3dCP points, int nPoints);
-DGNPLATFORM_EXPORT bool             ArePointsTotallyOutsideClip     (DPoint3dCP points, int nPoints);
-
-StatusInt                       OnOutputElement                 (ElementHandleCR eh) {return _OnOutputElement (eh);}
+DGNPLATFORM_EXPORT bool         IsRangeTotallyInside            (DRange3dCR range);
+DGNPLATFORM_EXPORT bool         IsRangeTotallyInsideClip        (DRange3dCR range);
+DGNPLATFORM_EXPORT bool         ArePointsTotallyInsideClip      (DPoint3dCP points, int nPoints);
+DGNPLATFORM_EXPORT bool         ArePointsTotallyOutsideClip     (DPoint3dCP points, int nPoints);
 
 void                            SetInPatternDraw                (bool isPattern) {m_inPatternDraw = isPattern;}
 bool                            GetInPatternDraw                () {return m_inPatternDraw;}
@@ -206,9 +183,9 @@ bool                            GetInTextDraw                   () {return m_inT
 void                            SetInThicknessDraw              (bool isThickness) {m_inThicknessDraw = isThickness;}
 bool                            GetInThicknessDraw              () {return m_inThicknessDraw;}
 
-DGNPLATFORM_EXPORT MaterialCP       GetCurrentMaterial              () const;
-DGNPLATFORM_EXPORT MaterialMapCP    GetCurrentGeometryMap           () const;
-bool                            GetInMaterialGeometryMap () const {return m_processingMaterialGeometryMap;}
+DGNPLATFORM_EXPORT MaterialCP       GetCurrentMaterial          () const;
+DGNPLATFORM_EXPORT MaterialMapCP    GetCurrentGeometryMap       () const;
+bool                                GetInMaterialGeometryMap    () const {return m_processingMaterialGeometryMap;}
 
 DGNPLATFORM_EXPORT IPolyfaceConstructionPtr GetPolyfaceBuilder ();
 
@@ -216,16 +193,14 @@ DGNPLATFORM_EXPORT BentleyStatus    GetElementToWorldTransform (TransformR trans
 DGNPLATFORM_EXPORT BentleyStatus    GetLocalToElementTransform (TransformR transform);
 
 StatusInt                       ProcessGeometryMap (PolyfaceQueryCR facets);
-StatusInt                       ProcessGeometryMap (DPoint3dCP points, DPoint2dCP params, size_t nPoints, ElementHandleCR eh, XGraphicsRecorder*& xGraphics);
 StatusInt                       ProcessTextureOutlines (PolyfaceQueryCR facets);
-StatusInt                       ProcessFacetTextureOutlines (IPolyfaceConstructionR, DPoint3dCP points, DPoint2dCP params, bool const* edgeHidden, size_t nPoints, bvector<DPoint3d>&, bvector<Int32>&);
-DGNPLATFORM_EXPORT void             StrokeGeometryMap  (CurveVectorCR curves);
+StatusInt                       ProcessFacetTextureOutlines (IPolyfaceConstructionR, DPoint3dCP points, DPoint2dCP params, bool const* edgeHidden, size_t nPoints, bvector<DPoint3d>&, bvector<int32_t>&);
+DGNPLATFORM_EXPORT void         StrokeGeometryMap (CurveVectorCR curves);
 
 private:
 
 void                            PreDrawMethod ();
 void                            PostDrawMethod ();
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      11/2012
@@ -254,7 +229,6 @@ struct MethodMark
 
     MethodMark (SimplifyViewDrawGeom&  drawGeom) : m_drawGeom (drawGeom)    { m_drawGeom.PreDrawMethod(); }
     ~MethodMark ()                                                          { m_drawGeom.PostDrawMethod (); }
-
     };
 
 }; // SimplifyViewDrawGeom

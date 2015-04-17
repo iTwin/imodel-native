@@ -2,11 +2,12 @@
 |
 |     $Source: DgnCore/HandlerTypeInfo.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+#define DGN_TABLE_LEVEL_FOR_MODEL(m)  (m)->GetDgnDb().Categories()
 enum
     {
     MAX_INFO_STRING_LEN = 4096,
@@ -17,46 +18,47 @@ enum
 +===============+===============+===============+===============+===============+======*/
 struct PathPropertyQuery : public IQueryProperties
 {
-LevelId         m_level;
+DgnCategoryId m_category;
 
-PathPropertyQuery () {m_level.Invalidate();}
+PathPropertyQuery () {m_category.Invalidate();}
 
-LevelId         GetEffectiveLevelId () {return m_level;}
+DgnCategoryId GetEffectiveCategoryId () {return m_category;}
 
-virtual ElementProperties _GetQueryPropertiesMask () override {return ELEMENT_PROPERTY_Level;}
+virtual ElementProperties _GetQueryPropertiesMask () override {return ELEMENT_PROPERTY_Category;}
 
-virtual void    _EachLevelCallback (EachLevelArg& arg) override
+virtual void    _EachCategoryCallback (EachCategoryArg& arg) override
     {
-    // Get effective base level id for this path...
+    // Get effective base category id for this path...
     if (0 == (arg.GetPropertyFlags () & PROPSCALLBACK_FLAGS_IsBaseID))
         return;
 
     if (0 != ((PROPSCALLBACK_FLAGS_ElementIgnoresID | PROPSCALLBACK_FLAGS_UndisplayedID) & arg.GetPropertyFlags ()))
         return;
 
-    m_level = arg.GetEffectiveValue ();
+    m_category = arg.GetEffectiveValue ();
     }
 
 }; // PathPropertyQuery
 
 /**
- * Level Display Name Format Defines
+ * Category Display Name Format Defines
  */
-#define LEVEL_NAME_DISPLAY_FORMAT_STRING            L"N"
-#define LEVEL_CODE_DISPLAY_FORMAT_STRING            L"C"
-#define LEVEL_DESCRIPTION_DISPLAY_FORMAT_STRING     L"D"
+#define LEVEL_NAME_DISPLAY_FORMAT_STRING            "N"
+#define LEVEL_CODE_DISPLAY_FORMAT_STRING            "C"
+#define LEVEL_DESCRIPTION_DISPLAY_FORMAT_STRING     "D"
 
 /**
- * Level Display Name Format Values
+ * Category Display Name Format Values
  */
-#define LEVEL_NAME_DISPLAY_FORMAT                   L'N'
-#define LEVEL_CODE_DISPLAY_FORMAT                   L'C'
-#define LEVEL_DESCRIPTION_DISPLAY_FORMAT            L'D'
-#define LEVEL_ID_DISPLAY_FORMAT                     L'I'
+#define LEVEL_NAME_DISPLAY_FORMAT                   'N'
+#define LEVEL_CODE_DISPLAY_FORMAT                   'C'
+#define LEVEL_DESCRIPTION_DISPLAY_FORMAT            'D'
+#define LEVEL_ID_DISPLAY_FORMAT                     'I'
 
+#if defined (NEEDSWORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Trefz   01/04
-+---------------+---------------+---------------+---------------+---------------+------*/
+ +---------------+---------------+---------------+---------------+---------------+------*/
 static bool     isBlankString (Utf8CP testStr)
     {
     if (!testStr || strlen (testStr) < 1)
@@ -77,36 +79,36 @@ static bool     isBlankString (Utf8CP testStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus getLevelDisplayName (WStringR displayNameStr, DgnLevels::Level const& level, WCharCP displayFormat)
+static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCategories::Category const& category, Utf8CP displayFormat)
     {
-    BeAssert (level.IsValid ());
+    BeAssert (category.IsValid ());
 
-    for (size_t formatIndex = 0; formatIndex < wcslen (displayFormat); formatIndex++)
+    for (size_t formatIndex = 0; formatIndex < strlen (displayFormat); formatIndex++)
         {
-        WChar formatChar = displayFormat[formatIndex];
+        Utf8Char formatChar = displayFormat[formatIndex];
 
         switch (formatChar)
             {
             case LEVEL_NAME_DISPLAY_FORMAT:
                 {
-                displayNameStr.AppendUtf8 (level.GetName()? level.GetName(): ""); // string conversion
+                displayNameStr.append(category.GetName()? category.GetName(): ""); // string conversion
                 break;
                 }
 
             case LEVEL_DESCRIPTION_DISPLAY_FORMAT:
                 {
-                if (isBlankString (level.GetDescription ()))
-                    displayNameStr.AppendUtf8 (DgnCoreL10N::GetString(DgnCoreL10N::IDS_LevelDescriptionNone).c_str());
+                if (isBlankString (category.GetDescription ()))
+                    displayNameStr.append(DgnCoreL10N::GetString(DgnCoreL10N::IDS_CategoryDescriptionNone).c_str());
                 else
-                    displayNameStr.AppendUtf8 (level.GetDescription ()); // string conversion
+                    displayNameStr.append (category.GetDescription ()); // string conversion
                 break;
                 }
 
             case LEVEL_ID_DISPLAY_FORMAT:
                 {
-                WChar     tmpStr[64];
+                Utf8Char     tmpStr[64];
 
-                BeStringUtilities::Snwprintf (tmpStr, L"%d", level.GetLevelId ());
+                BeStringUtilities::Snprintf (tmpStr, "%d", category.GetCategoryId());
                 displayNameStr.append (tmpStr);
                 break;
                 }
@@ -121,7 +123,7 @@ static BentleyStatus getLevelDisplayName (WStringR displayNameStr, DgnLevels::Le
         }
 
     if (displayNameStr.empty ())
-        displayNameStr.AssignUtf8 (level.GetName()? level.GetName(): ""); // string conversion
+        displayNameStr.assign(category.GetName()? category.GetName(): ""); // string conversion
 
     return SUCCESS;
     }
@@ -129,7 +131,7 @@ static BentleyStatus getLevelDisplayName (WStringR displayNameStr, DgnLevels::Le
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getLevelString (WStringR levelStr, DisplayPathCP path)
+static void getCategoryString (Utf8StringR categoryStr, DisplayPathCP path)
     {
     PathPropertyQuery   queryObj;
 
@@ -139,62 +141,34 @@ static void getLevelString (WStringR levelStr, DisplayPathCP path)
     else
         PropertyContext::QueryElementProperties (ElementHandle (path->GetTailElem ()), &queryObj);
 
-    DgnLevels::Level const& level = DGN_TABLE_LEVEL_FOR_MODEL(path->GetRoot()).QueryLevelById (queryObj.GetEffectiveLevelId ());
+    DgnCategories::Category const& category = DGN_TABLE_LEVEL_FOR_MODEL(path->GetRoot()).QueryCategoryById (queryObj.GetEffectiveCategoryId ());
 
-    if (!level.IsValid ())
+    if (!category.IsValid ())
         return;
 
-    WString displayFormat;
+    Utf8String displayFormat;
 
 #ifdef WIP_CFGVAR // MS_LEVEL_DISPLAY_FORMAT
     if (SUCCESS != ConfigurationManager::GetVariable (displayFormat, L"MS_LEVEL_DISPLAY_FORMAT") || displayFormat.size () == 0)
 #endif
         displayFormat = LEVEL_NAME_DISPLAY_FORMAT_STRING;
 
-    WString     displayName;
+    Utf8String     displayName;
 
-    if (SUCCESS != getLevelDisplayName (displayName, level, displayFormat.c_str ()))
+    if (SUCCESS != getCategoryDisplayName (displayName, category, displayFormat.c_str ()))
         return;
 
-    levelStr.AssignUtf8 (DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Level).c_str());
-    levelStr.append (displayName);
+    categoryStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category).c_str());
+    categoryStr.append (displayName);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void getGroupString (WStringR groupStr, ElementHandleCR eh, bool doNamedGroups)
-    {
-#ifdef DGN_GGROUP_REORG_WIP
-    int         ggroup = eh.GetElementCP ()->hdr.dhdr.grphgrp;
-    WString     tmpStr;
-
-    // NOTE: Used to check tcb->fbfdcn.gglk and only report GG id when enabled...
-    if (ggroup)
-        {
-        WChar ggVal[100];
-
-        tmpStr.AssignUtf8 (dgnCoreGetMessage(DgnCoreL10N::DISPLAY_INFO_MessageID_GG).c_str());
-        BeStringUtilities::Snwprintf (ggVal, _countof(ggVal), L"%d", ggroup);
-        tmpStr.append (L"{").append (ggVal).append (L"}");
-        }
-
-    if (doNamedGroups)
-        getNamedGroupString (tmpStr, eh);
-
-    if (tmpStr.empty ())
-        return;
-
-    groupStr.AssignUtf8 (dgnCoreGetMessage(DgnCoreL10N::DISPLAY_INFO_MessageID_Groups).c_str()).append (tmpStr);
 #endif
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (DisplayPathCP path, WStringR pathDescr, WCharCP delimiter) const
+void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (DisplayPathCP path, Utf8StringR pathDescr, Utf8CP delimiter) const
     {
+#if defined (NEEDSWORK_DGNITEM)
     ElementHandle   eh (path->GetHeadElem ());
     DisplayHandlerP dHandler;
 
@@ -204,15 +178,15 @@ void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (DisplayPathCP path, WS
         return;
         }
 
-    WString     levelStr, modelStr, groupStr;
+    Utf8String     categoryStr, modelStr;
 
 #if defined (WIP_V10_TRANSIENTS)
     // If description linkage has been added to transient, use it...
-    if (path->InTransientModel () && mdlElement_attributePresent (eh.GetElementCP (), LINKAGEID_String, NULL))
+    if (path->InTransientModel () && mdlElement_attributePresent (eh.GetGraphicsCP (), LINKAGEID_String, NULL))
         {
         WCharP    scratch = (WCharP) _alloca (MAX_LINKAGE_STRING_BYTES);
 
-        if (SUCCESS == mdlLinkage_extractNamedStringLinkageByIndex (scratch, MAX_LINKAGE_STRING_LENGTH, eh.GetElementCP (), STRING_LINKAGE_KEY_Description, 0))
+        if (SUCCESS == mdlLinkage_extractNamedStringLinkageByIndex (scratch, MAX_LINKAGE_STRING_LENGTH, eh.GetGraphicsCP (), STRING_LINKAGE_KEY_Description, 0))
             {
             pathDescr.assign (scratch);
             return;
@@ -225,12 +199,12 @@ void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (DisplayPathCP path, WS
         {
         DgnModelP dgnModel = eh.GetDgnModelP();
         if (dgnModel)
-            modelStr.AssignUtf8 (DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model).c_str()).append (WString(dgnModel->GetModelName(), true).c_str());
+            modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model).c_str()).append (dgnModel->GetModelName());
 
-        getGroupString (groupStr, eh, true);
         }
 
-    getLevelString (levelStr, path);
+    getCategoryString (categoryStr, path);
 
-    dHandler->GetPathDescription (eh, pathDescr, path, levelStr.c_str(), modelStr.c_str(), groupStr.c_str(), delimiter);
+    dHandler->GetPathDescription (eh, pathDescr, path, categoryStr.c_str(), modelStr.c_str(), delimiter);
+#endif
     }

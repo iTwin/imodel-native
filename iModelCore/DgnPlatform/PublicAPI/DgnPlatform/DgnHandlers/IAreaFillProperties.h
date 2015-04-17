@@ -2,14 +2,14 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/IAreaFillProperties.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#include    <DgnPlatform/DgnCore/Handler.h> // For MissingHandlerPermissions
+#include    <DgnPlatform/DgnCore/ElementHandler.h>
 #include    <DgnPlatform/DgnCore/AreaPattern.h>
 #include    <DgnPlatform/DgnPlatform.h>
 
@@ -25,16 +25,16 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE IAreaFillPropertiesQuery
 {
-//__PUBLISH_SECTION_END__
 protected:
 
 DGNPLATFORM_EXPORT virtual bool _GetAreaType (ElementHandleCR eh, bool* isHoleP) const;
-DGNPLATFORM_EXPORT virtual bool _GetSolidFill (ElementHandleCR eh, UInt32* fillColorP, bool* alwaysFilledP) const;
+DGNPLATFORM_EXPORT virtual bool _GetSolidFill (ElementHandleCR eh, uint32_t* fillColorP, bool* alwaysFilledP) const;
 DGNPLATFORM_EXPORT virtual bool _GetGradientFill (ElementHandleCR eh, GradientSymbPtr& symb) const;
-DGNPLATFORM_EXPORT virtual bool _GetPattern (ElementHandleCR eh, PatternParamsPtr& params, bvector<DwgHatchDefLine>* hatchDefLinesP, DPoint3dP originP, int index) const;
+DGNPLATFORM_EXPORT virtual bool _GetPattern (ElementHandleCR eh, PatternParamsPtr& params, DPoint3dP originP, int index) const;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
+IAreaFillPropertiesQuery() {;}
+IAreaFillPropertiesQuery& operator= (IAreaFillPropertiesQuery const&) {return *this;}
+
 public:
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,7 +54,7 @@ DGNPLATFORM_EXPORT bool GetAreaType (ElementHandleCR eh, bool* isHoleP) const;
 * @return true if element currently has a solid fill.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool GetSolidFill (ElementHandleCR eh, UInt32* fillColorP, bool* alwaysFilledP) const;
+DGNPLATFORM_EXPORT bool GetSolidFill (ElementHandleCR eh, uint32_t* fillColorP, bool* alwaysFilledP) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Query the current gradient fill information for the supplied element.
@@ -69,14 +69,13 @@ DGNPLATFORM_EXPORT bool GetGradientFill (ElementHandleCR eh, GradientSymbPtr& sy
 * Query the current hatch or area pattern information for the supplied element.
 * @param[in] eh The element to query.
 * @param[out] params The pattern parameters, holds information about angles, scales, pattern cell, and symbology.
-* @param[out] hatchDefLinesP Information about DWG hatch definition. 
 * @param[out] originP The pattern origin.
 * @param[in] index Which pattern index to query (0 based).
 * @return true if element is currently hatched or has an area pattern.
 * @note The Multiline element is the only element type that currently supports having more than one pattern.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool GetPattern (ElementHandleCR eh, PatternParamsPtr& params, bvector<DwgHatchDefLine>* hatchDefLinesP, DPoint3dP originP, int index) const;
+DGNPLATFORM_EXPORT bool GetPattern (ElementHandleCR eh, PatternParamsPtr& params, DPoint3dP originP, int index) const;
 
 }; // IAreaFillPropertiesQuery
 
@@ -87,18 +86,18 @@ DGNPLATFORM_EXPORT bool GetPattern (ElementHandleCR eh, PatternParamsPtr& params
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE IAreaFillPropertiesEdit : public IAreaFillPropertiesQuery
 {
-//__PUBLISH_SECTION_END__
 protected:
 
 DGNPLATFORM_EXPORT virtual bool _SetAreaType (EditElementHandleR eeh, bool isHole);
 DGNPLATFORM_EXPORT virtual bool _RemoveAreaFill (EditElementHandleR eeh);
 DGNPLATFORM_EXPORT virtual bool _RemovePattern (EditElementHandleR eeh, int index);
-DGNPLATFORM_EXPORT virtual bool _AddSolidFill (EditElementHandleR eeh, UInt32* fillColorP, bool* alwaysFilledP);
+DGNPLATFORM_EXPORT virtual bool _AddSolidFill (EditElementHandleR eeh, ColorDef* fillColorP, bool* alwaysFilledP);
 DGNPLATFORM_EXPORT virtual bool _AddGradientFill (EditElementHandleR eeh, GradientSymbCR symb);
-DGNPLATFORM_EXPORT virtual bool _AddPattern (EditElementHandleR eeh, PatternParamsR params, DwgHatchDefLineP hatchDefLinesP, int index);
+DGNPLATFORM_EXPORT virtual bool _AddPattern (EditElementHandleR eeh, PatternParamsR params, int index);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
+IAreaFillPropertiesEdit() {}
+IAreaFillPropertiesEdit& operator= (IAreaFillPropertiesEdit const&) {return *this;}
+
 public:
 
 /*---------------------------------------------------------------------------------**//**
@@ -136,7 +135,7 @@ DGNPLATFORM_EXPORT bool RemovePattern (EditElementHandleR eeh, int index);
 * @return true if element was updated.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool AddSolidFill (EditElementHandleR eeh, UInt32* fillColorP = NULL, bool* alwaysFilledP = NULL);
+DGNPLATFORM_EXPORT bool AddSolidFill (EditElementHandleR eeh, ColorDef* fillColorP = NULL, bool* alwaysFilledP = NULL);
 
 /*---------------------------------------------------------------------------------**//**
 * Add gradient fill to the supplied element.
@@ -151,12 +150,11 @@ DGNPLATFORM_EXPORT bool AddGradientFill (EditElementHandleR eeh, GradientSymbCR 
 * Add a hatch or area pattern to the supplied element.
 * @param[in] eeh The element to modify.
 * @param[in] params The pattern settings.
-* @param[in] hatchDefLinesP Settings for DWG hatch type. NOTE: Count must be set in params.GetDwgHatchDef ().nDefLines.
 * @param[in] index Pattern index (only for multilines).
 * @return true if element was updated.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool AddPattern (EditElementHandleR eeh, PatternParamsR params, DwgHatchDefLineP hatchDefLinesP, int index = 0);
+DGNPLATFORM_EXPORT bool AddPattern (EditElementHandleR eeh, PatternParamsR params, int index = 0);
 
 }; // IAreaFillPropertiesEdit
 

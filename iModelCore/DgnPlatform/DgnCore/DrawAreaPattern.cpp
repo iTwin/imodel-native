@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DrawAreaPattern.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -18,12 +18,12 @@
 #define     TOLERANCE_ChoordAngle   .4
 #define     TOLERANCE_ChoordLen     1000
 
-static      MSElementDescrCP        s_patternOverrideCell;
+static      DgnElementCP        s_patternOverrideCell;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     BentleyApi::pattern_setOverrideCell (MSElementDescrCP cellEdP)
+void     BentleyApi::pattern_setOverrideCell (DgnElementCP cellEdP)
     {
     /* NOTE: The sole purpose of this is to support the published mdlPattern_area api
              and still be able to use DropContext to create a non-associative pattern. */
@@ -33,7 +33,7 @@ void     BentleyApi::pattern_setOverrideCell (MSElementDescrCP cellEdP)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSElementDescrCP BentleyApi::pattern_getOverrideCell ()
+DgnElementCP BentleyApi::pattern_getOverrideCell ()
     {
     return s_patternOverrideCell;
     }
@@ -45,7 +45,6 @@ struct PatternBoundaryCollector : IElementGraphicsProcessor
 {
 private:
 
-ElementHandleCR     m_eh;
 IStrokeForCache&    m_stroker;
 CurveVectorPtr      m_boundary;
 ViewContextP        m_context;
@@ -56,7 +55,7 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-explicit PatternBoundaryCollector (ElementHandleCR eh, IStrokeForCache& stroker) : m_eh (eh), m_stroker (stroker) {}
+explicit PatternBoundaryCollector (IStrokeForCache& stroker) : m_stroker (stroker) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
@@ -91,9 +90,7 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics (ViewContextR context) override
     {
-    CachedDrawHandle drawHandle (&m_eh);
-
-    m_stroker._StrokeForCache (drawHandle, context);
+    m_stroker._StrokeForCache (context);
     }
 
 public:
@@ -106,11 +103,11 @@ CurveVectorPtr GetBoundary () {return m_boundary;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process (ElementHandleCR eh, IStrokeForCache& stroker)
+static CurveVectorPtr Process (IStrokeForCache& stroker)
     {
-    PatternBoundaryCollector  processor (eh, stroker);
+    PatternBoundaryCollector  processor (stroker);
 
-    ElementGraphicsOutput::Process (processor, *eh.GetDgnProject ());
+    ElementGraphicsOutput::Process (processor, stroker._GetDgnDb());
 
     return processor.GetBoundary ();
     }
@@ -123,126 +120,35 @@ static CurveVectorPtr Process (ElementHandleCR eh, IStrokeForCache& stroker)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::ClipStencil::ClipStencil (IStrokeForCache& stroker, int qvIndex, bool saveQvElem, QvElem* qvElem) : m_stroker (stroker)
+ViewContext::ClipStencil::ClipStencil (IStrokeForCache& stroker) : m_stroker (stroker) {m_tmpQvElem = nullptr;}
+ViewContext::ClipStencil::~ClipStencil () {if (m_tmpQvElem) IViewOutput::DeleteCacheElement(m_tmpQvElem);}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+QvElem* ViewContext::ClipStencil::GetQvElem (ViewContextR context)
     {
-    m_qvIndex    = qvIndex;
-    m_saveQvElem = saveQvElem;
-    m_qvElem     = qvElem;
+    if (nullptr != m_tmpQvElem)
+        return m_tmpQvElem;
+
+    bool    deleteQvElem;
+    QvElem* qvElem = context.GetCachedGeometry (m_stroker, deleteQvElem);
+
+    if (deleteQvElem)
+        m_tmpQvElem = qvElem;
+
+    return qvElem;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* ViewContext::ClipStencil::GetQvElem (ElementHandleCR thisElm, ViewContextR context, bool& deleteQvElem)
-    {
-    if (m_qvElem)
-        {
-        deleteQvElem = false;
-
-        return m_qvElem;
-        }
-
-    return context.GetCachedGeometry (CachedDrawHandle (&thisElm), m_stroker, m_qvIndex, deleteQvElem, m_saveQvElem);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr ViewContext::ClipStencil::GetCurveVector (ElementHandleCR thisElm)
+CurveVectorPtr ViewContext::ClipStencil::GetCurveVector ()
     {
     if (m_curveVector.IsNull ())
-        m_curveVector = PatternBoundaryCollector::Process (thisElm, m_stroker);
+        m_curveVector = PatternBoundaryCollector::Process (m_stroker);
 
     return m_curveVector;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-IStrokeForCache& ViewContext::ClipStencil::GetStroker ()
-    {
-    return m_stroker;
-    }
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::PatternParamSource::PatternParamSource (int patternIndex)
-    {
-    m_patternIndex  = patternIndex;
-    m_paramsP       = NULL;
-    m_hatchLinesP   = NULL;
-    m_freeData      = false;
-    m_origin.zero ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::PatternParamSource::PatternParamSource (PatternParamsP params, DwgHatchDefLineP hatchLines, int patternIndex)
-    {
-    m_patternIndex  = patternIndex;
-    m_paramsP       = params;
-    m_hatchLinesP   = params->dwgHatchDef.nDefLines ? hatchLines : NULL;
-    m_freeData      = false;
-    m_origin        = params->origin;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::PatternParamSource::~PatternParamSource ()
-    {
-    if (!m_freeData)
-        return;
-
-    FREE_AND_CLEAR (m_paramsP);
-    FREE_AND_CLEAR (m_hatchLinesP);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-PatternParamsP  ViewContext::PatternParamSource::GetParams (ElementHandleCR thisElm, DPoint3dP origin, DwgHatchDefLineP* hatchLines, int* index, ViewContextP context)
-    {
-    if (!m_paramsP)
-        {
-        if (NULL == context || NULL == context->GetOverrideMatSymb () || NULL == (m_paramsP = const_cast <PatternParamsP> (context->GetOverrideMatSymb ()->GetPatternParams ())))
-            {
-            if (!mdlElement_attributePresent (thisElm.GetElementCP (), PATTERN_ID, NULL))
-                return NULL;
-
-            m_paramsP     = (PatternParamsP) malloc (sizeof (*m_paramsP));
-            m_hatchLinesP = (DwgHatchDefLineP) malloc (MAX_DWG_EXPANDEDHATCH_LINES * sizeof (*m_hatchLinesP));
-
-#if defined (NEEDS_WORK_DGNITEM)
-            if (SUCCESS != PatternLinkageUtil::ExtractFromElement (NULL, *m_paramsP, m_hatchLinesP, MAX_DWG_EXPANDEDHATCH_LINES, &m_origin, *thisElm.GetElementCP (), thisElm.GetDgnModelP (), m_patternIndex))
-                {
-                FREE_AND_CLEAR (m_paramsP);
-                FREE_AND_CLEAR (m_hatchLinesP);
-
-                return NULL;
-                }
-#endif
-
-            m_freeData = true;
-            }
-        }
-
-    if (origin)
-        *origin = m_origin;
-
-    if (index)
-        *index = m_patternIndex;
-
-    if (hatchLines)
-        *hatchLines = m_hatchLinesP;
-
-    return m_paramsP;
     }
 
 /*=================================================================================**//**
@@ -253,7 +159,7 @@ struct PatternSymbol : IDisplaySymbol
 private:
 
 mutable EditElementHandle   m_eeh;
-mutable ElementRefP         m_elementRef;
+mutable DgnElementP         m_elementRef;
 mutable DRange3d            m_range;
 
 public:
@@ -262,14 +168,20 @@ public:
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementHandleCR GetElemHandle () const {return m_eeh;}
-ElementRefP     GetElementRef () const {return m_elementRef;}
+DgnElementP     GetElementRef () const {return m_elementRef;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _Draw (ViewContextR context) override
     {
-    context.VisitElemHandle (m_eeh, false, false);
+#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
+    // Pattern geometry will be a geom part...not an element...
+#endif
+    GeometricElementCP geomElem = m_eeh.GetGeometricElement();
+
+    if (geomElem)
+        context.VisitElement (*geomElem);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -285,23 +197,23 @@ virtual StatusInt _GetRange (DRange3dR range) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-PatternSymbol (ElementId cellId, DgnProjectR project)
+PatternSymbol (DgnElementId cellId, DgnDbR project)
     {
-    MSElementDescrPtr edP;
+    DgnElementPtr edP;
 
     if (!cellId.IsValid() && s_patternOverrideCell)
         {
-        edP = s_patternOverrideCell->Duplicate();
+        edP = s_patternOverrideCell->Duplicate(); 
         m_elementRef = NULL;
         }
     else
         {
         // If pattern cell doesn't already exist in project...it should fail...
-        m_elementRef = project.Models ().FindElementById (cellId);
+        m_elementRef = project.Elements().FindElementById (cellId);
         if (NULL == m_elementRef)
             return;
 
-        edP = m_elementRef->GetElementDescr();
+        edP = m_elementRef->Duplicate();
         if (!edP.IsValid())
             return;
         }
@@ -311,11 +223,11 @@ PatternSymbol (ElementId cellId, DgnProjectR project)
 
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     // Match dimension of modelRef; otherwise pattern in 3D reference to 2D ends up at z=0, which may be outside of the range of the reference file.
-    if (modelRef->Is3d () && !DisplayHandler::Is3dElem (m_eeh.GetElementCP ()))
+    if (modelRef->Is3d () && !DisplayHandler::Is3dElem (m_eeh.GetGraphicsCP ()))
         {
         m_eeh.GetHandler ().ConvertTo3d (m_eeh, 0.0);
         }
-    else if (!modelRef->Is3d () && DisplayHandler::Is3dElem (m_eeh.GetElementCP ()))
+    else if (!modelRef->Is3d () && DisplayHandler::Is3dElem (m_eeh.GetGraphicsCP ()))
         {
         DVec3d      flattenDir;
         Transform   flattenTrans;
@@ -328,21 +240,7 @@ PatternSymbol (ElementId cellId, DgnProjectR project)
         }
 #endif
 
-    DisplayHandlerP dHandler = m_eeh.GetDisplayHandler ();
-
-    if (NULL == dHandler || SUCCESS != dHandler->CalcElementRange (m_eeh, m_range, NULL))
-        {
-        BeAssert (false);
-        m_range = DRange3d::NullRange ();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IsPointCellSymbol ()
-    {
-    return !m_eeh.GetElementCP ()->IsSnappable(); // Always SCDef
+    m_range = m_eeh.GetGeometricElement()->_GetRange3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,7 +248,7 @@ bool IsPointCellSymbol ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Is3dCellSymbol ()
     {
-    return m_eeh.GetElementCP ()->Is3d();
+    return m_eeh.GetDgnModelP ()->Is3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -360,23 +258,17 @@ void ApplyElemDisplayParams (ElemDisplayParamsCR elParams)
     {
     ElementPropertiesSetter remapper;
 
-    remapper.SetLevel (elParams.GetSubLevelId().GetLevel ());
-    remapper.SetElementClass (elParams.GetElementClass ());
+    remapper.SetCategory (elParams.GetCategoryId ());
     remapper.SetTransparency (elParams.GetTransparency ());
 
+#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     if (IsPointCellSymbol ())
         {
-        UInt32  color = elParams.GetLineColor ();
-
-        if (INVALID_COLOR == color) // Use an existing extended color if it exists (Don't expect this case actually occurs)...
-            color = m_eeh.GetDgnProject()->Colors().FindElementColor (IntColorDef (elParams.GetLineColorTBGR ()));
-
-        if (INVALID_COLOR != color)
-            remapper.SetColor (color);
-
-        remapper.SetLinestyle (elParams.GetLineStyle (), elParams.GetLineStyleParams ());
+        remapper.SetColor (elParams.GetLineColor ());
         remapper.SetWeight (elParams.GetWeight ());
+        remapper.SetLinestyle (elParams.GetLineStyle (), elParams.GetLineStyleParams ());
         }
+#endif
 
     remapper.Apply (m_eeh);
     }
@@ -395,8 +287,6 @@ static void CookPatternSymbology (PatternParamsCR params, ViewContextR context)
     {
     ElemDisplayParamsP  elParams = context.GetCurrentDisplayParams ();
 
-    elParams->SetElementClass (DgnElementClass::PatternComponent);
-
     if (PatternParamsModifierFlags::None != ((PatternParamsModifierFlags::Color | PatternParamsModifierFlags::Weight | PatternParamsModifierFlags::Style) & params.modifiers))
         {
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Color))
@@ -405,25 +295,22 @@ static void CookPatternSymbology (PatternParamsCR params, ViewContextR context)
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Weight))
             elParams->SetWeight (params.weight);
 
+#if defined (WIP_LINESTYLE)
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Style))
             elParams->SetLineStyle (params.style, elParams->GetLineStyleParams ());
+#endif
         }
 
     context.CookDisplayParams ();
-
-    // NOTE: Re-cook overrides for stuff like weight used by hilite, etc.
-    context.CookDisplayParamsOverrides ();
-    context.ActivateOverrideMatSymb ();
+    context.CookDisplayParamsOverrides (); // NOTE: Re-cook and activate overrides for stuff like weight used by hilite, etc.
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool PushBoundaryClipStencil (ElementHandleCR thisElm, ViewContextR context, VCClipStencil& boundary, QvElem*& qvElem, bool& deleteQvElem)
+static bool PushBoundaryClipStencil (ViewContextR context, VCClipStencil& boundary, QvElem*& qvElem)
     {
-    deleteQvElem = false;
-
-    if (NULL == (qvElem = boundary.GetQvElem (thisElm, context, deleteQvElem)))
+    if (NULL == (qvElem = boundary.GetQvElem (context)))
         return false;
 
     context.GetIViewDraw ().PushClipStencil (qvElem);
@@ -434,15 +321,12 @@ static bool PushBoundaryClipStencil (ElementHandleCR thisElm, ViewContextR conte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void PopBoundaryClipStencil (ViewContextR context, QvElem* qvElem, bool deleteQvElem)
+static void PopBoundaryClipStencil (ViewContextR context, QvElem* qvElem)
     {
     if (NULL == qvElem)
         return;
 
     context.GetIViewDraw ().PopClipStencil ();
-
-    if (deleteQvElem)
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem (qvElem);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,7 +334,6 @@ static void PopBoundaryClipStencil (ViewContextR context, QvElem* qvElem, bool d
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool GetCellTileInfo
 (
-ElementHandleCR thisElm,
 VCClipStencil&  boundary,
 PatternSymbol&  symbCell,
 DRange3dR       cellRange,
@@ -489,7 +372,7 @@ double          columnSpacing
     transform.initFrom (&invMatrix);
     transform.translateInLocalCoordinates (&transform, -origin.x, -origin.y, -origin.z);
 
-    CurveVectorPtr  boundaryCurve = boundary.GetCurveVector (thisElm);
+    CurveVectorPtr  boundaryCurve = boundary.GetCurveVector ();
 
     if (!boundaryCurve.IsValid ())
         return false;
@@ -562,14 +445,14 @@ double          patternScale
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      05/2007
 +===============+===============+===============+===============+===============+======*/
-struct GeometryMapPatternAppData : ElementRefAppData 
+struct GeometryMapPatternAppData : DgnElementAppData
 {
 MaterialPtr     m_material;
 
 GeometryMapPatternAppData (MaterialPtr material) : m_material (material) {}
 MaterialCP GetMaterial () {return m_material.get ();}
 
-virtual void _OnCleanup (ElementRefP host, bool unloadingModel, HeapZoneR zone) {m_material = NULL;}
+virtual void _OnCleanup (DgnElementCP host, bool unloadingModel, HeapZoneR zone) override {m_material = NULL;}
 };
     
 /*---------------------------------------------------------------------------------**//**
@@ -577,7 +460,8 @@ virtual void _OnCleanup (ElementRefP host, bool unloadingModel, HeapZoneR zone) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static MaterialPtr CreateGeometryMapMaterial (ViewContextR context, PatternSymbol& symbCell, PatternParamsP params, DPoint2dCR spacing)
     {
-    MaterialPtr         pMaterial = Material::Create (symbCell.GetElemHandle ().GetDgnModelP ()->GetDgnProject());
+#if defined (NEEDS_WORK_DGNITEM)
+    MaterialPtr         pMaterial = Material::Create (symbCell.GetElemHandle ().GetDgnModelP ()->GetDgnDb());
     MaterialSettingsR   settings = pMaterial->GetSettingsR ();
     MaterialMapP        map = settings.GetMapsR().AddMap (MaterialMap::MAPTYPE_Geometry);
     MaterialMapLayerR   layer = map->GetLayersR().GetTopLayerR();
@@ -594,6 +478,8 @@ static MaterialPtr CreateGeometryMapMaterial (ViewContextR context, PatternSymbo
     context.GetIViewDraw ().DefineQVGeometryMap (*pMaterial, symbCell.GetElemHandle (), &spacing, !symbCell.IsPointCellSymbol (), context, true);
 
     return pMaterial;
+#endif
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -655,7 +541,6 @@ static size_t GetVertexCount (CurveVectorCR curveVector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool ProcessAreaPatternAsGeometryMap  
 (
-ElementHandleCR thisElm,
 ViewContextR    context,
 VCClipStencil&  boundary,
 PatternSymbol&  symbCell,
@@ -666,16 +551,10 @@ DPoint2dCR      spacing,
 double          scale
 )
     {
-    static      ElementRefAppData::Key s_appDataKey;
-#ifdef WIP_CFGVAR
-    static      int s_doGeometryMapsChecked;
-
-    if (ConfigurationManager::CheckVariableIsDefined (s_doGeometryMapsChecked, L"MS_NO_PATTERN_GEOMETRY_MAPS"))
-        return false;
+    static      DgnElementAppData::Key s_appDataKey;
 
     if (DrawPurpose::Plot == context.GetDrawPurpose())      // Opt for slower, higher quality when plotting.
         return false;
-#endif
 
 #if !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
     double          pixelSize = context.GetPixelSizeAtPoint (NULL);
@@ -686,7 +565,7 @@ double          scale
         return false;                                       // The pattern is too big... Draw it.
 #endif
 
-    ElementRefP     cellElementRef;
+    DgnElementP     cellElementRef;
 
     if (NULL == (cellElementRef = symbCell.GetElementRef ()))
         return false;                                       // No place to persist map...
@@ -706,6 +585,7 @@ double          scale
         cellElementRef->AddAppData (s_appDataKey, appData = new GeometryMapPatternAppData (pMaterial), cellElementRef->GetHeapZone ());
         }
 
+#if defined (NEEDS_WORK_DGNITEM)
     // NOTE: Colors aren't stored in geometry map for point cells, setup active matsymb color from pattern if different than element color...
     if (symbCell.IsPointCellSymbol () && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentDisplayParams ()->GetLineColor () != params->color)
         {
@@ -713,24 +593,24 @@ double          scale
         context.CookDisplayParams ();
         context.CookDisplayParamsOverrides ();
         }
+#endif
 
     OvrMatSymbP  ovrMatSymb = context.GetOverrideMatSymb ();
 
-    ovrMatSymb->SetTransparentFillColor (0xff);
+    ovrMatSymb->SetFillTransparency (0xff);
     ovrMatSymb->SetMaterial (appData->GetMaterial ());
-    context.ActivateOverrideMatSymb ();
+    context.GetIDrawGeom ().ActivateOverrideMatSymb (ovrMatSymb);
 
-    CurveVectorPtr  boundaryCurve = boundary.GetCurveVector (thisElm);
+    CurveVectorPtr  boundaryCurve = boundary.GetCurveVector ();
 
     // NOTE: Use stencils for curved or complex boundaries as these can take significant time to create polyface...
 #if !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  Don't allow this with OpenGL ES since PushBoundaryClipStencil does not work for geometry map.
     static size_t   s_facetBoundaryMax = 1000;
     if (boundaryCurve->ContainsNonLinearPrimitive () || GetVertexCount (*boundaryCurve) > s_facetBoundaryMax)
         {
-        bool        deleteQvElem;
-        QvElem*     qvElem = NULL;
+        QvElem* qvElem = NULL;
 
-        if (!PatternHelper::PushBoundaryClipStencil (thisElm, context, boundary, qvElem, deleteQvElem))
+        if (!PatternHelper::PushBoundaryClipStencil (context, boundary, qvElem))
             return false;
 
         PolyfaceHeaderPtr       polyface = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -755,7 +635,7 @@ double          scale
         AddPatternParametersToPolyface (polyface, rMatrix, origin, spacing);
         context.GetIDrawGeom ().DrawPolyface (*polyface, true);
 
-        PatternHelper::PopBoundaryClipStencil (context, qvElem, deleteQvElem);
+        PatternHelper::PopBoundaryClipStencil (context, qvElem);
         }
     else
 #endif
@@ -763,7 +643,7 @@ double          scale
         IFacetOptionsPtr  options = IFacetOptions::CreateForCurves ();
 
         options->SetConvexFacetsRequired (true);
-        options->SetMaxPerFace (MAX_VERTICES);
+        options->SetMaxPerFace (5000);
 
         IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::New (*options);
 
@@ -815,7 +695,7 @@ static bool DrawCellTiles (ViewContextR context, PatternSymbol& symbCell, DPoint
                 break;
                 }
 
-            cellTrans.TranslateInLocalCoordinates (orgTrans, patOrg.x/scale, patOrg.y/scale, context.GetDisplayPriority ());
+            cellTrans.TranslateInLocalCoordinates (orgTrans, patOrg.x/scale, patOrg.y/scale, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
             cellTrans.Multiply (tileCorners, cellCorners, 8);
 
             if (ClipPlaneContainment_StronglyOutside == context.GetTransformClipStack ().ClassifyPoints (tileCorners, 8))
@@ -845,7 +725,6 @@ static bool DrawCellTiles (ViewContextR context, PatternSymbol& symbCell, DPoint
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ProcessAreaPattern
 (
-ElementHandleCR thisElm,
 ViewContextR    context,
 VCClipStencil&  boundary,
 PatternParamsP  params,
@@ -853,7 +732,7 @@ DPoint3dR       origin,
 double          contextScale
 )
     {
-    PatternSymbol symbCell (ElementId (params->cellId), context.GetDgnProject ());
+    PatternSymbol symbCell (DgnElementId (params->cellId), context.GetDgnDb ());
 
     if (!symbCell.GetElemHandle ().IsValid ())
         return;
@@ -871,18 +750,17 @@ double          contextScale
     // the size of the QV display list and resulting plot output file.
     scale *= contextScale;
 
-    if (!PatternHelper::GetCellTileInfo (thisElm, boundary, symbCell, cellRange, cellOrg, spacing, low, high, isPlanar, origin, rMatrix, scale, params->space1, params->space2))
+    if (!PatternHelper::GetCellTileInfo (boundary, symbCell, cellRange, cellOrg, spacing, low, high, isPlanar, origin, rMatrix, scale, params->space1, params->space2))
         return;
 
     bool        isQVOutput = context.GetIViewDraw().IsOutputQuickVision ();
     bool        useStencil = isQVOutput && isPlanar && !context.CheckICachedDraw (); // Can't use stencil if creating QvElem...dimension terminators want patterns!
-    bool        deleteQvElem = false;
     QvElem*     qvElem = NULL;
 
-    if (useStencil && PatternHelper::ProcessAreaPatternAsGeometryMap (thisElm, context, boundary, symbCell, params, rMatrix, origin, spacing, scale))
+    if (useStencil && PatternHelper::ProcessAreaPatternAsGeometryMap (context, boundary, symbCell, params, rMatrix, origin, spacing, scale))
         return;
 
-    if (useStencil && !PatternHelper::PushBoundaryClipStencil (thisElm, context, boundary, qvElem, deleteQvElem))
+    if (useStencil && !PatternHelper::PushBoundaryClipStencil (context, boundary, qvElem))
         return;
 
     // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
@@ -900,7 +778,7 @@ double          contextScale
 #if defined (NEEDS_WORK_DGNITEM)
     if (isQVOutput)
         {
-        int     cellCmpns = symbCell.GetElemHandle ().GetElementCP ()->GetComplexComponentCount ();
+        int     cellCmpns = symbCell.GetElemHandle ().GetGraphicsCP ()->GetComplexComponentCount ();
         double  numTiles = ((high.x - low.x) / spacing.x) * ((high.y - low.y) / spacing.y);
 
         if (numTiles * cellCmpns > 5000)
@@ -924,7 +802,7 @@ double          contextScale
         }
     else
         {
-        CurveVectorPtr  boundaryCurve = boundary.GetCurveVector (thisElm);
+        CurveVectorPtr  boundaryCurve = boundary.GetCurveVector ();
 
         // NOTE: Union regions aren't valid clip boundaries, need to push separate clip for each solid area...
         if (boundaryCurve->IsUnionRegion ())
@@ -947,7 +825,7 @@ double          contextScale
             }
         }
 
-    PatternHelper::PopBoundaryClipStencil (context, qvElem, deleteQvElem);
+    PatternHelper::PopBoundaryClipStencil (context, qvElem);
 
     context.DeleteSymbol (&symbCell); // Only needed if DrawSymbol has been called...i.e. early returns are ok!
     }
@@ -964,7 +842,7 @@ ViewContextR    context
     size_t        nGot, sourceCount = pGPA->GetGraphicsPointCount ();
     DPoint3d      localPoints[MAX_GPA_STROKES];
     bool          is3d = context.Is3dView ();
-    double        priority = context.GetDisplayPriority ();
+    double        priority = context.GetCurrentDisplayParams()->GetNetDisplayPriority();
     GraphicsPoint gp;
 
     for (size_t i=0; i < sourceCount;)
@@ -1061,14 +939,13 @@ DPoint3dCR      origin
 +---------------+---------------+---------------+---------------+---------------+------*/
 static GPArrayP GetBoundaryGPA
 (
-ElementHandleCR thisElm,
 VCClipStencil&  boundary,
 RotMatrixCR     rMatrix,
 DPoint3dCR      origin,
 bool            useElmRange
 )
     {
-    CurveVectorPtr boundaryCurve = boundary.GetCurveVector (thisElm);
+    CurveVectorPtr boundaryCurve = boundary.GetCurveVector ();
 
     if (!boundaryCurve.IsValid ())
         return NULL;
@@ -1170,7 +1047,6 @@ double          space
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ProcessHatchPattern
 (
-ElementHandleCR thisElm,
 ViewContextR    context,
 VCClipStencil&  boundary,
 PatternParams*  params,
@@ -1182,15 +1058,14 @@ DPoint3dR       origin
 #else
     bool            useStencil = false;
 #endif
-    GPArraySmartP   boundGpa (PatternHelper::GetBoundaryGPA (thisElm, boundary, params->rMatrix, origin, useStencil));
+    GPArraySmartP   boundGpa (PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, useStencil));
 
     if (NULL == boundGpa || 0 == boundGpa->GetCount ())
         return;
 
-    bool            deleteQvElem=false;
     QvElem*         qvElem = NULL;
 
-    if (useStencil && !PatternHelper::PushBoundaryClipStencil (thisElm, context, boundary, qvElem, deleteQvElem))
+    if (useStencil && !PatternHelper::PushBoundaryClipStencil (context, boundary, qvElem))
         return;
 
     // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
@@ -1210,7 +1085,7 @@ DPoint3dR       origin
     if (PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Space2))
         PatternHelper::ProcessHatchBoundary (boundGpa, context, baseTransform, hatchTransform, params->angle2, params->space2);
 
-    PatternHelper::PopBoundaryClipStencil (context, qvElem, deleteQvElem);
+    PatternHelper::PopBoundaryClipStencil (context, qvElem);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1356,16 +1231,14 @@ bool                is3d
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ProcessDWGHatchPattern
 (
-ElementHandleCR     thisElm,
 ViewContextR        context,
 VCClipStencil&      boundary,
 PatternParamsP      params,
-DwgHatchDefLineP    hatchLines,
 DPoint3dR           origin
 )
     {
     // NOTE: Never use stencil for DWG patterns, boundary can be open elements...
-    GPArraySmartP   boundGpa (PatternHelper::GetBoundaryGPA (thisElm, boundary, params->rMatrix, origin, false));
+    GPArraySmartP   boundGpa (PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, false));
 
     if (NULL == boundGpa || 0 == boundGpa->GetCount ())
         return;
@@ -1393,23 +1266,35 @@ DPoint3dR           origin
 
     boundGpa->Transform (&invBaseTransform);
 
-    double  annotationScale = 1.0;//PatternHelper::GetAnnotationScale (*params, context); removed in graphite
+    double  annotationScale = PatternHelper::GetAnnotationScale (*params, context);
 
-    PatternHelper::ProcessDWGHatchBoundary (boundGpa, context, baseTransform, hatchTransform, annotationScale, hatchLines, params->dwgHatchDef.nDefLines, thisElm.GetElementCP ()->Is3d());
+    PatternHelper::ProcessDWGHatchBoundary (boundGpa, context, baseTransform, hatchTransform, annotationScale, &params->dwgHatchDef.hatchLines.front(), (int) params->dwgHatchDef.hatchLines.size(), context.Is3dView());
     }
 
-//static double GetAnnotationScale (PatternParamsCR params, ViewContextR context) removed in graphite
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sunand.Sandurkar 04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static double GetAnnotationScale (PatternParamsCR params, ViewContextR context)
+    {
+    if (PatternParamsModifierFlags::None == (PatternParamsModifierFlags::AnnotationScale & params.GetModifiers ()))
+        return 1.0;
+
+    double  annotationScale = params.GetAnnotationScale ();
+
+    return (0.0 == annotationScale ? 1.0 : annotationScale);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sunand.Sandurkar 04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PatternParamsPtr CookPatternParams (PatternParamsCR params, ViewContextR context)
     {
     PatternParamsPtr  cookedParams = PatternParams::CreateFromExisting (params);
-    //double            annotationScale = PatternHelper::GetAnnotationScale (*cookedParams, context); removed in graphite
+    double            annotationScale = PatternHelper::GetAnnotationScale (*cookedParams, context);
 
-    //cookedParams->scale  *= annotationScale;
-    //cookedParams->space1 *= annotationScale;
-    //cookedParams->space2 *= annotationScale;
+    cookedParams->scale  *= annotationScale;
+    cookedParams->space1 *= annotationScale;
+    cookedParams->space2 *= annotationScale;
 
     return cookedParams;
     }
@@ -1432,22 +1317,21 @@ bool ViewContext::_WantAreaPatterns ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void correctPatternOffsetAndRotation (ElementHandleCR thisElm, PatternParamsR params, DPoint3dR origin, ViewContext::ClipStencil& boundary)
+static void correctPatternOffsetAndRotation (PatternParamsR params, DPoint3dR origin, ViewContext::ClipStencil& boundary)
     {
     if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Origin) ||
         PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::DwgHatchOrigin))
         return; // Explicit origin supplied, assume PatternParam information is good (ex. cut section). Normal patterns specify an offset, not an origin...
 
-    CurveVectorPtr  curves = boundary.GetCurveVector (thisElm);
+    CurveVectorPtr  curves = boundary.GetCurveVector ();
 
     if (!curves.IsValid ())
         return;
 
-    // TR#261083 - We don't store good pattern offsets for complex shapes, grouped holes, and assoc regions. Offset is from the
-    //             lower left corner of range and may not lie in the plane of the geometry. The offset should be correct for 
-    //             SHAPE_ELM, ELLIPSE_ELM, and MULTILINE_ELM...but we'll verify it anyway since it doesn't hurt to get the 
-    //             CurveVector now (it's cached) and this PatternParams could be from an OvrMatSymb where the offset/rotation
-    //             aren't set per-element.
+    // TR#261083 - We didn't store good pattern offsets for complex shapes, grouped holes, and assoc regions. Offset was from the
+    //             lower left corner of range and might not lie in the plane of the geometry. Getting the CurveVector now to check
+    //             the origin is ok (since it's cached) and even though we don't have the legacy complex element issue anymore, the
+    //             PatternParams could still be from an OvrMatSymb where the offset/rotation aren't explicitly set per-boundary.
     DVec3d      planeNormal;
     DPoint3d    planePt;
 
@@ -1478,7 +1362,7 @@ static void correctPatternOffsetAndRotation (ElementHandleCR thisElm, PatternPar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawAreaPattern (ElementHandleCR thisElm, ClipStencil& boundary, PatternParamSource& source)
+void ViewContext::_DrawAreaPattern (ClipStencil& boundary)
     {
     if (_CheckStop ())
         return;
@@ -1486,22 +1370,20 @@ void ViewContext::_DrawAreaPattern (ElementHandleCR thisElm, ClipStencil& bounda
     if (!_WantAreaPatterns ())
         return;
 
-    int              patternIndex;
-    DPoint3d         origin;
-    PatternParamsP   params;
-    DwgHatchDefLineP hatchLines;
+    PatternParamsCP params = m_ovrMatSymb.GetPatternParams();
 
-    if (NULL == (params = source.GetParams (thisElm, &origin, &hatchLines, &patternIndex, this)))
+    if (nullptr == params)
+        params = m_elemMatSymb.GetPatternParams();
+
+    if (nullptr == params)
         return;
 
-    // Can greatly speed up fit/range calculation by just drawing boundary...
-    if (DrawPurpose::RangeCalculation == GetDrawPurpose () || DrawPurpose::FitView == GetDrawPurpose ())
-        {
-        CachedDrawHandle drawHandle(&thisElm);
-        boundary.GetStroker ()._StrokeForCache (drawHandle, *this);
+    int         patternIndex = 0; // NEEDSWORK: No more mlines...
+    DPoint3d    origin = params->origin;
 
-        return;
-        }
+    // Can greatly speed up fit calculation by just drawing boundary...
+    if (DrawPurpose::FitView == GetDrawPurpose ())
+        return boundary.GetStroker ()._StrokeForCache (*this);
 
     IPickGeom*  pickGeom = GetIPickGeom();
     GeomDetailP detail = pickGeom ? &pickGeom->GetGeomDetail () : NULL;
@@ -1517,7 +1399,7 @@ void ViewContext::_DrawAreaPattern (ElementHandleCR thisElm, ClipStencil& bounda
     PatternParamsPtr cookedParams = PatternHelper::CookPatternParams (*params, *this);
 
     if (Is3dView ())
-        correctPatternOffsetAndRotation (thisElm, *cookedParams, origin, boundary);
+        correctPatternOffsetAndRotation (*cookedParams, origin, boundary);
 
     // Use mark to keep track of number of CoordSys to pop...
     ViewContext::ContextMark mark (this);
@@ -1528,11 +1410,11 @@ void ViewContext::_DrawAreaPattern (ElementHandleCR thisElm, ClipStencil& bounda
              useParity = (0 != (cookedParams->modifiers & PatternParamsModifierFlags::HoleStyle) && PatternParamsHoleStyleType::Parity == cookedParams->holeStyle) */
 
     if (PatternParamsModifierFlags::None != (cookedParams->modifiers & PatternParamsModifierFlags::Cell))
-        PatternHelper::ProcessAreaPattern (thisElm, *this, boundary, cookedParams.get (), origin, m_patternScale);
+        PatternHelper::ProcessAreaPattern (*this, boundary, cookedParams.get(), origin, m_patternScale);
     else if (PatternParamsModifierFlags::None != (cookedParams->modifiers & PatternParamsModifierFlags::DwgHatchDef))
-        PatternHelper::ProcessDWGHatchPattern (thisElm, *this, boundary, cookedParams.get (), hatchLines, origin);
+        PatternHelper::ProcessDWGHatchPattern (*this, boundary, cookedParams.get(), origin);
     else
-        PatternHelper::ProcessHatchPattern (thisElm, *this, boundary, cookedParams.get (), origin);
+        PatternHelper::ProcessHatchPattern (*this, boundary, cookedParams.get(), origin);
 
     if (NULL != detail)
         {
@@ -1545,4 +1427,4 @@ void ViewContext::_DrawAreaPattern (ElementHandleCR thisElm, ClipStencil& bounda
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::WantAreaPatterns () {return _WantAreaPatterns ();}
-void ViewContext::DrawAreaPattern (ElementHandleCR thisElm, ClipStencil& boundary, PatternParamSource& pattern) {_DrawAreaPattern (thisElm, boundary, pattern);}
+void ViewContext::DrawAreaPattern (ClipStencil& boundary) {_DrawAreaPattern (boundary);}

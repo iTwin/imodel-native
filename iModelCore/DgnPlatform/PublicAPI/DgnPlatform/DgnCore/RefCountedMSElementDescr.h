@@ -2,17 +2,17 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/RefCountedMSElementDescr.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include "MSElementDescr.h"
+#include "DgnElementDescr.h"
 
 //=======================================================================================
 //!
-//! A "smart pointer" to an MSElementDescr. Works just like RefCountedPointer
+//! A "smart pointer" to an DgnElementDescr. Works just like RefCountedPointer
 //!   (aka Boost intrusive_ptr)
 //!
 //! @bsiclass                                                     Sam.Wilson      01/2005
@@ -20,10 +20,10 @@
 class  RefCountedElemDescrP
 {
 private:
-    MSElementDescrP m_element;
+    DgnElementDescrP m_element;
 
     void Release () {RELEASE_AND_CLEAR (m_element);}
-    void AddRef (MSElementDescrP e)
+    void AddRef (DgnElementDescrP e)
         {
         m_element = e;
         if (NULL != m_element)
@@ -39,7 +39,7 @@ public:
         return *this;
         }
     RefCountedElemDescrP (RefCountedElemDescrP const& cc) {AddRef (cc.m_element);}
-    RefCountedElemDescrP (MSElementDescrP e, bool addInitialRef = true)
+    RefCountedElemDescrP (DgnElementDescrP e, bool addInitialRef = true)
         {
         if (addInitialRef)
             AddRef (e);
@@ -47,7 +47,7 @@ public:
             m_element = e;
         }
     ~RefCountedElemDescrP () {Release ();}
-    MSElementDescrP get() const {return m_element;}
-    MSElementDescrP operator->() const {return m_element;}
-    MSElementDescrR operator*() const {return *m_element;}
+    DgnElementDescrP get() const {return m_element;}
+    DgnElementDescrP operator->() const {return m_element;}
+    DgnElementDescrR operator*() const {return *m_element;}
 };

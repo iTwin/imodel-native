@@ -2,12 +2,12 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DisplayAttribute.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
-#include "DgnElements.h"
+#include "ElementGeom.h"
 
 #define DISPLAY_ATTRIBUTE_ID        65
 #define DISPLAYATTR_PADWORDS        100
@@ -41,23 +41,23 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 +----------------------------------------------------------------------*/
 typedef struct      display_attribute_fill
     {
-    UInt32          color;
-    UShort          transparency;
+    uint32_t        color;
+    unsigned short  transparency;
 #if !defined (BITFIELDS_REVERSED)
-    UShort          alwaysFilled:1;     // Ignore view fill property
-    UShort          parityRule:1;       // 4 byte alignment
-    UShort          reserved:14;        // 4 byte alignment
+    unsigned short  alwaysFilled:1;     // Ignore view fill property
+    unsigned short  parityRule:1;       // 4 byte alignment
+    unsigned short  reserved:14;        // 4 byte alignment
 #else
-    UShort          reserved:14;
-    UShort          parityRule:1;       // 4 byte alignment
-    UShort          alwaysFilled:1;     // Ignore view fill property
+    unsigned short  reserved:14;
+    unsigned short  parityRule:1;       // 4 byte alignment
+    unsigned short  alwaysFilled:1;     // Ignore view fill property
 #endif
     } Display_attribute_fill;
 
 typedef struct      display_attribute_textStyle
     {
-    UShort          style;
-    UShort          reserved;           // 4 byte alignment
+    unsigned short  style;
+    unsigned short  reserved;           // 4 byte alignment
     } Display_attribute_textStyle;
 
 // These values are also matched against values on the pentable UI
@@ -95,7 +95,7 @@ typedef struct      display_attribute_linecap
 
 typedef struct      display_attribute_plotStyle
     {
-    UInt64       styleId;
+    uint64_t     styleId;
     } Display_attribute_plotStyle;
 
 typedef struct      gradientKey
@@ -113,10 +113,10 @@ typedef struct      Display_attribute_gradient
     double          angle;
     double          tint;
     double          shift;
-    UInt16          nKeys;
-    UInt16          mode;
-    UInt16          flags;
-    UInt16          reserved;
+    uint16_t        nKeys;
+    uint16_t        mode;
+    uint16_t        flags;
+    uint16_t        reserved;
     GradientKey     keys[MAX_GRADIENT_KEYS];
     } Display_attribute_gradient;
 
@@ -127,7 +127,7 @@ typedef struct      display_attribute_transparency
 
 typedef struct      display_attribute_material
     {
-    UInt64       materialId;
+    uint64_t     materialId;
     } Display_attribute_material;
 
 typedef struct      display_attribute_nonUniformSymb
@@ -137,7 +137,7 @@ typedef struct      display_attribute_nonUniformSymb
 
 typedef struct      display_attribute_displayStyle
     {
-    UInt32          styleIndex;
+    uint32_t        styleIndex;
     } Display_attribute_displayStyle;
 
 typedef union       displayAttributeUnion
@@ -156,7 +156,7 @@ typedef union       displayAttributeUnion
     Display_attribute_material          material;
     Display_attribute_nonUniformSymb    nonUniformSymb;
     Display_attribute_displayStyle      displayStyle;
-    UShort                              padding[DISPLAYATTR_PADWORDS];
+    unsigned short                      padding[DISPLAYATTR_PADWORDS];
     } DisplayAttributeUnion;
 
 #define PLTATTR_LINECOLOR               (1<<0)
@@ -168,13 +168,14 @@ typedef union       displayAttributeUnion
 
 typedef struct      displayAllPlotAttrib
     {
-    UInt32                              modifiers;
+    uint32_t                            modifiers;
     Display_attribute_colorRGBA         colorRGBA;
     Display_attribute_lineWidthMM       lineWidthMM;
     Display_attribute_screening         screening;
     Display_attribute_colorRGBA         fillColorRGBA;
     } DisplayAllPlotAttrib;
 
+#if defined (NEEDS_WORK_DGNITEM)
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   Display_attribute                                                   |
@@ -183,9 +184,10 @@ typedef struct      displayAllPlotAttrib
 typedef struct      display_attribute
     {
     LinkageHeader           linkHdr;
-    UInt32                  attr_type;
+    uint32_t                attr_type;
     DisplayAttributeUnion   attr_data;
     } Display_attribute;
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -194,6 +196,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 |   Display Attribute Functions                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
+#if defined (NEEDS_WORK_DGNITEM)
 BEGIN_BENTLEY_API_NAMESPACE
 
 DGNPLATFORM_EXPORT bool    mdlElement_attributePresent
@@ -221,7 +224,7 @@ DGNPLATFORM_EXPORT StatusInt mdlElement_displayAttributeCreate
 DgnPlatform::Display_attribute   *pDa,          // <=> Display_attribute buffer
 int                         attributeID,
 int                         dataBytes,
-UShort                     *attributeDataP
+unsigned short             *attributeDataP
 );
 
 DGNPLATFORM_EXPORT StatusInt mdlElement_displayAttributeAdd
@@ -240,7 +243,7 @@ DgnPlatform::Display_attribute   *attributeP    // => Pointer to new display att
 DGNPLATFORM_EXPORT StatusInt mdlElement_addFillDisplayAttribute
 (
 DgnElementP      elmP,                           // <=> Element pointer
-UInt32*         fillColor,                      //  => Color (same as element if NULL)
+uint32_t*         fillColor,                      //  => Color (same as element if NULL)
 bool*        alwaysFilled                    //  => Ignore fill view flag
 );
 
@@ -253,3 +256,4 @@ GradientSymbCR  gradientSymb
 DGNPLATFORM_EXPORT bool mdlElement_addTransparencyDisplayAttribute (EditElementHandleR eeh, double transparency);
 
 END_BENTLEY_API_NAMESPACE
+#endif

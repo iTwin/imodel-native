@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/GPArray.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ typedef struct GPArrayInterval const&    GPArrayIntervalCR;
 struct GPArrayParam
 {
     double          m_param;
-    UInt32          m_index;
+    uint32_t        m_index;
 
     GPArrayParam () : m_index (0), m_param (0.0) { }
     GPArrayParam    (int index, double param) { m_index = index, m_param = param; }
@@ -74,10 +74,9 @@ for (int i=0, count = gpa->GetCount(); i < count && SUCCESS == status; )
         {
         case GPCurveType::LineString:
             {
-            int         nPoints;
-            DPoint3d    points[MAX_VERTICES];
+            bvector<DPoint3d> points;
 
-            if (SUCCESS != (status = gpa->GetLineString (&i, points, &nPoints, MAX_VERTICES)))
+            if (SUCCESS != (status = gpa->GetLineString (&i, points)))
                 break;
 
             // do something...
@@ -148,8 +147,6 @@ public:
 
     DGNPLATFORM_EXPORT bool Equals (GPArray const&) const;
 
-    DGNPLATFORM_EXPORT BentleyStatus Add (ElementHandleCR eh);
-    DGNPLATFORM_EXPORT BentleyStatus Add (ElementHandleCR eh, bool splinesAsBezier);
     DGNPLATFORM_EXPORT void Add (GraphicsPoint const* pt);
     DGNPLATFORM_EXPORT void Add (double x, double y, double z, double w, double a, int mask, int userData);
     DGNPLATFORM_EXPORT BentleyStatus ToBCurve (MSBsplineCurveP curve) const;
@@ -302,10 +299,8 @@ public:
     //! Extract an array of points from the GPArray.
     //! @param[in]      index       Index of first point in linestring, on return will be set to first point after the linestring data.
     //! @param[out]     points      Extracted points.
-    //! @param[out]     nPoints     Number of extracted points.
-    //! @param[in]      maxPoints   Size of points buffer, maxmimum number of points to return.
     //! @return SUCCESS if returned information is valid.
-    DGNPLATFORM_EXPORT BentleyStatus GetLineString (int *index, DPoint3dP points, int* nPoints, int maxPoints) const;
+    DGNPLATFORM_EXPORT BentleyStatus GetLineString (int *index, bvector<DPoint3d>& points) const;
 
     //! Extract an arc or ellipse from the GPArray.
     //! @param[in]      index       Index of first point in ellipse, on return will be set to first point after the ellipse data.
@@ -337,24 +332,7 @@ public:
     //! Create CurveVector form of the curves.
     DGNPLATFORM_EXPORT CurveVectorPtr ToCurveVector () const;
 
-    //! Represent the GPArray as a simple curve, path, or region element.
-    //! @param[out]     eeh                     The new element .
-    //! @param[in]      templateEh              Template element to use for symbology; if NULL defaults are used.
-    //! @param[in]      is3d                    Initialize the 2d or 3d element structure, typically modelRef->Is3d ().
-    //! @param[in]      closed                  True if GPArray represents a closed path and a closed element type should be created.
-    //! @param[in]      model                   Model to associate this element with. Required to compute range.
-    //! @return SUCCESS if a valid element      is created and range was sucessfully calculated.
-    DGNPLATFORM_EXPORT BentleyStatus ToElement (EditElementHandleR eeh, ElementHandleCP templateEh, bool is3d, bool closed, DgnModelR model) const;
-
-    //! Represent the GPArray as a group cell containing simple curve elements.
-    //! @param[out]     eeh                     The new element .
-    //! @param[in]      templateEh              Template element to use for symbology; if NULL defaults are used.
-    //! @param[in]      is3d                    Initialize the 2d or 3d element structure, typically modelRef->Is3d ().
-    //! @param[in]      closePhysicallyClosed   For indivual curves that are physically closed whether to create as open or closed type.
-    //! @param[in]      model                   Model to associate this element with. Required to compute range.
-    //! @return SUCCESS if a valid element is created and range was sucessfully calculated.
-    DGNPLATFORM_EXPORT BentleyStatus ToGroupElement (EditElementHandleR eeh, ElementHandleCP templateEh, bool is3d, bool closePhysicallyClosed, DgnModelR model) const;
-};
+}; // GPArray
 
 typedef bvector<GPArrayP>      GPArrayVector;
 typedef GPArrayVector&          GPArrayVectorR;
@@ -377,8 +355,6 @@ public:
     operator GPArray& () const {return *m_gpa;}
     void ExtractFrom (GPArraySmartP& donor) {if (NULL != m_gpa) { m_gpa->Drop (); } m_gpa = donor.m_gpa; donor.m_gpa = NULL;}
 };
-
-
 
 //__PUBLISH_SECTION_END__
 /*=================================================================================**//**

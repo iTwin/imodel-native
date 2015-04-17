@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/DgnProject/dependencies.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (CREATE_STATIC_LIBRARIES)
@@ -13,6 +13,7 @@
 
 # Additional assets needed by DgnProject unit tests
 BEGTEST_ASSETS     + $(BuildContext)SubParts/ECSchemas/
+BEGTEST_ASSETS     + $(BuildContext)SubParts/UnitTests/assets/DgnProject/ECSchemas;ECSchemas
 BEGTEST_ASSETS     + $(BuildContext)SubParts/DgnPlatformLastResortFonts/;fonts/LastResortFonts
 BEGTEST_ASSETS     + $(BuildContext)SubParts/DgnPlatformFont/;fonts
 BEGTEST_ASSETS     + $(BuildContext)SubParts/BeIcu4cData/icudt53l.dat

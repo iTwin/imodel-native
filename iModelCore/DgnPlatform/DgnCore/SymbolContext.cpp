@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SymbolContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -13,7 +13,7 @@
 SymbolContext::SymbolContext (ViewContextR seedContext) : m_seedContext (seedContext)
     {
     if (SUCCESS != Attach (seedContext.GetViewport (), seedContext.GetDrawPurpose ()))
-        SetDgnProject (seedContext.GetDgnProject ()); // so "by level" stuff will work in the symbol.
+        SetDgnDb (seedContext.GetDgnDb ()); // so "by level" stuff will work in the symbol.
 
     m_currDisplayParams = *m_seedContext.GetCurrentDisplayParams ();
     m_elemMatSymb       = *m_seedContext.GetElemMatSymb ();
@@ -51,23 +51,10 @@ void            SymbolContext::_Detach ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 QvElemP         SymbolContext::DrawSymbolForCache (IDisplaySymbol* symbol, QvCacheR symbolCache)
     {
-    ViewFlags   viewFlags;
-    ViewFlagsCP viewFlagsP = m_seedContext.GetViewFlags ();
-
-    if (NULL != viewFlagsP)
-        {
-        // Make sure that we don't try to draw with a line style because of level symbology...
-        viewFlags = *viewFlagsP;
-        viewFlags.lev_symb = false;
-        viewFlagsP = &viewFlags;
-        }
-
-    m_ICachedDraw->BeginCacheElement (Is3dView (), &symbolCache, viewFlagsP);
+    m_ICachedDraw->BeginCacheElement (&symbolCache, Is3dView (), 0.0); // zDepth gets baked into placement transform I believe... -BB 04/15
 
     m_creatingCacheElem = true;
-
     symbol->_Draw (*this);
-
     m_creatingCacheElem = false;
 
     QvElemP qvElem = m_ICachedDraw->EndCacheElement ();

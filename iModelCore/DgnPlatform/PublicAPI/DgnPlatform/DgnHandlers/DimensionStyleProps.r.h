@@ -246,7 +246,7 @@ enum DimStyleProp_MLNote_Justification
 //!  </pre>
 //!See <code>DimensionStyle::GetIntegerProp DimensionStyle::SetIntegerProp</code>
 //!
-enum DimStyleProp_MLNote_VerticalJustification : UInt16
+enum DimStyleProp_MLNote_VerticalJustification : uint16_t
     {
     DIMSTYLE_VALUE_MLNote_VerticalJustification_Top                     = 0,
     DIMSTYLE_VALUE_MLNote_VerticalJustification_Center                  = 1,
@@ -434,11 +434,11 @@ enum  DimStyleProp_Text_Justification
 //!
 enum  DimStyleProp_Value_AngleFormat
     {
-    DIMSTYLE_VALUE_Value_AngleFormat_Degrees                            = (UInt32) AngleFormatVals::Degrees,
-    DIMSTYLE_VALUE_Value_AngleFormat_DegMinSec                          = (UInt32) AngleFormatVals::DegMinSec,
-    DIMSTYLE_VALUE_Value_AngleFormat_Centesimal                         = (UInt32) AngleFormatVals::Centesimal,
-    DIMSTYLE_VALUE_Value_AngleFormat_Radians                            = (UInt32) AngleFormatVals::Radians,
-    DIMSTYLE_VALUE_Value_AngleFormat_DegMin                             = (UInt32) AngleFormatVals::DegMin,
+    DIMSTYLE_VALUE_Value_AngleFormat_Degrees                            = (uint32_t) AngleFormatVals::Degrees,
+    DIMSTYLE_VALUE_Value_AngleFormat_DegMinSec                          = (uint32_t) AngleFormatVals::DegMinSec,
+    DIMSTYLE_VALUE_Value_AngleFormat_Centesimal                         = (uint32_t) AngleFormatVals::Centesimal,
+    DIMSTYLE_VALUE_Value_AngleFormat_Radians                            = (uint32_t) AngleFormatVals::Radians,
+    DIMSTYLE_VALUE_Value_AngleFormat_DegMin                             = (uint32_t) AngleFormatVals::DegMin,
     DIMSTYLE_VALUE_Value_AngleFormat_COUNT                              = 5,
     };
 

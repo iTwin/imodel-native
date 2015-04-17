@@ -364,7 +364,7 @@ void MaterialSettings::DeleteFur ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-const byte* MaterialSettings::GetPresetDataCP () const
+const Byte* MaterialSettings::GetPresetDataCP () const
     {
     if (m_preset.empty())
         return NULL;
@@ -374,7 +374,7 @@ const byte* MaterialSettings::GetPresetDataCP () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MaterialSettings::AddPresetData (byte const* data, size_t size)
+void MaterialSettings::AddPresetData (Byte const* data, size_t size)
     {
     m_preset.resize (size, 0);
     }
@@ -404,8 +404,8 @@ void                        MaterialSettings::SetIsLinkedToLxp (bool isLinkedToL
 bool                        MaterialSettings::ParticipatesInSpotlib () const                            { return TO_BOOL (m_flags.m_participatesInSpotlib); }
 void                        MaterialSettings::SetParticipatesInSpotlib (bool participatesInSpotlib)     { m_flags.m_participatesInSpotlib = participatesInSpotlib; }
 
-UInt32 const*               MaterialSettings::GetFlagsCP () const                                       { return (UInt32 const *) &m_flags; }
-void                        MaterialSettings::SetFlags (UInt32 flags)                                   { memcpy (&m_flags, &flags, sizeof (flags)); }
+uint32_t const*               MaterialSettings::GetFlagsCP () const                                       { return (uint32_t const *) &m_flags; }
+void                        MaterialSettings::SetFlags (uint32_t flags)                                   { memcpy (&m_flags, &flags, sizeof (flags)); }
 
 MaterialShaderCollectionCR  MaterialSettings::GetShaders () const                                       { return m_shaders; }
 MaterialShaderCollectionR   MaterialSettings::GetShadersR ()                                            { return m_shaders; }
@@ -518,14 +518,14 @@ void                        MaterialSettings::SetCastsShadows (bool castsShadows
 bool                        MaterialSettings::IsVisible () const                                        { return !m_flags.m_invisible; }
 void                        MaterialSettings::SetIsVisible (bool isVisible)                             { m_flags.m_invisible = !isVisible; }
 
-Int32                       MaterialSettings::GetReflectionRays () const                                { return m_reflectionRays; }
-void                        MaterialSettings::SetReflectionRays (Int32 rays)                            { m_reflectionRays = rays; }
+int32_t                     MaterialSettings::GetReflectionRays () const                                { return m_reflectionRays; }
+void                        MaterialSettings::SetReflectionRays (int32_t rays)                            { m_reflectionRays = rays; }
 
-Int32                       MaterialSettings::GetRefractionRays () const                                { return m_refractionRays; }
-void                        MaterialSettings::SetRefractionRays (Int32 rays)                            { m_refractionRays = rays; }
+int32_t                     MaterialSettings::GetRefractionRays () const                                { return m_refractionRays; }
+void                        MaterialSettings::SetRefractionRays (int32_t rays)                            { m_refractionRays = rays; }
 
-Int32                       MaterialSettings::GetSubsurfaceSamples () const                             { return m_subsurfaceSamples; }
-void                        MaterialSettings::SetSubsurfaceSamples (Int32 samples)                      { m_subsurfaceSamples = samples; }
+int32_t                     MaterialSettings::GetSubsurfaceSamples () const                             { return m_subsurfaceSamples; }
+void                        MaterialSettings::SetSubsurfaceSamples (int32_t samples)                      { m_subsurfaceSamples = samples; }
 
 double                      MaterialSettings::GetDisplacementDistanceInMillimeters () const             { return m_displacementDistance; }
 void                        MaterialSettings::SetDisplacementDistanceInMillimeters (double distance)    { m_displacementDistance = distance; }
@@ -712,8 +712,8 @@ void MaterialShader::Copy (MaterialShaderCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 const*                       MaterialShader::GetFlagsCP () const                                                     { return (UInt32 const *) &m_flags; }
-void                                MaterialShader::SetFlags (UInt32 flags)                                                 { memcpy (&m_flags, &flags, sizeof (flags)); }
+uint32_t const*                       MaterialShader::GetFlagsCP () const                                                     { return (uint32_t const *) &m_flags; }
+void                                MaterialShader::SetFlags (uint32_t flags)                                                 { memcpy (&m_flags, &flags, sizeof (flags)); }
 
 MaterialShader::ShaderType          MaterialShader::GetType () const                                                        { return m_type; }
 void                                MaterialShader::SetType (MaterialShader::ShaderType type)                               { m_type = type; }
@@ -1141,8 +1141,8 @@ void MaterialFur::Copy (MaterialFurCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 const*           MaterialFur::GetFlagsCP () const                            { return (UInt32 const *) &m_flags; }
-void                    MaterialFur::SetFlags (UInt32 flags)                        { memcpy (&m_flags, &flags, sizeof (flags)); }
+uint32_t const*           MaterialFur::GetFlagsCP () const                            { return (uint32_t const *) &m_flags; }
+void                    MaterialFur::SetFlags (uint32_t flags)                        { memcpy (&m_flags, &flags, sizeof (flags)); }
 
 bool                    MaterialFur::UseAdaptiveSampling () const                   { return m_flags.m_adaptiveSampling; }
 void                    MaterialFur::SetUseAdaptiveSampling (bool useAdaptive)      { m_flags.m_adaptiveSampling = useAdaptive; }
@@ -1231,8 +1231,8 @@ void                    MaterialFur::SetType (MaterialFur::FurType type)        
 MaterialFur::FurGuides  MaterialFur::GetFurGuides () const                          { return m_guides; }
 void                    MaterialFur::SetFurGuides (MaterialFur::FurGuides guides)   { m_guides = guides; }
 
-UInt32                  MaterialFur::GetSegmentCount () const                       { return m_segments; }
-void                    MaterialFur::SetSegmentCount (UInt32 count)                 { m_segments = count; }
+uint32_t                MaterialFur::GetSegmentCount () const                       { return m_segments; }
+void                    MaterialFur::SetSegmentCount (uint32_t count)                 { m_segments = count; }
 
 MaterialFur::FurBillboard MaterialFur::GetFurBillboard () const                       {return m_billboard;}
 void                    MaterialFur::SetFurBillboard (MaterialFur::FurBillboard billboard) { m_billboard = billboard;}
@@ -2190,8 +2190,8 @@ void MaterialMapLayer::Copy (MaterialMapLayerCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 const*                           MaterialMapLayer::GetBasicFlagsCP () const                              { return (UInt32 const *) &m_basicFlags; }
-void                                    MaterialMapLayer::SetBasicFlags (UInt32 flags)                          { memcpy (&m_basicFlags, &flags, sizeof (flags)); }
+uint32_t const*                           MaterialMapLayer::GetBasicFlagsCP () const                              { return (uint32_t const *) &m_basicFlags; }
+void                                    MaterialMapLayer::SetBasicFlags (uint32_t flags)                          { memcpy (&m_basicFlags, &flags, sizeof (flags)); }
 
 MaterialMapLayer::LegacyProcedureDataCR MaterialMapLayer::GetLegacyProcedureData () const                       { return m_legacyProcedureData; }
 MaterialMapLayer::LegacyProcedureDataR  MaterialMapLayer::GetLegacyProcedureDataR ()                            { return m_legacyProcedureData; }
@@ -2550,8 +2550,8 @@ void                            LxoNoiseProcedure::SetAlpha1 (double alpha)     
 double                          LxoNoiseProcedure::GetAlpha2 () const                               { return m_alpha2; }
 void                            LxoNoiseProcedure::SetAlpha2 (double alpha)                         { m_alpha2 = alpha; }
 
-UInt32                          LxoNoiseProcedure::GetFrequencies () const                          { return m_frequencies; }
-void                            LxoNoiseProcedure::SetFrequencies (UInt32 frequencies)              { m_frequencies = frequencies; }
+uint32_t                        LxoNoiseProcedure::GetFrequencies () const                          { return m_frequencies; }
+void                            LxoNoiseProcedure::SetFrequencies (uint32_t frequencies)              { m_frequencies = frequencies; }
 
 double                          LxoNoiseProcedure::GetFrequencyRatio () const                       { return m_frequencyRatio; }
 void                            LxoNoiseProcedure::SetFrequencyRatio (double ratio)                 { m_frequencyRatio = ratio; }
@@ -3215,8 +3215,8 @@ void                                LxoCellularProcedure::SetCellValue (double v
 double                              LxoCellularProcedure::GetFillerValue () const                                   { return m_fillerValue; }
 void                                LxoCellularProcedure::SetFillerValue (double value)                             { m_fillerValue = value; }
 
-Int32                               LxoCellularProcedure::GetFrequencies () const                                   { return m_frequencies; }
-void                                LxoCellularProcedure::SetFrequencies (Int32 frequencies)                        { m_frequencies = frequencies; }
+int32_t                             LxoCellularProcedure::GetFrequencies () const                                   { return m_frequencies; }
+void                                LxoCellularProcedure::SetFrequencies (int32_t frequencies)                        { m_frequencies = frequencies; }
 
 double                              LxoCellularProcedure::GetFrequencyRatio () const                                { return m_frequencyRatio; }
 void                                LxoCellularProcedure::SetFrequencyRatio (double ratio)                          { m_frequencyRatio = ratio; }
@@ -3655,8 +3655,8 @@ void                LxoRipplesProcedure::SetBias (double bias)                  
 double              LxoRipplesProcedure::GetGain () const                               { return m_gain; }
 void                LxoRipplesProcedure::SetGain (double gain)                          { m_gain = gain; }
 
-UInt32              LxoRipplesProcedure::GetSources () const                            { return m_sources; }
-void                LxoRipplesProcedure::SetSources (UInt32 sources)                    { m_sources = sources; }
+uint32_t            LxoRipplesProcedure::GetSources () const                            { return m_sources; }
+void                LxoRipplesProcedure::SetSources (uint32_t sources)                    { m_sources = sources; }
 
 double              LxoRipplesProcedure::GetCrestValue () const                         { return m_crestValue; }
 void                LxoRipplesProcedure::SetCrestValue (double value)                   { m_crestValue = value; }
@@ -3947,8 +3947,8 @@ LxoEnvelopeTangentInR       LxoFloatEnvelopeComponent::GetTangentInR ()         
 LxoEnvelopeTangentOutCR     LxoFloatEnvelopeComponent::GetTangentOut () const   { return m_tangentOut; }
 LxoEnvelopeTangentOutR      LxoFloatEnvelopeComponent::GetTangentOutR ()        { return m_tangentOut; }
 
-UInt32                      LxoFloatEnvelopeComponent::GetFlag () const         { return m_flag; }
-void                        LxoFloatEnvelopeComponent::SetFlag (UInt32 flag)    { m_flag = flag; }
+uint32_t                    LxoFloatEnvelopeComponent::GetFlag () const         { return m_flag; }
+void                        LxoFloatEnvelopeComponent::SetFlag (uint32_t flag)    { m_flag = flag; }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     12/09
@@ -4141,8 +4141,8 @@ LxoEnvelopeTangentInR       LxoIntEnvelopeComponent::GetTangentInR ()         { 
 LxoEnvelopeTangentOutCR     LxoIntEnvelopeComponent::GetTangentOut () const   { return m_tangentOut; }
 LxoEnvelopeTangentOutR      LxoIntEnvelopeComponent::GetTangentOutR ()        { return m_tangentOut; }
 
-UInt32                      LxoIntEnvelopeComponent::GetFlag () const         { return m_flag; }
-void                        LxoIntEnvelopeComponent::SetFlag (UInt32 flag)    { m_flag = flag; }
+uint32_t                    LxoIntEnvelopeComponent::GetFlag () const         { return m_flag; }
+void                        LxoIntEnvelopeComponent::SetFlag (uint32_t flag)    { m_flag = flag; }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater    03/12
@@ -4518,14 +4518,14 @@ void                    LxoBoardsProcedure::SetHorizontalVariation (double horiz
 double                  LxoBoardsProcedure::GetGrainScale () const {return m_grainScale;}
 void                    LxoBoardsProcedure::SetGrainScale (double grainScale) {m_grainScale = grainScale;}
 
-Int32                   LxoBoardsProcedure::GetBoardsPerColumn () const {return m_boardsPerColumn;}
-void                    LxoBoardsProcedure::SetBoardsPerColumn (Int32 boardsPerColumn) {m_boardsPerColumn = boardsPerColumn;}
+int32_t                 LxoBoardsProcedure::GetBoardsPerColumn () const {return m_boardsPerColumn;}
+void                    LxoBoardsProcedure::SetBoardsPerColumn (int32_t boardsPerColumn) {m_boardsPerColumn = boardsPerColumn;}
 
-Int32                   LxoBoardsProcedure::GetBoardsPerRow () const {return m_boardsPerRow;}
-void                    LxoBoardsProcedure::SetBoardsPerRow (Int32 boardsPerRow) {m_boardsPerRow = boardsPerRow;}
+int32_t                 LxoBoardsProcedure::GetBoardsPerRow () const {return m_boardsPerRow;}
+void                    LxoBoardsProcedure::SetBoardsPerRow (int32_t boardsPerRow) {m_boardsPerRow = boardsPerRow;}
 
-Int32                   LxoBoardsProcedure::GetPatternId () const {return m_patternId;}
-void                    LxoBoardsProcedure::SetPatternId (Int32 patternId) {m_patternId = patternId;}
+int32_t                 LxoBoardsProcedure::GetPatternId () const {return m_patternId;}
+void                    LxoBoardsProcedure::SetPatternId (int32_t patternId) {m_patternId = patternId;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater     11/09
@@ -4655,11 +4655,11 @@ void                        LxoBrickProcedure::SetAspectRatio (double aspectRati
 LxoBrickProcedure::BrickBondType LxoBrickProcedure::GetBondType () const {return m_bondType;}
 void                        LxoBrickProcedure::SetBondType (LxoBrickProcedure::BrickBondType bondType) {m_bondType = bondType;}
 
-Int32                       LxoBrickProcedure::GetPatternId () const {return m_patternId;}
-void                        LxoBrickProcedure::SetPatternId (Int32 patternId) {m_patternId = patternId;}
+int32_t                     LxoBrickProcedure::GetPatternId () const {return m_patternId;}
+void                        LxoBrickProcedure::SetPatternId (int32_t patternId) {m_patternId = patternId;}
 
-Int32                       LxoBrickProcedure::GetHeaderCourseInterval () const {return m_headerCourseInterval;}
-void                        LxoBrickProcedure::SetHeaderCourseInterval (Int32 headerCourseInterval) {m_headerCourseInterval = headerCourseInterval;}
+int32_t                     LxoBrickProcedure::GetHeaderCourseInterval () const {return m_headerCourseInterval;}
+void                        LxoBrickProcedure::SetHeaderCourseInterval (int32_t headerCourseInterval) {m_headerCourseInterval = headerCourseInterval;}
 
 bool                        LxoBrickProcedure::GetFlemishHeaders () const {return m_flemishHeaders;}
 void                        LxoBrickProcedure::SetFlemishHeaders (bool flemishHeaders) {m_flemishHeaders = flemishHeaders;}
@@ -5520,11 +5520,11 @@ RgbFactor const&            LxoStoneProcedure::GetMortarColor () const {return m
 RgbFactor&                  LxoStoneProcedure::GetMortarColorR () {return m_mortarColor;}
 void                        LxoStoneProcedure::SetMortarColor (double red, double green, double blue) {m_mortarColor.red = red; m_mortarColor.green = green; m_mortarColor.blue = blue;}
 
-Int32                       LxoStoneProcedure::GetStoneColors () const {return m_stoneColors;}
-void                        LxoStoneProcedure::SetStoneColors (Int32 stoneColors) {m_stoneColors = stoneColors;}
+int32_t                     LxoStoneProcedure::GetStoneColors () const {return m_stoneColors;}
+void                        LxoStoneProcedure::SetStoneColors (int32_t stoneColors) {m_stoneColors = stoneColors;}
 
-Int32                       LxoStoneProcedure::GetStoneColorOffset () const {return m_stoneColorOffset;}
-void                        LxoStoneProcedure::SetStoneColorOffset (Int32 stoneColorOffset) {m_stoneColorOffset = stoneColorOffset;}
+int32_t                     LxoStoneProcedure::GetStoneColorOffset () const {return m_stoneColorOffset;}
+void                        LxoStoneProcedure::SetStoneColorOffset (int32_t stoneColorOffset) {m_stoneColorOffset = stoneColorOffset;}
 
 double                      LxoStoneProcedure::GetMortarWidth () const {return m_mortarWidth;}
 void                        LxoStoneProcedure::SetMortarWidth (double mortarWidth) {m_mortarWidth = mortarWidth;}
@@ -6147,8 +6147,8 @@ void                            LxoOcclusionProcedure::SetGain (double gain) {m_
 LxoOcclusionProcedure::OcclusionType LxoOcclusionProcedure::GetOcclusionType () const {return m_occType;}
 void                            LxoOcclusionProcedure::SetOcclusionType (LxoOcclusionProcedure::OcclusionType type) {m_occType = type;}
 
-UInt32                          LxoOcclusionProcedure::GetOcclusionRays () const {return m_occlusionRays;}
-void                            LxoOcclusionProcedure::SetOcclusionRays (UInt32 occlusionRays) {m_occlusionRays = occlusionRays;}
+uint32_t                        LxoOcclusionProcedure::GetOcclusionRays () const {return m_occlusionRays;}
+void                            LxoOcclusionProcedure::SetOcclusionRays (uint32_t occlusionRays) {m_occlusionRays = occlusionRays;}
 
 bool                            LxoOcclusionProcedure::GetSameSurface () const  {return m_sameSurface;}
 void                            LxoOcclusionProcedure::SetSameSurface (bool sameSurface) {m_sameSurface = sameSurface;}

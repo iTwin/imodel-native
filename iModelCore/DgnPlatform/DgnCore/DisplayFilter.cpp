@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+#if defined (NEEDS_WORK_DGNITEM)
 
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      07/2012
@@ -15,7 +16,7 @@ struct BentleyApi::DgnPlatform::DisplayFilterState
 {
 private:
     DisplayFilterHandlerId      m_handlerId;
-    bvector<byte>               m_data;
+    bvector<Byte>               m_data;
     bool                        m_state;
 
 public:
@@ -40,7 +41,10 @@ bool    Matches (ViewContextR viewContext, ElementHandleCP element) const
         return true;
         }
 
+#if defined (NEEDS_WORK_DGNITEM)
     return  handler->DoConditionalDraw (viewContext, element, &m_data[0], m_data.size()) == m_state;
+#endif
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -116,17 +120,17 @@ struct  BooleanOperator : DisplayFilter::Operator
 {
 protected:
 
-    bvector <byte>        m_data;
+    bvector <Byte>        m_data;
 
-BooleanOperator (DisplayFilterHandlerId id, void const* pData, size_t dataSize) : Operator (id), m_data (dataSize + sizeof (UInt16))
+BooleanOperator (DisplayFilterHandlerId id, void const* pData, size_t dataSize) : Operator (id), m_data (dataSize + sizeof (uint16_t))
     {  
-    UInt16          opSize = (UInt16) dataSize;
+    uint16_t        opSize = (uint16_t) dataSize;
 
     memcpy (&m_data.front(), &opSize, sizeof (opSize));
     memcpy (&m_data[sizeof(opSize)], pData, dataSize); 
     }
 
-virtual void    _GetData (bvector<byte>& data) const override { data = m_data; }
+virtual void    _GetData (bvector<Byte>& data) const override { data = m_data; }
 
 public:
 static  DisplayFilter::OperatorPtr    Create (DisplayFilterHandlerId id, void const* pData, size_t dataSize) { return new BooleanOperator (id, pData, dataSize); }
@@ -149,9 +153,9 @@ DisplayFilter::OperatorPtr     DisplayFilter::CreateViewFlagTest (ViewFlag viewF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayFilter::OperatorPtr     DisplayFilter::CreateRenderModeTest (MSRenderMode renderMode, TestMode testMode)
+DisplayFilter::OperatorPtr     DisplayFilter::CreateRenderModeTest (DgnRenderMode renderMode, TestMode testMode)
     { 
-    ViewParameterFilterData       data (static_cast<UInt32>(renderMode), testMode, ViewParameterFilterData::Parameter_RenderMode);
+    ViewParameterFilterData       data (static_cast<uint32_t>(renderMode), testMode, ViewParameterFilterData::Parameter_RenderMode);
 
     return BooleanOperator::Create (DisplayFilterHandlerId_Parameter, &data, sizeof (data)); 
     }
@@ -161,7 +165,7 @@ DisplayFilter::OperatorPtr     DisplayFilter::CreateRenderModeTest (MSRenderMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayFilter::If (ViewContextR viewContext, ElementHandleCP element, DisplayFilter::Operator const& filterOperator)
     {
-    bvector<byte>   data;
+    bvector<Byte>   data;
 
     filterOperator.GetData (data);
 
@@ -173,7 +177,7 @@ bool DisplayFilter::If (ViewContextR viewContext, ElementHandleCP element, Displ
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayFilter::ElseIf (ViewContextR viewContext, ElementHandleCP element, DisplayFilter::Operator const& filterOperator)
     {
-    bvector<byte>   data;
+    bvector<Byte>   data;
                                                                                      
     filterOperator.GetData (data);
 
@@ -185,8 +189,6 @@ bool DisplayFilter::ElseIf (ViewContextR viewContext, ElementHandleCP element, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayFilter::Else (ViewContextR viewContext) { return viewContext.ElseConditionalDraw(); }
 void DisplayFilter::End (ViewContextR viewContext) { viewContext.EndConditionalDraw(); }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley       07/2012
@@ -206,6 +208,7 @@ DisplayFilterHandlerP           DisplayFilterHandlerManager::GetHandler (Display
     }
 
 
+#endif
 
 
 

@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/ScopedDgnHost.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -105,7 +105,7 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     virtual GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
     virtual NotificationAdmin& _SupplyNotificationAdmin () override;
     virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
-    virtual void _SupplyProductName(WStringR s) override {s=L"BeTest";}
+    virtual void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     virtual L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -179,20 +179,33 @@ StatusInt TestDataManager::FindTestData (BeFileName& fullFileName, WCharCP fileN
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnModelP getAndFill(DgnDbR db, DgnModelId modelID, bool fillCache)
+    {
+    DgnModelP dgnModel = db.Models().GetModelById (modelID);
+    if (dgnModel == NULL)
+        return NULL;
+
+    if (fillCache)
+        dgnModel->FillModel();
+
+    return  dgnModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestDataManager::TestDataManager (WCharCP fullFileName, FileOpenMode mode, bool fill)
+TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode, bool fill)
     {
     m_model = NULL;
 
-    BeSQLite::Db::OpenMode dbOpenMode = (OPENMODE_READONLY==mode)? BeSQLite::Db::OPEN_Readonly: BeSQLite::Db::OPEN_ReadWrite;
-
-    DgnFileStatus stat;
-    DgnProject::OpenParams params(dbOpenMode);
-    m_project = DgnProject::OpenProject (&stat, BeFileName(fullFileName), params);
-    if (m_project == NULL)
+    DbResult stat;
+    DgnDb::OpenParams params(dbOpenMode);
+    m_dgndb = DgnDb::OpenDgnDb(&stat, BeFileName(fullFileName), params);
+    if (m_dgndb == NULL)
         {
-        if (stat == DGNSCHEMA_STATUS_VersionTooOld || stat == DGNSCHEMA_STATUS_MismatchCantOpenForWrite)
+        if (stat == BE_SQLITE_ERROR_ProfileTooOld || stat == BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite)
             {
             NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"HORNSWAGGLED! \"%ls\"", fullFileName);
             BeAssert (false && "HORNSWAGGLED!");
@@ -206,10 +219,10 @@ TestDataManager::TestDataManager (WCharCP fullFileName, FileOpenMode mode, bool 
         }
 
 
-    for (auto const& entry : m_project->Models().MakeIterator())
+    for (auto const& entry : m_dgndb->Models().MakeIterator())
         {
-        DgnModelP dgnModel = m_project->Models().GetAndFillModelById (NULL, entry.GetModelId(), fill);
-        dgnModel->SetReadOnly (OPENMODE_READONLY == mode);
+        DgnModelP dgnModel = getAndFill(*m_dgndb, entry.GetModelId(), fill);
+        dgnModel->SetReadOnly (Db::OPEN_Readonly == dbOpenMode);
         if (m_model == NULL)
             m_model = dgnModel;
         }
@@ -227,7 +240,7 @@ TestDataManager::TestDataManager (WCharCP fullFileName, FileOpenMode mode, bool 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestDataManager::~TestDataManager ()
     {
-    m_project = NULL;   // then release/close the project
+    m_dgndb = NULL;   // then release/close the project
     }
 
 /*---------------------------------------------------------------------------------**//**

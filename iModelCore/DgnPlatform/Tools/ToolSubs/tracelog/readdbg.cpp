@@ -49,14 +49,14 @@ static void freeModuleBaseArray(ReadDbgHandle *readDbgHandleP);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    01/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32    readDbgI_open
+static int32_t  readDbgI_open
 (
 ReadDbgHandle *readDbgHandleP,
-Int32 *sysStatusP
+int32_t *sysStatusP
 )
     {
-    Int32 appStatus = 0;
-    Int32 *appStatusP = &appStatus;
+    int32_t appStatus = 0;
+    int32_t *appStatusP = &appStatus;
     DWORD section;
     IMAGE_DOS_HEADER *imageDosHeaderP = NULL;
     /*-------------------------------------------------------------------
@@ -225,12 +225,12 @@ mycheck_leave:
 void *          readDbg_open
 (
 char *filename,
-Int32 *appStatusP,
-Int32 *sysStatusP
+int32_t *appStatusP,
+int32_t *sysStatusP
 )
     {
     ReadDbgHandle *readDbgHandleP = NULL;
-    Int32 appStatus = 0;
+    int32_t appStatus = 0;
     /*-------------------------------------------------------------------
     initialize status to success
     -------------------------------------------------------------------*/
@@ -256,7 +256,7 @@ Int32 *sysStatusP
     /*-------------------------------------------------------------------
     map file into read-only memory
     -------------------------------------------------------------------*/
-    readDbgHandleP->fileBaseP = (byte*)fileMap_getPtr(readDbgHandleP->hFileMapping, appStatusP, sysStatusP);
+    readDbgHandleP->fileBaseP = (Byte*)fileMap_getPtr(readDbgHandleP->hFileMapping, appStatusP, sysStatusP);
     CHECK_HANDLE_LEAVE(readDbgHandleP->fileBaseP, L"fileMap_getPtr", READDBG_ERROR_VIEW_MAP);
     /*-------------------------------------------------------------------
     finish open by reading data into handle structure
@@ -275,15 +275,15 @@ mycheck_leave:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    01/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           readDbg_close
+int32_t         readDbg_close
 (
 void *hDbg,
-Int32 *sysStatusP
+int32_t *sysStatusP
 )
     {
     bool ok;
-    Int32 appStatus = 0;
-    Int32 *appStatusP = &appStatus;
+    int32_t appStatus = 0;
+    int32_t *appStatusP = &appStatus;
     ReadDbgHandle *readDbgHandleP = (ReadDbgHandle *)hDbg;
     CHECK_HANDLE_LEAVE(readDbgHandleP, L"readDbgHandleP", READDBG_ERROR_HANDLE_DBG);
 
@@ -302,15 +302,15 @@ mycheck_leave:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    03/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           readDbg_getImageRange
+int32_t         readDbg_getImageRange
 (
 void *hDbg,
 uintptr_t *pImageBase,
 uintptr_t *pImageHigh
 )
     {
-    Int32 *appStatusP = NULL;
-    Int32 *sysStatusP = NULL;
+    int32_t *appStatusP = NULL;
+    int32_t *sysStatusP = NULL;
     ReadDbgHandle *readDbgHandleP = (ReadDbgHandle *)hDbg;
 
     if (pImageBase)
@@ -328,7 +328,7 @@ uintptr_t *pImageHigh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32    readDbg_checkOMFSignature
+static int32_t  readDbg_checkOMFSignature
 (
 void *hDbg
 )
@@ -353,7 +353,7 @@ void *hDbg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    01/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           readDbg_getSrc
+int32_t         readDbg_getSrc
 (
 void *hDbg,
 uintptr_t ipAddress,
@@ -361,21 +361,21 @@ char *szSrc,
 size_t cbSrc
 )
     {
-    Int32 appStatus = 0;
-    Int32 *appStatusP = NULL;
-    Int32 *sysStatusP = NULL;
+    int32_t appStatus = 0;
+    int32_t *appStatusP = NULL;
+    int32_t *sysStatusP = NULL;
     char *nameFoundP = NULL;
-    Int32 lengthFound = 0;
-    UInt32 imodFound = 0;
-    UInt32 lineFound = 0;
+    int32_t lengthFound = 0;
+    uint32_t imodFound = 0;
+    uint32_t lineFound = 0;
     ptrdiff_t deltaFound = 0xffffffff;
     char *nameP = NULL;
-    UInt32 length;
-    UInt32 i;
-    UInt32 j;
-    UInt32 k;
-    UInt32 n;
-    UInt32 seg = 0;
+    uint32_t length;
+    uint32_t i;
+    uint32_t j;
+    uint32_t k;
+    uint32_t n;
+    uint32_t seg = 0;
     uintptr_t addr = 0;
     ptrdiff_t delta = 0;
     ReadDbgHandle *readDbgHandleP = (ReadDbgHandle *)hDbg;
@@ -426,7 +426,7 @@ size_t cbSrc
                     omfSourceFileP = (OMFSourceFile *)((DWORD)omfSourceModuleP +
                         omfSourceModuleP->baseSrcFile[j]);
                     nameP = (char *)((DWORD)omfSourceFileP + 4 + 12*omfSourceFileP->cSeg);
-                    length = (UInt32)(*nameP);
+                    length = (uint32_t)(*nameP);
                     nameP++;
 #if 0
                     memset(name, 0, sizeof(name));
@@ -437,13 +437,13 @@ size_t cbSrc
 #endif
                     for (k = 0;k < omfSourceFileP->cSeg; k++)
                         {
-                        UInt16 *lineNbr;
+                        uint16_t *lineNbr;
                         omfSourceLineP = (OMFSourceLine *)((DWORD)omfSourceModuleP +
                             omfSourceFileP->baseSrcLn[k]);
                         seg = omfSourceLineP->Seg;
                         if (seg > 0)
                             {
-                            lineNbr = (UInt16 *)(&omfSourceLineP->offset[omfSourceLineP->cLnOff]);
+                            lineNbr = (uint16_t *)(&omfSourceLineP->offset[omfSourceLineP->cLnOff]);
                             for (n = 0; n < omfSourceLineP->cLnOff; n++)
                                 {
                                 addr = readDbgHandleP->imageBase +
@@ -498,16 +498,16 @@ size_t cbSrc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 *getModuleBaseArray(ReadDbgHandle *readDbgHandleP)
+static uint32_t *getModuleBaseArray(ReadDbgHandle *readDbgHandleP)
     {
     OMFSignature *omfSignatureP = (OMFSignature *)readDbgHandleP->codeViewBaseP;
     OMFDirHeader *omfDirHeaderP = NULL;
     OMFDirEntry  *omfDirEntryP  = NULL;
     PROCSYM32    *procSym32P    = NULL;
-    UInt32 imodMax      = 0;
-    UInt32 *imodBaseA     = NULL;
-    UInt32 i;
-    Int32                size;
+    uint32_t imodMax      = 0;
+    uint32_t *imodBaseA     = NULL;
+    uint32_t i;
+    int32_t              size;
 
     /*---------------------------------------------------------------
     get cached pointer from handle if available
@@ -535,8 +535,8 @@ static UInt32 *getModuleBaseArray(ReadDbgHandle *readDbgHandleP)
     /*---------------------------------------------------------------
     allocate memory for module number array
     ---------------------------------------------------------------*/
-    size = sizeof(UInt32 *) * (1 + imodMax);
-    imodBaseA = (UInt32 *)READDBG_ALLOC(size);
+    size = sizeof(uint32_t *) * (1 + imodMax);
+    imodBaseA = (uint32_t *)READDBG_ALLOC(size);
     if (!imodBaseA)
         return NULL;
     memset(imodBaseA, 0, size);
@@ -576,31 +576,31 @@ static void freeModuleBaseArray(ReadDbgHandle *readDbgHandleP)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    01/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           readDbg_getSym
+int32_t         readDbg_getSym
 (
 void *hDbg,
 uintptr_t ipAddress,
 char *szSym,
-Int32 cbSym
+int32_t cbSym
 )
     {
-    Int32 appStatus = 0;
-    Int32 *appStatusP = NULL;
-    Int32 *sysStatusP = NULL;
+    int32_t appStatus = 0;
+    int32_t *appStatusP = NULL;
+    int32_t *sysStatusP = NULL;
     char *nameFoundP = NULL;
     size_t lengthFound = 0;
-    UInt32 imodFound = 0;
+    uint32_t imodFound = 0;
     ptrdiff_t deltaFound = 0xffffffff;
-    UInt32 rectypFound = 0;
-    UInt32 iFound = 0xffffffff;
-    UInt32 jFound = 0xffffffff;
-    Int32 lineFound = 0;
+    uint32_t rectypFound = 0;
+    uint32_t iFound = 0xffffffff;
+    uint32_t jFound = 0xffffffff;
+    int32_t lineFound = 0;
     char name[1024];
     char *nameP = NULL;
-    UInt32 length;
-    UInt32 i;
-    UInt32 j;
-    UInt32 seg = 0;
+    uint32_t length;
+    uint32_t i;
+    uint32_t j;
+    uint32_t seg = 0;
     uintptr_t addr = 0;
     ptrdiff_t delta = 0;
     ReadDbgHandle *readDbgHandleP = (ReadDbgHandle *)hDbg;
@@ -629,10 +629,10 @@ Int32 cbSym
         OMFSymHash   *omfSymHashP   = NULL;
         DATASYM32    *dataSym32P    = NULL;
         PROCSYM32    *procSym32P    = NULL;
-        UInt32 *imodBaseA     = NULL;
+        uint32_t *imodBaseA     = NULL;
         bool         isVC5 = !strncmp(omfSignatureP->Signature, "NB11", 4);
-        UInt32 rectyp           = 0;
-        Int32            __line__       = 0;
+        uint32_t rectyp           = 0;
+        int32_t          __line__       = 0;
         /*---------------------------------------------------------------
         get or create cached module base array
         ---------------------------------------------------------------*/
@@ -694,7 +694,7 @@ Int32 cbSym
                             addr += dataSym32P->_16t.off;
                             nameP = (char *)dataSym32P->_16t.name;
                             }
-                        length = (UInt32)*nameP;
+                        length = (uint32_t)*nameP;
                         nameP++;
                         rectyp = dataSym32P->_16t.rectyp;
                         __line__ = __LINE__;
@@ -800,7 +800,7 @@ Int32 cbSym
                                     {
                                     addr = readDbgHandleP->imageBase + readDbgHandleP->imageSectionHeaderP[seg - 1].VirtualAddress + dataSym32P->_16t.off;
                                     nameP = (char *)dataSym32P->_16t.name;
-                                    length = (UInt32)*nameP;
+                                    length = (uint32_t)*nameP;
                                     nameP++;
                                     rectyp = procSym32P->_16t.rectyp;
                                     __line__ = __LINE__;
@@ -819,7 +819,7 @@ Int32 cbSym
                                     {
                                     addr = readDbgHandleP->imageBase + readDbgHandleP->imageSectionHeaderP[seg - 1].VirtualAddress + procSym32P->_16t.off;
                                     nameP = (char *)procSym32P->_16t.name;
-                                    length = (UInt32)*nameP;
+                                    length = (uint32_t)*nameP;
                                     nameP++;
                                     rectyp = procSym32P->_16t.rectyp;
                                     __line__ = __LINE__;
@@ -840,7 +840,7 @@ Int32 cbSym
                                     {
                                     addr = readDbgHandleP->imageBase + readDbgHandleP->imageSectionHeaderP[seg - 1].VirtualAddress + dataSym32P->_32t.off;
                                     nameP = (char *)dataSym32P->_32t.name;
-                                    length = (UInt32)*nameP;
+                                    length = (uint32_t)*nameP;
                                     nameP++;
                                     rectyp = procSym32P->_16t.rectyp;
                                     __line__ = __LINE__;
@@ -859,7 +859,7 @@ Int32 cbSym
                                     {
                                     addr = readDbgHandleP->imageBase + readDbgHandleP->imageSectionHeaderP[seg - 1].VirtualAddress + procSym32P->_32t.off;
                                     nameP = (char *)procSym32P->_32t.name;
-                                    length = (UInt32)*nameP;
+                                    length = (uint32_t)*nameP;
                                     nameP++;
                                     rectyp = procSym32P->_16t.rectyp;
                                     __line__ = __LINE__;
@@ -908,8 +908,8 @@ checkCoffSym:
     -------------------------------------------------------------------*/
     if (readDbgHandleP->exportBaseP && readDbgHandleP->imageExportDirectoryP)
         {
-        UInt32 iFunc;
-        UInt32 iName;
+        uint32_t iFunc;
+        uint32_t iName;
         uintptr_t addr = 0;
         ptrdiff_t delta = 0;
         IMAGE_EXPORT_DIRECTORY *imageExportDirectoryP = readDbgHandleP->imageExportDirectoryP;
@@ -974,7 +974,7 @@ ptrdiff_t    * const deltaStartP,
 ptrdiff_t    * const deltaEndP,
 uintptr_t    * const procStartP,
 uintptr_t    * const procEndP,
-Int32 *appStatusP
+int32_t *appStatusP
 )
     {
 
@@ -1004,7 +1004,7 @@ Int32 *appStatusP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  PhilipMcGraw    03/2002
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           readDbg_getProcRange
+int32_t         readDbg_getProcRange
 (
 void *hDbg,
 BitMaskP moduleBitMaskP,
@@ -1013,12 +1013,12 @@ uintptr_t *procStartP,
 uintptr_t *procEndP
 )
     {
-    Int32 appStatus = READDBG_ERROR_NOT_FOUND;
-    Int32 *appStatusP = NULL;
-    Int32 *sysStatusP = NULL;
-    UInt32 i;
-    UInt32 j;
-    Int32 seg = 0;
+    int32_t appStatus = READDBG_ERROR_NOT_FOUND;
+    int32_t *appStatusP = NULL;
+    int32_t *sysStatusP = NULL;
+    uint32_t i;
+    uint32_t j;
+    int32_t seg = 0;
     uintptr_t addr = 0;
     uintptr_t procStart = 0;
     uintptr_t procEnd = 0;
@@ -1038,12 +1038,12 @@ uintptr_t *procEndP
         OBJNAMESYM   *objNameSymP   = NULL;
         char  objName[512];
         char *objNameP = NULL;
-        Int32   objNameLen = 0;
+        int32_t objNameLen = 0;
 #endif /* DEBUG_OBJNAME */
 #ifdef DEBUG_FUNCNAME
         char  funcName[512];
         char *funcNameP = NULL;
-        Int32   funcNameLen = 0;
+        int32_t funcNameLen = 0;
 #endif /* DEBUG_FUNCNAME */
         uintptr_t imageBase     = readDbgHandleP->imageBase;
         IMAGE_SECTION_HEADER *imageSectionHeaderP = readDbgHandleP->imageSectionHeaderP;
@@ -1074,7 +1074,7 @@ uintptr_t *procEndP
 
                 for (j = 0; (j < omfDirEntryP[i].cb) && procSym32P->_16t.reclen; )
                     {
-                    Int32 delta = 0;
+                    int32_t delta = 0;
                     addr = 0;
                     seg = 0;
 #ifdef DEBUG_FUNCNAME
@@ -1105,7 +1105,7 @@ uintptr_t *procEndP
                     case S_OBJNAME:
                         objNameSymP = (OBJNAMESYM*)procSym32P;
                         objNameP = (char *)objNameSymP->name;
-                        objNameLen = (UInt32)*objNameP;
+                        objNameLen = (uint32_t)*objNameP;
                         objNameP++;
                         if (srcModuleListP)
                             {
@@ -1120,7 +1120,7 @@ uintptr_t *procEndP
 #ifdef DEBUG_FUNCNAME
                     if (funcNameP)
                         {
-                        funcNameLen = (UInt32)*funcNameP;
+                        funcNameLen = (uint32_t)*funcNameP;
                         funcNameP++;
                         if (srcModuleListP)
                             {
@@ -1129,7 +1129,7 @@ uintptr_t *procEndP
                             funcName[funcNameLen] = (char)0;
                             }
 #if 0
-                        typind = (UInt32)procSym32P->_16t.typind;
+                        typind = (uint32_t)procSym32P->_16t.typind;
                         printf("\t0x%08lx: %s, seg=0x%x rectyp=%s typind=0x%x %s\n",
                             addr, funcName, seg, get_s_rectyp_funcName(procSym32P->_16t.rectyp),
                             typind, primative_type_funcName ? primative_type_funcName : "");
@@ -1148,8 +1148,8 @@ uintptr_t *procEndP
     /* search export table */
     if (appStatus && readDbgHandleP->exportBaseP && readDbgHandleP->imageExportDirectoryP)
         {
-        UInt32 iFunc;
-        UInt32 iName;
+        uint32_t iFunc;
+        uint32_t iName;
         uintptr_t addr = 0;
 //        ptrdiff_t delta = 0;
         IMAGE_EXPORT_DIRECTORY *imageExportDirectoryP = readDbgHandleP->imageExportDirectoryP;
@@ -1180,18 +1180,18 @@ uintptr_t *procEndP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  PhilipMcGraw    03/2002
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           readDbg_getProcAddr
+int32_t         readDbg_getProcAddr
 (
 void          const * const hDbg,
 uintptr_t  *  const procAddrP,
 char          const * const procName
 )
     {
-    Int32 *appStatusP = NULL;
-    Int32 *sysStatusP = NULL;
-    UInt32 i;
-    UInt32 j;
-    Int32 seg = 0;
+    int32_t *appStatusP = NULL;
+    int32_t *sysStatusP = NULL;
+    uint32_t i;
+    uint32_t j;
+    int32_t seg = 0;
     uintptr_t addr = 0;
     ReadDbgHandle *readDbgHandleP = (ReadDbgHandle *)hDbg;
 
@@ -1207,11 +1207,11 @@ char          const * const procName
         OBJNAMESYM   *objNameSymP   = NULL;
         char  objName[512];
         char *objNameP = NULL;
-        Int32   objNameLen = 0;
+        int32_t objNameLen = 0;
 #endif /* DEBUG_OBJNAME */
         char  funcName[512];
         char *funcNameP = NULL;
-        Int32   funcNameLen = 0;
+        int32_t funcNameLen = 0;
         uintptr_t imageBase     = readDbgHandleP->imageBase;
         IMAGE_SECTION_HEADER *imageSectionHeaderP = readDbgHandleP->imageSectionHeaderP;
 
@@ -1232,7 +1232,7 @@ char          const * const procName
 
                 for (j = 0; (j < omfDirEntryP[i].cb) && procSym32P->_16t.reclen; )
                     {
-                    Int32 delta = 0;
+                    int32_t delta = 0;
                     addr = 0;
                     seg = 0;
                     funcNameP = NULL;
@@ -1256,7 +1256,7 @@ char          const * const procName
                     case S_OBJNAME:
                         objNameSymP = (OBJNAMESYM*)procSym32P;
                         objNameP = (char *)objNameSymP->name;
-                        objNameLen = (UInt32)*objNameP;
+                        objNameLen = (uint32_t)*objNameP;
                         objNameP++;
                         if (srcModuleListP)
                             {
@@ -1270,7 +1270,7 @@ char          const * const procName
 
                     if (funcNameP)
                         {
-                        funcNameLen = (UInt32)*funcNameP;
+                        funcNameLen = (uint32_t)*funcNameP;
                         funcNameP++;
                         funcNameLen = min((sizeof(funcName)) - 1, funcNameLen);
                         memcpy(funcName, funcNameP, funcNameLen);
@@ -1282,7 +1282,7 @@ char          const * const procName
                             return 0;
                             }
 #if 0
-                        typind = (UInt32)procSym32P->_16t.typind;
+                        typind = (uint32_t)procSym32P->_16t.typind;
                         printf("\t0x%08lx: %s, seg=0x%x rectyp=%s typind=0x%x %s\n",
                             addr, funcName, seg, get_s_rectyp_funcName(procSym32P->_16t.rectyp),
                             typind, primative_type_funcName ? primative_type_funcName : "");
@@ -1300,8 +1300,8 @@ char          const * const procName
     /* search export table */
     if (readDbgHandleP->exportBaseP && readDbgHandleP->imageExportDirectoryP)
         {
-        UInt32 iFunc;
-        UInt32 iName;
+        uint32_t iFunc;
+        uint32_t iName;
         uintptr_t addr = 0;
         IMAGE_EXPORT_DIRECTORY *imageExportDirectoryP = readDbgHandleP->imageExportDirectoryP;
         DWORD *functionsP = (DWORD *)(readDbgHandleP->exportBaseP + imageExportDirectoryP->AddressOfFunctions);

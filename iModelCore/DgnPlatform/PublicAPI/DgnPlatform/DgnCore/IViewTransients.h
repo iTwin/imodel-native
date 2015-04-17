@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/IViewTransients.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,7 +40,7 @@ public:
 //! @param[out]         range       The computed range.
 //! @param[in]          vp          The view in which transients are displayed.
 //! @bsimethod
-DGNPLATFORM_EXPORT StatusInt ComputeRange (DRange3d& range, ViewportP vp);
+DGNPLATFORM_EXPORT StatusInt ComputeRange (DRange3d& range, DgnViewportP vp);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

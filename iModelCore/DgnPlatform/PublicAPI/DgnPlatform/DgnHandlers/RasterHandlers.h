@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/RasterHandlers.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,14 +10,8 @@
 /** @cond BENTLEY_SDK_Internal */
 
 #include <set>
-#include <DgnPlatform/DgnCore/DisplayHandler.h>
-#include <DgnPlatform/DgnHandlers/IManipulator.h>
 #include <Bentley/RefCounted.h>
 
-//__PUBLISH_SECTION_END__
-#include <DgnPlatform/DgnCore/IDrawRasterAttachment.h>
-
-//__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 typedef enum
@@ -30,7 +24,7 @@ DisplayPriority_FrontPlane     = 3  /**< Raster is on front plane  */
 
 //__PUBLISH_SECTION_END__
 //NEVER CHANGE THIS ENUM NUMBERS SINCE THEY ARE USED TO DEFINE XATTRIBUTE MINOR ID STORED IN FILE
-enum RasterFrameXAttributesMinorId : UInt16
+enum RasterFrameXAttributesMinorId : uint16_t
     {
     CLIP_XATTR_ID                   =0,
     MASKREFERENCE_XATTR_ID          =1,
@@ -74,8 +68,8 @@ public:
     DGNPLATFORM_EXPORT static void      SetTranslation(TransformR trn, DPoint3dCR translation);
 
     DGNPLATFORM_EXPORT static double    ComputeAngle (DVec3dCR u, DVec3dCR v);
-    DGNPLATFORM_EXPORT static DPoint2d  ComputeExtent (TransformCR pixelToUORs, UInt64 bitmapWidth, UInt64 bitmapHeight);
-    DGNPLATFORM_EXPORT static void      ComputeBitmapSize (UInt64& bitmapWidth, UInt64& bitmapHeight, TransformCR pixelToUORs, DPoint2d extentInUORs);
+    DGNPLATFORM_EXPORT static DPoint2d  ComputeExtent (TransformCR pixelToUORs, uint64_t bitmapWidth, uint64_t bitmapHeight);
+    DGNPLATFORM_EXPORT static void      ComputeBitmapSize (uint64_t& bitmapWidth, uint64_t& bitmapHeight, TransformCR pixelToUORs, DPoint2d extentInUORs);
 };
 
 /** @addtogroup RasterElements
@@ -217,8 +211,8 @@ DGNPLATFORM_EXPORT virtual StatusInt            _OnPreprocessCopy (EditElementHa
 #endif
 DGNPLATFORM_EXPORT virtual bool                 _IsSupportedOperation (ElementHandleCP eh, SupportOperation stype) override;
 DGNPLATFORM_EXPORT virtual bool                 _IsTransformGraphics (ElementHandleCR element, TransformInfoCR transform) override;
-DGNPLATFORM_EXPORT virtual void                 _GetDescription (ElementHandleCR el, WStringR string, UInt32 desiredLength) override;
-DGNPLATFORM_EXPORT virtual void                 _GetTypeName (WStringR string, UInt32 desiredLength) override;
+DGNPLATFORM_EXPORT virtual void                 _GetDescription (ElementHandleCR el, WStringR string, uint32_t desiredLength) override;
+DGNPLATFORM_EXPORT virtual void                 _GetTypeName (WStringR string, uint32_t desiredLength) override;
 DGNPLATFORM_EXPORT virtual ReprojectStatus      _OnGeoCoordinateReprojection (EditElementHandleR, IGeoCoordinateReprojectionHelper&, bool inChain) override;
 
 // //ITransactionHandler interface                                                                                                                                                 removed in Graphite
@@ -271,7 +265,7 @@ public:
 
     //! Returns the version of the raster attachment element
     //! @param[in] eh        The element to query.
-    DGNPLATFORM_EXPORT UInt32 GetVersion(ElementHandleCR eh) const;
+    DGNPLATFORM_EXPORT uint32_t GetVersion(ElementHandleCR eh) const;
 
 
     //__PUBLISH_CLASS_VIRTUAL__
@@ -305,14 +299,14 @@ public:
     //! @param[in] modelRef       The DgnModel to look to for color table.
     //! @param[in] rgbColor       The RGB triplet to find index in color table.
     //! @return SUCCESS if Successful, ERROR otherwise.
-    DGNPLATFORM_EXPORT static StatusInt ColorIndexFromRgbInModel (UInt32& index, DgnModelR modelRef, RgbColorDef const& rgbColor);
+    DGNPLATFORM_EXPORT static StatusInt ColorIndexFromRgbInModel (uint32_t& index, DgnModelR modelRef, RgbColorDef const& rgbColor);
 
     //! Query the RGB triplet from a DgnModel rawIndex.
     //! @param[out] color         the RGB triplet found.
-    //! @param[in] project        The DgnProject to look to for RGB color value.
+    //! @param[in] project        The DgnDb to look to for RGB color value.
     //! @param[in] rawIndex       The rawIndex of the RGB triplet to extract.
     //! @return SUCCESS if Successful, ERROR otherwise.
-    DGNPLATFORM_EXPORT static StatusInt RgbFromColorIndexInModel (RgbColorDef& color, DgnProjectR project, UInt32 rawIndex);
+    DGNPLATFORM_EXPORT static StatusInt RgbFromColorIndexInModel (RgbColorDef& color, DgnDbR project, uint32_t rawIndex);
 
     //! Return default search path used with the attach moniker to find attached raster file.
     //! @param[in] modelRef            Will search in this model design file folder.
@@ -537,7 +531,7 @@ public:
     //! @See RgbFromColorIndexInModel
     //! @param[in] eh        The element to query.
     //! @return raw color index used as foreground color.
-    DGNPLATFORM_EXPORT UInt32 GetForegroundColor(ElementHandleCR eh) const;
+    DGNPLATFORM_EXPORT uint32_t GetForegroundColor(ElementHandleCR eh) const;
 
     //! Change raw color index used as foreground color.
     //! @param[out] eeh             The element to modify.
@@ -545,13 +539,13 @@ public:
     //! @return true if element was updated.
     //! @See RgbFromColorIndexInModel
     //! @See ColorIndexFromRgbInModel
-    DGNPLATFORM_EXPORT bool SetForegroundColor(EditElementHandleR eeh, UInt32 rawColorIndex);
+    DGNPLATFORM_EXPORT bool SetForegroundColor(EditElementHandleR eeh, uint32_t rawColorIndex);
 
     //! Query raw color index used as background color.
     //! @See RgbFromColorIndexInModel
     //! @param[in] eh        The element to query.
     //! @return raw color index used as background color.
-    DGNPLATFORM_EXPORT UInt32 GetBackgroundColor(ElementHandleCR eh) const;
+    DGNPLATFORM_EXPORT uint32_t GetBackgroundColor(ElementHandleCR eh) const;
 
     //! Change raw color index used as background color.
     //! @param[out] eeh             The element to modify.
@@ -559,40 +553,40 @@ public:
     //! @return true if element was updated.
     //! @See RgbFromColorIndexInModel
     //! @See ColorIndexFromRgbInModel
-    DGNPLATFORM_EXPORT bool SetBackgroundColor(EditElementHandleR eeh, UInt32 rawColorIndex);
+    DGNPLATFORM_EXPORT bool SetBackgroundColor(EditElementHandleR eeh, uint32_t rawColorIndex);
 
     //! Query transparency value applied to raster image foreground at display [0, 255], 0 -> Opaque.
     //! @param[in] eh        The element to query.
     //! @return transparency value applied to all raster image foreground at display [0, 255], 0 -> Opaque.
-    DGNPLATFORM_EXPORT UInt8 GetForegroundTransparencyLevel(ElementHandleCR eh) const;
+    DGNPLATFORM_EXPORT uint8_t GetForegroundTransparencyLevel(ElementHandleCR eh) const;
 
     //! Change transparency value applied to raster image foreground at display [0,255], 0 -> Opaque.
     //! @param[out] eeh             The element to modify.
     //! @param[in]  transparency    The transparency value applied to all raster image at display [0,255], 0 -> Opaque.
     //! @return true if element was updated.
-    DGNPLATFORM_EXPORT bool SetForegroundTransparencyLevel(EditElementHandleR eeh,UInt8 transparency);
+    DGNPLATFORM_EXPORT bool SetForegroundTransparencyLevel(EditElementHandleR eeh,uint8_t transparency);
 
     //! Query transparency value applied to all raster image background at display [0, 255], 0 -> Opaque.
     //! @param[in] eh        The element to query.
     //! @return transparency value applied to all raster image background at display [0, 255], 0 -> Opaque.
-    DGNPLATFORM_EXPORT UInt8 GetBackgroundTransparencyLevel(ElementHandleCR eh) const;
+    DGNPLATFORM_EXPORT uint8_t GetBackgroundTransparencyLevel(ElementHandleCR eh) const;
 
     //! Change transparency value applied to raster image background at display [0,255], 0 -> Opaque.
     //! @param[out] eeh             The element to modify.
     //! @param[in]  transparency    The transparency value applied to all raster image at display [0,255], 0 -> Opaque.
     //! @return true if element was updated.
-    DGNPLATFORM_EXPORT bool SetBackgroundTransparencyLevel(EditElementHandleR eeh,UInt8 transparency);
+    DGNPLATFORM_EXPORT bool SetBackgroundTransparencyLevel(EditElementHandleR eeh,uint8_t transparency);
 
     //! Query transparency value applied to all raster image at display [0, 255], 0 -> Opaque.
     //! @param[in] eh        The element to query.
     //! @return transparency value applied to all raster image at display [0, 255], 0 -> Opaque.
-    DGNPLATFORM_EXPORT UInt8 GetImageTransparencyLevel(ElementHandleCR eh) const;
+    DGNPLATFORM_EXPORT uint8_t GetImageTransparencyLevel(ElementHandleCR eh) const;
 
     //! Change transparency value applied to all raster image at display [0,255], 0 -> Opaque.
     //! @param[out] eeh             The element to modify.
     //! @param[in]  transparency    The transparency value applied to all raster image at display [0,255], 0 -> Opaque.
     //! @return true if element was updated.
-    DGNPLATFORM_EXPORT bool SetImageTransparencyLevel(EditElementHandleR eeh,UInt8 transparency);
+    DGNPLATFORM_EXPORT bool SetImageTransparencyLevel(EditElementHandleR eeh,uint8_t transparency);
 
 
 }; // RasterFrameHandler

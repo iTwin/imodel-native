@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/XmlHelper.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -156,7 +156,7 @@ static bool     XmlHelper::GetNodeDoubleValue (double& val,  XmlNode& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool     XmlHelper::GetNodeInt32Value (Int32& val,  XmlNode& parentNodePtr, WCharCP path=NULL)
+static bool     XmlHelper::GetNodeInt32Value (int32_t& val,  XmlNode& parentNodePtr, WCharCP path=NULL)
     {
     XmlNode nodePtr = (NULL != path) ? parentNodePtr->selectSingleNode(path) : parentNodePtr;
     if (nodePtr == NULL)
@@ -183,7 +183,7 @@ static bool     XmlHelper::GetNodeInt32Value (Int32& val,  XmlNode& parentNodePt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool     XmlHelper::GetNodeUInt32Value (UInt32& val,  XmlNode& parentNodePtr, WCharCP path=NULL)
+static bool     XmlHelper::GetNodeUInt32Value (uint32_t& val,  XmlNode& parentNodePtr, WCharCP path=NULL)
     {
     XmlNode nodePtr = (NULL != path) ? parentNodePtr->selectSingleNode(path) : parentNodePtr;
     if (nodePtr == NULL)
@@ -209,7 +209,7 @@ static bool     XmlHelper::GetNodeUInt32Value (UInt32& val,  XmlNode& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool     XmlHelper::GetNodeUInt64Value (UInt64& val,  XmlNode& parentNodePtr, WCharCP path=NULL)
+static bool     XmlHelper::GetNodeUInt64Value (uint64_t& val,  XmlNode& parentNodePtr, WCharCP path=NULL)
     {
     XmlNode nodePtr = (NULL != path) ? parentNodePtr->selectSingleNode(path) : parentNodePtr;
     if (nodePtr == NULL)
@@ -334,7 +334,7 @@ static XmlElement XmlHelper::AddElementStringValue (XmlElement& parentElementPtr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     XmlHelper::AddElementInt32Value (XmlElement& parentElementPtr, XmlDocument& pXMLDom, WCharCP name, Int32 val, WCharCP namespaceURI=NULL)
+static void     XmlHelper::AddElementInt32Value (XmlElement& parentElementPtr, XmlDocument& pXMLDom, WCharCP name, int32_t val, WCharCP namespaceURI=NULL)
     {
     _variant_t var (val);
 
@@ -353,7 +353,7 @@ static void     XmlHelper::AddElementInt32Value (XmlElement& parentElementPtr, X
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static XmlElement     XmlHelper::AddElementUInt32Value (XmlElement& parentElementPtr, XmlDocument& pXMLDom, WCharCP name, UInt32 val)
+static XmlElement     XmlHelper::AddElementUInt32Value (XmlElement& parentElementPtr, XmlDocument& pXMLDom, WCharCP name, uint32_t val)
     {
     _variant_t var (val);
 
@@ -374,7 +374,7 @@ static XmlElement     XmlHelper::AddElementUInt32Value (XmlElement& parentElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static XmlElement     XmlHelper::AddElementUInt64Value (XmlElement& parentElementPtr, XmlDocument& pXMLDom, WCharCP name, UInt64 val)
+static XmlElement     XmlHelper::AddElementUInt64Value (XmlElement& parentElementPtr, XmlDocument& pXMLDom, WCharCP name, uint64_t val)
     {
     _variant_t var (val);
 
@@ -440,7 +440,7 @@ static bool XmlHelper::GetAttributeStringValue (XmlElement& elementPtr, WCharCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool XmlHelper::GetAttributeInt32Value (XmlElement& elementPtr, WCharCP name, Int32& val)
+static bool XmlHelper::GetAttributeInt32Value (XmlElement& elementPtr, WCharCP name, int32_t& val)
     {
     WString valString;
     if (!XmlHelper::GetAttributeStringValue (elementPtr, name, valString) || 0 == valString.length())
@@ -453,7 +453,7 @@ static bool XmlHelper::GetAttributeInt32Value (XmlElement& elementPtr, WCharCP n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool XmlHelper::GetAttributeUInt32Value (XmlElement& elementPtr, WCharCP name, UInt32& val)
+static bool XmlHelper::GetAttributeUInt32Value (XmlElement& elementPtr, WCharCP name, uint32_t& val)
     {
     WString valString;
     if (!XmlHelper::GetAttributeStringValue (elementPtr, name, valString) || 0 == valString.length())
@@ -551,7 +551,7 @@ static void    XmlHelper::AddAttributeStringValue (XmlElement& elementPtr, WChar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     XmlHelper::AddAttributeInt32Value (XmlElement& elementPtr, WCharCP name, Int32 val)
+static void     XmlHelper::AddAttributeInt32Value (XmlElement& elementPtr, WCharCP name, int32_t val)
     {
     elementPtr->setAttribute (name, _variant_t (val));
     }
@@ -567,7 +567,7 @@ static void    XmlHelper::AddAttributeDoubleValue (XmlElement& elementPtr, WChar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BentleySystems
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     XmlHelper::AddAttributeUInt32Value (XmlElement& elementPtr, WCharCP name, UInt32 val)
+static void     XmlHelper::AddAttributeUInt32Value (XmlElement& elementPtr, WCharCP name, uint32_t val)
     {
     elementPtr->setAttribute (name, _variant_t (val));
     }

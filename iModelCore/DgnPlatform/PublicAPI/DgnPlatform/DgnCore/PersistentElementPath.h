@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/PersistentElementPath.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,8 +21,8 @@ BENTLEY_API_TYPEDEFS(DataInternalizer)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-typedef bset<ElementRefP>   T_StdElementRefSet;
-typedef bvector<UInt64>     T_ElementIdInternalVector;
+typedef bset<DgnElementP>   T_StdDgnElementSet;
+typedef bvector<uint64_t>     T_ElementIdInternalVector;
 
 /*=================================================================================**//**
 PersistentElementPath captures a reference to an element.
@@ -79,7 +79,7 @@ public:
       };
 
 private:
-    UInt8*          m_storage;
+    uint8_t*          m_storage;
 
     void Clear ();
     void Copy (PersistentElementPath const&);
@@ -114,11 +114,11 @@ public:
 
     //! Use this constructor to create a PersistentElementPath that identifies a single element in a known model.
     //! @param[in]  rootElement     the root element.
-    //! @remarks This constructor does not capture a path, but just the ElementId of the root element.
+    //! @remarks This constructor does not capture a path, but just the DgnElementId of the root element.
     //! @remarks This is for the special case where:
     //! \li a DisplayPath is not available
     //! \li the root element is in a known model.
-    DGNPLATFORM_EXPORT explicit PersistentElementPath (ElementRefP rootElement);
+    DGNPLATFORM_EXPORT explicit PersistentElementPath (DgnElementP rootElement);
 
     //! Use this constructor to create a PersistentElementPath that identifies a root element.
     //! @param[in]  rootModel   The model that holds the root element.
@@ -128,16 +128,16 @@ public:
     //! DisplayPath dp (rootElement, rootModel);
     //! PersistentElementPath (&dp);
     //! \endcode
-    DGNPLATFORM_EXPORT PersistentElementPath (DgnModelP rootModel, ElementRefP rootElement);
+    DGNPLATFORM_EXPORT PersistentElementPath (DgnModelP rootModel, DgnElementP rootElement);
 
     //! @param[in]  mid              ModelId that contains element
-    //! @param[in]  eid              ElementId of element
-    DGNPLATFORM_EXPORT PersistentElementPath (DgnModelId mid, ElementId eid);
+    //! @param[in]  eid              DgnElementId of element
+    DGNPLATFORM_EXPORT PersistentElementPath (DgnModelId mid, DgnElementId eid);
 
 //__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT PersistentElementPath (DgnModelP rootModel, ElementId rootElementID);
+    DGNPLATFORM_EXPORT PersistentElementPath (DgnModelP rootModel, DgnElementId rootElementID);
 
-    DGNPLATFORM_EXPORT PersistentElementPath (ElementId rootElementID);
+    DGNPLATFORM_EXPORT PersistentElementPath (DgnElementId rootElementID);
 //__PUBLISH_SECTION_START__
 
 ///@name Serialization
@@ -161,7 +161,7 @@ public:
     //! @returns non-zero error status if the state is invalid
     //! @see Store
     DGNPLATFORM_EXPORT
-    StatusInt Load (byte const* bytes, size_t nbytes);
+    StatusInt Load (Byte const* bytes, size_t nbytes);
 
     //! Recreate a PersistentElementPath from stored state
     //! @param[in]  source  Previously stored state.
@@ -193,7 +193,7 @@ explicit
     //! @param[in]  sink    Where state is to be stored.
     //! @see Load
     DGNPLATFORM_EXPORT
-    void Store (bvector<byte>& sink) const;
+    void Store (bvector<Byte>& sink) const;
 
     //! Serialize the state of this PersistentElementPath
     //! @returns string that captures the persistent state of PersistentElementPath
@@ -227,7 +227,7 @@ explicit
     //! <p> This function is useful if you have an ElementHandle that identifies the dependent element element but a) you are not
     //! sure if the handle contains a model or an element ref, and b) you don't care if the returned handle has a model or not.
     //! \li If \a referenceHolder has a DgnModel, then this function calls EvaluateElement (DgnModelP).
-    //! \li Else, if \a referenceHolder has an ElementRefP, then this function calls EvaluateElementRef.
+    //! \li Else, if \a referenceHolder has an DgnElementP, then this function calls EvaluateDgnElement.
     //! \li Else, this function returns an invalid EditElementHandle.
     DGNPLATFORM_EXPORT
     ElementHandle EvaluateElementFromHost (ElementHandleCR referenceHolder) const;
@@ -237,18 +237,18 @@ explicit
     //! @returns an element handle that identifies the root element or an invalid handle if the path could not be evaluated.
     //! @remarks
     //!     This evaluation function is useful when you don't need a path and you don't have a modelRef.
-    //!     EvaluateElementRef will return NULL if the root element is deleted.
+    //!     EvaluateDgnElement will return NULL if the root element is deleted.
     DGNPLATFORM_EXPORT
-    ElementRefP EvaluateElementRef (DgnModelP dependentModel) const;
+    DgnElementP EvaluateDgnElement (DgnModelP dependentModel) const;
 
     //! Processor called on the items in a PersistentElementPath
     struct  PathProcessor
         {
-        //! An ElementId was encountered. ref is NULL if element is unresolved. Processing stops when NULL element is encountered.
-        virtual void OnElementId (ElementId e, ElementRefP ref, DgnModelP dependentModel) = 0;
+        //! An DgnElementId was encountered. ref is NULL if element is unresolved. Processing stops when NULL element is encountered.
+        virtual void OnElementId (DgnElementId e, DgnElementP ref, DgnModelP dependentModel) = 0;
         //! An optional dependent model or optional root model id was encountered. cacheFound is NULL if the model cannot be found.
         //! Processing stops when an optional model cannot be found.
-        virtual void OnModelId (DgnModelId mid, DgnModelP cacheFound, DgnProjectP homeFile) = 0;
+        virtual void OnModelId (DgnModelId mid, DgnModelP cacheFound, DgnDbP homeFile) = 0;
         };
 
     //! Process the items in a PersistentElementPath. Use this method if you want to learn more about a path that
@@ -262,23 +262,23 @@ explicit
     //! contains a single element. Normally, applications should call #EvaluateElement
     //! @see EvaluateElement
     //! @param[in]  dependentModel   The model that holds the first element identified by this path.
-    //! @return The element in \a dependentModel that is identified by the first ElementId stored in this path, or <code>NULL</code> if the element is not found
+    //! @return The element in \a dependentModel that is identified by the first DgnElementId stored in this path, or <code>NULL</code> if the element is not found
     DGNPLATFORM_EXPORT
-    ElementRefP EvaluateFirstElementRef (DgnModelP dependentModel) const;
+    DgnElementP EvaluateFirstDgnElement (DgnModelP dependentModel) const;
 
     //! Get the root file and model of the path.
     //! @return non-zero error status if the path could not be evaluated.
     DGNPLATFORM_EXPORT
     StatusInt       EvaluateRootModel
     (
-    DgnProjectP&       file,       //!< The root file
+    DgnDbP&       file,       //!< The root file
     DgnModelId&   mid,        //!< The root model
     DgnModelP       dependentModel   //!< The model containing the dependent element
     )   const;
 
-    //! Get the first ElementId stored in this path.
+    //! Get the first DgnElementId stored in this path.
     DGNPLATFORM_EXPORT
-    ElementId GetFirstElementId () const;
+    DgnElementId GetFirstElementId () const;
 
 //__PUBLISH_SECTION_START__
 
@@ -299,16 +299,16 @@ explicit
     //!     This is useful when handling an IDependencyHandler::OnRootsChanged callback and you find that a root has been deleted and need to determine
     //!     which of many PersistentElementPaths within the dependent XAttribute contains the reference to the deleted root.
     DGNPLATFORM_EXPORT
-    bool EqualElementRef (ElementRefP root, DgnModelP dependentModel) const;
+    bool EqualDgnElement (DgnElementP root, DgnModelP dependentModel) const;
 
-    //! Does the path depend on this ElementRefP? If dependent and root elements are in different models
+    //! Does the path depend on this DgnElementP? If dependent and root elements are in different models
     //! and/or root is a shared cell instance, then this function will detect that the path points to
     //! the shared cell definition element, etc.
     //! @param[in]  root      The element to look for.
     //! @param[in]  dependentModel   The model that contains the dependent element.
     //! @return true if \a root appears anywhere in the path, or false if it does not appear or if the path could not be evaluated.
     DGNPLATFORM_EXPORT
-    bool DependsOnElementRef (ElementRefP root, DgnModelP dependentModel) const;
+    bool DependsOnDgnElement (DgnElementP root, DgnModelP dependentModel) const;
 
     //! Query if two PersistentElementPathes match.
     DGNPLATFORM_EXPORT
@@ -316,7 +316,7 @@ explicit
 ///@}
 
     DGNPLATFORM_EXPORT
-    void DisclosePointers (T_StdElementRefSet* refs, DgnModelP dependentModel);
+    void DisclosePointers (T_StdDgnElementSet* refs, DgnModelP dependentModel);
 
 
 //__PUBLISH_SECTION_END__

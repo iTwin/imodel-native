@@ -199,7 +199,7 @@ private:
     double                                      m_alpha1;
     RgbFactor                                   m_color2;
     double                                      m_alpha2;
-    UInt32                                      m_frequencies;
+    uint32_t                                    m_frequencies;
     double                                      m_frequencyRatio;
     double                                      m_amplitudeRatio;
     double                                      m_bias;
@@ -233,8 +233,8 @@ public:
     DGNPLATFORM_EXPORT double GetAlpha2 () const;
     DGNPLATFORM_EXPORT void SetAlpha2 (double alpha);
 
-    DGNPLATFORM_EXPORT UInt32 GetFrequencies () const;
-    DGNPLATFORM_EXPORT void SetFrequencies (UInt32 frequencies);
+    DGNPLATFORM_EXPORT uint32_t GetFrequencies () const;
+    DGNPLATFORM_EXPORT void SetFrequencies (uint32_t frequencies);
 
     DGNPLATFORM_EXPORT double GetFrequencyRatio () const;
     DGNPLATFORM_EXPORT void SetFrequencyRatio (double ratio);
@@ -586,7 +586,7 @@ private:
     CellularType                                m_cellularType;
     double                                      m_cellWidth;
     double                                      m_transitionWidth;
-    Int32                                       m_frequencies;
+    int32_t                                     m_frequencies;
     double                                      m_frequencyRatio;
     double                                      m_amplitudeRatio;
     double                                      m_valueVariation;
@@ -638,8 +638,8 @@ public:
     DGNPLATFORM_EXPORT double GetFillerValue () const;
     DGNPLATFORM_EXPORT void SetFillerValue (double value);
 
-    DGNPLATFORM_EXPORT Int32 GetFrequencies () const;
-    DGNPLATFORM_EXPORT void SetFrequencies (Int32 frequencies);
+    DGNPLATFORM_EXPORT int32_t GetFrequencies () const;
+    DGNPLATFORM_EXPORT void SetFrequencies (int32_t frequencies);
 
     DGNPLATFORM_EXPORT double GetFrequencyRatio () const;
     DGNPLATFORM_EXPORT void SetFrequencyRatio (double ratio);
@@ -823,7 +823,7 @@ private:
     double                                      m_phase;
     double                                      m_bias;
     double                                      m_gain;
-    UInt32                                      m_sources;
+    uint32_t                                    m_sources;
     double                                      m_crestValue;
     double                                      m_troughValue;
 
@@ -864,8 +864,8 @@ public:
     DGNPLATFORM_EXPORT double GetGain () const;
     DGNPLATFORM_EXPORT void SetGain (double gain);
 
-    DGNPLATFORM_EXPORT UInt32 GetSources () const;
-    DGNPLATFORM_EXPORT void SetSources (UInt32 sources);
+    DGNPLATFORM_EXPORT uint32_t GetSources () const;
+    DGNPLATFORM_EXPORT void SetSources (uint32_t sources);
 
     DGNPLATFORM_EXPORT double GetCrestValue () const;
     DGNPLATFORM_EXPORT void SetCrestValue (double value);
@@ -1066,7 +1066,7 @@ private:
     LxoFloatEnvelopeKey                                 m_key;
     LxoEnvelopeTangentIn                                m_tangentIn;
     LxoEnvelopeTangentOut                               m_tangentOut;
-    UInt32                                              m_flag;
+    uint32_t                                            m_flag;
 
     LxoFloatEnvelopeComponent ();
 
@@ -1086,8 +1086,8 @@ public:
     DGNPLATFORM_EXPORT LxoEnvelopeTangentOutCR GetTangentOut () const;
     DGNPLATFORM_EXPORT LxoEnvelopeTangentOutR GetTangentOutR ();
 
-    DGNPLATFORM_EXPORT UInt32 GetFlag () const;
-    DGNPLATFORM_EXPORT void SetFlag (UInt32 flag);
+    DGNPLATFORM_EXPORT uint32_t GetFlag () const;
+    DGNPLATFORM_EXPORT void SetFlag (uint32_t flag);
 };
 
 //=======================================================================================
@@ -1139,7 +1139,7 @@ private:
     LxoIntEnvelopeKey                                   m_key;
     LxoEnvelopeTangentIn                                m_tangentIn;
     LxoEnvelopeTangentOut                               m_tangentOut;
-    UInt32                                              m_flag;
+    uint32_t                                            m_flag;
 
     LxoIntEnvelopeComponent ();
 
@@ -1159,8 +1159,8 @@ public:
     DGNPLATFORM_EXPORT LxoEnvelopeTangentOutCR GetTangentOut () const;
     DGNPLATFORM_EXPORT LxoEnvelopeTangentOutR GetTangentOutR ();
 
-    DGNPLATFORM_EXPORT UInt32 GetFlag () const;
-    DGNPLATFORM_EXPORT void SetFlag (UInt32 flag);
+    DGNPLATFORM_EXPORT uint32_t GetFlag () const;
+    DGNPLATFORM_EXPORT void SetFlag (uint32_t flag);
 };
 
 //=======================================================================================
@@ -1448,9 +1448,9 @@ private:
 // __PUBLISH_SECTION_END__
     RgbFactor       m_woodColor;
     RgbFactor       m_ringColor;
-    Int32           m_boardsPerColumn;
-    Int32           m_boardsPerRow;
-    Int32           m_patternId;
+    int32_t         m_boardsPerColumn;
+    int32_t         m_boardsPerRow;
+    int32_t         m_patternId;
     double          m_crackWidth;
     double          m_brightnessVariation;
     double          m_horizontalVariation;
@@ -1488,14 +1488,14 @@ public:
     DGNPLATFORM_EXPORT double GetGrainScale () const;
     DGNPLATFORM_EXPORT void SetGrainScale (double grainScale);
 
-    DGNPLATFORM_EXPORT Int32 GetBoardsPerColumn () const;
-    DGNPLATFORM_EXPORT void SetBoardsPerColumn (Int32 boardsPerColumn);
+    DGNPLATFORM_EXPORT int32_t GetBoardsPerColumn () const;
+    DGNPLATFORM_EXPORT void SetBoardsPerColumn (int32_t boardsPerColumn);
 
-    DGNPLATFORM_EXPORT Int32 GetBoardsPerRow () const;
-    DGNPLATFORM_EXPORT void SetBoardsPerRow (Int32 boardsPerRow);
+    DGNPLATFORM_EXPORT int32_t GetBoardsPerRow () const;
+    DGNPLATFORM_EXPORT void SetBoardsPerRow (int32_t boardsPerRow);
 
-    DGNPLATFORM_EXPORT Int32 GetPatternId () const;
-    DGNPLATFORM_EXPORT void SetPatternId (Int32 patternId);
+    DGNPLATFORM_EXPORT int32_t GetPatternId () const;
+    DGNPLATFORM_EXPORT void SetPatternId (int32_t patternId);
 
     };
 
@@ -1534,8 +1534,8 @@ private:
     RgbFactor       m_brickColor;
     RgbFactor       m_mortarColor;
     BrickBondType   m_bondType;
-    Int32           m_patternId;
-    Int32           m_headerCourseInterval;
+    int32_t         m_patternId;
+    int32_t         m_headerCourseInterval;
     bool            m_flemishHeaders;
     double          m_mortarWidth;
     double          m_brightnessVariation;
@@ -1581,11 +1581,11 @@ public:
     DGNPLATFORM_EXPORT BrickBondType GetBondType () const;
     DGNPLATFORM_EXPORT void SetBondType (BrickBondType bondType);
 
-    DGNPLATFORM_EXPORT Int32 GetPatternId () const;
-    DGNPLATFORM_EXPORT void SetPatternId (Int32 patternId);
+    DGNPLATFORM_EXPORT int32_t GetPatternId () const;
+    DGNPLATFORM_EXPORT void SetPatternId (int32_t patternId);
 
-    DGNPLATFORM_EXPORT Int32 GetHeaderCourseInterval () const;
-    DGNPLATFORM_EXPORT void SetHeaderCourseInterval (Int32 headerCourseInterval);
+    DGNPLATFORM_EXPORT int32_t GetHeaderCourseInterval () const;
+    DGNPLATFORM_EXPORT void SetHeaderCourseInterval (int32_t headerCourseInterval);
 
     DGNPLATFORM_EXPORT bool GetFlemishHeaders () const;
     DGNPLATFORM_EXPORT void SetFlemishHeaders (bool flemishHeaders);
@@ -2011,8 +2011,8 @@ private:
 // __PUBLISH_SECTION_END__
     RgbFactor       m_tintColor;
     RgbFactor       m_mortarColor;
-    Int32           m_stoneColors;
-    Int32           m_stoneColorOffset;
+    int32_t         m_stoneColors;
+    int32_t         m_stoneColorOffset;
     double          m_mortarWidth;
     double          m_noisiness;
 
@@ -2038,11 +2038,11 @@ public:
     DGNPLATFORM_EXPORT RgbFactor& GetMortarColorR ();
     DGNPLATFORM_EXPORT void SetMortarColor (double red, double green, double blue);
 
-    DGNPLATFORM_EXPORT Int32 GetStoneColors () const;
-    DGNPLATFORM_EXPORT void SetStoneColors (Int32 stoneColors);
+    DGNPLATFORM_EXPORT int32_t GetStoneColors () const;
+    DGNPLATFORM_EXPORT void SetStoneColors (int32_t stoneColors);
 
-    DGNPLATFORM_EXPORT Int32 GetStoneColorOffset () const;
-    DGNPLATFORM_EXPORT void SetStoneColorOffset (Int32 stoneColorOffset);
+    DGNPLATFORM_EXPORT int32_t GetStoneColorOffset () const;
+    DGNPLATFORM_EXPORT void SetStoneColorOffset (int32_t stoneColorOffset);
 
     DGNPLATFORM_EXPORT double GetMortarWidth () const;
     DGNPLATFORM_EXPORT void SetMortarWidth (double mortarWidth);
@@ -2334,7 +2334,7 @@ private:
     double          m_value1;
     double          m_value2;
     OcclusionType   m_occType;
-    UInt32          m_occlusionRays;
+    uint32_t        m_occlusionRays;
     double          m_occlusionDistance;
     double          m_variance;
     double          m_varianceScale;
@@ -2401,8 +2401,8 @@ public:
     DGNPLATFORM_EXPORT OcclusionType GetOcclusionType () const;
     DGNPLATFORM_EXPORT void SetOcclusionType (OcclusionType type);
 
-    DGNPLATFORM_EXPORT UInt32 GetOcclusionRays () const;
-    DGNPLATFORM_EXPORT void SetOcclusionRays (UInt32 occlusionRays);
+    DGNPLATFORM_EXPORT uint32_t GetOcclusionRays () const;
+    DGNPLATFORM_EXPORT void SetOcclusionRays (uint32_t occlusionRays);
 
     DGNPLATFORM_EXPORT bool GetSameSurface () const;
     DGNPLATFORM_EXPORT void SetSameSurface (bool sameSurface);

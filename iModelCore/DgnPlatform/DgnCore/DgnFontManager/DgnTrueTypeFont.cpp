@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnFontManager/DgnTrueTypeFont.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -48,8 +48,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 static const int FONT_LOGICAL_UNITS = 2048;
 #endif
 
-static const double ACAD_TRUETYPE_INTERCHARACTERSPACING_FACTOR = 0.615;
-
 //***************************************************************************************************************************************************
 //***************************************************************************************************************************************************
 
@@ -59,7 +57,7 @@ static const double ACAD_TRUETYPE_INTERCHARACTERSPACING_FACTOR = 0.615;
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     08/2012
 //=======================================================================================
-struct Win32TTThreadGlobals : public NonCopyableClass
+struct Win32TTThreadGlobals : public DgnHost::IHostObject
     {
     private:    mutable HDC                 m_dc;
     public:     T_WStringVector             m_localFontFilePaths;
@@ -78,6 +76,18 @@ struct Win32TTThreadGlobals : public NonCopyableClass
             m_dc = ::CreateDCW (L"DISPLAY", NULL, NULL, NULL);
 
         return m_dc;
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                               Grigas.Petraitis    03/2015
+    //---------------------------------------------------------------------------------------
+    protected: virtual void _OnHostTermination(bool isProgramExit)
+        {
+        if (nullptr != m_dc)
+            {
+            ::DeleteDC(m_dc);
+            m_dc = nullptr;
+            }
         }
 
     //---------------------------------------------------------------------------------------
@@ -123,11 +133,11 @@ struct Win32TTThreadGlobals : public NonCopyableClass
         {
         static DgnHost::Key s_ttThreadGlobals;
     
-        Win32TTThreadGlobals* globals = reinterpret_cast<Win32TTThreadGlobals*>(T_HOST.GetHostVariable (s_ttThreadGlobals));
+        Win32TTThreadGlobals* globals = reinterpret_cast<Win32TTThreadGlobals*>(T_HOST.GetHostObject (s_ttThreadGlobals));
         if (NULL == globals)
             {
             globals = new Win32TTThreadGlobals ();
-            T_HOST.SetHostVariable (s_ttThreadGlobals, globals);
+            T_HOST.SetHostObject (s_ttThreadGlobals, globals);
             }
 
         DWORD w = 0;
@@ -255,8 +265,8 @@ struct GlyphMetrics
     public: short   m_cellBoxWidth;
     public: long    m_blackBoxLeft;
     public: long    m_blackBoxTop;
-    public: UInt32  m_blackBoxWidth;
-    public: UInt32  m_blackBoxHeight;
+    public: uint32_t m_blackBoxWidth;
+    public: uint32_t m_blackBoxHeight;
 
     }; // GlyphMetrics
 
@@ -269,7 +279,7 @@ struct ITTPImpl
     
     public: virtual BentleyStatus _Activate (DgnTrueTypeFontCR, bool isBold, bool isItalic) = 0;
     public: virtual bool _CanEmbed (DgnTrueTypeFontCR, bool isBold, bool isItalic) = 0;
-    public: virtual BentleyStatus _ComputeAdvanceWidths(DgnTrueTypeFontCR, WCharCP, size_t totalNumChars, T_DoubleVectorR outAdvanceWidths, bvector<DPoint2d>& outGlyphOffsets, bvector<bool>& glyphIndexMask, DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes, T_DoubleVectorR leadingCaretOffsets, T_DoubleVectorR trailingCaretOffsets, DgnGlyphLayoutContextCR, double existingUnitCaretOffset, bool shouldDisableGlyphShaping, bool shouldAllowMissingGlyphs) = 0;
+    public: virtual BentleyStatus _ComputeAdvanceWidths(DgnTrueTypeFontCR, WCharCP, size_t totalNumChars, T_DoubleVectorR outAdvanceWidths, bvector<DPoint2d>& outGlyphOffsets, bvector<bool>& glyphIndexMask, DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes, DgnGlyphLayoutContextCR, bool shouldDisableGlyphShaping, bool shouldAllowMissingGlyphs) = 0;
     public: virtual bool _ContainsCharacter (WChar, DgnTrueTypeFontCR, bool isBold, bool isItalic) = 0;
     public: virtual BentleyStatus _GetFontMetrics (FontMetrics&, DgnTrueTypeFontCR, bool isBold, bool isItalic) = 0;
     public: virtual BentleyStatus _GetGlyphData (bvector<Byte>&, FontChar glyphID, bool isGlyphIndex, DgnTrueTypeFontCR, bool isBold, bool isItalic) = 0;
@@ -403,10 +413,7 @@ struct Win32TTPImpl : public ITTPImpl
     bvector<DPoint2d>&                  outGlyphOffsets,
     bvector<bool>&                      glyphIndexMask,
     DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes, 
-    T_DoubleVectorR                     leadingCaretOffsets,
-    T_DoubleVectorR                     trailingCaretOffsets,
     DgnGlyphLayoutContextCR             context,
-    double                              existingUnitCaretOffset,
     bool                                shouldDisableGlyphShaping,
     bool                                shouldAllowMissingGlyphs
     ) override
@@ -435,10 +442,7 @@ struct Win32TTPImpl : public ITTPImpl
     
         //...............................................................................................................................................
         // Determine the visual ordering of items so that we display the entire run correctly.
-        Win32TTThreadGlobals&   ttGlobals               = Win32TTThreadGlobals::Instance ();
-        DPoint2d                drawSize                = context.GetDisplaySize ();
-        CharacterSpacingType    characterSpacingType    = context.GetCharacterSpacingType ();
-        double                  characterSpacingValue   = context.GetCharacterSpacingValue ();
+        Win32TTThreadGlobals& ttGlobals = Win32TTThreadGlobals::Instance ();
 
         ScopedArray<BYTE> bidiLevels (numScriptItems);
         for (size_t iScriptItem = 0; iScriptItem < numScriptItems; ++iScriptItem)
@@ -448,9 +452,6 @@ struct Win32TTPImpl : public ITTPImpl
         ScopedArray<int> logicalToVisualMapping (numScriptItems);
 
         POSTCONDITION (0 == ::ScriptLayout ((int)numScriptItems, bidiLevels.GetData (), visualToLogicalMapping.GetData (), logicalToVisualMapping.GetData ()), ERROR);
-    
-        if ((CharacterSpacingType::Factor != characterSpacingType) || (characterSpacingValue < 0.0))
-            characterSpacingValue /= drawSize.x;
     
         bvector<T_DoubleVector> leadingCaretOffsetsPerVisual;
         bvector<T_DoubleVector> trailingCaretOffsetsPerVisual;
@@ -620,19 +621,12 @@ struct Win32TTPImpl : public ITTPImpl
 
             for (size_t iLogicalChar = 0; iLogicalChar <= numCharsInScriptItem; ++iLogicalChar)
                 {
-                bool            isLeadingPosition   = (0 == iLogicalChar);
                 bool            isTrailingPosition  = (iLogicalChar == numCharsInScriptItem);
                 T_DoubleVectorR offsetsVector       = (isTrailingPosition ? trailingCaretOffsets : leadingCaretOffsets);
             
                 if (isTrailingPosition)
                     trailingCaretOffsets.insert (trailingCaretOffsets.end (), leadingCaretOffsets.begin () + 1, leadingCaretOffsets.end ());
             
-                if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                    {
-                    offsetsVector.push_back (logicalCaretOffsetOffset + (iLogicalChar * characterSpacingValue));
-                    continue;
-                    }
-
                 if (shouldDisableGlyphShaping)
                     {
                     // Note that we put the total size of the string on the end of the vector, allowing this index.
@@ -652,43 +646,15 @@ struct Win32TTPImpl : public ITTPImpl
                                                     ERROR);
                     }
                 
-                if (!isLeadingPosition)
-                    {
-                    if ((CharacterSpacingType::Factor == characterSpacingType) && (characterSpacingValue > 0.0))
-                        runningCharacterSpacingOffset += ((characterSpacingValue - 1.0) * (drawSize.y * ACAD_TRUETYPE_INTERCHARACTERSPACING_FACTOR));
-                    else
-                        runningCharacterSpacingOffset += characterSpacingValue;
-                    }
-                
                 offsetsVector.push_back(logicalCaretOffsetOffset + (offset * font.GetScaleFactor()) + runningCharacterSpacingOffset);
                 }
         
             // ScriptCPtoX only works within script items; track an offset since we need to promote values to a CharStream (which can contain multiple script items).
             //  Note that it's important to sum runAbcWidth as an int, because the computed value relies on arithmatic overflow
             //  (e.g. for an RLM character, the B and C widths are non-zero, but their sum is 0, which is the desired result).
-            if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                logicalCaretOffsetOffset += (numCharsInScriptItem * characterSpacingValue);
-            else
-                logicalCaretOffsetOffset += (((int)(runAbcWidth.abcA + runAbcWidth.abcB + runAbcWidth.abcC) * font.GetScaleFactor ()) + runningCharacterSpacingOffset);
+            logicalCaretOffsetOffset += (((int)(runAbcWidth.abcA + runAbcWidth.abcB + runAbcWidth.abcC) * font.GetScaleFactor ()) + runningCharacterSpacingOffset);
             }
     
-        //...............................................................................................................................................
-        // We want to re-use the information in the visual-order loop above for caret positioning, but we really need it in logical order.
-        // Also note that we use the provided existingUnitCaretOffset, because this method only deals with unit coordinates [0..1]; the caller may have already scaled leadingCaretOffsets or trailingCaretOffsets.
-
-        for (size_t iLogicalItem = 0; iLogicalItem < numScriptItems; ++iLogicalItem)
-            {
-            T_DoubleVectorCR leadingItemOffsets = leadingCaretOffsetsPerVisual[logicalToVisualMapping.GetData ()[iLogicalItem]];
-        
-            for (T_DoubleVector::const_iterator leadingItemOffsetsIter = leadingItemOffsets.begin (); leadingItemOffsetsIter != leadingItemOffsets.end (); ++leadingItemOffsetsIter)
-                leadingCaretOffsets.push_back ((*leadingItemOffsetsIter) + existingUnitCaretOffset);
-        
-            T_DoubleVectorCR trailingItemOffsets = trailingCaretOffsetsPerVisual[logicalToVisualMapping.GetData ()[iLogicalItem]];
-
-            for (T_DoubleVector::const_iterator trailingItemOffsetsIter = trailingItemOffsets.begin (); trailingItemOffsetsIter != trailingItemOffsets.end (); ++trailingItemOffsetsIter)
-                trailingCaretOffsets.push_back ((*trailingItemOffsetsIter) + existingUnitCaretOffset);
-            }
-
         return SUCCESS;
         }
     
@@ -850,7 +816,7 @@ struct Win32TTPImpl : public ITTPImpl
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: static BentleyStatus GetPitchAndCharSet (byte& pitch, byte& charSet, DgnTrueTypeFontCR font, bool isBold, bool isItalic)
+    public: static BentleyStatus GetPitchAndCharSet (Byte& pitch, Byte& charSet, DgnTrueTypeFontCR font, bool isBold, bool isItalic)
         {
         pitch   = 0;
         charSet = 0;
@@ -1174,10 +1140,7 @@ struct FreeTypeTTPImpl : public ITTPImpl
     bvector<DPoint2d>&                  outGlyphOffsets,
     bvector<bool>&                      glyphIndexMask,
     DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes, 
-    T_DoubleVectorR                     leadingCaretOffsets,
-    T_DoubleVectorR                     trailingCaretOffsets,
     DgnGlyphLayoutContextCR             context,
-    double                              existingUnitCaretOffset,
     bool                                shouldDisableGlyphShaping,
     bool                                shouldAllowMissingGlyphs
     ) override
@@ -1207,8 +1170,6 @@ struct FreeTypeTTPImpl : public ITTPImpl
             outGlyphOffsets.push_back (DPoint2d::From (0.0, 0.0));
             glyphIndexMask.push_back (false);
             outGlyphCodes.push_back (chars[iChar]);
-            leadingCaretOffsets.push_back (totalLength);
-            trailingCaretOffsets.push_back (totalLength + outAdvanceWidths.back ());
 
             totalLength += outAdvanceWidths.back ();
             }
@@ -1610,7 +1571,7 @@ struct ITrueTypeDataAccessor
     virtual ~ITrueTypeDataAccessor () {}
     virtual bool _CanEmbed (bool isBold, bool isItalic) = 0;
     virtual bool _ContainsCharacter (WChar, bool isBold, bool isItalic) = 0;
-    virtual BentleyStatus _Embed (DgnProjectR, UInt32 fontNumber) = 0;
+    virtual BentleyStatus _Embed (DgnDbR, uint32_t fontNumber) = 0;
     virtual BentleyStatus _GetFontMetrics (FontMetrics&, bool isBold, bool isItalic) = 0;
     virtual BentleyStatus _GetGlyphData (bvector<Byte>&, FontChar glyphID, bool isGlyphIndex, bool isBold, bool isItalic) = 0;
     virtual BentleyStatus _GetGlyphMetrics (GlyphMetrics&, FontChar glyphID, bool isGlyphIndex, bool isBold, bool isItalic) = 0;
@@ -1669,7 +1630,7 @@ struct Win32SystemTTDataAcessor : public ITrueTypeDataAccessor
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: virtual BentleyStatus _Embed (DgnProjectR project, UInt32 fontNumber) override
+    public: virtual BentleyStatus _Embed (DgnDbR project, uint32_t fontNumber) override
         {
         if (SUCCESS != m_ttPImpl->_Activate (m_font, false, false))
             { BeAssert(false); return ERROR; }
@@ -1695,7 +1656,7 @@ struct Win32SystemTTDataAcessor : public ITrueTypeDataAccessor
         if ((GDI_ERROR == bytesRetrieved) || (0 == bytesRetrieved))
             { BeAssert(false); return ERROR; }
         
-        BeSQLite::DbResult res = project.SaveProperty(DgnTrueTypeFont::CreateEmbeddedFontPropertySpec(), fontData.GetData(), (UInt32)fontDataSize, fontNumber);
+        BeSQLite::DbResult res = project.SaveProperty(DgnTrueTypeFont::CreateEmbeddedFontPropertySpec(), fontData.GetData(), (uint32_t)fontDataSize, fontNumber);
     
         return ((BE_SQLITE_OK == res) ? SUCCESS : ERROR);
         }
@@ -1774,7 +1735,7 @@ struct FileTrueTypeDataAccessor : public ITrueTypeDataAccessor
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: virtual BentleyStatus _Embed (DgnProjectR project, UInt32 fontNumber) override
+    public: virtual BentleyStatus _Embed (DgnDbR project, uint32_t fontNumber) override
         {
         if (m_filePath.empty ())
             { BeAssert (false); return ERROR; }
@@ -1783,15 +1744,15 @@ struct FileTrueTypeDataAccessor : public ITrueTypeDataAccessor
         if (BeFileStatus::Success != fontFile.Open (m_filePath.c_str (), BeFileAccess::Read))
             { BeAssert (false); return ERROR; }
     
-        UInt64 fileSize = 0;
+        uint64_t fileSize = 0;
         if ((BeFileStatus::Success != fontFile.GetSize (fileSize)) || (0 == fileSize))
             { BeAssert (false); return ERROR; }
         
         ScopedArray<Byte> fileData ((size_t)fileSize);
-        if (BeFileStatus::Success != fontFile.Read (fileData.GetData (), NULL, (UInt32)fileSize))
+        if (BeFileStatus::Success != fontFile.Read (fileData.GetData (), NULL, (uint32_t)fileSize))
             { BeAssert (false); return ERROR; }
 
-        BeSQLite::DbResult res = project.SaveProperty (DgnTrueTypeFont::CreateEmbeddedFontPropertySpec(), fileData.GetData (), (UInt32)fileSize, fontNumber);
+        BeSQLite::DbResult res = project.SaveProperty (DgnTrueTypeFont::CreateEmbeddedFontPropertySpec(), fileData.GetData (), (uint32_t)fileSize, fontNumber);
     
         return ((BE_SQLITE_OK == res) ? SUCCESS : ERROR);
         }
@@ -1833,8 +1794,8 @@ struct FileTrueTypeDataAccessor : public ITrueTypeDataAccessor
 struct DbTrueTypeDataAccessor : public ITrueTypeDataAccessor
     {
     private:    ITTPImpl*           m_ttPImpl;
-    private:    UInt32              m_fontNumber;
-    private:    DgnProjectCR        m_project;
+    private:    uint32_t            m_fontNumber;
+    private:    DgnDbCR        m_dgndb;
     private:    DgnTrueTypeFontCR   m_font;
     private:    bvector<Byte>       m_ttData;
     private:    bool                m_wasRegistered;
@@ -1842,16 +1803,16 @@ struct DbTrueTypeDataAccessor : public ITrueTypeDataAccessor
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: DbTrueTypeDataAccessor (UInt32 fontNumber, DgnProjectCR project, DgnTrueTypeFontCR font, ITTPImpl& ttPImpl) :
+    public: DbTrueTypeDataAccessor (uint32_t fontNumber, DgnDbCR project, DgnTrueTypeFontCR font, ITTPImpl& ttPImpl) :
         m_ttPImpl       (&ttPImpl),
         m_fontNumber    (fontNumber),
-        m_project       (project),
+        m_dgndb       (project),
         m_font          (font),
         m_wasRegistered (false)
         {
         // Do a basic sanity check to ensure the font is there.
         PropertySpec ttDataPropSpec = DgnTrueTypeFont::CreateEmbeddedFontPropertySpec();
-        if (!m_project.HasProperty(ttDataPropSpec, m_fontNumber))
+        if (!m_dgndb.HasProperty(ttDataPropSpec, m_fontNumber))
             { BeAssert (false); return; }
         }
 
@@ -1876,15 +1837,15 @@ struct DbTrueTypeDataAccessor : public ITrueTypeDataAccessor
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: virtual BentleyStatus _Embed (DgnProjectR project, UInt32 fontNumber) override
+    public: virtual BentleyStatus _Embed (DgnDbR project, uint32_t fontNumber) override
         {
         PropertySpec    ttDataPropSpec = DgnTrueTypeFont::CreateEmbeddedFontPropertySpec();
-        UInt32          ttDataPropSize;
-        if (BE_SQLITE_ROW != m_project.QueryPropertySize (ttDataPropSize, ttDataPropSpec, m_fontNumber))
+        uint32_t        ttDataPropSize;
+        if (BE_SQLITE_ROW != m_dgndb.QueryPropertySize (ttDataPropSize, ttDataPropSpec, m_fontNumber))
             { BeAssert (false); return ERROR; }
     
         ScopedArray<Byte> ttDataPropValue (ttDataPropSize);
-        if (BE_SQLITE_ROW != m_project.QueryProperty (ttDataPropValue.GetData (), ttDataPropSize, ttDataPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (ttDataPropValue.GetData (), ttDataPropSize, ttDataPropSpec, m_fontNumber))
             { BeAssert (false); return ERROR; }
         
         if (BE_SQLITE_OK != project.SaveProperty (ttDataPropSpec, ttDataPropValue.GetData (), ttDataPropSize, fontNumber))
@@ -1902,7 +1863,7 @@ struct DbTrueTypeDataAccessor : public ITrueTypeDataAccessor
             return;
         
         m_wasRegistered = true;
-        UInt32 ttDataPropSize;
+        uint32_t ttDataPropSize;
         
             {
             // Font data is loaded on-demand, which could be during an update when drawing an element that uses a font for the first time.
@@ -1910,12 +1871,12 @@ struct DbTrueTypeDataAccessor : public ITrueTypeDataAccessor
 
             PropertySpec ttDataPropSpec = DgnTrueTypeFont::CreateEmbeddedFontPropertySpec();
         
-            if (BE_SQLITE_ROW != m_project.QueryPropertySize (ttDataPropSize, ttDataPropSpec, m_fontNumber))
+            if (BE_SQLITE_ROW != m_dgndb.QueryPropertySize (ttDataPropSize, ttDataPropSpec, m_fontNumber))
                 { BeAssert (false); return; }
 
             m_ttData.resize (ttDataPropSize);
         
-            if (BE_SQLITE_ROW != m_project.QueryProperty (&m_ttData[0], ttDataPropSize, ttDataPropSpec, m_fontNumber))
+            if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&m_ttData[0], ttDataPropSize, ttDataPropSpec, m_fontNumber))
                 { BeAssert (false); return; }
             }
         
@@ -1966,7 +1927,7 @@ struct MissingTrueTypeDataAccessor : public ITrueTypeDataAccessor
     {
     virtual bool _CanEmbed (bool isBold, bool isItalic) override { return false; }
     virtual bool _ContainsCharacter (WChar, bool isBold, bool isItalic) override { return false; }
-    virtual BentleyStatus _Embed (DgnProjectR, UInt32 fontNumber) override { return ERROR; }
+    virtual BentleyStatus _Embed (DgnDbR, uint32_t fontNumber) override { return ERROR; }
     virtual BentleyStatus _GetFontMetrics (FontMetrics&, bool isBold, bool isItalic) override { return ERROR; }
     virtual BentleyStatus _GetGlyphData (bvector<Byte>&, FontChar glyphID, bool isGlyphIndex, bool isBold, bool isItalic) override { return ERROR; }
     virtual BentleyStatus _GetGlyphMetrics (GlyphMetrics&, FontChar glyphID, bool isGlyphIndex, bool isBold, bool isItalic) override { return ERROR; }
@@ -2190,7 +2151,7 @@ FontChar        DgnTrueTypeFont::_GetPlusMinusCharCode      () const    { return
 double          DgnTrueTypeFont::GetScaleFactor             () const    { if (m_isMissing) { return 0.0; } EnsureFontIsLoaded (); return m_scaleFactor; }
 DgnFontType     DgnTrueTypeFont::_GetType                   () const    { return DgnFontType::TrueType; }
 DgnFontVariant  DgnTrueTypeFont::_GetVariant                () const    { return DGNFONTVARIANT_TrueType; }
-bool            DgnTrueTypeFont::_ShouldDrawWithLineWeight  () const    { return false; }
+bool            DgnTrueTypeFont::_CanDrawWithLineWeight  () const    { return false; }
 
 // WIP_NONPORT - TrueType
 #if defined (BENTLEY_WIN32)
@@ -2236,7 +2197,7 @@ DgnTrueTypeFont::DgnTrueTypeFont (Utf8CP name, WCharCP filePath, DgnFontConfigur
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2012
 //---------------------------------------------------------------------------------------
-DgnTrueTypeFont::DgnTrueTypeFont (Utf8CP name, DgnFontConfigurationData const& config, UInt32 fontNumber, DgnProjectCR project) :
+DgnTrueTypeFont::DgnTrueTypeFont (Utf8CP name, DgnFontConfigurationData const& config, uint32_t fontNumber, DgnDbCR project) :
     T_Super (name, config),
 // WIP_NONPORT - TrueType
 #if defined (BENTLEY_WIN32)
@@ -2303,15 +2264,12 @@ T_DoubleVectorR                     outAdvanceWidths,
 bvector<DPoint2d>&                  outGlyphOffsets,
 bvector<bool>&                      glyphIndexMask,
 DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes, 
-T_DoubleVectorR                     leadingCaretOffsets,
-T_DoubleVectorR                     trailingCaretOffsets,
 DgnGlyphLayoutContextCR             context,
-double                              existingUnitCaretOffset,
 bool                                shouldDisableGlyphShaping,
 bool                                shouldAllowMissingGlyphs
 ) const
     {
-    return m_ttPImpl->_ComputeAdvanceWidths(*this, chars, totalNumChars, outAdvanceWidths, outGlyphOffsets, glyphIndexMask, outGlyphCodes, leadingCaretOffsets, trailingCaretOffsets, context, existingUnitCaretOffset, shouldDisableGlyphShaping, shouldAllowMissingGlyphs);
+    return m_ttPImpl->_ComputeAdvanceWidths(*this, chars, totalNumChars, outAdvanceWidths, outGlyphOffsets, glyphIndexMask, outGlyphCodes, context, shouldDisableGlyphShaping, shouldAllowMissingGlyphs);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2345,7 +2303,7 @@ DgnFontPtr DgnTrueTypeFont::CreateDecoratorLogicalFont ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnTrueTypeFont::CreateFromEmbeddedFont (Utf8CP name, UInt32 fontNumber, DgnProjectCR project)
+DgnFontPtr DgnTrueTypeFont::CreateFromEmbeddedFont (Utf8CP name, uint32_t fontNumber, DgnDbCR project)
     {
     return new DgnTrueTypeFont (name, getEffectiveFontConfig (DgnFontKey (DgnFontType::TrueType, Utf8String (name))), fontNumber, project);
     }
@@ -2383,7 +2341,7 @@ DgnFontPtr DgnTrueTypeFont::CreateMissingFont (Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnTrueTypeFont::_Embed (DgnProjectR project) const
+DgnFontPtr DgnTrueTypeFont::_Embed (DgnDbR project) const
     {
     // Can't embed missing fonts; don't bother embedding last resort fonts.
     if (IsLastResort() || IsMissing())
@@ -2397,7 +2355,7 @@ DgnFontPtr DgnTrueTypeFont::_Embed (DgnProjectR project) const
     if (project.Fonts().EmbeddedFonts ().end () != foundFont)
         return foundFont->second;
     
-    UInt32 fontNumber;
+    uint32_t fontNumber;
     if (SUCCESS != project.Fonts().AcquireFontNumber (fontNumber, *this))
         { BeAssert (false); return NULL; }
     
@@ -2635,7 +2593,7 @@ BentleyStatus DgnTrueTypeFont::GetFontFaceNameFromFileName (WStringR faceName, W
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnTrueTypeFont::GetPitchAndCharSet (byte& pitch, byte& charSet) const
+BentleyStatus DgnTrueTypeFont::GetPitchAndCharSet (Byte& pitch, Byte& charSet) const
     {
     // Because one DgnTrueTypeFont object represents 4 faces, assume the font metrics are uniform across all faces, and use no-bold/no-italic here.
     return Win32TTPImpl::GetPitchAndCharSet (pitch, charSet, *this, false, false);
@@ -2688,175 +2646,67 @@ BentleyStatus DgnTrueTypeFont::LayoutGlyphsInternal (DgnGlyphLayoutContextCR lay
     //  This method differs from the V8i variants in that it is designed to compute only the low-level information needed,
     //  and to serve both TextString and TextBlock through a single code path. This does mean that some extraneous information
     //  is potentially computed, but should be cheap compared to the overall layout operation.
-    
-    // Local accessors for some commonly used input.
-    CharacterSpacingType                    characterSpacingType                = layoutContext.GetCharacterSpacingType ();
-    double                                  characterSpacingValue               = layoutContext.GetCharacterSpacingValue ();
-    
+
     // Local accessors for what we need to generate.
-    DgnGlyphLayoutResult::T_GlyphCodesR     outGlyphCodes                       = layoutResult.GetGlyphCodesR ();
-    DgnGlyphLayoutResult::T_GlyphOriginsR   outGlyphOrigins                     = layoutResult.GetGlyphOriginsR ();
-    T_DoubleVectorR                         outLeadingCaretOffsets              = layoutResult.GetLeadingCaretOffsetsR ();
-    T_DoubleVectorR                         outTrailingCaretOffsets             = layoutResult.GetTrailingCaretOffsetsR ();
-    DRange2dR                               outFullCellBoxRange                 = layoutResult.GetCellBoxRangeR ();
-    DRange2dR                               outFullBlackBoxRange                = layoutResult.GetBlackBoxRangeR ();
-    DRange2dR                               outJustificationCellBoxRange        = layoutResult.GetJustificationCellBoxRangeR();
-    DRange2dR                               outJustificationBlackBoxRange       = layoutResult.GetJustificationBlackBoxRangeR ();
-    double&                                 outTrailingInterCharacterSpacing    = layoutResult.GetTrailingInterCharacterSpacingR ();
-    double&                                 outMaxHorizontalCellIncrement       = layoutResult.GetMaxHorizontalCellIncrementR ();
-    bool&                                   outIsLastGlyphBlank                 = layoutResult.IsLastGlyphBlankR ();
-    double&                                 outLeftSideBearingToIgnore          = layoutResult.LeftSideBearingToIgnoreR ();
-    
-    DPoint3d    penPosition = layoutContext.GetDisplayOffset();
-    DPoint2d    drawSize    = layoutContext.GetDisplaySize ();
+    DRange2dR outRange = layoutResult.GetRangeR();
+    DRange2dR outJustificationRange = layoutResult.GetJustificationRangeR();
+    DgnGlyphLayoutResult::T_GlyphsR outGlyphs = layoutResult.GetGlyphsR();
+    DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes = layoutResult.GetGlyphCodesR();
+    DgnGlyphLayoutResult::T_GlyphOriginsR outGlyphOrigins = layoutResult.GetGlyphOriginsR();
 
-    if (layoutContext.ShouldIgnoreDisplayShifts ())
-        penPosition.Zero ();
+    DPoint3d penPosition = DPoint3d::FromZero();
+    DPoint2d drawSize = layoutContext.GetSize();
 
-    double existingUnitCaretOffset = 0.0;
-    
-    if (!outTrailingCaretOffsets.empty ())
-        {
-        if (!layoutContext.IsVertical ())
-            {
-            existingUnitCaretOffset = (outTrailingCaretOffsets.back () / drawSize.x);
-            penPosition.x           += outTrailingCaretOffsets.back ();
-            }
-        else
-            {
-            existingUnitCaretOffset = (outTrailingCaretOffsets.back () / drawSize.y);
-            penPosition.y           -= outTrailingCaretOffsets.back ();
-            }
-        }
-    
     // Compute the advance widths.
-    size_t              glyphOffset     = outGlyphCodes.size ();
-    T_DoubleVector      widths;
-    bvector<DPoint2d>   glyphOffsets;
-    bvector<bool>       glyphIndexMask;
-    
-    if (SUCCESS != ComputeAdvanceWidths(processedChars, numChars, widths, glyphOffsets, glyphIndexMask, outGlyphCodes, outLeadingCaretOffsets, outTrailingCaretOffsets, layoutContext, existingUnitCaretOffset, DgnFontManager::IsGlyphShapingDisabled(), true))
+    size_t glyphOffset = outGlyphCodes.size();
+    T_DoubleVector widths;
+    bvector<DPoint2d> glyphOffsets;
+    bvector<bool> glyphIndexMask;
+
+    if (SUCCESS != ComputeAdvanceWidths(processedChars, numChars, widths, glyphOffsets, glyphIndexMask, outGlyphCodes, layoutContext, DgnFontManager::IsGlyphShapingDisabled(), true))
         return ERROR;
 
     // We need the glyphs for two loops below, so cache them up first.
-    bvector<DgnTrueTypeGlyph> glyphs;
-    glyphs.reserve (outGlyphCodes.size ());
-    
-    for (size_t iGlyph = glyphOffset; iGlyph < outGlyphCodes.size (); ++iGlyph)
-        glyphs.push_back (DgnTrueTypeGlyph (outGlyphCodes[iGlyph], glyphIndexMask[iGlyph - glyphOffset], *m_data, m_scaleFactor, layoutContext.IsBold (), layoutContext.ShouldUseItalicTypeface ()));
-    
+    outGlyphs.reserve(outGlyphCodes.size());
+    for (size_t iGlyph = glyphOffset; iGlyph < outGlyphCodes.size(); ++iGlyph)
+        outGlyphs.push_back(FindGlyphCP(outGlyphCodes[iGlyph], glyphIndexMask[iGlyph - glyphOffset], layoutContext.IsBold(), layoutContext.ShouldUseItalicTypeface()));
+
     // Right-justified text needs to ignore trailing blanks.
-    size_t numNonBlankGlyphs = (outGlyphCodes.size () - glyphOffset);
+    size_t numNonBlankGlyphs = (outGlyphCodes.size() - glyphOffset);
     for (; numNonBlankGlyphs > 0; --numNonBlankGlyphs)
         {
-        DgnGlyphCR glyph = glyphs[numNonBlankGlyphs - 1];
-        
-        if (!glyph.IsBlank () || layoutContext.GetEDFMask ()[glyphOffset + numNonBlankGlyphs - 1])
+        DgnGlyphCR glyph = *outGlyphs[numNonBlankGlyphs - 1];
+        if (!glyph.IsBlank())
             break;
         }
     
-    if (layoutContext.IsBackwards ())
-        drawSize.x = -drawSize.x;
-    
-    if (layoutContext.IsUpsideDown ())
-        drawSize.y = -drawSize.y;
-    
-    outGlyphOrigins.reserve (outGlyphCodes.size ());
+    outGlyphOrigins.reserve(outGlyphCodes.size());
 
     // Compute origins, ranges, etc...
-    for (size_t i = glyphOffset; i < outGlyphCodes.size (); ++i)
+    for (size_t i = glyphOffset; i < outGlyphCodes.size(); ++i)
         {
-        outGlyphOrigins.push_back (penPosition);
-        
+        outGlyphOrigins.push_back(penPosition);
+
         outGlyphOrigins[i].x += (glyphOffsets[i].x * drawSize.x);
         outGlyphOrigins[i].y += (glyphOffsets[i].y * drawSize.y);
-        
-        // Legacy -- when vertical, glyphs are actually centered on a per-glyph basis, based on the nominal pen position... joy...
-        if (layoutContext.IsVertical ())
-            {
-            outGlyphOrigins[i].x += (drawSize.x * ((1.0 - widths[i]) / 2.0));
-            outGlyphOrigins[i].y -= drawSize.y;
-            }
-        
-        DgnGlyphCR glyph = glyphs[i - glyphOffset];
-        
-        if (NULL != layoutContext.GetIDgnGlyphLayoutListenerP ())
-            layoutContext.GetIDgnGlyphLayoutListenerP ()->_OnGlyphAnnounced (*this, glyph, outGlyphOrigins[i]);
-        
-        if (0 == i)
-            outLeftSideBearingToIgnore = drawSize.x * glyph.GetBlackBoxLeft ();
-        
-        if ((outGlyphCodes.size () - 1) == i)
-            outIsLastGlyphBlank = glyph.IsBlank ();
-        
-        DRange2d glyphCellRange;
-        glyphCellRange.low.x    = outGlyphOrigins[i].x;
-        glyphCellRange.low.y    = outGlyphOrigins[i].y;
-        glyphCellRange.high.x   = glyphCellRange.low.x + drawSize.x * glyph.GetCellBoxWidth ();
-        glyphCellRange.high.y   = glyphCellRange.low.y + drawSize.y;
-        
+
+        DgnGlyphCR glyph = *outGlyphs[i - glyphOffset];
+
+        DRange2d glyphRange;
+        glyphRange.low.x = outGlyphOrigins[i].x;
+        glyphRange.low.y = outGlyphOrigins[i].y;
+        glyphRange.high.x = glyphRange.low.x + drawSize.x * glyph.GetCellBoxWidth();
+        glyphRange.high.y = glyphRange.low.y + drawSize.y;
+
         // It is important to use the array overload of DRange2d::Extend; the ranges can be inverted for backwards/upside-down text, and the DRange2d overload enforces low/high semantics.
-        outFullCellBoxRange.Extend (&glyphCellRange.low, 2);
+        outRange.Extend(&glyphRange.low, 2);
         
         if ((i - glyphOffset) < numNonBlankGlyphs)
-            outJustificationCellBoxRange.Extend(&glyphCellRange.low, 2);
+            outJustificationRange.Extend(&glyphRange.low, 2);
 
-        DRange2d glyphBlackBoxRange;
-        glyphBlackBoxRange.low.x    = outGlyphOrigins[i].x + drawSize.x * glyph.GetBlackBoxLeft ();
-        glyphBlackBoxRange.low.y    = outGlyphOrigins[i].y + drawSize.y * glyph.GetBlackBoxBottom ();
-        glyphBlackBoxRange.high.x   = glyphBlackBoxRange.low.x + drawSize.x * glyph.GetBlackBoxWidth ();
-        glyphBlackBoxRange.high.y   = glyphBlackBoxRange.low.y + drawSize.y * glyph.GetBlackBoxHeight ();
-        
-        outFullBlackBoxRange.Extend (&glyphBlackBoxRange.low, 2);
-        
-        if ((i - glyphOffset) < numNonBlankGlyphs)
-            outJustificationBlackBoxRange.Extend (&glyphBlackBoxRange.low, 2);
-        
-        // Some more evil legacy -- needed for certain line spacing computations.
-        double glyphCellIncrement = glyph.GetCellBoxWidth () * drawSize.x * DgnFont::VERTICAL_TEXT_WIDTH_FACTOR;
-        if (glyphCellIncrement > outMaxHorizontalCellIncrement)
-            outMaxHorizontalCellIncrement = glyphCellIncrement;
-        
-        if (layoutContext.IsVertical ())
-            {
-            // Purposefully omitting CharacterSpacingType::Factor... not sure why; I guess it doesn't quite make sense for vertical, and it's some DWG thing anyway...
-            if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                penPosition.y -= characterSpacingValue;
-            else
-                penPosition.y -= drawSize.y + characterSpacingValue;
-            }
-        else
-            {
-            if ((CharacterSpacingType::Factor == characterSpacingType) && (characterSpacingValue > 0.0))
-                penPosition.x += (widths[i - glyphOffset] * drawSize.x) + ((characterSpacingValue - 1.0) * (drawSize.y * ACAD_TRUETYPE_INTERCHARACTERSPACING_FACTOR));
-            else if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                penPosition.x += characterSpacingValue;
-            else
-                penPosition.x += (widths[i - glyphOffset] * drawSize.x) + characterSpacingValue;
-            }
+        penPosition.x += (widths[i - glyphOffset] * drawSize.x);
         }
-    
-    if (layoutContext.IsVertical ())
-        {
-        outTrailingInterCharacterSpacing = penPosition.y - outFullCellBoxRange.low.y;
 
-        for (size_t iCaretOffset = glyphOffset; iCaretOffset < outLeadingCaretOffsets.size (); ++iCaretOffset)
-            {
-            outLeadingCaretOffsets[iCaretOffset]    *= drawSize.y;
-            outTrailingCaretOffsets[iCaretOffset]   *= drawSize.y;
-            }
-        }
-    else
-        {
-        outTrailingInterCharacterSpacing = penPosition.x - outFullCellBoxRange.high.x;
-
-        for (size_t iCaretOffset = glyphOffset; iCaretOffset < outLeadingCaretOffsets.size (); ++iCaretOffset)
-            {
-            outLeadingCaretOffsets[iCaretOffset]    *= drawSize.x;
-            outTrailingCaretOffsets[iCaretOffset]   *= drawSize.x;
-            }
-        }
-    
     return SUCCESS;
     }
 
@@ -2875,4 +2725,20 @@ void DgnTrueTypeFont::OnHostTermination ()
     localFontFilePaths.clear ();
 
 #endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     01/2015
+//---------------------------------------------------------------------------------------
+DgnTrueTypeGlyphCP DgnTrueTypeFont::FindGlyphCP(FontChar code, bool isGlyphIndex, bool isBold, bool isItalic) const
+    {
+    T_GlyphMap* glyphMap = (isGlyphIndex ? &m_glyphIndexGlyphMap : &m_glyphCodeGlyphMap);
+    auto foundGlyph = glyphMap->find(code);
+    if (glyphMap->end() != foundGlyph)
+        return foundGlyph->second;
+    
+    auto glyph = new DgnTrueTypeGlyph(code, isGlyphIndex, *m_data, m_scaleFactor, isBold, isItalic);
+    glyphMap->Insert(code, glyph);
+    
+    return glyph;
     }

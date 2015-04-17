@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/LineStyle.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,7 +74,7 @@ DGNPLATFORM_TYPEDEFS    (LsOffsetComponent)
 DGNPLATFORM_TYPEDEFS    (LsResourceFileMap)
 
 //__PUBLISH_SECTION_START__
-typedef UInt32 RscFileHandle;
+typedef uint32_t RscFileHandle;
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -120,15 +120,16 @@ typedef bvector<LsComponentPtr> T_LsComponents;
 +----------------------------------------------------------------------*/
 struct LineStyleNameInfo
 {
-    UInt32          rscFile;    // Resource file handle
-    UInt32          rscType;    // Resource type
-    ElementId       rscID;      // Resource ID
-    UInt32          attributes; // Name Attributes
+    uint32_t        rscFile;    // Resource file handle
+    uint32_t        rscType;    // Resource type
+    DgnElementId    rscID;      // Resource ID
+    uint32_t        attributes; // Name Attributes
     long            styleID;    // Style ID for MASTERFILE
 };
 
 #if !defined(__midl)  // For a MIDL compile, all we care about are the values of the #define constants.
 
+#if defined (NEEDS_WORK_DGNITEM)
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   Custom LineStyle Linkage                                            |
@@ -141,13 +142,14 @@ struct StyleLink
     /*-------------------------------------------------------------------
     Anything below here added to the element incrementally as needed.
     -------------------------------------------------------------------*/
-    UInt32          modifiers;
+    uint32_t        modifiers;
 
     /*-------------------------------------------------------------------
     Reserve enough space for maximum number of parameters.
     -------------------------------------------------------------------*/
-    byte            modData[sizeof (LineStyleParams)];
+    Byte modData[sizeof (LineStyleParams)];
 };
+#endif
 
 #endif // !defined(__midl)
 
@@ -185,7 +187,7 @@ enum class LsLocationType
     Unknown       = 0,                 //!<   Unknown, should never occur
     System        = 3,
     LinFile       = 4,
-    DgnProject    = 5
+    DgnDb    = 5
 };
 
 //! Values held in line style definition components in resource files
@@ -224,7 +226,7 @@ enum class LsResourceType
 //
 
 //=======================================================================================
-//! The header for every component definition included in a DgnProject.
+//! The header for every component definition included in a DgnDb.
 // @bsiclass                                                    John.Gooding    11/2012
 //=======================================================================================
 struct V10ComponentBase
@@ -240,10 +242,10 @@ struct V10ComponentBase
 //=======================================================================================
 struct V10PointSymbolInfo
 {
-    UInt32        m_symType;              //  must specify a symbol component in the same file
-    UInt32        m_symID;                //                  ""
-    UInt16        m_strokeNo;             //  If (!(mod1 & LCPOINT_ANYVERTEX)) && (mod1 & LCPOINT_ONSTROKE)) selects stroke number from stroke pattern
-    UInt16        m_mod1;
+    uint32_t      m_symType;              //  must specify a symbol component in the same file
+    uint32_t      m_symID;                //                  ""
+    uint16_t      m_strokeNo;             //  If (!(mod1 & LCPOINT_ANYVERTEX)) && (mod1 & LCPOINT_ONSTROKE)) selects stroke number from stroke pattern
+    uint16_t      m_mod1;
 
     double        m_xOffset;
     double        m_yOffset;
@@ -251,17 +253,19 @@ struct V10PointSymbolInfo
 };
 
 //=======================================================================================
-//! Describes the binary representation of LineCode component in a DgnProject
+//! Describes the binary representation of LineCode component in a DgnDb
 // @bsiclass                                                    John.Gooding    11/2012
 //=======================================================================================
 struct          V10LinePoint : V10ComponentBase
 {
-    UInt32        m_lcType;
-    UInt32        m_lcID;
-    UInt32        m_nSymbols;
+    uint32_t      m_lcType;
+    uint32_t      m_lcID;
+    uint32_t      m_nSymbols;
     V10PointSymbolInfo m_symbol[1];
 
-    static UInt32 GetBufferSize(UInt32 numberSymbols) { return offsetof(V10LinePoint, m_symbol) + sizeof (V10PointSymbolInfo) * numberSymbols; }
+    // Note: we used to use offsetof(V10LinePoint,m_symbol). It's not legal to use offsetof macro on a non-POD struct, however. 
+    // The cast on nullptr accomplishes the same thing as offsetof. It is safe because we know that V10LinePoint uses standard layout.
+    static uint32_t GetBufferSize(uint32_t numberSymbols) { return ((uint32_t)(intptr_t)&(((V10LinePoint*)nullptr)->m_symbol)) + sizeof (V10PointSymbolInfo) * numberSymbols; }
 };
 
 //=======================================================================================
@@ -273,32 +277,32 @@ struct V10StrokeData
     double      m_width;          /* Stroke width (or start width)       */
     double      m_endWidth;       /* End width of tapered stroke         */
 
-    UInt8       m_strokeMode;     /* bit 0: dash          | gap    dash  */
+    uint8_t     m_strokeMode;     /* bit 0: dash          | gap    dash  */
                                 /* bit 1: trace mode    | linear ray   */
                                 /* bit 2: scale mode    | off    on    */
                                 /* bit 3: start invert                 */
                                 /* bit 4: end invert                   */
 
-    UInt8       m_widthMode;      /* bit 0: left half     | off    on    */
+    uint8_t     m_widthMode;      /* bit 0: left half     | off    on    */
                                 /* bit 1: right half    | off    on    */
                                 /* bit 2: in taper      | no     yes   */
                                 /* bit 3: end taper     | no     yes   */
-    UInt8       m_capMode;
-    UInt8       m_bReserved;
+    uint8_t     m_capMode;
+    uint8_t     m_bReserved;
     };
 
 //=======================================================================================
-//! Describes the binary representation of LsStrokePatternComponent component in a DgnProject
+//! Describes the binary representation of LsStrokePatternComponent component in a DgnDb
 // @bsiclass                                                    John.Gooding    11/2012
 //=======================================================================================
 struct V10LineCode : V10ComponentBase
 {
     double        m_phase;
-    UInt32        m_options;
-    UInt32        m_maxIterate;
-    UInt32        m_nStrokes;
+    uint32_t      m_options;
+    uint32_t      m_maxIterate;
+    uint32_t      m_nStrokes;
     V10StrokeData m_stroke[1];
-    static UInt32 GetBufferSize(UInt32 numberStrokes) { return offsetof(V10LineCode, m_stroke) + sizeof (V10StrokeData) * numberStrokes; }
+    static uint32_t GetBufferSize(uint32_t numberStrokes) { return ((uint32_t)(intptr_t)&(((V10LineCode*)nullptr)->m_stroke)) + sizeof (V10StrokeData) * numberStrokes; }
 };
 
 //=======================================================================================
@@ -307,25 +311,25 @@ struct V10LineCode : V10ComponentBase
 //=======================================================================================
 struct V10ComponentInfo
     {
-    UInt32      m_type;
-    UInt32      m_id;
+    uint32_t    m_type;
+    uint32_t    m_id;
     double      m_offset;
     };
 
 //=======================================================================================
-//! Describes the binary representation of LsCompoundComponent component in a DgnProject
+//! Describes the binary representation of LsCompoundComponent component in a DgnDb
 // @bsiclass                                                    John.Gooding    11/2012
 //=======================================================================================
 struct V10Compound : V10ComponentBase
 {
-    UInt32          m_auxType;
-    UInt32          m_nComponents;
+    uint32_t        m_auxType;
+    uint32_t        m_nComponents;
     V10ComponentInfo   m_component[1];
-    static UInt32 GetBufferSize(UInt32 numberComponents) { return offsetof(V10Compound, m_component) + sizeof (V10ComponentInfo) * numberComponents; }
+    static uint32_t GetBufferSize(uint32_t numberComponents) { return ((uint32_t)(intptr_t)&(((V10Compound*)nullptr)->m_component)) + sizeof (V10ComponentInfo) * numberComponents; }
 };
 
 //=======================================================================================
-//! Describes the binary representation of an LsSymbolComponent component in a DgnProject
+//! Describes the binary representation of an LsSymbolComponent component in a DgnDb
 // @bsiclass                                                    John.Gooding    11/2012
 //=======================================================================================
 struct V10Symbol : V10ComponentBase
@@ -333,9 +337,9 @@ struct V10Symbol : V10ComponentBase
     SymbolRange m_range;
     double      m_scale;
 
-    UInt32      m_symFlags;
-    UInt32      m_symbolId;
-    static UInt32 GetBufferSize() { return sizeof (V10Symbol); }
+    uint32_t    m_symFlags;
+    uint32_t    m_symbolId;
+    static uint32_t GetBufferSize() { return sizeof (V10Symbol); }
 };
 #pragma pack(pop)
 
@@ -398,9 +402,9 @@ struct  LsLocation
 {
 private:
     LsLocationType      m_fileType;
-    DgnProjectP         m_project;
+    DgnDbP         m_dgndb;
     LsResourceType      m_rscType;          // Component resource type
-    UInt32              m_rscID;            // Component resource ID
+    uint32_t            m_rscID;            // Component resource ID
 
     bool                m_idDefined;
 
@@ -409,7 +413,7 @@ private:
         m_fileType      = LsLocationType::Unknown;
         m_rscType       = LsResourceType::Unknown;
         m_rscID         = 0;
-        m_project       = NULL;
+        m_dgndb       = NULL;
 
         m_idDefined     = true;
     }
@@ -419,10 +423,10 @@ public:
     LsLocation          () { Init (); }
     LsLocation          (LsLocationCP base) { SetFrom (base); }
 
-    void SetLocation    (DgnProjectR project, UInt32 componentType, UInt32 componentId);  //  after conversion to DgnDb this should be the only SetLocation
-    void SetFrom        (LsLocationCP base, UInt32 rscType);
+    void SetLocation    (DgnDbR project, uint32_t componentType, uint32_t componentId);  //  after conversion to DgnDb this should be the only SetLocation
+    void SetFrom        (LsLocationCP base, uint32_t rscType);
     void SetFrom        (LsLocationCP base);
-    void UpdateRscID    (UInt32 value) { m_idDefined = true; m_rscID = value; }
+    void UpdateRscID    (uint32_t value) { m_idDefined = true; m_rscID = value; }
     void SetIdDefined   (bool value) { m_idDefined = false; }
     bool GetIdDefined   () const { return m_idDefined; }
     void SetRscType     (LsResourceType rscType)         {m_rscType = rscType;}
@@ -431,15 +435,15 @@ public:
     DGNPLATFORM_EXPORT intptr_t             GetFileKey      () const;
     LsResourceType                      GetRscType      () const   {return m_rscType;}
     DGNPLATFORM_EXPORT LsElementType        GetElementType  () const;
-    UInt32                              GetRscID        () const   {return m_rscID;}
-    DGNPLATFORM_EXPORT UInt64 GetIdentKey () const;
-    DgnProjectP GetDgnProject () const {return m_project;}
+    uint32_t                            GetRscID        () const   {return m_rscID;}
+    DGNPLATFORM_EXPORT uint64_t GetIdentKey () const;
+    DgnDbP GetDgnDb () const {return m_dgndb;}
 
     DGNPLATFORM_EXPORT struct LsMap* GetMapPtr () const;
 
     bool IsValid () const;
     bool IsInternalDefault () const {return (LsResourceType::Internal == m_rscType && LSID_DEFAULT == GetIdentKey()) ? true : false;}
-    Int32 GetSeedID () const;
+    int32_t GetSeedID () const;
 
     BentleyStatus GetLineCodeLocation (struct LsRscReader*);
     BentleyStatus GetPointSymbolLocation (struct LsRscReader*, int symbolNumber);
@@ -455,31 +459,31 @@ struct          LsRscReader
 {
 protected:
     LsLocationCP        m_source;
-    DgnProjectR         m_project;
-    UInt32              m_rscType;
+    DgnDbR         m_dgndb;
+    uint32_t            m_rscType;
     LineStyleRsc*       m_rsc;
 
 public:
-    LsRscReader (LsLocationCP source, DgnProjectR project) : m_project(project)
+    LsRscReader (LsLocationCP source, DgnDbR project) : m_dgndb(project)
     {
         m_source    = source;
         m_rsc       = NULL;
-        m_rscType   = (UInt32)m_source->GetRscType();
+        m_rscType   = (uint32_t)m_source->GetRscType();
     }
 
     virtual ~LsRscReader() {}
     virtual BentleyStatus _LoadDefinition() = 0;
 
     LsLocationCP   GetSource()   {return m_source;}
-    DgnProjectR    GetDgnProject () { return m_project; }
+    DgnDbR    GetDgnDb () { return m_dgndb; }
     LineStyleRsc*  GetRsc()      {return m_rsc;}
-    UInt32         GetRscType()  {return m_rscType;}
+    uint32_t       GetRscType()  {return m_rscType;}
 
     // This is used by the cache insert function for editing
     // It explicitly does not free any previous resource because the resource is owned by the caller in this case.
     void           SetRsc(LineStyleRsc *pRsc) {m_rsc = pRsc;}
 
-    static LsRscReader* GetRscReader (LsLocationCP source, DgnProjectR dgnProject);
+    static LsRscReader* GetRscReader (LsLocationCP source, DgnDbR dgnProject);
 };
 
 /*=================================================================================**//**
@@ -489,7 +493,7 @@ struct          LsDgnDbReader : public LsRscReader
 {
 
 public:
-    LsDgnDbReader (LsLocationCP source, DgnProjectR project) : LsRscReader (source, project) {}
+    LsDgnDbReader (LsLocationCP source, DgnDbR project) : LsRscReader (source, project) {}
     virtual ~LsDgnDbReader();
 
     virtual BentleyStatus _LoadDefinition() override;
@@ -500,8 +504,8 @@ public:
 //=======================================================================================
 struct          LsComponentId
     {
-    UInt32 m_type;
-    UInt32 m_id;
+    uint32_t m_type;
+    uint32_t m_id;
     bool operator<(LsComponentId const&r) const
         {
         if (this->m_type < r.m_type)
@@ -536,18 +540,18 @@ protected:
 
     // Should only be used for setting descr in resource definition
     void      CopyDescription (CharP buffer) const;                      // WIP_CHAR_OK
-    static void GetNextComponentId (UInt32& id, DgnProjectR project, BeSQLite::PropertySpec spec);
+    static void GetNextComponentId (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec);
 
 public:
-    LsComponent (DgnProjectR, UInt32 componentType, UInt32 componentId);
+    LsComponent (DgnDbR, uint32_t componentType, uint32_t componentId);
     LsComponent (LsLocationCP location);
     LsComponent (LsComponent const* base) : m_isDirty (false)
         {
         m_location.SetFrom (&base->m_location);
         }
 
-    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (UInt32& componentId, DgnProjectR project, BeSQLite::PropertySpec spec, void const*data, UInt32 dataSize);
-    static LineStyleStatus GetComponentList (T_LsComponents& components, intptr_t fileKey, UInt32 componentType);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (uint32_t& componentId, DgnDbR project, BeSQLite::PropertySpec spec, void const*data, uint32_t dataSize);
+    static LineStyleStatus GetComponentList (T_LsComponents& components, intptr_t fileKey, uint32_t componentType);
 
     bool                IsWidthDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
     bool                IsSingleRepDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
@@ -580,7 +584,7 @@ public:
     DGNPLATFORM_EXPORT void SetDescription (WStringCR descr) { m_descr = descr; }
     DGNPLATFORM_EXPORT void SetDescription (WCharP descr) { m_descr = WString (descr); }
 
-    DGNPLATFORM_EXPORT static void QueryComponentIds(bset<LsComponentId>& ids, DgnProjectCR project, LsResourceType lsType);
+    DGNPLATFORM_EXPORT static void QueryComponentIds(bset<LsComponentId>& ids, DgnDbCR project, LsResourceType lsType);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -588,14 +592,14 @@ public:
 
     //! Gets the component's resource ID if the definition comes from a resource file, or element ID
     //! if the definition comes from a DgnFile.
-    DGNPLATFORM_EXPORT UInt64 GetId () const;
+    DGNPLATFORM_EXPORT uint64_t GetId () const;
     //! Retrieves the LsResourceType value specifying the type of component. This can be used regardless of
     //! whether the definition comes from a resource file or DgnFile.
     DGNPLATFORM_EXPORT LsElementType GetElementType () const;
     //! Retrieves a value indicating whether the component definition comes from a resource file or DgnFile.
     DGNPLATFORM_EXPORT LsLocationType GetLocationType () const;
-    //! Retrieves a DgnProjectP if the component is defined in a project file; NULL otherwise.
-    DGNPLATFORM_EXPORT DgnProjectP GetProjectP () const;
+    //! Retrieves a DgnDbP if the component is defined in a project file; NULL otherwise.
+    DGNPLATFORM_EXPORT DgnDbP GetProjectP () const;
     //! Retrieves the name of the resource file or DgnFile that contains the component definition.
     DGNPLATFORM_EXPORT WString GetFileName () const;
     //! Retrieves the description of the component; this is the description that is stored with the definition.
@@ -622,10 +626,10 @@ private:
 
 LsSymbolComponentPtr    m_component;
 DgnModelR               m_contextModel;
-UInt32                  m_color;
-UInt32                  m_fillColor;
-UInt32                  m_linecode;
-UInt32                  m_weight;
+uint32_t                m_color;
+uint32_t                m_fillColor;
+uint32_t                m_linecode;
+uint32_t                m_weight;
 LsSymbolGraphicsCreator (LsSymbolComponentP component, DgnModelR contextModel) : m_component (component), m_contextModel (contextModel)
     {
     m_color     = 0;
@@ -642,7 +646,7 @@ public:
 //! @param[in] linecode Line code to be used (MIN_LINECODE to MAX_LINECODE).
 //! @param[in] weight Line weight to be used.
 //! @param[in] fillColor Fill color to use for AddCurveVector when isFilled is true.
-DGNPLATFORM_EXPORT void SetupSymbology (UInt32 color, UInt32 linecode, UInt32 weight, UInt32 fillColor);
+DGNPLATFORM_EXPORT void SetupSymbology (uint32_t color, uint32_t linecode, uint32_t weight, uint32_t fillColor);
 
 //! Add text or text geometry.
 //! @param[in] text The text data.
@@ -678,15 +682,15 @@ private:
     WChar               m_styleName[LS_MAX_NAME];   // Stored on element, for round trip.  Kind of dumb though; remove in future file format.
 
     //  T_SymbolElements    m_elements;
-    MSElementDescrVec   m_elements;
+    DgnElementPtrVec   m_elements;
 
     size_t              m_xGraphicsSize;
-    byte const*         m_xGraphicsData;
+    Byte const*         m_xGraphicsData;
     double              m_storedScale;              //
     double              m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
     DPoint3d            m_symSize;
     DPoint3d            m_symBase;                  // Not needed to display; used just to reconstruct range for GetRange method
-    UInt32              m_symFlags;                 // Flags from point symbol resource
+    uint32_t            m_symFlags;                 // Flags from point symbol resource
     bool                m_postProcessed;
 
     explicit LsSymbolComponent (LsLocationCP pLocation);
@@ -695,11 +699,11 @@ private:
 public:
     static LsSymbolComponent* LoadPointSym  (LsRscReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
-    DGNPLATFORM_EXPORT static void StreamElements (bvector<byte>&elementData, MSElementDescrVec const& );
+    DGNPLATFORM_EXPORT static void StreamElements (bvector<Byte>&elementData, DgnElementPtrVec const& );
 
     double              GetMuDef            () const {return m_muDef;}
     DPoint3dCP          GetSymSize          () const {return &m_symSize;}
-    UInt32              GetFlags            () const {return m_symFlags;}
+    uint32_t            GetFlags            () const {return m_symFlags;}
     bool                IsNotScaled         () const {return 0 != (m_symFlags & LSSYM_NOSCALE);}
 
     virtual void        _PostProcessLoad    (DgnModelP modelRef) override;
@@ -707,34 +711,34 @@ public:
     virtual void        _Draw               (ViewContextR);
     virtual StatusInt   _GetRange           (DRange3dR range) const;
 
-    void                SetXGraphics        (byte const *data, size_t dataSize);
-    byte const*         GetXGraphicsData    () const {return m_xGraphicsData;}
+    void                SetXGraphics        (Byte const *data, size_t dataSize);
+    Byte const*         GetXGraphicsData    () const {return m_xGraphicsData;}
     size_t              GetXGraphicsSize    () const {return m_xGraphicsSize;}
     DgnModelP        GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
     void                SetSymBase          (DPoint3dCP sz){m_symBase = *sz;}
-    void                SetFlags            (UInt32 flags) {m_symFlags = flags;}
+    void                SetFlags            (uint32_t flags) {m_symFlags = flags;}
     //  Should never be called; symbol components should never be drawn this way.  Therefore, a line style
     //  resource must not directly refer to a symbol component.
     virtual StatusInt   _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
-    MSElementDescrVec& GetElementsR() {return m_elements;}
-    MSElementDescrVec const& GetElements () const {return m_elements;}
+    DgnElementPtrVec& GetElementsR() {return m_elements;}
+    DgnElementPtrVec const& GetElements () const {return m_elements;}
 
     DGNPLATFORM_EXPORT void AddGraphics (EditElementHandleR eeh);
     DGNPLATFORM_EXPORT void FreeGraphics (bool freeDescr, bool freeXGraphics);
 
-    DGNPLATFORM_EXPORT static BentleyStatus AddSymbolGraphicsAsProperty (UInt32& componentId, DgnProjectR project, byte const*data, size_t size, PointSymRsc::SymbolType symbolType);
+    DGNPLATFORM_EXPORT static BentleyStatus AddSymbolGraphicsAsProperty (uint32_t& componentId, DgnDbR project, Byte const*data, size_t size, PointSymRsc::SymbolType symbolType);
 
-    static BentleyStatus CreateRscFromDgnDb(PointSymRsc** rscOut, DgnProjectR project, UInt32 componentId);
-    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(PointSymRscPtr& ptr, DgnProjectR project, UInt32 componentId);
+    static BentleyStatus CreateRscFromDgnDb(PointSymRsc** rscOut, DgnDbR project, uint32_t componentId, bool useRscComponentTypes);
+    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(PointSymRscPtr& ptr, DgnDbR project, uint32_t componentId);
 
 //__PUBLISH_SECTION_START__
 public:
     //!  Used to retrieve raw V7 elements
-    typedef bvector<byte> T_V7ElementBlock;
+    typedef bvector<Byte> T_V7ElementBlock;
     //!  True if the LsSymbolComponent contains V7 elements
     DGNPLATFORM_EXPORT bool                     IsV7                    () const;
     //!  Retrieves the range that is stored with the LsSymbolComponent.  This range is computed
@@ -777,21 +781,21 @@ public:
     LsSymbolComponentPtr  m_symbol;
     LsPointComponentP   m_parent;
 
-    UInt32              m_mod1;
+    uint32_t            m_mod1;
 
     DPoint3d            m_offset;
     double              m_angle;
 
     int                 m_strokeNo;
 
-    MSElementDescrVec const* GetElements() const {return (NULL != m_symbol.get() ? &m_symbol->GetElements() : NULL);}
-    UInt32              GetMod1             () const {return m_mod1;}
+    DgnElementPtrVec const* GetElements() const {return (NULL != m_symbol.get() ? &m_symbol->GetElements() : NULL);}
+    uint32_t            GetMod1             () const {return m_mod1;}
     double              _GetMaxWidth         (DgnModelP modelRef) const;
 
     StatusInt           Output              (ViewContextP, LineStyleSymbCP, DPoint3dCP org, DPoint3dCP dir, double const* xScale=0,
                                                 DPoint3dCP clipOrg=0, DPoint3dCP clipEnd=0) const;
                         LsSymbolReference   (LsSymbolComponentP symbol, LsPointComponentP parent,
-                                                UInt32 mod1, double xOffset, double yOffset, double radians, int strokeNumber);
+                                                uint32_t mod1, double xOffset, double yOffset, double radians, int strokeNumber);
     DGNPLATFORM_EXPORT      LsSymbolReference       ();
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -830,8 +834,8 @@ public:
     DGNPLATFORM_EXPORT void                     SetClipPartial          (bool value);
     DGNPLATFORM_EXPORT bool                     GetStretchable          () const;
     DGNPLATFORM_EXPORT void                     SetStretchable          (bool value);
-    DGNPLATFORM_EXPORT bool                     GetProject              () const;
-    DGNPLATFORM_EXPORT void                     SetProject              (bool value);
+    DGNPLATFORM_EXPORT bool                     GetDgnDb              () const;
+    DGNPLATFORM_EXPORT void                     SetDgnDb              (bool value);
     DGNPLATFORM_EXPORT bool                     GetUseColor             () const;
     DGNPLATFORM_EXPORT void                     SetUseColor             (bool value);
     DGNPLATFORM_EXPORT bool                     GetUseWeight            () const;
@@ -897,9 +901,9 @@ public:
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
     void            CalculateSize                       (DgnModelP modelRef);
 
-    static BentleyStatus CreateRscFromDgnDb(LineStyleRsc** rscOut, DgnProjectR project, UInt32 componentId);
-    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(LineStyleRscPtr& ptr, DgnProjectR project, UInt32 componentId);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (UInt32& newId, DgnProjectR project, LineStyleRsc const& lsRsc);
+    static BentleyStatus CreateRscFromDgnDb(LineStyleRsc** rscOut, DgnDbR project, uint32_t componentId, bool useRscComponentTypes);
+    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(LineStyleRscPtr& ptr, DgnDbR project, uint32_t componentId);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (uint32_t& newId, DgnDbR project, LineStyleRsc const& lsRsc);
 
     virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
     virtual void    _ClearPostProcess           () override;
@@ -980,16 +984,16 @@ private:
     double          m_orgWidth;       // Stroke origin width
     double          m_endWidth;       // Stroke end width
 
-    byte            m_strokeMode;     // bit 0: dash, first rep | gap    dash
+    Byte m_strokeMode;     // bit 0: dash, first rep | gap    dash
                                       // bit 1: dash, int. rep  | gap    dash
                                       // bit 2: dash, last rep  | gap    dash
                                       // bit 4: rigid           | on     off
                                       // bit 5: stretchable     | on     off
 
-    byte            m_widthMode;      // bit 0: left half       | off    on
+    Byte m_widthMode;      // bit 0: left half       | off    on
                                       // bit 1: right half      | off    on
 
-    byte            m_capMode;        // 0 = closed       1 = open
+    Byte m_capMode;        // 0 = closed       1 = open
                                       // 2 = extended     3 = hexagon
                                       // 4 = octagon      5 = decagon
                                       // and so on, (n vectors in cap - up to 255)
@@ -1000,15 +1004,15 @@ private:
                      m_orgWidth   = orgWidth;
                      m_endWidth   = endWidth;
                      m_strokeMode = 0;
-                     m_widthMode  = (byte)widthMode;
-                     m_capMode    = (byte)capMode;
+                     m_widthMode  = (Byte)widthMode;
+                     m_capMode    = (Byte)capMode;
                     }
 
 public:
     void        SetLength           (double newLength) {m_length = newLength;}
     void        SetWidthMode        (int newMode) {m_widthMode &= ~0x03; m_widthMode |= newMode;}
     void        SetWidth            (double width){m_orgWidth = width; m_endWidth = width;}
-    void        SetCapMode          (int mode)    {m_capMode = (byte)mode;}
+    void        SetCapMode          (int mode)    {m_capMode = (Byte)mode;}
 
     bool        HasWidth            () const {return IsDash() && (0 != GetWidthMode());}
     // WIP_LINESTYLE *** (LCWIDTH_FULL == GetWidthMode()) => warning: comparison between 'enum DgnPlatform::LineCodeWidth' and 'enum DgnPlatform::LsStroke::WidthMode'
@@ -1104,12 +1108,12 @@ protected:
     int             m_nIterate;
 
     struct {
-        UInt32     phaseMode:2;
-        UInt32     iterationLimit:1;
-        UInt32     segMode:1;
-        UInt32     enableEndConditions:1;
-        UInt32     cosmetic:1;
-        UInt32     affectedByWidth:1;       // Cache this because it's called in display.
+        uint32_t   phaseMode:2;
+        uint32_t   iterationLimit:1;
+        uint32_t   segMode:1;
+        uint32_t   enableEndConditions:1;
+        uint32_t   cosmetic:1;
+        uint32_t   affectedByWidth:1;       // Cache this because it's called in display.
         }  m_options;
 
     size_t          m_nStrokes;
@@ -1136,10 +1140,10 @@ public:
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsRscReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
     BentleyStatus   CreateFromRsrc          (LineCodeRsc const* pRsc);
-    static BentleyStatus   CreateRscFromDgnDb      (LineCodeRsc** rsc, DgnProjectR project, UInt32 componentId);
+    static BentleyStatus   CreateRscFromDgnDb      (LineCodeRsc** rsc, DgnDbR project, uint32_t componentId, bool useRscComponentTypes);
     BentleyStatus   CreateFromComponent     (LsLineCodeComponentCP lcComp);
-    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(LineCodeRscPtr& ptr, DgnProjectR project, UInt32 componentId);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (UInt32& newId, DgnProjectR project, LineCodeRsc const& lsRsc);
+    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(LineCodeRscPtr& ptr, DgnDbR project, uint32_t componentId);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (uint32_t& newId, DgnDbR project, LineCodeRsc const& lsRsc);
 
     BentleyStatus   PostCreate              ();
 
@@ -1270,9 +1274,9 @@ public:
     DGNPLATFORM_EXPORT size_t GetResourceSize         () { return sizeof(LinePointRsc) + m_symbols.size () * sizeof(PointSymInfo) - sizeof(PointSymInfo); }
     DGNPLATFORM_EXPORT void SaveToResource          (LinePointRsc& resource);
 
-    static BentleyStatus   CreateRscFromDgnDb(LinePointRsc** rscOut, DgnProjectR project, UInt32 componentId);
-    DGNPLATFORM_EXPORT static BentleyStatus   GetRscFromDgnDb(LinePointRscPtr& ptr, DgnProjectR project, UInt32 componentId);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (UInt32& newId, DgnProjectR project, LinePointRsc const& lpr);
+    static BentleyStatus   CreateRscFromDgnDb(LinePointRsc** rscOut, DgnDbR project, uint32_t componentId, bool useRscComponentTypes);
+    DGNPLATFORM_EXPORT static BentleyStatus   GetRscFromDgnDb(LinePointRscPtr& ptr, DgnDbR project, uint32_t componentId);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (uint32_t& newId, DgnDbR project, LinePointRsc const& lpr);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1317,7 +1321,7 @@ struct          LsInternalComponent : public LsStrokePatternComponent
     {
 //__PUBLISH_SECTION_END__
 private:
-    UInt32      m_hardwareLineCode;
+    uint32_t    m_hardwareLineCode;
     LsInternalComponent (LsLocationCP pLocation);
 
 public:
@@ -1333,17 +1337,17 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
-    DGNPLATFORM_EXPORT UInt32                   GetHardwareStyle    () const;
+    DGNPLATFORM_EXPORT uint32_t                 GetHardwareStyle    () const;
     DGNPLATFORM_EXPORT bool                     IsHardwareStyle     () const;
-    DGNPLATFORM_EXPORT UInt32                   GetLineCode         () const;
+    DGNPLATFORM_EXPORT uint32_t                 GetLineCode         () const;
     };
 
 //__PUBLISH_SECTION_END__
 
 typedef struct LsIdNode const*                LsIdNodeP;
 typedef struct NameNode const*                NameNodeP;
-typedef KeyTree <LsIdNode, Int32>             T_LsIdTree;
-typedef LeafNode <LsIdNode, Int32>            T_LsIdTreeNode;
+typedef KeyTree <LsIdNode, int64_t>             T_LsIdTree;
+typedef LeafNode <LsIdNode, int64_t>            T_LsIdTreeNode;
 typedef KeyTree <NameNode, MSCharIKey>        T_LsNameTree;
 typedef LeafNode <NameNode, MSCharIKey>       T_LsNameTreeNode;
 typedef T_LsIdTree::Iterator                  T_LsIdIterator;
@@ -1357,24 +1361,24 @@ typedef T_LsIdTree::Iterator                  T_LsIdIterator;
 struct LineStyleUpgradeProcessor : RefCountedBase
 {
 private:
-    bmap <UInt64, UInt32> m_idMap;
-    MSElementDescrCP    m_v8Components;
-    DgnProjectR         m_dgnProject;
+    bmap <uint64_t, uint32_t> m_idMap;
+    DgnElementCP   m_v8Components;
+    DgnDbR         m_dgnProject;
 
-    LineStyleStatus UpgradeLsComponent (UInt32& v10Id, UInt64 v8Id, LsElementType type);
-    DgnProjectR GetProject () { return m_dgnProject; }
+    LineStyleStatus UpgradeLsComponent (uint32_t& v10Id, uint64_t v8Id, LsElementType type);
+    DgnDbR GetDgnDb () { return m_dgnProject; }
 
-    MSElementDescrCP FindComponent (UInt64 v8Id);
-    static UInt64 const* GetDependents (struct LStyleDefEntryElm const& lStyleDef);
+    DgnElementCP FindComponent (uint64_t v8Id);
+    static uint64_t const* GetDependents (struct LStyleDefEntryElm const& lStyleDef);
     static void SetDescription (V10ComponentBase*v10, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleStatus UpgradeCompoundType (UInt32&v10Id, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleStatus UpgradeLineCode (UInt32& v10Id, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleStatus UpgradeLinePoint (UInt32& v10Id, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleStatus UpgradePointSymbol (UInt32& v10Id, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleUpgradeProcessor (DgnProjectR project, MSElementDescrCP components);
+    LineStyleStatus UpgradeCompoundType (uint32_t&v10Id, struct LStyleDefEntryElm const& lStyleDef);
+    LineStyleStatus UpgradeLineCode (uint32_t& v10Id, struct LStyleDefEntryElm const& lStyleDef);
+    LineStyleStatus UpgradeLinePoint (uint32_t& v10Id, struct LStyleDefEntryElm const& lStyleDef);
+    LineStyleStatus UpgradePointSymbol (uint32_t& v10Id, struct LStyleDefEntryElm const& lStyleDef);
+    LineStyleUpgradeProcessor (DgnDbR project, DgnElementCP components);
 
 public:
-    DGNPLATFORM_EXPORT static RefCountedPtr<LineStyleUpgradeProcessor> Create (DgnProjectR project, MSElementDescrCP components);
+    DGNPLATFORM_EXPORT static RefCountedPtr<LineStyleUpgradeProcessor> Create (DgnDbR project, DgnElementCP components);
     DGNPLATFORM_EXPORT LineStyleStatus UpgradeLineStyleV8toV10 (struct LStyleNameEntryElm const& lStyle, Utf8CP alternateName);
 };
 
@@ -1402,19 +1406,19 @@ struct          LsDefinition
 private:
     bool                m_isDirty;
     bool                m_componentLookupFailed;
-    Int32               m_styleNumber;
+    int64_t             m_styleNumber;
     MSCharIKey          m_name;
     LsLocation          m_location;             // Where to find components of resource
     LsComponentPtr      m_lsComp;
     double              m_unitDef;
     double              m_maxWidth;
-    UInt32              m_attributes;
+    uint32_t            m_attributes;
     int                 m_hardwareLineCode;
     double              m_uorsPerMeter;         // Used to True Scale between models when it is units UOR
     bool                m_componentLoadPostProcessed;
 
-    void Init (CharCP nName, Json::Value& lsDefinition, Int32 styleId);
-    void SetHWStyle (UInt32 rscType, UInt64 rscID);
+    void Init (CharCP nName, Json::Value& lsDefinition, int64_t styleId);
+    void SetHWStyle (uint32_t rscType, uint64_t rscID);
     //  m_uorsPerMeter is only set when the line style is loaded from a DGN file.
     //  It is used only to compute the true scale value when units is UOR.
     double              GetUorsPerMeter         () const;
@@ -1422,11 +1426,11 @@ private:
 
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
-    DGNPLATFORM_EXPORT static UInt32 GetAttributes (Json::Value& lsDefinition);
-    DGNPLATFORM_EXPORT static UInt32 GetComponentType (Json::Value& lsDefinition);
-    DGNPLATFORM_EXPORT static UInt32 GetComponentId (Json::Value& lsDefinition);
+    DGNPLATFORM_EXPORT static uint32_t GetAttributes (Json::Value& lsDefinition);
+    DGNPLATFORM_EXPORT static uint32_t GetComponentType (Json::Value& lsDefinition);
+    DGNPLATFORM_EXPORT static uint32_t GetComponentId (Json::Value& lsDefinition);
 
-    LsDefinition (Utf8CP name, DgnProjectR project, Json::Value& lsDefinition, Int32 styleId);
+    LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, int64_t styleId);
 
     virtual ~LsDefinition ();
 
@@ -1436,23 +1440,23 @@ public:
 
     LsComponentP GetLsComponent () const {return m_lsComp.get ();}
     LsLocationCP GetLocation () const {return &m_location;}
-    UInt32 GetAttributes () const {return m_attributes;}
-    bool IsOfType (UInt32 type) const {return ((UInt32)m_location.GetRscType() == type ? true : false);}
+    uint32_t GetAttributes () const {return m_attributes;}
+    bool IsOfType (uint32_t type) const {return ((uint32_t)m_location.GetRscType() == type ? true : false);}
 
     //  This method should only be used during remapping. It is assumed that LsDefinition has
     //  not loaded the component and that the previous component ID was invalid.
-    DGNPLATFORM_EXPORT void      RemapComponentId (UInt32 newId);
+    DGNPLATFORM_EXPORT void      RemapComponentId (uint32_t newId);
 
     DGNPLATFORM_EXPORT StatusInt UpdateStyleTable() const;
-    DGNPLATFORM_EXPORT StatusInt TransferStyleTableEntry(DgnStyleId& newId, DgnProjectR targetProject) const;
+    DGNPLATFORM_EXPORT StatusInt TransferStyleTableEntry(DgnStyleId& newId, DgnDbR targetProject) const;
 
     void CheckForContinuous (LsStrokePatternComponentCP);
     void PostProcessComponentLoad (DgnModelP modelRef);
     void ClearPostProcess ();
     void SetName (Utf8CP name);
-    void SetAttributes (UInt32 attr) {m_attributes = attr;}
-    void SetStyleNumber (Int32 number) { m_styleNumber = number; }
-    Int32 GetStyleNumber () { return m_styleNumber; }
+    void SetAttributes (uint32_t attr) {m_attributes = attr;}
+    void SetStyleNumber (int64_t number) { m_styleNumber = number; }
+    int64_t GetStyleNumber () { return m_styleNumber; }
 
     DGNPLATFORM_EXPORT double GetTrueScale (DgnModelP styleDgnModel) const;
 
@@ -1467,7 +1471,7 @@ public:
     void MarkDirty (bool value = true) { m_isDirty = value; }
     StatusInt Commit ();
 
-    static void InitializeJsonObject (Json::Value& jsonObj, UInt32 componentId, UInt16 componentType, UInt32 flags, double unitDefinition);
+    static void InitializeJsonObject (Json::Value& jsonObj, uint32_t componentId, uint16_t componentType, uint32_t flags, double unitDefinition);
     void InitializeJsonObject (Json::Value& jsonObj);
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -1500,7 +1504,7 @@ public:
     //! For a style definition from a design file, this is the number that is used to translate from the number in an
     //! element's symbology to a line style name. For a style definition from a resource file,
     //! this normally is zero.
-    DGNPLATFORM_EXPORT Int32                    GetStyleNumber          () const;
+    DGNPLATFORM_EXPORT int64_t                  GetStyleNumber          () const;
 
     DGNPLATFORM_EXPORT DgnStyleId               GetStyleId              () const;
 
@@ -1546,24 +1550,24 @@ struct  LsIdNode
     {
     friend struct LsMapEntry;
 private:
-    Int32               m_id;
+    int64_t             m_id;
     Utf8P               m_name;
     LsDefinitionP       m_nameRec;
     bool                m_resolves;
 
 public:
-    LsIdNode (Int32 id, Utf8CP name, LsDefinitionP nameRec, bool resolves);
+    LsIdNode (int64_t id, Utf8CP name, LsDefinitionP nameRec, bool resolves);
 
     bool Resolves () const { return m_resolves; }
     void Clear ();
-    Int32 GetKey () const {return m_id;}
+    int64_t GetKey () const {return m_id;}
     LsDefinitionP GetValue () const {return m_nameRec;}
     Utf8CP GetName () const {return m_name;}
     void SetValue (LsDefinitionP v) {m_nameRec = v;}
     void SetName (Utf8CP newName);
 
-    static Int32 GetMinKey () {return INT32_MIN;}
-    static Int32 GetMaxKey () {return INT32_MAX;}
+    static int64_t GetMinKey () {return INT32_MIN;}
+    static int64_t GetMaxKey () {return INT32_MAX;}
     };
 
 //=======================================================================================
@@ -1610,7 +1614,7 @@ public:
     //! Get the line style number. For an LsMapEntry from an LsDgnFileMap this is the number
     //! that is used to translate from the number in an element's symbology to a line style name.
     //! For an LsMapEntry from a system map, the style number normally is meaningless.
-    DGNPLATFORM_EXPORT Int32 GetStyleNumber () const;
+    DGNPLATFORM_EXPORT int64_t GetStyleNumber () const;
     //! Get the LsDefinition for the line style associated with the LsMapEntry.
     DGNPLATFORM_EXPORT LsDefinitionP GetLineStyleP () const;
     //! Get the LsDefinition for the line style associated with the LsMapEntry.
@@ -1653,9 +1657,9 @@ public:
 //! A map used to map from line style number to line style name and vice versa.  There is a LsDgnFileMap
 //! for each DgnFile and a system map.
 //!
-//! To resolve a line style for an element, MicroStation uses the element's line style number
-//! to search the LsDgnFileMap of the DgnFile that holds the element. If that yields an
-//! LsMapEntry, MicroStation gets the style name from the entry and uses that name to
+//! To resolve a line style for an element, the element's line style number is used
+//! to search the LsDgnFileMap of the DgnDb that holds the element. If that yields an
+//! LsMapEntry, the style name is found from the entry and uses that name to
 //! search the LsSystemMap.
 //!  @ingroup LineStyleManagerModule
 // @bsiclass
@@ -1681,25 +1685,21 @@ protected:
     //  virtual LineStyleComponentP     _FindComponent (ComponentID& componentID, bool searchSystemMaps) const;
 
 public:
-    //  OPERATOR_NEW_KLUDGE
-    void * operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
-    void operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
-    void * operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
-    void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS 
 
     typedef int (*PFNameMapProcessFunc) (NameNode const* nameNode, void* arg);
 
     LsMap();
     virtual ~LsMap();
 
-    DGNPLATFORM_EXPORT LsIdNodeP               FindId                   (Int32 styleId) const;
+    DGNPLATFORM_EXPORT LsIdNodeP               FindId                   (int64_t styleId) const;
     DGNPLATFORM_EXPORT void                    EmptyMaps                ();
     T_LsIdIterator                         FirstId                  () {return m_idTree.FirstEntry();}
-    void                                   AddIdEntry               (Int32 id, DgnProjectR project, Utf8CP name, bool resolves);
-    void                                   AddIdEntry               (Int32 id, LsDefinitionP nameRec, bool resolves);
-    DGNPLATFORM_EXPORT BentleyStatus           RemoveIdEntry            (Int32 id);
+    void                                   AddIdEntry               (int64_t id, DgnDbR project, Utf8CP name, bool resolves);
+    void                                   AddIdEntry               (int64_t id, LsDefinitionP nameRec, bool resolves);
+    DGNPLATFORM_EXPORT BentleyStatus           RemoveIdEntry            (int64_t id);
     DGNPLATFORM_EXPORT BentleyStatus           RemoveNameEntry          (Utf8CP);
-    DGNPLATFORM_EXPORT LsDefinitionP           AddNameEntry             (Utf8CP, Int32 styleId, DgnProjectR, Json::Value& lsDefinition);
+    DGNPLATFORM_EXPORT LsDefinitionP           AddNameEntry             (Utf8CP, int64_t styleId, DgnDbR, Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT void                    AddNameEntry             (LsDefinition*);
     DGNPLATFORM_EXPORT void                    ProcessNameMap           (PFNameMapProcessFunc processFunc, void* arg);
     T_LsIdTree*                            GetIdMap                 () {return &m_idTree;}
@@ -1708,16 +1708,16 @@ public:
     bool                                   IsLoaded                 () const {return m_isLoaded;}
     void                                   TreeLoaded               () { m_isLoaded=true; }
 
-    DGNPLATFORM_EXPORT static LsDefinitionP     FindInRefOrRsc          (DgnProjectP project, Utf8CP name);
-    DGNPLATFORM_EXPORT static LsDefinitionP     FindInRefOrRsc          (DgnProjectP project, Int32 styleId);
-    DGNPLATFORM_EXPORT static LsDefinitionP     FindInRef               (DgnProjectP project, Int32 styleId);
-    DGNPLATFORM_EXPORT static LsDgnProjectMapP  GetMapPtr               (DgnProjectR, bool loadIfNotLoaded = true);
+    DGNPLATFORM_EXPORT static LsDefinitionP     FindInRefOrRsc          (DgnDbP project, Utf8CP name);
+    DGNPLATFORM_EXPORT static LsDefinitionP     FindInRefOrRsc          (DgnDbP project, int64_t styleId);
+    DGNPLATFORM_EXPORT static LsDefinitionP     FindInRef               (DgnDbP project, int64_t styleId);
+    DGNPLATFORM_EXPORT static LsDgnProjectMapP  GetMapPtr               (DgnDbR, bool loadIfNotLoaded = true);
     DGNPLATFORM_EXPORT static void              DropAllComponentRefs    ();
     DGNPLATFORM_EXPORT static void              EmptyAllMaps            ();
 
     //  These should be replaced by the Get methods
     DGNPLATFORM_EXPORT LsDefinitionP            Find                    (Utf8CP lsName) const;
-    DGNPLATFORM_EXPORT LsDefinitionP            Find                    (Int32 styleId) const;
+    DGNPLATFORM_EXPORT LsDefinitionP            Find                    (int64_t styleId) const;
 
     //  DGNPLATFORM_EXPORT LineStyleComponentP     Copy (LineStyleComponentP source);
     //  DGNPLATFORM_EXPORT LsDefinitionP           CreateLineStyle (WStringCR name, LineStyleComponentP component, UInt32 options, Int32 lineStyleID);
@@ -1726,7 +1726,7 @@ public:
 public:
     //! Gets the line style map associated with the specified project.
     //! @return a A pointer to the map if it is loaded or if not loaded but loadIfNotLoaded is true; NULL otherwise
-    DGNPLATFORM_EXPORT static LsDgnProjectMapP  GetProjectMap           (DgnProjectR, bool loadIfNotLoaded = true);
+    DGNPLATFORM_EXPORT static LsDgnProjectMapP  GetProjectMap           (DgnDbR, bool loadIfNotLoaded = true);
 
     DGNPLATFORM_EXPORT LsLocationType           GetType                 () const;    //!< Type of file used to load the map.
     DGNPLATFORM_EXPORT WString                  GetFileName             () const;    //!< Name of file used to load the map.
@@ -1753,14 +1753,14 @@ public:
     //! returned may be a pointer to a stub used to translate from element style
     //! number to name.  Call LsDgnFileMap::Resolve to find the LsDefinition that
     //! is used to stroke the element.
-    DGNPLATFORM_EXPORT LsDefinitionP            GetLineStyleP   (Int32 styleId) const;
+    DGNPLATFORM_EXPORT LsDefinitionP            GetLineStyleP   (int64_t styleId) const;
     //! Searches the set of ID's associated with the LsMap.
     //! @param[in] styleId The ID that is used to associate an element with a line style.
     //! @return The associated LsDefinition object if found. Otherwise, it returns NULL. It
     //! also returns NULL for all of the special codes including STYLE_BYLEVEL, STYLE_BYCELL, and the
     //! reserved line codes 0 through 7.
     //! @see LsMap::GetLineStyleP
-    DGNPLATFORM_EXPORT LsDefinitionCP           GetLineStyleCP  (Int32 styleId) const;
+    DGNPLATFORM_EXPORT LsDefinitionCP           GetLineStyleCP  (int64_t styleId) const;
 
     typedef LsMapIterator const_iterator;
     typedef const_iterator iterator;    //!< only const iteration is possible
@@ -1796,7 +1796,7 @@ public:
     DGNPLATFORM_EXPORT LsDefinitionP            FindSystemName          (Utf8CP) const;
     DGNPLATFORM_EXPORT LsDefinitionP            FindNameInLibs          (Utf8CP  name) const;
     DGNPLATFORM_EXPORT void                     ProcessSystemNameMaps   (PFNameMapProcessFunc processFunc, void* arg, bool includeDgnLibs);
-    void                                    AddSystemIdEntry        (Int32 id, Utf8CP name, bool resolves);
+    void                                    AddSystemIdEntry        (int64_t id, Utf8CP name, bool resolves);
 
     DGNPLATFORM_EXPORT static LsSystemMapP      GetSystemMapPtr         ();
     DGNPLATFORM_EXPORT static LsSystemMapP      GetSystemMapP           (bool requiresLoadedMap);
@@ -1812,7 +1812,7 @@ public:
 };
 
 //=======================================================================================
-//! Used to access the line styles known to a given DgnProject.
+//! Used to access the line styles known to a given DgnDb.
 //! @ingroup LineStyleManagerModule
 // @bsiclass
 //=======================================================================================
@@ -1820,12 +1820,12 @@ struct  LsDgnProjectMap : public LsMap
 {
 //__PUBLISH_SECTION_END__
 private:
-    DgnProjectR       m_dgnProject;
-    LsDgnProjectMap(DgnProjectR dgnProject) : m_dgnProject(dgnProject) {}
+    DgnDbR       m_dgnProject;
+    LsDgnProjectMap(DgnDbR dgnProject) : m_dgnProject(dgnProject) {}
     ~LsDgnProjectMap();
 
 protected:
-    virtual LsLocationType          _GetType        () override { return LsLocationType::DgnProject; }
+    virtual LsLocationType          _GetType        () override { return LsLocationType::DgnDb; }
     virtual WString                 _GetFileName    () override
         {
         return L""; // m_msDgnFile->GetFileName();
@@ -1834,52 +1834,46 @@ protected:
 public:
     BentleyStatus                   Load            ();
 
-    static LsDgnProjectMapPtr Create (DgnProjectR project);
+    static LsDgnProjectMapPtr Create (DgnDbR project);
 
 //__PUBLISH_SECTION_START__
 public:
     //!  Gets a pointer to the associated DgnFile.
     //!  @remark Use LineStyleManager::GetLineStyleMapP to get a pointer to a DgnFile's LsDgnFileMap.
-    DGNPLATFORM_EXPORT DgnProjectR      GetDgnProjectR  () const;
+    DGNPLATFORM_EXPORT DgnDbR      GetDgnProjectR  () const;
     //!  Gets a pointer to the associated DgnFile.
     //!  @remark Use LineStyleManager::GetLineStyleMapP to get a pointer to a DgnFile's LsDgnFileMap.
-    DGNPLATFORM_EXPORT DgnProjectCR     GetDgnProject   () const;
+    DGNPLATFORM_EXPORT DgnDbCR     GetDgnDb   () const;
 };
 
 //=======================================================================================
 //! Groups methods for Line Styles.
 // @bsiclass
 //=======================================================================================
-struct DgnLineStyles
+struct DgnLineStyles : public DgnDbTable
 {
+//__PUBLISH_SECTION_END__
 private:
+    DEFINE_T_SUPER(DgnDbTable);
     friend struct DgnStyles;
 
-    DgnProjectR m_project;
     LsDgnProjectMap* m_lineStyleMap;
 
     //! Only the outer class is designed to construct this class.
-    DgnLineStyles(DgnProjectR project) : m_project(project) {m_lineStyleMap=NULL;}
+    DgnLineStyles(DgnDbR db) : T_Super(db), m_lineStyleMap(nullptr) {}
     ~DgnLineStyles();
 
 public:
+//__PUBLISH_SECTION_START__
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(DgnStyleId& newStyleId, Utf8CP name, UInt32 componentId, UInt16 componentType, UInt32 flags, double unitDefinition);
-
-    //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
-    //! @note This is only intended to support importers that already have unique IDs, and should not normally be used; @see InsertStyle.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertWithId(DgnStyleId newStyleId, Utf8CP name, UInt32 componentId, UInt16 componentType, UInt32 flags, double unitDefinition);
+    DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, uint32_t componentId, uint16_t componentType, uint32_t flags, double unitDefinition);
 
     //! Updates an a Line Style in the styles table..
-    DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, UInt32 componentId, UInt16 componentType, UInt32 flags, double unitDefinition);
-
-    //! Creates an iterator to iterate available line styles.
-    DGNPLATFORM_EXPORT DgnStyles::Iterator MakeIterator(DgnStyleSort sortOrder = DgnStyleSort::None) const;
+    DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, uint32_t componentId, uint16_t componentType, uint32_t flags, double unitDefinition);
 
     DGNPLATFORM_EXPORT LsDgnProjectMapP GetMapP (bool load=true);
     DGNPLATFORM_EXPORT LsDgnProjectMapR ReloadMap();
-}; // LineStyleFunctions
-
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/DimensionStyle.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -106,8 +106,7 @@ private:
         WString         m_subUnitLabel;
         };
 
-    enum DimStringLinkageKey : UShort
-        {
+    enum DimStringLinkageKey : unsigned short         {
         DIMSTYLE_Name           = STRING_LINKAGE_KEY_Name,
         DIMSTYLE_Description    = STRING_LINKAGE_KEY_Description,
         DIMCELL_Prefix          = STRING_LINKAGE_KEY_DimPrefixCellName,
@@ -124,8 +123,8 @@ private:
         };
 
     bool                m_initialized;
-    DgnProjectP         m_project;
-    UInt64              m_elemID;
+    DgnDbP         m_dgndb;
+    uint64_t            m_elemID;
 
     WString             m_name;
     WString             m_description;
@@ -147,7 +146,7 @@ private:
 
     struct DimStyleComparer
         {
-        UInt32              m_compareOpts;
+        uint32_t            m_compareOpts;
         DimensionStyleCR    m_dimStyle1;
         DimensionStyleCR    m_dimStyle2;
         DimStylePropMaskPtr m_differences;
@@ -155,8 +154,8 @@ private:
         DgnModelP           m_cache1;
         DgnModelP           m_cache2;
 
-        void                SetPropertyBitInBitArray (UInt16 pBitArray[], DimStyleProp dimStyleProp, bool    bitValue);
-        void                SetTemplateBitInBitArray (UInt16 pBitArray[], DimStyleProp dimStyleProp, bool    bitValue);
+        void                SetPropertyBitInBitArray (uint16_t pBitArray[], DimStyleProp dimStyleProp, bool    bitValue);
+        void                SetTemplateBitInBitArray (uint16_t pBitArray[], DimStyleProp dimStyleProp, bool    bitValue);
 
         void                StripUnusedDiffs ();
 
@@ -174,36 +173,36 @@ private:
         void                CompareExtensions               ();
         void                CompareStrings                  ();
 
-        /* ctor */          DimStyleComparer (DimensionStyleCR style1, DimensionStyleCR style2, UInt32 compareOpts);
+        /* ctor */          DimStyleComparer (DimensionStyleCR style1, DimensionStyleCR style2, uint32_t compareOpts);
         DimStylePropMaskPtr CompareStyles ();
         };
 
 private:
     void                Clear ();
-    WString             StringFromElement (DgnElementCR, DimStringLinkageKey);
-    void                StringToElement (DgnElementR, WCharCP, DimStringLinkageKey) const;
+    WString             StringFromElement (ElementGraphicsCR, DimStringLinkageKey);
+    void                StringToElement (ElementGraphicsR, WCharCP, DimStringLinkageKey) const;
     int                 GetLabelLineFormat () const;
     void                SetLabelLineFormat (int value);
-    UInt16              GetMLNoteFrameType () const;
-    void                SetMLNoteFrameType (UInt16 value);
+    uint16_t            GetMLNoteFrameType () const;
+    void                SetMLNoteFrameType (uint16_t value);
     StatusInt           GetValueFormat (DimStyleProp_Value_Format& format, DimStyleProp formatProp) const;
     StatusInt           SetValueFormat (DimStyleProp formatProp, DimStyleProp_Value_Format format);
     StatusInt           GetComparisonValue (DimStyleProp_Value_Comparison& comparison, DimStyleProp comparisonProp) const;
     StatusInt           SetComparisonValue (DimStyleProp comparisonProp, DimStyleProp_Value_Format comparison);
 
-    StatusInt           SetTextStyleByID (UInt32 textStyleID);
+    StatusInt           SetTextStyleByID (uint32_t textStyleID);
 
     static ElementHandle    GetSettingsElement (ElementHandleCR tableElement);
-    static ElementHandle          GetSettingsElementByFile (DgnProjectR file);
+    static ElementHandle          GetSettingsElementByFile (DgnDbR file);
     static ElementHandle    GetStyleElementByName (WCharCP name, ElementHandleCR table);
-    static ElementHandle          GetStyleElementByName (WCharCP name, DgnProjectR file);
-    static ElementHandle          FetchTableElement (DgnProjectR file);
-    static bool                   IsDimStyleUsed (UInt64 elemID, DgnProjectR);
-    static ElementHandle          CreateTableElement (DgnProjectR file);
+    static ElementHandle          GetStyleElementByName (WCharCP name, DgnDbR file);
+    static ElementHandle          FetchTableElement (DgnDbR file);
+    static bool                   IsDimStyleUsed (uint64_t elemID, DgnDbR);
+    static ElementHandle          CreateTableElement (DgnDbR file);
 protected:
     DimensionStyle (ElementHandleCR styleElem);
     DimensionStyle (DgnDimStyleCR dimStyle);
-    DimensionStyle (WCharCP name, DgnProjectR file);
+    DimensionStyle (WCharCP name, DgnDbR file);
 
     void FromElement (ElementHandleCR styleElem);
     void ToElement (EditElementHandleR) const;
@@ -219,19 +218,19 @@ protected:
     static void OnDimStyleTransactionEvent (ElementHandleCP entryBefore, ElementHandleCP entryAfter, StyleEventType eventType, StyleEventSource source);
 #endif
 
-    DGNPLATFORM_EXPORT virtual StatusInt     _SetAccuracyProp     (byte               valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT virtual StatusInt     _SetAccuracyProp     (Byte valueIn,    DimStyleProp iProp);
     DGNPLATFORM_EXPORT virtual StatusInt     _SetBooleanProp      (bool               valueIn,    DimStyleProp iProp);
-    DGNPLATFORM_EXPORT virtual StatusInt     _SetCharProp         (UShort             valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT virtual StatusInt     _SetCharProp         (unsigned short     valueIn,    DimStyleProp iProp);
     DGNPLATFORM_EXPORT virtual StatusInt     _SetDoubleProp       (double             valueIn,    DimStyleProp iProp);
     DGNPLATFORM_EXPORT virtual StatusInt     _SetIntegerProp      (int                valueIn,    DimStyleProp iProp);
     DGNPLATFORM_EXPORT virtual StatusInt     _SetLevelProp        (LevelId            valueIn,    DimStyleProp iProp);
     DGNPLATFORM_EXPORT virtual StatusInt     _SetStringProp       (WCharCP            valueIn,    DimStyleProp iProp);
-    DGNPLATFORM_EXPORT virtual StatusInt     _SetFontProp         (UInt32             valueIn,    DimStyleProp iProp);
-    DGNPLATFORM_EXPORT virtual StatusInt     _SetColorProp        (UInt32             valueIn,    DimStyleProp iProp);
-    DGNPLATFORM_EXPORT virtual StatusInt     _SetWeightProp       (UInt32             valueIn,    DimStyleProp iProp);
-    DGNPLATFORM_EXPORT virtual StatusInt     _SetLineStyleProp    (Int32              valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT virtual StatusInt     _SetFontProp         (uint32_t           valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT virtual StatusInt     _SetColorProp        (uint32_t           valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT virtual StatusInt     _SetWeightProp       (uint32_t           valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT virtual StatusInt     _SetLineStyleProp    (int32_t            valueIn,    DimStyleProp iProp);
     DGNPLATFORM_EXPORT virtual StatusInt     _SetTextStyleProp    (DgnTextStyleCR     valueIn,    DimStyleProp iProp);
-    DGNPLATFORM_EXPORT virtual StatusInt     _SetTemplateFlagProp (UShort             valueIn,    DimensionType dimensionType, DimStyleProp iProp);
+    DGNPLATFORM_EXPORT virtual StatusInt     _SetTemplateFlagProp (unsigned short     valueIn,    DimensionType dimensionType, DimStyleProp iProp);
 #if defined (NEEDS_WORK_DGNITEM)
     DGNPLATFORM_EXPORT virtual BentleyStatus _SetName (WCharCP newName);
 #endif
@@ -245,11 +244,11 @@ public:
     DimStyleExtensions const&   GetStyleExtensionsCP () const  { return m_extensions; }
     void                        SetStyleExtensions (DimStyleExtensions const& newExtensions) { m_extensions = newExtensions; }
     void                        SetTemplateData (DimTemplate const& data, DimensionType templateIndex);
-    DGNPLATFORM_EXPORT UShort   GetDwgSpecificFlags (UShort& primaryUnits, UShort& secondaryUnits) const;
-    void                        SetDwgSpecificFlags (UShort flags);
-    DGNPLATFORM_EXPORT void     SetDwgSpecificFlags (UShort primaryUnits, UShort secondaryUnits);
-    UShort                      GetDeprecatedElbowJointLocation ()              { return m_extensions.flags.uElbowJointLocation;  }
-    void                        SetDeprecatedElbowJointLocation (UShort value)  { m_extensions.flags.uElbowJointLocation = value; }
+    DGNPLATFORM_EXPORT unsigned short GetDwgSpecificFlags (unsigned short& primaryUnits, unsigned short& secondaryUnits) const;
+    void                        SetDwgSpecificFlags (unsigned short flags);
+    DGNPLATFORM_EXPORT void     SetDwgSpecificFlags (unsigned short primaryUnits, unsigned short secondaryUnits);
+    unsigned short              GetDeprecatedElbowJointLocation ()              { return m_extensions.flags.uElbowJointLocation;  }
+    void                        SetDeprecatedElbowJointLocation (unsigned short value)  { m_extensions.flags.uElbowJointLocation = value; }
     bool                        IsPropertyLocallyControlled (DimStyleProp prop) const;
     DGNPLATFORM_EXPORT bool                 IsWitnessVisible (ElementHandleCR dim, int pointNo) const;
 
@@ -258,11 +257,11 @@ public:
     DGNPLATFORM_EXPORT void                 DropDependants() const;
     MSCORE_EXPORT static void               AddListener (DimStyleEvents& handler);
     MSCORE_EXPORT static void               DropListener (DimStyleEvents& handler);
-    MSCORE_EXPORT static void               UpdateFileFromDgnLibs (DgnProjectR dgnFile);
+    MSCORE_EXPORT static void               UpdateFileFromDgnLibs (DgnDbR dgnFile);
     MSCORE_EXPORT static DimensionStylePtr  GetActive (bool createIfNecessary);
     MSCORE_EXPORT void                      EnforceCurrentWorkMode ();
 
-    DGNPLATFORM_EXPORT static ElementHandle  GetTableElement (DgnProjectR file);
+    DGNPLATFORM_EXPORT static ElementHandle  GetTableElement (DgnDbR file);
     DGNPLATFORM_EXPORT static void           SetTransactionListener (IDimStyleTransactionListener* obj);
 #endif
     DGNPLATFORM_EXPORT static BentleyStatus  GetOverrideProp (DimStyleProp* overrideProp, bool* inverted, DimStyleProp property);
@@ -283,19 +282,19 @@ public:
     typedef DimStylePropMaskPtr PropertyMaskPtr;
 
     //! Create a new DimensionStyle object.  The style is not be persisted automatically.
-    DGNPLATFORM_EXPORT static DimensionStylePtr      Create (WCharCP name, DgnProjectR file);
+    DGNPLATFORM_EXPORT static DimensionStylePtr      Create (WCharCP name, DgnDbR file);
 
     //! Find an existing persistent Named DimensionStyle.
-    DGNPLATFORM_EXPORT static DimensionStylePtr      GetByName (WCharCP name, DgnProjectR file);
+    DGNPLATFORM_EXPORT static DimensionStylePtr      GetByName (WCharCP name, DgnDbR file);
 
     //! Find an existing persistent Named DimensionStyle.
-    DGNPLATFORM_EXPORT static DimensionStylePtr      GetByID (UInt64 elemID, DgnProjectR file);
+    DGNPLATFORM_EXPORT static DimensionStylePtr      GetByID (uint64_t elemID, DgnDbR file);
 
     //! Get the active dimension settings from a file.
-    DGNPLATFORM_EXPORT static DimensionStylePtr      GetSettings (DgnProjectR);
+    DGNPLATFORM_EXPORT static DimensionStylePtr      GetSettings (DgnDbR);
 
     //! Overwrite the active dimension settings from a file.
-    DGNPLATFORM_EXPORT static BentleyStatus          ReplaceSettings (DimensionStyleR settings, DgnProjectR file);
+    DGNPLATFORM_EXPORT static BentleyStatus          ReplaceSettings (DimensionStyleR settings, DgnDbR file);
 
     //! Add this DimensionStyle to a DgnFile.  Will fail if there is already a style with the same name.
     //! @param[in] file     The file in which to write the style.  If NULL, the style will be written to the file
@@ -303,7 +302,7 @@ public:
     //! @remark If the style is written to a file different than the file stored in the style object, then the style
     //!         object will be converted to the new file.
     //! @return SUCCESS if the style was written.
-    DGNPLATFORM_EXPORT BentleyStatus         Add (DgnProjectP file = NULL);
+    DGNPLATFORM_EXPORT BentleyStatus         Add (DgnDbP file = NULL);
 
     //! Replace an existing persistent DimensionStyle in a DgnFile.  Will fail if there is not already a style with the
     //! same name.
@@ -314,7 +313,7 @@ public:
     //! @remark If the style is written to a file different than the file stored in the style object, then the style
     //!         object will be converted to the new file.
     //! @return SUCCESS if the style was written.
-    DGNPLATFORM_EXPORT BentleyStatus         Replace (WCharCP oldName = NULL, DgnProjectP file = NULL);
+    DGNPLATFORM_EXPORT BentleyStatus         Replace (WCharCP oldName = NULL, DgnDbP file = NULL);
 
     //! Deletes a dimension style from a dgn file.  This method will fail
     //!              if any elements refer to the style.
@@ -323,7 +322,7 @@ public:
     //! @return SUCCESS if the style was removed.
     //! @see HasDependents
     //! @see RemapDependents
-    DGNPLATFORM_EXPORT static BentleyStatus  Delete (WCharCP name, DgnProjectR file);
+    DGNPLATFORM_EXPORT static BentleyStatus  Delete (WCharCP name, DgnDbR file);
 
     DGNPLATFORM_EXPORT StatusInt             GetUnitsProp (UnitDefinitionP master, UnitDefinitionP sub, DimStyleProp iProp) const;
 
@@ -334,13 +333,13 @@ public:
     DGNPLATFORM_EXPORT WStringCR             GetName () const;
 
     //! Get the id of this style.
-    DGNPLATFORM_EXPORT UInt64             GetID () const;
+    DGNPLATFORM_EXPORT uint64_t           GetID () const;
 
     //! Get the file which serves as the context for this style.
-    DGNPLATFORM_EXPORT DgnProjectP GetDgnProject() const;
+    DGNPLATFORM_EXPORT DgnDbP GetDgnDb() const;
 
     //! Get the id of the TextStyle used by this style.  If this style does not refer to a TextStyle this method will return zero.
-    DGNPLATFORM_EXPORT UInt32                GetTextStyleId () const;
+    DGNPLATFORM_EXPORT uint32_t              GetTextStyleId () const;
 
     //! Make a copy of this style object.
     DGNPLATFORM_EXPORT DimensionStylePtr     Copy () const;
@@ -364,19 +363,19 @@ public:
     //! that means the dimension's extension color will come from the header color.  In that case, the style's extension color value is unused.
     //! @return A mask with 'on' bits representing each difference between the two styles.  To quickly test if any difference exists
     //!         use DimStylePropMask::AnyBitSet
-    DGNPLATFORM_EXPORT DimStylePropMaskPtr   Compare (DimensionStyleCR otherStyle, UInt32 compareOpts = DIMSTYLE_COMPAREOPTS_Default) const;
+    DGNPLATFORM_EXPORT DimStylePropMaskPtr   Compare (DimensionStyleCR otherStyle, uint32_t compareOpts = DIMSTYLE_COMPAREOPTS_Default) const;
 
     //! Change the context of this style to another DgnFile.
-    DGNPLATFORM_EXPORT StatusInt             ConvertToFile (DgnProjectR file);
+    DGNPLATFORM_EXPORT StatusInt             ConvertToFile (DgnDbR file);
 
     //! Get the value of an accuracy type property.
-    DGNPLATFORM_EXPORT StatusInt     GetAccuracyProp     (byte&              valueOut,   DimStyleProp iProp) const;
+    DGNPLATFORM_EXPORT StatusInt     GetAccuracyProp     (Byte&              valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of a boolean type property.
     DGNPLATFORM_EXPORT StatusInt     GetBooleanProp      (bool&              valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of a char type property.
-    DGNPLATFORM_EXPORT StatusInt     GetCharProp         (UShort&            valueOut,   DimStyleProp iProp) const;
+    DGNPLATFORM_EXPORT StatusInt     GetCharProp         (unsigned short&            valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of a double type property.
     DGNPLATFORM_EXPORT StatusInt     GetDoubleProp       (double&            valueOut,   DimStyleProp iProp) const;
@@ -391,16 +390,16 @@ public:
     DGNPLATFORM_EXPORT StatusInt     GetStringProp       (WStringR           valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of a font type property.
-    DGNPLATFORM_EXPORT StatusInt     GetFontProp         (UInt32&            valueOut,   DimStyleProp iProp) const;
+    DGNPLATFORM_EXPORT StatusInt     GetFontProp         (uint32_t&            valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of an accuracy type property.
-    DGNPLATFORM_EXPORT StatusInt     GetColorProp        (UInt32&            valueOut,   DimStyleProp iProp) const;
+    DGNPLATFORM_EXPORT StatusInt     GetColorProp        (uint32_t&            valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of a weight type property.
-    DGNPLATFORM_EXPORT StatusInt     GetWeightProp       (UInt32&            valueOut,   DimStyleProp iProp) const;
+    DGNPLATFORM_EXPORT StatusInt     GetWeightProp       (uint32_t&            valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of a linestyle type property.
-    DGNPLATFORM_EXPORT StatusInt     GetLineStyleProp    (Int32&             valueOut,   DimStyleProp iProp) const;
+    DGNPLATFORM_EXPORT StatusInt     GetLineStyleProp    (int32_t&             valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of a unit type property.  To change a unit property use SetUnitsProp().
     DGNPLATFORM_EXPORT StatusInt     GetOneUnitProp      (UnitDefinitionR    valueOut,   DimStyleProp iProp) const;
@@ -409,16 +408,16 @@ public:
     DGNPLATFORM_EXPORT StatusInt     GetTextStyleProp    (DgnTextStylePtr&   valueOut,   DimStyleProp iProp) const;
 
     //! Get the value of a template flag.
-    DGNPLATFORM_EXPORT StatusInt     GetTemplateFlagProp (UShort&    valueOut, DimensionType dimensionType, DimStyleProp iProp) const;
+    DGNPLATFORM_EXPORT StatusInt     GetTemplateFlagProp (unsigned short&    valueOut, DimensionType dimensionType, DimStyleProp iProp) const;
 
     //! Change the value of an accuracy type property.
-    DGNPLATFORM_EXPORT StatusInt     SetAccuracyProp     (byte               valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT StatusInt     SetAccuracyProp     (Byte valueIn,    DimStyleProp iProp);
 
     //! Change the value of a boolean type property.
     DGNPLATFORM_EXPORT StatusInt     SetBooleanProp      (bool               valueIn,    DimStyleProp iProp);
 
     //! Change the value of a char type property.
-    DGNPLATFORM_EXPORT StatusInt     SetCharProp         (UShort             valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT StatusInt     SetCharProp         (unsigned short     valueIn,    DimStyleProp iProp);
 
     //! Change the value of a double type property.
     DGNPLATFORM_EXPORT StatusInt     SetDoubleProp       (double             valueIn,    DimStyleProp iProp);
@@ -433,16 +432,16 @@ public:
     DGNPLATFORM_EXPORT StatusInt     SetStringProp       (WCharCP            valueIn,    DimStyleProp iProp);
 
     //! Change the value of a font type property.
-    DGNPLATFORM_EXPORT StatusInt     SetFontProp         (UInt32             valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT StatusInt     SetFontProp         (uint32_t           valueIn,    DimStyleProp iProp);
 
     //! Change the value of a color type property.
-    DGNPLATFORM_EXPORT StatusInt     SetColorProp        (UInt32             valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT StatusInt     SetColorProp        (uint32_t           valueIn,    DimStyleProp iProp);
 
     //! Change the value of a weight type property.
-    DGNPLATFORM_EXPORT StatusInt     SetWeightProp       (UInt32             valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT StatusInt     SetWeightProp       (uint32_t           valueIn,    DimStyleProp iProp);
 
     //! Change the value of a line style type property.
-    DGNPLATFORM_EXPORT StatusInt     SetLineStyleProp    (Int32              valueIn,    DimStyleProp iProp);
+    DGNPLATFORM_EXPORT StatusInt     SetLineStyleProp    (int32_t            valueIn,    DimStyleProp iProp);
 
     //! Change the value of a unit type property.
     DGNPLATFORM_EXPORT StatusInt     SetOneUnitProp      (UnitDefinitionCR   valueIn,    DimStyleProp iProp);
@@ -451,10 +450,10 @@ public:
     DGNPLATFORM_EXPORT StatusInt     SetTextStyleProp    (DgnTextStyleCR     valueIn,    DimStyleProp iProp);
 
     //! Change the value of a template flag.
-    DGNPLATFORM_EXPORT StatusInt     SetTemplateFlagProp (UShort     valueIn,  DimensionType dimensionType, DimStyleProp iProp);
+    DGNPLATFORM_EXPORT StatusInt     SetTemplateFlagProp (unsigned short valueIn,  DimensionType dimensionType, DimStyleProp iProp);
 
     //__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT void          SetElemID (UInt64 elemID);
+    DGNPLATFORM_EXPORT void          SetElemID (uint64_t elemID);
 
 #ifdef DGN_IMPORTER_REORG_WIP
     MSCORE_EXPORT   static DimensionStylePtr      GetActive ();
@@ -465,20 +464,20 @@ public:
     MSCORE_EXPORT   bool                          IsActive() const;
 
     MSCORE_EXPORT   StatusInt     GetEffectiveUnitsProp (UnitDefinitionP master, UnitDefinitionP sub, bool* inherited, DimStyleProp iProp) const;
-    MSCORE_EXPORT   StatusInt     GetEffectiveAccuracyProp     (byte&             valueOut, bool* inherited, DimStyleProp iProp) const;
+    MSCORE_EXPORT   StatusInt     GetEffectiveAccuracyProp     (Byte&             valueOut, bool* inherited, DimStyleProp iProp) const;
     MSCORE_EXPORT   StatusInt     GetEffectiveBooleanProp      (bool&             valueOut, bool* inherited, DimStyleProp iProp) const;
-    MSCORE_EXPORT   StatusInt     GetEffectiveCharProp         (UShort&           valueOut, bool* inherited, DimStyleProp iProp) const;
+    MSCORE_EXPORT   StatusInt     GetEffectiveCharProp         (unsigned short&           valueOut, bool* inherited, DimStyleProp iProp) const;
     MSCORE_EXPORT   StatusInt     GetEffectiveDoubleProp       (double&           valueOut, bool* inherited, DimStyleProp iProp) const;
     MSCORE_EXPORT   StatusInt     GetEffectiveIntegerProp      (int&              valueOut, bool* inherited, DimStyleProp iProp) const;
     MSCORE_EXPORT   StatusInt     GetEffectiveLevelProp        (LevelId&          valueOut, bool* inherited, DimStyleProp iProp) const;
     MSCORE_EXPORT   StatusInt     GetEffectiveStringProp       (WStringR          valueOut, bool* inherited, DimStyleProp iProp) const;
-    MSCORE_EXPORT   StatusInt     GetEffectiveFontProp         (UInt32&           valueOut, bool* inherited, DimStyleProp iProp) const;
-    MSCORE_EXPORT   StatusInt     GetEffectiveColorProp        (UInt32&           valueOut, bool* inherited, DimStyleProp iProp) const;
-    MSCORE_EXPORT   StatusInt     GetEffectiveWeightProp       (UInt32&           valueOut, bool* inherited, DimStyleProp iProp) const;
-    MSCORE_EXPORT   StatusInt     GetEffectiveLineStyleProp    (Int32&            valueOut, bool* inherited, DimStyleProp iProp) const;
+    MSCORE_EXPORT   StatusInt     GetEffectiveFontProp         (uint32_t&           valueOut, bool* inherited, DimStyleProp iProp) const;
+    MSCORE_EXPORT   StatusInt     GetEffectiveColorProp        (uint32_t&           valueOut, bool* inherited, DimStyleProp iProp) const;
+    MSCORE_EXPORT   StatusInt     GetEffectiveWeightProp       (uint32_t&           valueOut, bool* inherited, DimStyleProp iProp) const;
+    MSCORE_EXPORT   StatusInt     GetEffectiveLineStyleProp    (int32_t&            valueOut, bool* inherited, DimStyleProp iProp) const;
     MSCORE_EXPORT   StatusInt     GetEffectiveOneUnitProp      (UnitDefinitionR   valueOut, bool* inherited, DimStyleProp iProp) const;
     MSCORE_EXPORT   StatusInt     GetEffectiveTextStyleProp    (DgnTextStylePtr&  valueOut, bool* inherited, DimStyleProp iProp) const;
-    MSCORE_EXPORT   StatusInt     GetEffectiveTemplateFlagProp (UShort&           valueOut, bool* inherited, DimensionType dimensionType, DimStyleProp iProp) const;
+    MSCORE_EXPORT   StatusInt     GetEffectiveTemplateFlagProp (unsigned short&           valueOut, bool* inherited, DimensionType dimensionType, DimStyleProp iProp) const;
 #endif
 
     //__PUBLISH_SECTION_START__
@@ -497,7 +496,7 @@ private:
     DgnPlatform::ChildElemIter  m_elemIter;
     mutable DimensionStylePtr   m_current;
     
-    DimStyleIterator (DgnProjectP file);
+    DimStyleIterator (DgnDbP file);
 
 public:
     DGNPLATFORM_EXPORT DimStyleIterator ();                                                     //!< Initializes an invalid iterator.
@@ -516,13 +515,13 @@ public:
 struct DimStyleCollection
 {
 private:
-    DgnProjectP m_dgnFile;
+    DgnDbP m_dgnFile;
 
 public:
     
     //!  Intialize a collection from a file
     //! @param file   Reference to the file on which to get the collection from
-    DGNPLATFORM_EXPORT DimStyleCollection (DgnProjectR file);
+    DGNPLATFORM_EXPORT DimStyleCollection (DgnDbR file);
     
     typedef DimStyleIterator const_iterator;
     typedef const_iterator iterator;    //!< only const iteration is possible
@@ -587,7 +586,7 @@ private:
         };
 
     BitMaskP m_pBitMasks [DIMSTYLE_CATEGORY_COUNT];
-    static const UInt16  s_templateCategoryId [24];
+    static const uint16_t s_templateCategoryId [24];
 private:
     DimStylePropMask ();
     ~DimStylePropMask ();
@@ -600,7 +599,7 @@ private:
     StatusInt   SetBitByCategoryAndPosition (DimStyle_Category categoryID, int bitPosition, bool bitValue);
 
 protected:
-    StatusInt   SetBitMaskByBitArray (UInt16 pArrayIn[], int nValidBits, DimStyle_Category categoryID);
+    StatusInt   SetBitMaskByBitArray (uint16_t pArrayIn[], int nValidBits, DimStyle_Category categoryID);
     static void MapTemplateBitPosition (int& bitPosition, DimStyleProp dimStyleProp);
 
 public:
@@ -608,10 +607,10 @@ public:
 
     StatusInt                   ClearTemplateBits (int templateIndex);
 
-    static  UShort              GetLinkageKeyFromCategoryID (DimStyle_Category catID);
+    static  unsigned short      GetLinkageKeyFromCategoryID (DimStyle_Category catID);
     static  DimStylePropMaskPtr ExtractFromLinkages (ElementHandleCR elm);
-    static  void                DeleteLinkages (DgnElementR elm);
-            void                AppendAsLinkages (DgnElementR elm) const;
+    static  void                DeleteLinkages (ElementGraphicsR elm);
+            void                AppendAsLinkages (ElementGraphicsR elm) const;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -664,7 +663,7 @@ struct DimStyleDgnCacheLoaderCollection
         DGNPLATFORM_EXPORT BentleyStatus Add (DimensionStyleR style, ElementId id, bool isSettings = false);
         
         //! Creates and adds a textstyle table directly to the nonmodel cache.
-        DGNPLATFORM_EXPORT BentleyStatus AddToFile (DgnProjectR file) const;
+        DGNPLATFORM_EXPORT BentleyStatus AddToFile (DgnDbR file) const;
     };
 #endif
 

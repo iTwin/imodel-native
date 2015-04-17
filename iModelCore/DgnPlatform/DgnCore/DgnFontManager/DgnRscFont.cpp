@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnFontManager/DgnRscFont.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 
@@ -210,8 +210,8 @@ BentleyStatus DgnRscGlyph::_FillGpa (GPArrayR gpa) const
     for (RscGlyphElementIterator curr (reinterpret_cast<RscGlyphElement const*>(glyphData + 1), (size_t)glyphData->numElems); curr.IsValid (); curr = curr.ToNext ())
         {
         size_t              nPts        = (size_t)curr->numVerts;
-        SPoint2d const*     glyphPoint = curr->vertice;
-        SPoint2d const*     glyphEnd   = (glyphPoint + nPts);
+        RscFontPoint2d const*     glyphPoint = curr->vertice;
+        RscFontPoint2d const*     glyphEnd   = (glyphPoint + nPts);
         bvector<DPoint2d>   tPts;
         
         for (; glyphPoint < glyphEnd; ++glyphPoint)
@@ -283,88 +283,88 @@ PropertySpec    DgnRscFont::CreateEmbeddedGlyphHeadersPropertySpec      ()  { re
 //=======================================================================================
 struct DbRscDataReader : public IRscDataAccessor
     {
-    private:    UInt32          m_fontNumber;
-    private:    DgnProjectCR    m_project;
+    private:    uint32_t        m_fontNumber;
+    private:    DgnDbCR    m_dgndb;
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: DbRscDataReader (UInt32 fontNumber, DgnProjectCR project) :
+    public: DbRscDataReader (uint32_t fontNumber, DgnDbCR project) :
         m_fontNumber    (fontNumber),
-        m_project       (project)
+        m_dgndb       (project)
         {
         }
     
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: virtual BentleyStatus _Embed (DgnProjectR project, UInt32 fontNumber) override
+    public: virtual BentleyStatus _Embed (DgnDbR project, uint32_t fontNumber) override
         {
         bvector<Byte> buffer;
 
         //.........................................................................................
         PropertySpec    fontHeaderPropSpec  = DgnRscFont::CreateEmbeddedFontHeaderPropertySpec ();
-        UInt32              fontHeaderPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (fontHeaderPropSize, fontHeaderPropSpec, m_fontNumber)) || (0 == fontHeaderPropSize))
+        uint32_t            fontHeaderPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (fontHeaderPropSize, fontHeaderPropSpec, m_fontNumber)) || (0 == fontHeaderPropSize))
             return ERROR;
     
         buffer.resize (fontHeaderPropSize);
-        if (BE_SQLITE_ROW != m_project.QueryProperty (&buffer[0], (UInt32)buffer.size (), fontHeaderPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&buffer[0], (uint32_t)buffer.size (), fontHeaderPropSpec, m_fontNumber))
             return ERROR;
         
-        if (BE_SQLITE_OK != project.SaveProperty (fontHeaderPropSpec, &buffer[0], (UInt32)buffer.size (), fontNumber))
+        if (BE_SQLITE_OK != project.SaveProperty (fontHeaderPropSpec, &buffer[0], (uint32_t)buffer.size (), fontNumber))
             return ERROR;
             
         //.........................................................................................
         PropertySpec    charHeadersPropSpec     = DgnRscFont::CreateEmbeddedGlyphHeadersPropertySpec ();
-        UInt32              charHeadersPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (charHeadersPropSize, charHeadersPropSpec, m_fontNumber)) || (0 == charHeadersPropSize))
+        uint32_t            charHeadersPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (charHeadersPropSize, charHeadersPropSpec, m_fontNumber)) || (0 == charHeadersPropSize))
             return ERROR;
     
         buffer.resize (charHeadersPropSize);
-        if (BE_SQLITE_ROW != m_project.QueryProperty (&buffer[0], (UInt32)buffer.size (), charHeadersPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&buffer[0], (uint32_t)buffer.size (), charHeadersPropSpec, m_fontNumber))
             return ERROR;
         
-        if (BE_SQLITE_OK != project.SaveProperty (charHeadersPropSpec, &buffer[0], (UInt32)buffer.size (), fontNumber))
+        if (BE_SQLITE_OK != project.SaveProperty (charHeadersPropSpec, &buffer[0], (uint32_t)buffer.size (), fontNumber))
             return ERROR;
         
         //.........................................................................................
         PropertySpec    glyphDataOffsetsPropSpec    = DgnRscFont::CreateEmbeddedGlyphDataOffsetsPropertySpec ();
-        UInt32              glyphDataOffsetsPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (glyphDataOffsetsPropSize, glyphDataOffsetsPropSpec, m_fontNumber)) || (0 == glyphDataOffsetsPropSize))
+        uint32_t            glyphDataOffsetsPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (glyphDataOffsetsPropSize, glyphDataOffsetsPropSpec, m_fontNumber)) || (0 == glyphDataOffsetsPropSize))
             return ERROR;
     
         buffer.resize (glyphDataOffsetsPropSize);
-        if (BE_SQLITE_ROW != m_project.QueryProperty (&buffer[0], (UInt32)buffer.size (), glyphDataOffsetsPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&buffer[0], (uint32_t)buffer.size (), glyphDataOffsetsPropSpec, m_fontNumber))
             return ERROR;
 
-        if (BE_SQLITE_OK != project.SaveProperty (glyphDataOffsetsPropSpec, &buffer[0], (UInt32)buffer.size (), fontNumber))
+        if (BE_SQLITE_OK != project.SaveProperty (glyphDataOffsetsPropSpec, &buffer[0], (uint32_t)buffer.size (), fontNumber))
             return ERROR;
         
         //.........................................................................................
         PropertySpec    glyphDataPropSpec   = DgnRscFont::CreateEmbeddedGlyphDataPropertySpec ();
-        UInt32              glyphDataPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (glyphDataPropSize, glyphDataPropSpec, m_fontNumber)) || (0 == glyphDataPropSize))
+        uint32_t            glyphDataPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (glyphDataPropSize, glyphDataPropSpec, m_fontNumber)) || (0 == glyphDataPropSize))
             return ERROR;
     
         buffer.resize (glyphDataPropSize);
-        if (BE_SQLITE_ROW != m_project.QueryProperty (&buffer[0], (UInt32)buffer.size (), glyphDataPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&buffer[0], (uint32_t)buffer.size (), glyphDataPropSpec, m_fontNumber))
             return ERROR;
 
-        if (BE_SQLITE_OK != project.SaveProperty (glyphDataPropSpec, &buffer[0], (UInt32)buffer.size (), fontNumber))
+        if (BE_SQLITE_OK != project.SaveProperty (glyphDataPropSpec, &buffer[0], (uint32_t)buffer.size (), fontNumber))
             return ERROR;
         
         //.........................................................................................
         PropertySpec fractionsPropSpec = DgnRscFont::CreateEmbeddedFractionsPropertySpec ();
     
-        UInt32 fractionsPropSize;
-        if ((BE_SQLITE_ROW == m_project.QueryPropertySize (fractionsPropSize, fractionsPropSpec, m_fontNumber)) && (fractionsPropSize > 0))
+        uint32_t fractionsPropSize;
+        if ((BE_SQLITE_ROW == m_dgndb.QueryPropertySize (fractionsPropSize, fractionsPropSpec, m_fontNumber)) && (fractionsPropSize > 0))
             {
             buffer.resize (fractionsPropSize);
-            if (BE_SQLITE_ROW != m_project.QueryProperty (&buffer[0], (UInt32)buffer.size (), fractionsPropSpec, m_fontNumber))
+            if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&buffer[0], (uint32_t)buffer.size (), fractionsPropSpec, m_fontNumber))
                 return ERROR;
 
-            if (BE_SQLITE_OK != project.SaveProperty (fractionsPropSpec, &buffer[0], (UInt32)buffer.size (), fontNumber))
+            if (BE_SQLITE_OK != project.SaveProperty (fractionsPropSpec, &buffer[0], (uint32_t)buffer.size (), fontNumber))
                 return ERROR;
             }
         
@@ -383,13 +383,13 @@ struct DbRscDataReader : public IRscDataAccessor
         //  on HighPriorityOperationBlock for more information.
         BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
 
-        UInt32 fontHeaderPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (fontHeaderPropSize, fontHeaderPropSpec, m_fontNumber)) || (0 == fontHeaderPropSize))
+        uint32_t fontHeaderPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (fontHeaderPropSize, fontHeaderPropSpec, m_fontNumber)) || (0 == fontHeaderPropSize))
             return ERROR;
     
         fontHeaderBuffer.resize (fontHeaderPropSize);
         
-        if (BE_SQLITE_ROW != m_project.QueryProperty (&fontHeaderBuffer[0], fontHeaderPropSize, fontHeaderPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&fontHeaderBuffer[0], fontHeaderPropSize, fontHeaderPropSpec, m_fontNumber))
             return ERROR;
         }
 
@@ -409,14 +409,14 @@ struct DbRscDataReader : public IRscDataAccessor
         //  on HighPriorityOperationBlock for more information.
         BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
 
-        UInt32 fractionsPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (fractionsPropSize, fractionsPropSpec, m_fontNumber)) || (0 == fractionsPropSize))
+        uint32_t fractionsPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (fractionsPropSize, fractionsPropSpec, m_fontNumber)) || (0 == fractionsPropSize))
             return ERROR;
         
         if (fractionsPropSize > sizeof (rawFractMap))
             return ERROR;
         
-        if (BE_SQLITE_ROW != m_project.QueryProperty (rawFractMap, fractionsPropSize, fractionsPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (rawFractMap, fractionsPropSize, fractionsPropSpec, m_fontNumber))
             return ERROR;
         }
 
@@ -443,12 +443,12 @@ struct DbRscDataReader : public IRscDataAccessor
         //  on HighPriorityOperationBlock for more information.
         BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
 
-        UInt32 glyphDataPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (glyphDataPropSize, glyphDataPropSpec, m_fontNumber)) || (0 == glyphDataPropSize))
+        uint32_t glyphDataPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (glyphDataPropSize, glyphDataPropSpec, m_fontNumber)) || (0 == glyphDataPropSize))
             return ERROR;
     
         ScopedArray<Byte> glyphDataPropValue (glyphDataPropSize);
-        if (BE_SQLITE_ROW != m_project.QueryProperty (glyphDataPropValue.GetData (), glyphDataPropSize, glyphDataPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (glyphDataPropValue.GetData (), glyphDataPropSize, glyphDataPropSpec, m_fontNumber))
             return ERROR;
 
         memcpy (glyphData, glyphDataPropValue.GetData () + dataOffset, dataSize);
@@ -469,13 +469,13 @@ struct DbRscDataReader : public IRscDataAccessor
         //  on HighPriorityOperationBlock for more information.
         BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
 
-        UInt32 glyphDataOffsetsPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (glyphDataOffsetsPropSize, glyphDataOffsetsPropSpec, m_fontNumber)) || (0 == glyphDataOffsetsPropSize))
+        uint32_t glyphDataOffsetsPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (glyphDataOffsetsPropSize, glyphDataOffsetsPropSpec, m_fontNumber)) || (0 == glyphDataOffsetsPropSize))
             return ERROR;
     
         glyphOffsets.resize (glyphDataOffsetsPropSize / sizeof (RscGlyphDataOffset));
         
-        if (BE_SQLITE_ROW != m_project.QueryProperty (&glyphOffsets[0], glyphDataOffsetsPropSize, glyphDataOffsetsPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&glyphOffsets[0], glyphDataOffsetsPropSize, glyphDataOffsetsPropSpec, m_fontNumber))
             return ERROR;
         }
 
@@ -494,13 +494,13 @@ struct DbRscDataReader : public IRscDataAccessor
         //  on HighPriorityOperationBlock for more information.
         BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
 
-        UInt32 charHeadersPropSize;
-        if ((BE_SQLITE_ROW != m_project.QueryPropertySize (charHeadersPropSize, charHeadersPropSpec, m_fontNumber)) || (0 == charHeadersPropSize))
+        uint32_t charHeadersPropSize;
+        if ((BE_SQLITE_ROW != m_dgndb.QueryPropertySize (charHeadersPropSize, charHeadersPropSpec, m_fontNumber)) || (0 == charHeadersPropSize))
             return ERROR;
     
         glyphHeaders.resize (charHeadersPropSize / sizeof (RscGlyphHeader));
         
-        if (BE_SQLITE_ROW != m_project.QueryProperty (&glyphHeaders[0], charHeadersPropSize, charHeadersPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&glyphHeaders[0], charHeadersPropSize, charHeadersPropSpec, m_fontNumber))
             return ERROR;
         }
 
@@ -517,8 +517,8 @@ struct DbRscDataReader : public IRscDataAccessor
 //=======================================================================================
 struct IRscGlyphShaper
     {
-    public: virtual bool            _IsValidLogicalGlyphCode    (UInt16 glyphCode) = 0;
-    public: virtual BentleyStatus   _ShapeGlyphs                (UInt16* glyphCodes, size_t numGlyphCodes) = 0;
+    public: virtual bool            _IsValidLogicalGlyphCode    (uint16_t glyphCode) = 0;
+    public: virtual BentleyStatus   _ShapeGlyphs                (uint16_t* glyphCodes, size_t numGlyphCodes) = 0;
     
     }; // IRscGlyphShaper
 
@@ -549,9 +549,9 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //=======================================================================================
     private: struct LigaturePair
         {
-        public: UChar   m_first;
-        public: UChar   m_second;
-        public: UInt16  m_ligature;
+        public: unsigned char m_first;
+        public: unsigned char m_second;
+        public: uint16_t m_ligature;
     
         }; // LigaturePair
 
@@ -561,19 +561,19 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Graeme.Coutts   09/95
     //---------------------------------------------------------------------------------------
-    private: static bool IsGlyphOfType (UInt16 glyphCode, GlyphType glyphType)
+    private: static bool IsGlyphOfType (uint16_t glyphCode, GlyphType glyphType)
         {
         //=======================================================================================
         // @bsiclass
         //=======================================================================================
         struct GlyphTypeData
             {
-            public: UInt8   m_isIsolated    :1;
-            public: UInt8   m_isFinal       :1;
-            public: UInt8   m_isMedial      :1;
-            public: UInt8   m_isInitial     :1;
-            public: UInt8   m_isDiacritical :1;
-            public: UInt8   unused          :3;
+            public: uint8_t m_isIsolated    :1;
+            public: uint8_t m_isFinal       :1;
+            public: uint8_t m_isMedial      :1;
+            public: uint8_t m_isInitial     :1;
+            public: uint8_t m_isDiacritical :1;
+            public: uint8_t unused          :3;
         
             }; // GlyphTypeData
 
@@ -648,9 +648,9 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Graeme.Coutts   04/96
     //---------------------------------------------------------------------------------------
-    private: static bool IsGlyphAnArabicDiacritic (UInt16 glyphCode)
+    private: static bool IsGlyphAnArabicDiacritic (uint16_t glyphCode)
         {
-        UInt16 highByte = (glyphCode >> 8);
+        uint16_t highByte = (glyphCode >> 8);
 
         if (0 == highByte)
             return ((0xf0 <= glyphCode && glyphCode <= 0xf3)
@@ -665,7 +665,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Graeme.Coutts   05/96
     //---------------------------------------------------------------------------------------
-    private: static bool IsGlyphAnEnglishPhonetic (UInt16 glyphCode)
+    private: static bool IsGlyphAnEnglishPhonetic (uint16_t glyphCode)
         {
         return ((0xaf == glyphCode) || (0xb4 == glyphCode) || (0xb8 == glyphCode));
         }
@@ -673,7 +673,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                  Hiroo.Jumonji   01/96
     //---------------------------------------------------------------------------------------
-    private: static bool IsGlyphAnArabicDigit (UInt16 glyphCode)
+    private: static bool IsGlyphAnArabicDigit (uint16_t glyphCode)
         {
         return ((0x96 <= glyphCode) && (glyphCode <= 0x9f));
         }
@@ -681,10 +681,10 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Graeme.Coutts   04/96
     //---------------------------------------------------------------------------------------
-    private: static UInt16 ComputeDiacriticGlyph (UInt16 baseGlyph, GlyphType baseGlyphType, UInt16 diacritic)
+    private: static uint16_t ComputeDiacriticGlyph (uint16_t baseGlyph, GlyphType baseGlyphType, uint16_t diacritic)
         {
-        UInt16  highByte;
-        UInt16  lowByte;
+        uint16_t highByte;
+        uint16_t lowByte;
 
         // Value of diacritic becomes new high byte value.
         if (0xf0 == diacritic)
@@ -724,7 +724,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Graeme.Coutts   04/96
     //---------------------------------------------------------------------------------------
-    private: static BentleyStatus ComputeLigature (UInt16 firstGlyph, UInt16 secondGlyph, UInt16& ligatureGlyph)
+    private: static BentleyStatus ComputeLigature (uint16_t firstGlyph, uint16_t secondGlyph, uint16_t& ligatureGlyph)
         {
         for (size_t iLigaturePair = 0; iLigaturePair < s_numLigaturePairs; ++iLigaturePair)
             {
@@ -741,7 +741,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     06/2010
     //---------------------------------------------------------------------------------------
-    public: virtual bool _IsValidLogicalGlyphCode (UInt16 glyphCode) override
+    public: virtual bool _IsValidLogicalGlyphCode (uint16_t glyphCode) override
         {
         // Ligatures do not belong in the logical character stream. Additionally, our delivered Arabic RSC font re-purposes certain glyph codes to
         //  mean ligatures (e.g. the RLM mark), so we cannot let them pass through; otherwise non-printable control characters show up as ligatures.
@@ -758,7 +758,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Graeme.Coutts   09/95
     //---------------------------------------------------------------------------------------
-    public: virtual BentleyStatus _ShapeGlyphs (UInt16* glyphCodes, size_t numGlyphCodes) override
+    public: virtual BentleyStatus _ShapeGlyphs (uint16_t* glyphCodes, size_t numGlyphCodes) override
         {
         // Do not process 0- or 1-character strings.
         if (numGlyphCodes < 2)
@@ -767,7 +767,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
         GlyphType leftGlyphType = GLYPH_TYPE_None;
 
         // Analyze each character, comparing with the left and right characters.
-        for (UInt16 *inP = glyphCodes, *outP = glyphCodes; (size_t)(inP - glyphCodes) < numGlyphCodes; )
+        for (uint16_t *inP = glyphCodes, *outP = glyphCodes; (size_t)(inP - glyphCodes) < numGlyphCodes; )
             {
             *inP &= 0xff;
 
@@ -775,7 +775,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
             if (ArabicRscGlyphShaper::IsGlyphOfType (*inP, GLYPH_TYPE_Isolated))
                 {
                 int     charSkip    = 0;
-                UInt16  rightGlyph;
+                uint16_t rightGlyph;
             
                 if (inP < (glyphCodes + numGlyphCodes - 1))
                     rightGlyph = *(inP + 1);
@@ -787,7 +787,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
                 // Check this char against next char for ligature.
                 if (0 != rightGlyph)
                     {
-                    UInt16 ligatureChar;
+                    uint16_t ligatureChar;
                     if (SUCCESS == ArabicRscGlyphShaper::ComputeLigature (*inP, *(inP + 1), ligatureChar))
                         {
                         *inP = ligatureChar;
@@ -804,7 +804,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
                 // Do not use a diacritic as the right character for analysis.
                 if (0 != rightGlyph && ArabicRscGlyphShaper::IsGlyphAnArabicDiacritic (rightGlyph))
                     {
-                    UInt16* tmpP = (inP + charSkip + 1);
+                    uint16_t* tmpP = (inP + charSkip + 1);
                     for (; ArabicRscGlyphShaper::IsGlyphAnArabicDiacritic (*tmpP) && tmpP <= (glyphCodes + numGlyphCodes); ++tmpP)
                        ;;
                 
@@ -824,7 +824,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
                     continue;
                     }
 
-                UInt16 newHighByte = 0;
+                uint16_t newHighByte = 0;
             
                 if ((GLYPH_TYPE_None == leftGlyphType) || (GLYPH_TYPE_Isolated == leftGlyphType) || (GLYPH_TYPE_Final == leftGlyphType))
                     {
@@ -858,7 +858,7 @@ struct ArabicRscGlyphShaper : public IRscGlyphShaper
                 }
             else if (ArabicRscGlyphShaper::IsGlyphAnEnglishPhonetic (*(inP + 1)))
                 {
-                UInt16 ligatureChar;
+                uint16_t ligatureChar;
                 if (SUCCESS == ArabicRscGlyphShaper::ComputeLigature (*inP, *(inP + 1), ligatureChar))
                     {
                     *outP++ = ligatureChar;
@@ -962,7 +962,7 @@ RscGlyphShaperManager* RscGlyphShaperManager::s_instance = NULL;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static UInt8 computeGreatestCommonDenominator (UInt8 lhs, UInt8 rhs)
+static uint8_t computeGreatestCommonDenominator (uint8_t lhs, uint8_t rhs)
     {
     if (0 == rhs)
         return lhs;
@@ -973,7 +973,7 @@ static UInt8 computeGreatestCommonDenominator (UInt8 lhs, UInt8 rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static bool detectFraction (UInt32& numerator, UInt32& denominator, size_t& numCharsInFraction, WCharCP wholeString, WCharCP subString)
+static bool detectFraction (uint32_t& numerator, uint32_t& denominator, size_t& numCharsInFraction, WCharCP wholeString, WCharCP subString)
     {
     // BeStringUtilities::Wtoi will eat whitespace looking for numbers, so ignore whitespace separately.
     if (iswspace (*subString))
@@ -1015,8 +1015,8 @@ static bool detectFraction (UInt32& numerator, UInt32& denominator, size_t& numC
     if (L'/' == *subString)
         return false;
 
-    numerator           = (UInt32)numeratorI;
-    denominator         = (UInt32)denominatorI;
+    numerator           = (uint32_t)numeratorI;
+    denominator         = (uint32_t)denominatorI;
     numCharsInFraction  = (subString - originalStr);
     
     return true;
@@ -1055,7 +1055,7 @@ DgnFontConfigurationData DgnRscFont::GetEffectiveFontConfig (DgnFontKey const& f
 //---------------------------------------------------------------------------------------
 static BentleyStatus orderAndShapeGlyphs
 (
-UInt16 const *                      localeCharacters,
+uint16_t const *                      localeCharacters,
 WCharCP                             unicodeCharacters,
 size_t                              totalNumChars,
 IRscGlyphShaper*                    shaper,
@@ -1119,7 +1119,7 @@ bvector<bool>&                      logicalRtlMask
         for (size_t iScriptItemCharOffset = 0; iScriptItemCharOffset < numCharsInScriptItem; ++iScriptItemCharOffset)
             {
             size_t  iCharIndex  = (scriptItems[iScriptItem].iCharPos + iScriptItemCharOffset);
-            UInt16  glyphCode   = localeCharacters[iCharIndex];
+            uint16_t glyphCode   = localeCharacters[iCharIndex];
             
             if ((NULL != shaper) && !shaper->_IsValidLogicalGlyphCode (glyphCode))
                 continue;
@@ -1155,14 +1155,14 @@ double          DgnRscFont::_GetDescenderRatio          () const    { if (m_isMi
 FontChar        DgnRscFont::_GetDiameterCharCode        () const    { return m_diameterCharCode; }
 FontChar        DgnRscFont::_GetPlusMinusCharCode       () const    { return m_plusMinusCharCode; }
 DgnFontType     DgnRscFont::_GetType                    () const    { return DgnFontType::Rsc; }
-UInt32          DgnRscFont::GetV8FontNumber             () const    { return m_v8FontNumber; }
+uint32_t        DgnRscFont::GetV8FontNumber             () const    { return m_v8FontNumber; }
 DgnFontVariant  DgnRscFont::_GetVariant                 () const    { return DGNFONTVARIANT_Rsc; }
-bool            DgnRscFont::_ShouldDrawWithLineWeight   () const    { return true; }
+bool            DgnRscFont::_CanDrawWithLineWeight   () const    { return true; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2012
 //---------------------------------------------------------------------------------------
-DgnRscFont::DgnRscFont (Utf8CP name, DgnFontConfigurationData const& config, IRscDataAccessor* accessor, UInt32 v8FontNumber, bool isLastResort) :
+DgnRscFont::DgnRscFont (Utf8CP name, DgnFontConfigurationData const& config, IRscDataAccessor* accessor, uint32_t v8FontNumber, bool isLastResort) :
     T_Super (name, config),
     m_data                      (accessor),
     m_codePage                  (config.m_codePage),
@@ -1180,11 +1180,11 @@ DgnRscFont::DgnRscFont (Utf8CP name, DgnFontConfigurationData const& config, IRs
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2012
 //---------------------------------------------------------------------------------------
-DgnRscFont::DgnRscFont (Utf8CP name, DgnFontConfigurationData const& config, UInt32 fontNumber, DgnProjectCR project) :
+DgnRscFont::DgnRscFont (Utf8CP name, DgnFontConfigurationData const& config, uint32_t fontNumber, DgnDbCR project) :
     T_Super (name, config),
     m_data                      (new DbRscDataReader (fontNumber, project)),
     m_codePage                  (config.m_codePage),
-    m_v8FontNumber              ((UInt32)-1),
+    m_v8FontNumber              ((uint32_t)-1),
     m_degreeCharCode            (config.m_degreeCharCode),
     m_diameterCharCode          (config.m_diameterCharCode),
     m_plusMinusCharCode         (config.m_plusMinusCharCode),
@@ -1235,8 +1235,8 @@ void DgnRscFont::CompressFractions (WStringR outStr, WCharCP inStr) const
     size_t              lenOfcompressedStr  = wcslen (inStr);
     ScopedArray<WChar>  compressedStrBuff   (lenOfcompressedStr + 1);
     WCharP              compressedStr       = compressedStrBuff.GetData ();
-    UInt32              numerator;
-    UInt32              denominator;
+    uint32_t            numerator;
+    uint32_t            denominator;
     size_t              numCharsInFraction;
     
     BeStringUtilities::Wcsncpy (compressedStr, (lenOfcompressedStr + 1), inStr);
@@ -1250,7 +1250,7 @@ void DgnRscFont::CompressFractions (WStringR outStr, WCharCP inStr) const
         if ((numerator > 0xff) || (denominator > 0xff))
             continue;
 
-        FontChar fractionCharCode = FractionToFontChar (static_cast <UInt8> (numerator), static_cast <UInt8> (denominator));
+        FontChar fractionCharCode = FractionToFontChar (static_cast <uint8_t> (numerator), static_cast <uint8_t> (denominator));
         if (0 == fractionCharCode)
             continue;
         
@@ -1271,7 +1271,7 @@ void DgnRscFont::CompressFractions (WStringR outStr, WCharCP inStr) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnRscFont::CreateFromEmbeddedFont (Utf8CP name, UInt32 fontNumber, DgnProjectCR project)
+DgnFontPtr DgnRscFont::CreateFromEmbeddedFont (Utf8CP name, uint32_t fontNumber, DgnDbCR project)
     {
     return new DgnRscFont(name, GetEffectiveFontConfig (DgnFontKey (DgnFontType::Rsc, name)), fontNumber, project);
     }
@@ -1288,7 +1288,7 @@ DgnFontPtr DgnRscFont::CreateLastResortFont ()
     // The system is not designed to not have a real last resort font.
     static Utf8CP FAKE_LAST_RESORT = "Fake Last Resort";
     
-    DgnRscFontP font = DgnRscFont::Create(FAKE_LAST_RESORT, DgnRscFont::GetEffectiveFontConfig(DgnFontKey(DgnFontType::Rsc, FAKE_LAST_RESORT)), NULL, (UInt32)-1, true);
+    DgnRscFontP font = DgnRscFont::Create(FAKE_LAST_RESORT, DgnRscFont::GetEffectiveFontConfig(DgnFontKey(DgnFontType::Rsc, FAKE_LAST_RESORT)), NULL, (uint32_t)-1, true);
     font->m_isMissing = true;
 
     return font;
@@ -1297,7 +1297,7 @@ DgnFontPtr DgnRscFont::CreateLastResortFont ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnRscFont::CreateMissingFont(Utf8CP name, UInt32 v8FontNumber)
+DgnFontPtr DgnRscFont::CreateMissingFont(Utf8CP name, uint32_t v8FontNumber)
     {
     DgnRscFontP font = new DgnRscFont(name, DgnRscFont::GetEffectiveFontConfig(DgnFontKey(DgnFontType::Rsc, Utf8String(name))), NULL, v8FontNumber, false);
     font->m_isMissing = true;
@@ -1316,7 +1316,7 @@ bool DgnRscFont::_ContainsCharacter (WChar uniChar) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnRscFont::_Embed (DgnProjectR project) const
+DgnFontPtr DgnRscFont::_Embed (DgnDbR project) const
     {
     // Can't embed missing fonts; don't bother embedding last resort fonts.
     if (IsLastResort() || IsMissing())
@@ -1326,7 +1326,7 @@ DgnFontPtr DgnRscFont::_Embed (DgnProjectR project) const
     if (project.Fonts().EmbeddedFonts ().end () != foundFont)
         return foundFont->second;
     
-    UInt32 fontNumber;
+    uint32_t fontNumber;
     if (SUCCESS != project.Fonts().AcquireFontNumber (fontNumber, *this))
         { BeAssert (false); return NULL; }
     
@@ -1410,8 +1410,8 @@ void DgnRscFont::ExpandFractions (WStringR outStr, WCharCP inStr) const
         return;
         }
     
-    UInt8   numerator;
-    UInt8   denominator;
+    uint8_t numerator;
+    uint8_t denominator;
 
     outStr.clear ();
 
@@ -1433,7 +1433,7 @@ void DgnRscFont::ExpandFractions (WStringR outStr, WCharCP inStr) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnRscFont::FontCharToFraction (UInt8& numerator, UInt8& denominator, FontChar charCode) const
+BentleyStatus DgnRscFont::FontCharToFraction (uint8_t& numerator, uint8_t& denominator, FontChar charCode) const
     {
     numerator   = 0;
     denominator = 0;
@@ -1465,7 +1465,7 @@ BentleyStatus DgnRscFont::FontCharToFraction (UInt8& numerator, UInt8& denominat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-FontChar DgnRscFont::FractionToFontChar (UInt8 numerator, UInt8 denominator, bool reduce) const
+FontChar DgnRscFont::FractionToFontChar (uint8_t numerator, uint8_t denominator, bool reduce) const
     {
     if (m_isMissing)
         return 0;
@@ -1479,7 +1479,7 @@ FontChar DgnRscFont::FractionToFontChar (UInt8 numerator, UInt8 denominator, boo
 
     if (reduce)
         {
-        UInt8 gcd   = computeGreatestCommonDenominator (numerator, denominator);
+        uint8_t gcd   = computeGreatestCommonDenominator (numerator, denominator);
         numerator   /= gcd;
         denominator /= gcd;
         }
@@ -1524,53 +1524,44 @@ BentleyStatus DgnRscFont::_LayoutGlyphs (DgnGlyphLayoutContextCR layoutContext, 
     {
     if (m_isMissing)
         return ERROR;
-    
+
     // If you make any changes to this method, also consider examining DgnTrueTypeFont::_LayoutGlpyhs and DgnShxFont::_LayoutGlyphs.
     //  This method differs from the V8i variants in that it is designed to compute only the low-level information needed,
     //  and to serve both TextString and TextBlock through a single code path. This does mean that some extraneous information
     //  is potentially computed, but should be cheap compared to the overall layout operation.
-    
+
     // Local accessors for some commonly used input.
-    DgnGlyphLayoutContext::T_FontCharsCR    fontChars                           = layoutContext.GetFontChars ();
-    CharacterSpacingType                    characterSpacingType                = layoutContext.GetCharacterSpacingType ();
-    double                                  characterSpacingValue               = layoutContext.GetCharacterSpacingValue ();
-    
+    DgnGlyphLayoutContext::T_FontCharsCR fontChars = layoutContext.GetFontChars();
+
     // Local accessors for what we need to generate.
-    DgnGlyphLayoutResult::T_GlyphCodesR     outGlyphCodes                       = layoutResult.GetGlyphCodesR ();
-    DgnGlyphLayoutResult::T_GlyphOriginsR   outGlyphOrigins                     = layoutResult.GetGlyphOriginsR ();
-    T_DoubleVectorR                         outLeadingCaretOffsets              = layoutResult.GetLeadingCaretOffsetsR ();
-    T_DoubleVectorR                         outTrailingCaretOffsets             = layoutResult.GetTrailingCaretOffsetsR ();
-    DRange2dR                               outFullCellBoxRange                 = layoutResult.GetCellBoxRangeR ();
-    DRange2dR                               outFullBlackBoxRange                = layoutResult.GetBlackBoxRangeR ();
-    DRange2dR                               outJustificationCellBoxRange        = layoutResult.GetJustificationCellBoxRangeR();
-    DRange2dR                               outJustificationBlackBoxRange       = layoutResult.GetJustificationBlackBoxRangeR ();
-    double&                                 outTrailingInterCharacterSpacing    = layoutResult.GetTrailingInterCharacterSpacingR ();
-    double&                                 outMaxHorizontalCellIncrement       = layoutResult.GetMaxHorizontalCellIncrementR ();
-    bool&                                   outIsLastGlyphBlank                 = layoutResult.IsLastGlyphBlankR ();
-    double&                                 outLeftSideBearingToIgnore          = layoutResult.LeftSideBearingToIgnoreR ();
-    
-    EnsureFontIsLoaded ();
+    DRange2dR outRange = layoutResult.GetRangeR();
+    DRange2dR outJustificationRange = layoutResult.GetJustificationRangeR();
+    DgnGlyphLayoutResult::T_GlyphsR outGlyphs = layoutResult.GetGlyphsR();
+    DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes = layoutResult.GetGlyphCodesR();
+    DgnGlyphLayoutResult::T_GlyphOriginsR outGlyphOrigins = layoutResult.GetGlyphOriginsR();
+
+    EnsureFontIsLoaded();
 
     // Expand any escape sequences to get the display string.
-    ScopedArray<FontChar>   processedCharsBuff  (fontChars.size () + 1);
-    FontCharP               processedChars      = processedCharsBuff.GetData ();
-    size_t                  numProcessedChars   = 0;
-    
-    for (CharIter iter (*this, &fontChars.front (), fontChars.size (), layoutContext.ShouldIgnorePercentEscapes ()); iter.IsValid (); iter.ToNext (), ++numProcessedChars)
-        processedChars[numProcessedChars] = iter.CurrCharCode ();
+    ScopedArray<FontChar> processedCharsBuff(fontChars.size() + 1);
+    FontCharP processedChars = processedCharsBuff.GetData();
+    size_t numProcessedChars = 0;
+
+    for (CharIter iter(*this, &fontChars.front(), fontChars.size(), layoutContext.ShouldIgnorePercentEscapes()); iter.IsValid(); iter.ToNext(), ++numProcessedChars)
+        processedChars[numProcessedChars] = iter.CurrCharCode();
 
     if (0 == numProcessedChars)
         return SUCCESS;
-    
+
     processedChars[numProcessedChars] = 0;
 
     bvector<size_t> visualToLogicalCharMapping;
-    bvector<bool>   logicalRtlMask;
+    bvector<bool> logicalRtlMask;
 
     // Guess how many... helps reduce malloc/free overhead.
-    outGlyphCodes.reserve (numProcessedChars);
-    visualToLogicalCharMapping.reserve (numProcessedChars);
-    logicalRtlMask.reserve (numProcessedChars);
+    outGlyphCodes.reserve(numProcessedChars);
+    visualToLogicalCharMapping.reserve(numProcessedChars);
+    logicalRtlMask.reserve(numProcessedChars);
 
 #if defined (BENTLEY_WIN32) // WIP_NONPORT DgnRscFont layout
 
@@ -1578,15 +1569,15 @@ BentleyStatus DgnRscFont::_LayoutGlyphs (DgnGlyphLayoutContextCR layoutContext, 
         {
         for (size_t iFontChar = 0; iFontChar < numProcessedChars; ++iFontChar)
             {
-            outGlyphCodes.push_back (processedChars[iFontChar]);
-            visualToLogicalCharMapping.push_back (iFontChar);
-            logicalRtlMask.push_back (false);
+            outGlyphCodes.push_back(processedChars[iFontChar]);
+            visualToLogicalCharMapping.push_back(iFontChar);
+            logicalRtlMask.push_back(false);
             }
         }
     else
         {
         // Get the glyphs in left-to-right display order (e.g. reverse and re-order for RTL), and shape for ligatures etc.
-        if (SUCCESS != orderAndShapeGlyphs (processedChars, FontCharsToUnicodeString (processedChars).c_str (), numProcessedChars, RscGlyphShaperManager::GetInstance ()->GetShaperForCodePage (m_codePage), outGlyphCodes, visualToLogicalCharMapping, logicalRtlMask))
+        if (SUCCESS != orderAndShapeGlyphs(processedChars, FontCharsToUnicodeString(processedChars).c_str(), numProcessedChars, RscGlyphShaperManager::GetInstance()->GetShaperForCodePage(m_codePage), outGlyphCodes, visualToLogicalCharMapping, logicalRtlMask))
             return ERROR;
         }
 
@@ -1594,191 +1585,73 @@ BentleyStatus DgnRscFont::_LayoutGlyphs (DgnGlyphLayoutContextCR layoutContext, 
 
     // This will only suffice for basic English text.
     for (size_t iFontChar = 0; iFontChar < numProcessedChars; ++iFontChar)
-        {
-        outGlyphCodes.push_back (processedChars[iFontChar]);
-        visualToLogicalCharMapping.push_back (iFontChar);
-        logicalRtlMask.push_back (false);
-        }
+        outGlyphCodes.push_back(processedChars[iFontChar]);
 
 #endif    
-    
-    if (0 == outGlyphCodes.size ())
+
+    if (0 == outGlyphCodes.size())
         return SUCCESS;
-    
-    DgnRscGlyph     blankGlyph      (' ');
-    DgnGlyphCP      defaultGlyph    = FindGlyphCP (GetDefaultCharCode ());
-    
+
+    DgnRscGlyph blankGlyph(' ');
+    DgnGlyphCP defaultGlyph = FindGlyphCP(GetDefaultCharCode());
+
     if (NULL == defaultGlyph)
         defaultGlyph = &blankGlyph;
-    
+
     // We know how many; might as well reserve.
-    outGlyphOrigins.reserve (outGlyphCodes.size ());
-    
+    outGlyphOrigins.reserve(outGlyphCodes.size());
+
     // We need the glyphs for two loops below, so cache them up first.
-    bvector<DgnGlyphCP> glyphs;
-    glyphs.reserve (outGlyphCodes.size ());
-    for (size_t iGlyphCode = 0; iGlyphCode < outGlyphCodes.size (); ++iGlyphCode)
+    outGlyphs.reserve(outGlyphCodes.size());
+    for (size_t iGlyphCode = 0; iGlyphCode < outGlyphCodes.size(); ++iGlyphCode)
         {
-        DgnGlyphCP glyph = FindGlyphCP (outGlyphCodes[iGlyphCode]);
+        DgnGlyphCP glyph = FindGlyphCP(outGlyphCodes[iGlyphCode]);
         if (NULL == glyph)
             {
-            glyph = (' ' == outGlyphCodes[iGlyphCode]) ? &blankGlyph : defaultGlyph;
-            outGlyphCodes[iGlyphCode] = (UInt16)glyph->GetCharCode ();
+            glyph = ((' ' == outGlyphCodes[iGlyphCode]) ? &blankGlyph : defaultGlyph);
+            outGlyphCodes[iGlyphCode] = (GlyphCode)glyph->GetCharCode();
             }
-        
-        glyphs.push_back (glyph);
+
+        outGlyphs.push_back(glyph);
         }
-    
+
     // Right-justified text needs to ignore trailing blanks (justification black box).
     size_t numNonBlankGlyphs = outGlyphCodes.size ();
     for (; numNonBlankGlyphs > 0; --numNonBlankGlyphs)
         {
-        DgnGlyphCR glyph = *glyphs[numNonBlankGlyphs - 1];
-        
-        if (!glyph.IsBlank () || layoutContext.GetEDFMask ()[numNonBlankGlyphs - 1])
+        DgnGlyphCR glyph = *outGlyphs[numNonBlankGlyphs - 1];
+        if (!glyph.IsBlank ())
             break;
         }
     
     // Compute origins, ranges, etc...
-    DPoint3d    penPosition = layoutContext.GetDisplayOffset ();
-    DPoint2d    drawSize    = layoutContext.GetDisplaySize ();
+    DPoint3d penPosition = DPoint3d::FromZero();
+    DPoint2d drawSize = layoutContext.GetSize();
 
-    if (layoutContext.ShouldIgnoreDisplayShifts ())
-        penPosition.Zero ();
-
-    if (layoutContext.IsBackwards ())
-        drawSize.x = -drawSize.x;
-    
-    if (layoutContext.IsUpsideDown ())
-        drawSize.y = -drawSize.y;
-    
-    for (size_t iGlyph = 0; iGlyph < glyphs.size (); ++iGlyph)
+    for (size_t iGlyph = 0; iGlyph < outGlyphs.size(); ++iGlyph)
         {
-        DgnRscGlyph const& glyph = static_cast<DgnRscGlyph const&>(*glyphs[iGlyph]);
-        
-        outGlyphOrigins.push_back (penPosition);
-        
-        // Legacy -- when vertical, glyphs are actually centered on a per-glyph basis, based on the nominal pen position... joy...
-        if (layoutContext.IsVertical ())
-            {
-            outGlyphOrigins[iGlyph].x += (drawSize.x - drawSize.x * glyph.GetBlackBoxRight ()) / 2.0;
-            outGlyphOrigins[iGlyph].y -= drawSize.y;
-            }
-        
-        if (NULL != layoutContext.GetIDgnGlyphLayoutListenerP ())
-            layoutContext.GetIDgnGlyphLayoutListenerP ()->_OnGlyphAnnounced (*this, glyph, outGlyphOrigins[iGlyph]);
-        
-        if (0 == iGlyph)
-            outLeftSideBearingToIgnore = drawSize.x * (layoutContext.IsVertical () ? glyph.GetVerticalCellBoxLeft () : glyph.GetBlackBoxLeft ());
-        
-        if ((outGlyphCodes.size () - 1) == iGlyph)
-            outIsLastGlyphBlank = glyph.IsBlank ();
-        
-        DRange2d glyphCellRange;
-        glyphCellRange.low.x    = outGlyphOrigins[iGlyph].x;
-        glyphCellRange.low.y    = outGlyphOrigins[iGlyph].y;
-        glyphCellRange.high.x   = glyphCellRange.low.x + drawSize.x * glyph.GetCellBoxWidth ();
-        glyphCellRange.high.y   = glyphCellRange.low.y + drawSize.y;
-        
+        DgnRscGlyph const& glyph = static_cast<DgnRscGlyph const&>(*outGlyphs[iGlyph]);
+
+        outGlyphOrigins.push_back(penPosition);
+
+        DRange2d glyphRange;
+        glyphRange.low.x = outGlyphOrigins[iGlyph].x;
+        glyphRange.low.y = outGlyphOrigins[iGlyph].y;
+        glyphRange.high.x = glyphRange.low.x + drawSize.x * glyph.GetCellBoxWidth();
+        glyphRange.high.y = glyphRange.low.y + drawSize.y;
+
         // It is important to use the array overload of DRange2d::Extend; the ranges can be inverted for backwards/upside-down text, and the DRange2d overload enforces low/high semantics.
-        outFullCellBoxRange.Extend (&glyphCellRange.low, 2);
+        outRange.Extend(&glyphRange.low, 2);
 
         if (iGlyph < numNonBlankGlyphs)
-            outJustificationCellBoxRange.Extend(&glyphCellRange.low, 2);
+            outJustificationRange.Extend(&glyphRange.low, 2);
         
-        DRange2d glyphBlackBoxRange;
-        glyphBlackBoxRange.low.x    = outGlyphOrigins[iGlyph].x + drawSize.x * glyph.GetBlackBoxLeft ();
-        glyphBlackBoxRange.low.y    = outGlyphOrigins[iGlyph].y + drawSize.y * glyph.GetBlackBoxBottom ();
-        glyphBlackBoxRange.high.x   = glyphBlackBoxRange.low.x + drawSize.x * glyph.GetBlackBoxWidth ();
-        glyphBlackBoxRange.high.y   = glyphBlackBoxRange.low.y + drawSize.y * glyph.GetBlackBoxHeight ();
-        
-        outFullBlackBoxRange.Extend (&glyphBlackBoxRange.low, 2);
-        
-        if (iGlyph < numNonBlankGlyphs)
-            outJustificationBlackBoxRange.Extend (&glyphBlackBoxRange.low, 2);
-        
-        // Some more evil legacy -- needed for certain line spacing computations.
-        double glyphCellIncrement = glyph.GetCellBoxWidth () * drawSize.x * DgnFont::VERTICAL_TEXT_WIDTH_FACTOR;
-        if (glyphCellIncrement > outMaxHorizontalCellIncrement)
-            outMaxHorizontalCellIncrement = glyphCellIncrement;
-        
-        if (layoutContext.IsVertical ())
-            {
-            // Purposefully omitting CharacterSpacingType::Factor... not sure why; I guess it doesn't quite make sense for vertical, and it's some DWG thing anyway...
-            if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                penPosition.y -= characterSpacingValue;
-            else
-                penPosition.y -= (glyph.GetVerticalCellBoxTop () + glyph.GetVerticalCellBoxRight ()) * drawSize.y + characterSpacingValue;
-            }
-        else
-            {
-            if ((CharacterSpacingType::Factor == characterSpacingType) && (characterSpacingValue > 0.0))
-               penPosition.x += (glyph.GetCellBoxWidth () * drawSize.x * characterSpacingValue);
-            else if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                penPosition.x += characterSpacingValue;
-            else
-                penPosition.x += ((glyph.GetCellBoxRight () * drawSize.x) + characterSpacingValue);
-            }
-        
+        penPosition.x += (glyph.GetCellBoxRight() * drawSize.x);
+
         // For Rsc, the width of the space character is equal to the width of the previous character.
-        blankGlyph.SetWidth (glyph.GetBlackBoxRight (), glyph.GetCellBoxRight ());
+        blankGlyph.SetWidth(glyph.GetBlackBoxRight(), glyph.GetCellBoxRight());
         }
-    
-    // Pre-allocate... helps reduce malloc/free overhead.
-    outLeadingCaretOffsets.reserve (outGlyphCodes.size ());
-    outTrailingCaretOffsets.reserve (outGlyphCodes.size ());
 
-    if (layoutContext.IsVertical ())
-        {
-        outTrailingInterCharacterSpacing = penPosition.y - outFullCellBoxRange.low.y;
-        
-        for (size_t i = 0; i < outGlyphCodes.size (); ++i)
-            {
-            size_t      iGlyph  = visualToLogicalCharMapping[i];
-            DgnGlyphCR  glyph   = *glyphs[iGlyph];
-            
-            outLeadingCaretOffsets.push_back (outGlyphOrigins[iGlyph].y);
-
-            if (logicalRtlMask[i])
-                outLeadingCaretOffsets.back () += (glyph.GetCellBoxHeight () * drawSize.y);
-            
-            outTrailingCaretOffsets.push_back (outGlyphOrigins[iGlyph].y);
-            
-            if (!logicalRtlMask[i])
-                outTrailingCaretOffsets.back () += (glyph.GetCellBoxHeight () * drawSize.y);
-            }
-        }
-    else
-        {
-        outTrailingInterCharacterSpacing = penPosition.x - outFullCellBoxRange.high.x;
-        
-        for (size_t i = 0; i < outGlyphCodes.size (); ++i)
-            {
-            size_t      iGlyph      = visualToLogicalCharMapping[i];
-            DgnGlyphCR  glyph       = *glyphs[iGlyph];
-            double      glyphWidth  = 0.0;
-            
-            if ((CharacterSpacingType::Factor == characterSpacingType) && (characterSpacingValue > 0.0))
-               glyphWidth = (glyph.GetCellBoxWidth () * drawSize.x * characterSpacingValue);
-            else if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                glyphWidth = characterSpacingValue;
-            else
-                glyphWidth = ((glyph.GetCellBoxRight () * drawSize.x) + characterSpacingValue);
-
-            outLeadingCaretOffsets.push_back (outGlyphOrigins[iGlyph].x);
-
-            if (logicalRtlMask[i])
-                outLeadingCaretOffsets.back () += glyphWidth;
-            
-            outTrailingCaretOffsets.push_back (outGlyphOrigins[iGlyph].x);
-            
-            if (!logicalRtlMask[i])
-                outTrailingCaretOffsets.back () += glyphWidth;
-            
-            blankGlyph.SetWidth (glyph.GetBlackBoxRight (), glyph.GetCellBoxRight ());
-            }
-        }
-    
     return SUCCESS;
     }
 
@@ -1805,8 +1678,8 @@ WChar DgnRscFont::_RemapFontCharToUnicodeChar (FontChar charCode) const
     //  Further, while it is possible that an RSC font can define its own fraction ranges, I have never seen one that does this, and it would greatly complicate code to have to deal with custom (potentially disjoint) ranges.
     if (!m_fractionMap.empty ())
         {
-        UInt8   numerator;
-        UInt8   denominator;
+        uint8_t numerator;
+        uint8_t denominator;
         
         if (SUCCESS == FontCharToFraction (numerator, denominator, charCode))
             {

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/pagalloc.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------
@@ -84,7 +84,7 @@ extern "C" {
 C runtime memory allocation replacements
 -----------------------------------------------------------------------*/
 PAGALLOC_API void * __cdecl pagalloc_malloc (size_t const size);
-PAGALLOC_API void * __cdecl pagalloc_nh_malloc (size_t const size, Int32 const nhFlag);
+PAGALLOC_API void * __cdecl pagalloc_nh_malloc (size_t const size, int32_t const nhFlag);
 PAGALLOC_API void * __cdecl pagalloc_calloc (size_t const num, size_t const size);
 PAGALLOC_API void   __cdecl pagalloc_free(void * const voidP);
 PAGALLOC_API void * __cdecl pagalloc_realloc(void  *oldDataP, size_t newSize);
@@ -98,12 +98,12 @@ PAGALLOC_API void __cdecl pagalloc_operatorDelete(void * const voidP);
 #ifndef _HEAPINFO_DEFINED
 typedef struct _heapinfo _HEAPINFO;
 #endif
-PAGALLOC_API Int32 __cdecl pagalloc_heapWalk(_HEAPINFO * const pHeapInfo);
+PAGALLOC_API int32_t __cdecl pagalloc_heapWalk(_HEAPINFO * const pHeapInfo);
 
 /*-----------------------------------------------------------------------
 Exported internal functions with context parameter
 -----------------------------------------------------------------------*/
-PAGALLOC_API void * __cdecl pagallocI_malloc (size_t  size, void const * const context, UChar const lastOperation);
+PAGALLOC_API void * __cdecl pagallocI_malloc (size_t  size, void const * const context, unsigned char const lastOperation);
 PAGALLOC_API void * __cdecl pagallocI_realloc(void  * const oldDataP, size_t const newSize, void const * const context);
 PAGALLOC_API void * __cdecl pagallocI_expand (void * const oldDataP, size_t const newsize, void const * const context);
 
@@ -111,10 +111,10 @@ PAGALLOC_API void * __cdecl pagallocI_expand (void * const oldDataP, size_t cons
 These functions set handler functions for free and msize failures
 -----------------------------------------------------------------------*/
 typedef void (*CRuntimeFreeFunc) (void*);
-typedef Int32  (*CRuntimeMsizeFunc)(void*);
+typedef int32_t (*CRuntimeMsizeFunc)(void*);
 PAGALLOC_API void __cdecl pagalloc_set_free_handler(CRuntimeFreeFunc freeHandler);
 PAGALLOC_API void __cdecl pagalloc_set_msize_handler(CRuntimeMsizeFunc msizeHandler);
-PAGALLOC_API void __cdecl pagalloc_showCallStackSince(void const * const  rawAddress, UInt32 const  thisSerialNumber);
+PAGALLOC_API void __cdecl pagalloc_showCallStackSince(void const * const  rawAddress, uint32_t const  thisSerialNumber);
 void __declspec(dllexport) __cdecl pagalloc_showCallStack(void const * const rawAddress);
 #if defined (__cplusplus)
 }

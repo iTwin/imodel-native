@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Performance/PerformanceTestFixture.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
@@ -28,11 +28,10 @@ ECSchemaR testSchema,
 DgnDbTestDgnManager tdm
 )
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
-    ECDbStoreCR ecDbStore = project.GetEC();
+    DgnDbR project = *tdm.GetDgnProjectP();
 
     StopWatch stopwatch ("PerformanceTestFixture::ImportSchema", true);
-    auto stat = ecDbStore.GetSchemaManager ().ImportECSchemas (schemaContext.GetCache ());
+    auto stat = project.Schemas ().ImportECSchemas (schemaContext.GetCache ());
     stopwatch.Stop();
     ASSERT_EQ (SUCCESS, stat);
 
@@ -89,7 +88,7 @@ ECPropertyCR ecProperty
     ecValue.Clear();
 
     PrimitiveType type = ecProperty.GetAsPrimitiveProperty ()->GetType ();
-    srand ((UInt32)BeTimeUtilities::QueryMillisecondsCounter ());
+    srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
     int randomNumber = rand ();
     switch (type)
         {
@@ -109,8 +108,8 @@ ECPropertyCR ecProperty
 
         case PRIMITIVETYPE_Long: 
             {
-            const Int32 intMax = std::numeric_limits<Int32>::max ();
-            const Int64 longValue = static_cast<Int64> (intMax) + randomNumber;
+            const int32_t intMax = std::numeric_limits<int32_t>::max ();
+            const int64_t longValue = static_cast<int64_t> (intMax) + randomNumber;
             ecValue.SetLong(longValue); 
             }
             break;

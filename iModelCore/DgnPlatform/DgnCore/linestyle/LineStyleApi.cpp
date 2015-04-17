@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LineStyleApi.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -23,32 +23,29 @@ struct PropertyCollector : IQueryProperties
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     LineStyleUtil::ElementHasLineStyle
-(
-DgnElementCP     pElem,
-DgnModelP    modelRef
-)
+bool LineStyleUtil::ElementHasLineStyle (GeometricElementCP pElem, DgnModelP modelRef)
     {
     /* The only non-graphic element allowed these linkages is the multiline styles */
     if (NULL == pElem)
         return false;
 
-    Int32 styleNo = pElem->GetSymbology().style;
 #if defined (LEVEL_FACET_REORG)
+    int32_t styleNo = pElem->GetSymbology().style;
     if (styleNo == STYLE_BYLEVEL)
         {
-        DgnLevels::Level const& level = DGN_TABLE_LEVEL_FOR_MODEL(modelRef).QueryLevelById(pElem->GetLevel());
-        if (level.IsValid ())
-            styleNo = level.GetAppearance().GetStyle();
+        DgnCategories::Category const& category = DGN_TABLE_LEVEL_FOR_MODEL(modelRef).QueryCategoryById(pElem->GetCategory());
+        if (category.IsValid ())
+            styleNo = category.GetAppearance().GetStyle();
         }
     else if (styleNo == STYLE_BYCELL)
         {
         /* NEEDSWORK_V8_LINESTYLE - this (somehow?) would need to look up the style from the cell */
         return  true;
         }
-#endif
 
     return !IS_LINECODE (styleNo);
+#endif
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -66,6 +63,7 @@ LineStyleParams*     params
     params->scale = params->gapScale = params->dashScale = params->normal.z = 1.0;
     }
 
+#if defined (NEEDSWORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -83,7 +81,7 @@ static StatusInt   getLsSymbFromElement (LineStyleSymbP lsSymb, ElementHandleCR 
     NullOutput  output;
     NullContext context (&output);
 
-    context.SetDgnProject (*elHandle.GetDgnProject ());
+    context.SetDgnDb (*elHandle.GetDgnDb ());
 
     lsSymb->FromNaturalElemDisplayParams (elParams, context, NULL, NULL);
 
@@ -97,9 +95,9 @@ static StatusInt   getLsSymbFromElement (LineStyleSymbP lsSymb, ElementHandleCR 
 * may not be the "tightest cube" possible. That's ok, since the real range is too expensive to calculate.
 * @bsimethod                                                    JimBartlett     06/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     LineStyleUtil::AddLsRange (EditElementHandleR elHandle)
+void     LineStyleUtil::AddLsRange (EditElementHandleR elHandle)
     {
-    DgnElementP el    = elHandle.GetElementP();
+    GeometricElementCP el= elHandle.GetGeometricElement();
     DgnModelP   model = elHandle.GetDgnModelP();
 
     BeAssert (NULL != model);
@@ -113,7 +111,7 @@ Public void     LineStyleUtil::AddLsRange (EditElementHandleR elHandle)
         return;
 #endif
 
-    if (!LineStyleUtil::ElementHasLineStyle (el, model))
+    if (!LineStyleUtil::ElementHasLineStyle(el, model))
         return;
 
     LineStyleSymb   lsSymb;
@@ -142,7 +140,7 @@ Public void     LineStyleUtil::AddLsRange (EditElementHandleR elHandle)
     if (0.0 == maxOff)
         return;
 
-    Int64     iMaxOff = (Int64) maxOff;
+    int64_t     iMaxOff = (int64_t) maxOff;
     DRange3dR range  = el->GetRangeR();
 
     range.low.x -= iMaxOff;
@@ -150,12 +148,13 @@ Public void     LineStyleUtil::AddLsRange (EditElementHandleR elHandle)
     range.high.x += iMaxOff;
     range.high.y += iMaxOff;
 
-    if (el->Is3d())
+    if (model->Is3d())
         {
         range.low.z -= iMaxOff;
         range.high.z += iMaxOff;
         }
     }
+#endif
 
 //////////////////Methods that were originally in lsproc.c
 /*---------------------------------------------------------------------------------**//**
@@ -199,17 +198,9 @@ bool            LsComponent::IsWidthDiscernible (ViewContextP context, LineStyle
     if (_HasLineCodes())
         return true;
 
-    // NEEDSWORK_V10: Linestyle api shouldn't require a DgnModel...should just need DgnProject or maybe ViewController...
-    DgnModelP   dgnModel = context->GetDgnProject ().Models ().GetModelById (context->GetDgnProject ().Models ().GetFirstModelId ());
-
-    BeAssert (NULL != dgnModel);
-
-    if (NULL == dgnModel)
-        return true;
-
     DPoint3d    max;
 
-    max.init (_GetLength(), _GetMaxWidth(dgnModel) * 1.5, 0);
+    max.init (_GetLength(), _GetMaxWidth(nullptr) * 1.5, 0);
     max.scale (lsSymb->GetScale());
 
     // see if there's a width modifier on the element, and if the linestyle is affected by it.
@@ -442,6 +433,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
         }
     else
         {
+#if defined (NEEDS_WORK_DGNITEM)
         ElemDisplayParamsP elParams = context->GetCurrentDisplayParams();
         if (0 == elParams->GetWeight())
             {
@@ -460,6 +452,9 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
             context->GetIDrawGeom().ActivateMatSymb (&saveMatSymb);
             }
+#else
+        context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+#endif
         }
 
     return SUCCESS;
@@ -639,50 +634,12 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    JimBartlett                     1/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool    BentleyApi::elemUtil_supportsLineStyle
-(
-ElementHandleR  eh
-)
-    {
-    return eh.GetHandler().IsSupportedOperation (&eh, SupportOperation::LineStyle);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                    ChuckKirschman                  05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void removeLineStyle (MSElementDescrP symb)
-    {
-    DgnElementR element = symb->ElementR();
-
-    if (!IS_LINECODE (element.GetSymbology().style))
-        {
-        element.GetSymbologyR().style = 0;
-        elemUtil_deleteLinkage (&element, STYLELINK_ID);
-        }
-
-    // Set the Z range for any 2D elements to be 0,0.  Otherwise the range check will be wrong.
-    if (!element.Is3d())
-        element.GetRangeR().low.z = element.GetRangeR().high.z = 0.0;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                    ChuckKirschman                  05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BentleyApi::lsutil_removeCustomLineStyles (MSElementDescrVec& symVec)
-    {
-    for (auto& sym : symVec)
-        removeLineStyle (sym.get());
-    }
-
 //  Potential inlines
-UInt64              LsComponent::GetId ()       const {return m_location.GetIdentKey ();}
+uint64_t            LsComponent::GetId ()       const {return m_location.GetIdentKey ();}
 LsElementType       LsComponent::GetElementType () const {return m_location.GetElementType ();}
 WString             LsComponent::GetDescription () const {return m_descr;}
 LsLocationType      LsComponent::GetLocationType () const {return m_location.GetSourceType();}
-DgnProjectP         LsComponent::GetProjectP() const {return m_location.GetDgnProject();}
+DgnDbP         LsComponent::GetProjectP() const {return m_location.GetDgnDb();}
 
 bool                LsStroke::IsDash ()           TESTSTROKEMODE (STROKE_Dash)
 bool                LsStroke::IsDashFirst ()      TESTSTROKEMODE (STROKE_DashFirst)
@@ -729,7 +686,7 @@ LsSymbolReference::StrokeJustification LsSymbolReference::GetJustification()   c
 bool                LsSymbolReference::GetNoPartial ()    const {return 0 != (m_mod1 & LCPOINT_NOPARTIAL);}
 bool                LsSymbolReference::GetClipPartial()   const {return 0 == (m_mod1 & LCPOINT_NOCLIP);}
 bool                LsSymbolReference::GetStretchable()   const {return 0 == (m_mod1 & LCPOINT_NOSCALE);}
-bool                LsSymbolReference::GetProject()       const {return 0 != (m_mod1 & LCPOINT_PROJECT);}
+bool                LsSymbolReference::GetDgnDb()       const {return 0 != (m_mod1 & LCPOINT_PROJECT);}
 bool                LsSymbolReference::GetUseColor()      const {return 0 != (m_mod1 & LCPOINT_COLOR);}
 bool                LsSymbolReference::GetUseWeight()     const {return 0 != (m_mod1 & LCPOINT_WEIGHT);}
 double              LsSymbolReference::GetXOffset()         const {return m_offset.x;}
@@ -752,7 +709,7 @@ void            LsSymbolReference::SetJustification(LsSymbolReference::StrokeJus
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetRotationMode (LsSymbolReference::RotationMode value)
     {
-    UInt32      newValue = 0;
+    uint32_t    newValue = 0;
     if (ROTATE_Adjusted == value)
         newValue |= LCPOINT_ADJROT;
     if (ROTATE_Absolute == value)
@@ -774,7 +731,7 @@ void            LsSymbolReference::SetVertexMask (LsSymbolReference::VertexMask 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetNoPartial (bool value)
     {
-    UInt32   newValue = value ? LCPOINT_NOPARTIAL : 0;
+    uint32_t newValue = value ? LCPOINT_NOPARTIAL : 0;
     m_mod1 = (m_mod1 & ~LCPOINT_NOPARTIAL) | newValue;
     }
 
@@ -783,7 +740,7 @@ void            LsSymbolReference::SetNoPartial (bool value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetClipPartial(bool value)
     {
-    UInt32   newValue = !value ? LCPOINT_NOCLIP : 0;
+    uint32_t newValue = !value ? LCPOINT_NOCLIP : 0;
     m_mod1 = (m_mod1 & ~LCPOINT_NOCLIP) | newValue;
     }
 
@@ -792,16 +749,16 @@ void            LsSymbolReference::SetClipPartial(bool value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetStretchable(bool value)
     {
-    UInt32   newValue = !value ? LCPOINT_NOSCALE : 0;
+    uint32_t newValue = !value ? LCPOINT_NOSCALE : 0;
     m_mod1 = (m_mod1 & ~LCPOINT_NOSCALE) | newValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    john.gooding                    09/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsSymbolReference::SetProject(bool value)
+void            LsSymbolReference::SetDgnDb(bool value)
     {
-    UInt32   newValue = value ? LCPOINT_PROJECT : 0;
+    uint32_t newValue = value ? LCPOINT_PROJECT : 0;
     m_mod1 = (m_mod1 & ~LCPOINT_PROJECT) | newValue;
     }
 
@@ -810,7 +767,7 @@ void            LsSymbolReference::SetProject(bool value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetUseColor(bool value)
     {
-    UInt32   newValue = value ? LCPOINT_COLOR : 0;
+    uint32_t newValue = value ? LCPOINT_COLOR : 0;
     m_mod1 = (m_mod1 & ~LCPOINT_COLOR) | newValue;
     }
 
@@ -819,7 +776,7 @@ void            LsSymbolReference::SetUseColor(bool value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetUseWeight(bool value)
     {
-    UInt32   newValue = value ? LCPOINT_WEIGHT : 0;
+    uint32_t newValue = value ? LCPOINT_WEIGHT : 0;
     m_mod1 = (m_mod1 & ~LCPOINT_WEIGHT) | newValue;
     }
 
@@ -837,11 +794,11 @@ void                LsSymbolReference::SetAngle(double value)       {m_angle = v
 void                LsSymbolReference::SetStrokeNumber(int value)   {m_strokeNo = value;}
 void                LsSymbolReference::SetSymbolComponent(LsSymbolComponentR symbolComponent) { m_symbol = &symbolComponent; }
 
-Int32               LsMapEntry::GetStyleNumber ()           const { return m_id; }
+int64_t             LsMapEntry::GetStyleNumber ()           const { return m_id; }
 LsDefinitionP       LsMapEntry::GetLineStyleP ()            const { return m_nameRec; }
 LsDefinitionCP      LsMapEntry::GetLineStyleCP ()           const { return m_nameRec; }
 
-Int32               LsDefinition::GetStyleNumber()        const {return m_styleNumber; }
+int64_t             LsDefinition::GetStyleNumber()        const {return m_styleNumber; }
 DgnStyleId          LsDefinition::GetStyleId()            const {return DgnStyleId (m_styleNumber); }
 double              LsDefinition::GetUnitsDefinition()    const {return m_unitDef;}
 LsUnit              LsDefinition::GetUnitsType()          const {return (LsUnit)(m_attributes & LSATTR_UNITMASK);}
@@ -862,7 +819,7 @@ bool                LsDefinition::IsHardware()            const {return (m_hardw
 bool                LsDefinition::IsSCScaleIndependent()  const {return 0 != (m_attributes & LSATTR_SHAREDCELL_SCALE_INDEPENDENT);}
 
 void                LsDefinition::SetUnitsDefinition(double newValue)      { m_unitDef = newValue;}
-void                LsDefinition::SetUnitsType (LsUnit unitsType) { m_attributes = (m_attributes & ~LSATTR_UNITMASK)   |  static_cast<UInt32>(unitsType);}
+void                LsDefinition::SetUnitsType (LsUnit unitsType) { m_attributes = (m_attributes & ~LSATTR_UNITMASK)   |  static_cast<uint32_t>(unitsType);}
 void                LsDefinition::SetIsContinuous (bool newValue)  { m_attributes = (m_attributes & ~LSATTR_CONTINUOUS) | (newValue ? LSATTR_CONTINUOUS : 0);}
 void                LsDefinition::SetIsSnappable  (bool newValue)  { m_attributes = (m_attributes & ~LSATTR_NOSNAP)     | (!newValue ? LSATTR_NOSNAP : 0);}
 void                LsDefinition::SetIsPhysical   (bool newValue)  { m_attributes = (m_attributes & ~LSATTR_PHYSICAL)   | (newValue ? LSATTR_PHYSICAL : 0);}

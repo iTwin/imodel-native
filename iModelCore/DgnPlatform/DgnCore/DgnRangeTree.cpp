@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnRangeTree.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -24,9 +24,9 @@ struct  DRTPrefs
     double      m_lodFilterFraction;
     double      m_testLOD;
     double      m_minLODFilterNPC;
-    UInt32      m_targetLeafCount;
-    UInt32      m_nOcclusionBatches;
-    UInt32      m_minimumOcclusionNodeTest;
+    uint32_t    m_targetLeafCount;
+    uint32_t    m_nOcclusionBatches;
+    uint32_t    m_minimumOcclusionNodeTest;
     bool        m_doOcclusionCull;
     bool        m_doLodFiltering;
     bool        m_completeStatistics;
@@ -590,13 +590,6 @@ inline void DRTInternalNode::ValidateInternalRange()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DRange3dCR getRangeForCacheElement(PersistentElementRefP elRef)  { return *elRef->CheckIndexRangeOfElement(*elRef->ElemPtrC()); }
-static DRange3dCR getRangeForElementRef  (PersistentElementRefP elRef)  { return ((ElementRefP) elRef)->GetUnstableMSElementCP()->GetRange(); }
-PFGetRangeForElement DRTLeafNode::GetRangeFunction () {return  (NodeType::Leaf == m_type) ? getRangeForCacheElement : getRangeForElementRef;}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline void DRTLeafNode::ValidateLeafRange()
@@ -607,10 +600,8 @@ inline void DRTLeafNode::ValidateLeafRange()
     m_sloppy = false;
     ClearRange();
 
-    PFGetRangeForElement rangeFunction = GetRangeFunction();
-
-    for (PersistentElementRefP* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
-        extendRange (m_nodeRange, rangeFunction (*curr));
+    for (GeometricElementCP* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+        extendRange (m_nodeRange, (*curr)->_GetRange3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -734,7 +725,7 @@ DRTNodeP DRTInternalNode::ChooseBestNode (DRange3dCP pRange, DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTInternalNode::AddElement (DRange3dCR range, PersistentElementRefP element, DgnRangeTreeR root)
+void DRTInternalNode::AddElement (DRange3dCR range, GeometricElementCR element, DgnRangeTreeR root)
     {
     ValidateRange();
     extendRange (m_nodeRange, range);
@@ -799,7 +790,7 @@ void DRTInternalNode::DropNode (DRTNodeP entry, DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DRTInternalNode::DropElement (DRange3dCR range, PersistentElementRefP elementRef, DgnRangeTreeR root)
+bool DRTInternalNode::DropElement (DRange3dCR range, GeometricElementCP elementRef, DgnRangeTreeR root)
     {
     DRTLeafNodeP leaf = ToLeaf();
     if (leaf)
@@ -913,12 +904,12 @@ RangeMatchStatus DRTInternalNode::Traverse (ElemRangeIndex::Traverser& traverser
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTLeafNode::AddElementToLeaf (DRange3dCR range, PersistentElementRefP element, DgnRangeTreeR root)
+void DRTLeafNode::AddElementToLeaf (DRange3dCR range, GeometricElementCR element, DgnRangeTreeR root)
     {
     ValidateRange();
     extendRange (m_nodeRange, range);
 
-    *m_endChild = element;
+    *m_endChild = &element;
     ++m_endChild;
     if (GetEntryCount() > (root.m_leafNodeSize))
         SplitLeafNode (root);
@@ -927,15 +918,15 @@ void DRTLeafNode::AddElementToLeaf (DRange3dCR range, PersistentElementRefP elem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DRTLeafNode::DropElementFromLeaf (DRange3dCR range, PersistentElementRefP elementRef, DgnRangeTreeR root)
+bool DRTLeafNode::DropElementFromLeaf (DRange3dCR range, GeometricElementCP elementRef, DgnRangeTreeR root)
     {
-    for (PersistentElementRefP* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+    for (GeometricElementCP* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
         if (*curr != elementRef)
             continue;
 
         if (curr+1 < m_endChild)
-            memmove (curr, curr+1, (m_endChild - curr) * sizeof (PersistentElementRefP));
+            memmove (curr, curr+1, (m_endChild - curr) * sizeof (GeometricElementCP));
 
         --m_endChild;
 
@@ -975,12 +966,10 @@ void DRTLeafNode::SplitLeafNode (DgnRangeTreeR root)
     DRTSplitEntryP currEntry = splitEntries;
     DRTSplitEntryP endEntry = splitEntries + count;
 
-    PFGetRangeForElement rangeFunction = GetRangeFunction();
-
-    for (PersistentElementRefP* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
+    for (GeometricElementCP* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
-        currEntry->m_entry =  *curr;
-        currEntry->m_range =  rangeFunction(*curr);
+        currEntry->m_entry = (void*) *curr;
+        currEntry->m_range =  (*curr)->_GetRange3d();
         }
 
     double xSep = checkSeparation (splitEntries, count, X_AXIS);
@@ -1002,9 +991,9 @@ void DRTLeafNode::SplitLeafNode (DgnRangeTreeR root)
     for (currEntry = splitEntries; currEntry < endEntry; ++currEntry)
         {
         if (0 == currEntry->m_groupNumber[optimalSplit])
-            newNode1->AddElementToLeaf (currEntry->m_range, (PersistentElementRefP) currEntry->m_entry, root);
+            newNode1->AddElementToLeaf (currEntry->m_range, *(GeometricElementCP)currEntry->m_entry, root);
         else
-            newNode2->AddElementToLeaf (currEntry->m_range, (PersistentElementRefP) currEntry->m_entry, root);
+            newNode2->AddElementToLeaf (currEntry->m_range, *(GeometricElementCP)currEntry->m_entry, root);
         }
 
     // if parent is NULL, this node is currently the root of the tree (the only node in the tree). We need to allocate an InternalNode to
@@ -1029,7 +1018,7 @@ RangeMatchStatus DRTLeafNode::Traverse (ElemRangeIndex::Traverser& traverser, bo
     {
     if (traverser._CheckRangeIndexNode (GetRange(), is3d, /*isElement*/true))   // WIP_VANCOUVER_MERGE rangeindex
         {
-        for (PersistentElementRefP* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+        for (GeometricElementCP* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
             RangeMatchStatus stat = traverser._VisitRangeIndexElem (*curr);
             if (RANGEMATCH_Ok != stat)
@@ -1043,7 +1032,7 @@ RangeMatchStatus DRTLeafNode::Traverse (ElemRangeIndex::Traverser& traverser, bo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTree::DgnRangeTree (DgnModelR dgnModel, size_t leafSize)
+DgnRangeTree::DgnRangeTree (DgnModelCR dgnModel, size_t leafSize)
     {
     m_root = NULL;
     m_internalNodeSize = m_leafNodeSize = 0;
@@ -1052,8 +1041,7 @@ DgnRangeTree::DgnRangeTree (DgnModelR dgnModel, size_t leafSize)
 
     if (0 == leafSize)
         {
-        PersistentElementRefListP graphics = dgnModel.GetGraphicElementsP();
-        UInt32 totalElements = graphics ? graphics->CountElements() : 0;
+        uint32_t totalElements = dgnModel.CountElements();
         leafSize = (size_t) MAX (20., totalElements / s_prefs.m_targetLeafCount);
         }
 
@@ -1064,7 +1052,7 @@ DgnRangeTree::DgnRangeTree (DgnModelR dgnModel, size_t leafSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::LoadTree (DgnModelR dgnModel)
+void DgnRangeTree::LoadTree (DgnModelCR dgnModel)
     {
 #ifdef DRT_DEBUGGING
     {
@@ -1077,18 +1065,21 @@ void DgnRangeTree::LoadTree (DgnModelR dgnModel)
     BeAssert (0 != m_leafNodeSize);
     m_root = AllocateLeafNode();
 
-    PersistentElementRefListIterator  iter;
-    for (PersistentElementRefP elemRef = iter.GetFirstElementRef(dgnModel.GetGraphicElementsP()); NULL != elemRef;  elemRef = iter.GetNextElementRef())
+    DgnElementIterator  iter;
+    for (DgnElementCP element = iter.GetFirstDgnElement(dgnModel); NULL != element;  element = iter.GetNextDgnElement())
         {
-        DgnElementCR el = *elemRef->ElemPtrC();
-        DRange3dCP  range = elemRef->CheckIndexRangeOfElement (el);
-        if ((NULL != range) && scanRangeIsValid (*range, m_is3d))
+        GeometricElementCP geom = element->_ToGeometricElement();
+        if (nullptr == geom)
+            continue;
+
+        DRange3dCR  range = geom->_GetRange3d();
+        if (scanRangeIsValid (range, m_is3d))
             {
             DRTLeafNodeP leaf = m_root->ToLeaf();
             if (leaf)
-                leaf->AddElementToLeaf (*range, elemRef, *this);
+                leaf->AddElementToLeaf (range, *geom, *this);
             else
-                ((DRTInternalNodeP) m_root)->AddElement (*range, elemRef, *this);
+                ((DRTInternalNodeP) m_root)->AddElement(range, *geom, *this);
             }
         }
 
@@ -1110,20 +1101,20 @@ DgnRangeTree::~DgnRangeTree()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::_AddElement (PersistentElementRefP elemRef, DRange3dCR range, int& stamp)
+void DgnRangeTree::_AddElement(GeometricElementCR element, DRange3dCR range, int& stamp)
     {
     if (NULL == m_root)
         return; // if we don't yet have a fully populated range tree from "LoadTree", don't do anything.
 
-    BeAssert (!elemRef->IsDeleted());
-    BeAssert (!((DRTInternalNodeP)m_root)->DropElement (range, elemRef, *this));
+    BeAssert (!element.IsDeleted());
+    BeAssert (!((DRTInternalNodeP)m_root)->DropElement(range, &element, *this));
 
     DRange3d before = m_root->GetRange(); // compare range before and after to see whether to increment "stamp"
     DRTLeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
-        leaf->AddElementToLeaf (range, elemRef, *this);
+        leaf->AddElementToLeaf (range, element, *this);
     else
-        ((DRTInternalNodeP)m_root)->AddElement (range, elemRef, *this);
+        ((DRTInternalNodeP)m_root)->AddElement (range, element, *this);
 
     if (0 != memcmp (&before, &m_root->GetRange(), sizeof (DRange3d)))
         ++stamp;
@@ -1132,13 +1123,13 @@ void DgnRangeTree::_AddElement (PersistentElementRefP elemRef, DRange3dCR range,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnRangeTree::_RemoveElement (PersistentElementRefP elemRef, DRange3dCR range, int& stamp)
+StatusInt DgnRangeTree::_RemoveElement (GeometricElementCR element, DRange3dCR range, int& stamp)
     {
     if (NULL == m_root)
         return ERROR;
 
     DRange3d before = m_root->GetRange(); // compare range before and after to see whether to increment "stamp"
-    if (!((DRTInternalNodeP)m_root)->DropElement (range, elemRef, *this))
+    if (!((DRTInternalNodeP)m_root)->DropElement(range, &element, *this))
         {
         BeAssert (false);
         return  ERROR;
@@ -1166,7 +1157,7 @@ void DgnRangeTree::SetNodeSizes (size_t internalNodeSize, size_t leafNodeSize)
     m_internalNodeSize = internalNodeSize;
     m_leafNodeSize = leafNodeSize;
 
-    m_leafNodes.SetEntrySize (sizeof (DRTLeafNode) + ((int) leafNodeSize*sizeof(PersistentElementRefP)), 1);
+    m_leafNodes.SetEntrySize (sizeof (DRTLeafNode) + ((int) leafNodeSize*sizeof(GeometricElementCP)), 1);
     m_internalNodes.SetEntrySize (sizeof (DRTInternalNode) + ((int) internalNodeSize*sizeof(DRTNodeP)), 1);
     }
 
@@ -1178,7 +1169,7 @@ DgnRangeTreeR ElemRangeIndex::GetDgnRangeTree()
     if (NULL == m_rangeTree)
         {
         size_t leafSize = 0;
-        m_rangeTree = new DgnRangeTree (m_dgnModel, leafSize);
+        m_rangeTree = new DgnRangeTree(m_dgnModel, leafSize);
         }
 
     return *m_rangeTree;
@@ -1218,7 +1209,7 @@ DbResult DgnModel::QueryModelRange (DRange3dR range) {return _QueryModelRange (r
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnModel::GetRange (DRange3dR range)
     {
-    range = GetDgnProject().Units().GetProjectExtents();
+    range = GetDgnDb().Units().GetProjectExtents();
 
 #ifdef DGNV10FORMAT_CHANGES_WIP
     DRange3d scanRange;
@@ -1295,7 +1286,7 @@ inline bool OcclusionScorer::ComputeNPC (DPoint3dR npcOut, DPoint3dCR localIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OcclusionScorer::InitForViewport(ViewportCR viewport, double minimumSizePixels)
+void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSizePixels)
     {
     m_localToNpc = viewport.GetWorldToNpcMap()->M0;
     m_cameraOn   = viewport.IsCameraOn();
@@ -1465,8 +1456,8 @@ bool OcclusionScorer::ComputeOcclusionScore (double* score, bool& overlap, bool&
     if (!doFrustumCull && 0.0 == m_lodFilterNPCArea && NULL == score)
         return true;
 
-    UInt32  npcComputedMask = 0, zComputedMask = 0;
-    UInt32  projectionIndex;
+    uint32_t npcComputedMask = 0, zComputedMask = 0;
+    uint32_t projectionIndex;
 
     spansEyePlane = false;
     if (m_cameraOn)
@@ -1492,7 +1483,7 @@ bool OcclusionScorer::ComputeOcclusionScore (double* score, bool& overlap, bool&
         projectionIndex = m_orthogonalProjectionIndex;
         }
 
-    UInt32      nVertices;
+    uint32_t    nVertices;
     double      npcZ[8];
     DPoint3d    npcVertices[6];
 
@@ -1506,10 +1497,10 @@ bool OcclusionScorer::ComputeOcclusionScore (double* score, bool& overlap, bool&
     double  zTotal = 0.0;
 
     // Note - Don't attempt to cull the front.back plane. - We can't do that as we're only looking at the frontmost vertices.
-    UInt32  outsideMask = OUTSIDE_Left | OUTSIDE_Right | OUTSIDE_Top | OUTSIDE_Bottom;
+    uint32_t outsideMask = OUTSIDE_Left | OUTSIDE_Right | OUTSIDE_Top | OUTSIDE_Bottom;
 
     overlap = false;
-    for (UInt32 i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
+    for (uint32_t i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
         {
         int  cornerIndex = s_indexList[projectionIndex][i];
         if (0 == (mask & npcComputedMask) && !ComputeNPC (npcVertices[i], localCorners[cornerIndex]))
@@ -1569,7 +1560,7 @@ bool OcclusionScorer::ComputeOcclusionScore (double* score, bool& overlap, bool&
         // We need to cull front and back seperately as we have only looked at the front most vertices so far and front/back requires checking all 8 corners.
 
         outsideMask = OUTSIDE_Back | OUTSIDE_Front;
-        for (UInt32 i=0, mask = 0x0001; i<8; i++, mask <<= 1)
+        for (uint32_t i=0, mask = 0x0001; i<8; i++, mask <<= 1)
             {
             if (0 == (zComputedMask & mask))
                 {
@@ -1636,7 +1627,7 @@ bool OcclusionScorer::ComputeOcclusionScore (double* score, bool& overlap, bool&
         return true;
 
     *score = (npcVertices[nVertices-1].x - npcVertices[0].x) * (npcVertices[nVertices-1].y + npcVertices[0].y);
-    for (UInt32 i=0; i<nVertices-1; i++)
+    for (uint32_t i=0; i<nVertices-1; i++)
         *score += (npcVertices[i].x - npcVertices[i+1].x) * (npcVertices[i].y + npcVertices[i+1].y);
 
     // an area of 0.0 means that we have a line. Recalculate using length/1000 (assuming width of 1000th of npc)
@@ -1662,28 +1653,28 @@ struct OcclusionSortedProcessor : OcclusionScorer
     double                      m_minLODArea;
     ViewContextR                m_viewContext;
     ScanCriteriaCP              m_scanCriteria;
-    ViewportP                   m_viewport;
+    DgnViewportP                   m_viewport;
     RangeTreeProgressMonitor*   m_progressMonitor;
-    UInt32                      m_visitElementCount;
+    uint32_t                    m_visitElementCount;
     DgnModelP                m_currDgnModel;
     DgnModelP                m_rootModel;
-    UInt32                      m_occlusionTestCount;
+    uint32_t                    m_occlusionTestCount;
     DgnMemoryPool<Transform,128> m_localToFrustTrans;
     TransformP                  m_localToFrustum;
     T_ViewNodes                 m_viewNodes;
     size_t                      m_viewNodesProcessed;
-    UInt32                      m_targetElementCount;
+    uint32_t                    m_targetElementCount;
     bool                        m_isDynamicUpdate;
     bool                        m_doOcclusionCull;
     bool                        m_doFrustumCull;
 
-    UInt32  GetVisitElementCount() {return m_visitElementCount;}
+    uint32_t GetVisitElementCount() {return m_visitElementCount;}
     static bool CompareOcclusionScore (DRTViewNodeCR lhs, DRTViewNodeCR rhs) { return lhs.m_score > rhs.m_score; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-OcclusionSortedProcessor (ViewContextR viewContext, DgnModelP startModel, bool doFrustumCull, UInt32 targetElementCount, ProgressMonitorP monitor=NULL)
+OcclusionSortedProcessor (ViewContextR viewContext, DgnModelP startModel, bool doFrustumCull, uint32_t targetElementCount, ProgressMonitorP monitor=NULL)
     : m_viewContext(viewContext)
     {
     m_doFrustumCull      = doFrustumCull;
@@ -1790,17 +1781,15 @@ inline bool WasAborted ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool VisitRangeElement (PersistentElementRefP element, DgnModelP modelRef, bool testRange, double score)
+bool VisitRangeElement (GeometricElementCP element, DgnModelP modelRef, bool testRange, double score)
     {
     m_viewContext.ValidateScanRange ();
 
-    ElementHandle elemHandle (element);
-
-    DRange3dCR   elRange = getRangeForCacheElement(element);
+    DRange3dCR   elRange = element->_GetRange3d();
     if (testRange && (ScanTestResult::Pass != m_scanCriteria->CheckRange (elRange, true)))
         return false;
 
-    if (ScanTestResult::Pass != m_scanCriteria->CheckElement (elemHandle, false, true))
+    if (ScanTestResult::Pass != m_scanCriteria->CheckElement (*element, false))
         return false;
 
     if (ClipPlaneContainment_StronglyOutside != m_viewContext.GetTransformClipStack().ClassifyRange (elRange, true))
@@ -1810,7 +1799,7 @@ bool VisitRangeElement (PersistentElementRefP element, DgnModelP modelRef, bool 
         double      elementTime = 0.0;
         BEGIN_DELTA_TIMER (elementTime);
 #endif
-        m_viewContext.VisitElemHandle (elemHandle, false, false);
+        m_viewContext.VisitElement (*element);
 
 #ifdef DRT_DEBUGGING
         END_DELTA_TIMER (elementTime);
@@ -1833,7 +1822,7 @@ bool ProcessViewNode (DRTViewNodeR viewNode)
 #endif
 
     bool testRange = viewNode.m_overlap;
-    for (PersistentElementRefP* curr = &viewNode.m_leaf->m_firstChild[0]; curr < viewNode.m_leaf->m_endChild; ++curr)
+    for (GeometricElementCP* curr = &viewNode.m_leaf->m_firstChild[0]; curr < viewNode.m_leaf->m_endChild; ++curr)
         {
         if (VisitRangeElement (*curr, viewNode.m_modelRef, testRange, viewNode.m_score))
             return  true;
@@ -1854,7 +1843,7 @@ bool ProcessViewNodesBatch (T_ViewNodeIterator begin, T_ViewNodeIterator end, bo
         return false;
 
     int                 results[MAX_OcclusionBatch];
-    UInt32              nNodes;
+    uint32_t            nNodes;
     DRTRangeCorners     corners[MAX_OcclusionBatch];
     T_ViewNodeIterator  curr;
 
@@ -1986,13 +1975,9 @@ void FindVisibleLeafs (DRTNodeR node, DgnModelR modelRef, bool testRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FindAllVisibleLeafs (DgnModelR modelRef)
+void FindAllVisibleLeafs (DgnModelR model)
     {
-    GraphicElementRefList* graphics = modelRef.GetGraphicElementsP();
-    if (NULL == graphics)
-        return;
-
-    ElemRangeIndexP rangeIndex = graphics->GetRangeIndexP(true);
+    ElemRangeIndexP rangeIndex = model.GetRangeIndexP(true);
     if (NULL == rangeIndex)
         return;
 
@@ -2001,7 +1986,7 @@ void FindAllVisibleLeafs (DgnModelR modelRef)
     InitForDgnModel();
     m_viewContext.ValidateScanRange ();
 
-    FindVisibleLeafs (*tree.GetRoot(), modelRef, m_doFrustumCull);
+    FindVisibleLeafs (*tree.GetRoot(), model, m_doFrustumCull);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2026,7 +2011,7 @@ void ProcessEntries ()
     if (s_debugToNode > 0)
         {
         size_t i=0;
-        for (T_ViewNodeIterator  curr = m_viewNodes.begin(), end = m_viewNodes.end(); curr != end && i <= (UInt32) s_debugToNode; ++curr, i++)
+        for (T_ViewNodeIterator  curr = m_viewNodes.begin(), end = m_viewNodes.end(); curr != end && i <= (uint32_t) s_debugToNode; ++curr, i++)
             if (ProcessViewNode (*curr))
                 return;
         }
@@ -2067,15 +2052,15 @@ void ProcessEntries ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::ProcessOcclusionSorted (ViewContextR context, DgnModelP startDgnModel, RangeTreeProgressMonitor* monitor, bool doFrustumCull, UInt32* timeout)
+void DgnRangeTree::ProcessOcclusionSorted (ViewContextR context, DgnModelP startDgnModel, RangeTreeProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeout)
     {
-    UInt32 targetElementCount = 0;
+    uint32_t targetElementCount = 0;
     bool   doTimeout = NULL != timeout && context.GetDrawPurpose() == DrawPurpose::UpdateDynamic;
 
     if (doTimeout && 0 != m_elementsPerSecond)
         {
         double timeOutSeconds = *timeout - BeTimeUtilities::QuerySecondsCounter();
-        targetElementCount = (UInt32) (timeOutSeconds * m_elementsPerSecond);
+        targetElementCount = (uint32_t) (timeOutSeconds * m_elementsPerSecond);
         }
 
 #ifdef DRT_DEBUGGING
@@ -2142,7 +2127,7 @@ bool OverlapScorer::ComputeScore (double* score, BeSQLite::RTree3dValCR testRang
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, UInt32 hitLimit)
+void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit)
     {
     m_useSecondary = true;
     m_secondaryFilter.m_hitLimit = hitLimit;
@@ -2154,7 +2139,7 @@ void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, UInt32 h
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-RtreeViewFilter::RtreeViewFilter(ViewportCR viewport, BeSQLiteDbR db, double minimumSizePixels, ElementIdSet const* exclude)
+RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, BeSQLiteDbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
         : RTreeMatch (db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(NULL)
     {
     m_nCalls = m_nScores = m_nSkipped = 0;
@@ -2181,8 +2166,8 @@ RtreeViewFilter::RtreeViewFilter(ViewportCR viewport, BeSQLiteDbR db, double min
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(ViewportCR viewport, ICheckStopP checkStop, BeSQLiteDbR db, UInt32 hitLimit, double minimumSizePixels,
-                            ElementIdSet const* alwaysDraw, ElementIdSet const* exclude)
+DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(DgnViewportCR viewport, ICheckStopP checkStop, BeSQLiteDbR db, uint32_t hitLimit, double minimumSizePixels,
+                            DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
     : RtreeViewFilter(viewport, db, minimumSizePixels, exclude), m_checkStop(checkStop), m_useSecondary(false), m_alwaysDraw(NULL)
     {
     m_eliminatedByLOD = false;
@@ -2311,17 +2296,17 @@ bool RtreeViewFilter::SkewTest (RTree3dValCP pt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbRTree3dViewFilter::RangeAccept (Int64 elementId)
+void DgnDbRTree3dViewFilter::RangeAccept (int64_t elementId)
     {
     BeAssert (m_lastId == elementId);
     
-    if (NULL != m_exclude && m_exclude->find(ElementId(elementId)) != m_exclude->end())
+    if (NULL != m_exclude && m_exclude->find(DgnElementId(elementId)) != m_exclude->end())
         return;
 
     if (m_passedPrimaryTest)
         {
         //  Don't add it if the constructor already added it.
-        if (NULL == m_alwaysDraw || m_alwaysDraw->find(ElementId(elementId)) == m_alwaysDraw->end())
+        if (NULL == m_alwaysDraw || m_alwaysDraw->find(DgnElementId(elementId)) == m_alwaysDraw->end())
             {
             ++m_nCalls;
 
@@ -2512,36 +2497,40 @@ void ProgressiveViewFilter::_StepAggregate(DbFunction::Context*, int nArgs, DbVa
 
     ++m_nLastPass;
 
-    ElementId elementId(args->GetValueInt64());
+    DgnElementId elementId(args->GetValueInt64());
     if (NULL != m_exclude && m_exclude->find(elementId) != m_exclude->end())
         return;
 
     if (m_existing.FindElementById (elementId))
         return;
 
-    PersistentElementRefPtr el = m_project.Models().GetElementById(elementId);
+    DgnElementPtr el = m_dgndb.Elements().GetElementById(elementId);
     if (el.IsValid())
         {
-        m_drewElementThisPass = true;
-        ElementHandle elemHandle(el.get());
-        m_context->VisitElemHandle(elemHandle, false, true);
+        GeometricElementCP geomElem = el->_ToGeometricElement();
+
+        if (nullptr != geomElem)
+            {
+            m_drewElementThisPass = true;
+            m_context->VisitElement(*geomElem);
+            }
         }
 
-    DgnElementPool& pool = m_project.Models().ElementPool();
-    if (pool.GetTotalAllocated() > (Int64)m_elementReleaseTrigger)
+    DgnElementPool& pool = m_dgndb.Elements().GetPool();
+    if (pool.GetTotalAllocated() > (int64_t)m_elementReleaseTrigger)
         {
         pool.ReleaseAndCleanup(el);  //  This also clears the reference so el is not valid after this call.
 
         //  Purging the element does not purge the symbols so it may be necessary to do a full purge
-        if (pool.GetTotalAllocated() > (Int64)m_purgeTrigger)
+        if (pool.GetTotalAllocated() > (int64_t)m_purgeTrigger)
             {
             pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
 
             //  The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
             //  When that is true, we leave it to QueryViewController::_DrawView to try to clean up.  This logic just tries to recover from the
             //  growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
-            UInt64 newTotalAllocated = (UInt64)pool.GetTotalAllocated();
-            m_purgeTrigger = (UInt64)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
+            uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
+            m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
             }
         }
     }
@@ -2601,7 +2590,7 @@ int ProgressiveViewFilter::_TestRange(QueryInfo const& info)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2014
 //---------------------------------------------------------------------------------------
-bool ProgressiveViewFilter::_WantTimeoutSet(UInt32& limit)
+bool ProgressiveViewFilter::_WantTimeoutSet(uint32_t& limit)
     {
     //  We want to limit how long ProgressiveDisplay runs but don't want to start the timer
     //  until it has drawn at least one element.

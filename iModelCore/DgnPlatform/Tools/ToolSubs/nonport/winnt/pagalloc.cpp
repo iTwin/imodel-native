@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/pagalloc.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------
@@ -143,7 +143,7 @@ extern "C" void* _ReturnAddress (void);
 #define PatchedCall static                              // This is a routine that is replacing another routine
 
 /* NT Server allows 3GB of address space under some conditions */
-#define THREE_GB (s_memoryStatus.dwTotalVirtual > (UInt32)0x7fffffff)
+#define THREE_GB (s_memoryStatus.dwTotalVirtual > (uint32_t)0x7fffffff)
 
 #define STACK_BYTES_NEEDED_FOR_PRINTF           (0x9000)
 #define STACK_BYTES_NEEDED_FOR_LOG_PRINTF       (0x8000 + STACK_BYTES_NEEDED_FOR_PRINTF)
@@ -154,15 +154,15 @@ typedef struct _sbh_struct
     {
     MEMORY_BASIC_INFORMATION mbi;
     char           *blockP;             // Base of small block heap (SBH)
-    UInt32          mbytes;            // SBH sized scaled by 1 Meg (i.e.  << 20 )
-    UInt32          blocks;            // Number of 4K, 8K, or whatever blocks
-    UInt32          blockBytes;                // Number of bytes in a block (4K, 8K, or whatever)
-    UInt32          bitmapBytes;       //
-    UInt32         *bitmapP;            //
-    UInt32         *lruBitmapP;         //
-    UInt32          bitmapDwords;       //
-    Int32           pagesPerBlock;      //
-    UInt32          blocksInUseCount;   // Number of allocated SBH blocks in use
+    uint32_t        mbytes;            // SBH sized scaled by 1 Meg (i.e.  << 20 )
+    uint32_t        blocks;            // Number of 4K, 8K, or whatever blocks
+    uint32_t        blockBytes;                // Number of bytes in a block (4K, 8K, or whatever)
+    uint32_t        bitmapBytes;       //
+    uint32_t       *bitmapP;            //
+    uint32_t       *lruBitmapP;         //
+    uint32_t        bitmapDwords;       //
+    int32_t         pagesPerBlock;      //
+    uint32_t        blocksInUseCount;   // Number of allocated SBH blocks in use
     } Sbh;
 
 
@@ -183,7 +183,7 @@ typedef BOOL (WINAPI *tTryEnterCriticalSection)(LPCRITICAL_SECTION lpCriticalSec
 #   define GR_GDIOBJECTS     0          // Count of GDI objects
 #   define GR_USEROBJECTS    1          // Count of USER objects
 #endif
-typedef UInt32 (WINAPI *tGetGuiResources) (HANDLE hProcess, UInt32 uiFlags);
+typedef uint32_t (WINAPI *tGetGuiResources) (HANDLE hProcess, uint32_t uiFlags);
 
 
 /*----------------------------------------------------------------------+
@@ -208,13 +208,13 @@ typedef struct functionexclusionlist
     {
     uintptr_t start;                // Start address of function to exclude.
     uintptr_t end;                          // End   address of function to exclude.
-    UInt32 hitCount;                // Number of times that this function was found in the last leak detect sweep
+    uint32_t hitCount;                // Number of times that this function was found in the last leak detect sweep
     } FunctionExclusionList;
 
 typedef void    MdlDesc, *MdlFunctionP;
 typedef void *  (*MdlSystem_getUstnMdlDesc)  (void);
 typedef void *  (*MdlSystem_getCurrMdlDesc)  (void);
-typedef Int32   (*DlmSystem_callAnyFunction) (char *pArgs,  MdlDesc *descP, MdlFunctionP offset, ...);
+typedef int32_t (*DlmSystem_callAnyFunction) (char *pArgs,  MdlDesc *descP, MdlFunctionP offset, ...);
 
 typedef enum
     {
@@ -231,94 +231,94 @@ static MEMORYSTATUS         s_memoryStatus;
 
 //  If true, pagalloc is using the lightweight version of the memory
 //  diagnostic tools. If false, pagalloc is using the traditional approach
-static Int32                s_usingLite;
+static int32_t              s_usingLite;
 static HeapLiteHeader*      s_heapList;
 static HeapLiteHeader*      s_heapListEnd;
-static UInt32               s_heapListLength;
+static uint32_t             s_heapListLength;
 static PageMallocEntry*     s_headers [6];   //  We generate headers on the fly for PageAllocLite
-static Int32                s_nextHeader;
+static int32_t              s_nextHeader;
 static HANDLE               s_hPagAllocHeap;  //  For PagAllocLite, alloc memory from here
 
 /* global flags set via system environment variables */
-static Int32        s_pageDebugHeadersAlwaysVisible;
-static Int32        s_pageDebugLow;
-static Int32        s_pageDebugNoRelease;
-static Int32        s_pageDebugNoReleaseSBH;
-static Int32        s_pageDebugFreeCheck;
-static Int32        s_pageDebugAllocBreak;
-static Int32        s_pageDebugAllocDump;
-static Int32        s_pageDebugCallStack;
-static Int32        s_pageDebugMaxFrames;
-static Int32        s_pageDebugCheckDoubleFree;
-static Int32        s_pageDebugReallocBreak;
-static Int32        s_pageDebugFreeBreak;
-static Int32        s_pageDebugMsizeBreak;
-static Int32        s_pageDebugExpandBreak;
-static Int32        s_pageDebugAddressBreak;
-static Int32        s_pageDebugAlignBits;
-static Int32        s_pageDebugAlignMask;
-static Int32        s_pageDebugFillSize;
-static UInt32       s_pageDebugFillData;
-static UInt32       s_pageDebugSbhMB;
-static UInt32       s_pageDebugSbhDecrMB;
-static UInt32       s_pageDebugSbhBase;
-static UInt32       s_pageDebugSbhTopDown;
-static Int32        s_pageDebugLruDisable;
-static Int32        s_pageDebugTraceLog;
-static Int32        s_pageDebugDumpModules;
+static int32_t      s_pageDebugHeadersAlwaysVisible;
+static int32_t      s_pageDebugLow;
+static int32_t      s_pageDebugNoRelease;
+static int32_t      s_pageDebugNoReleaseSBH;
+static int32_t      s_pageDebugFreeCheck;
+static int32_t      s_pageDebugAllocBreak;
+static int32_t      s_pageDebugAllocDump;
+static int32_t      s_pageDebugCallStack;
+static int32_t      s_pageDebugMaxFrames;
+static int32_t      s_pageDebugCheckDoubleFree;
+static int32_t      s_pageDebugReallocBreak;
+static int32_t      s_pageDebugFreeBreak;
+static int32_t      s_pageDebugMsizeBreak;
+static int32_t      s_pageDebugExpandBreak;
+static int32_t      s_pageDebugAddressBreak;
+static int32_t      s_pageDebugAlignBits;
+static int32_t      s_pageDebugAlignMask;
+static int32_t      s_pageDebugFillSize;
+static uint32_t     s_pageDebugFillData;
+static uint32_t     s_pageDebugSbhMB;
+static uint32_t     s_pageDebugSbhDecrMB;
+static uint32_t     s_pageDebugSbhBase;
+static uint32_t     s_pageDebugSbhTopDown;
+static int32_t      s_pageDebugLruDisable;
+static int32_t      s_pageDebugTraceLog;
+static int32_t      s_pageDebugDumpModules;
 static char         s_pageDebugOutfileName[512];
 static HANDLE       s_pageDebugOutfile;
-static Int32        s_pageDebugShowStackUsed;
+static int32_t      s_pageDebugShowStackUsed;
 
 /* global counters */
-static UInt32       s_mallocSerialNumber;         // Ever increasing number of allocations
-static UInt32       s_mallocCount;                // Specific number of "mallocs" (excluding "new", "realloc", etc)
-static UInt32       s_callocCount;
-static UInt32       s_strdupCount;
-static UInt32       s_wcsdupCount;
-static UInt32       s_reallocCount;
-static UInt32       s_freeCount;
+static uint32_t     s_mallocSerialNumber;         // Ever increasing number of allocations
+static uint32_t     s_mallocCount;                // Specific number of "mallocs" (excluding "new", "realloc", etc)
+static uint32_t     s_callocCount;
+static uint32_t     s_strdupCount;
+static uint32_t     s_wcsdupCount;
+static uint32_t     s_reallocCount;
+static uint32_t     s_freeCount;
 static size_t       s_byteCount;
-static UInt32       s_waitCount;
-static UInt32       s_operatorNewCount;
-static UInt32       s_operatorDeleteCount;
-static UInt32       s_largeBlockCount;            // Number of large blocks in use
+static uint32_t     s_waitCount;
+static uint32_t     s_operatorNewCount;
+static uint32_t     s_operatorDeleteCount;
+static uint32_t     s_largeBlockCount;            // Number of large blocks in use
 
-static UInt32       s_countInitializeCriticalSection;
-static UInt32       s_countDeleteCriticalSection;
+static uint32_t     s_countInitializeCriticalSection;
+static uint32_t     s_countDeleteCriticalSection;
 
 /* globals for fill data and dumping */
 static char                *s_fillDataP;
 static CRITICAL_SECTION     s_csDump;
 static CRITICAL_SECTION     s_csSymbolize;
 /* global for memory protection serialization */
-static Int32                s_csVisibleCount;
+static int32_t              s_csVisibleCount;
 static CRITICAL_SECTION     s_csVisible;
 /* globals for small block heap(s) */
 static CRITICAL_SECTION     s_csHeap;
-static Int32                s_nHeap;
+static int32_t              s_nHeap;
 static Sbh*                 s_sbh = NULL;
-static UInt32               s_sbhTotalMbytes;
+static uint32_t             s_sbhTotalMbytes;
 /* globals for handler functions */
 static CRuntimeFreeFunc     pagallocFreeHandler;
 static CRuntimeMsizeFunc    pagallocMsizeHandler;
 /* globals for traceLog APIs */
-static Int32                s_hComponent;
-static Int32                s_hLayerPagalloc;
-static Int32                s_hLayerMalloc;
-static Int32                s_hLayerFree;
+static int32_t              s_hComponent;
+static int32_t              s_hLayerPagalloc;
+static int32_t              s_hLayerMalloc;
+static int32_t              s_hLayerFree;
 /* global for WriteFile results */
-static Int32                s_bytesWritten;
+static int32_t              s_bytesWritten;
 
 static tTryEnterCriticalSection    pTryEnterCriticalSection;                   /* global for newer critical section function */
 
-static UInt32               s_workingMsgCount;
-static UInt32               s_leakDetectSinceBase;
+static uint32_t             s_workingMsgCount;
+static uint32_t             s_leakDetectSinceBase;
 static bool                 s_sortLeakersBySize = true;
 
 static PagallocOutputFunction  fpAlternateOutputFunction;
 
-static UInt32       g_userAuxiliaryValue;     /* User specified ID is recorded in thewhen the block is allocated */
+static uint32_t     g_userAuxiliaryValue;     /* User specified ID is recorded in thewhen the block is allocated */
 
 static MdlSystem_getCurrMdlDesc     mdlSystem_getCurrMdlDesc;
 static DlmSystem_callAnyFunction    dlmSystem_callAnyFunction;
@@ -339,7 +339,7 @@ static enum
     MAX_FAILED_MODULES                  = 256
     };
 
-static UInt32       g_pageLeakDetectTrigger;
+static uint32_t     g_pageLeakDetectTrigger;
 
 typedef enum PDE_CONTROL
     {
@@ -363,7 +363,7 @@ typedef struct
     size_t       totalSize;
     union
         {
-        Int32    groupMemberCount;
+        int32_t  groupMemberCount;
         void    *groupRoot;
         };
     } LeakDetectCandidate;
@@ -373,7 +373,7 @@ typedef struct
     LeakDetectCandidate     *candidates;
     LeakDetectCandidate     *nextCandidate;
     LeakDetectCandidate     *endCandidate;
-    Int32                    maxTopMatches;
+    int32_t                  maxTopMatches;
     LeakDetectCandidate     *topMatches[MAX_TOPMATCHES];
     } LeakDetectContext;
 
@@ -382,18 +382,18 @@ typedef struct
 -----------------------------------------------------------------------*/
 typedef struct
     {
-    UInt32      nEntries;
+    uint32_t    nEntries;
     uintptr_t   callStackSum[MAX_TOPMATCHES];
-    UInt32      userAuxiliaryValues[MAX_TOPMATCHES][MAX_TOPMATCHES_USERAUXILIARYVALUES];
+    uint32_t    userAuxiliaryValues[MAX_TOPMATCHES][MAX_TOPMATCHES_USERAUXILIARYVALUES];
     } GroupUserAuxiliaryValues;
 
 
-static UInt32       g_topMatchesToPrint     = MAX_TOPMATCHES;
-static UInt32       g_topMatchesToDetail    = MAX_TOPMATCHES_DETAIL;
+static uint32_t     g_topMatchesToPrint     = MAX_TOPMATCHES;
+static uint32_t     g_topMatchesToDetail    = MAX_TOPMATCHES_DETAIL;
 static bool         g_showBlockContents     = false;
 static bool         g_leakDetectAllMemory   = true;
-static UInt32       s_symbolizeFailedModules[MAX_FAILED_MODULES];
-static UInt32       s_symFailedCount        = 0;
+static uint32_t     s_symbolizeFailedModules[MAX_FAILED_MODULES];
+static uint32_t     s_symFailedCount        = 0;
 
 
 /*----------------------------------------------------------------------+
@@ -406,7 +406,7 @@ Public PAGALLOC_API void __cdecl   pagalloc_dumpEngine    (PDE_CONTROL (*fpCallB
 
 // Static table used for CRC hashing.
 static bool     s_crcTableCreated = false;
-static UInt32   s_crcTable[0x100];
+static uint32_t s_crcTable[0x100];
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Chuck.Kirschman                 02/12
@@ -414,15 +414,15 @@ static UInt32   s_crcTable[0x100];
 class CRC32Hash
 {
 private:
-    UInt32          m_crc;
+    uint32_t        m_crc;
     #define POLYNOMIAL 0x04C11DB7
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Chuck.Kirschman                 11/10
     +---------------+---------------+---------------+---------------+---------------+------*/
-    UInt32 Reflect(UInt32 v,int bits)
+    uint32_t Reflect(uint32_t v,int bits)
         {
-        UInt32 ret = 0;
+        uint32_t ret = 0;
 
         --bits;
         for(int iBit=0; iBit <= bits; iBit++)
@@ -443,7 +443,7 @@ private:
 
         for(int iTableItem = 0; iTableItem < 0x100; iTableItem++)
             {
-            s_crcTable[iTableItem] = Reflect(static_cast<UInt32>(iTableItem),8) << 24;
+            s_crcTable[iTableItem] = Reflect(static_cast<uint32_t>(iTableItem),8) << 24;
 
             for (int count = 0; count < 8; count++)
                 s_crcTable[iTableItem] = (s_crcTable[iTableItem] << 1) ^ ( (s_crcTable[iTableItem] & (1<<31))  ? POLYNOMIAL : 0);
@@ -456,7 +456,7 @@ private:
 public:
     CRC32Hash (CharCP stringToHash) { Reset(); Hash (stringToHash); }
 
-    UInt32 Get() const {return ~m_crc; }
+    uint32_t Get() const {return ~m_crc; }
     void        Reset() {m_crc = ~0;}
 
     /*---------------------------------------------------------------------------------**//**
@@ -467,7 +467,7 @@ public:
         BuildTable();
 
         size_t stringLength = strlen(stringToHash);
-        for(UInt32 iEntry = 0; iEntry < stringLength; ++iEntry)
+        for(uint32_t iEntry = 0; iEntry < stringLength; ++iEntry)
             m_crc = (m_crc >> 8) ^ s_crcTable[ (m_crc & 0xFF) ^ stringToHash[iEntry] ];
         }
 };
@@ -488,7 +488,7 @@ static void memutil_initializeDbgHelp ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chuck.Kirschman                 02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 getHash (char const* moduleName)
+static uint32_t getHash (char const* moduleName)
     {
     // Tried using the boost hash, but it triggers a runtime error about returning a bigger value in a smaller sized variable in VC10.
     //   Perhaps switch to it in the next release of boost.
@@ -504,9 +504,9 @@ static UInt32 getHash (char const* moduleName)
 static bool isKnownFailingMoudule (char const* moduleName)
     {
     // Just checks if the module name is in the list
-    UInt32 hash = getHash (moduleName);
+    uint32_t hash = getHash (moduleName);
     
-    for (UInt32 iSym=0; iSym<s_symFailedCount; iSym++)
+    for (uint32_t iSym=0; iSym<s_symFailedCount; iSym++)
         {
         if (hash == s_symbolizeFailedModules[iSym])
             {
@@ -530,7 +530,7 @@ static void addKnownFailingMoudule (char const* moduleName)
         }
     
     // Add it to the list.  Optimization is to keep the list sorted.
-    UInt32 hash = getHash (moduleName);
+    uint32_t hash = getHash (moduleName);
     if (0 == s_symFailedCount)
         {
         s_symbolizeFailedModules[s_symFailedCount] = hash;
@@ -538,7 +538,7 @@ static void addKnownFailingMoudule (char const* moduleName)
     else
         {
         bool inserted = false;
-        for (UInt32 iSym=0; iSym<s_symFailedCount; iSym++)
+        for (uint32_t iSym=0; iSym<s_symFailedCount; iSym++)
             {
             if (s_symbolizeFailedModules[iSym] > hash)
                 {
@@ -557,19 +557,19 @@ static void addKnownFailingMoudule (char const* moduleName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mike.Stratoti                  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public Int32 memutil_symbolizeAddress 
+Public int32_t memutil_symbolizeAddress 
 (
 void   *address,                    // => EIP address to query
 char   *fileAndLine,                // <= Symbolized "file(line)"
 size_t  sizeOfFileAndLine,          // =>
 char   *funcName,                   // <= Symbolized "function name"
-Int32  sizeofFuncName,              // =>
+int32_t sizeofFuncName,              // =>
 char   *moduleName,
-Int32  sizeofModuleName
+int32_t sizeofModuleName
 )
     {
     void*       hDbg = NULL;
-    Int32       appStatus = 0, sysStatus = 0;
+    int32_t     appStatus = 0, sysStatus = 0;
     uintptr_t   preferredBaseAddress,  preferredHighAddress;
     MEMORY_BASIC_INFORMATION mbi;
     memset (&mbi, 0, sizeof(mbi));
@@ -585,7 +585,7 @@ Int32  sizeofModuleName
     -----------------------------------------------------------------------------------*/
     __try
         {
-        Int32      nSymbolized = 0;                                        // When 0, try to locate the symbol using Phil & Mike's code because DbgHelp didn't work
+        int32_t    nSymbolized = 0;                                        // When 0, try to locate the symbol using Phil & Mike's code because DbgHelp didn't work
 
         HANDLE    const hProc = GetCurrentProcess();
 
@@ -735,9 +735,9 @@ static char * pagallocI_strrchr(char *component, char target)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    09/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 pagallocI_strtoul(char *szEnvData, char **pptr, Int32 base)
+static uint32_t pagallocI_strtoul(char *szEnvData, char **pptr, int32_t base)
     {
-    UInt32 iRet = 0;
+    uint32_t iRet = 0;
     char maxchar = '9';
     char *ptr = szEnvData;
 
@@ -771,12 +771,12 @@ static UInt32 pagallocI_strtoul(char *szEnvData, char **pptr, Int32 base)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    09/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-static char *pagallocI_ultoa(UInt32 val, char *ptr, Int32 base)
+static char *pagallocI_ultoa(uint32_t val, char *ptr, int32_t base)
     {
     char *pchRet = ptr;
     double dbase;
-    Int32 place;
-    UInt32 divisor;
+    int32_t place;
+    uint32_t divisor;
 
     /* special case for zero (in any base) */
     if (!val)
@@ -792,13 +792,13 @@ static char *pagallocI_ultoa(UInt32 val, char *ptr, Int32 base)
 
     /* calculate divisor */
     dbase = (double)base;
-    place = (Int32)(log((double)val) / log(dbase));
-    divisor = (UInt32)pow(dbase, place);
+    place = (int32_t)(log((double)val) / log(dbase));
+    divisor = (uint32_t)pow(dbase, place);
 
     /* divide and subtract for each place */
     for (; divisor; divisor /= base)
         {
-        UInt32 digit = val / divisor;
+        uint32_t digit = val / divisor;
 
         val -= (digit * divisor);
         if (digit > 9)
@@ -815,7 +815,7 @@ static char *pagallocI_ultoa(UInt32 val, char *ptr, Int32 base)
 |   Internal functions                                                  |
 |                                                                       |
 +----------------------------------------------------------------------*/
-UInt32 pagalloc_lockVisibleCriticalSection
+uint32_t pagalloc_lockVisibleCriticalSection
 (
 void
 )
@@ -830,7 +830,7 @@ typedef enum
     eShowDiagnostic = 1,
     } ShowCSDiagnostic;
 
-UInt32 pagalloc_unlockVisibleCriticalSection
+uint32_t pagalloc_unlockVisibleCriticalSection
 (
 ShowCSDiagnostic  const bShowDiagnostic
 )
@@ -849,7 +849,7 @@ ShowCSDiagnostic  const bShowDiagnostic
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PEM             05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32 pagalloc_sufficientStack
+static int32_t pagalloc_sufficientStack
 (
 void
 )
@@ -903,7 +903,7 @@ char const * const  szFormat,
     {
     va_list     arg;
     char        debugString[1024 * 5];
-    Int32               debugStringLen;
+    int32_t             debugStringLen;
 
     if (!pagalloc_sufficientStack())
         return;
@@ -977,11 +977,11 @@ static PageMallocEntry* getNextHeader ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brandon.Bohrer  01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32 pagallocI_computeBlocksInUse ()
+static int32_t pagallocI_computeBlocksInUse ()
     {
-    UInt32 total = 0;
+    uint32_t total = 0;
     
-    for (Int32 i=0; i < s_nHeap; i++)
+    for (int32_t i=0; i < s_nHeap; i++)
         total += s_sbh[i].blocksInUseCount;
 
     return total;
@@ -993,13 +993,13 @@ static Int32 pagallocI_computeBlocksInUse ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void pagallocI_printSbhUsage (char* msg)
     {
-    Int32 const rowSize = 4;
+    int32_t const rowSize = 4;
 
-    for (Int32 rowStart = 0; rowStart < s_nHeap; rowStart += rowSize)
+    for (int32_t rowStart = 0; rowStart < s_nHeap; rowStart += rowSize)
         {
         pagalloc_printf (PAGALLOC_SEVERITY_DEBUG, "PAGALLOC: %-20s ", msg);
 
-        for (Int32 i = rowStart; i < rowStart + rowSize && i < s_nHeap; i++)
+        for (int32_t i = rowStart; i < rowStart + rowSize && i < s_nHeap; i++)
             {
             char buf [128];
             // Print into a buffer first so we can set the width of the column as a whole.
@@ -1021,12 +1021,12 @@ char *msg
 )
     {
     SYSTEMTIME               localTime;
-    static UInt32            lastUse;
-    Int32              const deltaUse = s_usingLite ?
+    static uint32_t          lastUse;
+    int32_t            const deltaUse = s_usingLite ?
                                         s_heapListLength - lastUse :
-                                        (Int32) (pagallocI_computeBlocksInUse () - lastUse);
-    UInt32                   usedGdi  = 0;
-    UInt32                   usedUser = 0;
+                                        (int32_t) (pagallocI_computeBlocksInUse () - lastUse);
+    uint32_t                 usedGdi  = 0;
+    uint32_t                 usedUser = 0;
     static tGetGuiResources  pGetGuiResources = (tGetGuiResources) -1;
 
     if (!pagalloc_sufficientStack())
@@ -1085,7 +1085,7 @@ static __inline void    pagalloc_displayWorkingMessage
 void
 )
     {
-    const  Int32  mod = 1000000;
+    const  int32_t mod = 1000000;
 
     if (!pagalloc_sufficientStack())
         return;
@@ -1107,12 +1107,12 @@ void
 static void     pagalloc_symbolizeHeaderAddressesForVisualC
 (
 PageMallocEntry const * const headerP,          // =>
-Int32                           callsToSkip=0 // => Number of calls not to display, starting at the most recent. Internal calls are
+int32_t                         callsToSkip=0 // => Number of calls not to display, starting at the most recent. Internal calls are
                                             // removed at recording time, so this should be 0 most of the time.
 )
     {
-    Int32 iFrame;
-    Int32 const cFrame = _countof(headerP->callStackFrame);
+    int32_t iFrame;
+    int32_t const cFrame = _countof(headerP->callStackFrame);
 
     __try
         {
@@ -1130,7 +1130,7 @@ Int32                           callsToSkip=0 // => Number of calls not to displ
             // Compress duplicate call frames for recursive functions
             if (iFrame > 0 && headerP->callStackFrame[iFrame].returnAddress == headerP->callStackFrame[iFrame-1].returnAddress)
                 {
-                Int32 i;
+                int32_t i;
                 for (i=iFrame;  (i < (cFrame-1)) && headerP->callStackFrame[iFrame].returnAddress; i++)
                     {
                     if (headerP->callStackFrame[iFrame].returnAddress != headerP->callStackFrame[i].returnAddress)
@@ -1217,12 +1217,12 @@ const PageMallocEntry * const headerP           // =>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    07/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void pagallocI_sbHeapInit(Int32 iHeap)
+static void pagallocI_sbHeapInit(int32_t iHeap)
     {
-    Int32 sbhBlockPages;
-    UInt32 bitmapAllocBytes = 0;
-    UInt32 bitmapAllocDwords = 0;
-    UInt32 bytesReserved = 0;
+    int32_t sbhBlockPages;
+    uint32_t bitmapAllocBytes = 0;
+    uint32_t bitmapAllocDwords = 0;
+    uint32_t bytesReserved = 0;
 
     assert (PAGALLOC_TRADITIONAL == s_usingLite);
     /* force top down for 2nd heap on 3GB systems */
@@ -1241,13 +1241,13 @@ static void pagallocI_sbHeapInit(Int32 iHeap)
 
     /* calculate size of bitmap to allocate */
     bitmapAllocBytes = (sbhBlockPages / s_sbh[iHeap].pagesPerBlock) / BITS_PER_BYTE;
-    bitmapAllocDwords = bitmapAllocBytes / sizeof (UInt32);
+    bitmapAllocDwords = bitmapAllocBytes / sizeof (uint32_t);
 
     if (!s_pageDebugLruDisable)
         {
         /* allocate "least recently used" s_sbh block bitmap */
-        s_sbh[iHeap].lruBitmapP = (UInt32*)VirtualAlloc(NULL, bitmapAllocBytes + s_systemInfo.dwPageSize, MEM_RESERVE, PAGE_READWRITE);
-        s_sbh[iHeap].lruBitmapP = (UInt32*)VirtualAlloc(s_sbh[iHeap].lruBitmapP, bitmapAllocBytes, MEM_COMMIT, PAGE_READWRITE);
+        s_sbh[iHeap].lruBitmapP = (uint32_t*)VirtualAlloc(NULL, bitmapAllocBytes + s_systemInfo.dwPageSize, MEM_RESERVE, PAGE_READWRITE);
+        s_sbh[iHeap].lruBitmapP = (uint32_t*)VirtualAlloc(s_sbh[iHeap].lruBitmapP, bitmapAllocBytes, MEM_COMMIT, PAGE_READWRITE);
         if (!s_sbh[iHeap].lruBitmapP)
             {
             pagalloc_printf(PAGALLOC_SEVERITY_ERROR, "PAGALLOC: could not allocate s_sbh lru bitmap!\r\n");
@@ -1256,8 +1256,8 @@ static void pagallocI_sbHeapInit(Int32 iHeap)
         }
 
     /* allocate s_sbh block bitmap */
-    s_sbh[iHeap].bitmapP = (UInt32*)VirtualAlloc(NULL, bitmapAllocBytes + s_systemInfo.dwPageSize, MEM_RESERVE, PAGE_READWRITE);
-    s_sbh[iHeap].bitmapP = (UInt32*)VirtualAlloc(s_sbh[iHeap].bitmapP, bitmapAllocBytes, MEM_COMMIT, PAGE_READWRITE);
+    s_sbh[iHeap].bitmapP = (uint32_t*)VirtualAlloc(NULL, bitmapAllocBytes + s_systemInfo.dwPageSize, MEM_RESERVE, PAGE_READWRITE);
+    s_sbh[iHeap].bitmapP = (uint32_t*)VirtualAlloc(s_sbh[iHeap].bitmapP, bitmapAllocBytes, MEM_COMMIT, PAGE_READWRITE);
     if (!s_sbh[iHeap].bitmapP)
         {
         pagalloc_printf(PAGALLOC_SEVERITY_ERROR, "PAGALLOC: could not allocate s_sbh bitmap!\r\n");
@@ -1292,7 +1292,7 @@ static void pagallocI_sbHeapInit(Int32 iHeap)
 
     /* calculate size of allocation bitmap that should actually be used */
     s_sbh[iHeap].bitmapBytes = (sbhBlockPages / s_sbh[iHeap].pagesPerBlock) / BITS_PER_BYTE;
-    s_sbh[iHeap].bitmapDwords = s_sbh[iHeap].bitmapBytes / sizeof (UInt32);
+    s_sbh[iHeap].bitmapDwords = s_sbh[iHeap].bitmapBytes / sizeof (uint32_t);
 
     /* sanity test: bitmap size to be used should be greater or equal to size allocated */
     if (bitmapAllocBytes < s_sbh[iHeap].bitmapBytes)
@@ -1318,11 +1318,11 @@ static void pagallocI_sbHeapInit(Int32 iHeap)
 * @bsimethod                                                    BrandonBohrer   01/2012
 *  Ensure that nHeap SBH's exist and are initialized.
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void pagallocI_sbHeapsEnsure (Int32 nHeap)
+static void pagallocI_sbHeapsEnsure (int32_t nHeap)
     {
     if (!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
 
@@ -1346,7 +1346,7 @@ static void pagallocI_sbHeapsEnsure (Int32 nHeap)
 
     s_sbh = newHeapArray;
 
-    for (Int32 iHeap = s_nHeap; iHeap < nHeap; iHeap++)
+    for (int32_t iHeap = s_nHeap; iHeap < nHeap; iHeap++)
         pagallocI_sbHeapInit (iHeap);
 
     LeaveCriticalSection (&s_csHeap);
@@ -1355,15 +1355,15 @@ static void pagallocI_sbHeapsEnsure (Int32 nHeap)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    07/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 pagallocI_getEnvULong
+static uint32_t pagallocI_getEnvULong
 (
 char *szEnvName,
-UInt32 iDefault
+uint32_t iDefault
 )
     {
     char szEnvData[1024];
-    UInt32 iRet = iDefault;
-    UInt32 iStatus;
+    uint32_t iRet = iDefault;
+    uint32_t iStatus;
     char *ptr;
 
     memset(szEnvData, 0, sizeof(szEnvData));
@@ -1386,7 +1386,7 @@ HeapLiteHeader*header
 )
     {
     char*       pc = (char*)header + sizeof (*header);
-    UInt32    userDataSize = (header->requestedSize + 3) & ~3;
+    uint32_t  userDataSize = (header->requestedSize + 3) & ~3;
 
     assert (PAGALLOC_LITE == s_usingLite);
     return (HeapLiteTrailer*)(pc + userDataSize);
@@ -1398,7 +1398,7 @@ HeapLiteHeader*header
 static void    getLiteInfo
 (
 HeapLiteHeader**liteHeader,
-UInt32*       userDataSize,
+uint32_t*       userDataSize,
 HeapLiteTrailer**liteTrailer,
 void const * const actualData
 )
@@ -1421,11 +1421,11 @@ void const * const actualData
     *liteTrailer = (HeapLiteTrailer*)(pc + *userDataSize);
     }
 
-static Int32 s_pagallocInitialized;
+static int32_t s_pagallocInitialized;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32 __declspec(dllexport) __cdecl  pagalloc_isInitialized
+int32_t __declspec(dllexport) __cdecl  pagalloc_isInitialized
 (
 void
 )
@@ -1452,7 +1452,7 @@ void            initializePagAlloc ()
     {  //  Because it is not C++
     char szSemName[512];
     HANDLE hSem;
-    Int32 status;
+    int32_t status;
 
     memset(szSemName, 0, sizeof(szSemName));
     wsprintf(szSemName, "pagalloc_initialize_%04x_%p", GetCurrentProcessId(), pagallocI_pageModeCalc);
@@ -1478,7 +1478,7 @@ void            initializePagAlloc ()
         }
     else
         {
-        Int32 i;
+        int32_t i;
         HMODULE const hKernel32 = GetModuleHandle ("KERNEL32");
 
         /*-------------------------------------------------------------------
@@ -1585,12 +1585,12 @@ void            initializePagAlloc ()
         switch (s_pageDebugFillSize)
             {
             case 1:
-                memset(s_fillDataP, (Int32)s_pageDebugFillData, s_systemInfo.dwPageSize);
+                memset(s_fillDataP, (int32_t)s_pageDebugFillData, s_systemInfo.dwPageSize);
                 break;
             case 2:
                 {
                 unsigned short *wordP = (unsigned short *)s_fillDataP;
-                Int32 wordCount = s_systemInfo.dwPageSize / sizeof(short);
+                int32_t wordCount = s_systemInfo.dwPageSize / sizeof(short);
                 for (i = 0; i < wordCount; i++)
                     {
                     wordP[i] = (unsigned short)s_pageDebugFillData;
@@ -1599,8 +1599,8 @@ void            initializePagAlloc ()
                 break;
             case 4:
                 {
-                UInt32 *dwordP = (UInt32 *)s_fillDataP;
-                Int32 dwordCount = s_systemInfo.dwPageSize / sizeof(Int32);
+                uint32_t *dwordP = (uint32_t *)s_fillDataP;
+                int32_t dwordCount = s_systemInfo.dwPageSize / sizeof(int32_t);
                 for (i = 0; i < dwordCount; i++)
                     {
                     dwordP[i] = s_pageDebugFillData;
@@ -1614,7 +1614,7 @@ void            initializePagAlloc ()
 
         if (s_usingLite)
             {
-            Int32 i;
+            int32_t i;
 
             s_hPagAllocHeap = HeapCreate (0, 0, 0);
             for (i = 0; i < _countof (s_headers); i++)
@@ -1656,7 +1656,7 @@ uintptr_t *initialOffset
     {
     uintptr_t s_byteCount;
     uintptr_t pageCount;
-    UInt32 onFirstPage;
+    uint32_t onFirstPage;
 
     assert (PAGALLOC_TRADITIONAL == s_usingLite);
 
@@ -1683,23 +1683,23 @@ uintptr_t *initialOffset
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    07/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 pagallocI_bitScanForwardClearAndSet
+static uint32_t pagallocI_bitScanForwardClearAndSet
 (
-UInt32  *dwP,
-Int32   iHeap
+uint32_t *dwP,
+int32_t iHeap
 )
     {
-    UInt32 dwNum, bitNum;
+    uint32_t dwNum, bitNum;
 
     if (!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
 
     for (bitNum = dwNum = 0; dwNum < s_sbh[iHeap].bitmapDwords; dwNum++)
         {
-        UInt32 temp = ~dwP[dwNum];
+        uint32_t temp = ~dwP[dwNum];
         if (temp)
             {
             for (bitNum = 0; bitNum < BITS_PER_DWORD; bitNum++)
@@ -1723,24 +1723,24 @@ Int32   iHeap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    08/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 pagallocI_bitSet
+static uint32_t pagallocI_bitSet
 (
-UInt32   *dwP,
-UInt32    block,
-Int32       iHeap
+uint32_t *dwP,
+uint32_t  block,
+int32_t     iHeap
 )
     {
-    UInt32 dwNum;
-    UInt32 bitNum;
-    UInt32 retVal;
-    UInt32 mask;
+    uint32_t dwNum;
+    uint32_t bitNum;
+    uint32_t retVal;
+    uint32_t mask;
 
     if (block >= s_sbh[iHeap].blocks)
         return      0;
 
     if(!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
     dwNum       = block / BITS_PER_DWORD;
@@ -1757,14 +1757,14 @@ Int32       iHeap
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void pagallocI_bitCopyAll
 (
-UInt32   *dwDstP,
-UInt32   *dwSrcP,
-Int32       iHeap
+uint32_t *dwDstP,
+uint32_t *dwSrcP,
+int32_t     iHeap
 )
     {
     if(!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
     memcpy(dwDstP, dwSrcP, s_sbh[iHeap].bitmapBytes);
@@ -1774,21 +1774,21 @@ Int32       iHeap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    07/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 pagallocI_bitTestAndClear /* <= zero means bit wasn't set (error) */
+static uint32_t pagallocI_bitTestAndClear /* <= zero means bit wasn't set (error) */
 (
-UInt32   *dwP,
-UInt32    block,
-Int32       iHeap
+uint32_t *dwP,
+uint32_t  block,
+int32_t     iHeap
 )
     {
-    UInt32 dwNum;
-    UInt32 bitNum;
-    UInt32 retVal;
-    UInt32 mask;
+    uint32_t dwNum;
+    uint32_t bitNum;
+    uint32_t retVal;
+    uint32_t mask;
 
     if(!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
     dwNum   = block / BITS_PER_DWORD;
@@ -1809,11 +1809,11 @@ Int32       iHeap
 static bool pagallocI_makeHeaderVisible
 (
 PageMallocEntry const * const headerP,
-UInt32 newProtect,
-UInt32 *oldProtectP
+uint32_t newProtect,
+uint32_t *oldProtectP
 )
     {
-    UInt32 oldProtect = 0;
+    uint32_t oldProtect = 0;
     bool ok;
 
     if (s_pageDebugHeadersAlwaysVisible || s_usingLite)
@@ -1838,12 +1838,12 @@ UInt32 *oldProtectP
 static bool pagallocI_makeHeaderInvisible
 (
 PageMallocEntry const * const headerP,
-UInt32 newProtect,
-UInt32 *oldProtectP
+uint32_t newProtect,
+uint32_t *oldProtectP
 )
     {
     bool ok;
-    UInt32 oldProtect = 0;
+    uint32_t oldProtect = 0;
 
     if (s_pageDebugHeadersAlwaysVisible || s_usingLite)
         return true;
@@ -1867,7 +1867,7 @@ UInt32 *oldProtectP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrandonBohrer   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool  pagallocI_sbFindBlock (Int32& iHeap, UInt32& block)
+static bool  pagallocI_sbFindBlock (int32_t& iHeap, uint32_t& block)
     {
     bool        flushed = false;
 
@@ -1875,7 +1875,7 @@ static bool  pagallocI_sbFindBlock (Int32& iHeap, UInt32& block)
 
     if(!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
 
@@ -1886,7 +1886,7 @@ static bool  pagallocI_sbFindBlock (Int32& iHeap, UInt32& block)
     if (!s_pageDebugLruDisable)
         {
         /* look first in the LRU table to keep from re-using same blocks as often */
-        for (Int32 i = 0; i < s_nHeap; i++)
+        for (int32_t i = 0; i < s_nHeap; i++)
             {
             block = pagallocI_bitScanForwardClearAndSet(s_sbh[i].lruBitmapP, i);
             if (block < s_sbh[i].blocks)
@@ -1902,7 +1902,7 @@ static bool  pagallocI_sbFindBlock (Int32& iHeap, UInt32& block)
             flushed = true;
 
             /* the LRU table is full, so we just get the next block directly... */
-            for (Int32 i = 0; i < s_nHeap; i++)
+            for (int32_t i = 0; i < s_nHeap; i++)
                 {
                 block = pagallocI_bitScanForwardClearAndSet(s_sbh[i].bitmapP, i);
                 if (block < s_sbh[i].blocks)
@@ -1913,13 +1913,13 @@ static bool  pagallocI_sbFindBlock (Int32& iHeap, UInt32& block)
                 }
 
             /* ...and then copy all new LRU tables from current bitmaps */
-            for (Int32 i = 0; i < s_nHeap; i++)
+            for (int32_t i = 0; i < s_nHeap; i++)
                 pagallocI_bitCopyAll(s_sbh[i].lruBitmapP, s_sbh[i].bitmapP, i);
             }
         }
     else /* not using LRU bitmap */
         {
-        for (Int32 i = 0; i < s_nHeap; i++)
+        for (int32_t i = 0; i < s_nHeap; i++)
             {
             block = pagallocI_bitScanForwardClearAndSet(s_sbh[i].bitmapP, i);
             if (block < s_sbh[i].blocks)
@@ -1945,11 +1945,11 @@ static bool  pagallocI_sbFindBlock (Int32& iHeap, UInt32& block)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void *pagallocI_sbReserve
 (
-Int32 *iHeapP
+int32_t *iHeapP
 )
     {
-    UInt32      block = -1;
-    Int32       iHeap = -1;
+    uint32_t    block = -1;
+    int32_t     iHeap = -1;
     char       *charP;
     
     assert (PAGALLOC_TRADITIONAL == s_usingLite);
@@ -1996,9 +1996,9 @@ Int32 *iHeapP
 
 // On X64 we make more SBHs as needed, so the check below doesn't work and is less useful since it's harder to run out of memory.
 #ifdef _X86_
-    UInt32 blocksFree = 0;
+    uint32_t blocksFree = 0;
 
-    for (Int32 i=0; i < s_nHeap; i++)
+    for (int32_t i=0; i < s_nHeap; i++)
         blocksFree += s_sbh[i].blocks - s_sbh[i].blocksInUseCount;
 
     if (g_pageLeakDetectTrigger > blocksFree)
@@ -2021,9 +2021,9 @@ static bool pagallocI_sbDecommit
 PageMallocEntry *headerP
 )
     {
-    UInt32      block;
-    UInt32      blocks;
-    Int32       iHeap = headerP->iHeap;
+    uint32_t    block;
+    uint32_t    blocks;
+    int32_t     iHeap = headerP->iHeap;
     char       *charP = (char *)headerP;
     bool        ok;
 
@@ -2031,7 +2031,7 @@ PageMallocEntry *headerP
 
     if (iHeap <= s_nHeap)
         {
-        block = (UInt32)(charP - s_sbh[iHeap].blockP)  / s_sbh[iHeap].blockBytes;
+        block = (uint32_t)(charP - s_sbh[iHeap].blockP)  / s_sbh[iHeap].blockBytes;
         blocks = s_sbh[iHeap].blocks;
         }
 
@@ -2054,7 +2054,7 @@ PageMallocEntry *headerP
         /*---------------------------------------------------------------
         Keep the control block but free the data block
         ---------------------------------------------------------------*/
-        UInt32 fdwOldProtect = PAGE_NOACCESS;
+        uint32_t fdwOldProtect = PAGE_NOACCESS;
         char *ctrlBlockP = s_sbh[iHeap].blockP + (block * s_sbh[iHeap].blockBytes);
         char *dataBlockP = ctrlBlockP + s_sbh[iHeap].blockBytes - s_systemInfo.dwPageSize;
 
@@ -2086,11 +2086,11 @@ static PageMallocEntry* getHeaderProxy
 void const * const actualData
 )
     {
-    UInt32            i;
+    uint32_t          i;
     PageMallocEntry*    entry = getNextHeader ();
     HeapLiteHeader*     liteHeader;
     HeapLiteTrailer*    liteTrailer;
-    UInt32              userDataSize;
+    uint32_t            userDataSize;
     intptr_t*           returnAddress;
     CallStackFrame*     callStackFrame;
 
@@ -2133,7 +2133,7 @@ void const * const voidP
     {
     MEMORY_BASIC_INFORMATION memoryBasicInformation;
     char   *byteP = (char *)voidP;
-    Int32     iHeap;
+    int32_t   iHeap;
 
     assert (PAGALLOC_MINIMAL != s_usingLite);
     if (s_usingLite)
@@ -2173,7 +2173,7 @@ static bool pagallocI_openHeader
 PageMallocEntry const * const headerP
 )
     {
-    UInt32 fdwOldProtect = PAGE_NOACCESS;
+    uint32_t fdwOldProtect = PAGE_NOACCESS;
     bool ok;
 
     assert (PAGALLOC_MINIMAL != s_usingLite);
@@ -2235,7 +2235,7 @@ static void     pagallocI_leaveHeaderVisible(void)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mike.Stratoti   02/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32     pagallocI_recordCallingStack
+int32_t   pagallocI_recordCallingStack
 (
 PageMallocEntry *headerP,       // =>
 void* returnAddress             // => Most recent call that will be recorded in the call stack
@@ -2254,12 +2254,12 @@ void* returnAddress             // => Most recent call that will be recorded in 
         }
     
     //Microsoft-Imposed limit: 62 total recorded/skipped calls on XP/Server 2003, from: http://msdn.microsoft.com/en-us/library/bb204633(VS.85).aspx
-    const Int32 maxTotalAddrs = 62;
-    const Int32 maxRecordedAddrs = maxTotalAddrs;
+    const int32_t maxTotalAddrs = 62;
+    const int32_t maxRecordedAddrs = maxTotalAddrs;
     void* addrs[maxTotalAddrs];
-    UInt32 nAddrs = BackTraceFunc(0, maxRecordedAddrs, addrs, NULL);
+    uint32_t nAddrs = BackTraceFunc(0, maxRecordedAddrs, addrs, NULL);
     assert (nAddrs > 0);
-    UInt32 i=0;
+    uint32_t i=0;
     for(; i < min(nAddrs, _countof(headerP->callStackFrame)); i++)
         {
         headerP->callStackFrame[i].returnAddress =(uintptr_t) addrs[i];
@@ -2277,7 +2277,7 @@ void* returnAddress             // => Most recent call that will be recorded in 
         } SymInfo = { {sizeof (IMAGEHLP_SYMBOL)}};
     IMAGEHLP_SYMBOL * pSym = &SymInfo.sym;
     pSym->MaxNameLength = 100;
-    Int32 callsToSkip=0;
+    int32_t callsToSkip=0;
     SymGetSymFromAddr(GetCurrentProcess(), (intptr_t)returnAddress, 0, pSym);
     LeaveCriticalSection(&s_csSymbolize);
 
@@ -2286,7 +2286,7 @@ void* returnAddress             // => Most recent call that will be recorded in 
         if(headerP->callStackFrame[callsToSkip].returnAddress > pSym->Address
             && headerP->callStackFrame[callsToSkip].returnAddress < pSym->Address + pSym->Size)
             break;
-    assert ((UInt32)callsToSkip <= nAddrs);
+    assert ((uint32_t)callsToSkip <= nAddrs);
     //Once the good calls are copied, the other ones should be erased, so set the number of addresses to the number of addresses we care about.
     nAddrs -= callsToSkip;
     //Copy the good addresses forward to the beginning of the array
@@ -2348,7 +2348,7 @@ HeapLiteHeader* header
     //  Add to the end of the list. That way,
     if (!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
 
@@ -2381,7 +2381,7 @@ HeapLiteHeader* header
     {
     if (!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
 
@@ -2412,19 +2412,19 @@ size_t                const requestedSize,
 void          const * const context,
 unsigned char const         lastOperation,
 PageMallocEntry*            pageMallocEntry,
-Int32                    const recordedFrames
+int32_t                  const recordedFrames
 )
     {
-    Int32         i;
-    Int32         userDataSize = (requestedSize + 3) & ~3;
-    Int32         allocSize;
+    int32_t       i;
+    int32_t       userDataSize = (requestedSize + 3) & ~3;
+    int32_t       allocSize;
     char*       retval;
     HeapLiteHeader* header;
     HeapLiteTrailer* trailer;
     intptr_t*   returnAddress;
     CallStackFrame* callStackFrame;
 
-    allocSize = sizeof (HeapLiteHeader) + userDataSize + sizeof (HeapLiteTrailer) + (recordedFrames - 1) * sizeof (UInt32);
+    allocSize = sizeof (HeapLiteHeader) + userDataSize + sizeof (HeapLiteTrailer) + (recordedFrames - 1) * sizeof (uint32_t);
     header = (HeapLiteHeader*)HeapAlloc (s_hPagAllocHeap, 0, allocSize);
 
     header->requestedSize = requestedSize;
@@ -2513,7 +2513,7 @@ void *                      callingFunc //=> Function that called this one: new,
     size_t              initialOffset=0;
     char               *allocP=0;
     PageMallocEntry    *headerP;
-    Int32               iHeap = 0x7fffffff; /* big positive number */
+    int32_t             iHeap = 0x7fffffff; /* big positive number */
 
     initializePagAlloc ();
 
@@ -2523,7 +2523,7 @@ void *                      callingFunc //=> Function that called this one: new,
 
     if (PAGALLOC_LITE == s_usingLite)
         {
-        Int32               recordedFrames = 0;
+        int32_t             recordedFrames = 0;
         PageMallocEntry*    tempEntry = getNextHeader ();
         void*               retval;
 
@@ -2654,7 +2654,7 @@ void *                      callingFunc //=> Function that called this one: new,
         }
     else
         {
-        static Int32 warnOnce;
+        static int32_t warnOnce;
 
         if (!warnOnce)
             {
@@ -2676,7 +2676,7 @@ void *                      callingFunc //=> Function that called this one: new,
 * @bsimethod                                                    PhilipMcGraw    07/99
 +---------------+---------------+---------------+---------------+---------------+------*/
 PAGALLOC_API
-Int32 __cdecl     pagallocI_fillCheck
+int32_t __cdecl     pagallocI_fillCheck
 (
 char *dataP,
 size_t size
@@ -2688,7 +2688,7 @@ size_t size
     const uintptr_t wholePages      = size / s_systemInfo.dwPageSize;
     const uintptr_t  onLastPage      = (size - (wholePages * s_systemInfo.dwPageSize) - onFirstPage) ;
     uintptr_t   page;
-    Int32                       iMemCmp         = 0;
+    int32_t                     iMemCmp         = 0;
 
     if (onFirstPage)
         {
@@ -2725,7 +2725,7 @@ void const * const context
     HeapLiteHeader *header;
     HeapLiteTrailer*trailer;
     size_t         requestedSize;
-    UInt32         userDataSize;
+    uint32_t       userDataSize;
 
     if (!voidP)
         return; /*ANSI made me do it! */
@@ -2749,7 +2749,7 @@ void const * const context
         return;
         }
 
-    getLiteInfo (&header, (UInt32*)&userDataSize, &trailer, voidP);
+    getLiteInfo (&header, (uint32_t*)&userDataSize, &trailer, voidP);
     requestedSize = header->requestedSize;
 
     s_byteCount -= requestedSize;
@@ -2809,7 +2809,7 @@ void * callingFunc
 
     if (PAGALLOC_MINIMAL == s_usingLite)
         {
-        Int32 retval = HeapFree (s_hPagAllocHeap, 0, voidP);
+        int32_t retval = HeapFree (s_hPagAllocHeap, 0, voidP);
 
         if (0 == retval)
             {
@@ -2857,8 +2857,8 @@ void * callingFunc
 
         if (s_pageDebugFreeCheck)
             {
-            byte *startPtr = (byte *)headerP->dataStart;
-            byte *endPtr = startPtr + headerP->userSize;
+            Byte *startPtr = (Byte *)headerP->dataStart;
+            Byte *endPtr = startPtr + headerP->userSize;
             size_t startSize;
             size_t endOffset = headerP->userSize;
             size_t endSize;
@@ -2900,8 +2900,8 @@ void * callingFunc
                 ---------------------------------------------------------------*/
                 if (s_pageDebugCallStack  ||  s_pageDebugCheckDoubleFree)
                     {
-                    UInt32 fdwOldProtectReadOnly = PAGE_READONLY;
-                    UInt32 fdwOldProtectReadWrite = PAGE_READWRITE;
+                    uint32_t fdwOldProtectReadOnly = PAGE_READONLY;
+                    uint32_t fdwOldProtectReadWrite = PAGE_READWRITE;
 
                     /* already have header visible and have s_csVisible from checkHeader, so just need to temporarily make writable */
                     VirtualProtect (headerP, s_systemInfo.dwPageSize, PAGE_READWRITE, (PDWORD)&fdwOldProtectReadOnly);
@@ -3061,10 +3061,10 @@ void    const * const context
     headerP = pagallocI_findHeader(oldDataP);
     if (pagallocI_openHeader(headerP)) /* leaves header visible */
         {
-        UInt32 allocSize;
-        UInt32 commitSize;
-        UInt32 initialOffset;
-        UInt32 oldProtect = 0;
+        uint32_t allocSize;
+        uint32_t commitSize;
+        uint32_t initialOffset;
+        uint32_t oldProtect = 0;
 
         pagallocI_pageModeCalc(newsize, &allocSize, &commitSize, &initialOffset);
 
@@ -3164,7 +3164,7 @@ PAGALLOC_API void * __cdecl pagalloc_malloc (size_t const size)
 * @bsimethod                                                    PhilipMcGraw    07/99
 +---------------+---------------+---------------+---------------+---------------+------*/
 PAGALLOC_API
-void * __cdecl pagalloc_nh_malloc (size_t const size, Int32 const nhFlag)
+void * __cdecl pagalloc_nh_malloc (size_t const size, int32_t const nhFlag)
     {
     return  pagallocI_malloc(size, PAGALLOC_CONTEXT, LOP_NH_MALLOC, pagalloc_nh_malloc);
     }
@@ -3468,14 +3468,14 @@ PageMallocEntry const * const headerP
 +---------------+---------------+---------------+---------------+---------------+------*/
 void __cdecl    dumpSinceLite
 (
-UInt32 count
+uint32_t count
 )
     {
     HeapLiteHeader*   header;
 
     if (!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
 
@@ -3507,20 +3507,20 @@ UInt32 count
 +---------------+---------------+---------------+---------------+---------------+------*/
 void __cdecl    dumpSinceFull
 (
-UInt32 count
+uint32_t count
 )
     {
     char              *pMem;
     char       * const pMin = (char*)s_systemInfo.lpMinimumApplicationAddress;
     char const * const pMax = (char*)s_systemInfo.lpMaximumApplicationAddress;
     MEMORY_BASIC_INFORMATION mbi;
-    UInt32 fdwProtect = s_pageDebugHeadersAlwaysVisible ? PAGE_READWRITE : PAGE_NOACCESS;
+    uint32_t fdwProtect = s_pageDebugHeadersAlwaysVisible ? PAGE_READWRITE : PAGE_NOACCESS;
 
     EnterCriticalSection(&s_csDump);
     for (pMem = pMin; pMem < pMax; pMem += mbi.RegionSize)
         {
         size_t cb;
-        UInt32 fdwOldProtect = PAGE_NOACCESS;
+        uint32_t fdwOldProtect = PAGE_NOACCESS;
 
         memset(&mbi, 0, sizeof(mbi));
         cb = VirtualQuery(pMem, &mbi, sizeof(mbi));
@@ -3565,7 +3565,7 @@ UInt32 count
 PAGALLOC_API
 void __cdecl pagalloc_dumpSince
 (
-UInt32 count
+uint32_t count
 )
     {
     pagalloc_printf (PAGALLOC_SEVERITY_DEBUG, "PAGALLOC: dumpSince: %u\r\n", count);
@@ -3582,7 +3582,7 @@ UInt32 count
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    07/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-ULong32 WINAPI pagalloc_dumpSinceThreadProc
+uint32_t WINAPI pagalloc_dumpSinceThreadProc
 (
 LPVOID lpParameter  // This is a UInt32 put into a pointer
 )
@@ -3597,10 +3597,10 @@ LPVOID lpParameter  // This is a UInt32 put into a pointer
 PAGALLOC_API
 void __cdecl pagalloc_dumpSinceAsync
 (
-UInt32 count
+uint32_t count
 )
     {
-    ULong32 tid;
+    uint32_t tid;
     CloseHandle(CreateThread(NULL, 0, pagalloc_dumpSinceThreadProc, (LPVOID)count, 0, &tid));
     }
 
@@ -3610,7 +3610,7 @@ specialized freeHook for MicroStation:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PhilipMcGraw    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32 pagallocI_initMdlFuncs(void)
+static int32_t pagallocI_initMdlFuncs(void)
     {
 #if defined (LMSERVER) || defined (STANDALONE_BSI)
     /* in SELECTserver, calling GetModuleHandle during DLL initialization causes deadlocks. */
@@ -3619,7 +3619,7 @@ static Int32 pagallocI_initMdlFuncs(void)
     return 1;
 #else
     static HANDLE   hUstation;
-    static Int32      complete;
+    static int32_t    complete;
 
     if (complete)
         return complete;
@@ -3662,7 +3662,7 @@ static void pagallocI_freeHook(void)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static char const * const lastOperationToString
 (
-Int32             lastOperation
+int32_t           lastOperation
 )
     {
     char const * const szLastOper = (LOP_CALLOC     == lastOperation) ? "calloc"     :
@@ -3717,7 +3717,7 @@ const LeakDetectCandidate    * const leaker             // => [optional]
     unsigned char const * const by  = (unsigned char*)headerP->dataStart;
     size_t len = (headerP->userSize > 256) ? 256 : headerP->userSize;
     char  line[200], *lp;
-    UInt32 i,j, mlen;
+    uint32_t i,j, mlen;
     uintptr_t row;
 
     pagalloc_printf (PAGALLOC_SEVERITY_INFORMATION,
@@ -3783,7 +3783,7 @@ const LeakDetectCandidate    * const leaker             // => [optional]
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mike.Stratoti   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-CRTCallback Int32 pagalloc_sortfuncTopMatched
+CRTCallback int32_t pagalloc_sortfuncTopMatched
 (
 const void *p1,
 const void *p2
@@ -3817,7 +3817,7 @@ void                  * const context
 )
     {
     GroupUserAuxiliaryValues    * const guav =  (GroupUserAuxiliaryValues*)context;
-    UInt32 i, j;
+    uint32_t i, j;
 
     if ( ! headerP->userAuxiliaryValue)
         return      PDE_CONTINUE;
@@ -3833,7 +3833,7 @@ void                  * const context
             // Found the matching root.  Add userAuxiliaryValue to the first unused slot, uniquely.
             for (j=0; j < _countof(guav->userAuxiliaryValues[0]); j++)
                 {
-                UInt32 userVal = guav->userAuxiliaryValues[i][j];
+                uint32_t userVal = guav->userAuxiliaryValues[i][j];
                 if (headerP->userAuxiliaryValue == userVal)
                     return  PDE_CONTINUE;
 
@@ -3857,10 +3857,10 @@ void                  * const context
 static void     pagalloc_printTopLeakers
 (
 LeakDetectCandidate     ** const topMatches,
-Int32                      const maxTopMatches
+int32_t                    const maxTopMatches
 )
     {
-    UInt32              i;
+    uint32_t            i;
     GroupUserAuxiliaryValues    groupUserAuxiliaryValues;
 
     qsort (topMatches, maxTopMatches, sizeof (LeakDetectCandidate *), pagalloc_sortfuncTopMatched);
@@ -3904,7 +3904,7 @@ Int32                      const maxTopMatches
 
     for (i=0; i < g_topMatchesToDetail; i++)
         {
-        UInt32 fdwOldProtect = 0;
+        uint32_t fdwOldProtect = 0;
 
         if (topMatches[i]  &&  topMatches[i]->groupMemberCount > 0)
             {
@@ -3926,7 +3926,7 @@ Int32                      const maxTopMatches
             // Print any  User Auxiliary Values if any
             if (headerP->userAuxiliaryValue)
                 {
-                Int32   j;
+                int32_t j;
                 pagalloc_printf(PAGALLOC_SEVERITY_DEBUG, "PAGALLOC:      User Auxiliary Values:");
                 for (j=0; j < MAX_TOPMATCHES_USERAUXILIARYVALUES; j++)
                     {
@@ -3976,11 +3976,11 @@ static void     pagalloc_addToTopLeakers
 (
 LeakDetectCandidate * const     candidateP,
 LeakDetectCandidate           **topMatches,
-Int32                           maxTopMatches
+int32_t                         maxTopMatches
 )
     {
-    Int32     iSlot;
-    Int32     smallestSizeSlot = 0;
+    int32_t   iSlot;
+    int32_t   smallestSizeSlot = 0;
 
     for (iSlot=0; iSlot < maxTopMatches; iSlot++)
         {
@@ -4027,7 +4027,7 @@ void const * const key,
 void const * const base,
 size_t             num,
 size_t       const width,
-Int32 (__cdecl *compare)( void const * const, void const * const)
+int32_t (__cdecl *compare)( void const * const, void const * const)
 )
     {
     char const * lo = (char *)base;
@@ -4039,7 +4039,7 @@ Int32 (__cdecl *compare)( void const * const, void const * const)
         {
         if (half = (num / 2) )
             {
-            Int32     result;
+            int32_t   result;
             mid = lo + ((num & 1) ? half : (half - 1)) * width;
             result = (*compare)(key, mid);
             if ( ! result)
@@ -4068,7 +4068,7 @@ Int32 (__cdecl *compare)( void const * const, void const * const)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mike.Stratoti   03/2002
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32    bsearchfuncInFunctionExclusionList
+static int32_t  bsearchfuncInFunctionExclusionList
 (
 void const * const keyP,
 void const * const felVP
@@ -4093,7 +4093,7 @@ static bool  inFunctionExclusionList
 PageMallocEntry const * const headerP
 )
     {
-    Int32 i;
+    int32_t i;
     for (i=0; i < _countof(headerP->callStackFrame)  &&  headerP->callStackFrame[i].returnAddress; i++)
         {
         FunctionExclusionList * const felP = (FunctionExclusionList *) pagalloc_bsearch ((void *) (headerP->callStackFrame[i].returnAddress),  g_fel, g_felUsed, sizeof(g_fel)[0], bsearchfuncInFunctionExclusionList);
@@ -4121,7 +4121,7 @@ void *          context
 
     if (!pTryEnterCriticalSection(&s_csHeap))
         {
-        InterlockedIncrement ((volatile Long32 *)&s_waitCount);
+        InterlockedIncrement ((volatile int32_t *)&s_waitCount);
         EnterCriticalSection (&s_csHeap);
         }
 
@@ -4167,7 +4167,7 @@ char  *pEnd
     char *pMem;
     char       * const pMin = pStart ? pStart : (char*)s_systemInfo.lpMinimumApplicationAddress;
     char const * const pMax = pEnd   ? pEnd   : (char*)s_systemInfo.lpMaximumApplicationAddress;
-    UInt32 fdwProtect = s_pageDebugHeadersAlwaysVisible ? PAGE_READWRITE : PAGE_NOACCESS;
+    uint32_t fdwProtect = s_pageDebugHeadersAlwaysVisible ? PAGE_READWRITE : PAGE_NOACCESS;
     MEMORY_BASIC_INFORMATION        mbi;
 
     for (pMem = pMin; pMem < pMax; pMem += mbi.RegionSize)
@@ -4185,7 +4185,7 @@ char  *pEnd
 
         if (fdwProtect == mbi.Protect) /* might be PAGALLOC header */
             {
-            UInt32 fdwOldProtect = PAGE_NOACCESS;
+            uint32_t fdwOldProtect = PAGE_NOACCESS;
             PageMallocEntry *headerP = (PageMallocEntry*)mbi.BaseAddress;
 
             /* make invisible headers visible */
@@ -4242,8 +4242,8 @@ static uintptr_t    pagalloc_calculateCallStackSum
 PageMallocEntry *headerP
 )
     {
-    Int32 const       cFrame = _countof(headerP->callStackFrame);
-    Int32                   iFrame;
+    int32_t const       cFrame = _countof(headerP->callStackFrame);
+    int32_t                 iFrame;
     CallStackFrame  *frameP;
     uintptr_t   checkSum = 0xffffffff;
     for (iFrame=0, frameP = headerP->callStackFrame; iFrame < cFrame; iFrame++, frameP++)
@@ -4259,17 +4259,17 @@ PageMallocEntry *headerP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32     pagalloc_callStacksReallyMatch
+static int32_t   pagalloc_callStacksReallyMatch
 (
 PageMallocEntry*header1P,
 PageMallocEntry*header2P
 )
     {
     const CallStackFrame   *cs1P, *csEndP, *cs2P;
-    Int32 const             maxStackTest = _countof(header1P->callStackFrame);
-    UInt32                  fdwOldProtect1 = PAGE_NOACCESS;
-    UInt32                  fdwOldProtect2 = PAGE_NOACCESS;
-    Int32                           matches = true;
+    int32_t const             maxStackTest = _countof(header1P->callStackFrame);
+    uint32_t                fdwOldProtect1 = PAGE_NOACCESS;
+    uint32_t                fdwOldProtect2 = PAGE_NOACCESS;
+    int32_t                         matches = true;
 
     pagallocI_makeHeaderVisible (header1P, PAGE_READONLY, &fdwOldProtect1);
     pagallocI_makeHeaderVisible (header2P, PAGE_READONLY, &fdwOldProtect2);
@@ -4302,7 +4302,7 @@ PageMallocEntry*header2P
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32     consolidateLeakDetectCandidate
+static int32_t   consolidateLeakDetectCandidate
 (
 PageMallocEntry *headerP,
 LeakDetectContext   *ldcP
@@ -4441,8 +4441,8 @@ void
 )
     {
     LeakDetectContext         leakDetectContext;
-    UInt32              const sbhMaxAllocations = ((s_sbh[0].mbytes << 20 ) / s_systemInfo.dwPageSize / 2);     // Number of possible allocations in SBH
-    UInt32                    nCandidates = min(MAX_LEAK_DETECT_CANDIDATES, s_usingLite ? s_heapListLength : sbhMaxAllocations);
+    uint32_t            const sbhMaxAllocations = ((s_sbh[0].mbytes << 20 ) / s_systemInfo.dwPageSize / 2);     // Number of possible allocations in SBH
+    uint32_t                  nCandidates = min(MAX_LEAK_DETECT_CANDIDATES, s_usingLite ? s_heapListLength : sbhMaxAllocations);
 
     if (rejectInMinimal ())
         return;
@@ -4460,7 +4460,7 @@ void
         {
         MEMORY_BASIC_INFORMATION    mbi;
         ptrdiff_t                   availableStack;
-        Int32 const                stackNeeded = nCandidates * sizeof *leakDetectContext.candidates;
+        int32_t const                stackNeeded = nCandidates * sizeof *leakDetectContext.candidates;
 
         memset(&mbi, 0, sizeof(mbi));
         VirtualQuery(&mbi, &mbi, sizeof(mbi));
@@ -4469,7 +4469,7 @@ void
         // Sufficient stack for our needs?
         if (stackNeeded > availableStack)
             {
-            nCandidates =  (UInt32)(availableStack / sizeof (LeakDetectCandidate));
+            nCandidates =  (uint32_t)(availableStack / sizeof (LeakDetectCandidate));
             pagalloc_printf (PAGALLOC_SEVERITY_INFORMATION, "PAGALLOC:    *Insufficient stack for leak detection, %d bytes needed. ", stackNeeded);
             pagalloc_printf (PAGALLOC_SEVERITY_INFORMATION, "Reducing \"candidate\" array to %d from %d.\r\n", nCandidates, MAX_LEAK_DETECT_CANDIDATES);
             }
@@ -4512,13 +4512,13 @@ void            *context
         {
         HeapLiteHeader*   header;
         HeapLiteTrailer*  trailer;
-        UInt32          userDataSize;
+        uint32_t        userDataSize;
 
         getLiteInfo (&header, &userDataSize, &trailer, headerP->dataStart);
         }
     else
         {
-        UInt32   fdwOldProtect = PAGE_NOACCESS;
+        uint32_t fdwOldProtect = PAGE_NOACCESS;
         bool    ok;
 
         ok = pagallocI_makeHeaderVisible (headerP, PAGE_READWRITE, &fdwOldProtect);
@@ -4536,8 +4536,8 @@ void            *context
 +---------------+---------------+---------------+---------------+---------------+------*/
 void __declspec(dllexport) __cdecl  pagalloc_setLeakDetectDisplayLimit
 (
-UInt32 const  maxLeakersToDisplay,
-UInt32 const  maxLeakersToDetail
+uint32_t const  maxLeakersToDisplay,
+uint32_t const  maxLeakersToDetail
 )
     {
     if (rejectInMinimal ())
@@ -4630,7 +4630,7 @@ void const * const rawAddress       // =>
 PAGALLOC_API  void __cdecl pagalloc_showCallStackSince
 (
 void const * const  rawAddress,         // =>
-UInt32        const  thisSerialNumber   // => -1 == all blocks (same as pagalloc_showCallStack), 0 == s_leakDetectSinceBase, else use this number as low serial number limit
+uint32_t      const  thisSerialNumber   // => -1 == all blocks (same as pagalloc_showCallStack), 0 == s_leakDetectSinceBase, else use this number as low serial number limit
 )
     {
     PageMallocEntry const * const headerP = (PageMallocEntry const * const ) pagallocI_findHeader (rawAddress);
@@ -4690,7 +4690,7 @@ UInt32        const  thisSerialNumber   // => -1 == all blocks (same as pagalloc
 +---------------+---------------+---------------+---------------+---------------+------*/
 PAGALLOC_API  void __cdecl pagalloc_setSinceBase
 (
-UInt32 const beginningMallocSerialNumber            // =>
+uint32_t const beginningMallocSerialNumber            // =>
 )
     {
     if (rejectInMinimal ())
@@ -4722,7 +4722,7 @@ void
  void __declspec(dllexport) __cdecl pagalloc_queryStatistics
 (
 PagallocStatistics  *psp,
-Int32                maxPsp
+int32_t              maxPsp
 )
      {
      unsigned char    buf[8192];     // At least 1 machine page
@@ -4785,7 +4785,7 @@ PAGALLOC_API  void __cdecl pagalloc_showFullCallStack
 +---------------+---------------+---------------+---------------+---------------+------*/
 void __declspec(dllexport) __cdecl pagalloc_unprotect
     (
-    UInt32 const rawAddress     // =>
+    uint32_t const rawAddress     // =>
     )
     {
     PageMallocEntry const * const headerP = (PageMallocEntry const * const ) pagallocI_findHeader ((void*)rawAddress);
@@ -4810,7 +4810,7 @@ void __declspec(dllexport) __cdecl pagalloc_unprotect
 +---------------+---------------+---------------+---------------+---------------+------*/
 PAGALLOC_API  void __cdecl pagalloc_protect
 (
-UInt32 const rawAddress     // =>
+uint32_t const rawAddress     // =>
 )
     {
     PageMallocEntry const * const headerP = (PageMallocEntry const * const ) pagallocI_findHeader ((void*)rawAddress);
@@ -4861,7 +4861,7 @@ PagallocOutputFunction  const  pof          // =>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32     heapWalkLiteImpl
+static int32_t   heapWalkLiteImpl
 (
 _HEAPINFO * const pHeapInfo
 )
@@ -4877,7 +4877,7 @@ _HEAPINFO * const pHeapInfo
         {
         HeapLiteHeader* tempHeader;
         HeapLiteTrailer*tempTrailer;
-        UInt32        size;
+        uint32_t      size;
 
         getLiteInfo (&tempHeader, &size, &tempTrailer, pHeapInfo->_pentry);
         if (PAGE_SIGNATURE != tempHeader->signature)
@@ -4893,7 +4893,7 @@ _HEAPINFO * const pHeapInfo
 
     trailer = getLiteTrailer (next);
 
-    pHeapInfo->_pentry  = (Int32*)((char*)next + sizeof (*next));
+    pHeapInfo->_pentry  = (int32_t*)((char*)next + sizeof (*next));
     pHeapInfo->_size    = next->requestedSize;
     pHeapInfo->_useflag = trailer->flags.isFree ? _FREEENTRY : _USEDENTRY;
 
@@ -4903,12 +4903,12 @@ _HEAPINFO * const pHeapInfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32     heapWalkLite
+static int32_t   heapWalkLite
 (
 _HEAPINFO * const pHeapInfo
 )
     {
-    Int32                       retval = _HEAPBADPTR;
+    int32_t                     retval = _HEAPBADPTR;
 
     EnterCriticalSection(&s_csHeap);
 
@@ -4928,17 +4928,17 @@ _HEAPINFO * const pHeapInfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mike.Stratoti   10/2001
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32     heapWalkFull
+static int32_t   heapWalkFull
 (
 _HEAPINFO * const pHeapInfo
 )
     {
-    Int32                      retval = _HEAPBADPTR;
-    Int32                      found = false;
+    int32_t                    retval = _HEAPBADPTR;
+    int32_t                    found = false;
     char              *pMem;
     char       * const pMin = (char*)s_systemInfo.lpMinimumApplicationAddress;
     char const * const pMax = (char*)s_systemInfo.lpMaximumApplicationAddress;
-    UInt32        const fdwProtect = s_pageDebugHeadersAlwaysVisible ? PAGE_READWRITE : PAGE_NOACCESS;
+    uint32_t      const fdwProtect = s_pageDebugHeadersAlwaysVisible ? PAGE_READWRITE : PAGE_NOACCESS;
     MEMORY_BASIC_INFORMATION mbi;
 
     if (!s_systemInfo.dwPageSize)
@@ -4973,7 +4973,7 @@ _HEAPINFO * const pHeapInfo
             {
             if (fdwProtect == mbi.Protect) /* might be PAGALLOC header */
                 {
-                UInt32 fdwOldProtect = PAGE_NOACCESS;
+                uint32_t fdwOldProtect = PAGE_NOACCESS;
                 PageMallocEntry * const headerP = (PageMallocEntry*)mbi.BaseAddress;
 
                 /* make invisible headers visible */
@@ -4982,7 +4982,7 @@ _HEAPINFO * const pHeapInfo
                     {
                     if (PAGE_SIGNATURE == headerP->signature)
                         {
-                        pHeapInfo->_pentry  = (Int32*)headerP->dataStart;
+                        pHeapInfo->_pentry  = (int32_t*)headerP->dataStart;
                         pHeapInfo->_size    = headerP->userSize;
                         pHeapInfo->_useflag = headerP->flags.isFree ? _FREEENTRY : _USEDENTRY;
                         retval = _HEAPOK;
@@ -5013,7 +5013,7 @@ _HEAPINFO * const pHeapInfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mike.Stratoti   10/2001
 +---------------+---------------+---------------+---------------+---------------+------*/
-PAGALLOC_API Int32 __cdecl pagalloc_heapWalk
+PAGALLOC_API int32_t __cdecl pagalloc_heapWalk
 (
 _HEAPINFO * const pHeapInfo
 )
@@ -5036,7 +5036,7 @@ _HEAPINFO * const pHeapInfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mike.Stratoti   03/2002
 +---------------+---------------+---------------+---------------+---------------+------*/
-CRTCallback Int32 pagalloc_sortfuncAssendingFunctionExclusionList
+CRTCallback int32_t pagalloc_sortfuncAssendingFunctionExclusionList
 (
 void const * const p1,
 void const * const p2
@@ -5066,7 +5066,7 @@ static FunctionExclusionList *pagalloc_findEmptyFunctionExclusionListEntry
 void
 )
     {
-    Int32 i;
+    int32_t i;
     for (i=0; i < _countof(g_fel); i++)
         {
         if ( ! g_fel[i].start)
@@ -5203,7 +5203,7 @@ fini:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mike.Stratoti   03/2002
 +---------------+---------------+---------------+---------------+---------------+------*/
-PAGALLOC_API  Int32 __cdecl pagalloc_addFunctionByAddressToExclusionList
+PAGALLOC_API  int32_t __cdecl pagalloc_addFunctionByAddressToExclusionList
 (
 uintptr_t const funcAddress
 )
@@ -5230,21 +5230,21 @@ WCharCP funcName         // =>  C++ names must be mangled
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mike.Stratoti   05/2002
 +---------------+---------------+---------------+---------------+---------------+------*/
-PAGALLOC_API  UInt32 __cdecl pagalloc_setUserAuxiliaryValue
+PAGALLOC_API  uint32_t __cdecl pagalloc_setUserAuxiliaryValue
 (
-UInt32          const newUserAuxiliaryValue,        // =>
+uint32_t        const newUserAuxiliaryValue,        // =>
 void            const * const notYet                        // =>  Will eventually be an output function pointer
 )
     {
-    UInt32     const prevValue = g_userAuxiliaryValue;
+    uint32_t   const prevValue = g_userAuxiliaryValue;
     g_userAuxiliaryValue = newUserAuxiliaryValue;
     return  prevValue;
     }
 
 void GdiMonitor_Init ();
-UInt32 GdiMonitor_GetCurrentEntryID ();
-void GdiMonitor_Dump (UInt32 start, void (*callbackFunc) (PageMallocEntry const * const, uintptr_t, UInt32, UInt32) );
-static UInt32 s_gdiLeakStart = 0;
+uint32_t GdiMonitor_GetCurrentEntryID ();
+void GdiMonitor_Dump (uint32_t start, void (*callbackFunc) (PageMallocEntry const * const, uintptr_t, uint32_t, uint32_t) );
+static uint32_t s_gdiLeakStart = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Chuck.Kirschman   02/2012
@@ -5260,7 +5260,7 @@ PAGALLOC_API  void __cdecl pagalloc_initializeGDIMonitor (void)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Chuck.Kirschman   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void pagalloc_showGDILeaksCallback (PageMallocEntry const * const entry, uintptr_t handleId, UInt32 leakNumber, UInt32 count)
+static  void pagalloc_showGDILeaksCallback (PageMallocEntry const * const entry, uintptr_t handleId, uint32_t leakNumber, uint32_t count)
     {
     pagalloc_printf(PAGALLOC_SEVERITY_DEBUG, "PAGALLOC GDI:\r\n");
     pagalloc_printf(PAGALLOC_SEVERITY_DEBUG, "PAGALLOC GDI:      ======================================================================================\r\n");
@@ -5286,7 +5286,7 @@ PAGALLOC_API  void __cdecl pagalloc_showGDILeaks (void)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Chuck.Kirschman   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PAGALLOC_API void __cdecl pagalloc_setGDISinceBase (UInt32 beginningGDICount)
+PAGALLOC_API void __cdecl pagalloc_setGDISinceBase (uint32_t beginningGDICount)
     {
 #if !defined (NDEBUG)
     if (0 == beginningGDICount)
@@ -5458,7 +5458,7 @@ static NTDllBuild  ntDllBuild;
 
 typedef void (__stdcall *PfnRtlInitializeCriticalSection) (LPCRITICAL_SECTION csP);
 typedef void (__stdcall *PfnRtlDeleteCriticalSection)     (LPCRITICAL_SECTION csP);
-typedef BOOL (__stdcall *PfnRtlInitializeCriticalSectionAndSpinCount)     (IN OUT LPCRITICAL_SECTION lpCriticalSection,  IN UInt32 dwSpinCount );
+typedef BOOL (__stdcall *PfnRtlInitializeCriticalSectionAndSpinCount)     (IN OUT LPCRITICAL_SECTION lpCriticalSection,  IN uint32_t dwSpinCount );
 
 
 typedef struct ntdllPatchData
@@ -5480,7 +5480,7 @@ static NtdllPatchData  *ntdllPatchData;
 PatchedCall BOOL WINAPI     pagalloc_rtlInitializeCriticalSectionAndSpinCount
 (
 LPCRITICAL_SECTION  lpCriticalSection,
-UInt32              dwSpinCount
+uint32_t            dwSpinCount
 )
     {
     BOOL     rtn = 0;
@@ -5495,7 +5495,7 @@ UInt32              dwSpinCount
         csi->csDebug = *lpCriticalSection->DebugInfo;
 
         lpCriticalSection->DebugInfo->Spare[0] = PAGALLOC_CRITICAL_SECTION_SIGNATURE;
-        lpCriticalSection->DebugInfo->Spare[1] = (UInt32) csi;
+        lpCriticalSection->DebugInfo->Spare[1] = (uint32_t) csi;
 
         s_countInitializeCriticalSection++;
         }
@@ -5566,7 +5566,7 @@ bool const tracking                                                          // 
             isFuncPatchable (rtlInitializeCriticalSectionAndSpinCountP, s_Win2Ksp4RtlInitializeCriticalSectionAndSpinCountCtrl, s_Win2Ksp4RtlInitializeCriticalSectionAndSpinCountTest,  sizeof(s_Win2Ksp4RtlInitializeCriticalSectionAndSpinCountTest))
             )
             {
-            UInt32   oldProt = 0;
+            uint32_t oldProt = 0;
 
             ntDllBuild = Win2Ksp4;
 
@@ -5601,7 +5601,7 @@ bool const tracking                                                          // 
                 isFuncPatchable (rtlInitializeCriticalSectionAndSpinCountP, s_WinXPsp1RtlInitializeCriticalSectionAndSpinCountCtrl, s_WinXPsp1RtlInitializeCriticalSectionAndSpinCountTest,  sizeof(s_WinXPsp1RtlInitializeCriticalSectionAndSpinCountTest))
                 )
                 {
-                UInt32   oldProt = 0;
+                uint32_t oldProt = 0;
 
                 ntDllBuild = WinXPsp1;
 
@@ -5668,7 +5668,7 @@ bool const tracking                                                          // 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mike.Stratoti   01/2004
 +---------------+---------------+---------------+---------------+---------------+------*/
-PAGALLOC_API   Int32     pagalloc_walkCriticalSectionList
+PAGALLOC_API   int32_t   pagalloc_walkCriticalSectionList
 (
 HANDLE const m_hProcess
 )
@@ -5676,12 +5676,12 @@ HANDLE const m_hProcess
     RTL_CRITICAL_SECTION_DEBUG      csdLoaderLock;
     RTL_CRITICAL_SECTION_DEBUG      csdDeferedCriticalSectionDebug;
     RTL_CRITICAL_SECTION_DEBUG      csdCriticalSectionLockDebug;
-    UInt32                     const PEBLoaderLock = 0x7ffdf0a0;
+    uint32_t                   const PEBLoaderLock = 0x7ffdf0a0;
     PDWORD                          pLoaderLockAddress;
     RTL_CRITICAL_SECTION            csLoaderLock;
     RTL_CRITICAL_SECTION_DEBUG  *   pListEntry;
-    UInt32                  cnt = 1;
-    UInt32                   totalCS;
+    uint32_t                cnt = 1;
+    uint32_t                 totalCS;
 
 #if defined (Use_Local_Pointers) && 0
     __asm
@@ -5710,14 +5710,14 @@ HANDLE const m_hProcess
         return -3;
 
     // We need to walk the list backwards to the 1st entry.
-    pListEntry = (RTL_CRITICAL_SECTION_DEBUG*) ((UInt32) csdLoaderLock.ProcessLocksList.Blink  - (offsetof (RTL_CRITICAL_SECTION_DEBUG, ProcessLocksList)));
+    pListEntry = (RTL_CRITICAL_SECTION_DEBUG*) ((uint32_t) csdLoaderLock.ProcessLocksList.Blink  - (offsetof (RTL_CRITICAL_SECTION_DEBUG, ProcessLocksList)));
 
     // Load the 2nd debug area, i.e., the defered (sic) critical section debug structure.
     if ( !ReadProcessMemory (m_hProcess, pListEntry, &csdDeferedCriticalSectionDebug, sizeof(csdDeferedCriticalSectionDebug), ___))
         return -4;
 
     pListEntry = (RTL_CRITICAL_SECTION_DEBUG*)
-        ((UInt32) csdDeferedCriticalSectionDebug.ProcessLocksList.Blink - (offsetof (RTL_CRITICAL_SECTION_DEBUG, ProcessLocksList)));
+        ((uint32_t) csdDeferedCriticalSectionDebug.ProcessLocksList.Blink - (offsetof (RTL_CRITICAL_SECTION_DEBUG, ProcessLocksList)));
 
     // Now load the 1st debug area, i.e., the critical section lock debug structure.
     // Its previous or backward link - BLink - will mark the end of the list.
@@ -5742,7 +5742,7 @@ HANDLE const m_hProcess
         // Spare[1] contains a pointer to the pagalloc proxy data page
         if (PAGALLOC_CRITICAL_SECTION_SIGNATURE == cs_debug.Spare[0])
             {
-            UInt32                    dwOldProtect = 0;
+            uint32_t                  dwOldProtect = 0;
             PageMallocEntry const * const headerP = (PageMallocEntry const * const ) pagallocI_findHeader ((void*)cs_debug.Spare[1]);
 
             pagallocI_makeHeaderVisible (headerP, PAGE_READONLY, &dwOldProtect);
@@ -5781,7 +5781,7 @@ HANDLE const m_hProcess
         // back up the correct number of DWORDs to obtain the next entry in
         // the chain.  Use the offsetof macro to let the structures and the
         // compiler do the actual work.
-        pListEntry = (RTL_CRITICAL_SECTION_DEBUG*)  ((UInt32) cs_debug.ProcessLocksList.Flink - (offsetof (RTL_CRITICAL_SECTION_DEBUG, ProcessLocksList)));
+        pListEntry = (RTL_CRITICAL_SECTION_DEBUG*)  ((uint32_t) cs_debug.ProcessLocksList.Flink - (offsetof (RTL_CRITICAL_SECTION_DEBUG, ProcessLocksList)));
         }
 
     pagalloc_printf (PAGALLOC_SEVERITY_DEBUG,

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/rtypes.r.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ resourceclass CharString RTYPE_CharString;
 
 typedef struct charstring
     {
-    UInt32  numChars;
+    uint32_t numChars;
     char    firstChar[1]; // WIP_CHAR_OK - Persistence
 
     } CharString;

@@ -12,6 +12,7 @@
                                                                  
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define     HandlerId_DisplayFilter   22809 
+#if defined (NEEDS_WORK_DGNITEM)
                                                                                              
 //=================================================================================**//**
 //! Handler associated with a specific type of DisplayFilter.
@@ -23,27 +24,27 @@ protected:
 virtual             bool        _DoConditionalDraw (ViewContextR viewContext, ElementHandleCP element, void const* data, size_t dataSize) const = 0;
 virtual             StatusInt   _OnTransform (TransformInfoCR transform, void* pData, size_t dataSize) const { return SUCCESS;  }
 virtual             bool        _IsEqual (void const* data, void const* rhsData, size_t dataSize, double distanceTolerance) const {return 0 == memcmp (data, rhsData, dataSize);}
-virtual             WString     _GetDumpString (void const* data, size_t dataSize, DgnProjectR) const { return WString (L"DisplayFilterHandler"); }
+virtual             WString     _GetDumpString (void const* data, size_t dataSize, DgnDbR) const { return WString (L"DisplayFilterHandler"); }
 #ifdef NEEDS_WORK_TopazMerge_DisplayFilter
     virtual             void        _DoClone (void* data, size_t dataSize, ElementCopyContextR context) const { }
 #else
     virtual             void        _DoClone (void* data, size_t dataSize) const { }
 #endif
 virtual             StatusInt   _OnWriteToElement (void* data, size_t dataSize, ElementHandleCR eh) const { return SUCCESS; }
-virtual             BentleyStatus _GetExpressionData (bvector<byte>& data, WCharCP expression, DgnProjectR dgnFile) const { return ERROR; }
+virtual             BentleyStatus _GetExpressionData (bvector<Byte>& data, WCharCP expression, DgnDbR dgnFile) const { return ERROR; }
 
 public:
 DGNPLATFORM_EXPORT      bool        DoConditionalDraw (ViewContextR viewContext, ElementHandleCP element, void const* data, size_t dataSize) const;
 DGNPLATFORM_EXPORT      StatusInt   OnTransform (TransformInfoCR transform, void* pData, size_t dataSize) const;
 DGNPLATFORM_EXPORT      bool        IsEqual (void const* data, void const* rhsData, size_t dataSize, double distanceTolerance);
-DGNPLATFORM_EXPORT      WString     GetDumpString (void const* data, size_t dataSize, DgnProjectR) const;  
+DGNPLATFORM_EXPORT      WString     GetDumpString (void const* data, size_t dataSize, DgnDbR) const;  
 #ifdef NEEDS_WORK_TopazMerge_DisplayFilter
     DGNPLATFORM_EXPORT      void        DoClone (void* data, size_t dataSize, ElementCopyContextR context) const;
 #else
     DGNPLATFORM_EXPORT      void        DoClone (void* data, size_t dataSize) const;
 #endif
 DGNPLATFORM_EXPORT      StatusInt   OnWriteToElement (void* data, size_t dataSize, ElementHandleCR eh) const;
-DGNPLATFORM_EXPORT      BentleyStatus GetExpressionData (bvector<byte>& data, WCharCP expression, DgnProjectR dgnFile) const;
+DGNPLATFORM_EXPORT      BentleyStatus GetExpressionData (bvector<Byte>& data, WCharCP expression, DgnDbR dgnFile) const;
 
 };  // DisplayFilterHandler
 
@@ -99,6 +100,7 @@ DGNPLATFORM_EXPORT    void    PushState (DisplayFilterHandlerId filterId, void c
 
 };  //  DisplayFilterKey
 
+#endif
 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

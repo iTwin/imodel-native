@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SnapContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -331,7 +331,7 @@ DPoint3dCR      snapPoint, // In active coords...
 bool            forceHot,
 bool            isAdjusted,
 int             nBytes,
-byte*           customKeypointData
+Byte*           customKeypointData
 )
     {
     SnapPathP   snap = GetSnapPath ();
@@ -407,41 +407,6 @@ void            SnapContext::SetSnapPoint (DPoint3dCR snapPt, bool forceHot)
     m_snapPath->SetHeat (withinAperture ? SNAP_HEAT_InRange : (forceHot ? SNAP_HEAT_NotInRange : SNAP_HEAT_None));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            SnapContext::IsSnappableElement (int snapPathIndex)
-    {
-    ElementRefP el = GetSnapPath()->GetPathElem(snapPathIndex);
-    if (NULL == el)
-        return  false;
-
-    DgnElementCR hdr = *el->GetUnstableMSElementCP();
-    return (!hdr.IsSnappable());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus      SnapContext::DoSnapUsingNextInPath (int snapPathIndex)
-    {
-    SnapPathP   snap = GetSnapPath ();
-
-    // Pass along to next in path if we haven't yet reached the cursor index...
-    if (snap->GetCount () <= snapPathIndex+1)
-        return SnapStatus::NotSnappable;
-
-    ElementHandle currentHandle (snap->GetPathElem(snapPathIndex));
-
-    ElementHandle   elHandle (snap->GetPathElem (snapPathIndex+1));
-    DisplayHandlerP dispHandler;
-
-    if (NULL == (dispHandler = elHandle.GetDisplayHandler ()))
-        return SnapStatus::NotSnappable;
-
-    return dispHandler->OnSnap (this, snapPathIndex+1);
-    }
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -508,7 +473,7 @@ void GetSpacePointAndCurveTransform (DPoint3dR spacePoint, TransformR curveToHit
 bool IsEdgePointVisible (DPoint3dCR edgePoint, SnapPathCR snap)
     {
     // See HitList::Compare doZCompareOfSurfaceAndEdge...
-    ViewportP   vp = snap.GetViewport ();
+    DgnViewportP   vp = snap.GetViewport ();
     DPoint4d    homogeneousPlane;
     
     if (!vp || !homogeneousPlane.PlaneFromOriginAndNormal (snap.GetGeomDetail ().GetClosestPointLocal (), snap.GetGeomDetail ().GetSurfaceNormal ()))
@@ -648,12 +613,8 @@ static bool DoSnapUsingClosestCurve (ElementHandleCR eh, SnapContextR snapContex
 SnapStatus      SnapContext::DoDefaultDisplayableSnap (int snapPathIndex)
     {
     SnapPathP       snap = GetSnapPath ();
-    SnapMode    snapMode = GetSnapMode ();
+    SnapMode        snapMode = GetSnapMode ();
     GeomDetailCR    detail = snap->GetGeomDetail ();
-
-    // Pass this hit down to next in path in order to get proper cursor index set in snap path...
-    if (HIT_DETAIL_None != detail.GetDetailType () && snap->GetCount () > snapPathIndex+1)
-        return DoSnapUsingNextInPath (snapPathIndex);
 
     // Don't require a gpa if hit geom is point or mode is nearest because current hit point is correct...
     if (SnapMode::Nearest == snapMode || HitGeomType::Point == detail.GetGeomType ())
@@ -671,11 +632,7 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap (int snapPathIndex)
         // Surface w/o curve is interior hit...only nearest should "track" surface...
         if (HitGeomType::Surface == detail.GetGeomType ())
             {
-            ElementHandle    eh (snap->GetPathElem (snapPathIndex));
-            DisplayHandlerP  dispHandler;
-
-            if (NULL == (dispHandler = eh.GetDisplayHandler ()))
-                return SnapStatus::NotSnappable;
+            ElementHandle eh (snap->GetPathElem (snapPathIndex));
 
             if (SnapMode::Origin != snapMode)
                 {
@@ -686,8 +643,7 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap (int snapPathIndex)
 
             DPoint3d    hitPoint;
 
-            dispHandler->GetTransformOrigin (eh, hitPoint);
-
+            hitPoint = eh.GetGeometricElement()->_GetOrigin3d();
             ElmLocalToWorld (hitPoint);
             SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
@@ -778,14 +734,9 @@ SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
         case SnapMode::NearestKeypoint:
             {
             ElementHandle   eh (snap->GetPathElem (snapPathIndex));
-            DisplayHandlerP dHandler = eh.GetDisplayHandler ();
+            DPoint3d        hitPoint;
 
-            if (!dHandler)
-                return SnapStatus::NotSnappable;
-
-            DPoint3d    hitPoint;
-
-            dHandler->GetSnapOrigin (eh, hitPoint);
+            hitPoint = eh.GetGeometricElement()->_GetOrigin3d();
             ElmLocalToWorld (hitPoint);
 
             SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
@@ -847,9 +798,9 @@ SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            SnapPath::SetCustomKeypoint (int nBytes, byte* dataP)
+void            SnapPath::SetCustomKeypoint (int nBytes, Byte* dataP)
     {
-    if (nBytes && NULL != (m_customKeypointData = (byte *) memutil_malloc (nBytes, HEAPSIG_SNAP)))
+    if (nBytes && NULL != (m_customKeypointData = (Byte *) bentleyAllocator_malloc(nBytes)))
         {
         m_customKeypointSize = nBytes;
         memcpy (m_customKeypointData, dataP, nBytes);

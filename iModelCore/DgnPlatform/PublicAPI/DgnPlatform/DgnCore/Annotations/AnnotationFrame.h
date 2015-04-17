@@ -18,6 +18,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! This enumerates all possible ways to apply an AnnotationFrameStyle to an AnnotationFrame.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum struct SetAnnotationFrameStyleOptions
@@ -30,6 +31,8 @@ enum struct SetAnnotationFrameStyleOptions
 }; // SetAnnotationFrameStyleOptions
 
 //=======================================================================================
+//! An AnnotationFrame is an enclosing piece of geometry around an AnnotationTextBlock, used in a TextAnnotation. A frame also enables the TextAnnotation to have leaders, as the frame defines attachment points based on its type. AnnotationFrame is merely a data object; see AnnotationFrameLayout for size/position/geometry, and AnnotationFrameDraw for drawing.
+//! @note An AnnotationFrame must be created with an AnnotationFrameStyle; if a style does not exist, you must first create and store one, and then used its ID to create an AnnotationFrame. While an AnnotationFrame must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationFrame : public RefCountedBase
@@ -39,7 +42,7 @@ private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationFramePersistence;
     
-    DgnProjectP m_project;
+    DgnDbP m_dgndb;
     
     DgnStyleId m_styleID;
     AnnotationFrameStylePropertyBag m_styleOverrides;
@@ -48,17 +51,17 @@ private:
     void Reset();
 
 public:
-    DGNPLATFORM_EXPORT explicit AnnotationFrame(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit AnnotationFrame(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationFrame(AnnotationFrameCR);
     DGNPLATFORM_EXPORT AnnotationFrameR operator=(AnnotationFrameCR);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnProjectR);
-    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnProjectR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnDbR);
+    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT AnnotationFramePtr Clone() const;
 
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProjectR() const;
+    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationFrameStyleOptions);
     DGNPLATFORM_EXPORT AnnotationFrameStylePtr CreateEffectiveStyle() const;

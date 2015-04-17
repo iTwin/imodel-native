@@ -25,6 +25,8 @@ typedef AnnotationLeaderCollection& AnnotationLeaderCollectionR;
 typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
 
 //=======================================================================================
+//! TextAnnotation objects are used to place markup text (vs. physical text) in a drawing. They are comprised of a piece of text (AnnotationTextBlock), an optional frame (AnnotationFrame), and 0 or more leaders (AnnotationLeader). TextAnnotation is merely a data object; see TextAnnotationDraw for drawing, and TextAnnotationHandler for persistence.
+//! TextAnnotation objects themselves do not have "styles"; they can instead be created from "seeds" (TextAnnotationSeed). Unlike a style, a seed is only used when creating the TextAnnotation. TextAnnotation objects do not automatically react to changes in their seed (unlike how a style system normally operates), but it is a convenient way to create multiple TextAnnotation objects with the same look and feel. The individual pieces of a TextAnnotation (the text, frame, and leaders) all have styles, which do behave like a classical style system.
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
 struct TextAnnotation : public RefCountedBase
@@ -33,7 +35,7 @@ struct TextAnnotation : public RefCountedBase
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
-    DgnProjectP m_project;
+    DgnDbP m_dgndb;
 
     AnnotationTextBlockPtr m_text;
     AnnotationFramePtr m_frame;
@@ -41,20 +43,19 @@ private:
 
     void CopyFrom(TextAnnotationCR);
     void Reset();
-    void SetTemplateId(DgnStyleId);
 
 public:
-    DGNPLATFORM_EXPORT explicit TextAnnotation(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit TextAnnotation(DgnDbR);
     DGNPLATFORM_EXPORT TextAnnotation(TextAnnotationCR);
     DGNPLATFORM_EXPORT TextAnnotationR operator=(TextAnnotationCR);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnProjectR);
-    DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnProjectR, DgnStyleId);
+    DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR);
+    DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT TextAnnotationPtr Clone() const;
 
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProjectR() const;
+    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT void ApplySeed(DgnStyleId);
     DGNPLATFORM_EXPORT AnnotationTextBlockCP GetTextCP() const;
     DGNPLATFORM_EXPORT AnnotationTextBlockP GetTextP();

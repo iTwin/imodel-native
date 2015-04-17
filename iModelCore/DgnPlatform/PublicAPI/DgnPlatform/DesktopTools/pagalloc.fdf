@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/pagalloc.fdf $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -34,27 +34,27 @@ typedef enum
 extern "C" {
 #endif
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_dump (void *badPtr);
-PAGALLOC_API void            PAGALLOC_CDECL pagalloc_dumpSince(UInt32 count);
+PAGALLOC_API void            PAGALLOC_CDECL pagalloc_dumpSince(uint32_t count);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_dumpModules(void);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_showFullCallStack  ();
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_dumpModuleHeader (void *allocationBase, size_t regionSize);
-PAGALLOC_API void            PAGALLOC_CDECL pagalloc_dumpSinceAsync (UInt32 count);
+PAGALLOC_API void            PAGALLOC_CDECL pagalloc_dumpSinceAsync (uint32_t count);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_detectLeaks       (void);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_resetLeakDetect   (void);
-PAGALLOC_API void            PAGALLOC_CDECL pagalloc_setSinceBase      (UInt32 const beginningMallocCount);
+PAGALLOC_API void            PAGALLOC_CDECL pagalloc_setSinceBase      (uint32_t const beginningMallocCount);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_displayStatistics (void);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_showCallStack     (void const * const rawAddressOfAllocation);
-PAGALLOC_API void            PAGALLOC_CDECL pagalloc_showCallStackSince(void const * const rawAddressOfAllocation, UInt32 const showCallStartSerialNumber);
-PAGALLOC_API void            PAGALLOC_CDECL pagalloc_setLeakDetectDisplayLimit (UInt32 const  maxLeakersToDisplay, UInt32 const  maxLeakersToDetail);
-PAGALLOC_API Int32           PAGALLOC_CDECL pagalloc_isInitialized     (void);
-PAGALLOC_API Int32           PAGALLOC_CDECL pagalloc_addFunctionByDllAndNameToExclusionList  (WCharCP dllName, WCharCP funcName);
-PAGALLOC_API Int32           PAGALLOC_CDECL pagalloc_addFunctionByAddressToExclusionList (size_t const funcAddress);
-PAGALLOC_API UInt32          PAGALLOC_CDECL pagalloc_setUserAuxiliaryValue (UInt32 const newUserAuxiliaryValue,  void const * const notYet);
+PAGALLOC_API void            PAGALLOC_CDECL pagalloc_showCallStackSince(void const * const rawAddressOfAllocation, uint32_t const showCallStartSerialNumber);
+PAGALLOC_API void            PAGALLOC_CDECL pagalloc_setLeakDetectDisplayLimit (uint32_t const  maxLeakersToDisplay, uint32_t const  maxLeakersToDetail);
+PAGALLOC_API int32_t         PAGALLOC_CDECL pagalloc_isInitialized     (void);
+PAGALLOC_API int32_t         PAGALLOC_CDECL pagalloc_addFunctionByDllAndNameToExclusionList  (WCharCP dllName, WCharCP funcName);
+PAGALLOC_API int32_t         PAGALLOC_CDECL pagalloc_addFunctionByAddressToExclusionList (size_t const funcAddress);
+PAGALLOC_API uint32_t        PAGALLOC_CDECL pagalloc_setUserAuxiliaryValue (uint32_t const newUserAuxiliaryValue,  void const * const notYet);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_showFullCallStack2 (CallStackFrame  *pFrame);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_setSortType (PagallocSortType  sortType);
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_initializeGDIMonitor (void); // Only works on debug build.
 PAGALLOC_API void            PAGALLOC_CDECL pagalloc_showGDILeaks (void);
-PAGALLOC_API void            PAGALLOC_CDECL pagalloc_setGDISinceBase (UInt32 beginningGDICount);
+PAGALLOC_API void            PAGALLOC_CDECL pagalloc_setGDISinceBase (uint32_t beginningGDICount);
 
 
 typedef void  ( *PagallocOutputFunction) (char const * const outputBuffer);          // WIP_CHAR_OK Doesn't seem worth it to update all the debugging IO in pagalloc.
@@ -66,9 +66,9 @@ PAGALLOC_API PagallocOutputFunction const  PAGALLOC_CDECL pagalloc_setNativeOutp
 /*-----------------------------------------------------------------------
  Critical Section tracking.
 -----------------------------------------------------------------------*/
-PAGALLOC_API  Int32   pagalloc_trackCriticalSections
+PAGALLOC_API  int32_t pagalloc_trackCriticalSections
 (
-Int32 const enableTracking                                                          // TRUE to enable tracking
+int32_t const enableTracking                                                          // TRUE to enable tracking
 );
 
 PAGALLOC_API  void  pagalloc_symbolizeAllCriticalSections   (void);

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnFontManager/DgnShxFont.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -20,7 +20,7 @@ struct IShxDataAccessor
     public: virtual ~IShxDataAccessor () { }
     
     public: virtual void _Close () = 0;
-    public: virtual BentleyStatus _Embed (DgnProjectR, UInt32 fontNumber) = 0;
+    public: virtual BentleyStatus _Embed (DgnDbR, uint32_t fontNumber) = 0;
     public: virtual int _GetNextCharacter () = 0;
     public: virtual BentleyStatus _Open () = 0;
     public: virtual size_t _Read (void* buffer, size_t size, size_t count) = 0;
@@ -30,9 +30,9 @@ struct IShxDataAccessor
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: UInt16 GetNextUInt16 ()
+    public: uint16_t GetNextUInt16 ()
         {
-        UInt16 nextUInt16;
+        uint16_t nextUInt16;
         _Read (&nextUInt16, sizeof (nextUInt16), 1);
         return nextUInt16;
         }
@@ -104,7 +104,7 @@ struct FileShxDataAccessor : public IShxDataAccessor
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: virtual BentleyStatus _Embed (DgnProjectR project, UInt32 fontNumber) override
+    public: virtual BentleyStatus _Embed (DgnDbR project, uint32_t fontNumber) override
         {
         if (m_fileName.empty())
             return ERROR;
@@ -113,15 +113,15 @@ struct FileShxDataAccessor : public IShxDataAccessor
         if (BeFileStatus::Success != fontFile.Open (m_fileName.c_str (), BeFileAccess::Read/*WIP_BeFile, BeFileSharing::Read*/))
             { BeAssert (false); return ERROR; }
     
-        UInt64 fileSize = 0;
+        uint64_t fileSize = 0;
         if ((BeFileStatus::Success != fontFile.GetSize (fileSize)) || (0 == fileSize))
             { BeAssert (false); return ERROR; }
         
         ScopedArray<Byte> fileData ((size_t)fileSize);
-        if (BeFileStatus::Success != fontFile.Read (fileData.GetData (), NULL, (UInt32)fileSize))
+        if (BeFileStatus::Success != fontFile.Read (fileData.GetData (), NULL, (uint32_t)fileSize))
             { BeAssert (false); return ERROR; }
 
-        BeSQLite::DbResult res = project.SaveProperty(DgnShxFont::CreateEmbeddedFontPropertySpec(), fileData.GetData(), (UInt32)fileSize, fontNumber);
+        BeSQLite::DbResult res = project.SaveProperty(DgnShxFont::CreateEmbeddedFontPropertySpec(), fileData.GetData(), (uint32_t)fileSize, fontNumber);
     
         return ((BE_SQLITE_OK == res) ? SUCCESS : ERROR);
         }
@@ -189,8 +189,8 @@ struct FileShxDataAccessor : public IShxDataAccessor
 //=======================================================================================
 struct DbShxDataAccessor : public IShxDataAccessor
     {
-    private:    UInt32          m_fontNumber;
-    private:    DgnProjectCR    m_project;
+    private:    uint32_t        m_fontNumber;
+    private:    DgnDbCR    m_dgndb;
     private:    bvector<Byte>   m_buffer;
     private:    size_t          m_bufferCursor;
     private:    size_t          m_openCount;
@@ -198,9 +198,9 @@ struct DbShxDataAccessor : public IShxDataAccessor
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: DbShxDataAccessor (UInt32 fontNumber, DgnProjectCR project) :
+    public: DbShxDataAccessor (uint32_t fontNumber, DgnDbCR project) :
         m_fontNumber    (fontNumber),
-        m_project       (project),
+        m_dgndb       (project),
         m_bufferCursor  (0),
         m_openCount     (0)
         {
@@ -225,15 +225,15 @@ struct DbShxDataAccessor : public IShxDataAccessor
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: virtual BentleyStatus _Embed (DgnProjectR project, UInt32 fontNumber) override
+    public: virtual BentleyStatus _Embed (DgnDbR project, uint32_t fontNumber) override
         {
         PropertySpec    shxDataPropSpec = DgnShxFont::CreateEmbeddedFontPropertySpec();
-        UInt32              shxDataPropSize;
-        if (BE_SQLITE_ROW != m_project.QueryPropertySize (shxDataPropSize, shxDataPropSpec, m_fontNumber))
+        uint32_t            shxDataPropSize;
+        if (BE_SQLITE_ROW != m_dgndb.QueryPropertySize (shxDataPropSize, shxDataPropSpec, m_fontNumber))
             { BeAssert (false); return ERROR; }
     
         ScopedArray<Byte> shxDataPropValue (shxDataPropSize);
-        if (BE_SQLITE_ROW != m_project.QueryProperty (shxDataPropValue.GetData (), shxDataPropSize, shxDataPropSpec, m_fontNumber))
+        if (BE_SQLITE_ROW != m_dgndb.QueryProperty (shxDataPropValue.GetData (), shxDataPropSize, shxDataPropSpec, m_fontNumber))
             { BeAssert (false); return ERROR; }
         
         if (BE_SQLITE_OK != project.SaveProperty (shxDataPropSpec, shxDataPropValue.GetData (), shxDataPropSize, fontNumber))
@@ -265,12 +265,12 @@ struct DbShxDataAccessor : public IShxDataAccessor
             HighPriorityOperationBlock highPriorityOperationBlock;
             
             PropertySpec    shxDataPropSpec = DgnShxFont::CreateEmbeddedFontPropertySpec();
-            UInt32              shxDataPropSize;
-            if (BE_SQLITE_ROW != m_project.QueryPropertySize (shxDataPropSize, shxDataPropSpec, m_fontNumber))
+            uint32_t            shxDataPropSize;
+            if (BE_SQLITE_ROW != m_dgndb.QueryPropertySize (shxDataPropSize, shxDataPropSpec, m_fontNumber))
                 { BeAssert (false); return ERROR; }
     
             m_buffer.resize (shxDataPropSize);
-            if (BE_SQLITE_ROW != m_project.QueryProperty (&m_buffer[0], shxDataPropSize, shxDataPropSpec, m_fontNumber))
+            if (BE_SQLITE_ROW != m_dgndb.QueryProperty (&m_buffer[0], shxDataPropSize, shxDataPropSpec, m_fontNumber))
                 { BeAssert (false); return ERROR; }
         
             m_bufferCursor = 0;
@@ -600,18 +600,18 @@ struct ShapeConverter
     //---------------------------------------------------------------------------------------
     public: void DecodeExtenedFontSubShape (int& currentCode, ByteCP pCodes)
         {
-        byte    msb     = pCodes[++currentCode];
-        byte    lsb     = pCodes[++currentCode];
-        UInt16  iCode   = ((msb << 8) + lsb);
+        Byte msb     = pCodes[++currentCode];
+        Byte lsb     = pCodes[++currentCode];
+        uint16_t iCode   = ((msb << 8) + lsb);
 
         DgnShxGlyphFPos const* fPos = m_font->GetGlyphFilePos (iCode);
         if (NULL == fPos)
             return;
 
-        byte    xOrigin = pCodes[++currentCode];
-        byte    yOrigin = pCodes[++currentCode];
-        byte    iWidth  = pCodes[++currentCode];
-        byte    iHeight = pCodes[++currentCode];
+        Byte xOrigin = pCodes[++currentCode];
+        Byte yOrigin = pCodes[++currentCode];
+        Byte iWidth  = pCodes[++currentCode];
+        Byte iHeight = pCodes[++currentCode];
 
         if (0 != m_data->_Seek (fPos->m_filePosition, 0))
             return;
@@ -717,9 +717,9 @@ struct ShapeConverter
         if (!isClockwise)
             {
             startOffsetDeg  = (((iStartOffset * 45) / 256) + (iStartingOctant * 45));
-            startOffset     = bsiTrig_degreesToRadians (startOffsetDeg);
+            startOffset     = Angle::DegreesToRadians (startOffsetDeg);
             endOffsetDeg    = (((iEndOffset * 45.0) / 256.0) + ((0 == iEndOffset) ? iEndOctant : ((iStartingOctant + abs (iSweep) - 1)) * 45.0));
-            endOffset       = bsiTrig_degreesToRadians (endOffsetDeg);
+            endOffset       = Angle::DegreesToRadians (endOffsetDeg);
             }
         else
             {
@@ -728,14 +728,14 @@ struct ShapeConverter
             else
                 startOffsetDeg = (iStartingOctant * 45) - iStartOffset * 45.0 / 256.0;
 
-            startOffset = bsiTrig_degreesToRadians (startOffsetDeg);
+            startOffset = Angle::DegreesToRadians (startOffsetDeg);
 
             if (0 == iEndOffset)
                 endOffsetDeg = (((0 == iEndOctant) ? 8 : iEndOctant) * 45);
             else
                 endOffsetDeg = ((0 == iEndOctant) ? ((((iStartingOctant - abs (iSweep + 1))) * 45) - ((iEndOffset * 45) / 256)) : (((iEndOctant + 1) * 45) - ((iEndOffset * 45) / 256)));
 
-            endOffset = bsiTrig_degreesToRadians (endOffsetDeg);
+            endOffset = Angle::DegreesToRadians (endOffsetDeg);
             }
 
         radius = ((double)(iRadius + (256 * iHighRadius)) * m_multiplier);
@@ -745,7 +745,7 @@ struct ShapeConverter
             if (endOffsetDeg <= startOffsetDeg)
                 endOffsetDeg += 360;
 
-            sweep = bsiTrig_degreesToRadians (endOffsetDeg - startOffsetDeg + 1);
+            sweep = Angle::DegreesToRadians (endOffsetDeg - startOffsetDeg + 1);
             }
         else
             {
@@ -754,19 +754,19 @@ struct ShapeConverter
                 startOffsetDeg += 360;
 
             if (startOffsetDeg <= endOffsetDeg)
-                sweep = bsiTrig_degreesToRadians (-(360 - (endOffsetDeg - startOffsetDeg)));
+                sweep = Angle::DegreesToRadians (-(360 - (endOffsetDeg - startOffsetDeg)));
             else
-                sweep = bsiTrig_degreesToRadians (endOffsetDeg - startOffsetDeg);
+                sweep = Angle::DegreesToRadians (endOffsetDeg - startOffsetDeg);
             }
 
-        startOffset = bsiTrig_degreesToRadians (startOffsetDeg);
+        startOffset = Angle::DegreesToRadians (startOffsetDeg);
 
         x           = (radius * cos (startOffset));
         y           = (radius * sin (startOffset));
         center.x    = (m_currentPos.x - x);
         center.y    = (m_currentPos.y - y);
         center.z    = 0.0;
-        endOffset   = bsiTrig_degreesToRadians (endOffsetDeg);
+        endOffset   = Angle::DegreesToRadians (endOffsetDeg);
         
         x           = (radius * cos (endOffset));
         y           = (radius * sin (endOffset));
@@ -958,7 +958,7 @@ struct ShapeConverter
                 break;
             }
 
-        double  sweep       = ((0.0 == iSweep) ? msGeomConst_2pi : bsiTrig_degreesToRadians (iSweep * 45.0));
+        double  sweep       = ((0.0 == iSweep) ? msGeomConst_2pi : Angle::DegreesToRadians (iSweep * 45.0));
         DVec3d  s0Vector;
         DVec3d  s90Vector;
         
@@ -1047,7 +1047,7 @@ struct ShapeConverter
     //---------------------------------------------------------------------------------------
     public: void DecodeSubShape (int& currentCode, ByteCP pCodes)
         {
-        UInt16 subshapeCode = pCodes[++currentCode];
+        uint16_t subshapeCode = pCodes[++currentCode];
         if (LangCodePage::Unicode == m_font->GetCodePage ())
             subshapeCode = ((subshapeCode << 8) + pCodes[++currentCode]);
 
@@ -1073,7 +1073,7 @@ struct ShapeConverter
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     08/2012
     //---------------------------------------------------------------------------------------
-    public: void DecodeVector (byte iCode, ByteCP)
+    public: void DecodeVector (Byte iCode, ByteCP)
         {
         if (m_skipCodes)
             return;
@@ -1285,7 +1285,7 @@ struct ShapeConverter
         m_processVertical   = doVerticals;
 
         // If there is a code name for the glyph then skip it
-        size_t iOffset = (codeNameExists ((UChar*)buff, numBytes) ? (strlen (reinterpret_cast<CharCP>(buff)) + 1) : 1);
+        size_t iOffset = (codeNameExists ((unsigned char*)buff, numBytes) ? (strlen (reinterpret_cast<CharCP>(buff)) + 1) : 1);
 
         numBytes    -= iOffset;
         buff        += iOffset;
@@ -1358,7 +1358,6 @@ bool            DgnShxGlyph::_IsBlank                   () const                
 //---------------------------------------------------------------------------------------
 DgnShxGlyph::DgnShxGlyph (FontChar charCode, size_t filePos, size_t dataSize, DgnShxFontCR font, IShxDataAccessor& data) :
     T_Super (charCode),
-    m_font      (&font),
     m_data      (&data),
     m_isBlank   (true)
     {
@@ -1466,7 +1465,7 @@ enum ShxFileType
 struct ShxFileMetadata
     {
     public: ShxFileType m_shxFileType;
-    public: UInt64      m_timeStamp;
+    public: uint64_t    m_timeStamp;
 
     }; // ShxFileMetadata
 
@@ -1486,7 +1485,7 @@ static T_ShxFileMetadatas acquireCachedShxFileMetaData (WCharCP cacheFilePath)
     if (NULL == cacheFile)
         return cachedMetadata;
 
-    static const UInt32 MAX_SHXFILEDATARECORDSIZE   = (MAX_PATH * 2);
+    static const uint32_t MAX_SHXFILEDATARECORDSIZE   = (MAX_PATH * 2);
     static const WChar  ENDOFNAME                   = L'"';
     
     WChar buffer[MAX_SHXFILEDATARECORDSIZE];
@@ -1513,28 +1512,6 @@ static T_ShxFileMetadatas acquireCachedShxFileMetaData (WCharCP cacheFilePath)
     fclose (cacheFile);
 
     return cachedMetadata;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-static FontChar computeEffectiveSpecialSymbolFontCharFromUnicode (WChar uniChar)
-    {
-    char    localeBuff[3];
-    WChar   uniBuff[]       = { uniChar, 0 };
-            
-    BeStringUtilities::WCharToCurrentLocaleChar (localeBuff, uniBuff, sizeof (localeBuff));
-    
-    if ((0 == localeBuff[0]) || ('?' == localeBuff[0]))
-        {
-        BeDataAssert (false); 
-        return (FontChar)uniChar;
-        }
-    
-    if (0 == localeBuff[1])
-        return (FontChar)localeBuff[0];
-
-    return *reinterpret_cast<FontCharCP>(localeBuff);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1579,7 +1556,7 @@ static ShxFileType determineShxFileType (WCharCP fileName)
     if ((SHXFILETYPE_Shape10 == fileType) || (SHXFILETYPE_Shape11 == fileType))
         {
         // For font files, the first glyph is 0; otherwise it is a symbol file.
-        UInt16 firstGlyph;
+        uint16_t firstGlyph;
         reader._Read (&firstGlyph, sizeof (firstGlyph), 1);
         
         if (0 != firstGlyph)
@@ -1651,7 +1628,6 @@ static LangCodePage getDefaultCodePage(ShxFileType fileType)
             // Fall through
         
         case SHXFILETYPE_Shape11:
-        case SHXFILETYPE_Bigfont:
         case SHXFILETYPE_Shape10:
         case SHXFILETYPE_Symbol:
             {
@@ -1672,9 +1648,6 @@ static FontChar getDefaultDegreeCharCode(ShxFileType fileType)
         {
         case SHXFILETYPE_Shape11:
             return 256;
-        
-        case SHXFILETYPE_Bigfont:
-            return computeEffectiveSpecialSymbolFontCharFromUnicode (SPECIALCHAR_UnicodeDegree);
         
         case SHXFILETYPE_Unifont:
             return SPECIALCHAR_UnicodeDegree;
@@ -1699,9 +1672,6 @@ static FontChar getDefaultDiameterCharCode(ShxFileType fileType)
         case SHXFILETYPE_Shape11:
             return 258;
         
-        case SHXFILETYPE_Bigfont:
-            return computeEffectiveSpecialSymbolFontCharFromUnicode (SPECIALCHAR_UnicodeDiameter);
-        
         case SHXFILETYPE_Unifont:
             return SPECIALCHAR_UnicodeDiameter;
         
@@ -1724,9 +1694,6 @@ static FontChar getDefaultPlusMinusCharCode(ShxFileType fileType)
         {
         case SHXFILETYPE_Shape11:
             return 257;
-        
-        case SHXFILETYPE_Bigfont:
-            return computeEffectiveSpecialSymbolFontCharFromUnicode (SPECIALCHAR_UnicodePlusMinus);
         
         case SHXFILETYPE_Unifont:
             return SPECIALCHAR_UnicodePlusMinus;
@@ -1824,7 +1791,7 @@ static T_WStrings getSystemShxFilePathList (WString searchPaths)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static void readNonShxBigFontInfo (IShxDataAccessor& data, DgnShxGlyphFPos const* zeroGlyphFPos, bool isShxBigFont, Byte& ascender, Byte& descender, Byte& charHeight, Byte& charWidth)
+static void readNonShxBigFontInfo (IShxDataAccessor& data, DgnShxGlyphFPos const* zeroGlyphFPos, Byte& ascender, Byte& descender, Byte& charHeight, Byte& charWidth)
     {
     // Char 0 is the font specifier.
     if (NULL == zeroGlyphFPos)
@@ -1853,7 +1820,7 @@ static void readNonShxBigFontInfo (IShxDataAccessor& data, DgnShxGlyphFPos const
         return;
 
     // Pre-historic legacy...
-    if (((pBufSize - iLen) != 5) && !isShxBigFont)
+    if (((pBufSize - iLen) != 5))
         return;
 
     size_t  iOffset = (iLen + 1);
@@ -1863,20 +1830,8 @@ static void readNonShxBigFontInfo (IShxDataAccessor& data, DgnShxGlyphFPos const
     // Skip "modes"
     ++iOffset;
     
-    Byte iCharWidth = pBuf.GetData ()[iOffset++];
-
-    if ((0 == iBelow) && (0 != iCharWidth) && isShxBigFont)
-        {
-        // Extended font
-        charHeight  = iAbove;
-        ascender    = iAbove;
-        charWidth   = iCharWidth;
-        }
-    else
-        {
-        ascender    = iAbove;
-        descender   = iBelow;
-        }
+    ascender    = iAbove;
+    descender   = iBelow;
 
     // This hack comes from the OpenDWG code. I don't understand it but see TR#182253 for font with this problem (gbcbig.shx).
     if (0 == ascender)
@@ -1917,7 +1872,7 @@ FontChar        DgnShxFont::_GetPlusMinusCharCode       () const                
 DgnFontType     DgnShxFont::_GetType                    () const                { return DgnFontType::Shx; }
 bool            DgnShxFont::IsVertical                  () const                { if (m_isMissing) { return false; } _EnsureFontIsLoaded (); return m_isVertical; }
 void            DgnShxFont::SetIsVertical               (bool value)            { m_isVertical = value; }
-bool            DgnShxFont::_ShouldDrawWithLineWeight   () const                { return true; }
+bool            DgnShxFont::_CanDrawWithLineWeight   () const                { return true; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
@@ -1940,7 +1895,7 @@ DgnShxFont::DgnShxFont (Utf8CP name, DgnFontConfigurationData const& config, WCh
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnShxFont::DgnShxFont (Utf8CP name, DgnFontConfigurationData const& config, UInt32 fontNumber, DgnProjectCR project) :
+DgnShxFont::DgnShxFont (Utf8CP name, DgnFontConfigurationData const& config, uint32_t fontNumber, DgnDbCR project) :
     T_Super (name, config),
     m_data              (new DbShxDataAccessor (fontNumber, project)),
     m_codePage          (config.m_codePage),
@@ -2015,7 +1970,7 @@ void DgnShxFont::AcquireSystemFonts (T_FontCatalogMap& systemFonts)
             case SHXFILETYPE_Shape10:
             case SHXFILETYPE_Shape11:
             case SHXFILETYPE_Symbol:    systemFonts[fontKey] = new DgnShxShapeFont (fontName.c_str (), getEffectiveFontConfig (fontKey, cachedEntry->second.m_shxFileType), filePathIter->c_str ());    break;
-            case SHXFILETYPE_Bigfont:   systemFonts[fontKey] = new DgnShxBigFont (fontName.c_str (), getEffectiveFontConfig (fontKey, cachedEntry->second.m_shxFileType), filePathIter->c_str ());      break;
+            case SHXFILETYPE_Bigfont:   break;
             case SHXFILETYPE_Unifont:   systemFonts[fontKey] = new DgnShxUniFont (fontName.c_str (), getEffectiveFontConfig (fontKey, cachedEntry->second.m_shxFileType), filePathIter->c_str ());      break;
             
             default:
@@ -2031,7 +1986,7 @@ void DgnShxFont::AcquireSystemFonts (T_FontCatalogMap& systemFonts)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnShxFont::CreateFromEmbeddedFont (Utf8CP name, UInt32 fontNumber, DgnProjectCR project)
+DgnFontPtr DgnShxFont::CreateFromEmbeddedFont (Utf8CP name, uint32_t fontNumber, DgnDbCR project)
     {
     DbShxDataAccessor   dbData      (fontNumber, project);
     ShxFileType         shxFileType = determineRawShxFileType (dbData);
@@ -2041,7 +1996,7 @@ DgnFontPtr DgnShxFont::CreateFromEmbeddedFont (Utf8CP name, UInt32 fontNumber, D
         case SHXFILETYPE_Shape10:
         case SHXFILETYPE_Shape11:
         case SHXFILETYPE_Symbol:    return new DgnShxShapeFont (name, getEffectiveFontConfig (DgnFontKey (DgnFontType::Shx, Utf8String (name)), shxFileType), fontNumber, project);
-        case SHXFILETYPE_Bigfont:   return new DgnShxBigFont (name, getEffectiveFontConfig (DgnFontKey (DgnFontType::Shx, Utf8String (name)), shxFileType), fontNumber, project);
+        case SHXFILETYPE_Bigfont:   return NULL;
         case SHXFILETYPE_Unifont:   return new DgnShxUniFont (name, getEffectiveFontConfig (DgnFontKey (DgnFontType::Shx, Utf8String (name)), shxFileType), fontNumber, project);
             
         default:
@@ -2081,7 +2036,7 @@ DgnFontPtr DgnShxFont::CreateMissingFont (Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnShxFont::_Embed (DgnProjectR project) const
+DgnFontPtr DgnShxFont::_Embed (DgnDbR project) const
     {
     // Can't embed missing fonts; don't bother embedding last resort fonts.
     if (IsLastResort() || IsMissing())
@@ -2091,7 +2046,7 @@ DgnFontPtr DgnShxFont::_Embed (DgnProjectR project) const
     if (project.Fonts().EmbeddedFonts ().end () != foundFont)
         return foundFont->second;
     
-    UInt32 fontNumber;
+    uint32_t fontNumber;
     if (SUCCESS != project.Fonts().AcquireFontNumber (fontNumber, *this))
         { BeAssert (false); return NULL; }
     
@@ -2186,239 +2141,97 @@ BentleyStatus DgnShxFont::_LayoutGlyphs (DgnGlyphLayoutContextCR layoutContext, 
     {
     if (m_isMissing)
         return ERROR;
-    
+
     // If you make any changes to this method, also consider examining DgnTrueTypeFont::_LayoutGlyphs and DgnRscFont::_LayoutGlpyhs.
     //  This method differs from the V8i variants in that it is designed to compute only the low-level information needed,
     //  and to serve both TextString and TextBlock through a single code path. This does mean that some extraneous information
     //  is potentially computed, but should be cheap compared to the overall layout operation.
-    
+
     // Local accessors for some commonly used input.
-    DgnGlyphLayoutContext::T_FontCharsCR    fontChars                           = layoutContext.GetFontChars ();
-    CharacterSpacingType                    characterSpacingType                = layoutContext.GetCharacterSpacingType ();
-    double                                  characterSpacingValue               = layoutContext.GetCharacterSpacingValue ();
-    
+    DgnGlyphLayoutContext::T_FontCharsCR fontChars = layoutContext.GetFontChars();
+
     // Local accessors for what we need to generate.
-    DgnGlyphLayoutResult::T_GlyphCodesR     outGlyphCodes                       = layoutResult.GetGlyphCodesR ();
-    DgnGlyphLayoutResult::T_GlyphOriginsR   outGlyphOrigins                     = layoutResult.GetGlyphOriginsR ();
-    T_DoubleVectorR                         outLeadingCaretOffsets              = layoutResult.GetLeadingCaretOffsetsR ();
-    T_DoubleVectorR                         outTrailingCaretOffsets             = layoutResult.GetTrailingCaretOffsetsR ();
-    DRange2dR                               outFullCellBoxRange                 = layoutResult.GetCellBoxRangeR ();
-    DRange2dR                               outFullBlackBoxRange                = layoutResult.GetBlackBoxRangeR ();
-    DRange2dR                               outJustificationCellBoxRange        = layoutResult.GetJustificationCellBoxRangeR ();
-    DRange2dR                               outJustificationBlackBoxRange       = layoutResult.GetJustificationBlackBoxRangeR ();
-    double&                                 outTrailingInterCharacterSpacing    = layoutResult.GetTrailingInterCharacterSpacingR ();
-    double&                                 outMaxHorizontalCellIncrement       = layoutResult.GetMaxHorizontalCellIncrementR ();
-    bool&                                   outIsLastGlyphBlank                 = layoutResult.IsLastGlyphBlankR ();
-    double&                                 outLeftSideBearingToIgnore          = layoutResult.LeftSideBearingToIgnoreR ();
-    
-    _EnsureFontIsLoaded ();
-    
-    DgnShxBigFont const* shxBigFont = static_cast<DgnShxBigFont const*>(layoutContext.GetShxBigFont());
-    if ((NULL != shxBigFont) && !shxBigFont->m_isMissing)
-        shxBigFont->_EnsureFontIsLoaded ();
-    
-    ScopedArray<DgnShxGlyphCP>  glyphsBuff  (fontChars.size ());
-    DgnShxGlyphCP*              glyphs      = glyphsBuff.GetData ();
-    
-    // This does the work of digging up glyphs from the rights fonts (e.g. this font vs. big font), as well as expanding any escape sequences to get the display string.
-    size_t numGlyphs = LookupGlyphs (glyphs, &fontChars.front (), (int)fontChars.size (), layoutContext.ShouldIgnorePercentEscapes (), shxBigFont);
-    
+    DRange2dR outRange = layoutResult.GetRangeR();
+    DRange2dR outJustificationRange = layoutResult.GetJustificationRangeR();
+    DgnGlyphLayoutResult::T_GlyphsR outGlyphs = layoutResult.GetGlyphsR();
+    DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes = layoutResult.GetGlyphCodesR();
+    DgnGlyphLayoutResult::T_GlyphOriginsR outGlyphOrigins = layoutResult.GetGlyphOriginsR();
+
+    _EnsureFontIsLoaded();
+
+    outGlyphs.reserve(fontChars.size());
+
+    // This does the work of digging up glyphs from the rights fonts, as well as expanding any escape sequences to get the display string.
+    size_t numGlyphs = LookupGlyphs(outGlyphs, &fontChars.front(), (int)fontChars.size(), layoutContext.ShouldIgnorePercentEscapes());
     if (0 == numGlyphs)
         return SUCCESS;
-    
-    static const DgnShxGlyph blankGlyph (0, 0, 0, *this, *m_data);
+
+    static const DgnShxGlyph blankGlyph(0, 0, 0, *this, *m_data);
     for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
         {
-        if (NULL != glyphs[iGlyph])
+        if (NULL != outGlyphs[iGlyph])
             continue;
-        
-        glyphs[iGlyph] = &blankGlyph;
+
+        outGlyphs[iGlyph] = &blankGlyph;
         }
 
-    // If the font is not vertical, then the text cannot be vertical.
-    bool isVertical = (layoutContext.IsVertical () && IsVertical ());
-    
     // We know how many; might as well reserve.
-    outGlyphCodes.reserve (numGlyphs);
-    outGlyphOrigins.reserve (numGlyphs);
-    
+    outGlyphCodes.reserve(numGlyphs);
+    outGlyphOrigins.reserve(numGlyphs);
+
     // Right-justified text needs to ignore trailing blanks.
     size_t numNonBlankGlyphs = numGlyphs;
     for (; numNonBlankGlyphs > 0; --numNonBlankGlyphs)
         {
-        DgnShxGlyphCR glyph = *glyphs[numNonBlankGlyphs - 1];
+        DgnShxGlyphCR glyph = static_cast<DgnShxGlyphCR>(*outGlyphs[numNonBlankGlyphs - 1]);
         
-        if (!glyph.IsBlank () || layoutContext.GetEDFMask ()[numNonBlankGlyphs - 1])
+        if (!glyph.IsBlank())
             break;
         }
     
     // Compute origins, ranges, etc...
-    DPoint3d    penPosition = layoutContext.GetDisplayOffset();
-    DPoint2d    drawSize    = layoutContext.GetDisplaySize ();
+    DPoint3d penPosition = DPoint3d::FromZero();
+    DPoint2d drawSize = layoutContext.GetSize();
 
-    if (layoutContext.ShouldIgnoreDisplayShifts ())
-        penPosition.Zero ();
-    
-    if (layoutContext.IsBackwards ())
-        drawSize.x = -drawSize.x;
-    
-    if (layoutContext.IsUpsideDown ())
-        drawSize.y = -drawSize.y;
-    
     for (size_t i = 0; i < numGlyphs; ++i)
         {
-        DgnShxGlyphCR glyph = *glyphs[i];
-        
-        outGlyphCodes.push_back (glyph.GetCharCode ());
-        outGlyphOrigins.push_back (penPosition);
-        
-        // Legacy -- when vertical, glyphs are actually centered on a per-glyph basis, based on the nominal pen position... joy...
-        if (isVertical)
-            {
-            outGlyphOrigins[i].x += (drawSize.x * glyph.GetVerticalCellBoxLeft ());
-            outGlyphOrigins[i].y -= (drawSize.y * glyph.GetVerticalCellBoxBottom ());
-            }
-        
-        if (NULL != layoutContext.GetIDgnGlyphLayoutListenerP ())
-            layoutContext.GetIDgnGlyphLayoutListenerP ()->_OnGlyphAnnounced (*this, glyph, outGlyphOrigins[i]);
-        
-        if (0 == i)
-            outLeftSideBearingToIgnore = drawSize.x * (isVertical ? glyph.GetVerticalCellBoxLeft () : glyph.GetBlackBoxLeft ());
-        
-        if ((outGlyphCodes.size () - 1) == i)
-            outIsLastGlyphBlank = glyph.IsBlank ();
-        
-        DRange2d glyphCellRange;
-        glyphCellRange.low.x    = outGlyphOrigins[i].x;
-        glyphCellRange.low.y    = outGlyphOrigins[i].y;
-        glyphCellRange.high.x   = (glyphCellRange.low.x + drawSize.x * glyph.GetCellBoxWidth ());
-        glyphCellRange.high.y   = (glyphCellRange.low.y + drawSize.y);
-        
+        DgnShxGlyphCR glyph = static_cast<DgnShxGlyphCR>(*outGlyphs[i]);
+
+        outGlyphCodes.push_back(glyph.GetCharCode());
+        outGlyphOrigins.push_back(penPosition);
+
+        DRange2d glyphRange;
+        glyphRange.low.x = outGlyphOrigins[i].x;
+        glyphRange.low.y = outGlyphOrigins[i].y;
+        glyphRange.high.x = (glyphRange.low.x + drawSize.x * glyph.GetCellBoxWidth());
+        glyphRange.high.y = (glyphRange.low.y + drawSize.y);
+
         // It is important to use the array overload of DRange2d::Extend; the ranges can be inverted for backwards/upside-down text, and the DRange2d overload enforces low/high semantics.
-        outFullCellBoxRange.Extend (&glyphCellRange.low, 2);
+        outRange.Extend(&glyphRange.low, 2);
         
         if (i < numNonBlankGlyphs)
-            outJustificationCellBoxRange.Extend(&glyphCellRange.low, 2);
+            outJustificationRange.Extend(&glyphRange.low, 2);
 
-        DRange2d glyphBlackBoxRange;
-        glyphBlackBoxRange.low.x    = outGlyphOrigins[i].x + drawSize.x * glyph.GetBlackBoxLeft ();
-        glyphBlackBoxRange.low.y    = outGlyphOrigins[i].y + drawSize.y * glyph.GetBlackBoxBottom ();
-        glyphBlackBoxRange.high.x   = glyphBlackBoxRange.low.x + drawSize.x * glyph.GetBlackBoxWidth ();
-        glyphBlackBoxRange.high.y   = glyphBlackBoxRange.low.y + drawSize.y * glyph.GetBlackBoxHeight ();
-        
-        outFullBlackBoxRange.Extend (&glyphBlackBoxRange.low, 2);
-        
-        if (i < numNonBlankGlyphs)
-            outJustificationBlackBoxRange.Extend (&glyphBlackBoxRange.low, 2);
-        
-        // Some more evil legacy -- needed for certain line spacing computations.
-        double glyphCellIncrement = (glyph.GetCellBoxWidth () * drawSize.x);
-        if (glyphCellIncrement > outMaxHorizontalCellIncrement)
-            outMaxHorizontalCellIncrement = glyphCellIncrement;
-        
-        if (isVertical)
-            {
-            // Purposefully omitting CharacterSpacingType::Factor... not sure why; I guess it doesn't quite make sense for vertical, and it's some DWG thing anyway...
-            if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                penPosition.y -= characterSpacingValue;
-            else
-                penPosition.y += (glyph.GetVerticalCellBoxBottom () + glyph.GetVerticalCellBoxTop ()) * drawSize.y - characterSpacingValue;
-            }
-        else
-            {
-            if ((CharacterSpacingType::Factor == characterSpacingType) && (characterSpacingValue > 0.0))
-                penPosition.x += (glyph.GetCellBoxWidth () * drawSize.x * characterSpacingValue);
-            else if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                penPosition.x += characterSpacingValue;
-            else
-                penPosition.x += ((glyph.GetCellBoxRight () * drawSize.x) + characterSpacingValue);
-            }
+        penPosition.x += (glyph.GetCellBoxRight() * drawSize.x);
         }
-    
-    // Pre-allocate... helps reduce malloc/free overhead.
-    outLeadingCaretOffsets.reserve (outGlyphCodes.size ());
-    outTrailingCaretOffsets.reserve (outGlyphCodes.size ());
-    
-    if (layoutContext.IsVertical ())
-        {
-        outTrailingInterCharacterSpacing = penPosition.y - outFullCellBoxRange.low.y;
 
-        for (size_t i = 0; i < outGlyphCodes.size (); ++i)
-            {
-            outLeadingCaretOffsets.push_back (outGlyphOrigins[i].y);
-            outTrailingCaretOffsets.push_back (outGlyphOrigins[i].y + (glyphs[i]->GetCellBoxHeight () * drawSize.y));
-            }
-        }
-    else
-        {
-        outTrailingInterCharacterSpacing = penPosition.x - outFullCellBoxRange.high.x;
-
-        for (size_t i = 0; i < outGlyphCodes.size (); ++i)
-            {
-            outLeadingCaretOffsets.push_back (outGlyphOrigins[i].x);
-
-            DgnShxGlyphCR   glyph       = *glyphs[i];
-            double          glyphWidth  = 0.0;
-            
-            if ((CharacterSpacingType::Factor == characterSpacingType) && (characterSpacingValue > 0.0))
-                glyphWidth = (glyph.GetCellBoxWidth () * drawSize.x * characterSpacingValue);
-            else if (CharacterSpacingType::FixedWidth == characterSpacingType)
-                glyphWidth = characterSpacingValue;
-            else
-                glyphWidth = ((glyph.GetCellBoxRight () * drawSize.x) + characterSpacingValue);
-
-            outTrailingCaretOffsets.push_back (outGlyphOrigins[i].x + glyphWidth);
-            }
-        }
-    
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-size_t DgnShxFont::LookupGlyphs (DgnShxGlyphCP* glyphs, UInt16 const* inChars, int nChars, bool shouldIgnorePercentEscapes, DgnShxBigFontCP shxBigFont) const
+size_t DgnShxFont::LookupGlyphs (DgnGlyphLayoutResult::T_GlyphsR glyphs, uint16_t const* inChars, int nChars, bool shouldIgnorePercentEscapes) const
     {
-    bool        convertToUnicode    = ((LangCodePage::Unicode == _GetCodePage ()) && (NULL != shxBigFont));
-    CharIter    iter                (((NULL != shxBigFont) ? *shxBigFont : *this), inChars, nChars, shouldIgnorePercentEscapes);
-    size_t      numGlyphs           = 0;
+    CharIter iter(*this, inChars, nChars, shouldIgnorePercentEscapes);
+    size_t numGlyphs = 0;
     
-    for (; iter.IsValid (); iter.ToNext (), ++numGlyphs)
+    for (; iter.IsValid(); iter.ToNext(), ++numGlyphs)
         {
-        FontChar        currChar    = iter.CurrCharCode();
-        DgnShxGlyphCP   glyph       = 0;
+        FontChar currChar = iter.CurrCharCode();
+        DgnShxGlyphCP glyph = FindGlyphCP(currChar);
 
-        if ((CharIter::CHARTYPE_Normal == iter.CurrCharType ()) && (nChars > 1) && (NULL != shxBigFont) && shxBigFont->IsMultiCharInducer (currChar))
-            {
-            iter.ToNext ();
-            if (!iter.IsValid () || (CharIter::CHARTYPE_Normal != iter.CurrCharType ()))
-                return numGlyphs;
-
-            currChar    = ((currChar << 8) | iter.CurrCharCode ());
-            glyph       = shxBigFont->FindGlyphCP (currChar);
-            }
-        else
-            {
-            if (NULL != shxBigFont)
-                {
-                // For special chars only, look in small font first.
-                if (CharIter::CHARTYPE_Special == iter.CurrCharType ())
-                    glyph = FindGlyphCP (RemapUnicodeCharToFontChar (shxBigFont->RemapFontCharToUnicodeChar (currChar)));
-
-                // For normal chars, look in big font first.
-                if (NULL == glyph)
-                    glyph = shxBigFont->FindGlyphCP (currChar);
-
-                // If we're looking for a character from a non-unicode codepage, but the font is a unicode shx font, we have to convert the character from the codePage to unicode.
-                if ((NULL == glyph) && convertToUnicode)
-                    currChar = shxBigFont->RemapFontCharToUnicodeChar (currChar);
-                }
-
-            if (NULL == glyph)
-                glyph = FindGlyphCP (currChar);
-            }
-
-        glyphs[numGlyphs] = glyph;
+        glyphs.push_back(glyph);
         }
 
     return numGlyphs;
@@ -2444,7 +2257,7 @@ DgnShxShapeFont::DgnShxShapeFont (Utf8CP name, DgnFontConfigurationData const& c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnShxShapeFont::DgnShxShapeFont (Utf8CP name, DgnFontConfigurationData const& config, UInt32 fontNumber, DgnProjectCR project) :
+DgnShxShapeFont::DgnShxShapeFont (Utf8CP name, DgnFontConfigurationData const& config, uint32_t fontNumber, DgnDbCR project) :
     T_Super (name, config, fontNumber, project),
     m_wasLoaded (false)
     {
@@ -2484,7 +2297,7 @@ void DgnShxShapeFont::_EnsureFontIsLoaded () const
     for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
         {
         DgnShxGlyphFPos glyphFPos;
-        glyphFPos.m_filePosition    = (UInt16)(dataStart + dataOffset);
+        glyphFPos.m_filePosition    = (uint16_t)(dataStart + dataOffset);
         glyphFPos.m_charCode        = m_data->GetNextUInt16 ();
         glyphFPos.m_dataSize        = m_data->GetNextUInt16 ();
 
@@ -2492,103 +2305,10 @@ void DgnShxShapeFont::_EnsureFontIsLoaded () const
         dataOffset += glyphFPos.m_dataSize;
         }
     
-    readNonShxBigFontInfo (*m_data, GetGlyphFilePos (0), false, m_ascender, m_descender, m_charHeight, m_charWidth);
+    readNonShxBigFontInfo (*m_data, GetGlyphFilePos (0), m_ascender, m_descender, m_charHeight, m_charWidth);
     
     // We have to read a glyph to know if this font is vertical; we consider 0x3f the default glyph, so use that or assume not vertical.
     FindGlyphCP (0x3f);
-    }
-
-//***************************************************************************************************************************************************
-//***************************************************************************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-DgnFontVariant DgnShxBigFont::_GetVariant () const { return DGNFONTVARIANT_ShxBig; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-DgnShxBigFont::DgnShxBigFont (Utf8CP name, DgnFontConfigurationData const& config, WCharCP filePath) :
-    T_Super (name, config, filePath),
-    m_wasLoaded (false)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-DgnShxBigFont::DgnShxBigFont (Utf8CP name, DgnFontConfigurationData const& config, UInt32 fontNumber, DgnProjectCR project) :
-    T_Super (name, config, fontNumber, project),
-    m_wasLoaded (false)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-void DgnShxBigFont::_EnsureFontIsLoaded () const
-    {
-    if (m_wasLoaded)
-        return;
-
-    m_wasLoaded = true;
-    
-    if (m_isMissing)
-        { BeAssert (false && L"Don't attempt to load a missing font!"); return; }
-    
-    if (SUCCESS != m_data->_Open ())
-        {
-        BeAssert (false);
-        m_isMissing = true;
-        return;
-        }
-    
-    // Skip header...
-    for (size_t iByte = 0; ((iByte < 40) && (0x1a != m_data->_GetNextCharacter ())); ++iByte)
-        ;
-
-    // Skip 2 bytes...
-    m_data->_Seek (2, SEEK_CUR);
-    
-    size_t  numGlyphs           = (size_t)m_data->GetNextUInt16 ();
-    size_t  numInducerRanges    = (size_t)m_data->GetNextUInt16 ();
-    
-    for (size_t iInducerRange = 0; iInducerRange < numInducerRanges; ++iInducerRange)
-        m_inducerRanges.push_back (T_InducerRange ((FontChar)m_data->GetNextUInt16 (), (FontChar)m_data->GetNextUInt16 ()));
-
-    ScopedArray<DgnShxGlyphFPos> glyphFPoses (numGlyphs);
-    m_data->_Read (glyphFPoses.GetData (), sizeof (DgnShxGlyphFPos), numGlyphs);
-
-    for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
-        {
-        DgnShxGlyphFPos& glyphFPos = glyphFPoses.GetData ()[iGlyph];
-        if ((0 == glyphFPos.m_charCode) && (0 == glyphFPos.m_dataSize) && (0 == glyphFPos.m_filePosition))
-            continue;
-        
-        m_glyphFPosMap[(FontChar)glyphFPos.m_charCode] = glyphFPos;
-        }
-    
-    readNonShxBigFontInfo (*m_data, GetGlyphFilePos (0), true, m_ascender, m_descender, m_charHeight, m_charWidth);
-    
-    // We have to read a glyph to know if this font is vertical; we consider 0x3f the default glyph, so use that or assume not vertical.
-    FindGlyphCP (0x3f);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-bool DgnShxBigFont::IsMultiCharInducer (FontChar charCode) const
-    {
-    for (size_t iInducerRange = 0; iInducerRange < m_inducerRanges.size (); ++iInducerRange)
-        {
-        if ((charCode < m_inducerRanges[iInducerRange].first) || (charCode > m_inducerRanges[iInducerRange].second))
-            continue;
-        
-        return true;
-        }
-    
-    return false;
     }
 
 //***************************************************************************************************************************************************
@@ -2611,7 +2331,7 @@ DgnShxUniFont::DgnShxUniFont (Utf8CP name, DgnFontConfigurationData const& confi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-DgnShxUniFont::DgnShxUniFont (Utf8CP name, DgnFontConfigurationData const& config, UInt32 fontNumber, DgnProjectCR project) :
+DgnShxUniFont::DgnShxUniFont (Utf8CP name, DgnFontConfigurationData const& config, uint32_t fontNumber, DgnDbCR project) :
     T_Super (name, config, fontNumber, project),
     m_wasLoaded (false)
     {
@@ -2684,7 +2404,7 @@ void DgnShxUniFont::_EnsureFontIsLoaded () const
             }
 
         DgnShxGlyphFPos glyphFPos;
-        glyphFPos.m_filePosition    = (UInt16)(nextAddress + 4);
+        glyphFPos.m_filePosition    = (uint16_t)(nextAddress + 4);
         glyphFPos.m_charCode        = m_data->GetNextUInt16 ();
         glyphFPos.m_dataSize        = m_data->GetNextUInt16 ();
 

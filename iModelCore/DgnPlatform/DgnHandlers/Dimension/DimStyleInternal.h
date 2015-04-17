@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/Dimension/DimStyleInternal.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,7 +78,7 @@ DgnElementCP pCandidate
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt     dimStyleTable_createDirect
 (
-MSElementDescrH ppTableEd,
+DgnElementDescrH ppTableEd,
 ElementId               tableElementIdIn,
 DgnModelP            pDgnModelIn
 );
@@ -98,8 +98,8 @@ DgnModelP    destDgnModel
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt     dimStyleEntry_setId
 (
-MSElementDescrP pEntryDescrIn,
-UInt32          entryIdIn
+DgnElementDescrP pEntryDescrIn,
+uint32_t        entryIdIn
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,7 +107,7 @@ UInt32          entryIdIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt     dimStyleEntry_setDescription
 (
-MSElementDescrH ppStyleEd,
+DgnElementDescrH ppStyleEd,
 const WChar    *pDescriptionIn
 );
 
@@ -116,11 +116,11 @@ const WChar    *pDescriptionIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt     dimStyleEntry_create
 (
-MSElementDescrH ppStyleEd,
-MSElementDescrP pTemplateEd,
+DgnElementDescrH ppStyleEd,
+DgnElementDescrP pTemplateEd,
 WChar         *pStyleName,
 WChar         *pStyleDescription,
-MSElementDescrP pTableEd,
+DgnElementDescrP pTableEd,
 bool             getActive
 );
 
@@ -129,7 +129,7 @@ bool             getActive
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt     dimStyleEntry_delete
 (
-MSElementDescrP pEntryDescrIn
+DgnElementDescrP pEntryDescrIn
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,7 +146,7 @@ void
 StatusInt dimStyleTable_getDgnModel
 (
 DgnModelP    *pDgnModelOut,          /* <= output modelRef */
-MSElementDescrP pStyleTableDescrIn     /* => input style table element descriptor */
+DgnElementDescrP pStyleTableDescrIn     /* => input style table element descriptor */
 );
 
 
@@ -155,15 +155,15 @@ MSElementDescrP pStyleTableDescrIn     /* => input style table element descripto
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public StatusInt    dimStyleEntry_findByUniqueIdInFile
 (
-MSElementDescrH ppStyleEdP,         /* <= */
+DgnElementDescrH ppStyleEdP,         /* <= */
 ElementId           elementID,          /* => */
-DgnProjectP         fileObj             /* => */
+DgnDbP         fileObj             /* => */
 );
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public MSElementDescrP   dgnDimStyle_createElement
+Public DgnElementDescrP   dgnDimStyle_createElement
 (
 DgnDimStyleCP           dgnDimStyleP,
 const DgnModelP      destDgnModel
@@ -202,9 +202,9 @@ DgnModelP       dstCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt     dimStyleEntry_findById
 (
-MSElementDescrH ppStyleEd,
-UInt32          entryId,
-MSElementDescrP pTableEd
+DgnElementDescrH ppStyleEd,
+uint32_t        entryId,
+DgnElementDescrP pTableEd
 );
 
 /*----------------------------------------------------------------------------------*//**
@@ -212,8 +212,8 @@ MSElementDescrP pTableEd
 +---------------+---------------+---------------+---------------+---------------+------*/
  StatusInt     dimStyleEntry_getId
 (
-UInt32                 *pEntryIdOut,
-MSElementDescrCP pEd
+uint32_t               *pEntryIdOut,
+DgnElementDescrCP pEd
 );
 
 /*----------------------------------------------------------------------------------*//**
@@ -221,9 +221,9 @@ MSElementDescrCP pEd
 +---------------+---------------+---------------+---------------+---------------+------*/
  StatusInt     dimStyleEntry_findByUniqueId
 (
-MSElementDescrH ppStyleEd,
+DgnElementDescrH ppStyleEd,
 ElementId           entryId,
-MSElementDescrP pTableEd
+DgnElementDescrP pTableEd
 );
 
 /*----------------------------------------------------------------------------------*//**
@@ -231,7 +231,7 @@ MSElementDescrP pTableEd
 +---------------+---------------+---------------+---------------+---------------+------*/
  StatusInt     dimStyleTable_create
 (
-MSElementDescrH ppTableEd,
+DgnElementDescrH ppTableEd,
 DgnModelP        modelRefIn,
 ElementId           tableElementIdIn
 );

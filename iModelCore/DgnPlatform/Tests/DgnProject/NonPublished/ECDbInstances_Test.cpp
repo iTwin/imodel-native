@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ECDbInstances_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -10,7 +10,6 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnCore/ColorUtil.h>
 #include <Logging/bentleylogging.h>
-#include <DgnPlatform/DgnHandlers/DgnLinkTable.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"DgnECDb"))
 
@@ -23,11 +22,11 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
-extern Int64 GetV9ElementId (Utf8CP v8Filename, Int64 v8ElementId, DgnProjectR project);
+extern int64_t GetV9ElementId (Utf8CP v8Filename, int64_t v8ElementId, DgnDbR project);
 
 #if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------------
-* Demonstrate that you can iterate the rows in the dgn_Element table using an EC query.
+* Demonstrate that you can iterate the rows in the ElementGraphics table using an EC query.
 * @bsimethod                                                    Sam.Wilson      07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECDbInstances, DgnElement)
@@ -35,12 +34,13 @@ TEST(ECDbInstances, DgnElement)
     ScopedDgnHost host;
     
     DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb");
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
 
     ECN::ECSchemaP dgnschema = NULL;
-    auto schemaStat = project.GetEC().GetSchemaManager ().GetECSchema (dgnschema, "dgn");
+    auto schemaStat = project.Schemas ().GetECSchema (dgnschema, DGN_ECSCHEMA_NAME);
     ASSERT_EQ (SUCCESS, schemaStat);
-    ECN::ECClassP elementClass = dgnschema->GetClassP (L"Element");
+    WString classNameW(DGN_CLASSNAME_ElementGraphics, BentleyCharEncoding::Utf8);
+    ECN::ECClassP elementClass = dgnschema->GetClassP(classNameW.c_str());
     ASSERT_TRUE (elementClass != NULL);
 
     Utf8String schemaPrefix = Utf8String (elementClass->GetSchema().GetNamespacePrefix().c_str());
@@ -50,26 +50,39 @@ TEST(ECDbInstances, DgnElement)
     ECSqlStatus prepareStatus = statement.Prepare (project, ecSql.GetUtf8CP());
     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
 
-    bset<ElementId> elementInstances;
+    bset<DgnElementId> elementInstances;
     ECInstanceECSqlSelectAdapter adapter(statement);
     while (statement.Step() == ECSqlStepStatus::HasRow)
         {
         ECInstanceId id;
         bool status = adapter.GetInstanceId (id);
         ASSERT_TRUE (status);
-        ElementRefP ref = project.Models().GetElementById (ElementId(id.GetValue())).get();
+        ElementRefP ref = project.Models().GetElementById (DgnElementId(id.GetValue())).get();
         ASSERT_TRUE (ref != NULL);
-        elementInstances.insert (ElementId(id.GetValue()));
+        elementInstances.insert (DgnElementId(id.GetValue()));
         }
 
     WString elementInstancesStr;
-    FOR_EACH (ElementId id, elementInstances) {elementInstancesStr.append (WPrintfString(L"%lld ",id.GetValue()));}
+    FOR_EACH (DgnElementId id, elementInstances) {elementInstancesStr.append (WPrintfString(L"%lld ",id.GetValue()));}
 
     ASSERT_STREQ( elementsStr.c_str(), elementInstancesStr.c_str() );
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnModelP DgnModels::getAndFill(DgnDbR db, DgnModelId modelID)
+    {
+    DgnModelP dgnModel = db.Models().GetModelById (modelID);
+    if (dgnModel == NULL)
+        return NULL;
+
+    dgnModel->FillModel();
+    return  dgnModel;
+    }
     
 /*---------------------------------------------------------------------------------------
-* Demonstrate that you can query for DGN elements by ElementId using an EC query.
+* Demonstrate that you can query for DGN elements by DgnElementId using an EC query.
 * @bsimethod                                                    Krischan.Eberle   03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECDbInstances, DgnElementByElementId)
@@ -77,9 +90,9 @@ TEST(ECDbInstances, DgnElementByElementId)
     ScopedDgnHost host;
 
     DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb");
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
 
-    bvector<ElementId> elements;
+    bvector<DgnElementId> elements;
 
     project.Models().FillDictionaryModel ();
     FOR_EACH (PersistentElementRefP ref, project.Models().GetDictionaryModel()->GetElementsCollection ())
@@ -87,14 +100,14 @@ TEST(ECDbInstances, DgnElementByElementId)
 
     for (auto const& entry : project.Models().MakeIterator ())
         {
-        DgnModelP model = project.Models().GetAndFillModelById (NULL, entry.GetModelId(), true);
+        DgnModelP model = getAndFill(project, entry.GetModelId());
 
         FOR_EACH (PersistentElementRefP ref, model->GetElementsCollection ())
             elements.push_back (ref->GetElementId());
         }
 
     ECN::ECSchemaP dgnschema = NULL;
-    auto schemaStat = project.GetEC().GetSchemaManager ().GetECSchema (dgnschema, "dgn");
+    auto schemaStat = project.Schemas ().GetECSchema (dgnschema, "dgn");
     ASSERT_EQ (SUCCESS, schemaStat);
     ECN::ECClassCP elementClass = dgnschema->GetClassCP (L"Element");
     ASSERT_TRUE (elementClass != NULL);
@@ -109,7 +122,7 @@ TEST(ECDbInstances, DgnElementByElementId)
         auto stat = statement.Prepare (project, builder.ToString ().c_str ());
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
 
-        FOR_EACH (ElementId expectedElementId, elements)
+        FOR_EACH (DgnElementId expectedElementId, elements)
             {
             statement.Reset ();
             statement.ClearBindings ();
@@ -131,7 +144,7 @@ TEST(ECDbInstances, DgnElementByElementId)
         size_t totalElementIdCount = elements.size ();
         size_t testElementIdCount = std::min<size_t> (totalElementIdCount, 10);
 
-        bset<ElementId> expectedElementIds;
+        bset<DgnElementId> expectedElementIds;
         Utf8String whereClause;
         whereClause.append (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY);
         whereClause.append (" IN (");
@@ -156,166 +169,41 @@ TEST(ECDbInstances, DgnElementByElementId)
         auto stat = statement.Prepare (project, builder.ToString ().c_str ());
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
 
-        bset<ElementId> actualElementIds;
+        bset<DgnElementId> actualElementIds;
         while (ECSqlStepStatus::HasRow == statement.Step ())
             {
             ECInstanceId actualElementId = statement.GetValueId<ECInstanceId> (0);
-            actualElementIds.insert (ElementId (actualElementId.GetValue ()));
+            actualElementIds.insert (DgnElementId (actualElementId.GetValue ()));
             }
 
         //now check that results are as expected
         WString expectedElementIdsStr;
-        FOR_EACH (ElementId id, expectedElementIds) {expectedElementIdsStr.append (WPrintfString(L"%lld ",id.GetValue()));}
+        FOR_EACH (DgnElementId id, expectedElementIds) {expectedElementIdsStr.append (WPrintfString(L"%lld ",id.GetValue()));}
         WString actualElementIdsStr;
-        FOR_EACH (ElementId id, actualElementIds) {actualElementIdsStr.append (WPrintfString(L"%lld ",id.GetValue()));}
+        FOR_EACH (DgnElementId id, actualElementIds) {actualElementIdsStr.append (WPrintfString(L"%lld ",id.GetValue()));}
 
         ASSERT_STREQ (expectedElementIdsStr.c_str(), actualElementIdsStr.c_str());
         }
     }
 #endif
 
+#if defined (NEEDS_WORK_DGNITEM)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   03/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ElementId AddLineToModel (DgnModelR model)
+DgnElementId AddLineToModel (DgnModelR model)
     {
     EditElementHandle line;
-#if defined (NEEDS_WORK_DGNITEM)
     DSegment3d  segment;
 
     segment.point[0] = DPoint3d::FromXYZ (0.0, 0.0, 0.0); 
     segment.point[1] = DPoint3d::FromXYZ (100.0, 100.0, 100.0);
-#endif
-    ExtendedElementHandler::InitializeElement (line, NULL, model, model.Is3d());
+    GraphicElementHandler::InitializeElement (line, model); // WIP: need to pass in a DgnElementId
     line.AddToModel();
 
     return line.GetElementId();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceId AddDgnLink (DgnProjectR project, ElementId const& elementId, int ordinal, Utf8CP displayLabel, Utf8CP url = nullptr)
-    {
-    const auto isUrlLink = url != nullptr;
-    
-    ECSchemaP dgnSchema = nullptr;
-    project.GetEC().GetSchemaManager ().GetECSchema (dgnSchema, DGNECSCHEMA_SchemaName);
-
-    //create and insert the link instance
-    auto linkClass = isUrlLink ? dgnSchema->GetClassCP (DGNECSCHEMA_CLASSNAME_UrlDgnLink) : dgnSchema->GetClassCP (DGNECSCHEMA_CLASSNAME_DgnLink);
-    auto linkInstance = linkClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    linkInstance->SetValue (L"Ordinal", ECValue (ordinal));
-    linkInstance->SetValue (L"DisplayLabel", ECValue (displayLabel));
-    if (isUrlLink)
-        {
-        linkInstance->SetValue (L"Url", ECValue (url));
-        }
-
-    ECInstanceInserter linkInserter (project, *linkClass);
-    ECInstanceKey linkKey;
-    linkInserter.Insert (linkKey, *linkInstance);
-    WChar linkKeyStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ECInstanceIdHelper::ToString (linkKeyStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, linkKey.GetECInstanceId ());
-    linkInstance->SetInstanceId (linkKeyStr);
-    
-    //relate link to element
-    //For ECDb it is sufficient to use empty ECInstances with only the ECInstanceId set for the ends in the relationship instance.
-    //This is faster than querying the ECInstance from ECDb first via the following line: 
-    //auto elementInstance = ECDbInstanceAdapter::GetInstanceFromId (*dgnSchema->GetClassCP (DGNECSCHEMA_CLASSNAME_Element), elementId.GetValue (), project);
-    WChar elementInstanceId[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ECInstanceIdHelper::ToString (elementInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ECInstanceId (elementId.GetValue ()));
-    auto elementInstance = dgnSchema->GetClassCP (DGNECSCHEMA_CLASSNAME_Element)->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    elementInstance->SetInstanceId (elementInstanceId);
-
-    auto elementHasLinksRelClass = dgnSchema->GetClassCP (DGNECSCHEMA_CLASSNAME_ElementHasLinks)->GetRelationshipClassCP ();
-    auto relEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*elementHasLinksRelClass);
-    auto relInstance = relEnabler->CreateRelationshipInstance ();
-
-    relInstance->SetSource (elementInstance.get ());
-    relInstance->SetTarget (linkInstance.get ());
-
-    ECInstanceInserter relInserter (project, *elementHasLinksRelClass);
-    ECInstanceKey relInstanceKey;
-    relInserter.Insert (relInstanceKey, *relInstance);
-
-    return linkKey.GetECInstanceId ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbInstances, SelectDgnLinksForDgnElement)
-    {
-    ScopedDgnHost host;
-
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb");
-    DgnProjectR project = *tdm.GetDgnProjectP();
-
-    auto model = tdm.GetDgnModelP ();
-
-    auto elementId = AddLineToModel (*model);
-    auto linkId = AddDgnLink (project, elementId, 1, "Non-URL link");
-    auto urlLinkId = AddDgnLink (project, elementId, 2, "URL link", "http://www.foo.com");
-
-    ECSchemaP dgnschema = nullptr;
-    auto schemaStat = project.GetEC().GetSchemaManager ().GetECSchema (dgnschema, DGNECSCHEMA_SchemaName);
-    ASSERT_EQ (SUCCESS, schemaStat);
-    auto elementClass = dgnschema->GetClassCP (DGNECSCHEMA_CLASSNAME_Element);
-    ASSERT_TRUE (elementClass != nullptr);
-    auto dgnLinkClass = dgnschema->GetClassCP (DGNECSCHEMA_CLASSNAME_DgnLink);
-    ASSERT_TRUE (dgnLinkClass != nullptr);
-    auto elementHasLinksRelClass = dgnschema->GetClassCP (DGNECSCHEMA_CLASSNAME_ElementHasLinks)->GetRelationshipClassCP ();
-    ASSERT_TRUE (elementHasLinksRelClass != nullptr);
-
-    //non-polymorphic query (only for DgnLink objects)
-        {
-        ECSqlSelectBuilder ecsql;
-        ecsql.Select ("l.ECInstanceId").From (*dgnLinkClass, "l", false).Join (*elementClass, "e", false).Using (*elementHasLinksRelClass).Where ("e.ECInstanceId = ?");
-
-        ECSqlStatement statement;
-        auto stat = statement.Prepare (project, ecsql.ToString ().c_str ());
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
-
-        statement.BindInt64 (1, elementId.GetValue ());
-
-        int count = 0;
-        while (statement.Step () == ECSqlStepStatus::HasRow)
-            {
-            count++;
-            ASSERT_EQ (linkId.GetValue (), statement.GetValueInt64 (0));
-            }
-        ASSERT_EQ (1, count);
-        }
-
-     //polymorphic query (for DgnLink and subclasses)
-        {
-        ECSqlSelectBuilder ecsql;
-        ecsql.Select ("l.ECInstanceId").From (*dgnLinkClass, "l", true).Join (*elementClass, "e", false).Using (*elementHasLinksRelClass).Where ("e.ECInstanceId = ?").OrderBy ("e.ECInstanceId");
-
-        ECSqlStatement statement;
-        auto stat = statement.Prepare (project, ecsql.ToString ().c_str ());
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
-
-        statement.BindInt64 (1, elementId.GetValue ());
-
-        int count = 0;
-        while (statement.Step () == ECSqlStepStatus::HasRow)
-            {
-            count++;
-            if (count == 1)
-                {
-                ASSERT_EQ (linkId.GetValue(), statement.GetValueInt64 (0));
-                }
-            else if (count == 2)
-                {
-                ASSERT_EQ (urlLinkId.GetValue(), statement.GetValueInt64 (0));
-                }
-            }
-
-        ASSERT_EQ (2, count);
-        }
-    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/12
@@ -332,7 +220,7 @@ void DebugDumpJson (const Json::Value& jsonValue)
         }
     }
     
-static byte s_Utf8BOM[] = {0xef, 0xbb, 0xbf};
+static Byte s_Utf8BOM[] = {0xef, 0xbb, 0xbf};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/12
@@ -346,18 +234,18 @@ bool ReadStringFromUtf8File (Utf8String& strValue, WCharCP path)
     if (!EXPECTED_CONDITION (BeFileStatus::Success == fileStatus))
         return false;
 
-    UInt64 rawSize;
+    uint64_t rawSize;
     fileStatus = file.GetSize (rawSize);
     if (!EXPECTED_CONDITION (BeFileStatus::Success == fileStatus && rawSize <= UINT32_MAX))
         {
         file.Close();
         return false;
         }
-    UInt32 sizeToRead = (UInt32) rawSize;
+    uint32_t sizeToRead = (uint32_t) rawSize;
 
-    UInt32 sizeRead;
-    ScopedArray<byte> scopedBuffer (sizeToRead);
-    byte* buffer = scopedBuffer.GetData();
+    uint32_t sizeRead;
+    ScopedArray<Byte> scopedBuffer (sizeToRead);
+    Byte* buffer = scopedBuffer.GetData();
     fileStatus = file.Read (buffer, &sizeRead, sizeToRead);
     if (!EXPECTED_CONDITION (BeFileStatus::Success == fileStatus && sizeRead == sizeToRead))
         {
@@ -372,7 +260,7 @@ bool ReadStringFromUtf8File (Utf8String& strValue, WCharCP path)
         return false;
         }
 
-    for (UInt32 ii = 3; ii < sizeRead; ii++)
+    for (uint32_t ii = 3; ii < sizeRead; ii++)
         {
         if (buffer[ii] == '\n' || buffer[ii] == '\r')
             continue;
@@ -433,7 +321,7 @@ TEST(ECDbInstances, JsonValueFormatting)
     ScopedDgnHost host;
 
     DgnDbTestDgnManager tdm (L"rxmrlw1f.idgndb");
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
 
     // Make sure that all models are loaded and filled, so that call to dgnFile->FindElementById below will work.
     project.Models().FillDictionaryModel ();
@@ -443,18 +331,18 @@ TEST(ECDbInstances, JsonValueFormatting)
         }
 
     // Get some (arbitrary) reference element
-    Int64 selectedElementId = GetV9ElementId ("rxmrlw1f.dgn", 542696, project); 
+    int64_t selectedElementId = GetV9ElementId ("rxmrlw1f.dgn", 542696, project); 
     ASSERT_TRUE (selectedElementId > 0);
-    ElementId shownElementId;
-    if (!DgnECPersistence::TryGetAssemblyElementWithPrimaryInstance (shownElementId, ElementId (selectedElementId), project))
-        shownElementId = ElementId (selectedElementId);
+    DgnElementId shownElementId;
+    if (!DgnECPersistence::TryGetAssemblyElementWithPrimaryInstance (shownElementId, DgnElementId (selectedElementId), project))
+        shownElementId = DgnElementId (selectedElementId);
 
     // Get all relevant EC information for some arbitrary element
     PersistentElementRefPtr ref = project.Models().GetElementById (shownElementId);
     ASSERT_TRUE (ref.IsValid());
     ECN::ECClassId classId = (ECN::ECClassId) ref->GetECClassId();
     ECClassP ecClass = NULL;
-    project.GetEC().GetSchemaManager().GetECClass (ecClass, classId);
+    project.Schemas().GetECClass (ecClass, classId);
     ASSERT_TRUE (ecClass != NULL);
     ECInstanceId instanceId = ref->GetECInstanceId();
 
@@ -515,7 +403,7 @@ TEST(ECDbInstances, JsonValueFormatting)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnProjectPtr CreateEmptyProject (DgnProjectPtr& project, WCharCP projectPathname)
+DgnDbPtr CreateEmptyProject (DgnDbPtr& project, WCharCP projectPathname)
     {
     if (BeFileName::DoesPathExist (projectPathname))
         {
@@ -524,8 +412,8 @@ DgnProjectPtr CreateEmptyProject (DgnProjectPtr& project, WCharCP projectPathnam
             return NULL;
         }
 
-    CreateProjectParams params;
-    return DgnProject::CreateProject (NULL, BeFileName(projectPathname), params);
+    CreateDgnDbParams params;
+    return DgnDb::CreateDgnDb (NULL, BeFileName(projectPathname), params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -549,23 +437,23 @@ ECSchemaPtr ReadECSchemaFromDisk (WCharCP schemaPathname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ImportECSchema (ECSchemaR ecSchema, DgnProjectR project)
+bool ImportECSchema (ECSchemaR ecSchema, DgnDbR project)
     {
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema (ecSchema);
-    BentleyStatus importSchemaStatus = project.GetEC().GetSchemaManager ().ImportECSchemas (*schemaList);
+    BentleyStatus importSchemaStatus = project.Schemas ().ImportECSchemas (*schemaList);
     return (SUCCESS == importSchemaStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr CreateStartupCompanyInstance (ECSchemaR startupSchema)
+IECInstancePtr CreateStartupCompanyInstance (ECSchemaCR startupSchema)
     {
-    ECClassP anglesStructClass = startupSchema.GetClassP (L"AnglesStruct");
+    ECClassCP anglesStructClass = startupSchema.GetClassCP (L"AnglesStruct");
     if (anglesStructClass == NULL)
         return NULL;
-    ECClassP fooClass = startupSchema.GetClassP (L"Foo");
+    ECClassCP fooClass = startupSchema.GetClassCP (L"Foo");
     if (fooClass == NULL)
         return NULL;
 
@@ -599,7 +487,7 @@ IECInstancePtr CreateStartupCompanyInstance (ECSchemaR startupSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ImportECInstance (IECInstanceR instance, DgnProjectR project)
+bool ImportECInstance (IECInstanceR instance, DgnDbR project)
     {
     ECClassCR ecClass = instance.GetClass();
     ECInstanceInserter inserter (project, ecClass);
@@ -616,7 +504,7 @@ bool ImportECInstance (IECInstanceR instance, DgnProjectR project)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CreateStartupCompanyProject (WCharCP projectPathname, WCharCP schemaPathname)
     {
-    DgnProjectPtr project = CreateEmptyProject (project, projectPathname);
+    DgnDbPtr project = CreateEmptyProject (project, projectPathname);
     if (!project.IsValid())
         return false;
 
@@ -625,9 +513,8 @@ bool CreateStartupCompanyProject (WCharCP projectPathname, WCharCP schemaPathnam
         return false;
 
     ImportECSchema (*importSchema, *project);
-    ECSchemaP startupSchema = NULL;
-    auto schemaStat = project->GetEC().GetSchemaManager ().GetECSchema (startupSchema, "StartupCompany");
-    if (schemaStat != SUCCESS)
+    ECSchemaCP startupSchema = project->Schemas ().GetECSchema ("StartupCompany");
+    if (startupSchema == nullptr)
         return false;
         
     IECInstancePtr instance = CreateStartupCompanyInstance (*startupSchema);
@@ -644,12 +531,11 @@ bool CreateStartupCompanyProject (WCharCP projectPathname, WCharCP schemaPathnam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RetrieveStartupCompanyJson (Json::Value& jsonValue, DgnProjectR project)
+bool RetrieveStartupCompanyJson (Json::Value& jsonValue, DgnDbR project)
     {
     jsonValue = Json::nullValue;
 
-    ECClassP fooClass = NULL;
-    project.GetEC().GetSchemaManager().GetECClass (fooClass, "StartupCompany", "Foo");
+    ECClassCP fooClass = project.Schemas().GetECClass ("StartupCompany", "Foo");
     if (fooClass == NULL)
         return false;
 
@@ -694,7 +580,7 @@ TEST(ECDbInstances, JsonValueStructure)
     bool status = CreateStartupCompanyProject (projectPath.GetName(), ecSchemaPath.GetName());
     ASSERT_TRUE (status) << "Could not create test project";
 
-    DgnProjectPtr project = DgnProject::OpenProject (NULL, projectPath, DgnProject::OpenParams(Db::OPEN_Readonly));
+    DgnDbPtr project = DgnDb::OpenDgnDb (NULL, projectPath, DgnDb::OpenParams(Db::OPEN_Readonly));
     ASSERT_TRUE (project.IsValid()) << "Cound not open test project";
     
     Json::Value actualJson;
@@ -762,7 +648,7 @@ TEST (ECDbInstances, FieldEngineerStructArray)
     ASSERT_TRUE (schema.IsValid());
 
     /* Import schema into Db */
-    BentleyStatus importSchemaStatus = ecDb.GetEC().GetSchemaManager().ImportECSchemas (context->GetCache());
+    BentleyStatus importSchemaStatus = ecDb.Schemas().ImportECSchemas (context->GetCache());
     ASSERT_EQ (SUCCESS, importSchemaStatus);
 
     /* Read JSON from file */
@@ -775,10 +661,9 @@ TEST (ECDbInstances, FieldEngineerStructArray)
     ASSERT_TRUE (status);
 
     /* Import JSON into Db */
-    ECClassP documentClass = NULL;
-    ecDb.GetEC().GetSchemaManager().GetECClass (documentClass, "eB_PW_CommonSchema_WSB", "Document");
+    ECClassCP documentClass = ecDb.Schemas().GetECClass ("eB_PW_CommonSchema_WSB", "Document");
     ASSERT_TRUE (documentClass != NULL);
-    ECJsonInserter inserter (ecDb, documentClass->GetId());
+    JsonInserter inserter (ecDb, *documentClass);
     StatusInt insertStatus = inserter.Insert (beforeImportJson);
     ASSERT_TRUE (insertStatus == SUCCESS);
     ecDb.SaveChanges();
@@ -807,7 +692,7 @@ TEST (ECDbInstances, FieldEngineerStructArray)
         }
 
     /* Update */
-    ECJsonUpdater updater (ecDb, documentClass->GetId());
+    JsonUpdater updater (ecDb, *documentClass);
     Json::Value beforeUpdateJson = afterImportJson;
     beforeUpdateJson["Location"]["Coordinates"][0]["x"] = 1.11111;
     beforeUpdateJson["Location"]["Coordinates"][0]["y"] = 2.22222;
@@ -828,8 +713,7 @@ TEST (ECDbInstances, FieldEngineerStructArray)
 
     /* Validate */
     compare = beforeUpdateJson.compare (afterUpdateJson);
-    if (0 != compare)
-        {
+    //if (0 != compare)
         BeFileName beforeUpdateFile;
         BeTest::GetHost().GetOutputRoot (beforeUpdateFile);
         beforeUpdateFile.AppendToPath (L"FieldEngineerStructArray-BeforeUpdate.json");
@@ -840,7 +724,461 @@ TEST (ECDbInstances, FieldEngineerStructArray)
         afterUpdateFile.AppendToPath (L"FieldEngineerStructArray-AfterUpdate.json");
         WriteJsonToFile (afterUpdateFile.GetName(), afterUpdateJson);
 
-        FAIL() << "Json retrieved from db \n\t" << afterUpdateFile.GetName() << "\ndoes not match expected \n\t" << beforeUpdateFile.GetName();
+        ASSERT_EQ (0, compare) << "Json retrieved from db \n\t" << afterUpdateFile.GetName() << "\ndoes not match expected \n\t" << beforeUpdateFile.GetName();
+    }
+
+/*
+struct DgnECInstanceTests : public testing::Test
+    {
+    private:
+        static double s_xCoord;
+        static double s_yCoord;
+        static double s_zCoord;
+
+        static double s_increment;
+
+    public:
+        StatusInt CreateArbitraryElement (EditElementHandleR editElementHandle, DgnModelR model);
+
+
+    typedef void (*PopulatePrimitiveValueCallback)(ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecproperty);
+    static BentleyStatus SetECInstanceId (ECN::IECInstanceR instance, ECInstanceId const& instanceId);
+
+    static void            PopulateStructValue (ECN::ECValueR value, ECN::ECClassCR structType, PopulatePrimitiveValueCallback callback);
+
+    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, WCharCP baseAccessPath);
+    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR target, ECN::IECInstanceCR structValue, WCharCP propertyName);
+
+    static void PopulatePrimitiveValueWithRandomValues (ECN::ECValueR ecValue, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
+    static ECN::IECInstancePtr  CreateArbitraryECInstance (ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValueWithRandomValues, bool skipStructs = false, bool skipArrays = false);
+    static ECN::IECInstancePtr  CreateECInstance (ECN::ECClassCR ecClass);
+    static void                 PopulateECInstance (ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValueWithRandomValues, bool skipStructs = false, bool skipArrays = false);
+
+    };
+
+IECInstancePtr DgnECInstanceTests::CreateArbitraryECInstance (ECClassCR ecClass, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
+    {
+    IECInstancePtr instance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
+    PopulateECInstance (instance, populatePrimitiveValueCallback, skipStructs, skipArrays);
+    return instance;
+    }
+
+IECInstancePtr DgnECInstanceTests::CreateECInstance 
+(
+ECClassCR ecClass
+)
+    {
+    StandaloneECEnablerP instanceEnabler = ecClass.GetDefaultStandaloneEnabler ();
+    POSTCONDITION (instanceEnabler != nullptr, nullptr);
+    IECInstancePtr instance = instanceEnabler->CreateInstance ();
+    POSTCONDITION (instance != nullptr, nullptr);
+    return instance;
+    }
+
+void DgnECInstanceTests::PopulateECInstance (ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
+    {
+    ECValue value;
+    for (ECPropertyCP ecProperty : ecInstance->GetClass().GetProperties(true))
+        {
+        if (!skipStructs && ecProperty->GetIsStruct())
+            {
+            PopulateStructValue (value, ecProperty->GetAsStructProperty()->GetType(), populatePrimitiveValueCallback);
+            CopyStruct(*ecInstance, *value.GetStruct(), ecProperty->GetName().c_str());
+            }
+        else if (ecProperty->GetIsPrimitive())
+            {
+            populatePrimitiveValueCallback (value, ecProperty->GetAsPrimitiveProperty()->GetType(), ecProperty);
+            ecInstance->SetValue (ecProperty->GetName().c_str(), value);
+            }
+        else if (!skipArrays && ecProperty->GetIsArray())
+            {
+            ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
+            if(arrayProperty->GetKind() == ARRAYKIND_Primitive && arrayProperty->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
+                continue;
+
+            uint32_t arrayCount = 5;
+            if (arrayCount < arrayProperty->GetMinOccurs ())
+                arrayCount = arrayProperty->GetMinOccurs ();
+            else if (arrayCount > arrayProperty->GetMaxOccurs ())
+                arrayCount = arrayProperty->GetMaxOccurs ();
+
+            ecInstance->AddArrayElements (ecProperty->GetName ().c_str (), arrayCount);
+            if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+                {
+                for (uint32_t i = 0; i < arrayCount; i++)
+                    {
+                    PopulateStructValue (value, *arrayProperty->GetStructElementType(), populatePrimitiveValueCallback);
+                    ecInstance->SetValue (ecProperty->GetName().c_str (), value, i);
+                    }
+                }
+            else if (arrayProperty->GetKind() == ARRAYKIND_Primitive )
+                {
+                for (uint32_t i = 0; i < arrayCount; i++)
+                    {
+                    populatePrimitiveValueCallback (value, arrayProperty->GetPrimitiveElementType(), ecProperty);
+                    ecInstance->SetValue (ecProperty->GetName().c_str (), value, i);
+                    }
+                }
+            }
         }
     }
 
+ECObjectsStatus DgnECInstanceTests::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, WCharCP baseAccessPath)
+    { 
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    for(auto& propertyValue : collection)
+        {
+        auto pvAccessString = propertyValue.GetValueAccessor().GetPropertyName();
+        auto accessString =  baseAccessPath == nullptr ? pvAccessString : WString(baseAccessPath) + L"." + pvAccessString;
+
+        if (propertyValue.HasChildValues())
+            {
+            status = CopyStruct (source, *propertyValue.GetChildValues(), accessString.c_str());
+            if (status != ECOBJECTS_STATUS_Success)
+                {
+                return status;
+                }
+            continue;
+            }
+
+        auto& location = propertyValue.GetValueAccessor().DeepestLocationCR();
+
+        //auto property = location.GetECProperty(); 
+        //BeAssert(property != nullptr);
+        if (location.GetArrayIndex()>= 0)
+            {
+            source.AddArrayElements(accessString.c_str(), 1);
+            status = source.SetValue (accessString.c_str(), propertyValue.GetValue(), location.GetArrayIndex()); 
+            }
+        else
+            status = source.SetValue (accessString.c_str(), propertyValue.GetValue()); 
+
+        if (status != ECOBJECTS_STATUS_Success)
+            {
+            return status;
+            }
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan     9/2013
+//---------------------------------------------------------------------------------------
+ECObjectsStatus DgnECInstanceTests::CopyStruct(IECInstanceR target, IECInstanceCR structValue, WCharCP propertyName)
+    {
+    return CopyStruct(target, *ECValuesCollection::Create(structValue), propertyName);
+    }
+
+
+void DgnECInstanceTests::PopulateStructValue (ECValueR value, ECClassCR structType, PopulatePrimitiveValueCallback populatePrimitiveValueCallback)
+    {
+    value.Clear();
+    IECInstancePtr inst = CreateArbitraryECInstance (structType, populatePrimitiveValueCallback);
+    value.SetStruct(inst.get());
+    }
+
+//-------------------------------------------------------------------------------------
+/// <author>Carole.MacDonald</author>                     <date>11/2013</date>
+//---------------+---------------+---------------+---------------+---------------+-----
+void DgnECInstanceTests::PopulatePrimitiveValueWithRandomValues (ECValueR ecValue, PrimitiveType primitiveType, ECPropertyCP ecProperty)
+    {
+    ecValue.Clear();
+
+    int randomNumber = rand ();
+    switch (primitiveType)
+        {
+        case PRIMITIVETYPE_String: 
+            {
+            Utf8String text;
+            text.Sprintf ("Sample text with random number: %d", randomNumber);
+            ecValue.SetUtf8CP(text.c_str (), true); 
+            }
+            break;
+
+        case PRIMITIVETYPE_Integer: 
+            {
+            ecValue.SetInteger(randomNumber); 
+            }
+            break;
+
+        case PRIMITIVETYPE_Long: 
+            {
+            const int32_t intMax = std::numeric_limits<int32_t>::max ();
+            const int64_t longValue = static_cast<int64_t> (intMax) + randomNumber;
+            ecValue.SetLong(longValue); 
+            }
+            break;
+
+        case PRIMITIVETYPE_Double: 
+            {
+            ecValue.SetDouble(randomNumber * PI);
+            }
+            break;
+
+        case PRIMITIVETYPE_DateTime: 
+            {
+            DateTime utcTime = DateTime::GetCurrentTimeUtc ();
+            ecValue.SetDateTime(utcTime); 
+            }
+            break;
+
+        case PRIMITIVETYPE_Boolean: 
+            {
+            ecValue.SetBoolean(randomNumber % 2 != 0); 
+            }
+            break;
+
+        case PRIMITIVETYPE_Point2D: 
+            {
+            DPoint2d point2d;
+            point2d.x=randomNumber * 1.0;
+            point2d.y=randomNumber * 1.8;
+            ecValue.SetPoint2D(point2d);
+            break;
+            }
+        case PRIMITIVETYPE_Point3D:
+            {
+            DPoint3d point3d;
+            point3d.x=randomNumber * 1.0;
+            point3d.y=randomNumber * 1.8;
+            point3d.z=randomNumber * 2.9;
+            ecValue.SetPoint3D(point3d);
+            break;
+            }
+
+        default:
+            break;
+        }
+    }
+
+double DgnECInstanceTests::s_increment = 5.0;
+double DgnECInstanceTests::s_xCoord = 0.0;
+double DgnECInstanceTests::s_yCoord = 0.0;
+double DgnECInstanceTests::s_zCoord = 0.0;
+
+StatusInt DgnECInstanceTests::CreateArbitraryElement (EditElementHandleR editElementHandle, DgnModelR model)
+    {
+    DSegment3d  segment;
+    segment.point[0] = DPoint3d::FromXYZ (s_xCoord, s_yCoord, s_zCoord); 
+    segment.point[1] = DPoint3d::FromXYZ (s_xCoord + s_increment, s_yCoord + s_increment, s_zCoord + s_increment);
+
+    s_xCoord += 2 * s_increment;
+    s_yCoord += 2 * s_increment;
+    s_zCoord += 2 * s_increment;
+
+    return LineHandler::CreateLineElement (editElementHandle, NULL, segment, model.Is3d(), model);
+    }
+
+BentleyStatus DgnECInstanceTests::SetECInstanceId (ECN::IECInstanceR instance, ECInstanceId const& ecInstanceId)
+    {
+    if (!ecInstanceId.IsValid ())
+        return ERROR;
+
+    WChar instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    if (!ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId))
+        {
+        LOG.errorv ("Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
+        BeAssert (false && "Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.");
+        return ERROR;
+        }
+
+    const auto ecstat = instance.SetInstanceId (instanceIdStr);
+    return ecstat == ECOBJECTS_STATUS_Success ? SUCCESS : ERROR;
+    }
+
+TEST_F(DgnECInstanceTests, InstancesAndRelationships)
+    {
+    ScopedDgnHost host;
+
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb");
+    auto dgnFile = tdm.GetLoadedDgnPtr ();
+    auto& project = dgnFile->GetDgnProject ();
+
+    auto model = tdm.GetDgnModelP ();
+
+    ECSchemaPtr testSchema;
+    ECSchema::CreateSchema(testSchema, L"TestSchema", 1, 2);
+    testSchema->SetNamespacePrefix(L"ts");
+    testSchema->SetDescription(L"Schema for testing programmatic construction");
+    testSchema->SetDisplayLabel(L"Test Schema");
+
+    ECClassP widgetClass;
+    ECClassP fooClass;
+    ECClassP barClass;
+
+    testSchema->CreateClass(widgetClass, L"Widget");
+    testSchema->CreateClass(fooClass, L"Foo");
+    testSchema->CreateClass(barClass, L"Bar");
+
+    PrimitiveECPropertyP widgetNameProp;
+    PrimitiveECPropertyP valueProp;
+    PrimitiveECPropertyP longProp;
+    PrimitiveECPropertyP dateTimeProp;
+    PrimitiveECPropertyP boolProp;
+    PrimitiveECPropertyP point2dProp;
+    widgetClass->CreatePrimitiveProperty(widgetNameProp, L"Name", PRIMITIVETYPE_String);
+    widgetClass->CreatePrimitiveProperty(valueProp, L"Value", PRIMITIVETYPE_Integer);
+    widgetClass->CreatePrimitiveProperty(longProp, L"LongValue", PRIMITIVETYPE_Long);
+    widgetClass->CreatePrimitiveProperty(dateTimeProp, L"Created", PRIMITIVETYPE_DateTime);
+    widgetClass->CreatePrimitiveProperty(boolProp, L"Bool", PRIMITIVETYPE_Boolean);
+    widgetClass->CreatePrimitiveProperty(point2dProp, L"StartPoint", PRIMITIVETYPE_Point2D);
+
+    PrimitiveECPropertyP fooNameProp;
+    fooClass->CreatePrimitiveProperty(fooNameProp, L"Name", PRIMITIVETYPE_String);
+
+    PrimitiveECPropertyP barNameProp;
+    PrimitiveECPropertyP numberProp;
+    barClass->CreatePrimitiveProperty(barNameProp, L"Name", PRIMITIVETYPE_String);
+    barClass->CreatePrimitiveProperty(numberProp, L"Number", PRIMITIVETYPE_Integer);
+
+    ECRelationshipClassP widgetHasFoo;
+    testSchema->CreateRelationshipClass(widgetHasFoo, L"WidgetHasFoo");
+    widgetHasFoo->SetIsDomainClass(true);
+    widgetHasFoo->GetSource().AddClass(*widgetClass);
+    widgetHasFoo->GetTarget().AddClass(*fooClass);
+    widgetHasFoo->GetSource().SetCardinality(RelationshipCardinality::OneMany());
+    widgetHasFoo->GetTarget().SetCardinality(RelationshipCardinality::OneMany());
+
+    ECRelationshipClassP widgetHasBar;
+    testSchema->CreateRelationshipClass(widgetHasBar, L"WidgetHasBar");
+    widgetHasBar->SetIsDomainClass(true);
+    widgetHasBar->GetSource().AddClass(*widgetClass);
+    widgetHasBar->GetTarget().AddClass(*barClass);
+    widgetHasBar->GetSource().SetCardinality(RelationshipCardinality::OneMany());
+    widgetHasBar->GetTarget().SetCardinality(RelationshipCardinality::OneMany());
+
+    ECSchemaCachePtr schemaList = ECSchemaCache::Create();
+    schemaList->AddSchema (*testSchema);
+    project.GetEC().Schemas ().ImportECSchemas (*schemaList);
+    
+    bvector<IECInstancePtr> orphanedWidgets;
+    bvector<IECInstancePtr> orphanedBars;
+    bvector<IECInstancePtr> orphanedFoos;
+
+    bvector<IECInstancePtr> lineWidgets;
+    bvector<IECInstancePtr> lineBars;
+
+    ECInstanceInserter widgetInserter (*tdm.GetDgnProjectP(), *widgetClass);
+    ECInstanceInserter fooInserter (*tdm.GetDgnProjectP(), *fooClass);
+    ECInstanceInserter barInserter (*tdm.GetDgnProjectP(), *barClass);
+
+    for (int i = 0; i < 5; i++)
+        {
+        ECValue name;
+        ECInstanceKey ecInstanceKey;
+
+        IECInstancePtr widget = CreateArbitraryECInstance(*widgetClass, PopulatePrimitiveValueWithRandomValues);
+        widget->GetValue(name, L"Name");
+        WString nameStr;
+        nameStr.Sprintf(L"(orphaned) %ls", name.GetString());
+        name.SetString(nameStr.c_str());
+        widget->SetValue(L"Name", name);
+
+        orphanedWidgets.push_back(widget);
+        widgetInserter.Insert(ecInstanceKey, *widget);
+        SetECInstanceId(*widget, ecInstanceKey.GetECInstanceId());
+
+        IECInstancePtr bar = CreateArbitraryECInstance(*barClass, PopulatePrimitiveValueWithRandomValues);
+        bar->GetValue(name, L"Name");
+        nameStr.Sprintf(L"(orphaned) %ls", name.GetString());
+        name.SetString(nameStr.c_str());
+        bar->SetValue(L"Name", name);
+        
+        orphanedBars.push_back(bar);
+        barInserter.Insert(ecInstanceKey, *bar);
+        SetECInstanceId(*bar, ecInstanceKey.GetECInstanceId());
+
+        IECInstancePtr foo = CreateArbitraryECInstance(*fooClass, PopulatePrimitiveValueWithRandomValues);
+        foo->GetValue(name, L"Name");
+        nameStr.Sprintf(L"(orphaned) %ls", name.GetString());
+        name.SetString(nameStr.c_str());
+        foo->SetValue(L"Name", name);
+        orphanedFoos.push_back(foo);
+        fooInserter.Insert(ecInstanceKey, *foo);
+        SetECInstanceId(*foo, ecInstanceKey.GetECInstanceId());
+
+        }
+
+    // add some widget instances to line elements
+    for (int i = 0; i < 5; i++)
+        {
+        StatusInt status;
+        EditElementHandle* eeh = new EditElementHandle();
+        status = CreateArbitraryElement (*eeh, *model);
+        ASSERT_EQ(SUCCESS, status);
+
+        ECValue name;
+        IECInstancePtr widget = CreateArbitraryECInstance(*widgetClass, PopulatePrimitiveValueWithRandomValues);
+        widget->GetValue(name, L"Name");
+        WString nameStr;
+        nameStr.Sprintf(L"(line) %ls", name.GetString());
+        name.SetString(nameStr.c_str());
+        widget->SetValue(L"Name", name);
+        lineWidgets.push_back(widget);
+        ECInstanceKey ecInstanceKey;
+        widgetInserter.Insert(ecInstanceKey, *widget);
+        SetECInstanceId(*widget, ecInstanceKey.GetECInstanceId());
+
+        StatusInt stat2 = DgnECPersistence::SetPrimaryInstanceOnElement (*eeh, ecInstanceKey, project);
+        ASSERT_EQ (SUCCESS, stat2);
+        ASSERT_EQ (SUCCESS, eeh->AddToModel());
+        }
+
+    // add some bar instances to line elements
+    for (int i = 0; i < 5; i++)
+        {
+        StatusInt status;
+        EditElementHandle* eeh = new EditElementHandle();
+        status = CreateArbitraryElement (*eeh, *model);
+        ASSERT_EQ(SUCCESS, status);
+
+        IECInstancePtr bar = CreateArbitraryECInstance(*barClass, PopulatePrimitiveValueWithRandomValues);
+        ECValue name;
+        bar->GetValue(name, L"Name");
+        WString nameStr;
+        nameStr.Sprintf(L"(line) %ls", name.GetString());
+        name.SetString(nameStr.c_str());
+        bar->SetValue(L"Name", name);
+        lineBars.push_back(bar);
+        ECInstanceKey ecInstanceKey;
+        barInserter.Insert(ecInstanceKey, *bar);
+        SetECInstanceId(*bar, ecInstanceKey.GetECInstanceId());
+
+        StatusInt stat2 = DgnECPersistence::SetPrimaryInstanceOnElement (*eeh, ecInstanceKey, project);
+        ASSERT_EQ (SUCCESS, stat2);
+        ASSERT_EQ (SUCCESS, eeh->AddToModel());
+        }
+
+    auto widgetHasBarEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*widgetHasBar);
+    auto widgetHasFooEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*widgetHasFoo);
+
+    auto widgetHasFooInstance = widgetHasFooEnabler->CreateRelationshipInstance ();
+
+    widgetHasFooInstance->SetSource (orphanedWidgets[0].get ());
+    widgetHasFooInstance->SetTarget (orphanedFoos[0].get ());
+
+    ECInstanceInserter widgetHasFooInserter (project, *widgetHasFoo);
+    ECInstanceKey relInstanceKey;
+    widgetHasFooInserter.Insert (relInstanceKey, *widgetHasFooInstance);
+
+    ECInstanceInserter widgetHasBarInserter(project, *widgetHasBar);
+    auto widgetHasBarInstance = widgetHasBarEnabler->CreateRelationshipInstance();
+    widgetHasBarInstance->SetSource(orphanedWidgets[2].get());
+    widgetHasBarInstance->SetTarget(lineBars[0].get());
+    widgetHasBarInserter.Insert(relInstanceKey, *widgetHasBarInstance);
+
+    widgetHasBarInstance = widgetHasBarEnabler->CreateRelationshipInstance();
+    widgetHasBarInstance->SetSource(lineWidgets[0].get());
+    widgetHasBarInstance->SetTarget(lineBars[1].get());
+    widgetHasBarInserter.Insert(relInstanceKey, *widgetHasBarInstance);
+
+    widgetHasBarInstance = widgetHasBarEnabler->CreateRelationshipInstance();
+    widgetHasBarInstance->SetSource(lineWidgets[1].get());
+    widgetHasBarInstance->SetTarget(orphanedBars[0].get());
+    widgetHasBarInserter.Insert(relInstanceKey, *widgetHasBarInstance);
+
+    project.SaveChanges();
+    }
+
+
+*/

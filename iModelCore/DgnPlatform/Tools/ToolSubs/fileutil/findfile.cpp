@@ -34,7 +34,7 @@ static const WChar *wcsNullStr = L"";  /* linked external - cant use FMTc_nullst
 bool mdlFile_compactPath (WCharP pwOutStr, WCharCP pwInStr, size_t length)
     {
     WString spath;
-    if (BeFileName::BeCompactPath (spath, pwInStr, (UInt32)length) != SUCCESS)
+    if (BeFileName::BeCompactPath (spath, pwInStr, (uint32_t)length) != SUCCESS)
         return false;
     BeStringUtilities::Wcsncpy (pwOutStr, length, spath.c_str());
     return true;
@@ -671,7 +671,7 @@ int             option              /* => Open mode / search options           *
     wchar_t     tempString[MAXFILELENGTH];
 
     wchar_t     *pchr;
-    byte        read;
+    Byte read;
 #if 0 // WIP_BEFILENAME_PORTABILITY - can't depend on current working directory
     wchar_t     cwdDirectory[MAXDIRLENGTH];
     wchar_t     cwdDevice[MAXDEVICELENGTH];

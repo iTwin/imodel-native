@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/BackDoor/DgnElementHelpers.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -20,13 +20,13 @@ StatusInt AddElementToModel (EditElementHandleR eeh)
     {
     DgnModelP model = eeh.GetDgnModelP ();
 
-    size_t numberBeforeAdded = model->GetElementCount();
+    size_t numberBeforeAdded = model->CountElements();
 
-    DgnPlatform::ElementId id = eeh.GetElementId ();
+    DgnPlatform::DgnElementId id = eeh.GetElementId ();
     if (id.IsValid())
         return BSIERROR;
 
-    StatusInt result = eeh.AddToModel (/*model*/);
+    StatusInt result = eeh.GetElementDescrP()->AddToModel();
     if (SUCCESS != result)
         return result;
 
@@ -37,7 +37,7 @@ StatusInt AddElementToModel (EditElementHandleR eeh)
     if (!model->FindElementById (id))
         return BSIERROR;
 
-    size_t numberAfterAdded = model->GetElementCount();
+    size_t numberAfterAdded = model->CountElements();
     if (numberAfterAdded <= numberBeforeAdded)
         return BSIERROR;
 

@@ -2,12 +2,12 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/ITxnManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include    "DgnFile.h"
+#include    "DgnDb.h"
 
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
@@ -16,6 +16,8 @@ DGNPLATFORM_TYPEDEFS (TxnMonitor)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct DgnElementDependencyGraph;
+
 /*=================================================================================**//**
  @addtogroup TxnMgr
  <h1>Transaction Manager</h1>
@@ -23,50 +25,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  changes into units called transactions.
 
  <h2>Making and Saving Changes</h2>
- Use the Transaction Manager in order to add, save changes to, or to delete elements, XAttributes or models.
+ ITxn is the API for making and saving changes. See ITxnManager::GetCurrentTxn for how to get the current transaction.
 
- Here are a few common patterns:
-
- <h3>To add an element:</h3>
- -# Create an EditElementHandle. Initially, the handle is invalid.
- -# Call a static handler method to define the element. For example, LineHandler::CreateLineElement
- -# Call EditElementHandle::AddToModel to add the new element to a model.
-
- The element is now persistent in the specified model.
-
- <h3>To change an element:</h3>
- -# Obtain an ElementRefP that refers to the persistent element in the model.
- -# Create an EditElementHandle that can be used to access the element's data.
- -# Call handler methods such as Handler::ApplyTransform to modify the element's data.
- -# Call EditElementHandle::ReplaceInModel to update the persistent element's data to reflect the change.
-
- Note that you could make multiple changes to the EditElementHandle before writing to the model.
-
- <h3>To delete an element:</h3>
- -# Obtain an ElementRefP that refers to the persistent element in the model.
- -# Create an EditElementHandle from the ElementRefP and then call EditElementHandle::DeleteFromModel to delete the element.
-
- <h3>To add an XAttribute to an element:</h3>
- -# Obtain an ElementRefP that refers to the persistent element in the model.
- -# Define the XAttribute's data and decide what XAttributeHandlerId to use.
- -# Call ITxn::AddXAttribute to add the XAttribute to the persistent element in the model.
-
- The XAttribute is now persistent in the element's model.
-
- <h3>To modify an XAttribute on an element:</h3>
- -# Obtain an ElementRefP that refers to the persistent element in the model.
- -# Use XAttributeHandle to locate the XAttribute on the element.
- -# Decide how you want to modify the XAttribute's data.
- -# Call ITxn::ModifyXAttributeData to update the persistent XAttribute data in the model.
-
- Or, you could call ITxn::ReplaceXAttributeData to update the persistent XAttribute to store completely different data.
-
- <h3>To delete an XAttribute:</h3>
- -# Obtain an ElementRefP that refers to the persistent element in the model.
- -# Use XAttributeHandle to locate the XAttribute on the element.
- -# Call ITxn::DeleteXAttribute to remove the XAttribute from the persistent element in the model.
+ Use the Transaction Manager in order to add, save changes to, or to delete DgnModels and DgnElement instances and their contents.
 
  <h2>Transactions</h2>
+
+ ITxnManager is the API for managing transactions.
+
  A transaction is defined as a set of changes that are treated as a unit. All changes and deletions are made as part of a transaction.
  Most transactions are undoable and can be reversed or reinstated as a unit. Undoable transactions support \ref TxnMonitor listeners.
 
@@ -75,35 +41,16 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  All changes are made in the context of the current transaction. There is always a current transaction running. You don't have to start
  or create one. ITxnManager::GetCurrentTxn returns the current transaction.
 
- ITxnManager::CloseCurrentTxn defines a boundary that ends the current transaction and starts a new one.
- Setting a transaction boundary validates the preceding changes (ITxnManager::ValidateCurrentTxn). Validating an undoable transaction also notifies \ref TxnMonitor listeners.
+ ITxnManager::CloseCurrentTxn defines a \em boundary that ends the current transaction and starts a new one.
+ Setting a transaction boundary validates the preceding changes. Validating an undoable transaction also notifies \ref TxnMonitor listeners.
  For an undoable transaction, setting a transaction boundary defines an undo point.
 
  The current transaction implements the ITxn interface. The ITxn interface provides methods to write changes to elements, XAttributes, and models.
  The EditElementHandle methods to add, replace, and delete elements turn around and call the appropriate methods on the current transaction.
 
- <h2>Example</h2>
- Here is a simple example of using the transaction manager to add two elements to a model and then close the transaction.
-
- \code
-    ...
-   EditElementHandle eh1, eh2;
-
-   LineHandler::CreateLineElement (eh1, ...., model1);
-   ITxnManager::GetCurrentTxn().AddElement (eh1);
-
-   LineHandler::CreateLineElement (eh2, ...., model1);
-   ITxnManager::GetCurrentTxn().AddElement (eh2);
-
-   ITxnManager::CloseCurrentTxn(); // Call TxnMonitors and set transaction boundary.
- \endcode
-
- These two adds can now be reversed by calling ITxnManager::ReverseSingleTxn.
-
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
-enum TxnApplyDirection {APPLY_FOR_Undo=0, APPLY_FOR_Redo=1};
-enum TxnApplyStage     {APPLY_Pre=0, APPLY_Post=1};
+enum class TxnDirection {Undo=0, Redo=1};
 
 //=======================================================================================
 //! A 32 bit value to identify the group of entries that form a single transaction.
@@ -111,159 +58,95 @@ enum TxnApplyStage     {APPLY_Pre=0, APPLY_Post=1};
 //=======================================================================================
 struct TxnId
 {
-    Int32  m_value;
+    int32_t m_value;
 
 public:
     TxnId ()  {m_value = -1;}
-    explicit TxnId (Int32 val) {m_value = val;}
+    explicit TxnId (int32_t val) {m_value = val;}
 //__PUBLISH_SECTION_END__
     void Init() {m_value = 0;}
     void Next() {++m_value;}
     void Prev() {--m_value;}
 //__PUBLISH_SECTION_START__
     bool IsValid() const {return -1 != m_value;}
-    Int32 GetValue() const {return m_value;}
-    operator Int32() const {return m_value;}
+    int32_t GetValue() const {return m_value;}
+    operator int32_t() const {return m_value;}
 };
 
 //=======================================================================================
-//! A summary of all of the element-based changes that occurred during a Txn. TxnMonitors are supplied with a
-//! TxnSummary so they can determine what elements were affected by a Txn.
-//! A TxnSummary includes information about the Txn it summarizes, plus the following sets:
-//!    -# DgnElement Adds
-//!    -# DgnElement Deletes
-//!    -# DgnElement Modifies
-//!    -# XAttribute Adds
-//!    -# XAttribute Deletes
-//!    -# XAttribute Modifies
+//! A summary of all of the Element-based changes that occurred during a Txn. TxnMonitors are supplied with a
+//! TxnSummary so they can determine what Elements were affected by a Txn.
 // @bsiclass                                                    Keith.Bentley   07/13
 //=======================================================================================
 struct TxnSummary
 {
-    //=======================================================================================
-    //! Records the fact that an element was added or deleted during the transaction
-    // @bsiclass                                                    Keith.Bentley   07/13
-    //=======================================================================================
-    struct LifecycleChange
-    {
-    private:
-        ElementId         m_elId;
-        ElementHandlerId  m_handlerId;
-
-    public:
-        LifecycleChange() {}
-        LifecycleChange(ElementId elId, ElementHandlerId handlerId) : m_elId(elId), m_handlerId(handlerId) {}
-        bool operator< (LifecycleChange const& other) const {return m_elId < other.m_elId; }
-        ElementId GetElementId() const {return m_elId;}
-        ElementHandlerId GetHandlerId() const {return m_handlerId;}
-        PersistentElementRefPtr GetElement(DgnProjectR project) const {return project.Models().GetElementById(m_elId);}
-    };
-
-    //=======================================================================================
-    //! A single change to an XAttribute
-    // @bsiclass                                                    Keith.Bentley   07/13
-    //=======================================================================================
-    struct XAttrChange
-    {
-    private:
-        ElementId           m_elId;
-        XAttributeHandlerId m_handlerId;
-        UInt32              m_xAttrId;
-
-    public:
-        XAttrChange() {}
-        XAttrChange(ElementId elId, XAttributeHandlerId handlerId, UInt32 xAttrId) : m_elId(elId), m_handlerId(handlerId), m_xAttrId(xAttrId) {}
-        bool operator< (XAttrChange const& other) const
-            {
-            if (m_elId < other.m_elId) return true;
-            if (m_elId > other.m_elId) return false;
-            if (m_handlerId < other.m_handlerId) return true;
-            if (m_handlerId > other.m_handlerId) return false;
-            return m_xAttrId < other.m_xAttrId;
-            }
-        ElementId GetElementId() const {return m_elId;}
-        XAttributeHandlerId GetHandlerId() const {return m_handlerId;}
-        UInt32 GetXAttrId() const {return m_xAttrId;}
-        PersistentElementRefPtr GetElement(DgnProjectR project) const {return project.Models().GetElementById(m_elId);}
-    };
-
-    typedef bset<XAttrChange> TxnXAttrSet;
-    typedef bset<LifecycleChange> TxnLifecycleSet;
-    typedef bset<PersistentElementRefP> TxnModifySet;
-
 private:
-    TxnSummary (); // internal only
-
-//__PUBLISH_SECTION_END__
-    DgnProjectR     m_project;
+    DgnDbR          m_dgndb;
     TxnId           m_txnId;
     Utf8String      m_txnDescr;
-    UInt64          m_txnSource;
-    DRange3d        m_physicalRange;
-    DRange2d        m_drawingRange;
-    TxnLifecycleSet m_added;
-    TxnLifecycleSet m_deleted;
-    TxnModifySet    m_modified;
-    TxnXAttrSet     m_xattAdded;
-    TxnXAttrSet     m_xattDeleted;
-    TxnXAttrSet     m_xattModified;
-
-    friend struct ITxnManager;
-    friend struct ElementTableHandler;
-    friend struct XAttTableHandler;
+    uint64_t        m_txnSource;
+    BeSQLite::CachedStatementPtr m_addElementStatement;
+    BeSQLite::CachedStatementPtr m_addElementDepStatement;
+    bool            m_modelDepsChanged;
+    bool            m_elementDepsChanged;
 
 public:
-    DRange3dR GetPhysicalRangeR() {return m_physicalRange;}
-    DRange2dR GetDrawingRangeR() {return m_drawingRange;}
-    void CallHandlers_Boundary() const;
-    void CallHandlers_Reverse(bool isUndo) const;
-    void CallHandlers_Reversed(bool isUndo) const;
+    bset<DgnElementId> m_deletedElements;
+    bset<DgnElementId> m_addedElements;
+    bset<DgnElementP>  m_updatedElements;
+    bset<DgnModelId>   m_affectedModels;
+    bset<DgnElementId> m_failedDependencyTargets;
 
-    TxnSummary (DgnProjectR, TxnId, Utf8String, UInt64, BeSQLite::ChangeSet&);
+    enum class ChangeType {Add, Mod, Delete};
+    explicit TxnSummary(DgnElementDependencyGraph const&);
+    TxnSummary(DgnDbR, TxnId, Utf8String, uint64_t, BeSQLite::ChangeSet&);
+    ~TxnSummary();
 
-//__PUBLISH_SECTION_START__
-public:
-    //! Get the TxnLifecycleSet that holds the Added elements for this TxnSummary
-    DGNPLATFORM_EXPORT TxnLifecycleSet const& GetElementAdds() const;
+    //! Table handler should call this function to record the fact that the specified Element was changed in the current txn.
+    DGNPLATFORM_EXPORT void AddAffectedElement (DgnElementId const&, DgnModelId, ChangeType);
 
-    //! Get the TxnLifecycleSet that holds the deleted elements for this TxnSummary
-    DGNPLATFORM_EXPORT TxnLifecycleSet const& GetElementDeletes() const;
+    //! Table handler should call this function to record the fact that the specified relationship with a dependency was changed in the current txn.
+    DGNPLATFORM_EXPORT void AddAffectedDependency (BeSQLite::EC::ECInstanceId const&, ChangeType);
 
-    //! Get the TxnModifySet that holds the Modified elements for this TxnSummary
-    DGNPLATFORM_EXPORT TxnModifySet const& GetElementModifies() const;
+    void AddFailedDependencyTarget(DgnElementId eid) {m_failedDependencyTargets.insert(eid);}
+    void SetModelDependencyChanges() {m_modelDepsChanged=true;}
+    void SetElementDependencyChanges() {m_elementDepsChanged=true;}
 
-    //! Get the TxnXAttrSet that holds the Added XAttributes efor this TxnSummary
-    DGNPLATFORM_EXPORT TxnXAttrSet const& GetXAttributeAdds() const;
+    //! Get the name of the temp table that records all Elements that were modified, added, or deleted during this transaction.
+    //! The temp table is laid out as follows: 
+    //! * ElementId INTEGER NOT NULL PRIMARY KEY, 
+    //! * ModelId INTEGER NOT NULL, 
+    //! * Op CHAR
+    //! Op is text that can have the value "+", "-", or "*", indicating add, delete, or replacement, respectively.
+    DGNPLATFORM_EXPORT Utf8String GetChangedElementsTableName() const;
 
-    //! Get the TxnXAttrSet that holds the Deleted XAttributes for this TxnSummary
-    DGNPLATFORM_EXPORT TxnXAttrSet const& GetXAttributeDeletes() const;
+    //! Get the name of the temp table that records all ElementDrivesElements relationship instances that were modified, added, or deleted during this transaction.
+    //! The temp table is laid out as follows: 
+    //! * ECInstanceId INTEGER NOT NULL PRIMARY KEY, 
+    //! * ModelId INTEGER NOT NULL, 
+    //! * Op CHAR
+    //! Op is text that can have the value "+", "-", or "*", indicating add, delete, or replacement, respectively.
+    DGNPLATFORM_EXPORT Utf8String GetChangedElementDrivesElementRelationshipsTableName() const;
 
-    //! Get the TxnXAttrSet that holds the Modified XAttributes for this TxnSummary
-    DGNPLATFORM_EXPORT TxnXAttrSet const& GetXAttributeModifies() const;
-
-    //! Get the union of the range of all affected physical elements. For all Adds in the TxnSummary, this range
-    //! contains the new elements' range. For all Deletes, this range contains all of the original elements' range. For all modifies,
-    //! this range includes both the pre- and post-changed ranges.
-    DGNPLATFORM_EXPORT DRange3dCR GetPhysicalRange() const;
-
-    //! Get the union of the range of all affected drawing elements. For all Adds in the TxnSummary, this range
-    //! contains the new elements' range. For all Deletes, this range contains all of the original elements' range. For all modifies,
-    //! this range includes both the pre- and post-changed ranges.
-    DGNPLATFORM_EXPORT DRange2dCR GetDrawingRange() const;
-
-    //! Get the DgnProject for this TxnSummary
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProject() const;
+    //! Get the DgnDb for this TxnSummary
+    DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the TxnId of this TxnSummary
-    DGNPLATFORM_EXPORT TxnId GetTxnId() const;
+    TxnId GetTxnId() const {return m_txnId;}
 
     //! Get the description of this TxnSummary
     //! @see ITxnManager::SetTxnDescription
-    DGNPLATFORM_EXPORT Utf8StringCR GetTxnDescription() const;
+    Utf8StringCR GetTxnDescription() const {return m_txnDescr;}
 
     //! Get the source for this TxnSummary
     //! @see ITxnManager::SetTxnSource
-    DGNPLATFORM_EXPORT UInt64 GetTxnSource() const;
+    uint64_t GetTxnSource() const {return m_txnSource;}
+
+    //! Query if there are any changes to ModelDrivesModel ECRelationships
+    bool HasModelDependencyChanges() const {return m_modelDepsChanged;}
+
+    //! Query if there are any changes to ElementDrivesElement ECRelationships
+    bool HasElementDependencyChanges() const {return m_elementDepsChanged;}
 };
 
 //=======================================================================================
@@ -274,9 +157,9 @@ public:
 struct TxnMonitor
 {
     virtual void _OnTxnBoundary (TxnSummaryCR) = 0;
-    virtual void _OnTxnReverse (TxnSummaryCR, bool isUndo) = 0;
-    virtual void _OnTxnReversed (TxnSummaryCR, bool isUndo) = 0;
-    virtual void _OnUndoRedoFinished (DgnProjectR, bool isUndo) {}
+    virtual void _OnTxnReverse (TxnSummaryCR, TxnDirection isUndo) = 0;
+    virtual void _OnTxnReversed (TxnSummaryCR, TxnDirection isUndo) = 0;
+    virtual void _OnUndoRedoFinished (DgnDbR, TxnDirection isUndo) {}
 };
 
 //=======================================================================================
@@ -299,106 +182,43 @@ struct ITxnOptions
 //=======================================================================================
 struct ITxn : NonCopyableClass
 {
-//__PUBLISH_SECTION_END__
 private:
-    StatusInt CheckElementForWrite (ElementRefP);
+    StatusInt CheckElementForWrite (DgnElementP);
 
 protected:
     ITxnOptions m_opts;
     ITxn(ITxnOptions opts = ITxnOptions()) : m_opts (opts) {}
     virtual ~ITxn() {}
 
-    void ClearReversedTxns (DgnProjectR);
+    void ClearReversedTxns (DgnDbR);
     virtual StatusInt _CheckDgnModelForWrite (DgnModelP) {return SUCCESS;}
 
 public:
-    DGNPLATFORM_EXPORT StatusInt WriteXaChanges (MSElementDescrP ed, bool isAdd);
-
-    /// @name DeprecatedDescrBasedTxn
-    //@{
-    // Proper usage of these methods is very tricky. They are provided for compatibility only, and in all new code you should use
-    // "AddElement" and "ReplaceElement". The problem with these methods is that they take an MSElementDescrP and not MSElementDescrH.
-    // After the call, the elDescr supplied as input is NOT guaranteed to reflect the actual element that was added/modified. That's because both
-    // element handlers and write-to-file hooks are permitted to "replace" the supplied element with a different one. But, since
-    // the signature of this method doesn't allow a way to return the replaced element descriptor, this method must be used carefully.
-    // Basically, after this call the caller must immediately free "elDescr", since the only reliable information in it will be the
-    // elementRef value. Understanding all of this is tedious and unnecessary though, since AddElement and ReplaceElement do not
-    // suffer from this problem. But converting existing callers can be difficult, which is the only reason these methods exist.
-    DGNPLATFORM_EXPORT StatusInt AddElemDescr (ElementRefP& newElemRef, DgnModelP, MSElementDescrP elDescr);
-    DGNPLATFORM_EXPORT StatusInt ReplaceElementDescr (ElementRefP& out, ElementRefP inRef, MSElementDescrP newElemDscr);
-    //@}
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-
-    /// @name XAttributes
-    //@{
-    //! Add a new XAttribute to an existing element.
-    //! @param[in]          elRef           The ElementRefP of the element.
-    //! @param[in]          handlerId       The XAttributeHandlerId of the new XAttribute.
-    //! @param[in]          xAttrId         The XAttributeId of the new XAttribute. If INVALID_XATTR_ID, then a new, unique, id will be
-    //!                                         assigned. The value of the new id will be returned in \a outXAttrId.
-    //! @param[in]          xAttrData       A buffer of at least \a length bytes long that holds the value to be saved in the new XAttribute.
-    //! @param[in]          length          The number of bytes in xAttrData.
-    //! @param[out]         outXAttrId      Optional, the id of the new XAttribute. This is necessary only if \a xAttrId is INVALID_XATTR_ID, in which case
-    //!                                         the new XAttribute is assigned a new unique id.
-    //! @param[in] flags flags to control compression of data
-    //! Remarks Implementation must use DependencyMgrXAttributeChangeTracker
-    //! @return SUCCESS if the XAttribute was added to the ElementRefP.
-    DGNPLATFORM_EXPORT StatusInt AddXAttribute (ElementRefP elRef, XAttributeHandlerId handlerId, UInt32 xAttrId, void const* xAttrData, UInt32 length, UInt32* outXAttrId=NULL, DgnModels::XAttributeFlags flags=DgnModels::XAttributeFlags());
-
-    //! Delete an existing XAttribute from an element.
-    //! @param[in]          xAttr           An XAttributeHandle that references the XAttribute to delete.
-    //! @return SUCCESS if \a xAttr is valid and the XAttribute was deleted from the element. DGNMODEL_STATUS_InvalidXattribute if xAttr was not valid.
-    //! Remarks Implementation must use DependencyMgrXAttributeChangeTracker
-    DGNPLATFORM_EXPORT StatusInt DeleteXAttribute (XAttributeHandleR xAttr);
-
-    //! Modify all or part of an existing XAttribute. The size of the XAttribute cannot be changed.
-    //! @param[in]          xAttr           An XAttributeHandle that references the XAttribute to modify.
-    //! @param[in]          data            The new data to save in the XAttribute.
-    //! @param[in]          start           The starting byte number to replace with \a data.
-    //! @param[in]          length          The number of bytes to replace with \a data.
-    //! @param[in] flags flags to control compression of data
-    //! @return SUCCESS if the data in \a xAttr was modified. DGNMODEL_STATUS_InvalidXattribute if xAttr was not valid. ERROR if attempting to write
-    //!                 more data than exists in xAttr.
-    //! Remarks Implementation must use DependencyMgrXAttributeChangeTracker
-    DGNPLATFORM_EXPORT StatusInt ModifyXAttributeData (XAttributeHandleR xAttr, void const* data, UInt32 start, UInt32 length, DgnModels::XAttributeFlags flags=DgnModels::XAttributeFlags());
-
-    //! Replace an existing XAttribute with a new value. The size of the XAttribute \em can change with this method.
-    //! @param[in]          xAttr           An XAttributeHandle that references the XAttribute to replace.
-    //! @param[in]          data            The new data to save in the XAttribute.
-    //! @param[in]          newSize         The number of bytes in \a data.
-    //! @param[in] flags flags to control compression of data
-    //! @return SUCCESS if the data in \a xAttr was replaced. DGNMODEL_STATUS_InvalidXattribute if xAttr was not valid.
-    //! Remarks Implementation must use DependencyMgrXAttributeChangeTracker
-    DGNPLATFORM_EXPORT StatusInt ReplaceXAttributeData (XAttributeHandleR xAttr, void const* data, UInt32 newSize = 0, DgnModels::XAttributeFlags flags=DgnModels::XAttributeFlags());
-    //@}
-
     /// @name Element I/O
     //@{
 
     //! Delete an element from a model.
-    //! @param[in]          elem            The ElementRefP of the element to be deleted. Must be a valid existing element.
+    //! @param[in]          elem            The DgnElementP of the element to be deleted. Must be a valid existing element.
     //! @return SUCCESS if the element was deleted.
-    DGNPLATFORM_EXPORT StatusInt DeleteElement (ElementRefP elem);
+    DGNPLATFORM_EXPORT StatusInt DeleteElement (DgnElementP elem);
 
+#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
     //! Add a new element to a model.
     //! @remarks \a newEl must already be associated with a model.
-    //! @param[in,out]      newEl           The element to be added. Must hold an MSElementDescr.
+    //! @param[in,out]      newEl           The element to be added. Must hold an DgnElementDescr.
     //! @return SUCCESS if the element was added or non-zero indicating failure. Possible reasons for failure include:
     //! -- \a newEl is not associated with a model,
     //! -- the model is not writable,
     //! -- the element handler blocked the add,
-    //! -- the element could not be assigned an ElementId,
+    //! -- the element could not be assigned an DgnElementId,
     //! -- any scheduled XAttribute change failed.
     DGNPLATFORM_EXPORT StatusInt AddElement (EditElementHandleR newEl);
+#endif
 
     //! Replace an existing element in a model with a different one.
     //! @param[in,out] el The element to be replaced.
-    //! @param[in]  in The ElementRefP of the element to be replaced. Must be a valid existing element.
     //! @return SUCCESS if the element was replaced and out is non-NULL.
-    DGNPLATFORM_EXPORT StatusInt ReplaceElement (EditElementHandleR el, ElementRefP in);
+    DGNPLATFORM_EXPORT StatusInt ReplaceElement (EditElementHandleR el);
     //@}
 };
 
@@ -442,8 +262,8 @@ struct UndoDb : BeSQLite::Db
     BeSQLite::DbResult Open();
     void Empty();
     void TruncateChanges (TxnId id);
-    BeSQLite::DbResult SaveEntry(TxnId id, UInt64 source, Utf8StringCR descr);
-    BeSQLite::DbResult ReadEntry(TxnId id, UInt64& source, Utf8StringR cmdName);
+    BeSQLite::DbResult SaveEntry(TxnId id, uint64_t source, Utf8StringCR descr);
+    BeSQLite::DbResult ReadEntry(TxnId id, uint64_t& source, Utf8StringR cmdName);
     BeSQLite::DbResult SaveChange(TxnId id, BeSQLite::ChangeSet& changeset);
     BeSQLite::DbResult SaveMark(TxnId id, Utf8CP);
     TxnId FindMark(Utf8StringR, TxnId before);
@@ -470,7 +290,7 @@ struct UndoDb : BeSQLite::Db
             bool operator!=(Entry const& rhs) const {return (m_isValid != rhs.m_isValid);}
             bool operator==(Entry const& rhs) const {return (m_isValid == rhs.m_isValid);}
 
-            void GetChangeSet(BeSQLite::ChangeSet& changeSet, bool invert) const;
+            void GetChangeSet(BeSQLite::ChangeSet& changeSet, TxnDirection) const;
             };
 
         typedef Entry const_iterator;
@@ -479,26 +299,59 @@ struct UndoDb : BeSQLite::Db
         };
 };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/11
-//=======================================================================================
-struct TxnTableHandler
-{
-    virtual Utf8CP _GetTableName() const = 0;
-    virtual void _OnAdd(TxnSummary&, BeSQLite::Changes::Change const&) const= 0;
-    virtual void _OnDelete(TxnSummary&, BeSQLite::Changes::Change const&) const= 0;
-    virtual void _OnUpdate(TxnSummary&, BeSQLite::Changes::Change const&) const= 0;
-};
-
 //__PUBLISH_SECTION_START__
 
 //=======================================================================================
-//! This class provides a transaction mechanism for handling changes to elements in DgnProjects
+//! This class provides a transaction mechanism for handling changes to Elements in DgnDbs.
+//! 
+//! <h2>API Summary</h2>
+//!  * #Activate @copydoc Activate
+//!  * #CloseCurrentTxn @copydoc CloseCurrentTxn
+//!  * #ReverseSingleTxn @copydoc ReverseSingleTxn
+//!  * #CancelToPos @copydoc CancelToPos
+//! 
 //! @ingroup TxnMgr
 // @bsiclass
 //=======================================================================================
 struct ITxnManager
 {
+    enum class ValidationErrorSeverity
+        {
+        Fatal,      //!< Validation could not be completed, and the transaction should be rolled back.
+        Warning,    //!< Validation was completed. Consistency checks may have failed. The results should be reviewed.
+        };
+
+    //! Base class for validation errors. 
+    struct IValidationError : IRefCounted
+    {
+      protected:
+        virtual Utf8String _GetDescription() const = 0;
+        virtual ValidationErrorSeverity _GetSeverity() const = 0;
+
+      public:
+        //! Return the severity of the error
+        DGNPLATFORM_EXPORT ValidationErrorSeverity GetSeverity() const;
+
+        //! Return a human-readable, localized description of the error
+        DGNPLATFORM_EXPORT Utf8String GetDescription() const;
+    };
+
+    typedef RefCountedPtr<IValidationError> IValidationErrorPtr;
+
+    //! A general purpose validation error
+    struct ValidationError : RefCounted<IValidationError>
+    {
+        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+        Utf8String m_description;
+        ValidationErrorSeverity m_severity;
+
+        virtual Utf8String _GetDescription() const {return m_description;}
+        virtual ValidationErrorSeverity _GetSeverity() const {return m_severity;}
+        
+        ValidationError (ValidationErrorSeverity sev, Utf8StringCR desc) : m_severity(sev), m_description(desc) {;}
+    };
+
 //__PUBLISH_SECTION_END__
 
     friend struct TxnIter;
@@ -506,12 +359,12 @@ struct ITxnManager
     friend struct DgnCacheTxn;
 
 protected:
-    DgnProjectR     m_project;
+    DgnDbR          m_dgndb;
     UndoDb          m_db;
     bvector<TxnId>  m_txnGroup;
     bvector<RevTxn> m_reversedTxn;
     Utf8String      m_txnDescr;
-    UInt64          m_txnSource;
+    uint64_t        m_txnSource;
     ITxn*           m_currTxn;
     TxnId           m_firstTxn;
     TxnId           m_currentTxnID;
@@ -520,6 +373,8 @@ protected:
     bool            m_undoInProgress;
     bool            m_callRestartFunc;
     bool            m_inDynamics;
+    bool            m_doChangePropagation;
+    bvector<IValidationErrorPtr> m_validationErrors; //!< Validation errors detected on the last boundary check
 
     void SetActive (bool newValue) {m_isActive = newValue;}
     void SetUndoInProgress(bool);
@@ -528,22 +383,39 @@ protected:
     void CheckTxnBoundary ();
     void ReinstateTxn (TxnRange&, Utf8StringP redoStr);
     bool HasAnyChanges();
-    void ApplyChanges (TxnId, TxnApplyDirection);
+    void ApplyChanges (TxnId, TxnDirection);
+    void CancelChanges (BeSQLite::ChangeSet&);
     void CancelChanges (TxnId txnId);
     StatusInt ReinstateActions (RevTxn& revTxn);
     bool PrepareForUndo();
     StatusInt ReverseActions (TxnRange& txnRange, bool multiStep, bool showMsg);
+    enum class HowToCleanUpElements {CallApplied, CallCancelled};
+    BeSQLite::DbResult ApplyChangeSetInternal (BeSQLite::ChangeSet& changeset, TxnId txnId, Utf8StringCR txnDescr, uint64_t txnSource, TxnDirection isUndo, HowToCleanUpElements);
+
+    BentleyStatus ComputeIndirectChanges(BeSQLite::ChangeSet&);
 
 public:
+    void InitTempTables();
+
+    void UpdateModelDependencyIndex();
+
+    Utf8String GetChangedElementsTableName() const;
+
+    Utf8String GetChangedElementDrivesElementRelationshipsTableName() const;
+
+    DGNPLATFORM_EXPORT bool GetDoChangePropagation() const {return m_doChangePropagation;}
+    DGNPLATFORM_EXPORT void SetDoChangePropagation (bool b) {m_doChangePropagation=b;}
+
+#if defined (NEEDS_WORK_VIEW_HANDLER_REFACTOR)
     DGNPLATFORM_EXPORT static void AddTableHandler(TxnTableHandler&);
     static TxnTableHandler* FindTableHandler(Utf8CP);
+#endif
 
     DGNPLATFORM_EXPORT BentleyStatus SaveUndoMark(Utf8CP name);
     DGNPLATFORM_EXPORT void GetUndoString (Utf8StringR);
     DGNPLATFORM_EXPORT void GetRedoString (Utf8StringR);
-    DGNPLATFORM_EXPORT void DumpTxnHistory (int maxChanges);
 
-    DGNPLATFORM_EXPORT ITxnManager (DgnProjectR);
+    DGNPLATFORM_EXPORT ITxnManager (DgnDbR);
 
     //! Apply a changeset and then clean up the screen, reload elements, refresh other cached data, and notify txn listeners.
     //! @param changeset the changeset to apply
@@ -552,7 +424,7 @@ public:
     //! @param txnSource the transaction source to pass to monitors
     //! @param isUndo    the undo/redo flag to pass to monitors
     //! @return the result of calling changeset.ApplyChanges
-    DGNPLATFORM_EXPORT BeSQLite::DbResult ApplyChangeSet (BeSQLite::ChangeSet& changeset, TxnId txnId, Utf8StringCR txnDescr, UInt64 txnSource, bool isUndo);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnId txnId, Utf8StringCR txnDescr, uint64_t txnSource, TxnDirection isUndo);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -567,7 +439,20 @@ public:
     //! The closing mark designates that all of the preceding changes are to be undone together as a single operation, and that future
     //! changes are to be undone separately.
     //! @remarks If there is a Transaction Group active, the effect of this method is only to validate the transaction, if requested.
+    //! @remarks If this is an undoable transaction, then TxnMonitors are invoked before changes are committed.
     DGNPLATFORM_EXPORT void CloseCurrentTxn ();
+
+    //! TxnMonitors may call this to report a validation error. If the severity of the validation error is set to ValidationErrorSeverity::Fatal, then the transaction will be cancelled.
+    DGNPLATFORM_EXPORT void ReportValidationError (IValidationError&);
+
+    //! Query the number of validation errors that were reported during the last boundary check.
+    DGNPLATFORM_EXPORT size_t GetValidationErrorCount() const;
+
+    //! Query the validation errors that were reported during the last boundary check.
+    DGNPLATFORM_EXPORT bvector<IValidationErrorPtr> GetValidationErrors() const;
+
+    //! Query if any Fatal validation errors were reported during the last boundary check.
+    DGNPLATFORM_EXPORT bool HasAnyFatalValidationErrors() const;
 
     //! Get the current transaction
     DGNPLATFORM_EXPORT ITxn& GetCurrentTxn();
@@ -689,13 +574,13 @@ public:
     DGNPLATFORM_EXPORT bool IsUndoInProgress ();
 
     //! Set value for the "TxnSource" to be saved in undo
-    DGNPLATFORM_EXPORT void SetTxnSource (UInt64 souce);
+    DGNPLATFORM_EXPORT void SetTxnSource (uint64_t souce);
 
     //! Set description of current txn. Used to show what will be undone/redone.
     DGNPLATFORM_EXPORT void SetTxnDescription (Utf8CP descr);
 
-    //! Get the DgnProject of this ITxnManager
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProject();
+    //! Get the DgnDb of this ITxnManager
+    DGNPLATFORM_EXPORT DgnDbR GetDgnDb();
     //@}
 };
 
@@ -734,9 +619,9 @@ public:
     virtual void _OnNothingToRedo(){}
 
     DGNPLATFORM_EXPORT virtual void _OnTxnBoundary (TxnSummaryCR);
-    DGNPLATFORM_EXPORT virtual void _OnTxnReverse (TxnSummaryCR, bool isUndo);
-    DGNPLATFORM_EXPORT virtual void _OnTxnReversed (TxnSummaryCR, bool isUndo);
-    DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished (DgnProjectR, bool isUndo);
+    DGNPLATFORM_EXPORT virtual void _OnTxnReverse (TxnSummaryCR, TxnDirection isUndo);
+    DGNPLATFORM_EXPORT virtual void _OnTxnReversed (TxnSummaryCR, TxnDirection isUndo);
+    DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished (DgnDbR, TxnDirection isUndo);
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
     //! @name Transaction Monitors

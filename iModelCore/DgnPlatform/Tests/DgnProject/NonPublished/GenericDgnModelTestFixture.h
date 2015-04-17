@@ -41,7 +41,7 @@ virtual ~GenericDgnModelTestFixture ()
     }
 
 DgnModelP GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
-DgnProjectP  GetDgnProject() const {return m_testDgnManager.GetDgnProjectP();}
+DgnDbP  GetDgnDb() const {return m_testDgnManager.GetDgnProjectP();}
 bool      Is3d() const {return m_is3d;}
 };
 

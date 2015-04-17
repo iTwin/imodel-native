@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementAgenda.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -27,7 +27,7 @@ ElementAgenda::~ElementAgenda ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-EditElementHandleP ElementAgenda::Insert (ElementRefP elRef, bool atHead)
+EditElementHandleP ElementAgenda::Insert (DgnElementCP elRef, bool atHead)
     {
     if (NULL == elRef)
         return NULL;
@@ -45,7 +45,7 @@ EditElementHandleP ElementAgenda::Insert (ElementRefP elRef, bool atHead)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-EditElementHandleP ElementAgenda::InsertElemDescr (MSElementDescrP edP, bool atHead)
+EditElementHandleP ElementAgenda::InsertElemDescr(DgnElementP edP, bool atHead)
     {
     if (NULL == edP)
         return NULL;
@@ -68,7 +68,7 @@ EditElementHandleP ElementAgenda::Insert (EditElementHandleR eeh, bool atHead)
     if (NULL != eeh.PeekElementDescrCP ())
         return InsertElemDescr (eeh.ExtractElementDescr().get(), atHead);
 
-    ElementRefP elRef = eeh.GetElementRef ();
+    DgnElementCP elRef = eeh.GetDgnElement ();
     if (NULL == elRef)
         return NULL;
 
@@ -78,7 +78,7 @@ EditElementHandleP ElementAgenda::Insert (EditElementHandleR eeh, bool atHead)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementAgenda::Insert (bset<ElementRefP>& elSet)
+void ElementAgenda::Insert (bset<DgnElementCP>& elSet)
     {
     EditElementHandleCP curr = GetFirst();
     EditElementHandleCP end  = curr + GetCount();
@@ -86,7 +86,7 @@ void ElementAgenda::Insert (bset<ElementRefP>& elSet)
     // first make sure there are no entries in the elSet that are already in this Agenda
     for (; curr < end ; curr++)
         {
-        ElementRefP test = curr->GetElementRef();
+        DgnElementCP test = curr->GetDgnElement();
 
         if ((NULL != test) && (elSet.end() != elSet.find (test)))
             elSet.erase (test);
@@ -100,7 +100,7 @@ void ElementAgenda::Insert (bset<ElementRefP>& elSet)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-EditElementHandleCP    ElementAgenda::Find (ElementRefP elRef, size_t startIndex, size_t endIndex) const
+EditElementHandleCP ElementAgenda::Find (DgnElementCP elRef, size_t startIndex, size_t endIndex) const
     {
     if (IsEmpty())
         return  NULL;
@@ -116,7 +116,7 @@ EditElementHandleCP    ElementAgenda::Find (ElementRefP elRef, size_t startIndex
 
     for (; curr < end ; curr++)
         {
-        if (curr->GetElementRef() == elRef)
+        if (curr->GetDgnElement() == elRef)
             return curr;
         }
 
@@ -128,7 +128,7 @@ EditElementHandleCP    ElementAgenda::Find (ElementRefP elRef, size_t startIndex
 +---------------+---------------+---------------+---------------+---------------+------*/
 EditElementHandleP ElementAgenda::InsertPath (DisplayPathCP path, bool doGroups, bool groupLockState, bool allowLocked)
     {
-    ElementRefP     elRef    = path->GetHitElem();
+    DgnElementP     elRef    = path->GetHitElem();
 
     EditElementHandleP entry = Insert (elRef);
     if (NULL == entry)
@@ -141,7 +141,7 @@ EditElementHandleP ElementAgenda::InsertPath (DisplayPathCP path, bool doGroups,
     size_t entryIndex = GetCount()-1;
 
 #if defined (NEEDS_WORK_DGNITEM)
-    AddMembersOfAssembly (*elRef->GetDgnProject(), elRef->GetAssemblyId());
+    AddMembersOfAssembly (*elRef->GetDgnDb(), elRef->GetAssemblyId());
 #endif
 
 #ifdef DGN_IMPORTER_REORG_WIP
@@ -157,14 +157,14 @@ EditElementHandleP ElementAgenda::InsertPath (DisplayPathCP path, bool doGroups,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementAgenda::AddMembersOfAssembly (DgnProjectR project, ElementId assemblyId)
+void ElementAgenda::AddMembersOfAssembly (DgnDbR project, ElementId assemblyId)
     {
     if (!assemblyId.IsValid())
         return;
 
     for (auto it : project.MakeAssemblyIterator(assemblyId))
         {
-        PersistentElementRefPtr el = it.GetElementRef();
+        PersistentDgnElementPtr el = it.GetDgnElement();
         BeAssert (el.IsValid());
         Insert (el.get());
         }
@@ -174,7 +174,7 @@ void ElementAgenda::AddMembersOfAssembly (DgnProjectR project, ElementId assembl
 * find all the members of named groups/graphic groups.
 * @bsimethod                                                    Brien.Bastings  02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementAgenda::AddMembersOfGroups (ElementRefP elRef, DgnModelP modelRef, DgnModelP baseDgnModel, bool groupLock, bool allowLocked, int ggNum)
+void ElementAgenda::AddMembersOfGroups (DgnElementP elRef, DgnModelP modelRef, DgnModelP baseDgnModel, bool groupLock, bool allowLocked, int ggNum)
     {
     if (NULL == modelRef)
         return;

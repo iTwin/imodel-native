@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/msfilutl.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -202,8 +202,8 @@ void mdlFile_deleteWatchList (FileWatchListP watchList);
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef struct
 {
-UInt32      modTime;
-UInt32      fileSize;
+uint32_t    modTime;
+uint32_t    fileSize;
 } FileStats;
 
 typedef struct
@@ -214,7 +214,7 @@ typedef struct
 <li> FILE_STATS_CHANGE_MTIME: The file modification time
 </ul>
 */
-UInt32          mask;
+uint32_t        mask;
 /** The current status of the file */
 FileStats stats;
 /** The previous status of the file */

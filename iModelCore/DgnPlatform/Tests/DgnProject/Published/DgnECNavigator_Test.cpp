@@ -2,11 +2,11 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnECNavigator_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include <BeSQLite//ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <DgnPlatform/DgnHandlers/DgnHandlersAPI.h>
 #include <Logging/bentleylogging.h>
 
@@ -31,32 +31,6 @@ extern int CountRows (ECSqlStatement& statement);
 extern bool WriteJsonToFile (WCharCP path, const Json::Value& jsonValue);
 extern bool ReadJsonFromFile (Json::Value& jsonValue, WCharCP path);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-Int64 GetV9ElementId (Utf8CP v8Filename, Int64 v8ElementId, DgnProjectR project)
-    {
-    Statement stmt;
-    Utf8PrintfString idFromFile ("SELECT Id FROM " DGN_TABLE_ProvFile " WHERE OrigName = '%s'", v8Filename);
-    DbResult result = stmt.Prepare (project, idFromFile.c_str());
-    POSTCONDITION (result == BE_SQLITE_OK, -1);
-    result = stmt.Step();
-    POSTCONDITION (result == BE_SQLITE_ROW, -1);
-    int v8SourceFileId = stmt.GetValueInt(0);
-
-    stmt.Finalize();
-    Utf8PrintfString newIdFromOldId (
-        "SELECT Id FROM " DGN_TABLE_ProvElem 
-        " JOIN " DGN_TABLE_Element " USING (Id) "
-        " WHERE SourceFile = %d AND SourceId = %lld", 
-        v8SourceFileId, v8ElementId);
-    result = stmt.Prepare (project, newIdFromOldId.c_str());
-    POSTCONDITION (result == BE_SQLITE_OK, -1);
-    result = stmt.Step();
-    POSTCONDITION (result == BE_SQLITE_ROW, -1);
-
-    return stmt.GetValueInt64(0);
-    }
     
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
@@ -86,7 +60,7 @@ protected:
         ECDbR ecDb
         );
     static StatusInt FindInstancesIncludingChildren (ECInstanceKeyMultiMap& instanceKeyMap, ECSqlStatement& statement, ECDbR ecDb);
-    static StatusInt GetElementInfo (Json::Value& elementInfo, const ElementId& selectedElementId, DgnProjectR project);
+    static StatusInt GetElementInfo (Json::Value& elementInfo, const DgnElementId& selectedElementId, DgnDbR project);
     
     static void ValidateElementInfo (JsonValueR actualElementInfo, WStringCR expectedFileName);
 
@@ -166,7 +140,7 @@ TEST_F(DgnECNavigatorTest, Ifc_WithLatestDgnDb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::PlantElementInfo_InternalTest (DgnDbTestDgnManager& tdm)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
@@ -174,11 +148,11 @@ void DgnECNavigatorTest::PlantElementInfo_InternalTest (DgnDbTestDgnManager& tdm
     // Note: Only the V8 id is stable from the perspective of our test here - the .i.dgn
     // is checked in as part of source, but the .idgndb/.imodel is created as part of the 
     // build.
-    Int64 selectedElementId = GetV9ElementId ("EQPM01.dgn.i.dgn", 1779, project); // Returns 747 (or some child of that assembly) in Graphite04, but that's just for reference
+    int64_t selectedElementId = GetV9ElementId ("EQPM01.dgn.i.dgn", 1779, project); // Returns 747 (or some child of that assembly) in Graphite04, but that's just for reference
     ASSERT_TRUE (selectedElementId > 0);
-    ElementId shownElementId;
-    if (!DgnECPersistence::TryGetAssemblyElementWithPrimaryInstance (shownElementId, ElementId (selectedElementId), project))
-        shownElementId = ElementId (selectedElementId);
+    DgnElementId shownElementId;
+    if (!DgnECPersistence::TryGetAssemblyElementWithPrimaryInstance (shownElementId, DgnElementId (selectedElementId), project))
+        shownElementId = DgnElementId (selectedElementId);
     
     // Find level for equipment
     Utf8PrintfString levelFromElement ("SELECT Level.Name FROM ONLY dgn.Level JOIN dgn.Element USING dgn.ElementIsOnLevel WHERE Element.ECInstanceId = %lld", shownElementId.GetValue());
@@ -241,7 +215,7 @@ void DgnECNavigatorTest::PlantElementInfo_InternalTest (DgnDbTestDgnManager& tdm
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::DgnLinksElementInfo_InternalTest (DgnDbTestDgnManager& tdm)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
@@ -249,7 +223,7 @@ void DgnECNavigatorTest::DgnLinksElementInfo_InternalTest (DgnDbTestDgnManager& 
     // Note: Only the V8 id is stable from the perspective of our test here - the .dgn
     // is checked in as part of source, but the .idgndb/.imodel is created as part of the 
     // build.
-    Int64 v9ElementId = GetV9ElementId ("DgnLinksSample.dgn", 227, project); // Returns 6 in Graphite04, but that's just for reference
+    int64_t v9ElementId = GetV9ElementId ("DgnLinksSample.dgn", 227, project); // Returns 6 in Graphite04, but that's just for reference
     ASSERT_TRUE (v9ElementId > 0);
 
     Utf8PrintfString instanceFromElement(
@@ -282,7 +256,7 @@ void DgnECNavigatorTest::DgnLinksElementInfo_InternalTest (DgnDbTestDgnManager& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::PlantFindSimilar_InternalTest (DgnDbTestDgnManager& tdm)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
@@ -373,7 +347,7 @@ Json::Value* DgnECNavigatorTest::FindPrimaryInstance (Utf8StringR primaryRelatio
 * @bsimethod                                   Ramanujam.Raman                   02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static 
-StatusInt DgnECNavigatorTest::GetElementInfo (Json::Value& elementInfo, const ElementId& selectedElementId, DgnProjectR project)
+StatusInt DgnECNavigatorTest::GetElementInfo (Json::Value& elementInfo, const DgnElementId& selectedElementId, DgnDbR project)
     {
     /*
      * Determine the element to show ElementInfo on. 
@@ -382,7 +356,7 @@ StatusInt DgnECNavigatorTest::GetElementInfo (Json::Value& elementInfo, const El
      * we think that the user wants in 80% of the cases. 
      * An application should customize this behaviour as it sees appropriate for it's users. 
      */
-    ElementId shownElementId;
+    DgnElementId shownElementId;
     if (!DgnECPersistence::TryGetAssemblyElementWithPrimaryInstance (shownElementId, selectedElementId, project))
         shownElementId = selectedElementId;
     
@@ -439,15 +413,15 @@ void DgnECNavigatorTest::ValidateElementInfo (JsonValueR actualElementInfo, WStr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::PlantElementInfo_ExternalTest (DgnDbTestDgnManager& tdm, WStringCR expectedFileName)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
-    Int64 v9ElementId = GetV9ElementId ("EQPM01.dgn.i.dgn", 1779, project); // Returns 747 (or some child of that assembly) in Graphite04, but that's just for reference
+    int64_t v9ElementId = GetV9ElementId ("EQPM01.dgn.i.dgn", 1779, project); // Returns 747 (or some child of that assembly) in Graphite04, but that's just for reference
     ASSERT_TRUE (v9ElementId > 0);
  
     Json::Value actualElementInfo;
-    StatusInt elementInfoStatus = GetElementInfo (actualElementInfo, ElementId (v9ElementId), project);
+    StatusInt elementInfoStatus = GetElementInfo (actualElementInfo, DgnElementId (v9ElementId), project);
     ASSERT_TRUE (elementInfoStatus == SUCCESS);
 
     // Validate primary instance label and class label
@@ -466,7 +440,7 @@ void DgnECNavigatorTest::PlantElementInfo_ExternalTest (DgnDbTestDgnManager& tdm
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::DgnLinksElementInfo_ExternalTest (DgnDbTestDgnManager& tdm, WStringCR expectedFileName)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
@@ -474,11 +448,11 @@ void DgnECNavigatorTest::DgnLinksElementInfo_ExternalTest (DgnDbTestDgnManager& 
     // Note: Only the V8 id is stable from the perspective of our test here - the .dgn
     // is checked in as part of source, but the .idgndb/.imodel is created as part of the 
     // build.
-    Int64 v9ElementId = GetV9ElementId ("DgnLinksSample.dgn", 227, project); // Returns 6 in Graphite04, but that's just for reference
+    int64_t v9ElementId = GetV9ElementId ("DgnLinksSample.dgn", 227, project); // Returns 6 in Graphite04, but that's just for reference
     ASSERT_TRUE (v9ElementId > 0);
 
     Json::Value actualElementInfo;
-    StatusInt elementInfoStatus = GetElementInfo (actualElementInfo, ElementId (v9ElementId), project);
+    StatusInt elementInfoStatus = GetElementInfo (actualElementInfo, DgnElementId (v9ElementId), project);
     ASSERT_TRUE (elementInfoStatus == SUCCESS);
 
     ValidateElementInfo (actualElementInfo, expectedFileName);
@@ -600,15 +574,15 @@ StatusInt DgnECNavigatorTest::FindInstancesIncludingChildren (ECInstanceKeyMulti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::PlantFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
-    Int64 v9ElementId = GetV9ElementId ("EQPM01.dgn.i.dgn", 1779, project); // Returns 747 (or some child of that assembly) in Graphite04, but that's just for reference
+    int64_t v9ElementId = GetV9ElementId ("EQPM01.dgn.i.dgn", 1779, project); // Returns 747 (or some child of that assembly) in Graphite04, but that's just for reference
     ASSERT_TRUE (v9ElementId > 0);
 
     Json::Value elementInfo;
-    StatusInt elementInfoStatus = GetElementInfo (elementInfo, ElementId (v9ElementId), project);
+    StatusInt elementInfoStatus = GetElementInfo (elementInfo, DgnElementId (v9ElementId), project);
     ASSERT_TRUE (elementInfoStatus == SUCCESS);
 
     Utf8String ecSql;
@@ -658,15 +632,15 @@ void DgnECNavigatorTest::PlantFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::PlantFindSimilarOnElementWithNoPrimaryInstance_ExternalTest (DgnDbTestDgnManager& tdm)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
-    Int64 v9ElementId = GetV9ElementId ("STRM01.dgn.i.dgn", 1578, project); // Structural member with no primary instance
+    int64_t v9ElementId = GetV9ElementId ("STRM01.dgn.i.dgn", 1578, project); // Structural member with no primary instance
     ASSERT_TRUE (v9ElementId > 0);
 
     Json::Value elementInfo;
-    StatusInt elementInfoStatus = GetElementInfo (elementInfo, ElementId (v9ElementId), project);
+    StatusInt elementInfoStatus = GetElementInfo (elementInfo, DgnElementId (v9ElementId), project);
     ASSERT_TRUE (elementInfoStatus == SUCCESS);
 
     // Test 1: User has selected level property in the UI (with value = "Level 1")
@@ -686,7 +660,7 @@ void DgnECNavigatorTest::PlantFindSimilarOnElementWithNoPrimaryInstance_External
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::DgnLinksFindSimilar_InternalTest (DgnDbTestDgnManager& tdm)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
@@ -709,7 +683,7 @@ void DgnECNavigatorTest::DgnLinksFindSimilar_InternalTest (DgnDbTestDgnManager& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::DgnLinksFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     DgnModelP model = tdm.GetDgnModelP();
     ASSERT_TRUE (model != NULL);
 
@@ -717,11 +691,11 @@ void DgnECNavigatorTest::DgnLinksFindSimilar_ExternalTest (DgnDbTestDgnManager& 
     // Note: Only the V8 id is stable from the perspective of our test here - the .dgn
     // is checked in as part of source, but the .idgndb/.imodel is created as part of the 
     // build.
-    Int64 v9ElementId = GetV9ElementId ("DgnLinksSample.dgn", 227, project); // Returns 6 in Graphite04, but that's just for reference
+    int64_t v9ElementId = GetV9ElementId ("DgnLinksSample.dgn", 227, project); // Returns 6 in Graphite04, but that's just for reference
     ASSERT_TRUE (v9ElementId > 0);
 
     Json::Value elementInfo;
-    StatusInt elementInfoStatus = GetElementInfo (elementInfo, ElementId (v9ElementId), project);
+    StatusInt elementInfoStatus = GetElementInfo (elementInfo, DgnElementId (v9ElementId), project);
     ASSERT_TRUE (elementInfoStatus == SUCCESS);
 
     // Test 1: User has selected level property in the UI (with value = Equipment)
@@ -741,13 +715,13 @@ void DgnECNavigatorTest::DgnLinksFindSimilar_ExternalTest (DgnDbTestDgnManager& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::IfcElementInfo_ExternalTest (DgnDbTestDgnManager& tdm, WStringCR expectedFileName)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
 
-    Int64 v9ElementId = GetV9ElementId ("ifc.i.dgn", 1152921505705818095, project); // 10612 in Graphite0501
+    int64_t v9ElementId = GetV9ElementId ("ifc.i.dgn", 1152921505705818095, project); // 10612 in Graphite0501
     ASSERT_TRUE (v9ElementId > 0);
 
     Json::Value actualElementInfo;
-    StatusInt elementInfoStatus = GetElementInfo (actualElementInfo, ElementId (v9ElementId), project);
+    StatusInt elementInfoStatus = GetElementInfo (actualElementInfo, DgnElementId (v9ElementId), project);
     ASSERT_TRUE (elementInfoStatus == SUCCESS);
 
     // Ignore "$ECInstanceId" in comparision - it's too volatile. 
@@ -768,14 +742,14 @@ void DgnECNavigatorTest::IfcElementInfo_ExternalTest (DgnDbTestDgnManager& tdm, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECNavigatorTest::IfcFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm)
     {
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
 
-    Int64 v9ElementId = GetV9ElementId ("ifc.i.dgn", 1152921505705818095, project); // 10612 in Graphite0501
+    int64_t v9ElementId = GetV9ElementId ("ifc.i.dgn", 1152921505705818095, project); // 10612 in Graphite0501
     ASSERT_TRUE (v9ElementId > 0);
  
     Json::Value elementInfo;
     BeTest::SetFailOnAssert (false);
-    StatusInt elementInfoStatus = GetElementInfo (elementInfo, ElementId (v9ElementId), project);
+    StatusInt elementInfoStatus = GetElementInfo (elementInfo, DgnElementId (v9ElementId), project);
     ASSERT_TRUE (elementInfoStatus == SUCCESS);
     BeTest::SetFailOnAssert (true);
 

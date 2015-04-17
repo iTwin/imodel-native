@@ -3,7 +3,7 @@
 #
 #      $Source: DgnHandlers/WordBreakDataGenerator.py $
 #
-#   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -180,8 +180,8 @@ def main ():
     
     outputFile.write ("struct WordBreakRangeInfo\n")
     outputFile.write ("    {\n")
-    outputFile.write ("    public: UInt32  m_rangeStart;\n")
-    outputFile.write ("    public: UInt32  m_rangeEnd;\n\n")
+    outputFile.write ("    public: uint32_t m_rangeStart;\n")
+    outputFile.write ("    public: uint32_t m_rangeEnd;\n\n")
 
     outputFile.write ("    }; // WordBreakRangeInfo\n\n")
 

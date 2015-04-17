@@ -174,11 +174,8 @@ For a list of configuration variables used by DgnPlatform, see \ref ConfigVariab
 /** @endcond */
 
 #include    <DgnPlatform/DgnPlatform.h>
-#include    <DgnPlatform/DgnPlatformErrors.r.h>
-#include    "DgnCore/DgnFileIOApi.h"
 #include    "DgnCore/DgnCoreAPI.h"
 #include    "DgnHandlers/DgnHandlersAPI.h"
 //__PUBLISH_SECTION_END__
-#include    <DgnPlatform/MSSmartPtr.h>
 #include    <Bentley/BeAssert.h>
 #include    <RmgrTools/Tools/memutil.h>

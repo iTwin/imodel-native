@@ -29,7 +29,7 @@ protected:
 DGNPLATFORM_EXPORT virtual StatusInt   SerWriteFields   (DataExternalizer&);
 DGNPLATFORM_EXPORT virtual StatusInt   SerReadFields    (DataInternalizer&);
 DGNPLATFORM_EXPORT virtual void        SerInitFields    ();
-                virtual StatusInt  SerReadFields    (DataInternalizer& reader, DgnProjectP file) {return SerReadFields (reader);}
+                virtual StatusInt  SerReadFields    (DataInternalizer& reader, DgnDbP file) {return SerReadFields (reader);}
 
 public:
 
@@ -43,14 +43,14 @@ DGNPLATFORM_EXPORT  void FromGradientSettings       (GradientSettingsR);
 void        GetKeyRGBFactor    (RgbFactor *pFactor, double *pValue, int index) const
     {
     // mdlColor_rgbColorDefToFactor (pFactor, const_cast <RgbColorDef *> (&m_colors[index])), *pValue = m_values[index];
-    pFactor->red   = m_colors[index].red   / 255.0;
-    pFactor->green = m_colors[index].green / 255.0;
-    pFactor->blue  = m_colors[index].blue  / 255.0;
+    pFactor->red   = m_colors[index].GetRed()   / 255.0;
+    pFactor->green = m_colors[index].GetGreen() / 255.0;
+    pFactor->blue  = m_colors[index].GetBlue()  / 255.0;
 
     *pValue = m_values[index];
     }
 
-StatusInt   SetKeys (const RgbColorDef* pColors, const double* pValues, UInt16 nKeys)
+StatusInt   SetKeys (const ColorDef* pColors, const double* pValues, uint16_t nKeys)
     {
     if (nKeys > 0 && nKeys <= MAX_GRADIENT_KEYS)
         {
@@ -69,7 +69,7 @@ StatusInt   SetKeys (const RgbColorDef* pColors, const double* pValues, UInt16 n
     }
 
 GradientMode*   GetModeP ()  { return &m_mode; }
-UInt16*         GetFlagsP () { return &m_flags; }
+uint16_t*         GetFlagsP () { return &m_flags; }
 double*         GetAngleP () { return &m_angle; }
 double*         GetTintP ()  { return &m_tint; }
 double*         GetShiftP () { return &m_shift; }

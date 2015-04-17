@@ -10,13 +10,13 @@
 #include <Bentley/Bentley.h>
 #pragma pack(1)
 
-typedef ULong32 CV_uoff32_t;
-typedef Long32  CV_off32_t;
-typedef UInt16  CV_uoff16_t;
-typedef Int16   CV_off16_t;
-typedef UInt16  CV_typ16_t;
-typedef ULong32 CV_typ32_t;
-typedef UInt16  CV_typ_t;
+typedef uint32_t CV_uoff32_t;
+typedef int32_t CV_off32_t;
+typedef uint16_t CV_uoff16_t;
+typedef int16_t CV_off16_t;
+typedef uint16_t CV_typ16_t;
+typedef uint32_t CV_typ32_t;
+typedef uint16_t CV_typ_t;
 
 #if !defined (CV_ZEROLEN)
 #define CV_ZEROLEN 0
@@ -922,26 +922,26 @@ typedef enum CV_LABEL_TYPE_e {
 
 
 typedef struct CV_modifier_t {
-    UInt16  MOD_const       :1;
-    UInt16  MOD_volatile    :1;
-    UInt16  MOD_unaligned   :1;
-    UInt16  MOD_unused      :13;
+    uint16_t MOD_const       :1;
+    uint16_t MOD_volatile    :1;
+    uint16_t MOD_unaligned   :1;
+    uint16_t MOD_unused      :13;
 } CV_modifier_t ;
 
 
 //      bit field structure describing class/struct/union/enum properties
 
 typedef struct CV_prop_t {
-    UInt16  packed      :1;     // true if structure is packed
-    UInt16  ctor        :1;     // true if constructors or destructors present
-    UInt16  ovlops      :1;     // true if overloaded operators present
-    UInt16  isnested    :1;     // true if this is a nested class
-    UInt16  cnested     :1;     // true if this class contains nested types
-    UInt16  opassign    :1;     // true if overloaded assignment (=)
-    UInt16  opcast      :1;     // true if casting methods
-    UInt16  fwdref      :1;     // true if forward reference (incomplete defn)
-    UInt16  scoped      :1;     // scoped definition
-    UInt16  reserved    :7;
+    uint16_t packed      :1;     // true if structure is packed
+    uint16_t ctor        :1;     // true if constructors or destructors present
+    uint16_t ovlops      :1;     // true if overloaded operators present
+    uint16_t isnested    :1;     // true if this is a nested class
+    uint16_t cnested     :1;     // true if this class contains nested types
+    uint16_t opassign    :1;     // true if overloaded assignment (=)
+    uint16_t opcast      :1;     // true if casting methods
+    uint16_t fwdref      :1;     // true if forward reference (incomplete defn)
+    uint16_t scoped      :1;     // scoped definition
+    uint16_t reserved    :7;
 } CV_prop_t ;
 
 
@@ -950,12 +950,12 @@ typedef struct CV_prop_t {
 //      class field attribute
 
 typedef struct CV_fldattr_t {
-    UInt16  access      :2;     // access protection CV_access_t
-    UInt16  mprop       :3;     // method properties CV_methodprop_t
-    UInt16  pseudo      :1;     // compiler generated fcn and does not exist
-    UInt16  noinherit   :1;     // true if class cannot be inherited
-    UInt16  noconstruct :1;     // true if class cannot be constructed
-    UInt16  unused      :8;     // unused
+    uint16_t access      :2;     // access protection CV_access_t
+    uint16_t mprop       :3;     // method properties CV_methodprop_t
+    uint16_t pseudo      :1;     // compiler generated fcn and does not exist
+    uint16_t noinherit   :1;     // true if class cannot be inherited
+    uint16_t noconstruct :1;     // true if class cannot be constructed
+    uint16_t unused      :8;     // unused
 } CV_fldattr_t ;
 
 
@@ -964,9 +964,9 @@ typedef struct CV_fldattr_t {
 
 
 typedef struct TYPTYPE {
-    UInt16  len;
-    UInt16  leaf;
-    UChar   data[CV_ZEROLEN];
+    uint16_t len;
+    uint16_t leaf;
+    unsigned char data[CV_ZEROLEN];
 } TYPTYPE ;                      // general types record
 
 typedef enum CV_PMEMBER {
@@ -1073,7 +1073,7 @@ struct CV_PMFR16_NEARNVSA {
 
 struct CV_PMFR16_NEARNVMA {
     CV_uoff16_t     off;            // offset of function (NULL = 0,x)
-    Int16    disp;
+    int16_t  disp;
 };
 
 
@@ -1099,7 +1099,7 @@ struct CV_PMFR16_NEARVBASE {
 
 struct CV_PMFR16_FARNVSA {
     CV_uoff16_t     off;            // offset of function (NULL = 0:0)
-    UInt16  seg;            // segment of function
+    uint16_t seg;            // segment of function
 };
 
 
@@ -1111,8 +1111,8 @@ struct CV_PMFR16_FARNVSA {
 
 struct CV_PMFR16_FARNVMA {
     CV_uoff16_t     off;            // offset of function (NULL = 0:0,x)
-    UInt16  seg;
-    Int16    disp;
+    uint16_t seg;
+    int16_t  disp;
 };
 
 
@@ -1124,7 +1124,7 @@ struct CV_PMFR16_FARNVMA {
 
 struct CV_PMFR16_FARVBASE {
     CV_uoff16_t     off;            // offset of function (NULL = 0:0,x,x,x)
-    UInt16  seg;
+    uint16_t seg;
     CV_off16_t      mdisp;          // displacement to data
     CV_off16_t      pdisp;          // this pointer displacement
     CV_off16_t      vdisp;          // vbase table displacement
@@ -1176,7 +1176,7 @@ struct CV_PMFR32_VBASE {
 //      of a subfield of a complex list
 
 typedef struct lfEasy {
-    UInt16  leaf;           // LF_...
+    uint16_t leaf;           // LF_...
 } lfEasy ;
 
 
@@ -1192,13 +1192,13 @@ typedef struct lfEasy {
 
 
 typedef struct lfModifier_16t {
-    UInt16  leaf;           // LF_MODIFIER
+    uint16_t leaf;           // LF_MODIFIER
     CV_modifier_t   attr;           // modifier attribute modifier_t
     CV_typ16_t      type;           // modified type
 } lfModifier_16t ;;
 
 typedef struct lfModifier_32t {
-    UInt16  leaf;           // LF_MODIFIER
+    uint16_t leaf;           // LF_MODIFIER
     CV_modifier_t   attr;           // modifier attribute modifier_t
     CV_typ32_t      type;           // modified type
 } lfModifier_32t ;;
@@ -1206,10 +1206,10 @@ typedef struct lfModifier_32t {
 
 typedef struct myModifier_t
     {
-    UInt16  leaf;           // LF_MODIFIER
+    uint16_t leaf;           // LF_MODIFIER
     CV_typ32_t      type;           // modified type
     CV_modifier_t   attr;           // modifier attribute modifier_t
-    UInt16  pad;	    // pad out to dword boundary?
+    uint16_t pad;	    // pad out to dword boundary?
     } myModifier_t ;;
 
 
@@ -1217,20 +1217,20 @@ typedef struct myModifier_t
 //      type record for LF_POINTER
 
 typedef struct lfPointerAttr {
-    UChar   ptrtype	:5; // ordinal specifying pointer type (ptrtype_t)
-    UChar   ptrmode	:3; // ordinal specifying pointer mode (ptrmode_t)
-    UChar   isflat32	:1; // true if 0:32 pointer
-    UChar   isvolatile	:1; // true if volatile pointer
-    UChar   isconst	:1; // true if const pointer
-    UChar   isunaligned :1; // true if unaligned pointer
-    UChar   unused	:4;
+    unsigned char ptrtype	:5; // ordinal specifying pointer type (ptrtype_t)
+    unsigned char ptrmode	:3; // ordinal specifying pointer mode (ptrmode_t)
+    unsigned char isflat32	:1; // true if 0:32 pointer
+    unsigned char isvolatile	:1; // true if volatile pointer
+    unsigned char isconst	:1; // true if const pointer
+    unsigned char isunaligned :1; // true if unaligned pointer
+    unsigned char unused	:4;
 } lfPointerAttr ;;
 
 #ifndef __cplusplus
 typedef struct lfPointer {
 #endif
     struct lfPointerBody {
-        UInt16      leaf;           // LF_POINTER
+        uint16_t    leaf;           // LF_POINTER
         struct lfPointerAttr attr;
         CV_typ16_t  utype;                  // type index of the underlying type
 #if defined(__cplusplus) // for C++
@@ -1244,13 +1244,13 @@ typedef struct lfPointer_16t/* : public lfPointerBody_16t */ {
     union  {
         struct {
             CV_typ16_t      pmclass;    // index of containing class for pointer to member
-            UInt16  pmenum;     // enumeration specifying pm format
+            uint16_t pmenum;     // enumeration specifying pm format
         } pm;
-        UInt16      bseg;       // base segment if CV_PTR_BASE_SEG
-        UChar       Sym[1];     // copy of base symbol record (including length)
+        uint16_t    bseg;       // base segment if CV_PTR_BASE_SEG
+        unsigned char Sym[1];     // copy of base symbol record (including length)
         struct  {
             CV_typ16_t      index;      // type index if CV_PTR_BASE_TYPE
-            UChar   name[1];    // name of base type
+            unsigned char name[1];    // name of base type
         } btype;
     } pbase;
 } lfPointer_16t ;
@@ -1259,7 +1259,7 @@ typedef struct lfPointer_16t/* : public lfPointerBody_16t */ {
 typedef struct lfPointer_32t {
 #endif
     struct lfPointerBody_32t {
-        UInt16      leaf;           // LF_POINTER
+        uint16_t    leaf;           // LF_POINTER
         struct lfPointerAttr attr;
         CV_typ32_t  utype;                  // type index of the underlying type
 #if defined(__cplusplus) // for C++ 
@@ -1273,13 +1273,13 @@ typedef struct lfPointer_32t : public lfPointerBody_32t {
     union  {
         struct {
             CV_typ32_t      pmclass;    // index of containing class for pointer to member
-            UInt16  pmenum;     // enumeration specifying pm format
+            uint16_t pmenum;     // enumeration specifying pm format
         } pm;
-        UInt16      bseg;       // base segment if CV_PTR_BASE_SEG
-        UChar       Sym[1];     // copy of base symbol record (including length)
+        uint16_t    bseg;       // base segment if CV_PTR_BASE_SEG
+        unsigned char Sym[1];     // copy of base symbol record (including length)
         struct  {
             CV_typ32_t      index;      // type index if CV_PTR_BASE_TYPE
-            UChar   name[1];    // name of base type
+            unsigned char name[1];    // name of base type
         } btype;
     } pbase;
 } lfPointer_32t ;
@@ -1289,23 +1289,23 @@ typedef struct lfPointer_32t : public lfPointerBody_32t {
 
 typedef struct _myPointer
     {
-    UInt16	    leaf;	// LF_POINTER
+    uint16_t	  leaf;	// LF_POINTER
     CV_typ32_t		    utype;	// type index of underlying type
     struct lfPointerAttr    attr;
-    UInt16	    unknown;	// usually zero
+    uint16_t	  unknown;	// usually zero
     union _pbase 
         {
         struct _pm
             {
             CV_typ32_t	    pmclass;	// index of containing class for pointer to member
-            UInt16  pmenum;     // enumeration specifying pm format
+            uint16_t pmenum;     // enumeration specifying pm format
             } pm;
-        UInt16      bseg;       // base segment if CV_PTR_BASE_SEG
-        UChar       Sym[1];     // copy of base symbol record (including length)
+        uint16_t    bseg;       // base segment if CV_PTR_BASE_SEG
+        unsigned char Sym[1];     // copy of base symbol record (including length)
         struct _btype
             {
             CV_typ32_t	    index;      // type index if CV_PTR_BASE_TYPE
-            UChar   name[1];    // name of base type
+            unsigned char name[1];    // name of base type
             } btype;
         } pbase;
     } myPointer_t ;
@@ -1315,18 +1315,18 @@ typedef struct _myPointer
 
 
 typedef struct lfArray_16t {
-    UInt16  leaf;           // LF_ARRAY
+    uint16_t leaf;           // LF_ARRAY
     CV_typ16_t      elemtype;       // type index of element type
     CV_typ16_t      idxtype;        // type index of indexing type
-    UChar   data[CV_ZEROLEN]; // variable length data specifying
+    unsigned char data[CV_ZEROLEN]; // variable length data specifying
                                     // size in bytes and name
 } lfArray_16t ;
 
 typedef struct lfArray_32t {
-    UInt16  leaf;           // LF_ARRAY
+    uint16_t leaf;           // LF_ARRAY
     CV_typ32_t      elemtype;       // type index of element type
     CV_typ32_t      idxtype;        // type index of indexing type
-    UChar   data[CV_ZEROLEN]; // variable length data specifying
+    unsigned char data[CV_ZEROLEN]; // variable length data specifying
                                     // size in bytes and name
 } lfArray_32t ;
 
@@ -1336,25 +1336,25 @@ typedef struct lfArray_32t {
 
 
 typedef struct lfClass_16t {
-    UInt16  leaf;           // LF_CLASS, LF_STRUCT
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_CLASS, LF_STRUCT
+    uint16_t count;          // count of number of elements in class
     CV_typ16_t      field;          // type index of LF_FIELD descriptor list
     CV_prop_t       property;       // property attribute field (prop_t)
     CV_typ16_t      derived;        // type index of derived from list if not zero
     CV_typ16_t      vshape;         // type index of vshape table for this class
-    UChar   data[CV_ZEROLEN]; // data describing length of structure in
+    unsigned char data[CV_ZEROLEN]; // data describing length of structure in
                                     // bytes and name
 } lfClass_16t ;
 typedef lfClass_16t lfStructure_16t;
 
 typedef struct lfClass_32t {
-    UInt16  leaf;           // LF_CLASS, LF_STRUCT
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_CLASS, LF_STRUCT
+    uint16_t count;          // count of number of elements in class
     CV_typ32_t      field;          // type index of LF_FIELD descriptor list
     CV_prop_t       property;       // property attribute field (prop_t)
     CV_typ32_t      derived;        // type index of derived from list if not zero
     CV_typ32_t      vshape;         // type index of vshape table for this class
-    UChar   data[CV_ZEROLEN]; // data describing length of structure in
+    unsigned char data[CV_ZEROLEN]; // data describing length of structure in
                                     // bytes and name
 } lfClass_32t ;
 typedef lfClass_32t lfStructure_32t ;
@@ -1363,14 +1363,14 @@ typedef lfClass_32t lfStructure_32t ;
 //      type record for LF_CLASS, LF_STRUCTURE (from reverse engineering)
 
 typedef struct _myClass {
-    UInt16  leaf;           // LF_CLASS, LF_STRUCT
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_CLASS, LF_STRUCT
+    uint16_t count;          // count of number of elements in class
     CV_prop_t       property;       // property attribute field (prop_t)
     CV_typ32_t	    field;          // type index of LF_FIELD descriptor list
     CV_typ32_t      derived;        // type index of derived from list if not zero
     CV_typ32_t      vshape;         // type index of vshape table for this class
-    UInt16  bytes;	    // bytes in structure
-    UChar   name[CV_ZEROLEN];
+    uint16_t bytes;	    // bytes in structure
+    unsigned char name[CV_ZEROLEN];
 } myClass_t ;
 typedef myClass_t myStructure_t ;
 
@@ -1379,20 +1379,20 @@ typedef myClass_t myStructure_t ;
 
 
 typedef struct lfUnion_16t {
-    UInt16  leaf;           // LF_UNION
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_UNION
+    uint16_t count;          // count of number of elements in class
     CV_typ16_t      field;          // type index of LF_FIELD descriptor list
     CV_prop_t       property;       // property attribute field
-    UChar   data[CV_ZEROLEN]; // variable length data describing length of
+    unsigned char data[CV_ZEROLEN]; // variable length data describing length of
                                     // structure and name
 } lfUnion_16t ;
 
 typedef struct lfUnion_32t {
-    UInt16  leaf;           // LF_UNION
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_UNION
+    uint16_t count;          // count of number of elements in class
     CV_typ32_t      field;          // type index of LF_FIELD descriptor list
     CV_prop_t       property;       // property attribute field
-    UChar   data[CV_ZEROLEN]; // variable length data describing length of
+    unsigned char data[CV_ZEROLEN]; // variable length data describing length of
                                     // structure and name
 } lfUnion_32t ;
 
@@ -1401,12 +1401,12 @@ typedef struct lfUnion_32t {
 
 typedef struct _myUnion 
     {
-    UInt16  leaf;           // LF_UNION
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_UNION
+    uint16_t count;          // count of number of elements in class
     CV_prop_t       property;       // property attribute field
     CV_typ32_t	    field;          // type index of LF_FIELD descriptor list
-    UInt16  bytes;	    // bytes in structure
-    UChar   name[CV_ZEROLEN]; // variable length data describing length of
+    uint16_t bytes;	    // bytes in structure
+    unsigned char name[CV_ZEROLEN]; // variable length data describing length of
                                     // structure and name
     } myUnion_t ;
 
@@ -1417,32 +1417,32 @@ typedef struct _myUnion
 
 
 typedef struct lfEnum_16t {
-    UInt16  leaf;           // LF_ENUM
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_ENUM
+    uint16_t count;          // count of number of elements in class
     CV_typ16_t      utype;          // underlying type of the enum
     CV_typ16_t      field;          // type index of LF_FIELD descriptor list
     CV_prop_t       property;       // property attribute field
-    UChar   Name[1];        // length prefixed name of enum
+    unsigned char Name[1];        // length prefixed name of enum
 } lfEnum_16t ;
 
 typedef struct lfEnum_32t {
-    UInt16  leaf;           // LF_ENUM
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_ENUM
+    uint16_t count;          // count of number of elements in class
     CV_typ32_t      utype;          // underlying type of the enum
     CV_typ32_t      field;          // type index of LF_FIELD descriptor list
     CV_prop_t       property;       // property attribute field
-    UChar   Name[1];        // length prefixed name of enum
+    unsigned char Name[1];        // length prefixed name of enum
 } lfEnum_32t ;
 
 
 typedef struct _myEnum 
     {
-    UInt16  leaf;           // LF_ENUM
-    UInt16  count;          // count of number of elements in class
+    uint16_t leaf;           // LF_ENUM
+    uint16_t count;          // count of number of elements in class
     CV_prop_t       property;       // property attribute field
     CV_typ32_t      utype;          // underlying type of the enum
     CV_typ32_t      field;          // type index of LF_FIELD descriptor list
-    UChar   Name[CV_ZEROLEN]; // length prefixed name of enum
+    unsigned char Name[CV_ZEROLEN]; // length prefixed name of enum
     } myEnum_t ;
 
 
@@ -1451,20 +1451,20 @@ typedef struct _myEnum
 
 
 typedef struct lfProc_16t {
-    UInt16  leaf;           // LF_PROCEDURE
+    uint16_t leaf;           // LF_PROCEDURE
     CV_typ16_t      rvtype;         // type index of return value
-    UChar   calltype;       // calling convention (CV_call_t)
-    UChar   reserved;       // reserved for future use
-    UInt16  parmcount;      // number of parameters
+    unsigned char calltype;       // calling convention (CV_call_t)
+    unsigned char reserved;       // reserved for future use
+    uint16_t parmcount;      // number of parameters
     CV_typ16_t      arglist;        // type index of argument list
 } lfProc_16t ;
 
 typedef struct lfProc_32t {
-    UInt16  leaf;           // LF_PROCEDURE
+    uint16_t leaf;           // LF_PROCEDURE
     CV_typ32_t      rvtype;         // type index of return value
-    UChar   calltype;       // calling convention (CV_call_t)
-    UChar   reserved;       // reserved for future use
-    UInt16  parmcount;      // number of parameters
+    unsigned char calltype;       // calling convention (CV_call_t)
+    unsigned char reserved;       // reserved for future use
+    uint16_t parmcount;      // number of parameters
     CV_typ32_t      arglist;        // type index of argument list
 } lfProc_32t ;
 
@@ -1474,27 +1474,27 @@ typedef struct lfProc_32t {
 
 
 typedef struct lfMFunc_16t {
-    UInt16  leaf;           // LF_MFUNCTION
+    uint16_t leaf;           // LF_MFUNCTION
     CV_typ16_t      rvtype;         // type index of return value
     CV_typ16_t      classtype;      // type index of containing class
     CV_typ16_t      thistype;       // type index of this pointer (model specific)
-    UChar   calltype;       // calling convention (call_t)
-    UChar   reserved;       // reserved for future use
-    UInt16  parmcount;      // number of parameters
+    unsigned char calltype;       // calling convention (call_t)
+    unsigned char reserved;       // reserved for future use
+    uint16_t parmcount;      // number of parameters
     CV_typ16_t      arglist;        // type index of argument list
-    Int32            thisadjust;     // this adjuster (Int32 because pad required anyway)
+    int32_t          thisadjust;     // this adjuster (Int32 because pad required anyway)
 } lfMFunc_16t ;
 
 typedef struct lfMFunc_32t {
-    UInt16  leaf;           // LF_MFUNCTION
+    uint16_t leaf;           // LF_MFUNCTION
     CV_typ32_t      rvtype;         // type index of return value
     CV_typ32_t      classtype;      // type index of containing class
     CV_typ32_t      thistype;       // type index of this pointer (model specific)
-    UChar   calltype;       // calling convention (call_t)
-    UChar   reserved;       // reserved for future use
-    UInt16  parmcount;      // number of parameters
+    unsigned char calltype;       // calling convention (call_t)
+    unsigned char reserved;       // reserved for future use
+    uint16_t parmcount;      // number of parameters
     CV_typ32_t      arglist;        // type index of argument list
-    Int32            thisadjust;     // this adjuster (Int32 because pad required anyway)
+    int32_t          thisadjust;     // this adjuster (Int32 because pad required anyway)
 } lfMFunc_32t ;
 
 
@@ -1503,9 +1503,9 @@ typedef struct lfMFunc_32t {
 
 
 typedef struct lfVTShape {
-    UInt16  leaf;           // LF_VTSHAPE
-    UInt16  count;          // number of entries in vfunctable
-    UChar   desc[CV_ZEROLEN]; // 4 bit (CV_VTS_desc) descriptors
+    uint16_t leaf;           // LF_VTSHAPE
+    uint16_t count;          // number of entries in vfunctable
+    unsigned char desc[CV_ZEROLEN]; // 4 bit (CV_VTS_desc) descriptors
 } lfVTShape ;
 
 
@@ -1515,15 +1515,15 @@ typedef struct lfVTShape {
 
 
 typedef struct lfCobol0_16t {
-    UInt16  leaf;           // LF_COBOL0
+    uint16_t leaf;           // LF_COBOL0
     CV_typ16_t      type;           // parent type record index
-    UChar   data[CV_ZEROLEN];
+    unsigned char data[CV_ZEROLEN];
 } lfCobol0_16t ;
 
 typedef struct lfCobol0_32t {
-    UInt16  leaf;           // LF_COBOL0
+    uint16_t leaf;           // LF_COBOL0
     CV_typ32_t      type;           // parent type record index
-    UChar   data[CV_ZEROLEN];
+    unsigned char data[CV_ZEROLEN];
 } lfCobol0_32t ;
 
 
@@ -1533,8 +1533,8 @@ typedef struct lfCobol0_32t {
 
 
 typedef struct lfCobol1 {
-    UInt16  leaf;           // LF_COBOL1
-    UChar   data[CV_ZEROLEN];
+    uint16_t leaf;           // LF_COBOL1
+    unsigned char data[CV_ZEROLEN];
 } lfCobol1 ;
 
 
@@ -1544,12 +1544,12 @@ typedef struct lfCobol1 {
 
 
 typedef struct lfBArray_16t {
-    UInt16  leaf;           // LF_BARRAY
+    uint16_t leaf;           // LF_BARRAY
     CV_typ16_t      utype;          // type index of underlying type
 } lfBArray_16t ;
 
 typedef struct lfBArray_32t {
-    UInt16  leaf;           // LF_BARRAY
+    uint16_t leaf;           // LF_BARRAY
     CV_typ32_t      utype;          // type index of underlying type
 } lfBArray_32t ;
 
@@ -1557,8 +1557,8 @@ typedef struct lfBArray_32t {
 
 
 typedef struct lfLabel {
-    UInt16  leaf;           // LF_LABEL
-    UInt16  mode;           // addressing mode of label
+    uint16_t leaf;           // LF_LABEL
+    uint16_t mode;           // addressing mode of label
 } lfLabel ;
 
 
@@ -1567,14 +1567,14 @@ typedef struct lfLabel {
 
 
 typedef struct lfDimArray_16t {
-    UInt16  leaf;           // LF_DIMARRAY
+    uint16_t leaf;           // LF_DIMARRAY
     CV_typ16_t      utype;          // underlying type of the array
     CV_typ16_t      diminfo;        // dimension information
     char            name[1];        // length prefixed name
 } lfDimArray_16t ;
 
 typedef struct lfDimArray_32t {
-    UInt16  leaf;           // LF_DIMARRAY
+    uint16_t leaf;           // LF_DIMARRAY
     CV_typ32_t      utype;          // underlying type of the array
     CV_typ32_t      diminfo;        // dimension information
     char            name[1];        // length prefixed name
@@ -1586,14 +1586,14 @@ typedef struct lfDimArray_32t {
 
 
 typedef struct lfVFTPath_16t {
-    UInt16  leaf;           // LF_VFTPATH
-    UInt16  count;          // count of number of bases in path
+    uint16_t leaf;           // LF_VFTPATH
+    uint16_t count;          // count of number of bases in path
     CV_typ16_t      base[1];        // bases from root to leaf
 } lfVFTPath_16t ;
 
 typedef struct lfVFTPath_32t {
-    UInt16  leaf;           // LF_VFTPATH
-    UInt16  count;          // count of number of bases in path
+    uint16_t leaf;           // LF_VFTPATH
+    uint16_t count;          // count of number of bases in path
     CV_typ32_t      base[1];        // bases from root to leaf
 } lfVFTPath_32t ;
 
@@ -1602,11 +1602,11 @@ typedef struct lfVFTPath_32t {
 
 
 typedef struct lfPreComp {
-    UInt16  leaf;           // LF_PRECOMP
-    UInt16  start;          // starting type index included
-    UInt16  count;          // number of types in inclusion
-    UInt32   signature;      // signature
-    UChar   name[CV_ZEROLEN]; // length prefixed name of included type file
+    uint16_t leaf;           // LF_PRECOMP
+    uint16_t start;          // starting type index included
+    uint16_t count;          // number of types in inclusion
+    uint32_t signature;      // signature
+    unsigned char name[CV_ZEROLEN]; // length prefixed name of included type file
 } lfPreComp ;
 
 
@@ -1615,8 +1615,8 @@ typedef struct lfPreComp {
 
 
 typedef struct lfEndPreComp {
-    UInt16  leaf;           // LF_ENDPRECOMP
-    UInt32   signature;      // signature
+    uint16_t leaf;           // LF_ENDPRECOMP
+    uint32_t signature;      // signature
 } lfEndPreComp ;
 
 
@@ -1627,19 +1627,19 @@ typedef struct lfEndPreComp {
 
 
 typedef struct lfOEM_16t {
-    UInt16  leaf;           // LF_OEM
-    UInt16  cvOEM;          // MS assigned OEM identified
-    UInt16  recOEM;         // OEM assigned type identifier
-    UInt16  count;          // count of type indices to follow
+    uint16_t leaf;           // LF_OEM
+    uint16_t cvOEM;          // MS assigned OEM identified
+    uint16_t recOEM;         // OEM assigned type identifier
+    uint16_t count;          // count of type indices to follow
     CV_typ16_t      index[CV_ZEROLEN];  // array of type indices followed
                                     // by OEM defined data
 } lfOEM_16t ;
 
 typedef struct lfOEM_32t {
-    UInt16  leaf;           // LF_OEM
-    UInt16  cvOEM;          // MS assigned OEM identified
-    UInt16  recOEM;         // OEM assigned type identifier
-    UInt16  count;          // count of type indices to follow
+    uint16_t leaf;           // LF_OEM
+    uint16_t cvOEM;          // MS assigned OEM identified
+    uint16_t recOEM;         // OEM assigned type identifier
+    uint16_t count;          // count of type indices to follow
     CV_typ32_t      index[CV_ZEROLEN];  // array of type indices followed
                                     // by OEM defined data
 } lfOEM_32t ;
@@ -1652,10 +1652,10 @@ typedef struct lfOEM_32t {
 //      type record describing using of a type server
 
 typedef struct lfTypeServer {
-    UInt16  leaf;           // LF_TYPESERVER
-    UInt32   signature;      // signature
-    UInt32   age;            // age of database used by this module
-    UChar   name[CV_ZEROLEN];     // length prefixed name of PDB
+    uint16_t leaf;           // LF_TYPESERVER
+    uint32_t signature;      // signature
+    uint32_t age;            // age of database used by this module
+    unsigned char name[CV_ZEROLEN];     // length prefixed name of PDB
 } lfTypeServer ;
 
 //      description of type records that can be referenced from
@@ -1667,15 +1667,15 @@ typedef struct lfTypeServer {
 
 
 typedef struct lfSkip_16t {
-    UInt16  leaf;           // LF_SKIP
+    uint16_t leaf;           // LF_SKIP
     CV_typ16_t      type;           // next valid index
-    UChar   data[CV_ZEROLEN];     // pad data
+    unsigned char data[CV_ZEROLEN];     // pad data
 } lfSkip_16t ;
 
 typedef struct lfSkip_32t {
-    UInt16  leaf;           // LF_SKIP
+    uint16_t leaf;           // LF_SKIP
     CV_typ32_t      type;           // next valid index
-    UChar   data[CV_ZEROLEN];     // pad data
+    unsigned char data[CV_ZEROLEN];     // pad data
 } lfSkip_32t ;
 
 
@@ -1684,23 +1684,23 @@ typedef struct lfSkip_32t {
 
 
 typedef struct lfArgList_16t {
-    UInt16  leaf;           // LF_ARGLIST
-    UInt16  count;          // number of arguments
+    uint16_t leaf;           // LF_ARGLIST
+    uint16_t count;          // number of arguments
     CV_typ16_t      arg[CV_ZEROLEN];  // number of arguments
 } lfArgList_16t ;
 
 typedef struct lfArgList_32t {
-    UInt16  leaf;           // LF_ARGLIST
-    UInt16  count;          // number of arguments
+    uint16_t leaf;           // LF_ARGLIST
+    uint16_t count;          // number of arguments
     CV_typ32_t      arg[CV_ZEROLEN];  // number of arguments
 } lfArgList_32t ;
 
 
 typedef struct _myArgList 
     {
-    UInt16  leaf;           // LF_ARGLIST
-    UInt16  count;          // number of arguments
-    UInt16  flags;	    // unknown flags (usually zero)
+    uint16_t leaf;           // LF_ARGLIST
+    uint16_t count;          // number of arguments
+    uint16_t flags;	    // unknown flags (usually zero)
     CV_typ32_t      arg[CV_ZEROLEN];  // number of arguments
 } myArgList_t ;
 
@@ -1709,35 +1709,35 @@ typedef struct _myArgList
 
 
 typedef struct lfDerived_16t {
-    UInt16  leaf;           // LF_DERIVED
-    UInt16  count;          // number of arguments
+    uint16_t leaf;           // LF_DERIVED
+    uint16_t count;          // number of arguments
     CV_typ16_t      drvdcls[CV_ZEROLEN];  // type indices of derived classes
 } lfDerived_16t ;
 
 typedef struct lfDerived_32t {
-    UInt16  leaf;           // LF_DERIVED
-    UInt16  count;          // number of arguments
+    uint16_t leaf;           // LF_DERIVED
+    uint16_t count;          // number of arguments
     CV_typ32_t      drvdcls[CV_ZEROLEN];  // type indices of derived classes
 } lfDerived_32t ;
 
 typedef struct _myDerived 
     {
-    UInt16  leaf;           // LF_DERIVED
+    uint16_t leaf;           // LF_DERIVED
     CV_typ32_t	    type;	    // primative type or typind 
     union _myDerivedUnion
         {
         struct _bitfield
             {
-            UChar   count;	    // number of bits in field
-            UChar   start;	    // first bit position
-            UInt16  pad;	    // padding (usually 0xf1f2)
+            unsigned char count;	    // number of bits in field
+            unsigned char start;	    // first bit position
+            uint16_t pad;	    // padding (usually 0xf1f2)
             } bit;
         struct _leaf
             {
-            UInt16  type;	    // leaf type?
-            UInt16  pad;	    // padding (usually 0xf1f2)
+            uint16_t type;	    // leaf type?
+            uint16_t pad;	    // padding (usually 0xf1f2)
             } lf;
-        UInt32	    dword;
+        uint32_t	  dword;
         } u;
     } myDerived_t ;
 
@@ -1748,15 +1748,15 @@ typedef struct _myDerived
 
 
 typedef struct lfDefArg_16t {
-    UInt16  leaf;           // LF_DEFARG
+    uint16_t leaf;           // LF_DEFARG
     CV_typ16_t      type;           // type of resulting expression
-    UChar   expr[CV_ZEROLEN]; // length prefixed expression string
+    unsigned char expr[CV_ZEROLEN]; // length prefixed expression string
 } lfDefArg_16t ;
 
 typedef struct lfDefArg_32t {
-    UInt16  leaf;           // LF_DEFARG
+    uint16_t leaf;           // LF_DEFARG
     CV_typ32_t      type;           // type of resulting expression
-    UChar   expr[CV_ZEROLEN]; // length prefixed expression string
+    unsigned char expr[CV_ZEROLEN]; // length prefixed expression string
 } lfDefArg_32t ;
 
 
@@ -1768,7 +1768,7 @@ typedef struct lfDefArg_32t {
 
 
 typedef struct lfList {
-    UInt16  leaf;           // LF_LIST
+    uint16_t leaf;           // LF_LIST
     char            data[CV_ZEROLEN]; // data format specified by indexing type
 } lfList ;
 
@@ -1781,14 +1781,14 @@ typedef struct lfList {
 
 
 typedef struct lfFieldList {
-    UInt16  leaf;           // LF_FIELDLIST
+    uint16_t leaf;           // LF_FIELDLIST
     char            data[CV_ZEROLEN]; // field list sub lists
 } lfFieldList ;
 
 typedef struct _myFieldList 
     {
-    UInt16  leaf;           // LF_FIELDLIST
-    UInt32   count;	    // field count
+    uint16_t leaf;           // LF_FIELDLIST
+    uint32_t count;	    // field count
     CV_typ32_t	    field[CV_ZEROLEN]; // field list sub lists
     } myFieldList ;
 
@@ -1799,19 +1799,19 @@ typedef struct _myFieldList
 typedef struct mlMethod_16t {
     CV_fldattr_t   attr;           // method attribute
     CV_typ16_t     index;          // index to type record for procedure
-    UInt32  vbaseoff[CV_ZEROLEN];    // offset in vfunctable if intro virtual
+    uint32_t vbaseoff[CV_ZEROLEN];    // offset in vfunctable if intro virtual
 } mlMethod_16t ;
 
 typedef struct mlMethod_32t {
     CV_fldattr_t   attr;           // method attribute
     CV_typ32_t     index;          // index to type record for procedure
-    UInt32  vbaseoff[CV_ZEROLEN];    // offset in vfunctable if intro virtual
+    uint32_t vbaseoff[CV_ZEROLEN];    // offset in vfunctable if intro virtual
 } mlMethod_32t ;
 
 
 typedef struct lfMethodList {
-    UInt16 leaf;
-    UChar  mList[CV_ZEROLEN];       // really a mlMethod type
+    uint16_t leaf;
+    unsigned char mList[CV_ZEROLEN];       // really a mlMethod type
 } lfMethodList ;
 
 
@@ -1820,31 +1820,31 @@ typedef struct lfMethodList {
 
 
 typedef struct lfBitfield_16t {
-    UInt16  leaf;           // LF_BITFIELD
-    UChar   length;
-    UChar   position;
+    uint16_t leaf;           // LF_BITFIELD
+    unsigned char length;
+    unsigned char position;
     CV_typ16_t      type;           // type of bitfield
 } lfBitfield_16t ;
 
 typedef struct lfBitfield_32t {
-    UInt16  leaf;           // LF_BITFIELD
-    UChar   length;
-    UChar   position;
+    uint16_t leaf;           // LF_BITFIELD
+    unsigned char length;
+    unsigned char position;
     CV_typ32_t      type;           // type of bitfield
 } lfBitfield_32t ;
 
 
 typedef struct _myBitfieldSub
     {
-    UChar   length;
-    UChar   position;
-    UInt16  pad;	    // unused (usually zero)
+    unsigned char length;
+    unsigned char position;
+    uint16_t pad;	    // unused (usually zero)
     CV_typ32_t      type;           // type of bitfield
     } myBitfieldSub_t ;
 
 typedef struct _myBitfield 
     {
-    UInt16  leaf;           // LF_BITFIELD
+    uint16_t leaf;           // LF_BITFIELD
     myBitfieldSub_t start;
     myBitfieldSub_t end;
     } myBitfield_t ;
@@ -1855,18 +1855,18 @@ typedef struct _myBitfield
 
 
 typedef struct lfDimCon_16t {
-    UInt16  leaf;           // LF_DIMCONU or LF_DIMCONLU
-    UInt16  rank;           // number of dimensions
+    uint16_t leaf;           // LF_DIMCONU or LF_DIMCONLU
+    uint16_t rank;           // number of dimensions
     CV_typ16_t      typ;            // type of index
-    UChar   dim[CV_ZEROLEN];  // array of dimension information with
+    unsigned char dim[CV_ZEROLEN];  // array of dimension information with
                                     // either upper bounds or lower/upper bound
 } lfDimCon_16t ;
 
 typedef struct lfDimCon_32t {
-    UInt16  leaf;           // LF_DIMCONU or LF_DIMCONLU
-    UInt16  rank;           // number of dimensions
+    uint16_t leaf;           // LF_DIMCONU or LF_DIMCONLU
+    uint16_t rank;           // number of dimensions
     CV_typ32_t      typ;            // type of index
-    UChar   dim[CV_ZEROLEN];  // array of dimension information with
+    unsigned char dim[CV_ZEROLEN];  // array of dimension information with
                                     // either upper bounds or lower/upper bound
 } lfDimCon_32t ;
 
@@ -1877,20 +1877,20 @@ typedef struct lfDimCon_32t {
 
 
 typedef struct lfDimVar_16t {
-    UInt16  leaf;           // LF_DIMVARU or LF_DIMVARLU
-    UInt16  rank;           // number of dimensions
+    uint16_t leaf;           // LF_DIMVARU or LF_DIMVARLU
+    uint16_t rank;           // number of dimensions
     CV_typ16_t      typ;            // type of index
-    UChar   dim[CV_ZEROLEN];  // array of type indices for either
+    unsigned char dim[CV_ZEROLEN];  // array of type indices for either
                                     // variable upper bound or variable
                                     // lower/upper bound.  The referenced
                                     // types must be LF_REFSYM or T_VOID
 } lfDimVar_16t ;
 
 typedef struct lfDimVar_32t {
-    UInt16  leaf;           // LF_DIMVARU or LF_DIMVARLU
-    UInt16  rank;           // number of dimensions
+    uint16_t leaf;           // LF_DIMVARU or LF_DIMVARLU
+    uint16_t rank;           // number of dimensions
     CV_typ32_t      typ;            // type of index
-    UChar   dim[CV_ZEROLEN];  // array of type indices for either
+    unsigned char dim[CV_ZEROLEN];  // array of type indices for either
                                     // variable upper bound or variable
                                     // lower/upper bound.  The referenced
                                     // types must be LF_REFSYM or T_VOID
@@ -1903,8 +1903,8 @@ typedef struct lfDimVar_32t {
 
 
 typedef struct lfRefSym {
-    UInt16  leaf;           // LF_REFSYM
-    UChar   Sym[1];         // copy of referenced symbol record
+    uint16_t leaf;           // LF_REFSYM
+    unsigned char Sym[1];         // copy of referenced symbol record
                                     // (including length)
 } lfRefSym ;
 
@@ -1924,7 +1924,7 @@ typedef struct lfRefSym {
 //      signed character leaf
 
 typedef struct lfChar {
-    UInt16  leaf;           // LF_CHAR
+    uint16_t leaf;           // LF_CHAR
     signed char     val;            // signed 8-bit value
 } lfChar ;
 
@@ -1934,8 +1934,8 @@ typedef struct lfChar {
 //      signed Int16 leaf
 
 typedef struct lfShort {
-    UInt16  leaf;           // LF_SHORT
-    Int16           val;            // signed 16-bit value
+    uint16_t leaf;           // LF_SHORT
+    int16_t         val;            // signed 16-bit value
 } lfShort ;
 
 
@@ -1944,8 +1944,8 @@ typedef struct lfShort {
 //      UInt16 leaf
 
 typedef struct lfUShort {
-    UInt16  leaf;           // LF_unsigned Int16
-    UInt16  val;            // unsigned 16-bit value
+    uint16_t leaf;           // LF_unsigned Int16
+    uint16_t val;            // unsigned 16-bit value
 } lfUShort ;
 
 
@@ -1954,8 +1954,8 @@ typedef struct lfUShort {
 //      signed Int32 leaf
 
 typedef struct lfLong {
-    UInt16  leaf;           // LF_LONG
-    Int32            val;            // signed 32-bit value
+    uint16_t leaf;           // LF_LONG
+    int32_t          val;            // signed 32-bit value
 } lfLong ;
 
 
@@ -1964,8 +1964,8 @@ typedef struct lfLong {
 //      UInt32 leaf
 
 typedef struct lfULong {
-    UInt16  leaf;           // LF_ULONG
-    UInt32   val;            // unsigned 32-bit value
+    uint16_t leaf;           // LF_ULONG
+    uint32_t val;            // unsigned 32-bit value
 } lfULong ;
 
 
@@ -1974,8 +1974,8 @@ typedef struct lfULong {
 //      signed quad leaf
 
 typedef struct lfQuad {
-    UInt16  leaf;           // LF_QUAD
-    UChar   val[8];         // signed 64-bit value
+    uint16_t leaf;           // LF_QUAD
+    unsigned char val[8];         // signed 64-bit value
 } lfQuad ;
 
 
@@ -1984,8 +1984,8 @@ typedef struct lfQuad {
 //      unsigned quad leaf
 
 typedef struct lfUQuad {
-    UInt16  leaf;           // LF_UQUAD
-    UChar   val[8];         // unsigned 64-bit value
+    uint16_t leaf;           // LF_UQUAD
+    unsigned char val[8];         // unsigned 64-bit value
 } lfUQuad ;
 
 
@@ -1994,15 +1994,15 @@ typedef struct lfUQuad {
 //      signed int128 leaf
 
 typedef struct lfOct {
-    UInt16  leaf;           // LF_OCT
-    UChar   val[16];        // signed 128-bit value
+    uint16_t leaf;           // LF_OCT
+    unsigned char val[16];        // signed 128-bit value
 } lfOct ;
 
 //      unsigned int128 leaf
 
 typedef struct lfUOct {
-    UInt16  leaf;           // LF_UOCT
-    UChar   val[16];        // unsigned 128-bit value
+    uint16_t leaf;           // LF_UOCT
+    unsigned char val[16];        // unsigned 128-bit value
 } lfUOct ;
 
 #endif
@@ -2012,7 +2012,7 @@ typedef struct lfUOct {
 //      real 32-bit leaf
 
 typedef struct lfReal32 {
-    UInt16  leaf;           // LF_REAL32
+    uint16_t leaf;           // LF_REAL32
     float           val;            // 32-bit real value
 } lfReal32 ;
 
@@ -2022,8 +2022,8 @@ typedef struct lfReal32 {
 //      real 48-bit leaf
 
 typedef struct lfReal48 {
-    UInt16  leaf;           // LF_REAL48
-    UChar   val[6];         // 48-bit real value
+    uint16_t leaf;           // LF_REAL48
+    unsigned char val[6];         // 48-bit real value
 } lfReal48 ;
 
 
@@ -2032,7 +2032,7 @@ typedef struct lfReal48 {
 //      real 64-bit leaf
 
 typedef struct lfReal64 {
-    UInt16  leaf;           // LF_REAL64
+    uint16_t leaf;           // LF_REAL64
     double          val;            // 64-bit real value
 } lfReal64 ;
 
@@ -2042,7 +2042,7 @@ typedef struct lfReal64 {
 //      real 80-bit leaf
 
 typedef struct lfReal80 {
-    UInt16  leaf;           // LF_REAL80
+    uint16_t leaf;           // LF_REAL80
     FLOAT10         val;            // real 80-bit value
 } lfReal80 ;
 
@@ -2052,7 +2052,7 @@ typedef struct lfReal80 {
 //      real 128-bit leaf
 
 typedef struct lfReal128 {
-    UInt16  leaf;           // LF_REAL128
+    uint16_t leaf;           // LF_REAL128
     char            val[16];        // real 128-bit value
 } lfReal128 ;
 
@@ -2062,7 +2062,7 @@ typedef struct lfReal128 {
 //      complex 32-bit leaf
 
 typedef struct lfCmplx32 {
-    UInt16  leaf;           // LF_COMPLEX32
+    uint16_t leaf;           // LF_COMPLEX32
     float           val_real;       // real component
     float           val_imag;       // imaginary component
 } lfCmplx32 ;
@@ -2073,7 +2073,7 @@ typedef struct lfCmplx32 {
 //      complex 64-bit leaf
 
 typedef struct lfCmplx64 {
-    UInt16  leaf;           // LF_COMPLEX64
+    uint16_t leaf;           // LF_COMPLEX64
     double          val_real;       // real component
     double          val_imag;       // imaginary component
 } flCmplx64 ;
@@ -2084,7 +2084,7 @@ typedef struct lfCmplx64 {
 //      complex 80-bit leaf
 
 typedef struct lfCmplx80 {
-    UInt16  leaf;           // LF_COMPLEX80
+    uint16_t leaf;           // LF_COMPLEX80
     FLOAT10         val_real;       // real component
     FLOAT10         val_imag;       // imaginary component
 } lfCmplx80 ;
@@ -2095,7 +2095,7 @@ typedef struct lfCmplx80 {
 //      complex 128-bit leaf
 
 typedef struct lfCmplx128 {
-    UInt16  leaf;           // LF_COMPLEX128
+    uint16_t leaf;           // LF_COMPLEX128
     char            val_real[16];   // real component
     char            val_imag[16];   // imaginary component
 } lfCmplx128 ;
@@ -2105,9 +2105,9 @@ typedef struct lfCmplx128 {
 //      variable length numeric field
 
 typedef struct lfVarString {
-    UInt16  leaf;           // LF_VARSTRING
-    UInt16  len;            // length of value in bytes
-    UChar   value[CV_ZEROLEN];  // value
+    uint16_t leaf;           // LF_VARSTRING
+    uint16_t len;            // length of value in bytes
+    unsigned char value[CV_ZEROLEN];  // value
 } lfVarString ;
 
 //***********************************************************************
@@ -2118,12 +2118,12 @@ typedef struct lfVarString {
 //      Int32 complex list (LF_FIELD) in smaller pieces.
 
 typedef struct lfIndex_16t {
-    UInt16  leaf;           // LF_INDEX
+    uint16_t leaf;           // LF_INDEX
     CV_typ16_t      index;          // type index of referenced leaf
 } lfIndex_16t ;
 
 typedef struct lfIndex_32t {
-    UInt16  leaf;           // LF_INDEX
+    uint16_t leaf;           // LF_INDEX
     CV_typ32_t      index;          // type index of referenced leaf
 } lfIndex_32t ;
 
@@ -2132,37 +2132,37 @@ typedef struct lfIndex_32t {
 
 typedef struct _myIndex
     {
-    UInt16  leaf;           // LF_INDEX
+    uint16_t leaf;           // LF_INDEX
     CV_fldattr_t    attr;           // attribute mask
     CV_typ32_t	    type;	    // primative type or typind 
-    UInt16  offset;	    // offset in struct or union
+    uint16_t offset;	    // offset in struct or union
     char	    name[0];	    // name of field
     } myIndex_t ;
 
 //      subfield record for base class field
 
 typedef struct lfBClass_16t {
-    UInt16  leaf;           // LF_BCLASS
+    uint16_t leaf;           // LF_BCLASS
     CV_typ16_t      index;          // type index of base class
     CV_fldattr_t    attr;           // attribute
-    UChar   offset[CV_ZEROLEN];   // variable length offset of base within class
+    unsigned char offset[CV_ZEROLEN];   // variable length offset of base within class
 } lfBClass_16t ;
 
 typedef struct lfBClass_32t {
-    UInt16  leaf;           // LF_BCLASS
+    uint16_t leaf;           // LF_BCLASS
     CV_typ32_t      index;          // type index of base class
     CV_fldattr_t    attr;           // attribute
-    UChar   offset[CV_ZEROLEN];   // variable length offset of base within class
+    unsigned char offset[CV_ZEROLEN];   // variable length offset of base within class
 } lfBClass_32t ;
 
 
 typedef struct _myBClass 
     {
-    UInt16  leaf;           // LF_BCLASS
+    uint16_t leaf;           // LF_BCLASS
     CV_fldattr_t    attr;           // attribute
     CV_typ32_t      index;          // type index of base class
-    UInt16  offset;	    // offset of base within class
-    UInt16  pad;	    // pad out to dword boundary
+    uint16_t offset;	    // offset of base within class
+    uint16_t pad;	    // pad out to dword boundary
     } myBClass_t ;
 
 
@@ -2172,20 +2172,20 @@ typedef struct _myBClass
 //      subfield record for direct and indirect virtual base class field
 
 typedef struct lfVBClass_16t {
-    UInt16  leaf;           // LF_VBCLASS | LV_IVBCLASS
+    uint16_t leaf;           // LF_VBCLASS | LV_IVBCLASS
     CV_typ16_t      index;          // type index of direct virtual base class
     CV_typ16_t      vbptr;          // type index of virtual base pointer
     CV_fldattr_t    attr;           // attribute
-    UChar   vbpoff[CV_ZEROLEN];   // virtual base pointer offset from address point
+    unsigned char vbpoff[CV_ZEROLEN];   // virtual base pointer offset from address point
                                     // followed by virtual base offset from vbtable
 } lfVBClass_16t ;
 
 typedef struct lfVBClass_32t {
-    UInt16  leaf;           // LF_VBCLASS | LV_IVBCLASS
+    uint16_t leaf;           // LF_VBCLASS | LV_IVBCLASS
     CV_typ32_t      index;          // type index of direct virtual base class
     CV_typ32_t      vbptr;          // type index of virtual base pointer
     CV_fldattr_t    attr;           // attribute
-    UChar   vbpoff[CV_ZEROLEN];   // virtual base pointer offset from address point
+    unsigned char vbpoff[CV_ZEROLEN];   // virtual base pointer offset from address point
                                     // followed by virtual base offset from vbtable
 } lfVBClass_32t ;
 
@@ -2197,12 +2197,12 @@ typedef struct lfVBClass_32t {
 
 
 typedef struct lfFriendCls_16t {
-    UInt16  leaf;           // LF_FRIENDCLS
+    uint16_t leaf;           // LF_FRIENDCLS
     CV_typ16_t      index;          // index to type record of friend class
 } lfFriendCls_16t ;
 
 typedef struct lfFriendCls_32t {
-    UInt16  leaf;           // LF_FRIENDCLS
+    uint16_t leaf;           // LF_FRIENDCLS
     CV_typ32_t      index;          // index to type record of friend class
 } lfFriendCls_32t ;
 
@@ -2210,7 +2210,7 @@ typedef struct lfFriendCls_32t {
 //      my reverse engineered subfield record for friend class
 
 typedef struct _myFriendCls {
-    UInt16  leaf;           // LF_FRIENDCLS
+    uint16_t leaf;           // LF_FRIENDCLS
     CV_prop_t       property;       // property attribute field
     CV_typ32_t	    index;          // index to type record of friend class
     char            name[CV_ZEROLEN];        // name of friend struct function
@@ -2222,13 +2222,13 @@ typedef struct _myFriendCls {
 
 
 typedef struct lfFriendFcn_16t {
-    UInt16  leaf;           // LF_FRIENDFCN
+    uint16_t leaf;           // LF_FRIENDFCN
     CV_typ16_t      index;          // index to type record of friend struct function
     char            Name[1];        // name of friend struct function
 } lfFriendFcn_16t ;
 
 typedef struct lfFriendFcn_32t {
-    UInt16  leaf;           // LF_FRIENDFCN
+    uint16_t leaf;           // LF_FRIENDFCN
     CV_typ32_t      index;          // index to type record of friend struct function
     char            Name[1];        // name of friend struct function
 } lfFriendFcn_32t ;
@@ -2238,28 +2238,28 @@ typedef struct lfFriendFcn_32t {
 //      subfield record for non-static data members
 
 typedef struct lfMember_16t {
-    UInt16  leaf;           // LF_MEMBER
+    uint16_t leaf;           // LF_MEMBER
     CV_typ16_t      index;          // index of type record for field
     CV_fldattr_t    attr;           // attribute mask
-    UChar   offset[CV_ZEROLEN];   // variable length offset of field followed
+    unsigned char offset[CV_ZEROLEN];   // variable length offset of field followed
                                     // by length prefixed name of field
 } lfMember_16t ;
 
 typedef struct lfMember_32t {
-    UInt16  leaf;           // LF_MEMBER
+    uint16_t leaf;           // LF_MEMBER
     CV_typ32_t      index;          // index of type record for field
     CV_fldattr_t    attr;           // attribute mask
-    UChar   offset[CV_ZEROLEN];   // variable length offset of field followed
+    unsigned char offset[CV_ZEROLEN];   // variable length offset of field followed
                                     // by length prefixed name of field
 } lfMember_32t ;
 
 
 typedef struct _myMember_t 
     {
-    UInt16  leaf;           // LF_MEMBER
+    uint16_t leaf;           // LF_MEMBER
     CV_fldattr_t    attr;           // attribute mask
     CV_typ32_t      index;          // index of type record for field
-    UChar   offset[CV_ZEROLEN];   // variable length offset of field followed
+    unsigned char offset[CV_ZEROLEN];   // variable length offset of field followed
                                     // by length prefixed name of field
     } myMember_t ;
 
@@ -2268,14 +2268,14 @@ typedef struct _myMember_t
 //      type record for static data members
 
 typedef struct lfSTMember_16t {
-    UInt16  leaf;           // LF_STMEMBER
+    uint16_t leaf;           // LF_STMEMBER
     CV_typ16_t      index;          // index of type record for field
     CV_fldattr_t    attr;           // attribute mask
     char            Name[1];        // length prefixed name of field
 } lfSTMember_16t ;
 
 typedef struct lfSTMember_32t {
-    UInt16  leaf;           // LF_STMEMBER
+    uint16_t leaf;           // LF_STMEMBER
     CV_typ32_t      index;          // index of type record for field
     CV_fldattr_t    attr;           // attribute mask
     char            Name[1];        // length prefixed name of field
@@ -2286,12 +2286,12 @@ typedef struct lfSTMember_32t {
 //      subfield record for virtual function table pointer
 
 typedef struct lfVFuncTab_16t {
-    UInt16  leaf;           // LF_VFUNCTAB
+    uint16_t leaf;           // LF_VFUNCTAB
     CV_typ16_t      type;           // type index of pointer
 } lfVFuncTab_16t ;
 
 typedef struct lfVFuncTab_32t {
-    UInt16  leaf;           // LF_VFUNCTAB
+    uint16_t leaf;           // LF_VFUNCTAB
     CV_typ32_t      type;           // type index of pointer
 } lfVFuncTab_32t ;
 
@@ -2300,13 +2300,13 @@ typedef struct lfVFuncTab_32t {
 //      subfield record for virtual function table pointer with offset
 
 typedef struct lfVFuncOff_16t {
-    UInt16  leaf;           // LF_VFUNCTAB
+    uint16_t leaf;           // LF_VFUNCTAB
     CV_typ16_t      type;           // type index of pointer
     CV_off32_t      offset;         // offset of virtual function table pointer
 } lfVFuncOff_16t ;
 
 typedef struct lfVFuncOff_32t {
-    UInt16  leaf;           // LF_VFUNCTAB
+    uint16_t leaf;           // LF_VFUNCTAB
     CV_typ32_t      type;           // type index of pointer
     CV_off32_t      offset;         // offset of virtual function table pointer
 } lfVFuncOff_32t ;
@@ -2317,15 +2317,15 @@ typedef struct lfVFuncOff_32t {
 
 
 typedef struct lfMethod_16t {
-    UInt16  leaf;           // LF_METHOD
-    UInt16  count;          // number of occurances of function
+    uint16_t leaf;           // LF_METHOD
+    uint16_t count;          // number of occurances of function
     CV_typ16_t      mList;          // index to LF_METHODLIST record
     char            Name[CV_ZEROLEN];        // length prefixed name of method
 } lfMethod_16t ;
 
 typedef struct lfMethod_32t {
-    UInt16  leaf;           // LF_METHOD
-    UInt16  count;          // number of occurances of function
+    uint16_t leaf;           // LF_METHOD
+    uint16_t count;          // number of occurances of function
     CV_typ32_t      mList;          // index to LF_METHODLIST record
     char            Name[CV_ZEROLEN];        // length prefixed name of method
 } lfMethod_32t ;
@@ -2336,19 +2336,19 @@ typedef struct lfMethod_32t {
 
 
 typedef struct lfOneMethod_16t {
-    UInt16  leaf;           // LF_ONEMETHOD
+    uint16_t leaf;           // LF_ONEMETHOD
     CV_fldattr_t    attr;           // method attribute
     CV_typ16_t      index;          // index to type record for procedure
-    UInt32   vbaseoff[CV_ZEROLEN];    // offset in vfunctable if
+    uint32_t vbaseoff[CV_ZEROLEN];    // offset in vfunctable if
                                     // intro virtual followed by
                                     // length prefixed name of method
 } lfOneMethod_16t ;
 
 typedef struct lfOneMethod_32t {
-    UInt16  leaf;           // LF_ONEMETHOD
+    uint16_t leaf;           // LF_ONEMETHOD
     CV_fldattr_t    attr;           // method attribute
     CV_typ32_t      index;          // index to type record for procedure
-    UInt32   vbaseoff[CV_ZEROLEN];    // offset in vfunctable if
+    uint32_t vbaseoff[CV_ZEROLEN];    // offset in vfunctable if
                                     // intro virtual followed by
                                     // length prefixed name of method
 } lfOneMethod_32t ;
@@ -2357,9 +2357,9 @@ typedef struct lfOneMethod_32t {
 //              subfield record for enumerate
 
 typedef struct lfEnumerate {
-    UInt16  leaf;           // LF_ENUMERATE
+    uint16_t leaf;           // LF_ENUMERATE
     CV_fldattr_t    attr;           // access
-    UChar   value[CV_ZEROLEN];  // variable length value field followed
+    unsigned char value[CV_ZEROLEN];  // variable length value field followed
                                         // by length prefixed name
 } lfEnumerate ;
 
@@ -2367,21 +2367,21 @@ typedef struct lfEnumerate {
 //      type record for nested (scoped) type definition
 
 typedef struct lfNestType_16t {
-    UInt16  leaf;           // LF_NESTTYPE
+    uint16_t leaf;           // LF_NESTTYPE
     CV_typ16_t      index;          // index of nested type definition
-    UChar   Name[CV_ZEROLEN];        // length prefixed type name
+    unsigned char Name[CV_ZEROLEN];        // length prefixed type name
 } lfNestType_16t ;
 
 typedef struct lfNestType_32t {
-    UInt16  leaf;           // LF_NESTTYPE
+    uint16_t leaf;           // LF_NESTTYPE
     CV_typ32_t      index;          // index of nested type definition
-    UChar   Name[CV_ZEROLEN];        // length prefixed type name
+    unsigned char Name[CV_ZEROLEN];        // length prefixed type name
 } lfNestType_32t ;
 
 typedef struct _myNestType 
     {
-    UInt16  leaf;           // LF_NESTTYPE
-    UInt16  unknown;	    // unknown value (usually zero)
+    uint16_t leaf;           // LF_NESTTYPE
+    uint16_t unknown;	    // unknown value (usually zero)
     CV_typ32_t      index;          // index of nested type definition
                                     // Name never supplied!
     } myNestType_t ;
@@ -2390,7 +2390,7 @@ typedef struct _myNestType
 //      type record for pad leaf
 
 typedef struct lfPad {
-    UChar   leaf;
+    unsigned char leaf;
 } SYM_PAD ;
 
 
@@ -2551,13 +2551,13 @@ typedef enum CV_CFL_FPKG_e {
 
 
 typedef union CV_PROCFLAGS {
-    UChar   bAll;
+    unsigned char bAll;
     struct {
-        UChar CV_PFLAG_FPO  :1; // frame pointer omitted
-        UChar CV_PFLAG_INT  :1; // interrupt return
-        UChar CV_PFLAG_FAR  :1; // far return
-        UChar CV_PFLAG_NEVER:1; // function does not return
-        UChar unused        :4; //
+        unsigned char CV_PFLAG_FPO  :1; // frame pointer omitted
+        unsigned char CV_PFLAG_INT  :1; // interrupt return
+        unsigned char CV_PFLAG_FAR  :1; // far return
+        unsigned char CV_PFLAG_NEVER:1; // function does not return
+        unsigned char unused        :4; //
     } b ;
 } CV_PROCFLAGS ;
 
@@ -2576,15 +2576,15 @@ typedef enum CV_GENERIC_STYLE_e {
 
 
 typedef struct CV_GENERIC_FLAG {
-    UInt16  cstyle  :1;     // true push varargs right to left
-    UInt16  rsclean :1;     // true if returnee stack cleanup
-    UInt16  unused  :14;    // unused
+    uint16_t cstyle  :1;     // true push varargs right to left
+    uint16_t rsclean :1;     // true if returnee stack cleanup
+    uint16_t unused  :14;    // unused
 } CV_GENERIC_FLAG ;
 
 
 typedef struct SYMTYPE {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // Record type
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // Record type
     char            data[CV_ZEROLEN];
 } SYMTYPE ;
 
@@ -2593,39 +2593,39 @@ typedef struct SYMTYPE {
 
 
 typedef struct REGSYM_16t {
-        UInt16  reclen;         // Record length
-        UInt16  rectyp;         // S_REGISTER
+        uint16_t reclen;         // Record length
+        uint16_t rectyp;         // S_REGISTER
         CV_typ16_t      typind;         // Type index
-        UInt16  reg;            // register enumerate
-        UChar   name[1];        // Length-prefixed name
+        uint16_t reg;            // register enumerate
+        unsigned char name[1];        // Length-prefixed name
 } REGSYM_16t ;
 
 typedef struct REGSYM_32t {
-        UInt16  reclen;         // Record length
-        UInt16  rectyp;         // S_REGISTER
+        uint16_t reclen;         // Record length
+        uint16_t rectyp;         // S_REGISTER
         CV_typ32_t      typind;         // Type index
-        UInt16  reg;            // register enumerate
-        UChar   name[1];        // Length-prefixed name
+        uint16_t reg;            // register enumerate
+        unsigned char name[1];        // Length-prefixed name
 } REGSYM_32t ;
 
 
 
 typedef struct MANYREGSYM_16t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_MANYREG
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_MANYREG
     CV_typ16_t      typind;         // Type index
-    UChar   count;          // count of number of registers
-    UChar   reg[1];         // count register enumerates followed by
+    unsigned char count;          // count of number of registers
+    unsigned char reg[1];         // count register enumerates followed by
                                     // length-prefixed name.  Registers are
                                     // most significant first.
 } MANYREGSYM_16t ;
 
 typedef struct MANYREGSYM_32t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_MANYREG
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_MANYREG
     CV_typ32_t      typind;         // Type index
-    UChar   count;          // count of number of registers
-    UChar   reg[1];         // count register enumerates followed by
+    unsigned char count;          // count of number of registers
+    unsigned char reg[1];         // count register enumerates followed by
                                     // length-prefixed name.  Registers are
                                     // most significant first.
 } MANYREGSYM_32t ;
@@ -2633,57 +2633,57 @@ typedef struct MANYREGSYM_32t {
 
 
 typedef struct CONSTSYM_16t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_CONSTANT
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_CONSTANT
     CV_typ16_t      typind;         // Type index (containing enum if enumerate)
-    UInt16  value;          // numeric leaf containing value
-    UChar   name[CV_ZEROLEN];         // Length-prefixed name
+    uint16_t value;          // numeric leaf containing value
+    unsigned char name[CV_ZEROLEN];         // Length-prefixed name
 } CONSTSYM_16t ;
 
 typedef struct CONSTSYM_32t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_CONSTANT
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_CONSTANT
     CV_typ32_t      typind;         // Type index (containing enum if enumerate)
-    UInt16  value;          // numeric leaf containing value
-    UChar   name[CV_ZEROLEN];         // Length-prefixed name
+    uint16_t value;          // numeric leaf containing value
+    unsigned char name[CV_ZEROLEN];         // Length-prefixed name
 } CONSTSYM_32t ;
 
 typedef struct UDTSYM_16t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_UDT | S_COBOLUDT
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_UDT | S_COBOLUDT
     CV_typ16_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } UDTSYM_16t ;
 
 typedef struct UDTSYM_32t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_UDT | S_COBOLUDT
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_UDT | S_COBOLUDT
     CV_typ32_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } UDTSYM_32t ;
 
 typedef struct SEARCHSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_SSEARCH
-    UInt32   startsym;       // offset of the procedure
-    UInt16  seg;            // segment of symbol
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_SSEARCH
+    uint32_t startsym;       // offset of the procedure
+    uint16_t seg;            // segment of symbol
 } SEARCHSYM ;
 
 typedef struct CFLAGSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_COMPILE
-    UChar   machine;        // target processor
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_COMPILE
+    unsigned char machine;        // target processor
     struct  {
-        UChar   language    :8; // language index
-        UChar   pcode       :1; // true if pcode present
-        UChar   floatprec   :2; // floating precision
-        UChar   floatpkg    :2; // float package
-        UChar   ambdata     :3; // ambiant data model
-        UChar   ambcode     :3; // ambiant code model
-        UChar   mode32      :1; // true if compiled 32 bit mode
-        UChar   pad         :4; // reserved
+        unsigned char language    :8; // language index
+        unsigned char pcode       :1; // true if pcode present
+        unsigned char floatprec   :2; // floating precision
+        unsigned char floatpkg    :2; // float package
+        unsigned char ambdata     :3; // ambiant data model
+        unsigned char ambcode     :3; // ambiant code model
+        unsigned char mode32      :1; // true if compiled 32 bit mode
+        unsigned char pad         :4; // reserved
     } flags;
-    UChar   ver[1];         // Length-prefixed compiler version string
+    unsigned char ver[1];         // Length-prefixed compiler version string
 } CFLAGSYM ;
 
 
@@ -2691,24 +2691,24 @@ typedef struct CFLAGSYM {
 
 
 typedef struct OBJNAMESYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_OBJNAME
-    UInt32   signature;      // signature
-    UChar   name[1];        // Length-prefixed name
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_OBJNAME
+    uint32_t signature;      // signature
+    unsigned char name[1];        // Length-prefixed name
 } OBJNAMESYM ;
 
 
 
 
 typedef struct ENDARGSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_ENDARG
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_ENDARG
 } ENDARGSYM ;
 
 
 typedef struct RETURNSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_RETURN
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_RETURN
     CV_GENERIC_FLAG flags;          // flags
     CV_GENERIC_STYLE_e style;       // return style
                                     // followed by return method data
@@ -2716,9 +2716,9 @@ typedef struct RETURNSYM {
 
 
 typedef struct ENTRYTHISSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_ENTRYTHIS
-    UChar   thissym;        // symbol describing this pointer on entry
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_ENTRYTHIS
+    unsigned char thissym;        // symbol describing this pointer on entry
 } ENTRYTHISSYM ;
 
 
@@ -2726,57 +2726,57 @@ typedef struct ENTRYTHISSYM {
 
 
 typedef struct BPRELSYM16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_BPREL16
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_BPREL16
     CV_off16_t      off;            // BP-relative offset
     CV_typ16_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } BPRELSYM16 ;
 
 
 
 typedef struct DATASYM16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_LDATA or S_GDATA
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_LDATA or S_GDATA
     CV_uoff16_t     off;            // offset of symbol
-    UInt16  seg;            // segment of symbol
+    uint16_t seg;            // segment of symbol
     CV_typ16_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } DATASYM16 ;
 typedef DATASYM16 PUBSYM16 ;
 
 
 typedef struct PROCSYM16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_GPROC16 or S_LPROC16
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
-    UInt16  len;            // Proc length
-    UInt16  DbgStart;       // Debug start offset
-    UInt16  DbgEnd;         // Debug end offset
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_GPROC16 or S_LPROC16
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
+    uint16_t len;            // Proc length
+    uint16_t DbgStart;       // Debug start offset
+    uint16_t DbgEnd;         // Debug end offset
     CV_uoff16_t     off;            // offset of symbol
-    UInt16  seg;            // segment of symbol
+    uint16_t seg;            // segment of symbol
     CV_typ16_t      typind;         // Type index
     CV_PROCFLAGS    flags;          // Proc flags
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } PROCSYM16 ;
 
 
 
 
 typedef struct THUNKSYM16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_THUNK
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_THUNK
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
     CV_uoff16_t     off;            // offset of symbol
-    UInt16  seg;            // segment of symbol
-    UInt16  len;            // length of thunk
-    UChar   ord;            // ordinal specifying type of thunk
-    UChar   name[1];        // name of thunk
-    UChar   variant[CV_ZEROLEN]; // variant portion of thunk
+    uint16_t seg;            // segment of symbol
+    uint16_t len;            // length of thunk
+    unsigned char ord;            // ordinal specifying type of thunk
+    unsigned char name[1];        // name of thunk
+    unsigned char variant[CV_ZEROLEN]; // variant portion of thunk
 } THUNKSYM16 ;
 
 typedef enum {
@@ -2787,34 +2787,34 @@ typedef enum {
 } THUNK_ORDINAL;
 
 typedef struct LABELSYM16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_LABEL16
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_LABEL16
     CV_uoff16_t     off;            // offset of symbol
-    UInt16  seg;            // segment of symbol
+    uint16_t seg;            // segment of symbol
     CV_PROCFLAGS    flags;          // flags
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } LABELSYM16 ;
 
 typedef struct BLOCKSYM16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_BLOCK16
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt16  len;            // Block length
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_BLOCK16
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint16_t len;            // Block length
     CV_uoff16_t     off;            // offset of symbol
-    UInt16  seg;            // segment of symbol
-    UChar   name[1];        // Length-prefixed name
+    uint16_t seg;            // segment of symbol
+    unsigned char name[1];        // Length-prefixed name
 } BLOCKSYM16 ;
 
 typedef struct WITHSYM16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_WITH16
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt16  len;            // Block length
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_WITH16
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint16_t len;            // Block length
     CV_uoff16_t     off;            // offset of symbol
-    UInt16  seg;            // segment of symbol
-    UChar   expr[1];        // Length-prefixed expression
+    uint16_t seg;            // segment of symbol
+    unsigned char expr[1];        // Length-prefixed expression
 } WITHSYM16 ;
 
 
@@ -2841,19 +2841,19 @@ typedef enum CV_COBOL_e {
 } CV_COBOL_e;
 
 typedef struct CEXMSYM16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_CEXMODEL16
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_CEXMODEL16
     CV_uoff16_t     off;            // offset of symbol
-    UInt16  seg;            // segment of symbol
-    UInt16  model;          // execution model
+    uint16_t seg;            // segment of symbol
+    uint16_t model;          // execution model
     union var16 {
         struct  {
             CV_uoff16_t pcdtable;   // offset to pcode function table
             CV_uoff16_t pcdspi;     // offset to segment pcode information
         } pcode;
         struct {
-            UInt16  subtype;   // see CV_COBOL_e above
-            UInt16  flag;
+            uint16_t subtype;   // see CV_COBOL_e above
+            uint16_t flag;
         } cobol;
     };
 } CEXMSYM16 ;
@@ -2862,10 +2862,10 @@ typedef struct CEXMSYM16 {
 
 
 typedef struct VPATHSYM16 {
-    UInt16  reclen;         // record length
-    UInt16  rectyp;         // S_VFTPATH16
+    uint16_t reclen;         // record length
+    uint16_t rectyp;         // S_VFTPATH16
     CV_uoff16_t     off;            // offset of virtual function table
-    UInt16  seg;            // segment of virtual function table
+    uint16_t seg;            // segment of virtual function table
     CV_typ16_t      root;           // type index of the root of path
     CV_typ16_t      path;           // type index of the path record
 } VPATHSYM16 ;
@@ -2874,12 +2874,12 @@ typedef struct VPATHSYM16 {
 
 
 typedef struct REGREL16 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_REGREL16
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_REGREL16
     CV_uoff16_t     off;            // offset of symbol
-    UInt16  reg;            // register index
+    uint16_t reg;            // register index
     CV_typ16_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } REGREL16 ;
 
 
@@ -2887,38 +2887,38 @@ typedef struct REGREL16 {
 
 
 typedef struct BPRELSYM32_16t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_BPREL32
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_BPREL32
     CV_off32_t      off;            // BP-relative offset
     CV_typ16_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } BPRELSYM32_16t ;
 
 typedef struct BPRELSYM32_32t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_BPREL32
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_BPREL32
     CV_off32_t      off;            // BP-relative offset
     CV_typ32_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } BPRELSYM32_32t;
 
 typedef struct DATASYM32_16t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_LDATA32, S_GDATA32 or S_PUB32
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_LDATA32, S_GDATA32 or S_PUB32
     CV_uoff32_t     off;
-    UInt16  seg;
+    uint16_t seg;
     CV_typ16_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } DATASYM32_16t ;
 typedef DATASYM32_16t PUBSYM32_16t;
 
 typedef struct DATASYM32_32t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_LDATA32, S_GDATA32 or S_PUB32
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_LDATA32, S_GDATA32 or S_PUB32
     CV_typ32_t      typind;         // Type index
     CV_uoff32_t     off;
-    UInt16  seg;
-    UChar   name[1];        // Length-prefixed name
+    uint16_t seg;
+    unsigned char name[1];        // Length-prefixed name
 } DATASYM32_32t ;
 typedef DATASYM32_32t PUBSYM32_32t ;
 
@@ -2930,35 +2930,35 @@ typedef union DATASYM32
 
 
 typedef struct PROCSYM32_16t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_GPROC32 or S_LPROC32
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
-    UInt32   len;            // Proc length
-    UInt32   DbgStart;       // Debug start offset
-    UInt32   DbgEnd;         // Debug end offset
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_GPROC32 or S_LPROC32
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
+    uint32_t len;            // Proc length
+    uint32_t DbgStart;       // Debug start offset
+    uint32_t DbgEnd;         // Debug end offset
     CV_uoff32_t     off;
-    UInt16  seg;
+    uint16_t seg;
     CV_typ16_t      typind;         // Type index
     CV_PROCFLAGS    flags;          // Proc flags
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } PROCSYM32_16t ;
 
 typedef struct PROCSYM32_32t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_GPROC32 or S_LPROC32
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
-    UInt32   len;            // Proc length
-    UInt32   DbgStart;       // Debug start offset
-    UInt32   DbgEnd;         // Debug end offset
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_GPROC32 or S_LPROC32
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
+    uint32_t len;            // Proc length
+    uint32_t DbgStart;       // Debug start offset
+    uint32_t DbgEnd;         // Debug end offset
     CV_typ32_t      typind;         // Type index
     CV_uoff32_t     off;
-    UInt16  seg;
+    uint16_t seg;
     CV_PROCFLAGS    flags;          // Proc flags
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } PROCSYM32_32t ;
 
 typedef union PROCSYM32
@@ -2970,75 +2970,75 @@ typedef union PROCSYM32
 
 
 typedef struct THUNKSYM32 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_THUNK32
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_THUNK32
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
     CV_uoff32_t     off;
-    UInt16  seg;
-    UInt16  len;            // length of thunk
-    UChar   ord;            // ordinal specifying type of thunk
-    UChar   name[1];        // Length-prefixed name
-    UChar   variant[CV_ZEROLEN]; // variant portion of thunk
+    uint16_t seg;
+    uint16_t len;            // length of thunk
+    unsigned char ord;            // ordinal specifying type of thunk
+    unsigned char name[1];        // Length-prefixed name
+    unsigned char variant[CV_ZEROLEN]; // variant portion of thunk
 } THUNKSYM32 ;
 
 
 
 
 typedef struct LABELSYM32 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_LABEL32
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_LABEL32
     CV_uoff32_t     off;
-    UInt16  seg;
+    uint16_t seg;
     CV_PROCFLAGS    flags;          // flags
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } LABELSYM32 ;
 
 
 typedef struct BLOCKSYM32 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_BLOCK32
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   len;            // Block length
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_BLOCK32
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t len;            // Block length
     CV_uoff32_t     off;            // Offset in code segment
-    UInt16  seg;            // segment of label
-    UChar   name[1];        // Length-prefixed name
+    uint16_t seg;            // segment of label
+    unsigned char name[1];        // Length-prefixed name
 } BLOCKSYM32 ;
 
 
 typedef struct WITHSYM32 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_WITH32
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   len;            // Block length
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_WITH32
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t len;            // Block length
     CV_uoff32_t     off;            // Offset in code segment
-    UInt16  seg;            // segment of label
-    UChar   expr[1];        // Length-prefixed expression string
+    uint16_t seg;            // segment of label
+    unsigned char expr[1];        // Length-prefixed expression string
 } WITHSYM32 ;
 
 
 
 typedef struct CEXMSYM32 {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_CEXMODEL32
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_CEXMODEL32
     CV_uoff32_t     off;            // offset of symbol
-    UInt16  seg;            // segment of symbol
-    UInt16  model;          // execution model
+    uint16_t seg;            // segment of symbol
+    uint16_t model;          // execution model
     union var32 {
         struct  {
             CV_uoff32_t pcdtable;   // offset to pcode function table
             CV_uoff32_t pcdspi;     // offset to segment pcode information
         } pcode;
         struct {
-            UInt16  subtype;   // see CV_COBOL_e above
-            UInt16  flag;
+            uint16_t subtype;   // see CV_COBOL_e above
+            uint16_t flag;
         } cobol;
         struct {
             CV_uoff32_t calltableOff; // offset to function table
-            UInt16 calltableSeg; // segment of function table
+            uint16_t calltableSeg; // segment of function table
         } pcode32Mac;
     };
 } CEXMSYM32 ;
@@ -3046,21 +3046,21 @@ typedef struct CEXMSYM32 {
 
 
 typedef struct VPATHSYM32_16t {
-    UInt16  reclen;         // record length
-    UInt16  rectyp;         // S_VFTPATH32
+    uint16_t reclen;         // record length
+    uint16_t rectyp;         // S_VFTPATH32
     CV_uoff32_t     off;            // offset of virtual function table
-    UInt16  seg;            // segment of virtual function table
+    uint16_t seg;            // segment of virtual function table
     CV_typ16_t      root;           // type index of the root of path
     CV_typ16_t      path;           // type index of the path record
 } VPATHSYM32_16t;
 
 typedef struct VPATHSYM32_32t {
-    UInt16  reclen;         // record length
-    UInt16  rectyp;         // S_VFTPATH32
+    uint16_t reclen;         // record length
+    uint16_t rectyp;         // S_VFTPATH32
     CV_typ32_t      root;           // type index of the root of path
     CV_typ32_t      path;           // type index of the path record
     CV_uoff32_t     off;            // offset of virtual function table
-    UInt16  seg;            // segment of virtual function table
+    uint16_t seg;            // segment of virtual function table
 } VPATHSYM32_32t ;
 
 
@@ -3068,106 +3068,106 @@ typedef struct VPATHSYM32_32t {
 
 
 typedef struct REGREL32_16t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_REGREL32
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_REGREL32
     CV_uoff32_t     off;            // offset of symbol
-    UInt16  reg;            // register index for symbol
+    uint16_t reg;            // register index for symbol
     CV_typ16_t      typind;         // Type index
-    UChar   name[1];        // Length-prefixed name
+    unsigned char name[1];        // Length-prefixed name
 } REGREL32_16t, FAR * LPREGREL32_16t;
 
 typedef struct REGREL32_32t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_REGREL32
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_REGREL32
     CV_uoff32_t     off;            // offset of symbol
     CV_typ32_t      typind;         // Type index
-    UInt16  reg;            // register index for symbol
-    UChar   name[1];        // Length-prefixed name
+    uint16_t reg;            // register index for symbol
+    unsigned char name[1];        // Length-prefixed name
 } REGREL32_32t , FAR * LPREGREL32_32t ;
 
 
 
 typedef struct THREADSYM32_16t {
-    UInt16  reclen;         // record length
-    UInt16  rectyp;         // S_LTHREAD32 | S_GTHREAD32
+    uint16_t reclen;         // record length
+    uint16_t rectyp;         // S_LTHREAD32 | S_GTHREAD32
     CV_uoff32_t     off;            // offset into thread storage
-    UInt16  seg;            // segment of thread storage
+    uint16_t seg;            // segment of thread storage
     CV_typ16_t      typind;         // type index
-    UChar   name[1];        // length prefixed name
+    unsigned char name[1];        // length prefixed name
 } THREADSYM32_16t ;
 
 typedef struct THREADSYM32_32t {
-    UInt16  reclen;         // record length
-    UInt16  rectyp;         // S_LTHREAD32 | S_GTHREAD32
+    uint16_t reclen;         // record length
+    uint16_t rectyp;         // S_LTHREAD32 | S_GTHREAD32
     CV_typ32_t      typind;         // type index
     CV_uoff32_t     off;            // offset into thread storage
-    UInt16  seg;            // segment of thread storage
-    UChar   name[1];        // length prefixed name
+    uint16_t seg;            // segment of thread storage
+    unsigned char name[1];        // length prefixed name
 } THREADSYM32_32t ;
 
 typedef struct SLINK32 {
-    UInt16  reclen;         // record length
-    UInt16  rectyp;         // S_SLINK32
-    UInt32   framesize;      // frame size of parent procedure
+    uint16_t reclen;         // record length
+    uint16_t rectyp;         // S_SLINK32
+    uint32_t framesize;      // frame size of parent procedure
     CV_off32_t      off;            // signed offset where the static link was saved relative to the value of reg
-    UInt16  reg;
+    uint16_t reg;
 } SLINK32 , FAR * LPSLINK32 ;
 
 typedef struct PROCSYMMIPS_16t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_GPROCMIPS or S_LPROCMIPS
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
-    UInt32   len;            // Proc length
-    UInt32   DbgStart;       // Debug start offset
-    UInt32   DbgEnd;         // Debug end offset
-    UInt32   regSave;        // int register save mask
-    UInt32   fpSave;         // fp register save mask
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_GPROCMIPS or S_LPROCMIPS
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
+    uint32_t len;            // Proc length
+    uint32_t DbgStart;       // Debug start offset
+    uint32_t DbgEnd;         // Debug end offset
+    uint32_t regSave;        // int register save mask
+    uint32_t fpSave;         // fp register save mask
     CV_uoff32_t     intOff;         // int register save offset
     CV_uoff32_t     fpOff;          // fp register save offset
     CV_uoff32_t     off;            // Symbol offset
-    UInt16  seg;            // Symbol segment
+    uint16_t seg;            // Symbol segment
     CV_typ16_t      typind;         // Type index
-    UChar   retReg;         // Register return value is in
-    UChar   frameReg;       // Frame pointer register
-    UChar   name[1];        // Length-prefixed name
+    unsigned char retReg;         // Register return value is in
+    unsigned char frameReg;       // Frame pointer register
+    unsigned char name[1];        // Length-prefixed name
 } PROCSYMMIPS_16t , FAR *PROCPTRMIPS_16t ;
 
 typedef struct PROCSYMMIPS_32t {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_GPROCMIPS or S_LPROCMIPS
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
-    UInt32   len;            // Proc length
-    UInt32   DbgStart;       // Debug start offset
-    UInt32   DbgEnd;         // Debug end offset
-    UInt32   regSave;        // int register save mask
-    UInt32   fpSave;         // fp register save mask
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_GPROCMIPS or S_LPROCMIPS
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
+    uint32_t len;            // Proc length
+    uint32_t DbgStart;       // Debug start offset
+    uint32_t DbgEnd;         // Debug end offset
+    uint32_t regSave;        // int register save mask
+    uint32_t fpSave;         // fp register save mask
     CV_uoff32_t     intOff;         // int register save offset
     CV_uoff32_t     fpOff;          // fp register save offset
     CV_typ32_t      typind;         // Type index
     CV_uoff32_t     off;            // Symbol offset
-    UInt16  seg;            // Symbol segment
-    UChar   retReg;         // Register return value is in
-    UChar   frameReg;       // Frame pointer register
-    UChar   name[1];        // Length-prefixed name
+    uint16_t seg;            // Symbol segment
+    unsigned char retReg;         // Register return value is in
+    unsigned char frameReg;       // Frame pointer register
+    unsigned char name[1];        // Length-prefixed name
 } PROCSYMMIPS_32t , FAR *PROCPTRMIPS_32t ;
 
 
 typedef struct REFSYM {
-    UInt16  reclen;     // Record length
-    UInt16  rectyp;     // S_PROCREF or S_DATAREF
-    UInt32   sumName;    // SUC of the name
-    UInt32   ibSym;          // Offset of actual symbol in $$Symbols
-    UInt16  imod;       // Module containing the actual symbol
-    UInt16  usFill;     // align this record
+    uint16_t reclen;     // Record length
+    uint16_t rectyp;     // S_PROCREF or S_DATAREF
+    uint32_t sumName;    // SUC of the name
+    uint32_t ibSym;          // Offset of actual symbol in $$Symbols
+    uint16_t imod;       // Module containing the actual symbol
+    uint16_t usFill;     // align this record
 } REFSYM ;
 
 typedef struct ALIGNSYM {
-    UInt16  reclen;     // Record length
-    UInt16  rectyp;     // S_PROCREF or S_DATAREF
+    uint16_t reclen;     // Record length
+    uint16_t rectyp;     // S_PROCREF or S_DATAREF
 } ALIGNSYM ;
 
 //  generic block definition symbols
@@ -3175,35 +3175,35 @@ typedef struct ALIGNSYM {
 //  only define the length, type and linkage fields
 
 typedef struct PROCSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_GPROC16 or S_LPROC16
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_GPROC16 or S_LPROC16
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
 } PROCSYM ;
 
 
 typedef struct THUNKSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_THUNK
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
-    UInt32   pNext;          // pointer to next symbol
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_THUNK
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
+    uint32_t pNext;          // pointer to next symbol
 } THUNKSYM ;
 
 typedef struct BLOCKSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_BLOCK16
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_BLOCK16
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
 } BLOCKSYM ;
 
 
 typedef struct WITHSYM {
-    UInt16  reclen;         // Record length
-    UInt16  rectyp;         // S_WITH16
-    UInt32   pParent;        // pointer to the parent
-    UInt32   pEnd;           // pointer to this blocks end
+    uint16_t reclen;         // Record length
+    uint16_t rectyp;         // S_WITH16
+    uint32_t pParent;        // pointer to the parent
+    uint32_t pEnd;           // pointer to this blocks end
 } WITHSYM ;
 
 

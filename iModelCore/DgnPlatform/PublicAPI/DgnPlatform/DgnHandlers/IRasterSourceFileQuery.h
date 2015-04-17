@@ -25,9 +25,9 @@ private:
 
 protected:
     DGNPLATFORM_EXPORT virtual BentleyStatus    _InitFrom (ElementHandleCR eh)=0;
-    DGNPLATFORM_EXPORT virtual UInt64           _GetBitmapHeight () const = 0;
-    DGNPLATFORM_EXPORT virtual UInt64           _GetBitmapWidth  () const = 0;
-    DGNPLATFORM_EXPORT virtual BentleyStatus    _ReadToRGBA (byte *RgbaBuffer, size_t maxBufferLength, bool useBgIfNoAlpha) const=0;
+    DGNPLATFORM_EXPORT virtual uint64_t         _GetBitmapHeight () const = 0;
+    DGNPLATFORM_EXPORT virtual uint64_t         _GetBitmapWidth  () const = 0;
+    DGNPLATFORM_EXPORT virtual BentleyStatus    _ReadToRGBA (Byte *RgbaBuffer, size_t maxBufferLength, bool useBgIfNoAlpha) const=0;
 
     //__PUBLISH_CLASS_VIRTUAL__
 public:
@@ -38,18 +38,18 @@ public:
 
     //! Query bitmap height in pixels.
     //! @return bitmap height in pixels.
-    DGNPLATFORM_EXPORT UInt64              GetBitmapHeight () const;
+    DGNPLATFORM_EXPORT uint64_t            GetBitmapHeight () const;
 
     //! Query bitmap width in pixels.
     //! @return bitmap width in pixels.
-    DGNPLATFORM_EXPORT UInt64              GetBitmapWidth  () const;
+    DGNPLATFORM_EXPORT uint64_t            GetBitmapWidth  () const;
 
     //! Fill a buffer with RGBA data read from a raster file. If the file is not RGBA, original data read will be converted to RGBA
     //! @param[in,out] RgbaBuffer       The buffer to be filled. Caller must allocate the buffer before calling the method.
     //! @param[in]     maxBufferLength  The size of the input buffer.
     //! @param[in]     useBgIfNoAlpha   If True and there is no alpha channel present in file, will create alpha based on background color. Use first pixel as background color if no background defined in file.
     //! @return BSISUCCESS or BSIERROR.
-    DGNPLATFORM_EXPORT BentleyStatus       ReadToRGBA (byte *RgbaBuffer, size_t maxBufferLength, bool useBgIfNoAlpha) const;
+    DGNPLATFORM_EXPORT BentleyStatus       ReadToRGBA (Byte *RgbaBuffer, size_t maxBufferLength, bool useBgIfNoAlpha) const;
 };
 
 /** @endGroup */

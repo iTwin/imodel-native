@@ -1,10 +1,17 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationTextStyle_Test.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+
+// Republish API:           bb re DgnPlatform:PublishedApi
+// Rebuild API:             bb re DgnPlatformDll
+// Republish seed files:    bb re UnitTests_Documents
+// Rebuild test:            bb re DgnProjectUnitTests BeGTestExe
+// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnProjectUnitTests BeGTestExe
+// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="BasicAnnotationTextStyleTest.*:AnnotationTextStyleTest.*"
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014
@@ -37,26 +44,20 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsBold, 1);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, 2);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, 1);
-    data->SetIntegerProperty(AnnotationTextStyleProperty::IsSubScript, 1);
-    data->SetIntegerProperty(AnnotationTextStyleProperty::IsSubScript, 1);
-    data->SetIntegerProperty(AnnotationTextStyleProperty::IsSuperScript, 1);
-    data->SetIntegerProperty(AnnotationTextStyleProperty::IsSuperScript, 1);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, 1);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, 1);
-    data->SetIntegerProperty(AnnotationTextStyleProperty::StackedFractionType, (UInt32)AnnotationStackedFractionType::DiagonalBar);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::StackedFractionType, (uint32_t)AnnotationStackedFractionType::DiagonalBar);
     data->SetRealProperty(AnnotationTextStyleProperty::WidthFactor, 2.0);
     }
 
 #define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
     Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\
     Utf8String description = "MyDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
-    UInt32 colorId = 11;                                                                        STYLE_PTR->SetColorId(colorId);\
-    UInt32 fontId = 21;                                                                         STYLE_PTR->SetFontId(fontId);\
+    uint32_t colorId = 11;                                                                      STYLE_PTR->SetColor(ColorDef(colorId));\
+    uint32_t fontId = 21;                                                                       STYLE_PTR->SetFontId(fontId);\
     double height = 31.31;                                                                      STYLE_PTR->SetHeight(height);\
     bool isBold = true;                                                                         STYLE_PTR->SetIsBold(isBold);\
     bool isItalic = true;                                                                       STYLE_PTR->SetIsItalic(isItalic);\
-    bool isSubScript = true;                                                                    STYLE_PTR->SetIsSubScript(isSubScript);\
-    bool isSuperScript = true;                                                                  STYLE_PTR->SetIsSuperScript(isSuperScript);\
     bool isUnderlined = true;                                                                   STYLE_PTR->SetIsUnderlined(isUnderlined);\
     AnnotationStackedFractionType fractionType = AnnotationStackedFractionType::DiagonalBar;    STYLE_PTR->SetStackedFractionType(fractionType);\
     double widthFactor = 41.41;                                                                 STYLE_PTR->SetWidthFactor(widthFactor);
@@ -64,13 +65,11 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
     EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
-    EXPECT_TRUE(colorId == STYLE_PTR->GetColorId());\
+    EXPECT_TRUE(colorId == STYLE_PTR->GetColor().GetValue());\
     EXPECT_TRUE(fontId == STYLE_PTR->GetFontId());\
     EXPECT_TRUE(height == STYLE_PTR->GetHeight());\
     EXPECT_TRUE(isBold == STYLE_PTR->IsBold());\
     EXPECT_TRUE(isItalic == STYLE_PTR->IsItalic());\
-    EXPECT_TRUE(isSubScript == STYLE_PTR->IsSubScript());\
-    EXPECT_TRUE(isSuperScript == STYLE_PTR->IsSuperScript());\
     EXPECT_TRUE(isUnderlined == STYLE_PTR->IsUnderlined());\
     EXPECT_TRUE(fractionType == STYLE_PTR->GetStackedFractionType());\
     EXPECT_TRUE(widthFactor == STYLE_PTR->GetWidthFactor());
@@ -83,7 +82,7 @@ TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
     {
     //.............................................................................................
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnProjectR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
     AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);
@@ -96,13 +95,11 @@ TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
     EXPECT_TRUE(style->GetDescription().empty());
-    EXPECT_TRUE(0 == style->GetColorId());
+    EXPECT_TRUE(0 == style->GetColor().GetValue());
     EXPECT_TRUE(0 == style->GetFontId());
     EXPECT_TRUE(1.0 == style->GetHeight());
     EXPECT_TRUE(!style->IsBold());
     EXPECT_TRUE(!style->IsItalic());
-    EXPECT_TRUE(!style->IsSubScript());
-    EXPECT_TRUE(!style->IsSuperScript());
     EXPECT_TRUE(!style->IsUnderlined());
     EXPECT_TRUE(AnnotationStackedFractionType::HorizontalBar == style->GetStackedFractionType());
     EXPECT_TRUE(1.0 == style->GetWidthFactor());
@@ -120,7 +117,7 @@ TEST_F(AnnotationTextStyleTest, DeepCopy)
     {
     //.............................................................................................
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnProjectR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
     AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);
@@ -146,7 +143,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     {
     //.............................................................................................
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnProjectR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
     // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.
@@ -157,35 +154,28 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project);
     DECLARE_AND_SET_DATA_1(testStyle);
 
-    AnnotationTextStylePtr fileStyle = project.Styles().AnnotationTextStyles().Insert(*testStyle);
-    ASSERT_TRUE(fileStyle.IsValid());
-    
-    ASSERT_TRUE(fileStyle->GetId().IsValid());
-    DgnStyleId fileStyleId = fileStyle->GetId();
-    
-    EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
-    EXPECT_TRUE(testStyle->GetId() != fileStyle->GetId());
-    VERIFY_DATA_1(fileStyle);
+    ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Insert(*testStyle));
+    ASSERT_TRUE(testStyle->GetId().IsValid());
 
     EXPECT_TRUE(1 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(project.Styles().AnnotationTextStyles().ExistsById(fileStyleId));
+    EXPECT_TRUE(project.Styles().AnnotationTextStyles().ExistsById(testStyle->GetId()));
     EXPECT_TRUE(project.Styles().AnnotationTextStyles().ExistsByName(name.c_str()));
 
-    fileStyle = project.Styles().AnnotationTextStyles().QueryById(fileStyleId);
+    AnnotationTextStylePtr fileStyle = project.Styles().AnnotationTextStyles().QueryById(testStyle->GetId());
     ASSERT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
-    EXPECT_TRUE(fileStyleId == fileStyle->GetId());
+    EXPECT_TRUE(testStyle->GetId() == fileStyle->GetId());
     VERIFY_DATA_1(fileStyle);
 
     fileStyle = project.Styles().AnnotationTextStyles().QueryByName(name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
-    EXPECT_TRUE(fileStyleId == fileStyle->GetId());
+    EXPECT_TRUE(testStyle->GetId() == fileStyle->GetId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -194,7 +184,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     ASSERT_TRUE(mutatedStyle.IsValid());
 
     name = "DifferentName"; mutatedStyle->SetName(name.c_str());
-    colorId *= 100;         mutatedStyle->SetColorId(colorId);
+    colorId *= 100;         mutatedStyle->SetColor(ColorDef(colorId));
     height *= 100.0;        mutatedStyle->SetHeight(height);
     isBold = false;         mutatedStyle->SetIsBold(isBold);
 
@@ -210,10 +200,48 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
+    // Iterate
+    DgnAnnotationTextStyles::Iterator iter1 = project.Styles().AnnotationTextStyles().MakeIterator();
+    size_t numStyles = 0;
+    for (auto const& style : iter1)
+        {
+        EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
+        ASSERT_TRUE(style.GetId().IsValid());
+        
+        AnnotationTextStylePtr iterStyle = project.Styles().AnnotationTextStyles().QueryById(style.GetId());
+        ASSERT_TRUE(iterStyle.IsValid());
+
+        EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
+
+        ++numStyles;
+        }
+
+    EXPECT_TRUE(1 == numStyles);
+
+    DgnAnnotationTextStyles::Iterator iter2 = project.Styles().AnnotationTextStyles().MakeIterator();
+    iter2.Params().SetWhere("ORDER BY Name");
+    numStyles = 0;
+
+    for (auto const& style : iter2)
+        {
+        EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
+        ASSERT_TRUE(style.GetId().IsValid());
+
+        AnnotationTextStylePtr iterStyle = project.Styles().AnnotationTextStyles().QueryById(style.GetId());
+        ASSERT_TRUE(iterStyle.IsValid());
+
+        EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
+
+        ++numStyles;
+        }
+
+    EXPECT_TRUE(1 == numStyles);
+
+    //.............................................................................................
     // Delete
     ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Delete(mutatedStyle->GetId()));
 
     EXPECT_TRUE(0 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
-    EXPECT_TRUE(!project.Styles().AnnotationTextStyles().ExistsById(fileStyleId));
+    EXPECT_TRUE(!project.Styles().AnnotationTextStyles().ExistsById(testStyle->GetId()));
     EXPECT_TRUE(!project.Styles().AnnotationTextStyles().ExistsByName(name.c_str()));
     }

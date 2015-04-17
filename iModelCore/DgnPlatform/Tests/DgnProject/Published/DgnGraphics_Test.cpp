@@ -2,13 +2,14 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnGraphics_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
+#if defined (NEEDS_WORK_DGNITEM)
 //=======================================================================================
 // @bsiclass                                                    MattGooding     08/13
 //=======================================================================================
@@ -40,7 +41,7 @@ static bool verifyRangeHigh (double actual, double expected)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     08/13
 //---------------------------------------------------------------------------------------
-static bool verifyRange (ElementRefP element, DRange3dCR expected)
+static bool verifyRange (DgnElementP element, DRange3dCR expected)
     {
     ElementHandle eh (element);
     DRange3d elementRange = eh.GetElementCP()->GetRange();
@@ -104,7 +105,6 @@ static bool boxesEqual (DgnBoxDetail const& box0, DgnBoxDetail const& box1)
     return true;
     }
 
-#if defined (NEEDS_WORK_DGNITEM)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/13
 //---------------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ TEST_F(DgnGraphicsTest3d, ChangeTypeAndSave)
     EditElementHandle line;
     ASSERT_TRUE (SUCCESS == LineHandler::CreateLineElement (line, NULL, segment, true, *GetDgnModelP()));
     ASSERT_TRUE (SUCCESS == line.AddToModel());
-    ElementId originalId = line.GetElementId();
+    DgnElementId originalId = line.GetElementId();
 
     GetDgnProjectP()->SaveChanges(); // just so we can verify what's happened in another process for debugging
 
@@ -129,7 +129,7 @@ TEST_F(DgnGraphicsTest3d, ChangeTypeAndSave)
                                                                   true);
     ASSERT_TRUE (SUCCESS == modGraphics->AddSolidPrimitive (*ISolidPrimitive::CreateDgnBox (boxDetail)));
 
-    ElementId updatedId = modGraphics->Save();
+    DgnElementId updatedId = modGraphics->Save();
     ASSERT_TRUE (updatedId.IsValid());
     ASSERT_TRUE (originalId == updatedId);
 
@@ -140,14 +140,14 @@ TEST_F(DgnGraphicsTest3d, ChangeTypeAndSave)
 
     ASSERT_TRUE (2 == readGraphics->GetSize());
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     08/13
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, SaveAndLoadPhysicalGraphics)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
     ASSERT_TRUE (graphics->IsEmpty());
 
@@ -169,7 +169,7 @@ TEST_F(DgnGraphicsTest3d, SaveAndLoadPhysicalGraphics)
 
     ASSERT_TRUE (SUCCESS == graphics->AddCurvePrimitive (*ICurvePrimitive::CreateLineString (linePoints, 4)));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
     PhysicalGraphicsPtr loadedGraphics = GetPhysicalModel()->ReadPhysicalGraphics (graphicsId);
@@ -213,7 +213,8 @@ TEST_F(DgnGraphicsTest3d, SaveAndLoadPhysicalGraphics)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest2d, SaveAndLoadDrawingGraphics)
     {
-    DrawingGraphicsPtr graphics = GetDrawingModel()->Create2dGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    DrawingGraphicsPtr graphics = GetDrawingModel()->Create2dGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
     ASSERT_TRUE (graphics->IsEmpty());
 
@@ -237,7 +238,7 @@ TEST_F(DgnGraphicsTest2d, SaveAndLoadDrawingGraphics)
 
     ASSERT_TRUE (SUCCESS == graphics->AddCurveVector (*CurveVector::CreateLinear (curvePts, 8, CurveVector::BOUNDARY_TYPE_Outer).get()));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
     DrawingGraphicsPtr loadedGraphics = GetDrawingModel()->Read2dGraphics (graphicsId);
@@ -278,7 +279,8 @@ TEST_F(DgnGraphicsTest2d, SaveAndLoadDrawingGraphics)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, IterateOverGeometry)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
     ASSERT_TRUE (graphics->IsEmpty());
 
@@ -359,11 +361,12 @@ TEST_F(DgnGraphicsTest3d, IterateOverGeometry)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, CreatePhysicalGraphics)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     // Cannot save empty graphics.
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_FALSE (graphicsId.IsValid());
 
     DPoint3d linePoints[4];
@@ -377,7 +380,7 @@ TEST_F(DgnGraphicsTest3d, CreatePhysicalGraphics)
     graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -397,25 +400,29 @@ TEST_F(DgnGraphicsTest3d, CreatePhysicalGraphics)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddTextString)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DPoint2d textScale;
     textScale.Init (5000.0, 5000.0);
-    TextStringPropertiesPtr props = TextStringProperties::Create (DgnFontManager::GetDefaultTrueTypeFont(), NULL, textScale);
-    props->SetJustification (TextElementJustification::CenterMiddle);
-
-    TextStringPtr text = TextString::Create (L"DgnGraphics Test", NULL, NULL, *props);
+    TextStringStylePtr style = TextStringStyle::Create();
+    style->SetFont(DgnFontManager::GetDefaultTrueTypeFont());
+    style->SetSize(textScale);
+    
+    TextStringPtr text = TextString::Create();
+    text->SetText("DgnGraphics Test");
+    text->SetStyle(*style);
     ASSERT_TRUE (text.IsValid());
 
-    text->SetOriginFromUserOrigin (DPoint3d::FromZero());
+    text->SetOriginFromJustificationOrigin(DPoint3d::FromZero(), TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
 
     ASSERT_TRUE (SUCCESS == graphics->AddTextString (*text));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     GetDgnProjectP()->SaveChanges(); // just so we can verify what's happened in another process for debugging
@@ -426,12 +433,10 @@ TEST_F(DgnGraphicsTest3d, AddTextString)
 
     TextStringCP loadedText = (*loadedGraphics->begin())->GetAsTextStringCP();
     ASSERT_TRUE (NULL != loadedText);
-    ASSERT_TRUE (loadedText->GetString() == text->GetString());
-    ASSERT_TRUE (loadedText->GetExtents().IsEqual (text->GetExtents(), 1.0E-8));
-    ASSERT_TRUE (loadedText->GetWidth() == text->GetWidth());
-    ASSERT_TRUE (loadedText->GetHeight() == text->GetHeight());
+    ASSERT_TRUE (loadedText->GetText() == text->GetText());
+    ASSERT_TRUE(loadedText->GetRange().IsEqual(text->GetRange(), 1.0E-8));
     ASSERT_TRUE (loadedText->GetOrigin().IsEqual (text->GetOrigin(), 1.0E-8));
-    ASSERT_TRUE (loadedText->GetRotMatrix().IsEqual (text->GetRotMatrix(), 1.0E-8));
+    ASSERT_TRUE (loadedText->GetOrientation().IsEqual (text->GetOrientation(), 1.0E-8));
     }
 
 //---------------------------------------------------------------------------------------
@@ -439,7 +444,8 @@ TEST_F(DgnGraphicsTest3d, AddTextString)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Box)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DgnBoxDetail detail = DgnBoxDetail::InitFromCenterAndSize (DPoint3d::From (0.0, 0.0, 0.0),
@@ -447,10 +453,10 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Box)
                                                                true);
     ASSERT_TRUE (SUCCESS == graphics->AddSolidPrimitive (*ISolidPrimitive::CreateDgnBox (detail)));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -470,7 +476,8 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Box)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Cone)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DgnConeDetail detail (DPoint3d::From (0.0, 0.0, 0.0),
@@ -480,10 +487,10 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Cone)
                           true);
     ASSERT_TRUE (SUCCESS == graphics->AddSolidPrimitive (*ISolidPrimitive::CreateDgnCone (detail)));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -503,16 +510,17 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Cone)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Sphere)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DgnSphereDetail detail (DPoint3d::FromZero (), 5000.0);
     ASSERT_TRUE (SUCCESS == graphics->AddSolidPrimitive (*ISolidPrimitive::CreateDgnSphere (detail)));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -532,17 +540,18 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Sphere)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Extrusion)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     CurveVectorPtr shape = CurveVector::CreateRectangle (-5000.0, -5000.0, 5000.0, 5000.0, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
     DgnExtrusionDetail detail (shape, DVec3d::From (0.0, 0.0, 10000.0), true);
     ASSERT_TRUE (SUCCESS == graphics->AddSolidPrimitive (*ISolidPrimitive::CreateDgnExtrusion (detail)));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -562,17 +571,18 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Extrusion)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Rotation)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     CurveVectorPtr shape = CurveVector::CreateRectangle (0.0, 0.0, 10000.0, 10000.0, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
     DgnRotationalSweepDetail detail (shape, DPoint3d::FromZero(), DVec3d::From (0.0, 1.0, 0.0), Angle::Pi(), true);
     ASSERT_TRUE (SUCCESS == graphics->AddSolidPrimitive (*ISolidPrimitive::CreateDgnRotationalSweep (detail)));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -592,7 +602,8 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Rotation)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Ruled)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     CurveVectorPtr  shapeA = CurveVector::CreateRectangle (0.0, 0.0, 10000.0, 10000.0, 0.0),
@@ -601,10 +612,10 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Ruled)
     DgnRuledSweepDetail detail (shapeA, shapeB, false);
     ASSERT_TRUE (SUCCESS == graphics->AddSolidPrimitive (*ISolidPrimitive::CreateDgnRuledSweep (detail)));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -624,7 +635,8 @@ TEST_F(DgnGraphicsTest3d, AddSolidPrimitive_Ruled)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddMSBsplineCurve)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DPoint3d poles[3];
@@ -634,10 +646,10 @@ TEST_F(DgnGraphicsTest3d, AddMSBsplineCurve)
     MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder (poles, 3, 3, false);
     ASSERT_TRUE (SUCCESS == graphics->AddCurvePrimitive (*ICurvePrimitive::CreateBsplineCurve (*curve.get())));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -657,7 +669,8 @@ TEST_F(DgnGraphicsTest3d, AddMSBsplineCurve)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddMSBsplineSurface)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DPoint3d poles[3];
@@ -669,10 +682,10 @@ TEST_F(DgnGraphicsTest3d, AddMSBsplineSurface)
     MSBsplineSurfacePtr surface = MSBsplineSurface::CreateLinearSweep (*curve.get(), DVec3d::From (5000.0, 0.0, 10000.0));
     ASSERT_TRUE (SUCCESS == graphics->AddMSBsplineSurface (*surface.get()));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -692,7 +705,8 @@ TEST_F(DgnGraphicsTest3d, AddMSBsplineSurface)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddPolyface)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     PolyfaceHeaderPtr polyface = PolyfaceHeader::CreateVariableSizeIndexed();
@@ -705,10 +719,10 @@ TEST_F(DgnGraphicsTest3d, AddPolyface)
 
     ASSERT_TRUE (SUCCESS == graphics->AddPolyface (*polyface.get()));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -728,7 +742,8 @@ TEST_F(DgnGraphicsTest3d, AddPolyface)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest2d, AddCurveVector)
     {
-    DrawingGraphicsPtr graphics = GetDrawingModel()->Create2dGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    DrawingGraphicsPtr graphics = GetDrawingModel()->Create2dGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DPoint3d curvePts[8];
@@ -744,10 +759,10 @@ TEST_F(DgnGraphicsTest2d, AddCurveVector)
 
     ASSERT_TRUE (SUCCESS == graphics->AddCurveVector (*curve.get()));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -767,11 +782,12 @@ TEST_F(DgnGraphicsTest2d, AddCurveVector)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest2d, CreateDrawingGraphics)
     {
-    DrawingGraphicsPtr graphics = GetDrawingModel()->Create2dGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    DrawingGraphicsPtr graphics = GetDrawingModel()->Create2dGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     // Cannot save empty graphics.
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_FALSE (graphicsId.IsValid());
 
     DPoint3d linePoints[4];
@@ -785,7 +801,7 @@ TEST_F(DgnGraphicsTest2d, CreateDrawingGraphics)
     graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
-    PersistentElementRefPtr element = GetDgnModelP()->GetDgnProject().Models().GetElementById (graphicsId);
+    DgnElementPtr element = GetDgnModelP()->GetDgnDb().Elements().GetElementById (graphicsId);
     ASSERT_TRUE (element.IsValid());
 
     DRange3d expectedRange;
@@ -805,7 +821,8 @@ TEST_F(DgnGraphicsTest2d, CreateDrawingGraphics)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, LoadModifyAndSave)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DPoint3d linePoints[4];
@@ -823,7 +840,7 @@ TEST_F(DgnGraphicsTest3d, LoadModifyAndSave)
     polyface->AddPolygon (polygon, 3);
     ASSERT_TRUE (SUCCESS == graphics->AddPolyface (*polyface.get()));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
     PhysicalGraphicsPtr loadedGraphics = GetPhysicalModel()->ReadPhysicalGraphics (graphicsId);
@@ -849,10 +866,10 @@ TEST_F(DgnGraphicsTest3d, LoadModifyAndSave)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, CreateWithLevel)
     {
-    auto& levelTable = GetDgnModelP()->GetDgnProject().Levels();
+    auto& levelTable = GetDgnModelP()->GetDgnDb().Levels();
 
     DgnLevels::SubLevel::Appearance appear;
-    DgnLevels::Level level (LevelId(levelTable.QueryHighestId().GetValue() + 1), "Test Level 1", DgnLevels::Scope::Physical);
+    DgnLevels::Level level ("Test Level 1", DgnLevels::Scope::Physical);
     ASSERT_TRUE (BE_SQLITE_OK == levelTable.InsertLevel (level, appear));
 
     PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics (level.GetLevelId());
@@ -866,7 +883,7 @@ TEST_F(DgnGraphicsTest3d, CreateWithLevel)
     linePoints[3].Init (10000.0, 10000.0, 0.0);
     ASSERT_TRUE (SUCCESS == graphics->AddCurvePrimitive (*ICurvePrimitive::CreateLineString (linePoints, 4)));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
     PhysicalGraphicsPtr loadedGraphics = GetPhysicalModel()->ReadPhysicalGraphics (graphicsId);
@@ -881,7 +898,8 @@ TEST_F(DgnGraphicsTest3d, CreateWithLevel)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnGraphicsTest3d, AddWithSymbology)
     {
-    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics();
+    DgnLevels::Level level = GetDgnProjectP()->Levels().QueryLevelByName ("Default");
+    PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics(level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
 
     DPoint3d linePoints[4];
@@ -890,11 +908,10 @@ TEST_F(DgnGraphicsTest3d, AddWithSymbology)
     linePoints[3].Init (10000.0, 10000.0, 0.0);
     linePoints[2].Init (0.0, 10000.0, 0.0);
 
-    Symbology modifiedSymb = DgnGraphics::GetDefaultSymbology();
-    RgbColorDef rgbColor = {255, 0, 0};
-    modifiedSymb.color = graphics->GetSymbologyColorFromRgb (rgbColor);
-    modifiedSymb.weight = 11;
-    modifiedSymb.style = 4;
+    DgnGraphics::Symbology modifiedSymb = DgnGraphics::GetDefaultSymbology();
+    modifiedSymb.m_color = ColorDef(255, 0, 0);
+    modifiedSymb.m_weight = 11;
+    modifiedSymb.m_style = 4;
 
     ASSERT_TRUE (SUCCESS == graphics->AddCurvePrimitive (*ICurvePrimitive::CreateLineString (linePoints, 4), modifiedSymb));
 
@@ -907,7 +924,7 @@ TEST_F(DgnGraphicsTest3d, AddWithSymbology)
     polyface->AddPolygon (polygon, 3);
     ASSERT_TRUE (SUCCESS == graphics->AddPolyface (*polyface.get(), DgnGraphics::GetDefaultSymbology()));
 
-    ElementId graphicsId = graphics->Save();
+    DgnElementId graphicsId = graphics->Save();
     ASSERT_TRUE (graphicsId.IsValid());
 
     PhysicalGraphicsPtr loadedGraphics = GetPhysicalModel()->ReadPhysicalGraphics (graphicsId);
@@ -932,12 +949,13 @@ TEST_F(DgnGraphicsTest3d, AddWithSymbology)
 
     // just so we can verify what's happened in another process for debugging - can verify visually
     // that color-by-level works properly.
-    auto& levelTable  = GetDgnModelP()->GetDgnProject().Levels();
-    DgnLevels::SubLevel facet = levelTable.QuerySubLevelById (SubLevelId(LEVEL_DEFAULT_LEVEL_ID));
+    auto& levelTable  = GetDgnModelP()->GetDgnDb().Levels();
+    DgnLevels::SubLevel sublevel = levelTable.QuerySubLevel(DgnLevels::DefaultSubLevelId(level.GetLevelId()));
 
-    rgbColor.red = 0; rgbColor.green = 0; rgbColor.blue = 255;
-    facet.GetAppearanceR().SetColor (graphics->GetSymbologyColorFromRgb (rgbColor));
-    ASSERT_TRUE (BE_SQLITE_OK == levelTable.UpdateSubLevel(facet));
+    ColorDef rgbColor (0,0,255);
+    sublevel.GetAppearanceR().SetColor(rgbColor);
+    ASSERT_TRUE (BE_SQLITE_OK == levelTable.UpdateSubLevel(sublevel));
 
     GetDgnProjectP()->SaveChanges(); // just so we can verify what's happened in another process for debugging
     }
+#endif

@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/filemap.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifdef winNT
@@ -37,9 +37,9 @@ typedef void *HANDLE;
 typedef struct fileMapHandle
     {
     BeFileName filename;
-    Int32 readonly;
-    Int32 shared;
-    Int32 offset;
+    int32_t readonly;
+    int32_t shared;
+    int32_t offset;
     size_t size;
 #ifdef winNT
     HANDLE hFile;
@@ -125,17 +125,17 @@ static uintptr_t fileMapI_openRW
     WCharCP filename,
     uintptr_t hFile,
     WCharCP mapname,
-    Int32 readonly,
-    Int32 shared,
-    Int32 offset,
-    Int32 sizeIn,
-    Int32 *sizeOutP,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t readonly,
+    int32_t shared,
+    int32_t offset,
+    int32_t sizeIn,
+    int32_t *sizeOutP,
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
     FileMapHandle *fileMapHandleP = NULL;
-    Int32 size = sizeIn;
+    int32_t size = sizeIn;
     /*-------------------------------------------------------------------
     initialize status to success
     -------------------------------------------------------------------*/
@@ -253,13 +253,13 @@ uintptr_t fileMap_openRW
     (
     WCharCP filename,
     WCharCP mapname,
-    Int32 readonly,
-    Int32 shared,
-    Int32 offset,
-    Int32 sizeIn,
-    Int32 *sizeOutP,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t readonly,
+    int32_t shared,
+    int32_t offset,
+    int32_t sizeIn,
+    int32_t *sizeOutP,
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
     return fileMapI_openRW(filename, (-1), mapname, readonly, shared,
@@ -272,13 +272,13 @@ uintptr_t fileMap_fhopenRW
     (
     uintptr_t hFile,
     WCharCP mapname,
-    Int32 readonly,
-    Int32 shared,
-    Int32 offset,
-    Int32 sizeIn,
-    Int32 *sizeOutP,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t readonly,
+    int32_t shared,
+    int32_t offset,
+    int32_t sizeIn,
+    int32_t *sizeOutP,
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
     return fileMapI_openRW(NULL, hFile, mapname, readonly, shared,
@@ -290,8 +290,8 @@ uintptr_t fileMap_fhopenRW
 uintptr_t fileMap_open
     (
     WCharCP filename,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
     return fileMap_openRW(filename, NULL,
@@ -304,8 +304,8 @@ uintptr_t fileMap_open
 uintptr_t fileMap_fhopen
     (
     uintptr_t hFile,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
     return fileMap_fhopenRW(hFile, NULL,
@@ -319,17 +319,17 @@ StatusInt fileMap_flush
     (
     uintptr_t handle,
     char *start,
-    Int32 size,
-    Int32 async,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t size,
+    int32_t async,
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
-    Int32 ok;
-    Int32 appStatus = 0;
+    int32_t ok;
+    int32_t appStatus = 0;
     FileMapHandle *fileMapHandleP = NULL;
 #ifndef winNT
-    UInt32 pagemask = (getpagesize() - 1);
+    uint32_t pagemask = (getpagesize() - 1);
 #endif
     /*-------------------------------------------------------------------
     initialize status to success
@@ -351,8 +351,8 @@ StatusInt fileMap_flush
 //  Commented out by BernMcCarty.  ok is NOT a handle...
 //  CHECK_HANDLE_LEAVE((HANDLE)ok, L"FlushViewOfFile", FILEMAP_ERROR_FLUSH);
 #else
-    size += (UInt32)start & pagemask;
-    start = (char *)((UInt32)start & ~pagemask);
+    size += (uint32_t)start & pagemask;
+    start = (char *)((uint32_t)start & ~pagemask);
     ok = !msync(start, size, (async ? MS_ASYNC : MS_SYNC) | MS_INVALIDATE);
     CHECK_HANDLE_LEAVE((HANDLE)ok, L"msync", FILEMAP_ERROR_FLUSH);
 #endif
@@ -365,12 +365,12 @@ mycheck_leave:
 StatusInt     fileMap_close
     (
     uintptr_t handle,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
-    Int32 ok;
-    Int32 appStatus = 0;
+    int32_t ok;
+    int32_t appStatus = 0;
     FileMapHandle *fileMapHandleP = NULL;
     /*-------------------------------------------------------------------
     initialize status to success
@@ -438,8 +438,8 @@ mycheck_leave:
 void            *fileMap_getPtr
     (
     uintptr_t handle,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
     FileMapHandle *fileMapHandleP = NULL;
@@ -464,8 +464,8 @@ void            *fileMap_getPtr
 size_t fileMap_getSize
     (
     uintptr_t handle,
-    Int32 *appStatusP,
-    Int32 *sysStatusP
+    int32_t *appStatusP,
+    int32_t *sysStatusP
     )
     {
     FileMapHandle *fileMapHandleP = NULL;

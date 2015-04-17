@@ -14,6 +14,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct ExtendedElementHandler;
 //__PUBLISH_SECTION_START__
 
+#if defined (NEEDS_WORK_DGNITEM)
 
 //*=================================================================================**//**
 //! DisplayFilter is used to construct branching structures for conditional presentation
@@ -37,11 +38,11 @@ struct  Operator : RefCountedBase
     DisplayFilterHandlerId      m_handlerId;
 
 protected:
-    virtual void                _GetData (bvector<byte>& data) const = 0;
+    virtual void                _GetData (bvector<Byte>& data) const = 0;
 public:   
     Operator (DisplayFilterHandlerId handlerId) : m_handlerId (handlerId)  { }
 
-    void                        GetData (bvector<byte>& data) const { return _GetData (data); }
+    void                        GetData (bvector<Byte>& data) const { return _GetData (data); }
     DisplayFilterHandlerId      GetHandlerId () const               { return m_handlerId; }
 //__PUBLISH_SECTION_START__
 };  // Operator
@@ -60,7 +61,7 @@ public:
     //! Creates a new ECExpression-based DisplayFilter operator.
     //! @param[in] expression   An ECExpression evaluating to a boolean value
     //! @param[in] dgnfile      The file in which the element associated with this filter resides.
-    DGNPLATFORM_EXPORT static OperatorPtr   Create (WCharCP expression, DgnProjectR dgnfile);
+    DGNPLATFORM_EXPORT static OperatorPtr   Create (WCharCP expression, DgnDbR dgnfile);
 
     //! Creates a new ECExpression-based DisplayFilter operator to test the view size at the specified point
     //! The expression produced is of the format "ViewContext.GetPixelSizeAt (x,y,z) > pixelSize" if largerThan is true, or
@@ -69,17 +70,17 @@ public:
     //! @param[in] pixelSize    The pixel size to test against, in UORs
     //! @param[in] largerThan   If true, the expression uses the ">" operator; otherwise, it uses the "<=" operator
     //! @param[in] dgnfile      The file in which the element associated with this filter resides.
-    DGNPLATFORM_EXPORT static OperatorPtr   CreateViewSizeTest (DPoint3dCR origin, double pixelSize, bool largerThan, DgnProjectR dgnfile);
+    DGNPLATFORM_EXPORT static OperatorPtr   CreateViewSizeTest (DPoint3dCR origin, double pixelSize, bool largerThan, DgnDbR dgnfile);
 
 
 //__PUBLISH_SECTION_END__
 private:
-    UInt32                      m_expressionId;
+    uint32_t                    m_expressionId;
     bool                        m_storesTransform;
 
-    TestExpression (UInt32 exprId, bool storesTransform) : Operator (DisplayFilterHandlerId_ECExpression), m_expressionId(exprId), m_storesTransform(storesTransform) { }
+    TestExpression (uint32_t exprId, bool storesTransform) : Operator (DisplayFilterHandlerId_ECExpression), m_expressionId(exprId), m_storesTransform(storesTransform) { }
 
-    virtual void                _GetData (bvector<byte>& data) const override;
+    virtual void                _GetData (bvector<Byte>& data) const override;
 //__PUBLISH_SECTION_START__
     };  // ExpressionOperator
 
@@ -121,7 +122,7 @@ enum TestMode
     };
 
 
-DGNPLATFORM_EXPORT static OperatorPtr  CreateRenderModeTest (MSRenderMode renderMode, TestMode testMode);
+DGNPLATFORM_EXPORT static OperatorPtr  CreateRenderModeTest (DgnRenderMode renderMode, TestMode testMode);
 
 //! Begins a conditional branch block, with filterOperator as the condition to be tested
 //! Must be matched by a corresponding call to End. May be followed by zero or more calls to ElseIf,
@@ -196,11 +197,11 @@ struct  ViewParameterFilterData
         };
 
 
-    Int32                           m_testValue;
+    int32_t                         m_testValue;
     DisplayFilter::TestMode         m_testMode;
     Parameter                       m_parameter;
 
-    ViewParameterFilterData (UInt32 testValue, DisplayFilter::TestMode testMode, Parameter parameter)
+    ViewParameterFilterData (uint32_t testValue, DisplayFilter::TestMode testMode, Parameter parameter)
         {
         memset (this, 0, sizeof (*this));
         m_testMode = testMode;
@@ -209,6 +210,7 @@ struct  ViewParameterFilterData
         }
 };  // ViewParameterFilterData
 //__PUBLISH_SECTION_START__
+#endif
 
 
 

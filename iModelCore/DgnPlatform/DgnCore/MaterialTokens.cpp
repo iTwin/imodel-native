@@ -10,7 +10,7 @@
 
 struct Keyword
     {
-    Int32       m_token;
+    int32_t     m_token;
     char        m_keyword[40];
     };
 
@@ -607,7 +607,7 @@ MaterialTokenManager& MaterialTokenManager::GetManagerR ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32 MaterialTokenManager::ResolveToken (WStringR arg, WCharCP rawInput, KeywordTokenMap const& map)
+int32_t MaterialTokenManager::ResolveToken (WStringR arg, WCharCP rawInput, KeywordTokenMap const& map)
     {
     WString input        = rawInput;
     size_t  keywordBegin = input.find_first_not_of (L" ");
@@ -989,7 +989,7 @@ void MaterialTokenManager::ResolvePaletteKeyword (Utf8StringR keyword, PaletteTo
     // the forseeable future since there are a sizable numbers of serialized materials with their
     // keywords shifted.
     if (MATERIALVERSION_Invalid == version && token > PALETTETOKEN_MaterialVersion)
-        token = static_cast <PaletteToken> (static_cast<Int32> (token) + 1);
+        token = static_cast <PaletteToken> (static_cast<int32_t> (token) + 1);
 
     BeAssert (token == s_paletteKeywords[token].m_token);
     keyword.assign (s_paletteKeywords[token].m_keyword);
@@ -1005,7 +1005,7 @@ void MaterialTokenManager::ResolvePaletteKeyword (WStringR keyword, PaletteToken
     // the forseeable future since there are a sizable numbers of serialized materials with their
     // keywords shifted.
     if (MATERIALVERSION_Invalid == version && token > PALETTETOKEN_MaterialVersion)
-        token = static_cast <PaletteToken> (static_cast<Int32> (token) + 1);
+        token = static_cast <PaletteToken> (static_cast<int32_t> (token) + 1);
 
     BeAssert (token == s_paletteKeywords[token].m_token);
     keyword.AssignA (s_paletteKeywords[token].m_keyword);

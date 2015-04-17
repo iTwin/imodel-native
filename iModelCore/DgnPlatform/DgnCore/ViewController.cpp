@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewController.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -11,29 +11,26 @@
 
 static double const MAX_VDELTA = 1.0e20;
 
-static Utf8CP VIEW_SETTING_IsCameraOn            = "isCameraOn";
+static Utf8CP VIEW_SETTING_Area2d                = "area2d";
+static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
 static Utf8CP VIEW_SETTING_CameraAngle           = "cameraAngle";
 static Utf8CP VIEW_SETTING_CameraFocalLength     = "cameraFocalLength";
-static Utf8CP VIEW_SETTING_Origin                = "origin";
-static Utf8CP VIEW_SETTING_Delta                 = "delta";
 static Utf8CP VIEW_SETTING_CameraPosition        = "cameraPosition";
-static Utf8CP VIEW_SETTING_Rotation              = "rotation";
-static Utf8CP VIEW_SETTING_DisplayStyleId        = "displayStyleId";
-static Utf8CP VIEW_SETTING_RotAngle              = "rotAngle";
-static Utf8CP VIEW_SETTING_Levels                = "levels";
+static Utf8CP VIEW_SETTING_Delta                 = "delta";
 static Utf8CP VIEW_SETTING_Flags                 = "flags";
-static Utf8CP VIEW_SETTING_SubLevels             = "sublevels";
-static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
-static Utf8CP VIEW_SETTING_Area2d                = "area2d";
+static Utf8CP VIEW_SETTING_IsCameraOn            = "isCameraOn";
+static Utf8CP VIEW_SETTING_Categories            = "categories";
+static Utf8CP VIEW_SETTING_Models                = "models";
+static Utf8CP VIEW_SETTING_Origin                = "origin";
+static Utf8CP VIEW_SETTING_RotAngle              = "rotAngle";
+static Utf8CP VIEW_SETTING_Rotation              = "rotation";
+static Utf8CP VIEW_SETTING_SubCategories         = "subCategories";
+static Utf8CP VIEW_SubCategoryId                 = "subCategoryId";
 
 static Utf8CP VIEWFLAG_noText                    = "noText";
 static Utf8CP VIEWFLAG_noWeight                  = "noWeight";
 static Utf8CP VIEWFLAG_noPattern                 = "noPattern";
-static Utf8CP VIEWFLAG_txNodes                   = "txNodes";
-static Utf8CP VIEWFLAG_noEdFields                = "noEdField";
 static Utf8CP VIEWFLAG_grid                      = "grid";
-static Utf8CP VIEWFLAG_noConstruction            = "noConstruct";
-static Utf8CP VIEWFLAG_noDimensions              = "noDims";
 static Utf8CP VIEWFLAG_fill                      = "fill";
 static Utf8CP VIEWFLAG_acs                       = "acs";
 static Utf8CP VIEWFLAG_renderMode                = "renderMode";
@@ -50,68 +47,41 @@ static Utf8CP VIEWFLAG_hlStyle                   = "hlStyle";
 static Utf8CP VIEWFLAG_noSceneLight              = "noSceneLight";
 static Utf8CP VIEWFLAG_useBgColor                = "useBgColor";
 
-
-static bvector<DgnViews::Factory*> s_factories;
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
+* @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViews::Register (Factory& factory)
+ViewHandlerP ViewHandler::FindHandler(DgnDb const& db, DgnClassId handlerId)
     {
-    UnRegister(factory);
-    s_factories.push_back(&factory);
+    // quick check for a handler already known
+    DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);
+    if (nullptr != handler)
+        return handler->_ToViewHandler();
+
+    // not there, check via base classes
+    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(GetHandler()));
+    return handler ? handler->_ToViewHandler() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViews::UnRegister (Factory& factory)
+ViewControllerPtr ViewHandler::_SupplyController(DgnDbR db, DgnViews::View const& view)
     {
-    for (auto it=s_factories.begin(); it!=s_factories.end();)
-        {
-        if (*it == &factory)
-            it = s_factories.erase(it);
-        else
-            ++it;
-        }
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ViewControllerPtr createViewController(DgnProjectR project, DgnViews::View const& view) 
-    {
-    for (auto it=s_factories.rbegin(); it!=s_factories.rend(); ++it)
-        {
-        auto controller = (*it)->_SupplyViewController(project, view);
-        if (nullptr != controller)
-            return controller;
-        }
+    auto const& schemas = db.Schemas();
+    ECClassCP viewClass = schemas.GetECClass(view.GetClassId().GetValue());
 
-    auto viewId = view.GetId();
-    switch (view.GetDgnViewType())
-        {
-        case DGNVIEW_TYPE_Physical:
-            {
-            if (view.GetViewSubType() == CameraViewController::GetViewSubType())
-                return new CameraViewController(project, viewId);
+    if (nullptr==viewClass)
+        return nullptr;
 
-            if (view.GetViewSubType() == SectioningViewController::GetViewSubType())
-                return new SectioningViewController(project, viewId);
+    if (viewClass->Is(schemas.GetECClass("dgn", "CameraView")))
+        return new QueryViewController(db, view.GetId());
 
-            return new PhysicalViewController(project, viewId);
-            }
+    if (viewClass->Is(schemas.GetECClass("dgn", "SheetView")))
+        return new SheetViewController(db, view.GetId());
 
-        case DGNVIEW_TYPE_Drawing:
-            return new DrawingViewController(project, viewId);
+    if (viewClass->Is(schemas.GetECClass("dgn", "DrawingView")))
+        return new DrawingViewController(db, view.GetId());
 
-        case DGNVIEW_TYPE_Sheet:
-            if (view.GetViewSubType() == RedlineViewController::GetViewSubType())
-                return RedlineViewController::Create (project, viewId);
-
-            return new SheetViewController(project, viewId);
-        }
-
-    BeAssert (false);
     return nullptr;
     }
 
@@ -120,17 +90,31 @@ static ViewControllerPtr createViewController(DgnProjectR project, DgnViews::Vie
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr DgnViews::LoadViewController(DgnViewId viewId, FillModels fillModels) const
     {
-    auto view  = QueryViewById (viewId);
+    DgnViews::View view = QueryViewById(viewId);
     if (!view.IsValid())
         return nullptr;
 
-    auto controller = createViewController(m_project, view);
+    // make sure the class derives from Model (has a handler)
+    ViewHandlerP handler = ViewHandler::FindHandler(m_dgndb, view.GetClassId());
+    if (nullptr == handler)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    // if there's an "override" extension on the view handler, see if it wants to supply the view
+    ViewHandlerOverride* ovr = ViewHandlerOverride::Cast(*handler);
+    ViewControllerPtr controller = ovr ? ovr->_SupplyController(m_dgndb, view) : nullptr;
+
+    if (!controller.IsValid())
+        controller = handler->_SupplyController(m_dgndb, view); // use handler
+
     if (!controller.IsValid())
         return nullptr;
 
     controller->Load();
     if (fillModels == FillModels::Yes)
-        controller->FillModels();
+        controller->_FillModels();
 
     return controller;
     }
@@ -145,11 +129,7 @@ void ViewFlags::FromBaseJson(JsonValueCR val)
     fast_text = val[VIEWFLAG_noText].asBool();
     line_wghts = !val[VIEWFLAG_noWeight].asBool();
     patterns = !val[VIEWFLAG_noPattern].asBool();
-    text_nodes = val[VIEWFLAG_txNodes].asBool();
-    ed_fields = !val[VIEWFLAG_noEdFields].asBool();
     grid = val[VIEWFLAG_grid].asBool();
-    constructs = !val[VIEWFLAG_noConstruction].asBool();
-    dimens = !val[VIEWFLAG_noDimensions].asBool();
     fill = val[VIEWFLAG_fill].asBool();
     transparency = !val[VIEWFLAG_noTransparency].asBool();
     overrideBackground = val[VIEWFLAG_useBgColor].asBool();
@@ -170,7 +150,7 @@ void ViewFlags::From3dJson(JsonValueCR val)
     noClipVolume = val[VIEWFLAG_noClipVolume].asBool();
     renderDisplayShadows = val[VIEWFLAG_shadows].asBool();
     ignoreSceneLights = val[VIEWFLAG_noSceneLight].asBool();
-    renderMode = val[VIEWFLAG_renderMode].asUInt();
+    m_renderMode = DgnRenderMode(val[VIEWFLAG_renderMode].asUInt());
     hiddenLineStyle = val[VIEWFLAG_hlStyle].asUInt();
     }
 
@@ -182,11 +162,7 @@ void ViewFlags::ToBaseJson (JsonValueR val) const
     if (fast_text) val[VIEWFLAG_noText] = true;
     if (!line_wghts) val[VIEWFLAG_noWeight] = true;
     if (!patterns) val[VIEWFLAG_noPattern] = true;
-    if (text_nodes) val[VIEWFLAG_txNodes] = true;
-    if (!ed_fields) val[VIEWFLAG_noEdFields] = true;
     if (grid) val[VIEWFLAG_grid] = true;
-    if (!constructs) val[VIEWFLAG_noConstruction] = true;
-    if (!dimens) val[VIEWFLAG_noDimensions] = true;
     if (fill) val[VIEWFLAG_fill] = true;
     if (!transparency) val[VIEWFLAG_noTransparency] = true;
     if (overrideBackground) val[VIEWFLAG_useBgColor] = true;
@@ -207,7 +183,7 @@ void ViewFlags::To3dJson (JsonValueR val) const
     if (renderDisplayShadows) val[VIEWFLAG_shadows] = true;
     if (ignoreSceneLights) val[VIEWFLAG_noSceneLight] = true;
 
-    val[VIEWFLAG_renderMode] = renderMode;
+    val[VIEWFLAG_renderMode] = (uint8_t) m_renderMode;
     if (0 != hiddenLineStyle)
         val[VIEWFLAG_hlStyle] = hiddenLineStyle;
     }
@@ -215,72 +191,48 @@ void ViewFlags::To3dJson (JsonValueR val) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnLevels::SubLevel::Appearance ViewController::GetSubLevelAppearance(SubLevelId subLevelId) const
+DgnCategories::SubCategory::Appearance ViewController::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
     {
-    auto const entry = m_subLevels.find(subLevelId);
-    if (entry != m_subLevels.end())
+    auto const entry = m_subCategories.find(subCategoryId);
+    if (entry != m_subCategories.end())
         return entry->second;
 
-    auto subLevel = m_project.Levels().QuerySubLevelById(subLevelId);
-    auto out = m_subLevels.Insert(subLevelId, subLevel.GetAppearance());
+    auto subCategory = m_dgndb.Categories().QuerySubCategory(subCategoryId);
+    auto out = m_subCategories.Insert(subCategoryId, subCategory.GetAppearance());
     return out.first->second;
     }
 
-DgnModelIdSet const& ViewController::GetViewedModels() const {return m_viewedModels;}
-DgnLevelIdSet const& ViewController::GetViewedLevels() const {return m_levels;}
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/12
+* @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BitMaskCR  ViewController::_GetLevelDisplayMask () const
+void ViewController::_ChangeModelDisplay (DgnModelId modelId, bool onOff)
     {
-    BeAssert (m_levels.m_mask.IsValid());
-    return *m_levels.m_mask.GetBitMask();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::SetLevelDisplayMask (BitMaskCR bitMask)
-    {
-    auto mask = m_levels.m_mask.GetBitMask();
-    if (!mask->IsEqual (&bitMask))
-        {
-        mask->SetFromBitMask (bitMask);
-        _OnLevelChange (false);
-        }
+    if (onOff)
+        m_viewedModels.insert(modelId);
+    else
+        m_viewedModels.erase(modelId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_ChangeModelDisplay (DgnModelId, bool onOff)
+void ViewController::_ChangeCategoryDisplay (DgnCategoryId categoryId, bool onOff)
     {
-    // NEEDS_WORK
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_ChangeLevelDisplay (LevelId levelId, bool onOff)
-    {
-    BeAssert (m_levels.m_mask.IsValid());
-    if (onOff != GetLevelDisplayMask ().Test (levelId.GetValue() - 1))
-        {
-        m_levels.m_mask.GetBitMask()->SetBit (levelId.GetValue() - 1, onOff);
-        _OnLevelChange (onOff);
-        }
+    if (onOff)
+        m_viewedCategories.insert(categoryId);
+    else
+        m_viewedCategories.erase(categoryId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP ViewController::_GetTargetModel() const {return m_project.Models().GetModelById(m_targetModelId);}
+DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetModelById(m_targetModelId);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::ViewController (DgnProjectR project, DgnViewId viewId) : m_project(project)
+ViewController::ViewController (DgnDbR dgndb, DgnViewId viewId) : m_dgndb(dgndb)
     {
     m_viewId = viewId;
     m_viewFlags.InitDefaults();
@@ -292,29 +244,25 @@ ViewController::ViewController (DgnProjectR project, DgnViewId viewId) : m_proje
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LoadLevels(JsonValueCR settings)
+void ViewController::LoadCategories(JsonValueCR settings)
     {
-    if (settings.isMember(VIEW_SETTING_Levels))
-        {
-        // by default, all bits are off. We now find out which ones should be on.
-        Utf8String lmsUtf8 = settings[VIEW_SETTING_Levels].asString();
-        m_levels.m_mask.GetBitMask()->SetFromString (lmsUtf8, 0, UINT_MAX);
-        }
+    if (settings.isMember(VIEW_SETTING_Categories))
+        m_viewedCategories.FromJson(settings[VIEW_SETTING_Categories]);
 
-    // load all SubLevels (even for levels not currently on)
-    for (auto const& it : DgnLevels::SubLevelIterator(m_project, LevelId()))
-        m_subLevels.Insert(it.GetId(), it.GetAppearance());
-    
-    if (!settings.isMember(VIEW_SETTING_SubLevels))
+    // load all SubCategories (even for categories not currently on)
+    for (auto const& it : DgnCategories::SubCategoryIterator(m_dgndb, DgnCategoryId()))
+        m_subCategories.Insert(it.GetSubCategoryId(), it.GetAppearance());
+
+    if (!settings.isMember(VIEW_SETTING_SubCategories))
         return;
 
-    JsonValueCR facetJson = settings[VIEW_SETTING_SubLevels];
+    JsonValueCR facetJson = settings[VIEW_SETTING_SubCategories];
     for (Json::ArrayIndex i=0; i<facetJson.size(); ++i)
         {
         JsonValueCR val=facetJson[i];
-        SubLevelId id(val);
-        if (id.IsValid())
-            OverrideSubLevel (id, DgnLevels::SubLevel::Override(val));
+        DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asInt64());
+        if (subCategoryId.IsValid())
+            OverrideSubCategory (subCategoryId, DgnCategories::SubCategory::Override(val));
         }
     }
 
@@ -334,12 +282,12 @@ void ViewController::_RestoreFromSettings (JsonValueCR settings)
             m_viewFlags.overrideBackground = false;
         else
             {
-            IntColorDef bgColor(settings[VIEW_SETTING_BackgroundColor].asUInt());
-            m_backgroundColor = bgColor.m_rgb;
+            m_backgroundColor = ColorDef(settings[VIEW_SETTING_BackgroundColor].asUInt());
             }
         }
 
-    LoadLevels(settings);
+
+    LoadCategories(settings);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -347,7 +295,7 @@ void ViewController::_RestoreFromSettings (JsonValueCR settings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::Load()
     {
-    DgnViews::View entry = m_project.Views().QueryViewById(m_viewId);
+    DgnViews::View entry = m_dgndb.Views().QueryViewById(m_viewId);
     if (!entry.IsValid())
         {
         BeAssert (false);
@@ -358,21 +306,9 @@ DbResult ViewController::Load()
     m_baseModelId = m_targetModelId = entry.GetBaseModelId();
     m_viewedModels.insert (m_baseModelId);
 
-    DgnModelSelectorId selectorId = entry.GetDgnModelSelectorId();
-    if (selectorId.IsValid()) // no selector means just show base model
-        {
-        DgnModelSelection selections (m_project, entry.GetDgnModelSelectorId());
-        DbResult rc = selections.Load();
-        if (BE_SQLITE_OK != rc)
-            return  rc;
-
-        for (DgnModelId modelId : selections)
-            m_viewedModels.insert(modelId);
-        }
-
     Utf8String settingsStr;
-    //  The QueryModel calls GetModelById in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and 
-    DbResult  rc = GetDgnProject().Views().QueryProperty (settingsStr, GetViewId(), DgnViewProperty::Settings());
+    //  The QueryModel calls GetModelById in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
+    DbResult  rc = GetDgnDb().Views().QueryProperty (settingsStr, GetViewId(), DgnViewProperty::Settings());
     if (BE_SQLITE_ROW != rc)
         return rc;
 
@@ -380,10 +316,10 @@ DbResult ViewController::Load()
     Json::Reader::Parse (settingsStr, json);
     _RestoreFromSettings(json);
 
-    //  The QueryModel calls GetModelById in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and 
+    //  The QueryModel calls GetModelById in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     //  the model is not already loaded.
     for (auto&id : GetViewedModels())
-        m_project.Models().GetModelById(id);
+        m_dgndb.Models().GetModelById(id);
 
     return BE_SQLITE_OK;
     }
@@ -397,20 +333,17 @@ void ViewController::_SaveToSettings (JsonValueR settings) const
 
     // only save background color if viewflag is on
     if (m_viewFlags.overrideBackground)
-        settings[VIEW_SETTING_BackgroundColor] = IntColorDef(m_backgroundColor).AsUInt32();
+        settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
 
-    Utf8String levelString;
-    m_levels.m_mask.GetBitMask()->ToString (levelString, 0);
-    settings[VIEW_SETTING_Levels] = levelString;
-
-    if (m_subLevelOverrides.empty())
+    m_viewedCategories.ToJson(settings[VIEW_SETTING_Categories]);
+    if (m_subCategoryOverrides.empty())
         return;
 
-    JsonValueR ovrJson = settings[VIEW_SETTING_SubLevels];
+    JsonValueR ovrJson = settings[VIEW_SETTING_SubCategories];
     int i=0;
-    for (auto const& it : m_subLevelOverrides)
+    for (auto const& it : m_subCategoryOverrides)
         {
-        it.first.ToJson(ovrJson[i]);
+        ovrJson[i][VIEW_SubCategoryId] = it.first.GetValue();
         it.second.ToJson(ovrJson[i]);
         ++i;
         }
@@ -424,7 +357,7 @@ DbResult ViewController::Save()
     Json::Value settings;
     _SaveToSettings(settings);
 
-    return m_project.Views().SavePropertyString(m_viewId, DgnViewProperty::Settings(), Json::FastWriter::ToString(settings));
+    return m_dgndb.Views().SavePropertyString(m_viewId, DgnViewProperty::Settings(), Json::FastWriter::ToString(settings));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -432,12 +365,10 @@ DbResult ViewController::Save()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::SaveAs (Utf8CP newName)
     {
-    _GetLevelDisplayMask(); // make sure its loaded
-
-    DgnViews::View newRow(m_project.Views().QueryViewById(m_viewId));
+    DgnViews::View newRow(m_dgndb.Views().QueryViewById(m_viewId));
     newRow.SetName(newName);
 
-    DbResult rc = m_project.Views().InsertView(newRow);
+    DbResult rc = m_dgndb.Views().InsertView(newRow);
     if (BE_SQLITE_OK != rc)
         return rc;
 
@@ -445,7 +376,7 @@ DbResult ViewController::SaveAs (Utf8CP newName)
     rc = Save();
 
     if (BE_SQLITE_OK == rc)
-        m_project.SaveSettings();
+        m_dgndb.SaveSettings();
 
     return rc;
     }
@@ -467,76 +398,73 @@ DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange3d ViewController::_GetProjectExtents() const
     {
-    return m_project.Units().GetProjectExtents();
+    return m_dgndb.Units().GetProjectExtents();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawElement(ViewContextR context, ElementHandleCR elIter)
+void ViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
-    context.CookElemDisplayParams (elIter);
-    context.ActivateOverrideMatSymb ();
-
-    elIter.GetDisplayHandler()->Draw (elIter, context);
+    element.Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawElementFiltered(ViewContextR context, ElementHandleCR el, DPoint3dCP pts, double size)
+void ViewController::_DrawElementFiltered(ViewContextR context, GeometricElementCR element, DPoint3dCP pts, double size)
     {
-    el.GetDisplayHandler()->DrawFiltered (el, context, pts, size);
+    // Display nothing...
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::ReloadSubLevel(SubLevelId id)
+void ViewController::ReloadSubCategory(DgnSubCategoryId id)
     {
-    auto unmodified = m_project.Levels().QuerySubLevelById(id);
-    auto const& result = m_subLevels.Insert(id, unmodified.GetAppearance());
+    auto unmodified = m_dgndb.Categories().QuerySubCategory(id);
+    auto const& result = m_subCategories.Insert(id, unmodified.GetAppearance());
 
     if (!result.second)
-        result.first->second = unmodified.GetAppearance(); // we already had this SubLevel; change it.
+        result.first->second = unmodified.GetAppearance(); // we already had this SubCategory; change it.
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::OverrideSubLevel(SubLevelId id, DgnLevels::SubLevel::Override const& ovr)
+void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnCategories::SubCategory::Override const& ovr)
     {
     if (!id.IsValid())
         return;
 
-    auto result = m_subLevelOverrides.Insert(id, ovr);
+    auto result = m_subCategoryOverrides.Insert(id, ovr);
     if (!result.second)
         {
         result.first->second = ovr; // we already had this override; change it.
-        ReloadSubLevel(id); // To ensure none of the previous overrides are still active, we reload the original SubLevel
+        ReloadSubCategory(id); // To ensure none of the previous overrides are still active, we reload the original SubCategory
         }
 
-    // now apply this override to the unmodified SubLevel appearance
-    auto const& it = m_subLevels.find(id);
-    if (it != m_subLevels.end())
+    // now apply this override to the unmodified SubCategory appearance
+    auto const& it = m_subCategories.find(id);
+    if (it != m_subCategories.end())
         ovr.ApplyTo(it->second);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::DropSubLevelOverride(SubLevelId id)
+void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
     {
-    m_subLevelOverrides.erase(id);
-    ReloadSubLevel(id);
+    m_subCategoryOverrides.erase(id);
+    ReloadSubCategory(id);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewController::_IsPointAdjustmentRequired (ViewportR vp) const {return vp.Is3dView ();}
-bool ViewController::_IsSnapAdjustmentRequired  (ViewportR vp, bool snapLockEnabled) const {return snapLockEnabled && vp.Is3dView ();}
-bool ViewController::_IsContextRotationRequired (ViewportR vp, bool contextLockEnabled) const {return contextLockEnabled;}
+bool ViewController::_IsPointAdjustmentRequired (DgnViewportR vp) const {return vp.Is3dView ();}
+bool ViewController::_IsSnapAdjustmentRequired  (DgnViewportR vp, bool snapLockEnabled) const {return snapLockEnabled && vp.Is3dView ();}
+bool ViewController::_IsContextRotationRequired (DgnViewportR vp, bool contextLockEnabled) const {return contextLockEnabled;}
 
 /////////////////////////////////////////////////////////////////////////////////////
 ///
@@ -676,10 +604,10 @@ static bool findNearbyStandardViewMatrix (RotMatrixR rMatrix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus ViewController::SetupFromFrustum (Frustum const& inFrustum) 
+ViewFrustumStatus ViewController::SetupFromFrustum (Frustum const& inFrustum)
     {
     Frustum frustum=inFrustum;
-    Viewport::FixFrustumOrder (frustum);
+    DgnViewport::FixFrustumOrder (frustum);
 
     return _SetupFromFrustum(frustum);
     }
@@ -729,7 +657,7 @@ ViewFrustumStatus ViewController::_SetupFromFrustum (Frustum const& frustum)
     DVec3d viewDelta;
     viewRot.Multiply (viewDelta, viewDiagRoot);
 
-    ViewFrustumStatus validSize = Viewport::ValidateWindowSize (viewDelta, false);
+    ViewFrustumStatus validSize = DgnViewport::ValidateWindowSize (viewDelta, false);
     if (validSize != VIEWFRUST_STATUS_SUCCESS)
         return validSize;
 
@@ -860,7 +788,7 @@ void ViewController::LookAtViewAlignedVolume (DRange3dCR volume, double const* a
         // don't fix the origin due to changes in delta here
         origNewDelta = newDelta;
         }
-    else 
+    else
         {
         newDelta.Scale(1.04); // default "dilation"
         }
@@ -873,7 +801,7 @@ void ViewController::LookAtViewAlignedVolume (DRange3dCR volume, double const* a
             newDelta.z = diag;
         }
 
-    Viewport::ValidateWindowSize (newDelta, true);
+    DgnViewport::ValidateWindowSize (newDelta, true);
 
     SetDelta(newDelta);
     if (aspect)
@@ -918,11 +846,11 @@ void ViewController::LookAtViewAlignedVolume (DRange3dCR volume, double const* a
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_FillModels() 
+void ViewController::_FillModels()
     {
     for (auto modelId : m_viewedModels)
         {
-        auto model = m_project.Models().GetModelById(modelId);
+        auto model = m_dgndb.Models().GetModelById(modelId);
         if (model)
             model->FillModel();
         }
@@ -931,8 +859,7 @@ void ViewController::_FillModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalViewController::PhysicalViewController (DgnProjectR project, DgnViewId viewId) 
-    : ViewController (project, viewId)
+PhysicalViewController::PhysicalViewController (DgnDbR dgndb, DgnViewId viewId) : ViewController(dgndb, viewId)
     {
     // not valid, but better than random
     m_origin.Zero();
@@ -984,15 +911,12 @@ DPoint3d PhysicalViewController::_GetOrigin() const {return m_origin;}
 DVec3d PhysicalViewController::_GetDelta() const {return m_delta;}
 RotMatrix PhysicalViewController::_GetRotation() const {return m_rotation;}
 
-DgnStyleId PhysicalViewController::GetDisplayStyleId() const {return m_displayStyleId;}
-void PhysicalViewController::SetDisplayStyle(DgnStyleId id) {m_displayStyleId = id;}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PhysicalViewController::SetTargetModel (DgnModelP target)
     {
-    if (!m_viewedModels.IsModelOn(target->GetModelId()))
+    if (!m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;
 
     m_targetModelId = target->GetModelId();
@@ -1004,6 +928,7 @@ BentleyStatus PhysicalViewController::SetTargetModel (DgnModelP target)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewController() const
     {
+#if defined (NEEDS_WORK_DRAWINGS)
     if (m_sectionView.IsValid())
         return m_sectionView;
 
@@ -1011,8 +936,11 @@ SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewContr
     if (drawing == NULL)
         return NULL;
 
-    auto sectionViewId = GetDgnProject().ViewGeneratedDrawings().QuerySourceView (drawing->GetModelId()); 
-    return dynamic_cast<SectioningViewController*>(GetDgnProject().Views().LoadViewController(sectionViewId, DgnViews::FillModels::Yes).get());
+    auto sectionViewId = GetDgnDb().GeneratedDrawings().QuerySourceView (drawing->GetModelId());
+    return dynamic_cast<SectioningViewController*>(GetDgnDb().Views().LoadViewController(sectionViewId, DgnViews::FillModels::Yes).get());
+#else
+    return nullptr;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1087,7 +1015,7 @@ StatusInt SectionDrawingViewController::_VisitPath (DisplayPathCP displayPath, v
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  03/14
 //--------------+------------------------------------------------------------------------
-void SectionDrawingViewController::_DrawView (ViewContextR context) 
+void SectionDrawingViewController::_DrawView (ViewContextR context)
     {
     context.PushTransform (GetFlatteningMatrixIf2D(context));
     T_Super::_DrawView (context);
@@ -1097,7 +1025,7 @@ void SectionDrawingViewController::_DrawView (ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectionDrawingViewController::_DrawElement(ViewContextR context, ElementHandleCR elIter)
+void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
 #if defined (NEEDS_WORK_VIEW_CONTROLLER)
     if (context.GetViewport() != NULL)
@@ -1108,14 +1036,13 @@ void SectionDrawingViewController::_DrawElement(ViewContextR context, ElementHan
         }
 #endif
 
-    T_Super::_DrawElement (context, elIter);
+    T_Super::_DrawElement (context, element);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraViewController::CameraViewController (DgnProjectR project, DgnViewId viewId) 
-    : PhysicalViewController (project, viewId) 
+CameraViewController::CameraViewController (DgnDbR project, DgnViewId viewId) : PhysicalViewController (project, viewId)
     {
     // not valid, but better than random
     m_isCameraOn = false;
@@ -1141,7 +1068,7 @@ void CameraViewController::CenterEyePoint(double const* backDistanceIn)
     BeAssert (IsCameraValid());
 
     DVec3d delta = GetDelta();
-    DPoint3d eyePoint; 
+    DPoint3d eyePoint;
     eyePoint.Scale (delta, 0.5);
     eyePoint.z = backDistanceIn ? *backDistanceIn : GetBackDistance();
 
@@ -1161,31 +1088,6 @@ void CameraViewController::CenterFocusDistance()
     DPoint3d eye     = GetEyePoint();
     DPoint3d target  = DPoint3d::FromSumOf(eye, GetZVector(), frontDist-backDist);
     LookAtUsingLensAngle(eye, target, GetYVector(), GetLensAngle(), &frontDist, &backDist);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     08/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayStyleCP PhysicalViewController::GetDisplayStyleCP() const
-    {
-#if defined (NEEDS_WORK_DGNITEM)
-    DgnModelP targetModel = GetTargetModel();
-    if (NULL == targetModel)
-        {
-        BeAssert (false);
-        return NULL;
-        }
-
-    DgnProjectP targetFile = &targetModel->GetDgnProject();
-    if (NULL == targetFile)
-        {
-        BeAssert (false);
-        return NULL;
-        }
-
-    return targetFile->Styles().DisplayStyles().QueryById (GetDisplayStyleId());
-#endif
-    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1217,7 +1119,7 @@ static bool convertToWorldPointWithStatus (DPoint3dR worldPoint, GeoLocationEven
         {
         if (!units.CanConvertBetweenGeoAndWorld())
             status = GeoLocationEventStatus::NoGeoCoordinateSystem;
-        else if (!units.IsGeoPointWithinGeoCoordinateSystemWorkingArea (location))
+        else if (!units.IsGeoPointWithinCoordinateSystem (location))
             status = GeoLocationEventStatus::PointOutsideGeoCoordinateSystem;
         else
             {
@@ -1241,7 +1143,7 @@ bool CameraViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, 
         return T_Super::_OnGeoLocationEvent (status, location);
 
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus (worldPoint, status, m_project.Units(), location))
+    if (!convertToWorldPointWithStatus (worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     worldPoint.z = GetEyePoint().z;
@@ -1252,7 +1154,7 @@ bool CameraViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, 
     newViewZ.Normalize();
     targetPoint.SumOf (worldPoint, newViewZ, GetFocusDistance());
     LookAt (worldPoint, targetPoint, DVec3d::From (0.0, 0.0, 1.0));
-    
+
     return true;
     }
 
@@ -1262,7 +1164,7 @@ bool CameraViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, 
 bool PhysicalViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus (worldPoint, status, m_project.Units(), location))
+    if (!convertToWorldPointWithStatus (worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     // If there's no perspective, just center the current location in the view.
@@ -1329,7 +1231,7 @@ bool PhysicalViewController::ViewVectorsFromOrientation (DVec3dR forward, DVec3d
     switch (mode)
         {
         case OrientationMode::CompassHeading:
-            azimuthCorrection = msGeomConst_radiansPerDegree * (90.0 + m_project.Units().GetAzimuth());
+            azimuthCorrection = msGeomConst_radiansPerDegree * (90.0 + m_dgndb.Units().GetAzimuth());
             forward.RotateXY (azimuthCorrection);
             break;
         case OrientationMode::IgnoreHeading:
@@ -1427,7 +1329,7 @@ bool CameraViewController::_OnOrientationEvent (RotMatrixCR orientation, Orienta
 bool DrawingViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus (worldPoint, status, m_project.Units(), location))
+    if (!convertToWorldPointWithStatus (worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     RotMatrix viewInverse;
@@ -1482,7 +1384,7 @@ ViewFrustumStatus CameraViewController::LookAt (DPoint3dCR eyePoint, DPoint3dCR 
     delta.z = (backDist - frontDist);
 
     DVec3d frontDelta = DVec3d::FromScale(delta, frontDist/focusDist);
-    ViewFrustumStatus stat = Viewport::ValidateWindowSize (frontDelta, false); // validate window size on front (smallest) plane
+    ViewFrustumStatus stat = DgnViewport::ValidateWindowSize (frontDelta, false); // validate window size on front (smallest) plane
     if (VIEWFRUST_STATUS_SUCCESS != stat)
         return  stat;
 
@@ -1591,52 +1493,6 @@ double CameraViewController::GetBackDistance() const
     return eyeOrg.z;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d PhysicalViewController::_ShowTxnSummary(TxnSummaryCR summary) 
-    {
-    DRange3d physicalRange = summary.GetPhysicalRange();
-
-    // any modify that did not affect the range of the element will not have been included in the summary range
-    // because there was no change to the range values in the drawing/physical element table. We need to union the range
-    // of the current element (from the entry in the element data table) so its range will be healed
-    for (auto el : summary.GetElementModifies())
-        {
-        DRange3dCP elRange = el->CheckIndexRange();
-        if (NULL == elRange)
-            continue;
-
-        if (el->GetDgnModelP()->Is3d())
-            physicalRange.Extend(*elRange);
-        }
-
-    return physicalRange;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d ViewController2d::_ShowTxnSummary(TxnSummaryCR summary) 
-    {
-    DRange2d drawingRange = summary.GetDrawingRange();
-
-    for (auto el : summary.GetElementModifies())
-        {
-        DRange3dCP elRange = el->CheckIndexRange();
-        if (NULL == elRange)
-            continue;
-
-        if (!el->GetDgnModelP()->Is3d())
-            {
-            drawingRange.Extend(elRange->low);
-            drawingRange.Extend(elRange->high);
-            }
-        }
-
-    return DRange3d::From(&drawingRange.low, 2, 0.0);
-    }
-
 double   DrawingViewController::_GetAspectRatioSkew() const {return 1.0;}
 DPoint3d ViewController2d::_GetOrigin() const {return DPoint3d::From (m_origin.x, m_origin.y);}
 void     ViewController2d::_SetDelta(DVec3dCR delta) {m_delta.x = delta.x; m_delta.y = delta.y;}
@@ -1681,7 +1537,7 @@ DPoint3d CameraViewController::_GetTargetPoint() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void CameraViewController::_RestoreFromSettings (JsonValueCR jsonObj) 
+void CameraViewController::_RestoreFromSettings (JsonValueCR jsonObj)
     {
     T_Super::_RestoreFromSettings(jsonObj);
 
@@ -1713,10 +1569,10 @@ void PhysicalViewController::_RestoreFromSettings (JsonValueCR jsonObj)
     {
     T_Super::_RestoreFromSettings(jsonObj);
 
-    m_viewFlags.From3dJson(jsonObj[VIEW_SETTING_Flags]);
+    if (jsonObj.isMember(VIEW_SETTING_Models))
+        m_viewedModels.FromJson(jsonObj[VIEW_SETTING_Models]);
 
-    if (jsonObj.isMember(VIEW_SETTING_DisplayStyleId))
-        m_displayStyleId = DgnStyleId(jsonObj[VIEW_SETTING_DisplayStyleId].asUInt());
+    m_viewFlags.From3dJson(jsonObj[VIEW_SETTING_Flags]);
 
     JsonUtils::DPoint3dFromJson (m_origin, jsonObj[VIEW_SETTING_Origin]);
     JsonUtils::DPoint3dFromJson (m_delta, jsonObj[VIEW_SETTING_Delta]);
@@ -1749,138 +1605,11 @@ void PhysicalViewController::_SaveToSettings (JsonValueR jsonObj) const
     T_Super::_SaveToSettings (jsonObj);
 
     m_viewFlags.To3dJson(jsonObj[VIEW_SETTING_Flags]);
-
-    if (m_displayStyleId.IsValid())
-        jsonObj[VIEW_SETTING_DisplayStyleId] = m_displayStyleId.GetValue();
+    m_viewedModels.ToJson(jsonObj[VIEW_SETTING_Models]);
 
     JsonUtils::DPoint3dToJson (jsonObj[VIEW_SETTING_Origin], m_origin);
     JsonUtils::DPoint3dToJson (jsonObj[VIEW_SETTING_Delta], m_delta);
     JsonUtils::RotMatrixToJson (jsonObj[VIEW_SETTING_Rotation], m_rotation);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewPortInfo::ViewPortInfo() {Clear();}
-ViewPortInfo::~ViewPortInfo() {}
-ViewPortInfoPtr ViewPortInfo::Create() {return new ViewPortInfo();}
-ViewPortInfoPtr ViewPortInfo::CopyFrom (ViewPortInfoCR source) {return new ViewPortInfo (source);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewPortInfoPtr ViewPortInfo::Create (BSIRectCR windowRect, BSIRectCR screenRect, UInt32 screenNum, bool wasDefined)
-    {
-    ViewPortInfo*   vp = new ViewPortInfo();
-
-    DPoint2d    screenSize;
-    screenSize.x = (double) (screenRect.corner.x - screenRect.origin.x);
-    screenSize.y = (double) (screenRect.corner.y - screenRect.origin.y);
-    if ( (screenSize.x > 0) && (screenSize.y > 0) )
-        {
-        vp->m_globalRelativeRect.origin.x = (double) (windowRect.origin.x - screenRect.origin.x) / screenSize.x;
-        vp->m_globalRelativeRect.origin.y = (double) (windowRect.origin.y - screenRect.origin.y) / screenSize.y;
-
-        DPoint2d    extentFraction;
-        extentFraction.x = (double) (windowRect.corner.x - windowRect.origin.x) / screenSize.x;
-        extentFraction.y = (double) (windowRect.corner.y - windowRect.origin.y) / screenSize.y;
-
-        vp->m_globalRelativeRect.corner.x = vp->m_globalRelativeRect.origin.x + extentFraction.x;
-        vp->m_globalRelativeRect.corner.y = vp->m_globalRelativeRect.origin.y + extentFraction.y;
-        }
-
-    vp->m_viewPixelRect.origin.x    = (Int16)windowRect.origin.x;
-    vp->m_viewPixelRect.origin.y    = (Int16)windowRect.origin.y;
-    vp->m_viewPixelRect.corner.x    = (Int16)windowRect.corner.x;
-    vp->m_viewPixelRect.corner.y    = (Int16)windowRect.corner.y;
-    vp->m_wasDefined                = wasDefined;
-    vp->m_screenNumber              = (Int16) screenNum;
-
-    return vp;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewPortInfo::Clear()
-    {
-    memset (&m_globalRelativeRect, 0, sizeof(m_globalRelativeRect));
-    memset (&m_viewPixelRect, 0, sizeof(m_viewPixelRect));
-
-    m_wasDefined   = false;
-    m_screenNumber = 0;
-    m_reserved     = 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewPortInfo::From (ViewPortInfoCR other)
-    {
-    if (this == &other)
-        return;
-
-    m_globalRelativeRect  = other.m_globalRelativeRect;
-    m_viewPixelRect       = other.m_viewPixelRect;
-    m_wasDefined          = other.m_wasDefined;
-    m_screenNumber        = other.m_screenNumber;
-    m_reserved            = other.m_reserved;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewPortInfoR ViewPortInfo::operator= (ViewPortInfoCR other)
-    {
-    From (other);
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewPortInfo::ViewPortInfo (ViewPortInfoCR other)
-    {
-    From (other);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewPortInfo::IsEqual (ViewPortInfoCP other) const
-    {
-    if (NULL == other)
-        return false;
-
-    if (this == other)
-        return true;
-
-    if (m_screenNumber != other->m_screenNumber)
-        return  false;
-
-    if (m_wasDefined != other->m_wasDefined)
-        return  false;
-
-    if (0 != memcmp (&m_globalRelativeRect, &other->m_globalRelativeRect, sizeof(m_globalRelativeRect)))
-        return  false;
-
-    if (0 != memcmp (&m_viewPixelRect, &other->m_viewPixelRect, sizeof(m_viewPixelRect)))
-        return  false;
-
-    return  true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-double ViewPortInfo::GetAspectRatio() const
-    {
-    double  aspectYDelta = (double) m_viewPixelRect.corner.y - m_viewPixelRect.origin.y;
-
-    if  (aspectYDelta > 0.0)
-        return (double)(m_viewPixelRect.corner.x - m_viewPixelRect.origin.x) / aspectYDelta;
-
-    return 0.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1891,14 +1620,12 @@ IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
 #ifdef DGNV10FORMAT_CHANGES_WIP
     // if we don't have an ACS when this is called, try to get one.
     if (!m_auxCoordSys.IsValid())
-        IACSManager::GetManager().ReadSettings (const_cast <ViewControllerP>(this), GetElementRef(), GetRootModelP(false));
+        IACSManager::GetManager().ReadSettings (const_cast <ViewControllerP>(this), GetDgnElement(), GetRootModelP(false));
 
     IAuxCoordSysP   acs = m_auxCoordSys.get();
 
      if (NULL != acs && SUCCESS == acs->CompleteSetupFromViewController (this))
         return acs;
-
-    return m_auxCoordSys.get();
 #endif
 
     return m_auxCoordSys.get();
@@ -1920,13 +1647,8 @@ void PhysicalViewController::SetAuxCoordinateSystem (IAuxCoordSysP acs)
 void ViewFlags::InitDefaults()
     {
     memset (this, 0, sizeof(ViewFlags));
-
     line_wghts  = true;
     patterns    = true;
-    text_nodes  = true;
-    ed_fields   = true;
-    constructs  = true;
-    dimens      = true;
     fill        = true;
     }
 

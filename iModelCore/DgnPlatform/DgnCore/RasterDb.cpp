@@ -41,7 +41,7 @@ static Utf8CP RASTERRESOLUTIONBLOB_Height       = "height";       // in pixels (
 DgnRasterTable::Row DgnRasterTable::QueryRasterById(DgnRasterFileId id)
     {
     Statement stmt;
-    stmt.Prepare (m_project, "SELECT Name,Header FROM " DGN_TABLE_RasterFile " WHERE RasterId=?");
+    stmt.Prepare (m_dgndb, "SELECT Name,Header FROM " DGN_TABLE_RasterFile " WHERE RasterId=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -86,7 +86,7 @@ DgnRasterTable::Row DgnRasterTable::QueryRasterById(DgnRasterFileId id)
 BeSQLite::DbResult DgnRasterTable::DeleteRaster(DgnRasterFileId id)
     {
     Statement stmt;
-    stmt.Prepare (m_project, "DELETE FROM " DGN_TABLE_RasterFile " WHERE RasterId=?");
+    stmt.Prepare (m_dgndb, "DELETE FROM " DGN_TABLE_RasterFile " WHERE RasterId=?");
     stmt.BindId(1, id);
     
     return stmt.Step() == BE_SQLITE_DONE ? BE_SQLITE_OK : BE_SQLITE_ERROR;
@@ -97,7 +97,7 @@ BeSQLite::DbResult DgnRasterTable::DeleteRaster(DgnRasterFileId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnRasterTable::InsertRaster (DgnRasterTable::Row& row)
     {
-    BeAssert (m_project.IsTransactionActive());
+    BeAssert (m_dgndb.IsTransactionActive());
 
     // Do not accept invalid header
     if(row.GetPixelType() == 0 || row.GetCompressionType() == 0 || row.GetResolutions().empty())
@@ -106,7 +106,7 @@ BeSQLite::DbResult DgnRasterTable::InsertRaster (DgnRasterTable::Row& row)
         return BE_SQLITE_ERROR;
         }       
 
-    DbResult status = m_project.GetNextRepositoryBasedId(row.m_id, DGN_TABLE_RasterFile, "RasterId");
+    DbResult status = m_dgndb.GetNextRepositoryBasedId(row.m_id, DGN_TABLE_RasterFile, "RasterId");
     if(BE_SQLITE_OK != status)
         {
         BeAssert (!"DgnRasterTable: failed to GetNextRepositoryBasedId"); 
@@ -114,14 +114,14 @@ BeSQLite::DbResult DgnRasterTable::InsertRaster (DgnRasterTable::Row& row)
         }
 
     Json::Value headerBlob;
-    headerBlob[RASTERHEADERBLOB_Type]        = (UInt32)HEADERBLOBTYPE_DgnDb;        // The only one we support for now.
+    headerBlob[RASTERHEADERBLOB_Type]        = (uint32_t)HEADERBLOBTYPE_DgnDb;        // The only one we support for now.
     headerBlob[RASTERHEADERBLOB_BlockWidth]  = row.GetBlockWidth();
     headerBlob[RASTERHEADERBLOB_BlockHeight] = row.GetBlockHeight();
-    headerBlob[RASTERHEADERBLOB_PixelType]  = (UInt32)row.GetPixelType();
-    headerBlob[RASTERHEADERBLOB_CompressionType] = (UInt32)row.GetCompressionType();
+    headerBlob[RASTERHEADERBLOB_PixelType]  = (uint32_t)row.GetPixelType();
+    headerBlob[RASTERHEADERBLOB_CompressionType] = (uint32_t)row.GetCompressionType();
 
     Json::Value allResolutions;//(Json::arrayValue);
-    for(UInt32 i=0; i < row.GetResolutions().size(); ++i)
+    for(uint32_t i=0; i < row.GetResolutions().size(); ++i)
         {
         Json::Value oneRes(Json::objectValue);
         oneRes[RASTERRESOLUTIONBLOB_Width]  = row.GetResolutions()[i].width;
@@ -134,10 +134,10 @@ BeSQLite::DbResult DgnRasterTable::InsertRaster (DgnRasterTable::Row& row)
     Utf8String  HeaderBlobStr = Json::FastWriter::ToString(headerBlob);
 
     Statement stmt;
-    stmt.Prepare (m_project, "INSERT INTO " DGN_TABLE_RasterFile " (RasterID, Name, Header) VALUES(?,?,?)");
+    stmt.Prepare (m_dgndb, "INSERT INTO " DGN_TABLE_RasterFile " (RasterID, Name, Header) VALUES(?,?,?)");
     stmt.BindId (1, row.GetId());
-    stmt.BindText (2, row.GetName(), Statement::MAKE_COPY_No);
-    stmt.BindBlob (3, HeaderBlobStr.c_str(), (int)HeaderBlobStr.length(), Statement::MAKE_COPY_No);
+    stmt.BindText (2, row.GetName(), Statement::MakeCopy::No);
+    stmt.BindBlob (3, HeaderBlobStr.c_str(), (int)HeaderBlobStr.length(), Statement::MakeCopy::No);
     status = stmt.Step();
     
     return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
@@ -146,13 +146,13 @@ BeSQLite::DbResult DgnRasterTable::InsertRaster (DgnRasterTable::Row& row)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Donald.Morissette                10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnRasterDataTable::ReadData (void* data, UInt32& outDataSize, UInt32 inDataSize, DgnRasterFileId rasterId, UInt32 resolutionLevel, UInt32 rowBlockId, UInt32 columnBlockId)
+BeSQLite::DbResult DgnRasterDataTable::ReadData (void* data, uint32_t& outDataSize, uint32_t inDataSize, DgnRasterFileId rasterId, uint32_t resolutionLevel, uint32_t rowBlockId, uint32_t columnBlockId)
     {
-    BeAssert (m_project.IsTransactionActive());
+    BeAssert (m_dgndb.IsTransactionActive());
 
     DbResult status;
     CachedStatementPtr stmt;
-    if (BE_SQLITE_OK != (status = m_project.GetCachedStatement (stmt, "SELECT Data FROM " DGN_TABLE_RasterData " WHERE RasterId=? AND ResolutionLevel=? AND RowBlockId=? AND ColumnBlockId=?")))
+    if (BE_SQLITE_OK != (status = m_dgndb.GetCachedStatement (stmt, "SELECT Data FROM " DGN_TABLE_RasterData " WHERE RasterId=? AND ResolutionLevel=? AND RowBlockId=? AND ColumnBlockId=?")))
         return status;
 
     stmt->BindId (1, rasterId);
@@ -176,14 +176,14 @@ BeSQLite::DbResult DgnRasterDataTable::ReadData (void* data, UInt32& outDataSize
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Donald.Morissette                10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRasterDataTable::RasterBlockDataPtr DgnRasterDataTable::ReadDataPtr (BeSQLite::DbResult& status, DgnRasterFileId rasterId, UInt32 resolutionLevel, UInt32 rowBlockId, UInt32 columnBlockId)
+DgnRasterDataTable::RasterBlockDataPtr DgnRasterDataTable::ReadDataPtr (BeSQLite::DbResult& status, DgnRasterFileId rasterId, uint32_t resolutionLevel, uint32_t rowBlockId, uint32_t columnBlockId)
     {
-    BeAssert (m_project.IsTransactionActive());
+    BeAssert (m_dgndb.IsTransactionActive());
 
     RasterBlockDataPtr pBlockData = RasterBlockData::Create();
     Statement* pStmt(pBlockData->GetStatement());
 
-    pStmt->Prepare (m_project, "SELECT Data FROM " DGN_TABLE_RasterData " WHERE RasterId=? AND ResolutionLevel=? AND RowBlockId=? AND ColumnBlockId=?");
+    pStmt->Prepare (m_dgndb, "SELECT Data FROM " DGN_TABLE_RasterData " WHERE RasterId=? AND ResolutionLevel=? AND RowBlockId=? AND ColumnBlockId=?");
     pStmt->BindId (1, rasterId);
     pStmt->BindInt (2, resolutionLevel);
     pStmt->BindInt (3, rowBlockId);
@@ -198,17 +198,17 @@ DgnRasterDataTable::RasterBlockDataPtr DgnRasterDataTable::ReadDataPtr (BeSQLite
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Donald.Morissette                10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnRasterDataTable::AddData (void const* data, UInt32 datasize, DgnRasterFileId rasterId, UInt32 resolutionLevel, UInt32 rowBlockId, UInt32 columnBlockId)
+BeSQLite::DbResult DgnRasterDataTable::AddData (void const* data, uint32_t datasize, DgnRasterFileId rasterId, uint32_t resolutionLevel, uint32_t rowBlockId, uint32_t columnBlockId)
     {
-    BeAssert (m_project.IsTransactionActive());
+    BeAssert (m_dgndb.IsTransactionActive());
 
     Statement stmt;
-    stmt.Prepare (m_project, "INSERT INTO " DGN_TABLE_RasterData " (RasterId, ResolutionLevel, RowBlockId, ColumnBlockId, Data) VALUES(?,?,?,?,?)");
+    stmt.Prepare (m_dgndb, "INSERT INTO " DGN_TABLE_RasterData " (RasterId, ResolutionLevel, RowBlockId, ColumnBlockId, Data) VALUES(?,?,?,?,?)");
     stmt.BindId   (1, rasterId);
     stmt.BindInt  (2, resolutionLevel);
     stmt.BindInt  (3, rowBlockId);
     stmt.BindInt  (4, columnBlockId);
-    stmt.BindBlob (5, data, datasize, Statement::MAKE_COPY_No);
+    stmt.BindBlob (5, data, datasize, Statement::MakeCopy::No);
     DbResult status = stmt.Step();
     return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;  
     }

@@ -33,23 +33,6 @@ DGNPLATFORM_TYPEDEFS (UnitIteratorOptions)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-struct StoredUnitInfo;
-
-//=======================================================================================
-//! Unit information.
-//=======================================================================================
-// In-memory use only!
-struct UnitInfo
-    {
-    UnitFlags       flags;                          /**< Unit flags */
-    double          numerator;                      /**< Units per meter fraction numerator */
-    double          denominator;                    /**< Units per meter fraction denominator */
-    WChar           label[DGNPLATFORM_RESOURCE_MAX_UNIT_LABEL_LENGTH];   /**< Units Label */
-
-    DGNPLATFORM_EXPORT static void     FromStoredUnitInfo (UnitInfo&, StoredUnitInfo const&);
-    DGNPLATFORM_EXPORT static void     ToStoredUnitInfo (StoredUnitInfo&, UnitInfo const&);
-    };
-
 //=======================================================================================
 //! A UnitDefinition describes a unit which is a context in which users and
 //! applications express distances.  To correctly express the value of any distance
@@ -99,12 +82,8 @@ public:
     //! Initialize a UnitDefinition from another UnitDefinition
     DGNPLATFORM_EXPORT void Init (UnitDefinitionCR source);
 
-    DGNPLATFORM_EXPORT UnitDefinition (UnitInfoCR unitInfo);
-
-    DGNPLATFORM_EXPORT void Init (UnitInfoCR unitInfo);
-    DGNPLATFORM_EXPORT UnitInfo ToUnitInfo () const;
-    DGNPLATFORM_EXPORT static UnitBase BaseFromInt (UInt32 base);
-    DGNPLATFORM_EXPORT static UnitSystem SystemFromInt (UInt32 system);
+    DGNPLATFORM_EXPORT static UnitBase BaseFromInt (uint32_t base);
+    DGNPLATFORM_EXPORT static UnitSystem SystemFromInt (uint32_t system);
     DGNPLATFORM_EXPORT static int CompareRatios (double num1, double den1, double num2, double den2);
 
     //! Test if the unit contains valid data.

@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/gdileak.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,7 @@
 #include <vector>
 #include <RmgrTools/Tools/pagstruc.h>
 
-Int32     pagallocI_recordCallingStack (PageMallocEntry *headerP, void* returnAddress);
+int32_t   pagallocI_recordCallingStack (PageMallocEntry *headerP, void* returnAddress);
 
 std::map<uintptr_t, PageMallocEntry const*> g_HandleInfo;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsName.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -39,7 +39,7 @@ Utf8CP          name
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsDefinition::SetHWStyle (UInt32 rscType, UInt64 rscID)
+void LsDefinition::SetHWStyle (uint32_t rscType, uint64_t rscID)
     {
     m_hardwareLineCode = -1;
     if (LsElementType::Internal == (LsElementType)rscType)
@@ -55,7 +55,7 @@ void LsDefinition::SetHWStyle (UInt32 rscType, UInt64 rscID)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, Int32 styleId)
+void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, int64_t styleId)
     {
     m_isDirty           = false;
     m_lsComp            = NULL;
@@ -76,11 +76,11 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, Int32 styleId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinition::LsDefinition (Utf8CP name, DgnProjectR project, Json::Value& lsDefinition, Int32 styleId)
+LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, int64_t styleId)
     {
     Init (name, lsDefinition, styleId);
-    UInt32 compType = GetComponentType(lsDefinition);
-    UInt32 compId = GetComponentId(lsDefinition);
+    uint32_t compType = GetComponentType(lsDefinition);
+    uint32_t compId = GetComponentId(lsDefinition);
 
     m_location.SetLocation (project, compType, compId);
     SetHWStyle (compType, compId);
@@ -140,7 +140,7 @@ WString         LsDefinition::GetStyleName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsMap::AddIdEntry
 (
-Int32           id,
+int64_t         id,
 LsDefinitionP   nameRec,
 bool            resolves
 )
@@ -155,7 +155,7 @@ bool            resolves
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsMap::AddIdEntry (Int32 id, DgnProjectR project, CharCP name, bool resolves)
+void            LsMap::AddIdEntry (int64_t id, DgnDbR project, CharCP name, bool resolves)
     {
     LsDefinitionP   nameRec = FindInRefOrRsc (&project, name);
     LsIdNode        idRec (id, name, nameRec, resolves);
@@ -168,7 +168,7 @@ void            LsMap::AddIdEntry (Int32 id, DgnProjectR project, CharCP name, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSystemMap::AddSystemIdEntry
 (
-Int32           id,
+int64_t         id,
 Utf8CP       name,
 bool            resolves
 )
@@ -190,7 +190,7 @@ void            LsMap::AddNameEntry (LsDefinition* nameRec)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinitionP   LsMap::AddNameEntry(Utf8CP name, Int32 styleId, DgnProjectR project, Json::Value& lsDefinition)
+LsDefinitionP   LsMap::AddNameEntry(Utf8CP name, int64_t styleId, DgnDbR project, Json::Value& lsDefinition)
     {
     LsDefinition* nameRec = new LsDefinition (name, project, lsDefinition, styleId);
     AddNameEntry (nameRec);
@@ -200,7 +200,7 @@ LsDefinitionP   LsMap::AddNameEntry(Utf8CP name, Int32 styleId, DgnProjectR proj
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsMap::RemoveIdEntry (Int32 id)
+BentleyStatus       LsMap::RemoveIdEntry (int64_t id)
     {
     LsIdNode    node (0,0,0, true);
 
@@ -228,7 +228,7 @@ BentleyStatus       LsMap::RemoveNameEntry (Utf8CP name)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDgnProjectMapP  LsMap::GetMapPtr(DgnProjectR project, bool loadIfNotLoaded)
+LsDgnProjectMapP  LsMap::GetMapPtr(DgnDbR project, bool loadIfNotLoaded)
     {
     return  project.Styles().LineStyles().GetMapP (loadIfNotLoaded);
     }
@@ -236,7 +236,7 @@ LsDgnProjectMapP  LsMap::GetMapPtr(DgnProjectR project, bool loadIfNotLoaded)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2013
 //---------------------------------------------------------------------------------------
-LsDgnProjectMapP  LsMap::GetProjectMap (DgnProjectR project, bool loadIfNotLoaded)
+LsDgnProjectMapP  LsMap::GetProjectMap (DgnDbR project, bool loadIfNotLoaded)
     {
     return GetMapPtr(project, loadIfNotLoaded);
     }
@@ -288,7 +288,7 @@ void            LsMap::DropAllComponentRefs ()
     size_t count = dgnFiles.size();
     for (size_t i=0; i<count; i++)
         {
-        DgnProjectP    dgnFile = dgnFiles.at(i);
+        DgnDbP    dgnFile = dgnFiles.at(i);
         if (NULL == dgnFile)
             continue;
 
@@ -312,7 +312,7 @@ void            LsMap::DropAllComponentRefs ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsIdNode::LsIdNode
 (
-Int32           id,
+int64_t         id,
 Utf8CP       name,
 LsDefinitionP   nameRec,
 bool            resolves
@@ -459,7 +459,7 @@ void            LsMap::EmptyAllMaps ()
 #ifdef BEIJING_DGNSESSION_WIP
     DgnFileArray& dgnFiles = DgnFile::GetOpenedFileArray (session);
 
-    DgnProjectP  currFile;
+    DgnDbP  currFile;
     size_t numOpenFiles = dgnFiles.size();
     LsMap*      currMap;
 
@@ -474,59 +474,60 @@ void            LsMap::EmptyAllMaps ()
     LsSystemMap::EmptySystemMap();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    07/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbCR    LsDgnProjectMap::GetDgnDb () const
+    {
+    return m_dgnProject;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    07/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbR     LsDgnProjectMap::GetDgnProjectR () const
+    {
+    return m_dgnProject;
+    }
+
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    ChuckKirschman  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt insertIntoNameMap(LsMap* lsInfo, Utf8CP name, DgnStyleId id, Utf8String& data, DgnProjectR project)
-    {
-    Json::Value  jsonObj (Json::objectValue);
-    if (!Json::Reader::Parse(data, jsonObj))
-        return ERROR;
-
-    lsInfo->AddNameEntry (name, (Int32)id.GetValue(), project, jsonObj);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    07/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnProjectCR    LsDgnProjectMap::GetDgnProject () const
-    {
-    return m_dgnProject;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    07/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnProjectR     LsDgnProjectMap::GetDgnProjectR () const
-    {
-    return m_dgnProject;
-    }
+//static StatusInt insertIntoNameMap(LsMap* lsInfo, Utf8CP name, DgnStyleId id, Utf8String& data, DgnDbR project)
+//    {
+//    Json::Value  jsonObj (Json::objectValue);
+//    if (!Json::Reader::Parse(data, jsonObj))
+//        return ERROR;
+//
+//    lsInfo->AddNameEntry (name, (int32_t)id.GetValue(), project, jsonObj);
+//
+//    return SUCCESS;
+//    }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    ChuckKirschman  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsDgnProjectMap::Load ()
     {
-    if (IsLoaded())
-        return SUCCESS;
+    //if (IsLoaded())
+    //    return SUCCESS;
 
-    TreeLoaded ();
+    //TreeLoaded ();
 
-    DgnStyles::Iterator lineStyles = m_dgnProject.Styles ().LineStyles().MakeIterator ();
-    for (DgnStyles::Iterator::Entry iter = lineStyles.begin (); lineStyles.end () != iter; ++iter)
-        {
-        Utf8String  data ((Utf8CP)iter.GetData());
-        insertIntoNameMap (this, iter.GetName(), iter.GetId(), data, this->m_dgnProject);
-        AddIdEntry (iter.GetId().GetValue(), m_dgnProject, iter.GetName(), true);
-        }
+    //DgnStyles::Iterator lineStyles = m_dgnProject.Styles ().LineStyles().MakeIterator ();
+    //for (DgnStyles::Iterator::Entry iter = lineStyles.begin (); lineStyles.end () != iter; ++iter)
+    //    {
+    //    Utf8String  data ((Utf8CP)iter.GetData());
+    //    insertIntoNameMap (this, iter.GetName(), iter.GetId(), data, this->m_dgnProject);
+    //    AddIdEntry (iter.GetId().GetValue(), m_dgnProject, iter.GetName(), true);
+    //    }
 
-    // Update the dialog if any names were loaded.  Can't do this until the line style system is loaded
-    // since it calls into the level system which updates the local file from dgn libs.
-    T_HOST.GetLineStyleAdmin()._LoadedNameMap (m_dgnProject);
+    //// Update the dialog if any names were loaded.  Can't do this until the line style system is loaded
+    //// since it calls into the level system which updates the local file from dgn libs.
+    //T_HOST.GetLineStyleAdmin()._LoadedNameMap (m_dgnProject);
 
-    return SUCCESS;
+    //return SUCCESS;
+    return ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -540,7 +541,7 @@ LsDgnProjectMap::~LsDgnProjectMap ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LsDgnProjectMapPtr LsDgnProjectMap::Create (DgnProjectR project)
+LsDgnProjectMapPtr LsDgnProjectMap::Create (DgnDbR project)
     {
     return new LsDgnProjectMap (project); 
     }
@@ -581,7 +582,7 @@ LsSystemMapCR   LsSystemMap::GetSystemMap ()
 * Look for the name in the file; if not there, look in the resource map.
 * @bsimethod                                                    ChuckKirschman   09/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinitionP     LsMap::FindInRefOrRsc (DgnProjectP project, CharCP name)
+LsDefinitionP     LsMap::FindInRefOrRsc (DgnDbP project, CharCP name)
     {
     LsMap* lsInfo = NULL != project ? GetMapPtr (*project, true) : NULL;
 
@@ -596,7 +597,7 @@ LsDefinitionP     LsMap::FindInRefOrRsc (DgnProjectP project, CharCP name)
 * Look for the ID in the file; if not there, look in the resource map.
 * @bsimethod                                                    ChuckKirschman   09/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinitionP     LsMap::FindInRefOrRsc (DgnProjectP project, Int32 styleId)
+LsDefinitionP     LsMap::FindInRefOrRsc (DgnDbP project, int64_t styleId)
     {
     LsMap* lsInfo = NULL != project ? GetMapPtr (*project, true) : NULL;
 
@@ -688,7 +689,7 @@ LsMapIterator LsMap::end   () const
 * Find a style by id. If id > 0, first look in system map. If not there, look in modelref
 * @bsimethod                                                    ChuckKirschman   09/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinitionP     LsMap::FindInRef (DgnProjectP project, Int32 styleId)
+LsDefinitionP     LsMap::FindInRef (DgnDbP project, int64_t styleId)
     {
 #ifdef DGNV10FORMAT_CHANGES_WIP_LINESTYLES
     if (styleId > 0)
@@ -724,7 +725,7 @@ LsDefinitionP   LsMap::Find (Utf8CP name) const
 * look up a linestyle in a LsMap by id. Return LsIdNodeP
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsIdNodeP       LsMap::FindId (Int32 styleId) const
+LsIdNodeP       LsMap::FindId (int64_t styleId) const
     {
     LsIdNodeP   retval = m_idTree.Get (styleId);
     
@@ -738,7 +739,7 @@ LsIdNodeP       LsMap::FindId (Int32 styleId) const
 * look up a linestyle in a LsMap by id. Return name record.
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinitionP   LsMap::Find (Int32 styleId) const
+LsDefinitionP   LsMap::Find (int64_t styleId) const
     {
     LsIdNodeP   idNode = FindId (styleId);
     return  (NULL != idNode) ? idNode->GetValue() : NULL;
@@ -757,9 +758,9 @@ LsLocationType   LsMap::GetType ()  const
     }
 
 LsDefinitionP   LsMap::GetLineStyleP (Utf8CP name)  const { return Find (name); }
-LsDefinitionP   LsMap::GetLineStyleP (Int32 styleId)   const { return Find (styleId); }
+LsDefinitionP   LsMap::GetLineStyleP (int64_t styleId)   const { return Find (styleId); }
 LsDefinitionCP  LsMap::GetLineStyleCP (Utf8CP name) const { return GetLineStyleP (name); }
-LsDefinitionCP  LsMap::GetLineStyleCP (Int32 styleId)  const { return GetLineStyleP (styleId); }
+LsDefinitionCP  LsMap::GetLineStyleCP (int64_t styleId)  const { return GetLineStyleP (styleId); }
 
 static ILineStyleDgnLibIterator* s_iter;
 
@@ -842,7 +843,7 @@ void            processDgnLibMaps (LsMap::PFNameMapProcessFunc callback, void*ar
             
         size_t  iterHandle = s_iter->_Begin ();
         
-        for (DgnProjectP  dgnFile = s_iter->_MoveNext (iterHandle); NULL != dgnFile; dgnFile = s_iter->_MoveNext (iterHandle))
+        for (DgnDbP  dgnFile = s_iter->_MoveNext (iterHandle); NULL != dgnFile; dgnFile = s_iter->_MoveNext (iterHandle))
             {
             LsMapP     lsMap = LsMap::GetMapPtr (*dgnFile, true);
             lsMap->ProcessNameMap (callback, arg);
@@ -897,19 +898,19 @@ Utf8CP  name
 Public int      BentleyApi::lineStyle_nameInsert
 (
 Utf8CP       styleName,     /* => New style name for name map      */
-UInt32          rscFile,        /* => Resource file handle             */
-UInt32          rscType,        /* => UDLS resource type               */
-ElementId       rscID,          /* => UDLS resource ID                 */
-UInt32          nameAttributes, /* => Name attributes                  */
+uint32_t        rscFile,        /* => Resource file handle             */
+uint32_t        rscType,        /* => UDLS resource type               */
+DgnElementId    rscID,          /* => UDLS resource ID                 */
+uint32_t        nameAttributes, /* => Name attributes                  */
 long            id,             /* => pass 0 for generated seed id     */
-UInt32          option,         /* => Function options                 */
+uint32_t        option,         /* => Function options                 */
 DgnModelP    modelRef
 )
     {
     return ERROR;
 #ifdef DGNV10FORMAT_CHANGES_WIP_LINESTYLES
     LsRscRecord   rscNameRec;
-    DgnProjectR    dgnFile = *modelRef->GetDgnProjectP ();
+    DgnDbR    dgnFile = *modelRef->GetDgnProjectP ();
     
     /*-------------------------------------------------------------------
     Create the name map record.
@@ -929,7 +930,7 @@ DgnModelP    modelRef
         }
 
     // Find a unique ID add to id tree
-    Int32   uniqueID = getUniqueLsId ((id != 0 ? id : nameRec->GetLocation()->GetSeedID ()), dgnFile);
+    int32_t uniqueID = getUniqueLsId ((id != 0 ? id : nameRec->GetLocation()->GetSeedID ()), dgnFile);
     LsDgnFileMap* lsInfo = LsMap::GetMapPtr (dgnFile, true);
     lsInfo->AddIdEntry (uniqueID, dgnFile, styleName, true);
 

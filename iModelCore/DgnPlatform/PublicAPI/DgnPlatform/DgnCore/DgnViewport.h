@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnViewport.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,6 @@
 #include <Bentley/WString.h>
 #include <Geom/IntegerTypes/BSIRect.h>
 #include "IViewOutput.h"
-#include "DisplayStyle.h"
 #include "ColorUtil.h"
 #include "ViewController.h"
 
@@ -24,33 +23,33 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 /**  @addtogroup DgnViewGroup
 
  A View is an abstract term to describe the way that applications display contents from a \ref DgnProjectGroup on a device like a screen. 
- <p>There are different types of views to show different types of project data in application-specific ways.
+ <p>There are different types of views to show different types of DgnModels in application-specific ways.
  <p>A ViewController provides persistence and behavior to a type of view.
- <p>A Viewport has a reference-counted-pointer to a ViewController that controls it.
- <p>A ViewContext holds the state of an operation performed on one or more elements in a Viewport.
- <p>A QueryModel is used to query and display graphics from the DgnProject database. 
+ <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.
+ <p>A ViewContext holds the state of an operation performed on one or more elements in a DgnViewport.
+ <p>A QueryModel is used to query and display graphics from the DgnDb database. 
 
-  <h2>%Viewport Coordinates</h2>
+  <h2>%DgnViewport Coordinates</h2>
   Coordinate information can be exchanged with Viewports using the various coordinate systems defined in DgnCoordSystem.
   - \c DgnCoordSystem::Screen - coordinates are relative to the upper left corner of the screen on which the viewport resides
   - \c DgnCoordSystem::View   - coordinates are relative to the upper left corner of the viewport.
   - \c DgnCoordSystem::Npc    - (<b>N</b>ormalized <b>P</b>lane <b>C</b>oordinates) the left bottom rear of the view is (0.0, 0.0, 0.0) and
                             the right top front of the view is coordinate (1.0, 1.0, 1.0)
-  - \c DgnCoordSystem::World  - For PhyscialViews, the <i>world</i> coordinate system is the DgnProject coordinate system. For DrawingViews, 
+  - \c DgnCoordSystem::World  - For PhyscialViews, the <i>world</i> coordinate system is the DgnDb coordinate system. For DrawingViews, 
                          the world coordinate system is the drawing's coordinate system.
 
-  \b Note: ViewContext has an additional type of coordinate system called \c COORDSYS_Local since it supports pushing and popping of transformations.
-           When an ViewContext is first attached to a Viewport, the "local" coordinate system will be the Viewport's world coordinate system.
+  \b Note: ViewContext has an additional type of coordinate system called \c DgnCoordSystem::Local since it supports pushing and popping of transformations.
+           When an ViewContext is first attached to a DgnViewport, the "local" coordinate system will be the DgnViewport's world coordinate system.
 
   @see DgnCoordSystem
 
 @if BENTLEY_SDK_Internal
   <h2>Output Buffers</h2>
-  Each Viewport has multiple output buffers associated with it that are used to compose the result (the "scene", see below)
+  Each DgnViewport has multiple output buffers associated with it that are used to compose the result (the "scene", see below)
   that is visible to the user. Buffers are selected using DgnDrawBuffer:
     - \c DgnDrawBuffer::Screen - This is the only buffer that is visible to the user. The Screen buffer is <em>not</em> a drawable buffer. The scene
-                          is composed using one of the non-visible offscreen buffers and then is copied to the screen by MicroStation at the appropriate time.
-    - \c DgnDrawBuffer::Dynamic - This is typically (but not always) an accelerated offscreen buffer, if the viewport is attached to one of MicroStation's views.
+                          is composed using one of the non-visible offscreen buffers and then is copied to the screen by the application at the appropriate time.
+    - \c DgnDrawBuffer::Dynamic - This is typically (but not always) an accelerated offscreen buffer, if the viewport is attached to one of the views.
                            However, if the viewport is to a different device (e.g. a plotter), or if the graphics device is not accelerated, the dynamic
                            buffer and the Drawing buffer will be mapped to the same buffer. The Dynamic buffer also cannot be copied to the BackingStore.
                            For this reason, the Dynamic buffer is almost exclusively use for <i>viewing dynamics</i> (e.g. panning and zooming).
@@ -60,11 +59,11 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
                             Most drawing is to this buffer.
 
   <h2>Scene Creation</h2>
-  The current image visible within a Viewport is called the \e Scene. To provide feedback to the user during a session, a Viewport's scene
+  The current image visible within a DgnViewport is called the \e Scene. To provide feedback to the user during a session, a DgnViewport's scene
   may change repeatedly (e.g. when moving the camera or while modifying elements) as a series of steps called \e Frames. For each frame, the scene differs from the preceding
   frame only slightly. Each scene is \e composed by drawing to offscreen (non-visible) buffers and only the final result is then copied
   to the visible buffer. This way the user does not see the intervening scene composition states and the scene does not appear to
-  flicker as its contents change. The process of composing a Scene starts by drawing all of the visible elements (those in the Viewport's
+  flicker as its contents change. The process of composing a Scene starts by drawing all of the visible elements (those in the DgnViewport's
   DgnModels, plus all relevant "Transient" elements.) The resultant image represents the \e static part of the
   scene, and typically takes a relatively long time to create. Therefore, the static image is saved into the \c DgnDrawBuffer::BackingStore so that it can be reused.
 
@@ -111,34 +110,15 @@ struct FitViewParams
 };
 
 //__PUBLISH_SECTION_END__
-#if defined (NEEDS_WORK_DGNITEM)
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ShadowHealState
-{
-    BSIRect                     m_dirtyRect;
-    ViewFlags                   m_shadowListFlags;
-    ViewDisplayOverrides        m_shadowListOverrides;
-    bool                        m_hasConfiguredDisplayStyleItem;
-    ULong                       m_shadowHealStartTick;
-    ShadowHealState ();
-    DGNPLATFORM_EXPORT void    ClearDirty();
-    DGNPLATFORM_EXPORT void    ResetDisplayStyleItemState ();
-};
-typedef ShadowHealState&   ShadowHealStateR;
-#endif
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
-struct IProgressiveDisplay : virtual RefCountedBase
+struct IProgressiveDisplay : IRefCounted
 {
     enum class Completion {Finished=0, Aborted=1, Failed=2};
     virtual Completion _Process(ViewContextR) = 0;   // if this returns Finished, it is removed from the viewport
-    virtual bool _WantTimeoutSet(UInt32& limit) = 0;  // set limit and returns true to cause caller to call EnableStopAfterTimout
+    virtual bool _WantTimeoutSet(uint32_t& limit) = 0;  // set limit and returns true to cause caller to call EnableStopAfterTimout
 };
-
 //__PUBLISH_SECTION_START__
 
 //=======================================================================================
@@ -214,8 +194,8 @@ struct StopEvents
     bool    m_abortUpdateRequest;
     bool    m_touchMotion;          //  Ignored unless the motion exceeds range.
     bool    m_anyEvent;
-    UInt32  m_touchLimit;
-    UInt32  m_numTouches;
+    uint32_t m_touchLimit;
+    uint32_t m_numTouches;
     BentleyApi::Point2d m_touches[3];
 
     enum StopMask
@@ -262,7 +242,7 @@ struct StopEvents
         m_touchLimit = 0;
         }
 
-    void SetTouchLimit (UInt32 limit, UInt32 numTouches, Point2dCP touches);
+    void SetTouchLimit (uint32_t limit, uint32_t numTouches, Point2dCP touches);
 
     // Stop when the ctrl or shift key is pressed or released.
     void SetStopOnModifierKey (bool stop) {m_modifierKeyTransition = stop;}
@@ -309,7 +289,7 @@ public:
     void SetFenceParams (FenceParamsP fp) {m_fenceParams = fp;}
     bool GetIncremental () const {return m_incremental;}
     bool GetStartEndMsg() const {return m_startEndMsg;}
-    void SetTouchCheckStopLimit (bool enabled, UInt32 pixels, UInt32 numberTouches, Point2dCP touches);
+    void SetTouchCheckStopLimit (bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 
 //=======================================================================================
@@ -319,7 +299,7 @@ struct DynamicUpdateInfo
     {
 private:
 //__PUBLISH_SECTION_END__
-    friend struct IViewManager;
+    friend struct ViewManager;
     friend struct UpdateContext;
 //__PUBLISH_SECTION_START__
     StopEvents          m_stopEvents;
@@ -348,41 +328,32 @@ public:
     void SetMinLODDelta (int minLodDelta) {m_minLodDelta = minLodDelta;}
     void SetDynamicsStopInterval (int dynamicsStopInterval) {m_dynamicsStopInterval = dynamicsStopInterval;}
     void SetDynamicsMotionTolerance (int dynamicsMotionTolerance) {m_dynamicsMotionTolerance = dynamicsMotionTolerance;}
-    void SetTouchCheckStopLimit (bool enabled, UInt32 pixels, UInt32 numberTouches, Point2dCP touches);
+    void SetTouchCheckStopLimit (bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 
 //=======================================================================================
 /**
- A Viewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. levels, view flags, etc). 
+ A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
  <p>
  Viewports are usually mapped to a window on a screen. But, they 
  can also be mapped to other types of output devices such as plot drivers, dialog boxes, bitmaps, etc. All output to a
- Viewport is through methods on its IViewDraw interface, which may be retrieved by calling GetIViewDraw.
+ DgnViewport is through methods on its IViewDraw interface, which may be retrieved by calling GetIViewDraw.
  <p>
- When active, a Viewport is connected to ViewController, that determines the behavior of the view. ViewControllers supply the methods
+ When active, a DgnViewport is connected to ViewController, that determines the behavior of the view. ViewControllers supply the methods
  that control which elements are visible, and the rules for determining elements' symbology. ViewControllers may also add additional graphics
- to a view. ViewControllers store their persistent state in the properties table, and are synchronized with a Viewport (which may hold
+ to a view. ViewControllers store their persistent state in the properties table, and are synchronized with a DgnViewport (which may hold
  local copies of the current state). So, viewing tools that wish to change camera location or other viewing state, must call 
- Viewport::SynchWithViewController before the changes are visible to the user.
+ DgnViewport::SynchWithViewController before the changes are visible to the user.
 */
 //! @ingroup DgnViewGroup
 //! @nosubgrouping
 //  @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Viewport : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : NonCopyableClass
 {
 public:
 //__PUBLISH_SECTION_END__
-    /*=================================================================================**//**
-     @bsiclass
-    +===============+===============+===============+===============+===============+======*/
-    struct IBackDropTextureProvider
-        {
-        protected:
-            virtual uintptr_t _GetBackDropTextureId (ViewportP vp) = 0;
-        };
-
-    friend struct IViewManager;
+    friend struct ViewManager;
     friend struct UpdateContext;
     friend struct QvOutput;
     friend struct QvOutputMT;
@@ -405,11 +376,8 @@ protected:
     DPoint3d        m_scale;
     CameraInfo      m_camera;
     ViewFlags       m_rootViewFlags;            // view flags for root model
-    ElementRefP     m_tempClipElementRef;
-    ElementRefP     m_tempClipMaskElementRef;
     int             m_viewNumber;
-    int             m_rangeStamp;
-    IntColorDef     m_backgroundColor;
+    ColorDef        m_backgroundColor;
     IViewOutputP    m_output;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
@@ -417,7 +385,6 @@ protected:
     ToolGraphicsHandler* m_toolGraphicsHandler;
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
-    IBackDropTextureProvider* m_bgTextureProvider;
 
     void AdjustOrgAndDelta (ViewControllerR);
     DGNPLATFORM_EXPORT void DestroyViewport();
@@ -427,7 +394,6 @@ protected:
     virtual bool _IsGridOn () const {return m_rootViewFlags.grid;}
     virtual DPoint3dCP _GetViewDelta () const {return &m_viewDelta;}
     virtual DPoint3dCP _GetViewOrigin () const {return &m_viewOrg;}
-    virtual int _GetScreenNumber () const {return 0;}
     virtual void _AllocateOutput () = 0;
     virtual void _CallDecorators (bool& stopFlag) {}
     virtual void _SetNeedsHeal () {m_needsRefresh = true;}
@@ -438,7 +404,7 @@ protected:
     virtual AntiAliasPref _WantAntiAliasLines() const {return AntiAliasPref::Detect;}
     virtual AntiAliasPref _WantAntiAliasText() const {return AntiAliasPref::Detect;}
     virtual void _AdjustFencePts (RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
-    virtual UInt32 _GetHiliteColor () const {return _GetMenuColor(MAGENTA_MENU_COLOR_INDEX);}
+    virtual ColorDef _GetHiliteColor () const {return ColorDef::Magenta();}
     virtual void _SynchViewTitle () {}
     virtual void _DrawStandardGrid (DPoint3dR gridOrigin, RotMatrixR rMatrix, Point2dCP fixedRepetitions) {}
     virtual BSIRect _GetClientRect() const = 0;
@@ -449,27 +415,24 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio (ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual StatusInt _ConnectToOutput ();
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth (int index) const;
-    DGNPLATFORM_EXPORT virtual UInt32 _GetIndexedLinePattern (int index) const;
-    DGNPLATFORM_EXPORT virtual void _ResynchColorMap ();
+    DGNPLATFORM_EXPORT virtual uint32_t _GetIndexedLinePattern (int index) const;
     DGNPLATFORM_EXPORT virtual void _GetViewCorners (DPoint3dR low, DPoint3dR high) const;
     DGNPLATFORM_EXPORT virtual StatusInt _SetupFromViewController ();
     DGNPLATFORM_EXPORT virtual ViewportStatus _Activate (QvPaintOptions const&);
     DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners (DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController (bool saveInUndo);
-    DGNPLATFORM_EXPORT virtual UInt32 _GetMenuColor (int index) const;
     DGNPLATFORM_EXPORT static double GetViewNoClipZMargin ();
     DGNPLATFORM_EXPORT static double GetMinViewDelta ();
     virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView () const = 0;
     virtual uintptr_t _GetBackDropTextureId () {return 0;}
-    DGNPLATFORM_EXPORT virtual bool _GetWindowBgColor (RgbColorDef& rgb) const;
+    DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
     virtual BentleyStatus _RefreshViewport (bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
     virtual void _SetICachedDraw (ICachedDrawP cachedOutput) = 0;
     virtual double _GetMinimumLOD () const {return m_minLOD;}
-    virtual ViewportStatus _ResizeFromViewportInfo (ViewPortInfoCR, ViewportResizeMode, ViewControllerCP) {return ViewportStatus::NotResized;}
 
 public:
-    DGNPLATFORM_EXPORT Viewport ();
-    virtual ~Viewport () {DestroyViewport();}
+    DGNPLATFORM_EXPORT DgnViewport ();
+    virtual ~DgnViewport () {DestroyViewport();}
 
     BSIRectCP GetShadowDirtyRect ();
     void SetShadowDirtyRect (BSIRectCP rect);
@@ -490,10 +453,9 @@ public:
     DGNPLATFORM_EXPORT void CalcNpcToView (DMap4dR npcToView);
     void ClearNeedsRefresh () {m_needsRefresh = false;}
     void SetIViewOutput (IViewOutputP output) {m_output = output;}
-    void SetBackgroundColor (UInt32 color) {m_backgroundColor.m_int = color; m_backgroundColor.m_rgba.alpha = 0;}
+    void SetBackgroundColor (ColorDef color) {m_backgroundColor = color; m_backgroundColor.SetAlpha(0);}
     void AlignWithRootZ ();
-    DGNPLATFORM_EXPORT bool GetWindowBgColor (RgbColorDef& rgb) const;
-    DGNPLATFORM_EXPORT UInt32 GetMenuColor (int index) const;
+    DGNPLATFORM_EXPORT ColorDef GetWindowBgColor() const;
     DGNPLATFORM_EXPORT double GetMinimumLOD () const;
     IProgressiveDisplay::Completion DoProgressiveDisplay();
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
@@ -502,11 +464,11 @@ public:
     void UpdateShadowList (IElementSetP, DgnDrawMode, DrawPurpose);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef (DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR, DgnModelP targetModel);
-    DGNPLATFORM_EXPORT static Int32 GetMaxDisplayPriority ();
-    DGNPLATFORM_EXPORT static Int32 GetDisplayPriorityFrontPlane();
+    DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority ();
+    DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
     DGNPLATFORM_EXPORT static ViewFrustumStatus ValidateWindowSize (DPoint3dR delta, bool displayMessage);
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
-    DGNPLATFORM_EXPORT void InitViewSettings (bool useBgTexture, CookedDisplayStyleP = NULL);
+    DGNPLATFORM_EXPORT void InitViewSettings (bool useBgTexture);
     DGNPLATFORM_EXPORT void SetDisplayFlagFill (bool fill);
     DGNPLATFORM_EXPORT void SetDisplayFlagPatterns (bool patternsOn);
     DGNPLATFORM_EXPORT void SetDisplayFlagLevelSymb (bool levelSymbOn);
@@ -518,12 +480,9 @@ public:
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange (DRange3dR, FitViewParams& params) ;
     DGNPLATFORM_EXPORT void SetNeedsHeal ();
     DGNPLATFORM_EXPORT bool UseClipVolume (DgnModelCP) const;
-    DGNPLATFORM_EXPORT StatusInt GetDynamicViewClip (EditElementHandleR elHandle, DgnModelP modelRef) const;
-    DGNPLATFORM_EXPORT void CheckCacheRangeExpanded ();
     DGNPLATFORM_EXPORT StatusInt RefreshViewport (bool always, bool synchHealingFromBs, bool& stopFlag);
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth (int index);
-    DGNPLATFORM_EXPORT static UInt32 GetDefaultIndexedLinePattern (int index);
-    DGNPLATFORM_EXPORT ViewportStatus ResizeFromViewportInfo (ViewPortInfoCR, ViewportResizeMode, ViewControllerCP);
+    DGNPLATFORM_EXPORT static uint32_t GetDefaultIndexedLinePattern (int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage (StatusInt errorStatus);
     bool Allow3dManipulations () const {return m_viewController->Allow3dManipulations();}
     DGNVIEW_EXPORT BentleyStatus PixelsFromInches(double& pixels, double inches) const;
@@ -532,398 +491,384 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-
-//! @return the current Camera for this Viewport. Note that the Viewport's camera may not match its ViewController's camera
-//! due to adjustments made for front/back clipping being turned off.
-DGNPLATFORM_EXPORT CameraInfo const& GetCamera() const;
-
-//! @return the camera target for this Viewport
-DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;
-/** @} */
-
-//! sets the object to be used for drawing tool graphics
-//! @param[in] handler The new tool graphics handler. NULL to clear
-DGNPLATFORM_EXPORT void SetToolGraphicsHandler(ToolGraphicsHandler* handler);
-
-/** @cond BENTLEY_SDK_Internal */
-/** Bentley Internal */
-/** @{ */
-//! Determine the depth, in NPC units, of the elements visible within a view. 
-//! @param[out] low the npc value of the furthest back element in the view
-//! @param[out] high the npc value of the element closest to the front of view
-//! @param[in] subRectNpc If non-NULL, only search within a sub rectangle of the view. In NPC coordinates.
-//! @return SUCCESS if there were visible elements within the view, ERROR otherwise.
-DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=NULL);
-
-//! @return the point to use as the default rotation point at the center of the visible elements in the view.
-//! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
-DGNPLATFORM_EXPORT DPoint3d DetermineDefaultRotatePoint();
-
-//! Get the number width in pixels for a line weight value for this Viewport. Users select, and elements store a "line weight"
-//! value in the range of 0 to 31. Users can also specify a mapping from line weight values to pixels as a user preference.
-//! This mapping can vary from view to view, and for plotting views. This method returns the number of pixels for a given line weight value
-//! from the mapping table for this Viewport.
-//! @param[in] index the line weight value in the range of 0 to 31.
-//! @return  the number of pixels for lineWeightValue
-DGNPLATFORM_EXPORT int GetIndexedLineWidth (int index) const;
-
-//! Get the 32 bit on-off "line pattern" for a line code value for this Viewport. Users select, and elements store a "line code"
-//! value in the range of 0 to 7. Output devices can change the on-off patterns based on resolution, etc. This method returns the line pattern
-//! for a given line code value from the mapping table for this Viewport.
-//! @param[in] index a the range of 0 to 7.
-//! @return  the line pattern for lineCodeValue
-DGNPLATFORM_EXPORT UInt32 GetIndexedLinePattern (int index) const;
-
-//! Compute the range of the element when displayed in this Viewport
-DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange (DRange3dR range, IElementSetR elements, RotMatrixCP rMatrix);
-
-DGNPLATFORM_EXPORT void SetMinimumLOD (double minLOD);
-/** @} */
-/** @endcond */
-
-/** @name Color Controls */
-/** @{ */
-//! Get the RGB color of the background for this Viewport.
-//! @return background RGB color
-DGNPLATFORM_EXPORT UInt32 GetBackgroundColor () const;
-
-//! @return either white or black, whichever has more contrast to the background color of this Viewport.
-DGNPLATFORM_EXPORT UInt32 GetContrastToBackgroundColor () const;
-
-//! Adjust a color such that there is visible contrast to another color. This method is useful for adjusting a
-//! color slightly so that it can be discerned by the user in the context of other objects or against the background color.
-//! If the two colors are nearly the same, such that the user wouldn't be able to tell them apart (e.g. they are both
-//! very dark or very light) this method will adjust the starting color by making it either brighter or darker, but keeping
-//! the same hue, until there is sufficient Contrast.
-//! @param[in] thisColor Starting color
-//! @param[in] againstColor Color against which the result must contrast.
-//! @return  the adjusted, contrasting color
-DGNPLATFORM_EXPORT UInt32 AdjustColorForContrast (UInt32 thisColor, UInt32 againstColor) const;
-
-//! Compose a TRGB color from separate Red, Green, Blue, and Transparency values. All values must be between 0 and 255.
-//! @param[in] red The red component
-//! @param[in] green The green component
-//! @param[in] blue  The blue component
-//! @param[in] transparency Transparency component (0=opaque, 255=fully transparent)
-//! @return  the TRGB color
-DGNPLATFORM_EXPORT static UInt32 MakeTrgbColor (int red, int green, int blue, int transparency);
-
-//! Adjust the transparency value of a TRGB color, leaving the Red, Blue, and Green components unchanged.
-//! @param[in] color               Original color
-//! @param[in] transparency        New transparency (0=opaque, 255=fully transparent)
-//! @return color with transparency adjusted.
-DGNPLATFORM_EXPORT static UInt32 MakeColorTransparency (UInt32 color, int transparency);
-
-//! Adjust the transparency value of a TRGB color, leaving the Red, Blue, and Green components unchanged, but ONLY IF
-//! the current transparency value of the color is opaque. If the color already has a transparency value, this method
-//! returns the original value of color.
-//! @param[in] color Original color
-//! @param[in] transparency New transparency (0=opaque, 255=fully transparent)
-//! @return color with transparency adjusted.
-DGNPLATFORM_EXPORT static UInt32 MakeTransparentIfOpaque (UInt32 color, int transparency);
-
-/** @cond BENTLEY_SDK_Scope1 */
-DGNPLATFORM_EXPORT void ResynchColorMap ();
-/** @endcond */
-
-//! Get the current TBGR color value of the user-selected hilite color for this Viewport.
-//! @return the current TBGR hilite color.
-DGNPLATFORM_EXPORT UInt32 GetHiliteColor () const;
-
-//! Get the hilite TBGR color value for a DisplayPath. Display paths that are to elements currently in the Selection Set
-//! are hilited with the Selection Set Color and paths that are not in the selection set use the normal hilite color.
-//! @param[in]          path            Display path to check
-//! @return             the hilite color for \c path
-DGNPLATFORM_EXPORT UInt32 GetHiliteColor (DisplayPathCP path) const;
-
-//! Set the current display symbology for this Viewport by TBGR color values, a pixel width, and 0-7 line code.
-//! @param[in]          lineColorTBGR   Line color in TBGR (T=0 for opaque)
-//! @param[in]          fillColorTBGR   Fill color in TBGR (T=0 for opaque)
-//! @param[in]          lineWidth       Line width in pixels (1 or greater)
-//! @param[in]          lineCodeIndex   Line code index (0-7)
-DGNPLATFORM_EXPORT void SetSymbologyRgb (UInt32 lineColorTBGR, UInt32 fillColorTBGR, int lineWidth, int lineCodeIndex);
-/** @} */
-
-/** @name Coordinate Query and Conversion */
-/** @{ */
-//! Get the Rotation Matrix for this Viewport. The concept of a Viewport's Rotation Matrix is somewhat limiting since it does not
-//! support perspective transformations. This method is provided for compatibility with previous MicroStation API only.
-//! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
-DGNPLATFORM_EXPORT RotMatrixCR GetRotMatrix () const;
-
-//! Get the Scale Factors for X, Y, Z for this Viewport.
-//! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
-DGNPLATFORM_EXPORT DPoint3dCP GetScale () const;
-
-//! Get the Viewport rectangle in DgnCoordSystem::View.
-DGNPLATFORM_EXPORT BSIRect GetViewRect() const;
-
-//! Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
-//! @param[out] low The lower left back corner of the view
-//! @param[out] high The upper right front corner of the view
-DGNPLATFORM_EXPORT void GetViewCorners (DPoint3dR low, DPoint3dR high) const;
-
-//! Get the DPI scale which can be used for conversion between physical pixels and device-independent pixels (DIPs).
-DGNPLATFORM_EXPORT DVec2d GetDpiScale () const;
-
-//! Get an 8-point frustum corresponding to the 8 corners of the Viewport in the specified coordinate system.
-//! When front or back clipping is turned \em off, there are two sets of corners that may be of interest.
-//! The "expanded" box is the one that is computed by examining the extents of the content of the view and moving
-//! the front and back planes to enclose everything in the view [N.B. this is the way that MicroStation implements
-//! the concept of "no front/back clipping", since there always must be a view frustum]. The "unexpanded" box is
-//! the one that is saved in the view definition.
-//! @param[in] sys Coordinate system for \c points
-//! @param[in] adjustedBox If true, and if f/b clipping is OFF, retrieve the "adjusted" box. Otherwise retrieve the box that came from the view definition.
-//! @return the view frustum
-//! @note The "adjusted" box may, in reality, be either larger or smaller than the "unexpanded" box since the expanded box depends on the current
-//!       content of the view.
-DGNPLATFORM_EXPORT Frustum GetFrustum(DgnCoordSystem sys=DgnCoordSystem::World, bool adjustedBox=false) const;
-
-//! Get the size of a single pixel at a given point as a distance along the view-x axis.
-//! The size of a pixel will only differ at different points within the same Viewport if the camera is on for this Viewport (in which case,
-//! points closer to the eye return larger values than ones further from the eye.)
-//! @param[in] rootPt      The point in DgnCoordSystem::World for determining pixel size. If NULL, use the center of the Viewport.
-//! @param[in] coordSys    The coordinate system for the returned distance.
-//! @return the size of the pixel at point \c rootPt.
-DGNPLATFORM_EXPORT double GetPixelSizeAtPoint (DPoint3dCP rootPt, DgnCoordSystem coordSys = DgnCoordSystem::World) const;
-
-//! Get the DMap4d to convert between DgnCoordSystem::World and DgnCoordSystem::View coordinates for this Viewport.
-//! @return the current WorldToView map for this Viewport.
-DGNPLATFORM_EXPORT DMap4dCP GetWorldToViewMap () const;
-
-//! Get the DMap4d to convert between DgnCoordSystem::World and DgnCoordSystem::Npc coordinates for this Viewport.
-//! @return the current WorldToNpc map for this Viewport.
-DGNPLATFORM_EXPORT DMap4dCP GetWorldToNpcMap () const;
-
-//! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
-//! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-//! @param[in] npcPts Input array in DgnCoordSystem::Npc
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void NpcToView (DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
-
-//! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::View.
-DPoint3d NpcToView(DPoint3dCR npcPt) {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
-
-//! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
-//! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
-//! @param[in] viewPts Input array in DgnCoordSystem::View
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToNpc (DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
-
-//! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
-DPoint3d ViewToNpc(DPoint3dCR viewPt) {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
-
-//! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Screen.
-//! @param[out] screenPts An array to receive the points in DgnCoordSystem::Screen. Must be dimensioned to hold \c nPts points.
-//! @param[in] viewPts Input array in DgnCoordSystem::View
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToScreen (DPoint3dP screenPts, DPoint3dCP viewPts, int nPts) const;
-
-//! Transfrom an array of points in DgnCoordSystem::Screen into DgnCoordSystem::View.
-//! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-//! @param[in] screenPts Input array in DgnCoordSystem::Screen
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void ScreenToView (DPoint3dP viewPts, DPoint3dCP screenPts, int nPts) const;
-
-//! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
-//! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
-//! @param[in] npcPts Input array in DgnCoordSystem::Npc
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void NpcToWorld (DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
-
-//! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
-DPoint3d NpcToWorld(DPoint3dCR npcPt) {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
-
-//! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
-//! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
-//! @param[in] worldPts Input array in DgnCoordSystem::World
-//! @param[in] nPts  Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToNpc (DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
-
-//! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
-DPoint3d WorldToNpc(DPoint3dCR worldPt) {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
-
-//! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-//! @param[out] viewPts  An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-//! @param[in] worldPts Input array in DgnCoordSystem::World
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToView (DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
-
-//! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
-//! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
-//! @param[in] viewPts Input array of DPoint4d coordinates in DgnCoordSystem::View
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToWorld (DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
-
-//! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-//! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-//! @param[in] worldPts Input array in DgnCoordSystem::World
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToView (DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
-
-//! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::View.
-DPoint3d WorldToView(DPoint3dCR worldPt) {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
-
-//! Transfrom an array of points in DgnCoordSystem::World into an array of 2D points in DgnCoordSystem::View.
-//! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-//! @param[in] worldPts Input array in DgnCoordSystem::World
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToView2d (DPoint2dP viewPts, DPoint3dCP worldPts, int nPts) const;
-
-//! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
-//! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
-//! @param[in] viewPts Input array in DgnCoordSystem::View
-//! @param[in] nPts Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToWorld (DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
-
-//! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::World.
-DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
-/** @} */
-
-/** @name Viewport Parameters */
-/** @{ */
-//! Determine whether this Viewport is currently active. Viewports become "active" after they have
-//! been initialized and connected to an output device.
-//! @return true if the Viewport is active.
-DGNPLATFORM_EXPORT bool IsActive () const;
-
-//! Determine whether this Viewport currently has a camera enabled. In this context, the "camera" is on
-//! if the WorldToView transform contains a perspective transformation.
-//! @remarks Applicable only to physical views.
-//! @return true if the camera is on.
-DGNPLATFORM_EXPORT bool IsCameraOn () const;
-
-//! Determine whether the Grid display is currently enabled in this Viewport.
-//! @return true if the grid display is on.
-DGNPLATFORM_EXPORT bool IsGridOn () const;
-
-//! Determine whether this viewport is a 3D view.
-//! @remarks Will be true only for a physical view.
-DGNPLATFORM_EXPORT bool Is3dView () const;
-
-//__PUBLISH_SECTION_END__
-//! Determine whether the root model of this viewport is a Sheet model.
-DGNPLATFORM_EXPORT bool IsSheetView () const;
-//__PUBLISH_SECTION_START__
-
-DGNPLATFORM_EXPORT IViewDrawP GetIViewDraw ();
-DGNPLATFORM_EXPORT IViewOutputP GetIViewOutput ();
-
-/** @cond BENTLEY_SDK_Scope1 */
-DGNPLATFORM_EXPORT ICachedDrawP GetICachedDraw ();
-/** @endcond */
-
-//! Get a pointer to the ViewController associated with this Viewport.
-DGNPLATFORM_EXPORT ViewControllerCR GetViewController () const;
-
-//! Get a pointer to the ViewController associated with this Viewport.
-DGNPLATFORM_EXPORT ViewControllerR GetViewControllerR() const;
-
-//! If this view is a physical view, get the physical view controller.
-PhysicalViewControllerCP GetPhysicalViewControllerCP () const {return GetViewController().ToPhysicalViewController();}
-//! If this view is a physical view, get a writeable pointer to the physical view controller.
-PhysicalViewControllerP GetPhysicalViewControllerP ()         {return (PhysicalViewControllerP) GetPhysicalViewControllerCP();}
-//! If this view is a camera view, get the camera physical view controller.
-CameraViewControllerCP GetCameraViewControllerCP () const {return GetViewController().ToCameraViewController();}
-//! If this view is a camera view, get a writeable pointer to the camera physical view controller.
-CameraViewControllerP GetCameraViewControllerP ()         {return (CameraViewControllerP) GetCameraViewControllerCP();}
-
-//! If this view is a drawing view, get the drawing view controller.
-DrawingViewControllerCP GetDrawingViewControllerCP () const   {return GetViewController().ToDrawingViewController();}
-//! If this view is a drawing view, get a writeable pointer to the drawing view controller.
-DrawingViewControllerP GetDrawingViewControllerP ()           {return (DrawingViewControllerP) GetDrawingViewControllerCP();}
-
-//__PUBLISH_SECTION_END__
-//! If this view is a sheet view, get the sheet view controller.
-SheetViewControllerCP GetSheetViewControllerCP () const       {return GetViewController().ToSheetViewController();}
-//! If this view is a sheet view, get a writeable pointer to the sheet view controller.
-SheetViewControllerP GetSheetViewControllerP ()               {return (SheetViewControllerP) GetSheetViewControllerCP();}
-//__PUBLISH_SECTION_START__
-
-//! Get the name for this view.
-//! @param[out] name A string to be filled with the current name of this view.
-DGNPLATFORM_EXPORT void GetViewName (WStringR name) const;
-
-//! Get the view number of this Viewport. If this Viewport is one of the 8 MicroStation numbered views (i.e. "View 1" through
-//! "View 8"), then return the index of view number (e.g. "View 1" is view index 0, "View 8" is view index 7). If the Viewport
-//! is not one of the 8 MicroStation numbered views, this method will return -1.
-//! @return the view index of this Viewport, or -1 if it is not one of the numbered views.
-DGNPLATFORM_EXPORT int GetViewNumber () const;
-
-//! Get the screen number on which this Viewport resides.
-DGNPLATFORM_EXPORT int GetScreenNumber () const;
-
-//! Get View Origin for this Viewport.
-//! @return the root coordinates of the lower left back corner of the Viewport.
-DGNPLATFORM_EXPORT DPoint3dCP GetViewOrigin () const;
-
-//! Get the View Delta (size) of this Viewport in root coordinate distances.
-//! @return the view delta in root coordinate distances.
-DGNPLATFORM_EXPORT DPoint3dCP GetViewDelta () const;
-
-//! Get the current View Flags for this Viewport.
-//! @return the View flags for this Viewport.
-DGNPLATFORM_EXPORT ViewFlagsCP GetViewFlags () const;
-
-//! Synchronized this Viewport with the current state of its ViewController. A Viewport may hold local copies of the information
-//! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the
-//! Viewport to which it is connected before the changes are visible to the user. This method also allows applications to save 
-//! the changes between states of a ViewController to support the "view undo" command.
-//! @param[in] saveInUndo If true, the new state of the ViewController is compared to the previous state and changes are saved in the View Undo stack.
-//! If the user issues the "view undo" command, the changes are reversed and the ViewController is reverted to the previous state.
-DGNPLATFORM_EXPORT void SynchWithViewController (bool saveInUndo);
-
-DGNPLATFORM_EXPORT void SetNeedsRefresh ();
-/** @} */
-
-/** @name Changing Viewport Frustum */
-/** @{ */
-//! Scroll the Viewport by a given number of pixels in the view's X and/or Y direction. This method will move the Viewport's frustum
-//! in the indicated direction, but does \em not update the screen (even if the Viewport happens to be a visible View.) This method does
-//! change the ViewController associated with the Viewport.
-//! @param[in]      viewDist    The distance to scroll, in pixels.
-//! @note To update the view, see IViewManager::UpdateView or IViewManager::UpdateViewDynamic. To save the change to the ViewController
-//!       in the view undo buffer, see SynchWithViewController.
-DGNPLATFORM_EXPORT StatusInt Scroll (Point2dCP viewDist);
-
-//! Change the size of this Viewport's frustum by a ratio to its current size. Also, specify a new center point
-//! for the frustum in DgnCoordSystem::World coordinates.
-//! This method will change the Viewport's frustum, but does \em not update the screen (even if the Viewport happens
-//! to be a visible View.) This method \em does change the ViewController associated with the Viewport.
-//! @param[in]      newCenterRoot   The position, in DgnCoordSystem::World, for the new center of the frustum. If NULL, center is unchanged.
-//! @param[in]      factor          Scale factor to apply to current frustum. Scale factors greater than 1.0 zoom out (that is, the view
-//!                                   frustum gets larger and shows more of the model), and scale factors less than 1.0 zoom in.
-//! @note To update the view, see IViewManager::UpdateView or IViewManager::UpdateViewDynamic. To save the change to the ViewController
-//!       in the view undo buffer, see SynchWithViewController.
-DGNPLATFORM_EXPORT StatusInt Zoom (DPoint3dCP newCenterRoot, double factor);
-
-//! Change the frustum for this Viewport. The frustum is an 8-point array of points in DgnCoordSystem::World coordinates
-//! in the order specified by #NpcCorners.
-//! This method will change the Viewport's frustum, but does \em not update the screen (even if the Viewport happens
-//! to be a visible View.) This method \em does change the ViewController associated with the Viewport.
-//! @note To update the view, see IViewManager::UpdateView or IViewManager::UpdateViewDynamic. To save the change to the ViewController
-//!       in the view undo buffer, see SynchWithViewController.
-DGNPLATFORM_EXPORT StatusInt SetupFromFrustum (Frustum const& frustPts);
-/** @} */
-
-//__PUBLISH_SECTION_END__
-DGNPLATFORM_EXPORT UInt32 GetSolidFillEdgeColor (UInt32 rawElementColor, DgnModelP modelRef);
-DGNPLATFORM_EXPORT UInt32 GetSolidFillEdgeColor (UInt32 inColor);
-//__PUBLISH_SECTION_START__
+    //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
+    //! due to adjustments made for front/back clipping being turned off.
+    DGNPLATFORM_EXPORT CameraInfo const& GetCamera() const;
+
+    //! @return the camera target for this DgnViewport
+    DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;
+    /** @} */
+
+    //! sets the object to be used for drawing tool graphics
+    //! @param[in] handler The new tool graphics handler. NULL to clear
+    DGNPLATFORM_EXPORT void SetToolGraphicsHandler(ToolGraphicsHandler* handler);
+
+    /** @cond BENTLEY_SDK_Internal */
+    /** Bentley Internal */
+    /** @{ */
+    //! Determine the depth, in NPC units, of the elements visible within a view.
+    //! @param[out] low the npc value of the furthest back element in the view
+    //! @param[out] high the npc value of the element closest to the front of view
+    //! @param[in] subRectNpc If non-NULL, only search within a sub rectangle of the view. In NPC coordinates.
+    //! @return SUCCESS if there were visible elements within the view, ERROR otherwise.
+    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=NULL);
+
+    //! @return the point to use as the default rotation point at the center of the visible elements in the view.
+    //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
+    DGNPLATFORM_EXPORT DPoint3d DetermineDefaultRotatePoint();
+
+    //! Get the number width in pixels for a line weight value for this DgnViewport. Users select, and elements store a "line weight"
+    //! value in the range of 0 to 31. Users can also specify a mapping from line weight values to pixels as a user preference.
+    //! This mapping can vary from view to view, and for plotting views. This method returns the number of pixels for a given line weight value
+    //! from the mapping table for this DgnViewport.
+    //! @param[in] index the line weight value in the range of 0 to 31.
+    //! @return  the number of pixels for lineWeightValue
+    DGNPLATFORM_EXPORT int GetIndexedLineWidth (int index) const;
+
+    //! Get the 32 bit on-off "line pattern" for a line code value for this DgnViewport. Users select, and elements store a "line code"
+    //! value in the range of 0 to 7. Output devices can change the on-off patterns based on resolution, etc. This method returns the line pattern
+    //! for a given line code value from the mapping table for this DgnViewport.
+    //! @param[in] index a the range of 0 to 7.
+    //! @return  the line pattern for lineCodeValue
+    DGNPLATFORM_EXPORT uint32_t GetIndexedLinePattern (int index) const;
+
+    //! Compute the range of the element when displayed in this DgnViewport
+    DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange (DRange3dR range, IElementSetR elements, RotMatrixCP rMatrix);
+
+    DGNPLATFORM_EXPORT void SetMinimumLOD (double minLOD);
+    /** @} */
+    /** @endcond */
+
+    /** @name Color Controls */
+    /** @{ */
+    //! Get the RGB color of the background for this DgnViewport.
+    //! @return background RGB color
+    DGNPLATFORM_EXPORT ColorDef GetBackgroundColor () const;
+
+    //! @return either white or black, whichever has more contrast to the background color of this DgnViewport.
+    DGNPLATFORM_EXPORT ColorDef GetContrastToBackgroundColor () const;
+
+    //! Adjust a color such that there is visible contrast to another color. This method is useful for adjusting a
+    //! color slightly so that it can be discerned by the user in the context of other objects or against the background color.
+    //! If the two colors are nearly the same, such that the user wouldn't be able to tell them apart (e.g. they are both
+    //! very dark or very light) this method will adjust the starting color by making it either brighter or darker, but keeping
+    //! the same hue, until there is sufficient Contrast.
+    //! @param[in] thisColor Starting color
+    //! @param[in] againstColor Color against which the result must contrast.
+    //! @return  the adjusted, contrasting color
+    DGNPLATFORM_EXPORT ColorDef AdjustColorForContrast (ColorDef thisColor, ColorDef againstColor) const;
+
+    //! Adjust the transparency value of a TRGB color, leaving the Red, Blue, and Green components unchanged.
+    //! @param[in] color               Original color
+    //! @param[in] transparency        New transparency (0=opaque, 255=fully transparent)
+    //! @return color with transparency adjusted.
+    DGNPLATFORM_EXPORT static ColorDef MakeColorTransparency (ColorDef color, int transparency);
+
+    //! Adjust the transparency value of a TRGB color, leaving the Red, Blue, and Green components unchanged, but ONLY IF
+    //! the current transparency value of the color is opaque. If the color already has a transparency value, this method
+    //! returns the original value of color.
+    //! @param[in] color Original color
+    //! @param[in] transparency New transparency (0=opaque, 255=fully transparent)
+    //! @return color with transparency adjusted.
+    DGNPLATFORM_EXPORT static ColorDef MakeTransparentIfOpaque (ColorDef color, int transparency);
+
+    //! Get the current TBGR color value of the user-selected hilite color for this DgnViewport.
+    //! @return the current TBGR hilite color.
+    DGNPLATFORM_EXPORT ColorDef GetHiliteColor () const;
+
+    //! Get the hilite color value for a DisplayPath. Display paths that are to elements currently in the Selection Set
+    //! are hilited with the Selection Set Color and paths that are not in the selection set use the normal hilite color.
+    //! @param[in]          path            Display path to check
+    //! @return             the hilite color for \c path
+    DGNPLATFORM_EXPORT ColorDef GetHiliteColor (DisplayPathCP path) const;
+
+    //! Set the current display symbology for this DgnViewport by TBGR color values, a pixel width, and 0-7 line code.
+    //! @param[in]          lineColor Line color
+    //! @param[in]          fillColor Fill color
+    //! @param[in]          lineWidth       Line width in pixels (1 or greater)
+    //! @param[in]          lineCodeIndex   Line code index (0-7)
+    DGNPLATFORM_EXPORT void SetSymbologyRgb (ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex);
+    /** @} */
+
+    /** @name Coordinate Query and Conversion */
+    /** @{ */
+    //! Get the Rotation Matrix for this DgnViewport. The concept of a DgnViewport's Rotation Matrix is somewhat limiting since it does not
+    //! support perspective transformations. This method is provided for compatibility with previous API only.
+    //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
+    DGNPLATFORM_EXPORT RotMatrixCR GetRotMatrix () const;
+
+    //! Get the Scale Factors for X, Y, Z for this DgnViewport.
+    //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
+    DGNPLATFORM_EXPORT DPoint3dCP GetScale () const;
+
+    //! Get the DgnViewport rectangle in DgnCoordSystem::View.
+    DGNPLATFORM_EXPORT BSIRect GetViewRect() const;
+
+    //! Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
+    //! @param[out] low The lower left back corner of the view
+    //! @param[out] high The upper right front corner of the view
+    DGNPLATFORM_EXPORT void GetViewCorners (DPoint3dR low, DPoint3dR high) const;
+
+    //! Get the DPI scale which can be used for conversion between physical pixels and device-independent pixels (DIPs).
+    DGNPLATFORM_EXPORT DVec2d GetDpiScale () const;
+
+    //! Get an 8-point frustum corresponding to the 8 corners of the DgnViewport in the specified coordinate system.
+    //! When front or back clipping is turned \em off, there are two sets of corners that may be of interest.
+    //! The "expanded" box is the one that is computed by examining the extents of the content of the view and moving
+    //! the front and back planes to enclose everything in the view [N.B. this is the way that views implement
+    //! the concept of "no front/back clipping", since there always must be a view frustum]. The "unexpanded" box is
+    //! the one that is saved in the view definition.
+    //! @param[in] sys Coordinate system for \c points
+    //! @param[in] adjustedBox If true, and if f/b clipping is OFF, retrieve the "adjusted" box. Otherwise retrieve the box that came from the view definition.
+    //! @return the view frustum
+    //! @note The "adjusted" box may, in reality, be either larger or smaller than the "unexpanded" box since the expanded box depends on the current
+    //!       content of the view.
+    DGNPLATFORM_EXPORT Frustum GetFrustum(DgnCoordSystem sys=DgnCoordSystem::World, bool adjustedBox=false) const;
+
+    //! Get the size of a single pixel at a given point as a distance along the view-x axis.
+    //! The size of a pixel will only differ at different points within the same DgnViewport if the camera is on for this DgnViewport (in which case,
+    //! points closer to the eye return larger values than ones further from the eye.)
+    //! @param[in] rootPt      The point in DgnCoordSystem::World for determining pixel size. If NULL, use the center of the DgnViewport.
+    //! @param[in] coordSys    The coordinate system for the returned distance.
+    //! @return the size of the pixel at point \c rootPt.
+    DGNPLATFORM_EXPORT double GetPixelSizeAtPoint (DPoint3dCP rootPt, DgnCoordSystem coordSys = DgnCoordSystem::World) const;
+
+    //! Get the DMap4d to convert between DgnCoordSystem::World and DgnCoordSystem::View coordinates for this DgnViewport.
+    //! @return the current WorldToView map for this DgnViewport.
+    DGNPLATFORM_EXPORT DMap4dCP GetWorldToViewMap () const;
+
+    //! Get the DMap4d to convert between DgnCoordSystem::World and DgnCoordSystem::Npc coordinates for this DgnViewport.
+    //! @return the current WorldToNpc map for this DgnViewport.
+    DGNPLATFORM_EXPORT DMap4dCP GetWorldToNpcMap () const;
+
+    //! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
+    //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in] npcPts Input array in DgnCoordSystem::Npc
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void NpcToView (DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
+
+    //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::View.
+    DPoint3d NpcToView(DPoint3dCR npcPt) {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
+
+    //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
+    //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToNpc (DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
+
+    //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
+    DPoint3d ViewToNpc(DPoint3dCR viewPt) {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
+
+    //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Screen.
+    //! @param[out] screenPts An array to receive the points in DgnCoordSystem::Screen. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToScreen (DPoint3dP screenPts, DPoint3dCP viewPts, int nPts) const;
+
+    //! Transfrom an array of points in DgnCoordSystem::Screen into DgnCoordSystem::View.
+    //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in] screenPts Input array in DgnCoordSystem::Screen
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ScreenToView (DPoint3dP viewPts, DPoint3dCP screenPts, int nPts) const;
+
+    //! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
+    //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
+    //! @param[in] npcPts Input array in DgnCoordSystem::Npc
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void NpcToWorld (DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
+
+    //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
+    DPoint3d NpcToWorld(DPoint3dCR npcPt) {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
+
+    //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
+    //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World
+    //! @param[in] nPts  Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToNpc (DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
+
+    //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
+    DPoint3d WorldToNpc(DPoint3dCR worldPt) {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
+
+    //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+    //! @param[out] viewPts  An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToView (DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
+
+    //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
+    //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array of DPoint4d coordinates in DgnCoordSystem::View
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToWorld (DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
+
+    //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+    //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToView (DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
+
+    //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::View.
+    DPoint3d WorldToView(DPoint3dCR worldPt) {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
+
+    //! Transfrom an array of points in DgnCoordSystem::World into an array of 2D points in DgnCoordSystem::View.
+    //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToView2d (DPoint2dP viewPts, DPoint3dCP worldPts, int nPts) const;
+
+    //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
+    //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
+    //! @param[in] viewPts Input array in DgnCoordSystem::View
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToWorld (DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
+
+    //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::World.
+    DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+    /** @} */
+
+    /** @name DgnViewport Parameters */
+    /** @{ */
+    //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
+    //! been initialized and connected to an output device.
+    //! @return true if the DgnViewport is active.
+    DGNPLATFORM_EXPORT bool IsActive () const;
+
+    //! Determine whether this DgnViewport currently has a camera enabled. In this context, the "camera" is on
+    //! if the WorldToView transform contains a perspective transformation.
+    //! @remarks Applicable only to physical views.
+    //! @return true if the camera is on.
+    DGNPLATFORM_EXPORT bool IsCameraOn () const;
+
+    //! Determine whether the Grid display is currently enabled in this DgnViewport.
+    //! @return true if the grid display is on.
+    DGNPLATFORM_EXPORT bool IsGridOn () const;
+
+    //! Determine whether this viewport is a 3D view.
+    //! @remarks Will be true only for a physical view.
+    DGNPLATFORM_EXPORT bool Is3dView () const;
+
+    //__PUBLISH_SECTION_END__
+    //! Determine whether the root model of this viewport is a Sheet model.
+    DGNPLATFORM_EXPORT bool IsSheetView () const;
+    //__PUBLISH_SECTION_START__
+
+    DGNPLATFORM_EXPORT IViewDrawP GetIViewDraw ();
+    DGNPLATFORM_EXPORT IViewOutputP GetIViewOutput ();
+
+    /** @cond BENTLEY_SDK_Scope1 */
+    DGNPLATFORM_EXPORT ICachedDrawP GetICachedDraw ();
+    /** @endcond */
+
+    //! Get a pointer to the ViewController associated with this DgnViewport.
+    DGNPLATFORM_EXPORT ViewControllerCR GetViewController () const;
+
+    //! Get a pointer to the ViewController associated with this DgnViewport.
+    DGNPLATFORM_EXPORT ViewControllerR GetViewControllerR() const;
+
+    //! If this view is a physical view, get the physical view controller.
+    PhysicalViewControllerCP GetPhysicalViewControllerCP () const {return GetViewController()._ToPhysicalView();}
+    //! If this view is a physical view, get a writeable pointer to the physical view controller.
+    PhysicalViewControllerP GetPhysicalViewControllerP ()         {return (PhysicalViewControllerP) GetPhysicalViewControllerCP();}
+    //! If this view is a camera view, get the camera physical view controller.
+    CameraViewControllerCP GetCameraViewControllerCP () const {return GetViewController()._ToCameraView();}
+    //! If this view is a camera view, get a writeable pointer to the camera physical view controller.
+    CameraViewControllerP GetCameraViewControllerP ()         {return (CameraViewControllerP) GetCameraViewControllerCP();}
+
+    //! If this view is a drawing view, get the drawing view controller.
+    DrawingViewControllerCP GetDrawingViewControllerCP () const   {return GetViewController()._ToDrawingView();}
+    //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
+    DrawingViewControllerP GetDrawingViewControllerP ()           {return (DrawingViewControllerP) GetDrawingViewControllerCP();}
+
+    //__PUBLISH_SECTION_END__
+    //! If this view is a sheet view, get the sheet view controller.
+    SheetViewControllerCP GetSheetViewControllerCP () const       {return GetViewController()._ToSheetView();}
+    //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
+    SheetViewControllerP GetSheetViewControllerP ()               {return (SheetViewControllerP) GetSheetViewControllerCP();}
+    //__PUBLISH_SECTION_START__
+
+    //! Get the name for this view.
+    //! @param[out] name A string to be filled with the current name of this view.
+    DGNPLATFORM_EXPORT void GetViewName (WStringR name) const;
+
+    //! Get the view number of this DgnViewport. If this DgnViewport is one of the 8 numbered views (i.e. "View 1" through
+    //! "View 8"), then return the index of view number (e.g. "View 1" is view index 0, "View 8" is view index 7). If the DgnViewport
+    //! is not one of the 8 numbered views, this method will return -1.
+    //! @return the view index of this DgnViewport, or -1 if it is not one of the numbered views.
+    DGNPLATFORM_EXPORT int GetViewNumber () const;
+
+    //! Get the screen number on which this DgnViewport resides.
+    DGNPLATFORM_EXPORT int GetScreenNumber () const;
+
+    //! Get View Origin for this DgnViewport.
+    //! @return the root coordinates of the lower left back corner of the DgnViewport.
+    DGNPLATFORM_EXPORT DPoint3dCP GetViewOrigin () const;
+
+    //! Get the View Delta (size) of this DgnViewport in root coordinate distances.
+    //! @return the view delta in root coordinate distances.
+    DGNPLATFORM_EXPORT DPoint3dCP GetViewDelta () const;
+
+    //! Get the current View Flags for this DgnViewport.
+    //! @return the View flags for this DgnViewport.
+    DGNPLATFORM_EXPORT ViewFlagsCP GetViewFlags () const;
+
+    //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
+    //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the
+    //! DgnViewport to which it is connected before the changes are visible to the user. This method also allows applications to save
+    //! the changes between states of a ViewController to support the "view undo" command.
+    //! @param[in] saveInUndo If true, the new state of the ViewController is compared to the previous state and changes are saved in the View Undo stack.
+    //! If the user issues the "view undo" command, the changes are reversed and the ViewController is reverted to the previous state.
+    DGNPLATFORM_EXPORT void SynchWithViewController (bool saveInUndo);
+
+    DGNPLATFORM_EXPORT void SetNeedsRefresh ();
+    /** @} */
+
+    /** @name Changing DgnViewport Frustum */
+    /** @{ */
+    //! Scroll the DgnViewport by a given number of pixels in the view's X and/or Y direction. This method will move the DgnViewport's frustum
+    //! in the indicated direction, but does \em not update the screen (even if the DgnViewport happens to be a visible View.) This method does
+    //! change the ViewController associated with the DgnViewport.
+    //! @param[in]      viewDist    The distance to scroll, in pixels.
+    //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
+    //!       in the view undo buffer, see SynchWithViewController.
+    DGNPLATFORM_EXPORT StatusInt Scroll (Point2dCP viewDist);
+
+    //! Change the size of this DgnViewport's frustum by a ratio to its current size. Also, specify a new center point
+    //! for the frustum in DgnCoordSystem::World coordinates.
+    //! This method will change the DgnViewport's frustum, but does \em not update the screen (even if the DgnViewport happens
+    //! to be a visible View.) This method \em does change the ViewController associated with the DgnViewport.
+    //! @param[in]      newCenterRoot   The position, in DgnCoordSystem::World, for the new center of the frustum. If NULL, center is unchanged.
+    //! @param[in]      factor          Scale factor to apply to current frustum. Scale factors greater than 1.0 zoom out (that is, the view
+    //!                                   frustum gets larger and shows more of the model), and scale factors less than 1.0 zoom in.
+    //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
+    //!       in the view undo buffer, see SynchWithViewController.
+    DGNPLATFORM_EXPORT StatusInt Zoom (DPoint3dCP newCenterRoot, double factor);
+
+    //! Change the frustum for this DgnViewport. The frustum is an 8-point array of points in DgnCoordSystem::World coordinates
+    //! in the order specified by #NpcCorners.
+    //! This method will change the DgnViewport's frustum, but does \em not update the screen (even if the DgnViewport happens
+    //! to be a visible View.) This method \em does change the ViewController associated with the DgnViewport.
+    //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
+    //!       in the view undo buffer, see SynchWithViewController.
+    DGNPLATFORM_EXPORT StatusInt SetupFromFrustum (Frustum const& frustPts);
+    /** @} */
+
+    //__PUBLISH_SECTION_END__
+    DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor (ColorDef inColor);
+    //__PUBLISH_SECTION_START__
 };
 
 //__PUBLISH_SECTION_END__
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/10
 //=======================================================================================
-struct NonVisibleViewport : Viewport
+struct NonVisibleViewport : DgnViewport
 {
 protected:
     virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView() const override { return NULL; }
     virtual void _AllocateOutput() override {}
     virtual ICachedDrawP _GetICachedDraw() override { return NULL; }
     virtual void _SetICachedDraw(ICachedDrawP cachedOutput) override {}
-    virtual bool _GetWindowBgColor (RgbColorDef& rgb) const override {return false;}
+    virtual ColorDef _GetWindowBgColor () const override {return ColorDef::Black();}
     virtual StatusInt _ConnectToOutput() override { return SUCCESS; }
     virtual void _AdjustZPlanesToModel (DPoint3dR, DVec3dR, ViewControllerCR) const override {}
     virtual BSIRect _GetClientRect() const override
@@ -962,19 +907,6 @@ A reality data handler controls the download, caching, and display of reality da
 
 @endif
 */
-
-//=======================================================================================
-// An interface to be implemented by a class that knows how to obtain and display reality data.
-// @bsiclass                                                    Sam.Wilson  10/14
-//=======================================================================================
-struct IRealityDataHandler : virtual RefCountedBase
-{
-    //! Draw reality data. 
-    //! @note The handler should only draw data that's immediately available and can be drawn without any significant delay (i.e., less than about 1/64th of a second).
-    //! If some data is not immediately available but can be obtained in the near future, the handler should call context.GetViewport()->ScheduleProgressiveDisplay to 
-    //! schedule a callback to update the missing data when it becomes available.
-    virtual void _DrawView (ViewContextR) = 0;
-};
 
 //! @endGroup
 

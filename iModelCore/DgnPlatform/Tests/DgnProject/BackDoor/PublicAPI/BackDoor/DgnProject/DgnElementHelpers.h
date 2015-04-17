@@ -2,13 +2,12 @@
 |
 |  $Source: Tests/DgnProject/BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <DgnPlatform/DgnCore/DgnFileIOApi.h>
 #include <DgnPlatform/DgnCore/PropertyContext.h>
 #include <UnitTests/BackDoor/DgnProject/BackDoor.h>
 
@@ -116,14 +115,14 @@ public:
         T GetValue () const     {return m_value;}
     };
 private:
-    AccessedValue <LevelId>     m_level;
-    AccessedValue <UInt32>      m_color;
-    AccessedValue <Int32>       m_lineStyle;
+    AccessedValue <DgnCategoryId> m_category;
+    AccessedValue <uint32_t>      m_color;
+    AccessedValue <int32_t>       m_lineStyle;
 
 public:
     TestElementPropertiesGetter ()  {}
     virtual ~TestElementPropertiesGetter () {}
-    virtual void    _EachLevelCallback           (EachLevelArg& val)             override {m_level.SetValue (val.GetStoredValue());}
+    virtual void    _EachCategoryCallback        (EachCategoryArg& val)          override {m_category.SetValue (val.GetStoredValue());}
     virtual void    _EachColorCallback           (EachColorArg& val)             override {m_color.SetValue (val.GetStoredValue());}
     virtual void    _EachLineStyleCallback       (EachLineStyleArg& val)         override {m_lineStyle.SetValue (val.GetStoredValue());}
     virtual void    _EachFontCallback            (EachFontArg& val)              override {}
@@ -132,16 +131,15 @@ public:
     virtual void    _EachMLineStyleCallback      (EachMLineStyleArg& val)        override {}
     virtual void    _EachMaterialCallback        (EachMaterialArg& val)          override {}
     virtual void    _EachWeightCallback          (EachWeightArg& val)            override {}
-    virtual void    _EachElementClassCallback    (EachElementClassArg& val)      override {}
     virtual void    _EachTransparencyCallback    (EachTransparencyArg& val)      override {}
     virtual void    _EachThicknessCallback       (EachThicknessArg& val)         override {}
     virtual void    _EachDisplayPriorityCallback (EachDisplayPriorityArg& val)   override {}
     virtual void    _EachElementTemplateCallback (EachElementTemplateArg& val)   override {}
     
-    AccessedValue <LevelId>     GetLevel () const {return m_level;}
-    AccessedValue <UInt32>      GetColor () const {return m_color;}
+    AccessedValue <DgnCategoryId> GetCategory () const {return m_category;}
+    AccessedValue <uint32_t>      GetColor () const {return m_color;}
     // TODO: this should be GetLineStyle, however the ElementPropertiesSetter uses lower case (consistency is more important).
-    AccessedValue <Int32>       GetLinestyle () const {return m_lineStyle;}
+    AccessedValue <int32_t>       GetLinestyle () const {return m_lineStyle;}
 };
 
 struct GeomTests

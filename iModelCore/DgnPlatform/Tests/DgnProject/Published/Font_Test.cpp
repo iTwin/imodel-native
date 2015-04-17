@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/Font_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -20,6 +20,8 @@
 // Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="DgnFontTests.*"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_SQLITE
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2010
 //---------------------------------------------------------------------------------------
@@ -27,7 +29,7 @@ TEST (DgnFontTests, CompressRscFractions)
     {
     ScopedDgnHost autoDgnHost;
     WString compressedString;
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY);
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly);
     DgnRscFontCP engineeringFont = static_cast<DgnRscFontCP>(DgnFontManager::FindFont ("ENGINEERING", DgnFontType::Rsc, tdm.GetDgnProjectP()));
     ASSERT_TRUE (NULL != engineeringFont);
         
@@ -58,7 +60,7 @@ TEST (DgnFontTests, ExpandRscFractions)
     {
     ScopedDgnHost autoDgnHost;
     WString expandedString;        
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY);
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly);
     DgnRscFontCP engineeringFont = static_cast<DgnRscFontCP>(DgnFontManager::FindFont ("ENGINEERING", DgnFontType::Rsc, tdm.GetDgnProjectP()));
     ASSERT_TRUE (NULL != engineeringFont);
        
@@ -80,7 +82,7 @@ TEST (DgnFontTests, CompressEscapeSequences)
     {
     ScopedDgnHost autoDgnHost;
     WString expandedString;
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY);          
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly);          
     DgnFontCP arialFont = DgnFontManager::FindFont ("Courier New", DgnFontType::TrueType, tdm.GetDgnProjectP());
     ASSERT_TRUE (NULL != arialFont);
 
@@ -104,7 +106,7 @@ TEST(DgnFontTests, CompressEscapeSequencesRsc)
     {
     ScopedDgnHost autoDgnHost;
     WString expandedString;
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY);  
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly);  
     DgnFontCP engineeringFont = DgnFontManager::FindFont ("ENGINEERING", DgnFontType::Rsc, tdm.GetDgnProjectP());
     ASSERT_TRUE (NULL != engineeringFont);        
     engineeringFont->CompressEscapeSequences (expandedString, L"\\134"); EXPECT_STREQ (L"\x215d", expandedString.c_str ()) << L"ENGINEERING did not correctly compress a string.";
@@ -117,7 +119,7 @@ TEST (DgnFontTests, ExpandEscapeSequences)
     {
     ScopedDgnHost autoDgnHost;
     WString expandedString;
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY);    
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly);    
     DgnFontCP arialFont = DgnFontManager::FindFont ("Courier New", DgnFontType::TrueType, tdm.GetDgnProjectP());
     ASSERT_TRUE (NULL != arialFont);
 
@@ -137,7 +139,7 @@ TEST (DgnFontTests, ExpandEscapeSequences)
 TEST(DgnFontTests, GetFonts)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY);    
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly);    
     DgnFontVariant variants [] = {DGNFONTVARIANT_Rsc, DGNFONTVARIANT_TrueType, 
     DGNFONTVARIANT_ShxShape, DGNFONTVARIANT_ShxUni};
     size_t extractedFontCount = 0;
@@ -158,7 +160,7 @@ TEST(DgnFontTests, GetFonts)
 TEST(DgnFontTests, GetTypeVariantAndName)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY); 
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly); 
     Utf8CP fontName= "ENGINEERING";
     DgnFontType fontType = DgnFontType::Rsc;
     //Find Rsc fond and check if name and type matches
@@ -203,8 +205,6 @@ TEST(DgnFontTests, ConvertFontVariantToType)
     EXPECT_TRUE(DgnFontType::Shx == type);
     type = DgnFontManager::ConvertFontVariantToType(DGNFONTVARIANT_ShxUni);
     EXPECT_TRUE(DgnFontType::Shx == type);
-    type = DgnFontManager::ConvertFontVariantToType(DGNFONTVARIANT_ShxBig);
-    EXPECT_TRUE(DgnFontType::Shx == type);
     //When passing Invalid or DontCare variant, invalid type should be returned. 
     // This would normally trigger an assertion failure.
     BeTest::SetFailOnAssert (false);
@@ -220,7 +220,7 @@ TEST(DgnFontTests, ConvertFontVariantToType)
 TEST(DgnFontTests, GetFontAndConvertFontVariantToType)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY); 
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly); 
     Utf8CP fontName= "ENGINEERING";
     DgnFontType fontType = DgnFontType::Rsc;
     //Find Rsc fond and check if name and type matches
@@ -235,22 +235,22 @@ TEST(DgnFontTests, GetFontAndConvertFontVariantToType)
 TEST(DgnFontTests, ResolveFonts)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, OPENMODE_READONLY); 
+    DgnDbTestDgnManager tdm (L"fonts.dgn.i.idgndb", __FILE__, Db::OPEN_Readonly); 
 
     //Resolve some fonts in fonts.dgn.i.dgndb
-    DgnFontCP font = DgnFontManager::ResolveFont(3, *tdm.GetDgnProjectP(), DGNFONTVARIANT_Rsc);
+    DgnFontCP font = &DgnFontManager::ResolveFont(3, *tdm.GetDgnProjectP(), DGNFONTVARIANT_Rsc);
     Utf8String extractedFontName = font->GetName();
     int cmp = extractedFontName.CompareTo("ENGINEERING");
     EXPECT_EQ(0, cmp)<<"Expected font: ENGINEERING, extracted: "<<extractedFontName;
     EXPECT_EQ(DGNFONTVARIANT_Rsc, font->GetVariant());
 
-    font = DgnFontManager::ResolveFont(41, *tdm.GetDgnProjectP(), DGNFONTVARIANT_Rsc);
+    font = &DgnFontManager::ResolveFont(41, *tdm.GetDgnProjectP(), DGNFONTVARIANT_Rsc);
     extractedFontName = font->GetName();
     cmp = extractedFontName.CompareTo("ARCHITECTURAL");
     EXPECT_EQ(0, cmp)<<"Expected font: ARCHITECTURAL, extracted: "<<extractedFontName;
     EXPECT_EQ(DGNFONTVARIANT_Rsc, font->GetVariant());
 
-    font = DgnFontManager::ResolveFont(1024, *tdm.GetDgnProjectP(), DGNFONTVARIANT_TrueType);
+    font = &DgnFontManager::ResolveFont(1024, *tdm.GetDgnProjectP(), DGNFONTVARIANT_TrueType);
     extractedFontName = font->GetName();
     cmp = extractedFontName.CompareTo("Courier New");
     EXPECT_EQ(0, cmp)<<"Expected font: Courier New, extracted: "<<extractedFontName;

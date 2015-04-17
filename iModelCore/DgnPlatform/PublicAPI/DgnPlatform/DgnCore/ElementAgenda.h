@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/ElementAgenda.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -114,7 +114,7 @@ struct ElemAgendaEntry : EditElementHandle
 {
 public:
     ElemAgendaEntry() {}
-    ElemAgendaEntry (ElementRefP elRef)  : EditElementHandle (elRef) {}
+    ElemAgendaEntry (DgnElementCP elRef)  : EditElementHandle ((DgnElementP)elRef) {}
     ElemAgendaEntry (ElementHandleCR from, bool duplicateDescr) : EditElementHandle (from, duplicateDescr) {}
     ElemAgendaEntry (ElemAgendaEntry const& from) : EditElementHandle(from,false) {}
 
@@ -216,7 +216,7 @@ public:
     DGNPLATFORM_EXPORT ElementAgenda();
     DGNPLATFORM_EXPORT virtual ~ElementAgenda();
 
-    //! Draw all of the entries in this ElementAgenda in a single Viewport. Technically, this is a "redraw" operation.
+    //! Draw all of the entries in this ElementAgenda in a single DgnViewport. Technically, this is a "redraw" operation.
     //! @param[in]      viewport        The viewport in which to draw the agenda
     //! @param[in]      drawMode        The drawmode for the draw. Generally only DgnDrawMode::Normal is useful.
     //! @param[in]      drawPurpose     The purpose argument to be passed to all ElementHandler to describe why this draw operation is
@@ -225,7 +225,7 @@ public:
     //! @param[in]      clip            A ClipVector that clips the elements within the viewport. Can be NULL.
     //! @param[in]      abort           An object that is called periodically during the redraw operation to determine whether the operation is taking
     //!                                     too long and should be aborted.
-    DGNVIEW_EXPORT void Draw (ViewportP viewport, DgnDrawMode drawMode, DrawPurpose drawPurpose, IRedrawOperationP redrawOp, ClipVectorCP clip, IRedrawAbortP abort);
+    DGNVIEW_EXPORT void Draw (DgnViewportP viewport, DgnDrawMode drawMode, DrawPurpose drawPurpose, IRedrawOperationP redrawOp, ClipVectorCP clip, IRedrawAbortP abort);
 
     //! Draw all of the entries in this ElementAgenda in all visible Viewports. Technically, this is a "redraw" operation.
     //! @param[in]      drawMode        The drawmode for the draw. Generally only DgnDrawMode::Normal is useful.
@@ -246,31 +246,31 @@ public:
     void SetCapacity (int nEntries) {reserve (nEntries);}
 
     //! Get the source for this ElementAgenda, if applicable. The "source" is merely an indication of what the collection of elements
-    //! in this agenda means. Also, if the source is ModifyElementSource::SelectionSet, MicroStation internally attempts to keep the Selection
-    //! Set current with changes to the agenda.
+    //! in this agenda means. Also, if the source is ModifyElementSource::SelectionSet, the Selection
+    //! Set is kept current with changes to the agenda.
     ModifyElementSource GetSource () const {return m_source;}
 
     //! Set the source for this ElementAgenda.
     //! @see #GetSource
     void SetSource (ModifyElementSource val) {m_source = val;}
 
-    //! Attempt to find an ElementRefP in this ElementAgenda.
-    //! @param[in]     elRef            The ElementRefP to find
+    //! Attempt to find an DgnElementP in this ElementAgenda.
+    //! @param[in]     elRef            The DgnElementP to find
     //! @param[in]     startIndex       The index of the first entry to be considered for the Find operation.
     //! @param[in]     endIndex         The index of the last entry to be considered for the Find operation.
     //! @return A pointer to the EditElementHandle holding the element, or NULL if not found.
-    DGNPLATFORM_EXPORT EditElementHandleCP Find(ElementRefP elRef, size_t startIndex = 0, size_t endIndex = -1) const;
+    DGNPLATFORM_EXPORT EditElementHandleCP Find(DgnElementCP elRef, size_t startIndex = 0, size_t endIndex = -1) const;
 //__PUBLISH_SECTION_END__
 
-    //! Insert an MSElementDescr into this ElementAgenda.
-    //! @param[in]     elDscr           An MSElementDescr that is to be inserted into this agenda.
+    //! Insert an DgnElementDescr into this ElementAgenda.
+    //! @param[in]     elDscr           An DgnElementDescr that is to be inserted into this agenda.
     //! @param[in]     atHead           If true, put this in at the head (front) of the agenda, otherwise put it at the end. Passing false is more efficient.
     //! @return A pointer to the EditElementHandle within the ElementAgenda holding \c elDscr.
     //! @note After this call, \c elDscr is owned by this ElementAgenda and should NOT be freed by the caller!
     //! @note For performance reasons, no attempt is made to enforce uniqueness of the entries (i.e. this method will allow duplicate
     //! entries for the same element, even though that's generally undesirable.) If you're unsure whether the entry you're adding
-    //! may already be in the agenda, call #Find. Also, see Insert(bset<ElementRefP>&) for more efficient technique to enforce uniqueness for large sets.
-    DGNPLATFORM_EXPORT EditElementHandleP InsertElemDescr (MSElementDescrP elDscr, bool atHead=false);
+    //! may already be in the agenda, call #Find. Also, see Insert(bset<DgnElementP>&) for more efficient technique to enforce uniqueness for large sets.
+    DGNPLATFORM_EXPORT EditElementHandleP InsertElemDescr (DgnElementP elDscr, bool atHead=false);
 //__PUBLISH_SECTION_START__
 
     //! Insert an element into this ElementAgenda.
@@ -278,20 +278,20 @@ public:
     //! @param[in]      atHead          If true, put this in at the head (front) of the agenda, otherwise put it at the end. Passing false is more efficient.
     //! @return A pointer to the EditElementHandle within the ElementAgenda holding \c elDscr.
     //! @note If the EditElementHandle you provide has a descriptor, this will extract and then own the descriptor; you can thus not use the EditElementHandle; use this method's return value instead.
-    //! @note For performance reasons, no attempt is made to enforce uniqueness of the entries (i.e. this method will allow duplicate entries for the same element, even though that's generally undesirable.) If you're unsure whether the entry you're adding may already be in the agenda, call #Find. Also, see Insert(bset<ElementRefP>&) for more efficient technique to enforce uniqueness for large sets.
+    //! @note For performance reasons, no attempt is made to enforce uniqueness of the entries (i.e. this method will allow duplicate entries for the same element, even though that's generally undesirable.) If you're unsure whether the entry you're adding may already be in the agenda, call #Find. Also, see Insert(bset<DgnElementP>&) for more efficient technique to enforce uniqueness for large sets.
     DGNPLATFORM_EXPORT EditElementHandleP Insert (EditElementHandleR eeh, bool atHead = false);
 
-    //! Insert an ElementRefP into this ElementAgenda.
-    //! @param[in]      elRef           The ElementRefP to insert
+    //! Insert an DgnElementP into this ElementAgenda.
+    //! @param[in]      elRef           The DgnElementP to insert
     //! @param[in]      atHead          If true, put this in at the head (front) of the agenda, otherwise put it at the end. Passing false is more efficient.
     //! @return A pointer to the EditElementHandle within the ElementAgenda holding the newly inserted entry.
     //! @note For performance reasons, no attempt is made to enforce uniqueness of the entries (i.e. this method will allow duplicate
     //! entries for the same element, even though that's generally undesirable.) 
-    DGNPLATFORM_EXPORT EditElementHandleP Insert (ElementRefP elRef, bool atHead=false);
+    DGNPLATFORM_EXPORT EditElementHandleP Insert (DgnElementCP elRef, bool atHead=false);
 
-    //! Insert an ElementRefP from a DisplayPath into this ElementAgenda. Optionally, add all of the other members of
+    //! Insert an DgnElementP from a DisplayPath into this ElementAgenda. Optionally, add all of the other members of
     //! graphic groups or named groups containing the element.
-    //! @param[in]      path            The path to insert into this ElementAgenda. The ElementRefP is taken from the HitElem and the DgnModel is taken
+    //! @param[in]      path            The path to insert into this ElementAgenda. The DgnElementP is taken from the HitElem and the DgnModel is taken
     //!                                 from the PathRoot.
     //! @param[in]      doGroups        If true add all other members of graphic or named groups containing the element.
     //! @param[in]      allowLocked     If \c doGroups is true, allow members of groups that are locked to be inserted into the ElementAgenda.
@@ -300,12 +300,12 @@ public:
     //! true and more than one element is added to this agenda, the return is the entry for the original element from \c path.
     //! @note For performance reasons, no attempt is made to enforce uniqueness of the entries (i.e. this method will allow duplicate
     //! entries for the same element, even though that's generally undesirable.) If you're unsure whether the entry you're adding
-    //! may already be in the agenda, call #Find. Also, see Insert(bset<ElementRefP>&) for more efficient technique to enforce uniqueness for large sets.
+    //! may already be in the agenda, call #Find. Also, see Insert(bset<DgnElementP>&) for more efficient technique to enforce uniqueness for large sets.
     DGNVIEW_EXPORT EditElementHandleP InsertPath (DisplayPathCP path, bool doGroups, bool allowLocked);
 
-    //! Insert an ElementRefP from a DisplayPath into this ElementAgenda. Optionally, add all of the other members of
+    //! Insert an DgnElementP from a DisplayPath into this ElementAgenda. Optionally, add all of the other members of
     //! graphic groups or named groups containing the element.
-    //! @param[in]      path            The path to insert into this ElementAgenda. The ElementRefP is taken from the HitElem and the DgnModel is taken
+    //! @param[in]      path            The path to insert into this ElementAgenda. The DgnElementP is taken from the HitElem and the DgnModel is taken
     //!                                     from the PathRoot.
     //! @param[in]      doGroups        If true add all other members of graphic or named groups containing the element.
     //! @param[in]      groupLockState  Interpret group traversal rules according to this state of group lock. See NamedGroup class.
@@ -315,17 +315,17 @@ public:
     //! true and more than one element is added to this agenda, the return is the entry for the original element from \c path.
     //! @note For performance reasons, no attempt is made to enforce uniqueness of the entries (i.e. this method will allow duplicate
     //! entries for the same element, even though that's generally undesirable.) If you're unsure whether the entry you're adding
-    //! may already be in the agenda, call #Find. Also, see Insert(bset<ElementRefP>&) for more efficient technique to enforce uniqueness for large sets.
+    //! may already be in the agenda, call #Find. Also, see Insert(bset<DgnElementP>&) for more efficient technique to enforce uniqueness for large sets.
     DGNPLATFORM_EXPORT EditElementHandleP InsertPath (DisplayPathCP path, bool doGroups, bool groupLockState, bool allowLocked);
 
     //! Add a set of elements to this agenda. This call guarantees uniqueness of the entries in the ElementAgenda (presuming the existing
     //! entries are unique before this call.)
-    //! @param[in,out] elemSet  On input, the set of unique ElementRefP entries to add to this ElementAgenda. On output, the set of entries actually added to this agenda.
+    //! @param[in,out] elemSet  On input, the set of unique DgnElementP entries to add to this ElementAgenda. On output, the set of entries actually added to this agenda.
     //! @remarks This function modifies \c elemSet by removing entries that are already in this agenda.
     //! @note If this ElementAgenda is not empty before this call, all of the existing entries are compared for uniqueness against
     //! the entries in \c elemSet so that the resultant ElementAgenda is also a unique set. For example, if you were to call this method twice
     //! with the same elemSet, the second call would do nothing.
-    DGNPLATFORM_EXPORT void Insert(bset<ElementRefP>& elemSet);
+    DGNPLATFORM_EXPORT void Insert(bset<DgnElementCP>& elemSet);
 
     //! Perform a modification operation on all of the entries in this ElementAgenda.
     //! @param[in]      modifyOp        The operation to be performed on the agenda. The implementation determine what happens to the elements in the ElementAgenda.
@@ -344,10 +344,10 @@ public:
     //! @return SUCCESS if at least one element was added to the agenda from \c elementSet.
     DGNVIEW_EXPORT StatusInt BuildFromElementSet (IElementSetP elementSet, ModifyElementSource source);
 
-    //! Populate this ElementAgenda from the elements visible in a Viewport.
+    //! Populate this ElementAgenda from the elements visible in a DgnViewport.
     //! @param[in] viewPort all elements visible in this viewPort are considered eligible for the agenda.
     //! @return SUCCESS if the resultant ElementAgenda has at least one entry.
-    DGNPLATFORM_EXPORT void BuildFromViewport (ViewportR viewPort);
+    DGNPLATFORM_EXPORT void BuildFromViewport (DgnViewportR viewPort);
 
     //! Mark all entries in this agenda as being hilited and then redraw the agenda so that fact is visible to the user. The agenda itself
     //! also holds a flag indicating whether its entries are all in the hilite state so that calls to #ClearHilite can reverse that.

@@ -16,18 +16,18 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFramePtr AnnotationFrame::Create(DgnProjectR project) { return new AnnotationFrame(project); }
-AnnotationFrame::AnnotationFrame(DgnProjectR project) :
+AnnotationFramePtr AnnotationFrame::Create(DgnDbR project) { return new AnnotationFrame(project); }
+AnnotationFrame::AnnotationFrame(DgnDbR project) :
     T_Super()
     {
     // Making additions or changes? Please check CopyFrom and Reset.
-    m_project = &project;
+    m_dgndb = &project;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFramePtr AnnotationFrame::Create(DgnProjectR project, DgnStyleId styleID)
+AnnotationFramePtr AnnotationFrame::Create(DgnDbR project, DgnStyleId styleID)
     {
     auto frame = AnnotationFrame::Create(project);
     frame->SetStyleId(styleID, SetAnnotationFrameStyleOptions::Direct);
@@ -44,7 +44,7 @@ AnnotationFrameR AnnotationFrame::operator=(AnnotationFrameCR rhs) { T_Super::op
 void AnnotationFrame::CopyFrom(AnnotationFrameCR rhs)
     {
     // Making additions or changes? Please check constructor and Reset.
-    m_project = rhs.m_project;
+    m_dgndb = rhs.m_dgndb;
     m_styleID = rhs.m_styleID;
     m_styleOverrides = rhs.m_styleOverrides;
     }
@@ -62,9 +62,9 @@ void AnnotationFrame::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-DgnProjectR AnnotationFrame::GetDgnProjectR() const { return *m_project; }
+DgnDbR AnnotationFrame::GetDgnProjectR() const { return *m_dgndb; }
 DgnStyleId AnnotationFrame::GetStyleId() const { return m_styleID; }
-AnnotationFrameStylePtr AnnotationFrame::CreateEffectiveStyle() const { return m_project->Styles().AnnotationFrameStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+AnnotationFrameStylePtr AnnotationFrame::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationFrameStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
 AnnotationFrameStylePropertyBagCR AnnotationFrame::GetStyleOverrides() const { return m_styleOverrides; }
 AnnotationFrameStylePropertyBagR AnnotationFrame::GetStyleOverridesR() { return m_styleOverrides; }
 
@@ -82,8 +82,8 @@ void AnnotationFrame::SetStyleId(DgnStyleId value, SetAnnotationFrameStyleOption
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
-static const UInt32 CURRENT_MAJOR_VERSION = 1;
-static const UInt32 CURRENT_MINOR_VERSION = 0;
+static const uint32_t CURRENT_MAJOR_VERSION = 1;
+static const uint32_t CURRENT_MINOR_VERSION = 0;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014

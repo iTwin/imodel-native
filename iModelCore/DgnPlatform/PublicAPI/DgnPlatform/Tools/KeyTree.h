@@ -2,13 +2,13 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Tools/KeyTree.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include    <RmgrTools/Tools/HeapZone.h>
+#include <Bentley/HeapZone.h>
 #include    <string.h>
 #include    <limits>
 #include    <limits.h>
@@ -304,7 +304,7 @@ template <class ETYPE, class KTYPE> class  LeafNode : public KeyRangeNode <ETYPE
     using  T_KeyRangeNode::m_isSloppy;
     using  T_KeyRangeNode::m_parent;
 
-    byte m_entData[NUM_LEAFENTRIES * sizeof(ETYPE)];  // don't want constructors we get if we use ETYPE[]
+    Byte m_entData[NUM_LEAFENTRIES * sizeof(ETYPE)];  // don't want constructors we get if we use ETYPE[]
 
 public:
 
@@ -1246,7 +1246,7 @@ Iterator FirstEntry ()
 /*=================================================================================**//**
 * A simplified version of KeyTree.
 * Simplifying assumptions:
-*   the Key type (KTYPE) is a UInt32 in the range 0-ffffffff.
+*   the Key type (KTYPE) is a uint32_t in the range 0-ffffffff.
 *   the Value type (VTYPE) is assumed to have the following characteristics
 *       can be passed by value
 *       0 means a Nil value
@@ -1268,9 +1268,9 @@ struct          UInt32KeyTree
         Node (KTYPE k, VTYPE v) : m_key (k), m_value (v) {;}
 
         //  required of every KeyTree node:
-        static UInt32 GetMinKey() {return 0;}
-        static UInt32 GetMaxKey() {return UINT32_MAX;}
-        UInt32  GetKey ()       const       { return (UInt32)m_key; }
+        static uint32_t GetMinKey() {return 0;}
+        static uint32_t GetMaxKey() {return UINT32_MAX;}
+        uint32_t GetKey ()       const       { return (uint32_t)m_key; }
         VTYPE   GetValue ()     const       { return m_value; }
 
         //  Some sugar *** EXPERIMENT ***
@@ -1303,7 +1303,7 @@ struct          UInt32KeyTree
         };
 
 private:
-    KeyTree <Node, UInt32>                  m_tree;
+    KeyTree <Node, uint32_t>                  m_tree;
 
     UInt32KeyTree (const UInt32KeyTree&)              {;}
     UInt32KeyTree& operator=(const UInt32KeyTree&)  { return *this; } // NO
@@ -1319,14 +1319,14 @@ public:
     //  Tree access
     void        Add (KTYPE key, VTYPE value)
         {
-        BeAssert (!m_tree.ContainsKey ((UInt32)key)); // (There should never be dups!)
+        BeAssert (!m_tree.ContainsKey ((uint32_t)key)); // (There should never be dups!)
         Node newNode (key, value);
         m_tree.Add (&newNode);      // KeyTree makes a copy
         }
 
     VTYPE       Find (KTYPE key)
         {
-        Node *node = m_tree.Get ((UInt32)key);
+        Node *node = m_tree.Get ((uint32_t)key);
         return node? node->GetValue (): 0;
         }
 

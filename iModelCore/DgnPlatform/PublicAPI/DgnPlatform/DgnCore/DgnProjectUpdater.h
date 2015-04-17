@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnCore/DgnProject.h>
+#include <DgnPlatform/DgnCore/DgnDb.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

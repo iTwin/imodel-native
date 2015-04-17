@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/papatch.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -43,7 +43,7 @@ typedef void *(*CRuntimeNhMallocFunc)       (size_t,size_t);
 typedef void *(*CRuntimeCallocFunc)         (size_t,size_t);
 typedef void *(*CRuntimeReallocFunc)        (void*,size_t);
 typedef void  (*CRuntimeFreeFunc)           (void*);
-typedef Int32 (*CRuntimeMsizeFunc)          (void*);
+typedef int32_t (*CRuntimeMsizeFunc)          (void*);
 typedef void *(*CRuntimeExpandFunc)         (void*,size_t);
 typedef void  (*PagallocSetFreeHFunc)       (CRuntimeFreeFunc);
 typedef void  (*PagallocSetMsizeHFunc)      (CRuntimeMsizeFunc);
@@ -59,22 +59,22 @@ typedef wchar_t *(*PagallocWcsdupFunc)      (wchar_t  const * const);
 |
 +----------------------------------------------------------------------*/
 // Most functions only need a few dozen bytes but this is much easier than debugging the problems that show up when functions write over each other.
-const static Int32 PATCHDATA_PATCHBYTES = 256;
+const static int32_t PATCHDATA_PATCHBYTES = 256;
 
 static struct __patchData
     {
-    byte                        mallocCode[PATCHDATA_PATCHBYTES];
-    byte                        nhMallocCode[PATCHDATA_PATCHBYTES];
-    byte                        callocCode[PATCHDATA_PATCHBYTES];
-    byte                        reallocCode[PATCHDATA_PATCHBYTES];
-    byte                        freeCode[PATCHDATA_PATCHBYTES];
-    byte                        msizeCode[PATCHDATA_PATCHBYTES];
-    byte                        expandCode[PATCHDATA_PATCHBYTES];
-    byte                        operatorNewCode[PATCHDATA_PATCHBYTES];
-    byte                        operatorDeleteCode[PATCHDATA_PATCHBYTES];
-    byte                        heapWalkCode[PATCHDATA_PATCHBYTES];
-    byte                        strdupCode[PATCHDATA_PATCHBYTES];
-    byte                        wcsdupCode[PATCHDATA_PATCHBYTES];
+    Byte mallocCode[PATCHDATA_PATCHBYTES];
+    Byte nhMallocCode[PATCHDATA_PATCHBYTES];
+    Byte callocCode[PATCHDATA_PATCHBYTES];
+    Byte reallocCode[PATCHDATA_PATCHBYTES];
+    Byte freeCode[PATCHDATA_PATCHBYTES];
+    Byte msizeCode[PATCHDATA_PATCHBYTES];
+    Byte expandCode[PATCHDATA_PATCHBYTES];
+    Byte operatorNewCode[PATCHDATA_PATCHBYTES];
+    Byte operatorDeleteCode[PATCHDATA_PATCHBYTES];
+    Byte heapWalkCode[PATCHDATA_PATCHBYTES];
+    Byte strdupCode[PATCHDATA_PATCHBYTES];
+    Byte wcsdupCode[PATCHDATA_PATCHBYTES];
 
     CRuntimeMallocFunc              callCrtMalloc;
     CRuntimeNhMallocFunc            callCrtNhMalloc;
@@ -91,19 +91,19 @@ static struct __patchData
     } *patchData;
 
 
-static byte *crtMallocP;
-static byte *crtNhMallocP;
-static byte *crtCallocP;
-static byte *crtReallocP;
-static byte *crtFreeP;
-static byte *crtMsizeP;
-static byte *crtExpandP;
-static byte *crtOperatorNewP, *crtOperatorDeleteP;
-static byte *crtHeapWalkP;
-static byte *crtStrdupP;
-static byte *crtWcsdupP;
+static Byte *crtMallocP;
+static Byte *crtNhMallocP;
+static Byte *crtCallocP;
+static Byte *crtReallocP;
+static Byte *crtFreeP;
+static Byte *crtMsizeP;
+static Byte *crtExpandP;
+static Byte *crtOperatorNewP, *crtOperatorDeleteP;
+static Byte *crtHeapWalkP;
+static Byte *crtStrdupP;
+static Byte *crtWcsdupP;
 
-static Int32 s_crtBuild;
+static int32_t s_crtBuild;
 
 /*----------------------------------------------------------------------+
 |
@@ -188,32 +188,32 @@ typedef enum testycontrol
 
 
     TestControl g_b07010BECMallocInfo[]                         =  {VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU};// malloc:     77C2AC46: FF 35 A0 B2 38 7C   push    dword ptr [__newmode (77C5C804h)]
-    byte        g_b07010BECMallocTest[_countof(g_b07010BECMallocInfo)] =  {0xff,0x35,0xa0,0xb2,0x38,0x7c,0xff,0x74,0x24,0x08};//                77C2AC4C: FF 74 24 08         push    dword ptr [esp+8]
-    byte        g_b07010BECMallocSave[_countof(g_b07010BECMallocInfo)];                                                       //             77C2AC50: E8 C5 FF FF FF   call        __nh_malloc (77C2AC1Ah)
+    Byte g_b07010BECMallocTest[_countof(g_b07010BECMallocInfo)] =  {0xff,0x35,0xa0,0xb2,0x38,0x7c,0xff,0x74,0x24,0x08};//                77C2AC4C: FF 74 24 08         push    dword ptr [esp+8]
+    Byte g_b07010BECMallocSave[_countof(g_b07010BECMallocInfo)];                                                       //             77C2AC50: E8 C5 FF FF FF   call        __nh_malloc (77C2AC1Ah)
 
     TestControl g_b07010BECNhMallocInfo[]                           = {VEQU,VEQU,VEQU,VEQU,VEQU};                 // __nh_malloc:77C2AC1A: 83 7C 24 04 E0   cmp         dword ptr [esp+4],0FFFFFFE0h
-    byte        g_b07010BECNhMallocTest[_countof(g_b07010BECNhMallocInfo)] = {0x83,0x7c,0x24,0x04,0xe0};                    //             77C2AC1F: 77 22            ja          free+1D8h (77c2ac43)
-    byte        g_b07010BECNhMallocSave[_countof(g_b07010BECNhMallocInfo)];                                         //             77C2AC21: FF 74 24 04      push        dword ptr [esp+4]
+    Byte g_b07010BECNhMallocTest[_countof(g_b07010BECNhMallocInfo)] = {0x83,0x7c,0x24,0x04,0xe0};                    //             77C2AC1F: 77 22            ja          free+1D8h (77c2ac43)
+    Byte g_b07010BECNhMallocSave[_countof(g_b07010BECNhMallocInfo)];                                         //             77C2AC21: FF 74 24 04      push        dword ptr [esp+4]
 
     TestControl g_b07010BECCallocInfo[]                          =  {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};         // calloc:     7C342357: 6A 10            push        10h
-    byte        g_b07010BECCallocTest[_countof(g_b07010BECCallocInfo)]  =  {0x6a,0x10,0x68,0x78,0xf0,0x37,0x7c};            //             7C342359: 68 78 F0 37 7C   push        7C37F078h
-    byte        g_b07010BECCallocSave[_countof(g_b07010BECCallocInfo)];                                                     //             7C34235E: E8 A8 FF FF FF   call        __SEH_prolog (7C34230Bh)
+    Byte g_b07010BECCallocTest[_countof(g_b07010BECCallocInfo)]  =  {0x6a,0x10,0x68,0x78,0xf0,0x37,0x7c};            //             7C342359: 68 78 F0 37 7C   push        7C37F078h
+    Byte g_b07010BECCallocSave[_countof(g_b07010BECCallocInfo)];                                                     //             7C34235E: E8 A8 FF FF FF   call        __SEH_prolog (7C34230Bh)
 
     TestControl g_b07010BECReallocInfo[]                         = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // realloc:    7C3524FF: 6A 24            push        24h
-    byte        g_b07010BECReallocTest[_countof(g_b07010BECReallocInfo)]= {0x6a,0x24,0x68,0xa8,0x0b,0x38,0x7c};     //             7C352501: 68 A8 0B 38 7C   push        7C380BA8h
-    byte        g_b07010BECReallocSave[_countof(g_b07010BECReallocInfo)];                                           //             7C352506: E8 00 FE FE FF   call        __SEH_prolog (7C34230Bh)
+    Byte g_b07010BECReallocTest[_countof(g_b07010BECReallocInfo)]= {0x6a,0x24,0x68,0xa8,0x0b,0x38,0x7c};     //             7C352501: 68 A8 0B 38 7C   push        7C380BA8h
+    Byte g_b07010BECReallocSave[_countof(g_b07010BECReallocInfo)];                                           //             7C352506: E8 00 FE FE FF   call        __SEH_prolog (7C34230Bh)
 
     TestControl g_b07010BECFreeInfo[]                            = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // free:       7C342151: 6A 18            push        18h
-    byte        g_b07010BECFreeTest[_countof(g_b07010BECFreeInfo)]      = {0x6a,0x18,0x68,0xa8,0xa3,0x37,0x7c};             //             7C342153: 68 A8 A3 37 7C   push        7C37A3A8h
-    byte        g_b07010BECFreeSave[_countof(g_b07010BECFreeInfo)];                                                 //             7C342158: E8 AE 01 00 00   call        __SEH_prolog (7C34230Bh)
+    Byte g_b07010BECFreeTest[_countof(g_b07010BECFreeInfo)]      = {0x6a,0x18,0x68,0xa8,0xa3,0x37,0x7c};             //             7C342153: 68 A8 A3 37 7C   push        7C37A3A8h
+    Byte g_b07010BECFreeSave[_countof(g_b07010BECFreeInfo)];                                                 //             7C342158: E8 AE 01 00 00   call        __SEH_prolog (7C34230Bh)
 
     TestControl g_b07010BECMsizeInfo[]                           = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // _msize:     7C3420A2: 6A 1C            push        1Ch
-    byte        g_b07010BECMsizeTest[_countof(g_b07010BECMsizeInfo)]    = {0x6a,0x1c,0x68,0x68,0xa3,0x37,0x7c};          //        7C3420A4: 68 68 A3 37 7C   push        7C37A368h
-    byte        g_b07010BECMsizeSave[_countof(g_b07010BECMsizeInfo)];                                                       //             7C3420A9: E8 5D 02 00 00   call        __SEH_prolog (7C34230Bh)
+    Byte g_b07010BECMsizeTest[_countof(g_b07010BECMsizeInfo)]    = {0x6a,0x1c,0x68,0x68,0xa3,0x37,0x7c};          //        7C3420A4: 68 68 A3 37 7C   push        7C37A368h
+    Byte g_b07010BECMsizeSave[_countof(g_b07010BECMsizeInfo)];                                                       //             7C3420A9: E8 5D 02 00 00   call        __SEH_prolog (7C34230Bh)
 
     TestControl g_b07010BECExpandInfo[]                          =  {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};         // _expand:    7C360B61: 6A 1C            push        1Ch
-    byte        g_b07010BECExpandTest[_countof(g_b07010BECExpandInfo)]  =  {0x6a,0x1c,0x68,0xc8,0x19,0x38,0x7c};         //        7C360B63: 68 C8 19 38 7C   push        7C3819C8h
-    byte        g_b07010BECExpandSave[_countof(g_b07010BECExpandInfo)];                                                     //             7C360B68: E8 9E 17 FE FF   call        __SEH_prolog (7C34230Bh)
+    Byte g_b07010BECExpandTest[_countof(g_b07010BECExpandInfo)]  =  {0x6a,0x1c,0x68,0xc8,0x19,0x38,0x7c};         //        7C360B63: 68 C8 19 38 7C   push        7C3819C8h
+    Byte g_b07010BECExpandSave[_countof(g_b07010BECExpandInfo)];                                                     //             7C360B68: E8 9E 17 FE FF   call        __SEH_prolog (7C34230Bh)
 
     //  --- f:\vs70builds\3052\vc\crtbld\crt\src\new.cpp -------------------------------
     //  7C36093C 6A 01            push        1                                ??2@YAPAXI@Z  [void * __cdecl operator new(unsigned int)]
@@ -230,26 +230,26 @@ typedef enum testycontrol
     //  7C360951 E9 FB 17 FE FF   jmp         free (7C342151h)                 ??_V@YAXPAX@Z  [void __cdecl operator delete[](void *)]
     //
     TestControl g_b07010BECOperatorNewCtrl[]                              = {VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,V___,V___,V___,V___,VEQU,VEQU,VEQU};
-    byte        g_b07010BECOperatorNewTest[_countof(g_b07010BECOperatorNewCtrl)] = {0x6A,0x01,0xFF,0x74,0x24,0x08,0xE8,0x84,0x0d,0xfe,0xff,0x59,0x59,0xC3};
-    byte        g_b07010BECOperatorNewSave[_countof(g_b07010BECOperatorNewCtrl)];
+    Byte g_b07010BECOperatorNewTest[_countof(g_b07010BECOperatorNewCtrl)] = {0x6A,0x01,0xFF,0x74,0x24,0x08,0xE8,0x84,0x0d,0xfe,0xff,0x59,0x59,0xC3};
+    Byte g_b07010BECOperatorNewSave[_countof(g_b07010BECOperatorNewCtrl)];
 
     TestControl g_b07010BECOperatorDeleteCtrl[]                                 = {VEQU,V___,V___,V___,V___};
-    byte        g_b07010BECOperatorDeleteTest[_countof(g_b07010BECOperatorDeleteCtrl)] = {0xE9,0x20,0x18,0xfe,0xf0};
-    byte        g_b07010BECOperatorDeleteSave[_countof(g_b07010BECOperatorDeleteCtrl)];
+    Byte g_b07010BECOperatorDeleteTest[_countof(g_b07010BECOperatorDeleteCtrl)] = {0xE9,0x20,0x18,0xfe,0xf0};
+    Byte g_b07010BECOperatorDeleteSave[_countof(g_b07010BECOperatorDeleteCtrl)];
 //******************************** fixme: add "new[]" and "delete[]" to find "new" and "delete" mismatches
 
 
     TestControl g_b07010BECHeapWalkCtrl[]                           = {VEQU,VEQU,VEQU,V___,V___,V___,V___};       // _heapwalk:  7C360E37: 6A 2C            push      2Ch
-    byte        g_b07010BECHeapWalkTest[_countof(g_b07010BECHeapWalkCtrl)] = {0x6a,0x2c,0x68,0x10,0x1a,0x38,0x7c};  //             7C360E39: 68 10 1A 38 7C   push      7C381A10h
-    byte        g_b07010BECHeapWalkSave[_countof(g_b07010BECHeapWalkCtrl)];                                         //             7C360E3E: E8 C8 14 FE FF   call      __SEH_prolog (7C34230Bh)
+    Byte g_b07010BECHeapWalkTest[_countof(g_b07010BECHeapWalkCtrl)] = {0x6a,0x2c,0x68,0x10,0x1a,0x38,0x7c};  //             7C360E39: 68 10 1A 38 7C   push      7C381A10h
+    Byte g_b07010BECHeapWalkSave[_countof(g_b07010BECHeapWalkCtrl)];                                         //             7C360E3E: E8 C8 14 FE FF   call      __SEH_prolog (7C34230Bh)
 
     TestControl g_b07010BECStrdupCtrl[]                             = {VEQU,VEQU,VEQU,VEQU,VEQU};                 // _mbsdup:    77C42090: 56               push      esi
-    byte        g_b07010BECStrdupTest[_countof(g_b07010BECStrdupCtrl)]        = {0x56,0x8b,0x74,0x24,0x08};                 //             77C42091: 8B 74 24 08      mov       esi,dword ptr [esp+8]
-    byte        g_b07010BECStrdupSave[_countof(g_b07010BECStrdupCtrl)];                                                     //
+    Byte g_b07010BECStrdupTest[_countof(g_b07010BECStrdupCtrl)]        = {0x56,0x8b,0x74,0x24,0x08};                 //             77C42091: 8B 74 24 08      mov       esi,dword ptr [esp+8]
+    Byte g_b07010BECStrdupSave[_countof(g_b07010BECStrdupCtrl)];                                                     //
 
     TestControl g_b07010BECWcsdupCtrl[]                             = {VEQU,VEQU,VEQU,VEQU,VEQU};                 //_wcsdup:      7C35053C: 56              push      esi
-    byte        g_b07010BECWcsdupTest[_countof(g_b07010BECWcsdupCtrl)]     = {0x56,0x8b,0x74,0x24,0x08};                    //              7C35053D: 8B 74 24 08     mov       esi,dword ptr [esp+8]
-    byte        g_b07010BECWcsdupSave[_countof(g_b07010BECWcsdupCtrl)];                                                     //              7C350541: 85 F6           test      esi,esi
+    Byte g_b07010BECWcsdupTest[_countof(g_b07010BECWcsdupCtrl)]     = {0x56,0x8b,0x74,0x24,0x08};                    //              7C35053D: 8B 74 24 08     mov       esi,dword ptr [esp+8]
+    Byte g_b07010BECWcsdupSave[_countof(g_b07010BECWcsdupCtrl)];                                                     //              7C350541: 85 F6           test      esi,esi
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -285,32 +285,32 @@ typedef enum testycontrol
     //   Addr:7C3625F4 Ord: 758 (02F6h) Name: realloc
     //
     TestControl g_b0701178EMallocInfo[]                         =  {VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU};// malloc:     7c36281a ff 35 c8 b4 3a 7c    push    dword ptr [MSVCR71!_newmode (7c3ab4c8)]
-    byte        g_b0701178EMallocTest[_countof(g_b0701178EMallocInfo)] =  {0xff,0x35,0xc8,0xb4,0x3a,0x7c,0xff,0x74,0x24,0x08};//                7c362820 ff 74 24 08          push    dword ptr [esp+8]
-    byte        g_b0701178EMallocSave[_countof(g_b0701178EMallocInfo)];                                                       //             7c362824 e8 d3 ff ff ff       call    MSVCR71!_nh_malloc (7c3627fc)
+    Byte g_b0701178EMallocTest[_countof(g_b0701178EMallocInfo)] =  {0xff,0x35,0xc8,0xb4,0x3a,0x7c,0xff,0x74,0x24,0x08};//                7c362820 ff 74 24 08          push    dword ptr [esp+8]
+    Byte g_b0701178EMallocSave[_countof(g_b0701178EMallocInfo)];                                                       //             7c362824 e8 d3 ff ff ff       call    MSVCR71!_nh_malloc (7c3627fc)
 
     TestControl g_b0701178ENhMallocInfo[]                           = {VEQU,VEQU,VEQU,VEQU,VEQU};                 // __nh_malloc: 7c3627fc 837c2404e0      cmp     dword ptr [esp+4],0FFFFFFE0h
-    byte        g_b0701178ENhMallocTest[_countof(g_b0701178ENhMallocInfo)] = {0x83,0x7c,0x24,0x04,0xe0};                    //              7c362801 7713            ja      MSVCR71!_nh_malloc+0x29 (7c362816)
-    byte        g_b0701178ENhMallocSave[_countof(g_b0701178ENhMallocInfo)];                                         //              7c362803 ff742404        push    dword ptr [esp+4]
+    Byte g_b0701178ENhMallocTest[_countof(g_b0701178ENhMallocInfo)] = {0x83,0x7c,0x24,0x04,0xe0};                    //              7c362801 7713            ja      MSVCR71!_nh_malloc+0x29 (7c362816)
+    Byte g_b0701178ENhMallocSave[_countof(g_b0701178ENhMallocInfo)];                                         //              7c362803 ff742404        push    dword ptr [esp+4]
 
     TestControl g_b0701178ECallocInfo[]                          =  {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};         // calloc:      7c361844 6a10            push    10h
-    byte        g_b0701178ECallocTest[_countof(g_b0701178ECallocInfo)]  =  {0x6a,0x10,0x68,0xa8,0xa2,0x39,0x7c};            //              7c361846 68a8a2397c      push    offset MSVCR71!`string'+0x3c (7c39a2a8)
-    byte        g_b0701178ECallocSave[_countof(g_b0701178ECallocInfo)];                                                     //              7c36184b e854180000      call    MSVCR71!__SEH_prolog (7c3630a4)
+    Byte g_b0701178ECallocTest[_countof(g_b0701178ECallocInfo)]  =  {0x6a,0x10,0x68,0xa8,0xa2,0x39,0x7c};            //              7c361846 68a8a2397c      push    offset MSVCR71!`string'+0x3c (7c39a2a8)
+    Byte g_b0701178ECallocSave[_countof(g_b0701178ECallocInfo)];                                                     //              7c36184b e854180000      call    MSVCR71!__SEH_prolog (7c3630a4)
 
     TestControl g_b0701178EReallocInfo[]                         = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // realloc:     7c3625f4 6a24            push    24h
-    byte        g_b0701178EReallocTest[_countof(g_b0701178EReallocInfo)]= {0x6a,0x24,0x68,0xe8,0xa3,0x39,0x7c};     //              7c3625f6 68e8a3397c      push    offset MSVCR71!`string'+0x44 (7c39a3e8)
-    byte        g_b0701178EReallocSave[_countof(g_b0701178EReallocInfo)];                                           //              7c3625fb e8a40a0000      call    MSVCR71!__SEH_prolog (7c3630a4)
+    Byte g_b0701178EReallocTest[_countof(g_b0701178EReallocInfo)]= {0x6a,0x24,0x68,0xe8,0xa3,0x39,0x7c};     //              7c3625f6 68e8a3397c      push    offset MSVCR71!`string'+0x44 (7c39a3e8)
+    Byte g_b0701178EReallocSave[_countof(g_b0701178EReallocInfo)];                                           //              7c3625fb e8a40a0000      call    MSVCR71!__SEH_prolog (7c3630a4)
 
     TestControl g_b0701178EFreeInfo[]                            = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // free:       7C342151: 6A 18            push        18h
-    byte        g_b0701178EFreeTest[_countof(g_b0701178EFreeInfo)]      = {0x6a,0x18,0x68,0xa8,0xa3,0x37,0x7c};             //             7C342153: 68 A8 A3 37 7C   push        7C37A3A8h
-    byte        g_b0701178EFreeSave[_countof(g_b0701178EFreeInfo)];                                                 //             7C342158: E8 AE 01 00 00   call        __SEH_prolog (7C34230Bh)
+    Byte g_b0701178EFreeTest[_countof(g_b0701178EFreeInfo)]      = {0x6a,0x18,0x68,0xa8,0xa3,0x37,0x7c};             //             7C342153: 68 A8 A3 37 7C   push        7C37A3A8h
+    Byte g_b0701178EFreeSave[_countof(g_b0701178EFreeInfo)];                                                 //             7C342158: E8 AE 01 00 00   call        __SEH_prolog (7C34230Bh)
 
     TestControl g_b0701178EMsizeInfo[]                           = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // _msize:     7c362903 6a 1c               push    1Ch
-    byte        g_b0701178EMsizeTest[_countof(g_b0701178EMsizeInfo)]    = {0x6a,0x1c,0x68,0x00,0xa4,0x39,0x7c};          //        7c362905 68 00 a4 39 7c      push    offset MSVCR71!`string'+0x5c (7c39a400)
-    byte        g_b0701178EMsizeSave[_countof(g_b0701178EMsizeInfo)];                                                       //             7c36290a e8 95 07 00 00      call    MSVCR71!__SEH_prolog (7c3630a4)
+    Byte g_b0701178EMsizeTest[_countof(g_b0701178EMsizeInfo)]    = {0x6a,0x1c,0x68,0x00,0xa4,0x39,0x7c};          //        7c362905 68 00 a4 39 7c      push    offset MSVCR71!`string'+0x5c (7c39a400)
+    Byte g_b0701178EMsizeSave[_countof(g_b0701178EMsizeInfo)];                                                       //             7c36290a e8 95 07 00 00      call    MSVCR71!__SEH_prolog (7c3630a4)
 
     TestControl g_b0701178EExpandInfo[]                          =  {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};         // _expand:    7c381871 6a 1c               push    1Ch
-    byte        g_b0701178EExpandTest[_countof(g_b0701178EExpandInfo)]  =  {0x6a,0x1c,0x68,0x18,0x1a,0x3a,0x7c};         //        7c381873 68 18 1a 3a 7c      push    offset MSVCR71!`string'+0xc (7c3a1a18)
-    byte        g_b0701178EExpandSave[_countof(g_b0701178EExpandInfo)];                                                     //             7c381878 e8 27 18 fe ff      call    MSVCR71!__SEH_prolog (7c3630a4)
+    Byte g_b0701178EExpandTest[_countof(g_b0701178EExpandInfo)]  =  {0x6a,0x1c,0x68,0x18,0x1a,0x3a,0x7c};         //        7c381873 68 18 1a 3a 7c      push    offset MSVCR71!`string'+0xc (7c3a1a18)
+    Byte g_b0701178EExpandSave[_countof(g_b0701178EExpandInfo)];                                                     //             7c381878 e8 27 18 fe ff      call    MSVCR71!__SEH_prolog (7c3630a4)
 
     //  --- f:\vs70builds\3052\vc\crtbld\crt\src\new.cpp -------------------------------
     //  MSVCR71!operator new:
@@ -334,27 +334,27 @@ typedef enum testycontrol
     //  7c381635 e9 20 1f fe ff      jmp     MSVCR71!free (7c36355a)               ??_V@YAXPAX@Z  [void __cdecl operator delete[](void *)]
     //
     TestControl g_b0701178EOperatorNewCtrl[]                              = {VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,V___,V___,V___,V___,VEQU,VEQU,VEQU};
-    byte        g_b0701178EOperatorNewTest[_countof(g_b0701178EOperatorNewCtrl)] = {0x6A,0x01,0xFF,0x74,0x24,0x08,0xE8,0xd1,0x11,0xfe,0xff,0x59,0x59,0xC3};
-    byte        g_b0701178EOperatorNewSave[_countof(g_b0701178EOperatorNewCtrl)];
+    Byte g_b0701178EOperatorNewTest[_countof(g_b0701178EOperatorNewCtrl)] = {0x6A,0x01,0xFF,0x74,0x24,0x08,0xE8,0xd1,0x11,0xfe,0xff,0x59,0x59,0xC3};
+    Byte g_b0701178EOperatorNewSave[_countof(g_b0701178EOperatorNewCtrl)];
 
     TestControl g_b0701178EOperatorDeleteCtrl[]                                 = {VEQU,V___,V___,V___,V___};
-    byte        g_b0701178EOperatorDeleteTest[_countof(g_b0701178EOperatorDeleteCtrl)] = {0xE9,0x27,0x1f,0xfe,0xff};
-    byte        g_b0701178EOperatorDeleteSave[_countof(g_b0701178EOperatorDeleteCtrl)];
+    Byte g_b0701178EOperatorDeleteTest[_countof(g_b0701178EOperatorDeleteCtrl)] = {0xE9,0x27,0x1f,0xfe,0xff};
+    Byte g_b0701178EOperatorDeleteSave[_countof(g_b0701178EOperatorDeleteCtrl)];
 
     //******************************** fixme: add "new[]" and "delete[]" to find "new" and "delete" mismatches--But I don't have 5 byte for a jump instruction!
 
     TestControl g_b0701178EHeapWalkCtrl[]                           = {VEQU,VEQU,VEQU,V___,V___,V___,V___};       // _heapwalk:  7c381b47 6a 2c               push    2Ch
-    byte        g_b0701178EHeapWalkTest[_countof(g_b0701178EHeapWalkCtrl)] = {0x6a,0x2c,0x68,0x60,0x1a,0x3a,0x7c};  //             7c381b49 68 60 1a 3a 7c      push    offset MSVCR71!`string'+0x54 (7c3a1a60)
-    byte        g_b0701178EHeapWalkSave[_countof(g_b0701178EHeapWalkCtrl)];                                         //             7c381b4e e8 51 15 fe ff      call    MSVCR71!__SEH_prolog (7c3630a4)
+    Byte g_b0701178EHeapWalkTest[_countof(g_b0701178EHeapWalkCtrl)] = {0x6a,0x2c,0x68,0x60,0x1a,0x3a,0x7c};  //             7c381b49 68 60 1a 3a 7c      push    offset MSVCR71!`string'+0x54 (7c3a1a60)
+    Byte g_b0701178EHeapWalkSave[_countof(g_b0701178EHeapWalkCtrl)];                                         //             7c381b4e e8 51 15 fe ff      call    MSVCR71!__SEH_prolog (7c3630a4)
 
     TestControl g_b0701178EStrdupCtrl[]                             = {VEQU,VEQU,VEQU,VEQU,VEQU};                 // _mbsdup:    7c372007 56                  push    esi
-    byte        g_b0701178EStrdupTest[_countof(g_b0701178EStrdupCtrl)]        = {0x56,0x8b,0x74,0x24,0x08};                 //             7c372008 8b 74 24 08         mov     esi,dword ptr [esp+8]
-    byte        g_b0701178EStrdupSave[_countof(g_b0701178EStrdupCtrl)];                                                     //             7c37200c 85 f6               test    esi,esi
+    Byte g_b0701178EStrdupTest[_countof(g_b0701178EStrdupCtrl)]        = {0x56,0x8b,0x74,0x24,0x08};                 //             7c372008 8b 74 24 08         mov     esi,dword ptr [esp+8]
+    Byte g_b0701178EStrdupSave[_countof(g_b0701178EStrdupCtrl)];                                                     //             7c37200c 85 f6               test    esi,esi
                                                                                                                 //             7c37200e 74 1e               je      MSVCR71!_strdup+0x27 (7c37202e)
 
     TestControl g_b0701178EWcsdupCtrl[]                             = {VEQU,VEQU,VEQU,VEQU,VEQU};                 //_wcsdup:     7c372032 56                  push    esi
-    byte        g_b0701178EWcsdupTest[_countof(g_b0701178EWcsdupCtrl)]     = {0x56,0x8b,0x74,0x24,0x08};                    //             7c372033 8b 74 24 08         mov     esi,dword ptr [esp+8]
-    byte        g_b0701178EWcsdupSave[_countof(g_b0701178EWcsdupCtrl)];                                                     //             7c372037 85 f6               test    esi,esi
+    Byte g_b0701178EWcsdupTest[_countof(g_b0701178EWcsdupCtrl)]     = {0x56,0x8b,0x74,0x24,0x08};                    //             7c372033 8b 74 24 08         mov     esi,dword ptr [esp+8]
+    Byte g_b0701178EWcsdupSave[_countof(g_b0701178EWcsdupCtrl)];                                                     //             7c372037 85 f6               test    esi,esi
                                                                                                             //             7c372039 74 21               je      MSVCR71!_wcsdup+0x2a (7c37205c)
 #pragma endregion
 #pragma region Visual Studio 8 Patch Table
@@ -393,8 +393,8 @@ typedef enum testycontrol
     //   Addr:78134f97 Ord:1355 (054Ah) Name: realloc
     //
     TestControl g_b0800C627MallocInfo[]                         =  {VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU};     // malloc:  78134d09 53              push    ebx
-    byte        g_b0800C627MallocTest[_countof(g_b0800C627MallocInfo)] =  {0x53,0x8b,0x5c,0x24,0x08,0x83,0xfb,0xe0};     //          78134d0a 8b5c2408        mov     ebx,dword ptr [esp+8]
-    byte        g_b0800C627MallocSave[_countof(g_b0800C627MallocInfo)];                                                  //          78134d0e 83fbe0          cmp     ebx,0FFFFFFE0h
+    Byte g_b0800C627MallocTest[_countof(g_b0800C627MallocInfo)] =  {0x53,0x8b,0x5c,0x24,0x08,0x83,0xfb,0xe0};     //          78134d0a 8b5c2408        mov     ebx,dword ptr [esp+8]
+    Byte g_b0800C627MallocSave[_countof(g_b0800C627MallocInfo)];                                                  //          78134d0e 83fbe0          cmp     ebx,0FFFFFFE0h
                                                                                                                 //          78134d11 0f87ac000000    ja      MSVCR80!malloc+0xba (78134dc3)
                                                                                                                 //          78134d17 55              push    ebp
                                                                                                                 //          78134d18 8b2d48401978    mov     ebp,dword ptr [MSVCR80!CRT_RTC_INITW+0x41a5 (78194048)]
@@ -409,8 +409,8 @@ typedef enum testycontrol
 
 
     TestControl g_b0800C627CallocInfo[]                          =  {VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU};    // calloc:  78134f58 55              push    ebp
-    byte        g_b0800C627CallocTest[_countof(g_b0800C627CallocInfo)]  =  {0x55,0x8b,0xec,0x51,0x83,0x65,0xfc,0x00};       //          78134f59 8bec            mov     ebp,esp
-    byte        g_b0800C627CallocSave[_countof(g_b0800C627CallocInfo)];                                                     //          78134f5b 51              push    ecx
+    Byte g_b0800C627CallocTest[_countof(g_b0800C627CallocInfo)]  =  {0x55,0x8b,0xec,0x51,0x83,0x65,0xfc,0x00};       //          78134f59 8bec            mov     ebp,esp
+    Byte g_b0800C627CallocSave[_countof(g_b0800C627CallocInfo)];                                                     //          78134f5b 51              push    ecx
                                                                                                                 //          78134f5c 8365fc00        and     dword ptr [ebp-4],0
                                                                                                                 //          78134f60 57              push    edi
                                                                                                                 //          78134f61 8d45fc          lea     eax,[ebp-4]
@@ -418,8 +418,8 @@ typedef enum testycontrol
                                                                                                                 //          78134f65 ff750c          push    dword ptr [ebp+0Ch]
 
     TestControl g_b0800C627ReallocInfo[]                         = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // realloc: 78134f97 6a1c            push    1Ch
-    byte        g_b0800C627ReallocTest[_countof(g_b0800C627ReallocInfo)]= {0x6a,0x1c,0x68,0xf0,0x4c,0x1b,0x78};     //          78134f99 68f04c1b78      push    offset MSVCR80!exception::`vftable'+0x1e818 (781b4cf0)
-    byte        g_b0800C627ReallocSave[_countof(g_b0800C627ReallocInfo)];                                           //          78134f9e e8dd3c0000      call    MSVCR80!_dllonexit+0x44 (78138c80)
+    Byte g_b0800C627ReallocTest[_countof(g_b0800C627ReallocInfo)]= {0x6a,0x1c,0x68,0xf0,0x4c,0x1b,0x78};     //          78134f99 68f04c1b78      push    offset MSVCR80!exception::`vftable'+0x1e818 (781b4cf0)
+    Byte g_b0800C627ReallocSave[_countof(g_b0800C627ReallocInfo)];                                           //          78134f9e e8dd3c0000      call    MSVCR80!_dllonexit+0x44 (78138c80)
                                                                                                                 //          78134fa3 8b7d08          mov     edi,dword ptr [ebp+8]
                                                                                                                 //          78134fa6 85ff            test    edi,edi
                                                                                                                 //          78134fa8 750e            jne     MSVCR80!realloc+0x21 (78134fb8)
@@ -427,8 +427,8 @@ typedef enum testycontrol
                                                                                                                 //          78134fad e857fdffff      call    MSVCR80!malloc (78134d09)
 
     TestControl g_b0800C627FreeInfo[]                            = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // free:    78134b6c 6a18            push    18h
-    byte        g_b0800C627FreeTest[_countof(g_b0800C627FreeInfo)]      = {0x6a,0x18,0x68,0x60,0x4c,0x1b,0x78};             //          78134b6e 68604c1b78      push    offset MSVCR80!exception::`vftable'+0x1e788 (781b4c60)
-    byte        g_b0800C627FreeSave[_countof(g_b0800C627FreeInfo)];                                                 //          78134b73 e808410000      call    MSVCR80!_dllonexit+0x44 (78138c80)
+    Byte g_b0800C627FreeTest[_countof(g_b0800C627FreeInfo)]      = {0x6a,0x18,0x68,0x60,0x4c,0x1b,0x78};             //          78134b6e 68604c1b78      push    offset MSVCR80!exception::`vftable'+0x1e788 (781b4c60)
+    Byte g_b0800C627FreeSave[_countof(g_b0800C627FreeInfo)];                                                 //          78134b73 e808410000      call    MSVCR80!_dllonexit+0x44 (78138c80)
                                                                                                                 //          78134b78 8b7508          mov     esi,dword ptr [ebp+8]
                                                                                                                 //          78134b7b 85f6            test    esi,esi
                                                                                                                 //          78134b7d 0f84d0000000    je      MSVCR80!free+0xe7 (78134c53)
@@ -436,8 +436,8 @@ typedef enum testycontrol
                                                                                                                 //          78134b88 83f803          cmp     eax,3
 
     TestControl g_b0800C627MsizeInfo[]                           = {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};          // _msize:  78136c6b 6a1c            push    1Ch
-    byte        g_b0800C627MsizeTest[_countof(g_b0800C627MsizeInfo)]    = {0x6a,0x1c,0x68,0x18,0x4d,0x1b,0x78};          //          78136c6d 68184d1b78      push    offset MSVCR80!exception::`vftable'+0x1e840 (781b4d18)
-    byte        g_b0800C627MsizeSave[_countof(g_b0800C627MsizeInfo)];                                                       //          78136c72 e809200000      call    MSVCR80!_dllonexit+0x44 (78138c80)
+    Byte g_b0800C627MsizeTest[_countof(g_b0800C627MsizeInfo)]    = {0x6a,0x1c,0x68,0x18,0x4d,0x1b,0x78};          //          78136c6d 68184d1b78      push    offset MSVCR80!exception::`vftable'+0x1e840 (781b4d18)
+    Byte g_b0800C627MsizeSave[_countof(g_b0800C627MsizeInfo)];                                                       //          78136c72 e809200000      call    MSVCR80!_dllonexit+0x44 (78138c80)
                                                                                                                 //          78136c77 33c0            xor     eax,eax
                                                                                                                 //          78136c79 8b7508          mov     esi,dword ptr [ebp+8]
                                                                                                                 //          78136c7c 33ff            xor     edi,edi
@@ -445,8 +445,8 @@ typedef enum testycontrol
                                                                                                                 //          78136c80 0f95c0          setne   al
 
     TestControl g_b0800C627ExpandInfo[]                          =  {VEQU,VEQU,VEQU,VABS,VABS,VABS,VABS};         // _expand: 781611a9 6a1c            push    1Ch
-    byte        g_b0800C627ExpandTest[_countof(g_b0800C627ExpandInfo)]  =  {0x6a,0x1c,0x68,0xa0,0x57,0x1b,0x78};         //          781611ab 68a0571b78      push    offset MSVCR80!exception::`vftable'+0x1f2c8 (781b57a0)
-    byte        g_b0800C627ExpandSave[_countof(g_b0800C627ExpandInfo)];                                                     //          781611b0 e8cb7afdff      call    MSVCR80!_dllonexit+0x44 (78138c80)
+    Byte g_b0800C627ExpandTest[_countof(g_b0800C627ExpandInfo)]  =  {0x6a,0x1c,0x68,0xa0,0x57,0x1b,0x78};         //          781611ab 68a0571b78      push    offset MSVCR80!exception::`vftable'+0x1f2c8 (781b57a0)
+    Byte g_b0800C627ExpandSave[_countof(g_b0800C627ExpandInfo)];                                                     //          781611b0 e8cb7afdff      call    MSVCR80!_dllonexit+0x44 (78138c80)
                                                                                                                 //          781611b5 33c0            xor     eax,eax
                                                                                                                 //          781611b7 8b7d08          mov     edi,dword ptr [ebp+8]
                                                                                                                 //          781611ba 33db            xor     ebx,ebx
@@ -479,18 +479,18 @@ typedef enum testycontrol
 
 
     TestControl g_b0800C627OperatorNewCtrl[]                              = {VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,VEQU,V___,VEQU,VEQU,VEQU,VEQU,V___,V___,V___,V___};
-    byte        g_b0800C627OperatorNewTest[_countof(g_b0800C627OperatorNewCtrl)] = {0x55,0x8b,0xec,0x83,0xec,0x0c,0xeb,0x0d,0xff,0x75,0x08,0xe8,0x4d,0x02,0xfd,0xff};
-    byte        g_b0800C627OperatorNewSave[_countof(g_b0800C627OperatorNewCtrl)];
+    Byte g_b0800C627OperatorNewTest[_countof(g_b0800C627OperatorNewCtrl)] = {0x55,0x8b,0xec,0x83,0xec,0x0c,0xeb,0x0d,0xff,0x75,0x08,0xe8,0x4d,0x02,0xfd,0xff};
+    Byte g_b0800C627OperatorNewSave[_countof(g_b0800C627OperatorNewCtrl)];
 
     TestControl g_b0800C627OperatorDeleteCtrl[]                                 = {VEQU,V___,V___,V___,V___};
-    byte        g_b0800C627OperatorDeleteTest[_countof(g_b0800C627OperatorDeleteCtrl)] = {0xe9,0x09,0x3d,0xfd,0xff};
-    byte        g_b0800C627OperatorDeleteSave[_countof(g_b0800C627OperatorDeleteCtrl)];
+    Byte g_b0800C627OperatorDeleteTest[_countof(g_b0800C627OperatorDeleteCtrl)] = {0xe9,0x09,0x3d,0xfd,0xff};
+    Byte g_b0800C627OperatorDeleteSave[_countof(g_b0800C627OperatorDeleteCtrl)];
 
     //******************************** fixme: add "new[]" and "delete[]" to find "new" and "delete" mismatches--But I don't have 5 byte for a jump instruction!
 
     TestControl g_b0800C627HeapWalkCtrl[]                           = {VEQU,VEQU,VEQU,V___,V___,V___,V___};       // _heapwalk:   781614dd 6a2c            push    2Ch
-    byte        g_b0800C627HeapWalkTest[_countof(g_b0800C627HeapWalkCtrl)] = {0x6a,0x2c,0x68,0x60,0x1a,0x3a,0x7c};  //              781614df 6818581b78      push    offset MSVCR80!exception::`vftable'+0x1f340 (781b5818)
-    byte        g_b0800C627HeapWalkSave[_countof(g_b0800C627HeapWalkCtrl)];                                         //              781614e4 e89777fdff      call    MSVCR80!_dllonexit+0x44 (78138c80)
+    Byte g_b0800C627HeapWalkTest[_countof(g_b0800C627HeapWalkCtrl)] = {0x6a,0x2c,0x68,0x60,0x1a,0x3a,0x7c};  //              781614df 6818581b78      push    offset MSVCR80!exception::`vftable'+0x1f340 (781b5818)
+    Byte g_b0800C627HeapWalkSave[_countof(g_b0800C627HeapWalkCtrl)];                                         //              781614e4 e89777fdff      call    MSVCR80!_dllonexit+0x44 (78138c80)
                                                                                                                 //              781614e9 6afe            push    0FFFFFFFEh
                                                                                                                 //              781614eb 5f              pop     edi
                                                                                                                 //              781614ec 897de0          mov     dword ptr [ebp-20h],edi
@@ -498,8 +498,8 @@ typedef enum testycontrol
                                                                                                                 //              781614f1 8b7508          mov     esi,dword ptr [ebp+8]
 
     TestControl g_b0800C627StrdupCtrl[]                             = {VEQU,VEQU,VEQU,VEQU,VEQU};                 // _strdup:     78144ba8 53              push    ebx
-    byte        g_b0800C627StrdupTest[_countof(g_b0800C627StrdupCtrl)]        = {0x53,0x8b,0x5c,0x24,0x08};                 //              78144ba9 8b5c2408        mov     ebx,dword ptr [esp+8]
-    byte        g_b0800C627StrdupSave[_countof(g_b0800C627StrdupCtrl)];                                                     //              78144bad 55              push    ebp
+    Byte g_b0800C627StrdupTest[_countof(g_b0800C627StrdupCtrl)]        = {0x53,0x8b,0x5c,0x24,0x08};                 //              78144ba9 8b5c2408        mov     ebx,dword ptr [esp+8]
+    Byte g_b0800C627StrdupSave[_countof(g_b0800C627StrdupCtrl)];                                                     //              78144bad 55              push    ebp
                                                                                                                 //              78144bae 33ed            xor     ebp,ebp
                                                                                                                 //              78144bb0 3bdd            cmp     ebx,ebp
                                                                                                                 //              78144bb2 7504            jne     MSVCR80!strdup+0x10 (78144bb8)
@@ -508,8 +508,8 @@ typedef enum testycontrol
 
 
     TestControl g_b0800C627WcsdupCtrl[]                             = {VEQU,VEQU,VEQU,VEQU,VEQU};                 // _wcsdup:     78144d2d 53              push    ebx
-    byte        g_b0800C627WcsdupTest[_countof(g_b0800C627WcsdupCtrl)]     = {0x53,0x8b,0x5c,0x24,0x08};                    //              78144d2e 8b5c2408        mov     ebx,dword ptr [esp+8]
-    byte        g_b0800C627WcsdupSave[_countof(g_b0800C627WcsdupCtrl)];                                                     //              78144d32 55              push    ebp
+    Byte g_b0800C627WcsdupTest[_countof(g_b0800C627WcsdupCtrl)]     = {0x53,0x8b,0x5c,0x24,0x08};                    //              78144d2e 8b5c2408        mov     ebx,dword ptr [esp+8]
+    Byte g_b0800C627WcsdupSave[_countof(g_b0800C627WcsdupCtrl)];                                                     //              78144d32 55              push    ebp
                                                                                                             //              78144d33 33ed            xor     ebp,ebp
                                                                                             //              78144d35 3bdd            cmp     ebx,ebp
                                                                                             //              78144d37 7504
@@ -523,8 +523,8 @@ typedef enum testycontrol
 
     /* 9.0.21022.8   VC 9.0  (21022==0x521E)*/
     TestControl g_b0900521eMallocInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU};
-    byte g_b0900521eMallocTest[_countof(g_b0900521eMallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x56, 0x8b, 0x75, 0x08};
-    byte g_b0900521eMallocSave[_countof(g_b0900521eMallocInfo)];
+    Byte g_b0900521eMallocTest[_countof(g_b0900521eMallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x56, 0x8b, 0x75, 0x08};
+    Byte g_b0900521eMallocSave[_countof(g_b0900521eMallocInfo)];
     //_malloc:
     //73B63D3F 8B FF            mov         edi,edi
     //73B63D41 55               push        ebp
@@ -534,8 +534,8 @@ typedef enum testycontrol
     //73B63D48 83 FE E0         cmp         esi,0FFFFFFE0h
 
     TestControl g_b0900521eCallocInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eCallocTest[_countof(g_b0900521eCallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x51, 0x83, 0x65, 0xfc, 0x00};
-    byte g_b0900521eCallocSave[_countof(g_b0900521eCallocInfo)];
+    Byte g_b0900521eCallocTest[_countof(g_b0900521eCallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x51, 0x83, 0x65, 0xfc, 0x00};
+    Byte g_b0900521eCallocSave[_countof(g_b0900521eCallocInfo)];
     //_calloc
     //73B63C40 8B FF            mov         edi,edi
     //73B63C42 55               push        ebp
@@ -544,37 +544,37 @@ typedef enum testycontrol
     //73B63C46 83 65 FC 00      and         dword ptr [ebp-4],0
 
     TestControl g_b0900521eReallocInfo[] = { VEQU, VEQU, VEQU, VABS, VABS, VABS, VABS };
-    byte g_b0900521eReallocTest[_countof(g_b0900521eReallocInfo)] = { 0x6a, 0x1c, 0x68, 0xe0, 0xd6, 0xb8, 0x73 };
-    byte g_b0900521eReallocSave[_countof(g_b0900521eReallocInfo)];
+    Byte g_b0900521eReallocTest[_countof(g_b0900521eReallocInfo)] = { 0x6a, 0x1c, 0x68, 0xe0, 0xd6, 0xb8, 0x73 };
+    Byte g_b0900521eReallocSave[_countof(g_b0900521eReallocInfo)];
     //_realloc
     //73B663FC 6A 1C            push        1Ch
     //73B663FE 68 E0 D6 B8 73   push        73B8D6E0h
     //73B66403 E8 D8 6A 00 00   call        73B6CEE0
 
     TestControl g_b0900521eFreeInfo[] = { VEQU, VEQU, VEQU, VABS, VABS, VABS, VABS};
-    byte g_b0900521eFreeTest[_countof(g_b0900521eFreeInfo)] = { 0x6a, 0x18, 0x68, 0x80, 0xd5, 0xb8, 0x73};
-    byte g_b0900521eFreeSave[_countof(g_b0900521eFreeInfo)];
+    Byte g_b0900521eFreeTest[_countof(g_b0900521eFreeInfo)] = { 0x6a, 0x18, 0x68, 0x80, 0xd5, 0xb8, 0x73};
+    Byte g_b0900521eFreeSave[_countof(g_b0900521eFreeInfo)];
     //_free
     //73B63B4E 6A 18            push        18h
     //73B63B50 68 80 D5 B8 73   push        73B8D580h
 
     TestControl g_b0900521eMsizeInfo[] = { VEQU, VEQU, VEQU, VABS, VABS, VABS, VABS };
-    byte g_b0900521eMsizeTest[_countof(g_b0900521eMsizeInfo)] = { 0x6a, 0x1c, 0x68, 0xb8, 0xd6, 0xb8, 0x73};
-    byte g_b0900521eMsizeSave[_countof(g_b0900521eMsizeInfo)];
+    Byte g_b0900521eMsizeTest[_countof(g_b0900521eMsizeInfo)] = { 0x6a, 0x1c, 0x68, 0xb8, 0xd6, 0xb8, 0x73};
+    Byte g_b0900521eMsizeSave[_countof(g_b0900521eMsizeInfo)];
     //_msize
     //73B66182 6A 1C            push        1Ch
     //73B66184 68 B8 D6 B8 73   push        73B8D6B8h
 
     TestControl g_b0900521eExpandInfo[] = { VEQU, VEQU, VEQU, VABS, VABS, VABS, VABS };
-    byte g_b0900521eExpandTest[_countof(g_b0900521eExpandInfo)] = { 0x6a, 0x1c, 0x68, 0x20, 0xd6, 0xb8, 0x73};
-    byte g_b0900521eExpandSave[_countof(g_b0900521eExpandInfo)];
+    Byte g_b0900521eExpandTest[_countof(g_b0900521eExpandInfo)] = { 0x6a, 0x1c, 0x68, 0x20, 0xd6, 0xb8, 0x73};
+    Byte g_b0900521eExpandSave[_countof(g_b0900521eExpandInfo)];
     //_expand
     //73B64334 6A 1C            push        1Ch
     //73B64336 68 20 D6 B8 73   push        73B8D620h
 
     TestControl g_b0900521eOperatorNewCtrl[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU};
-    byte g_b0900521eOperatorNewTest[_countof(g_b0900521eOperatorNewCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0xec, 0x0c};
-    byte g_b0900521eOperatorNewSave[_countof(g_b0900521eOperatorNewCtrl)];
+    Byte g_b0900521eOperatorNewTest[_countof(g_b0900521eOperatorNewCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0xec, 0x0c};
+    Byte g_b0900521eOperatorNewSave[_countof(g_b0900521eOperatorNewCtrl)];
     //_??2@YAPAXI@Z
     //73B63E99 8B FF            mov         edi,edi
     //73B63E9B 55               push        ebp
@@ -583,8 +583,8 @@ typedef enum testycontrol
     //73B63EA1 EB 0D            jmp         73B63EB0
 
     TestControl g_b0900521eOperatorDeleteCtrl[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, V___, V___, V___ , V___ };
-    byte g_b0900521eOperatorDeleteTest[_countof(g_b0900521eOperatorDeleteCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x5d, 0xe9, 0x40, 0xfc, 0xff, 0xff };
-    byte g_b0900521eOperatorDeleteSave[_countof(g_b0900521eOperatorDeleteCtrl)];
+    Byte g_b0900521eOperatorDeleteTest[_countof(g_b0900521eOperatorDeleteCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x5d, 0xe9, 0x40, 0xfc, 0xff, 0xff };
+    Byte g_b0900521eOperatorDeleteSave[_countof(g_b0900521eOperatorDeleteCtrl)];
     //_??3@YAXPAX@Z
     //73B63F03 8B FF            mov         edi,edi
     //73B63F05 55               push        ebp
@@ -593,15 +593,15 @@ typedef enum testycontrol
     //73B63F09 E9 40 FC FF FF   jmp         73B63B4E
 
     TestControl g_b0900521eHeapWalkCtrl[] = { VEQU, VEQU, VEQU, VABS, VABS, VABS, VABS };
-    byte g_b0900521eHeapWalkTest[_countof(g_b0900521eHeapWalkCtrl)] = { 0x6a, 0x2c, 0x68, 0x98, 0xd6, 0xb8, 0x73 };
-    byte g_b0900521eHeapWalkSave[_countof(g_b0900521eHeapWalkCtrl)];
+    Byte g_b0900521eHeapWalkTest[_countof(g_b0900521eHeapWalkCtrl)] = { 0x6a, 0x2c, 0x68, 0x98, 0xd6, 0xb8, 0x73 };
+    Byte g_b0900521eHeapWalkSave[_countof(g_b0900521eHeapWalkCtrl)];
     //_heapwalk
     //73B66020 6A 2C            push        2Ch
     //73B66022 68 98 D6 B8 73   push        73B8D698h
 
     TestControl g_b0900521eStrdupCtrl[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU};
-    byte g_b0900521eStrdupTest[_countof(g_b0900521eStrdupCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x33, 0xdb, 0x39, 0x5d, 0x08};
-    byte g_b0900521eStrdupSave[_countof(g_b0900521eStrdupCtrl)];
+    Byte g_b0900521eStrdupTest[_countof(g_b0900521eStrdupCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x33, 0xdb, 0x39, 0x5d, 0x08};
+    Byte g_b0900521eStrdupSave[_countof(g_b0900521eStrdupCtrl)];
     //_strdup
     //73B36A87 8B FF            mov         edi,edi
     //73B36A89 55               push        ebp
@@ -611,8 +611,8 @@ typedef enum testycontrol
     //73B36A8F 39 5D 08         cmp         dword ptr [ebp+8],ebx
 
     TestControl g_b0900521eWcsdupCtrl[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU};
-    byte g_b0900521eWcsdupTest[_countof(g_b0900521eWcsdupCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x33, 0xdb, 0x39, 0x5d, 0x08};
-    byte g_b0900521eWcsdupSave[_countof(g_b0900521eWcsdupCtrl)];
+    Byte g_b0900521eWcsdupTest[_countof(g_b0900521eWcsdupCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x33, 0xdb, 0x39, 0x5d, 0x08};
+    Byte g_b0900521eWcsdupSave[_countof(g_b0900521eWcsdupCtrl)];
     //_wcsdup
     //73B372E8 8B FF            mov         edi,edi
     //73B372EA 55               push        ebp
@@ -628,8 +628,8 @@ typedef enum testycontrol
 
     /* 10.0.30319.1   VC 10.0  (30319=766F)*/
     TestControl g_b0A00766fMallocInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fMallocTest[_countof(g_b0A00766fMallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x8b, 0x5d, 0x08, 0x83, 0xfb, 0xe0 };
-    byte g_b0A00766fMallocSave[_countof(g_b0A00766fMallocInfo)];
+    Byte g_b0A00766fMallocTest[_countof(g_b0A00766fMallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x8b, 0x5d, 0x08, 0x83, 0xfb, 0xe0 };
+    Byte g_b0A00766fMallocSave[_countof(g_b0A00766fMallocInfo)];
     //_malloc
     //69440233 8B FF            mov         edi,edi
     //69440235 55               push        ebp
@@ -639,8 +639,8 @@ typedef enum testycontrol
     //6944023C 83 FB E0         cmp         ebx,0FFFFFFE0h
 
     TestControl g_b0A00766fCallocInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU};
-    byte g_b0A00766fCallocTest[_countof(g_b0A00766fCallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec};
-    byte g_b0A00766fCallocSave[_countof(g_b0A00766fCallocInfo)];
+    Byte g_b0A00766fCallocTest[_countof(g_b0A00766fCallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec};
+    Byte g_b0A00766fCallocSave[_countof(g_b0A00766fCallocInfo)];
     //69440282 8B FF            mov         edi,edi
     //69440284 55               push        ebp
     //69440285 8B EC            mov         ebp,esp
@@ -648,8 +648,8 @@ typedef enum testycontrol
     //69440288 83 65 FC 00      and         dword ptr [ebp-4],0
 
     TestControl g_b0A00766fReallocInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fReallocTest[_countof(g_b0A00766fReallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0x7d, 0x08, 0x00 };
-    byte g_b0A00766fReallocSave[_countof(g_b0A00766fReallocInfo)];
+    Byte g_b0A00766fReallocTest[_countof(g_b0A00766fReallocInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0x7d, 0x08, 0x00 };
+    Byte g_b0A00766fReallocSave[_countof(g_b0A00766fReallocInfo)];
     //69442ADB 8B FF            mov         edi,edi
     //69442ADD 55               push        ebp
     //69442ADE 8B EC            mov         ebp,esp
@@ -657,8 +657,8 @@ typedef enum testycontrol
     //69442AE4 0F 84 A3 00 00 00 je          realloc+0Bh (69442B8Dh)
 
     TestControl g_b0A00766fFreeInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fFreeTest[_countof(g_b0A00766fFreeInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0x7d, 0x08, 0x00 };
-    byte g_b0A00766fFreeSave[_countof(g_b0A00766fFreeInfo)];
+    Byte g_b0A00766fFreeTest[_countof(g_b0A00766fFreeInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0x7d, 0x08, 0x00 };
+    Byte g_b0A00766fFreeSave[_countof(g_b0A00766fFreeInfo)];
     //6944014E 8B FF            mov         edi,edi
     //69440150 55               push        ebp
     //69440151 8B EC            mov         ebp,esp
@@ -666,8 +666,8 @@ typedef enum testycontrol
     //69440157 74 19            je          free+38h (69440172h)
 
     TestControl g_b0A00766fMsizeInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fMsizeTest[_countof(g_b0A00766fMsizeInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0x7d, 0x08, 0x00 };
-    byte g_b0A00766fMsizeSave[_countof(g_b0A00766fMsizeInfo)];
+    Byte g_b0A00766fMsizeTest[_countof(g_b0A00766fMsizeInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0x7d, 0x08, 0x00 };
+    Byte g_b0A00766fMsizeSave[_countof(g_b0A00766fMsizeInfo)];
     //69442231 8B FF            mov         edi,edi
     //69442233 55               push        ebp
     //69442234 8B EC            mov         ebp,esp
@@ -675,8 +675,8 @@ typedef enum testycontrol
     //6944223A 0F 84 FD D0 02 00 je          _msize+0Bh (6946F33Dh)
 
     TestControl g_b0A00766fExpandInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU  };
-    byte g_b0A00766fExpandTest[_countof(g_b0A00766fExpandInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x51, 0x83, 0x7d, 0x08, 0x00};
-    byte g_b0A00766fExpandSave[_countof(g_b0A00766fExpandInfo)];
+    Byte g_b0A00766fExpandTest[_countof(g_b0A00766fExpandInfo)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x51, 0x83, 0x7d, 0x08, 0x00};
+    Byte g_b0A00766fExpandSave[_countof(g_b0A00766fExpandInfo)];
     //694B6957 8B FF            mov         edi,edi
     //694B6959 55               push        ebp
     //694B695A 8B EC            mov         ebp,esp
@@ -684,8 +684,8 @@ typedef enum testycontrol
     //694B695D 83 7D 08 00      cmp         dword ptr [ebp+8],0
 
     TestControl g_b0A00766fOperatorNewCtrl[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fOperatorNewTest[_countof(g_b0A00766fOperatorNewCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0xec, 0x10, 0xff, 0x75, 0x08 };
-    byte g_b0A00766fOperatorNewSave[_countof(g_b0A00766fOperatorNewCtrl)];
+    Byte g_b0A00766fOperatorNewTest[_countof(g_b0A00766fOperatorNewCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x83, 0xec, 0x10, 0xff, 0x75, 0x08 };
+    Byte g_b0A00766fOperatorNewSave[_countof(g_b0A00766fOperatorNewCtrl)];
     //694402C1 8B FF            mov         edi,edi
     //694402C3 55               push        ebp
     //694402C4 8B EC            mov         ebp,esp
@@ -693,8 +693,8 @@ typedef enum testycontrol
     //694402C9 FF 75 08         push        dword ptr [ebp+8]
 
     TestControl g_b0A00766fOperatorDeleteCtrl[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fOperatorDeleteTest[_countof(g_b0A00766fOperatorDeleteCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x5d};
-    byte g_b0A00766fOperatorDeleteSave[_countof(g_b0A00766fOperatorDeleteCtrl)];
+    Byte g_b0A00766fOperatorDeleteTest[_countof(g_b0A00766fOperatorDeleteCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x5d};
+    Byte g_b0A00766fOperatorDeleteSave[_countof(g_b0A00766fOperatorDeleteCtrl)];
     //69440174 8B FF            mov         edi,edi
     //69440176 55               push        ebp
     //69440177 8B EC            mov         ebp,esp
@@ -702,15 +702,15 @@ typedef enum testycontrol
     //6944017A EB D2            jmp         free (6944014Eh)
 
     TestControl g_b0A00766fHeapWalkCtrl[] = { VEQU, VEQU, VEQU, VABS, VABS, VABS, VABS, VEQU, VABS, VABS, VABS, VABS };
-    byte g_b0A00766fHeapWalkTest[_countof(g_b0A00766fHeapWalkCtrl)] = { 0x6a, 0x2c, 0x68, 0x88, 0x6b, 0x4b, 0x69, 0xe8, 0x0d, 0xa2, 0xf8, 0xff };
-    byte g_b0A00766fHeapWalkSave[_countof(g_b0A00766fHeapWalkCtrl)];
+    Byte g_b0A00766fHeapWalkTest[_countof(g_b0A00766fHeapWalkCtrl)] = { 0x6a, 0x2c, 0x68, 0x88, 0x6b, 0x4b, 0x69, 0xe8, 0x0d, 0xa2, 0xf8, 0xff };
+    Byte g_b0A00766fHeapWalkSave[_countof(g_b0A00766fHeapWalkCtrl)];
     //694B6A67 6A 2C            push        2Ch
     //694B6A69 68 88 6B 4B 69   push        offset __CT??_R0?AVbad_cast@std@@@8??0bad_cast@std@@QAE@ABV01@@Z12+60h (694B6B88h)
     //694B6A6E E8 0D A2 F8 FF   call        __SEH_prolog4 (69440C80h)
 
     TestControl g_b0A00766fStrdupCtrl[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fStrdupTest[_countof(g_b0A00766fStrdupCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x33, 0xdb, 0x39, 0x5d, 0x08 };
-    byte g_b0A00766fStrdupSave[_countof(g_b0A00766fStrdupCtrl)];
+    Byte g_b0A00766fStrdupTest[_countof(g_b0A00766fStrdupCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x33, 0xdb, 0x39, 0x5d, 0x08 };
+    Byte g_b0A00766fStrdupSave[_countof(g_b0A00766fStrdupCtrl)];
     //69455B46 8B FF            mov         edi,edi
     //69455B48 55               push        ebp
     //69455B49 8B EC            mov         ebp,esp
@@ -719,8 +719,8 @@ typedef enum testycontrol
     //69455B4E 39 5D 08         cmp         dword ptr [ebp+8],ebx
 
     TestControl g_b0A00766fWcsdupCtrl[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fWcsdupTest[_countof(g_b0A00766fWcsdupCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x33, 0xdb, 0x39, 0x5d, 0x08 };
-    byte g_b0A00766fWcsdupSave[_countof(g_b0A00766fWcsdupCtrl)];
+    Byte g_b0A00766fWcsdupTest[_countof(g_b0A00766fWcsdupCtrl)] = { 0x8b, 0xff, 0x55, 0x8b, 0xec, 0x53, 0x33, 0xdb, 0x39, 0x5d, 0x08 };
+    Byte g_b0A00766fWcsdupSave[_countof(g_b0A00766fWcsdupCtrl)];
     //694B1E41 8B FF            mov         edi,edi
     //694B1E43 55               push        ebp
     //694B1E44 8B EC            mov         ebp,esp
@@ -736,8 +736,8 @@ typedef enum testycontrol
 
     /* 9.0.21022.8   VC 9.0  (21022==0x521E)*/
     TestControl g_b0900521eMallocInfo[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eMallocTest[_countof(g_b0900521eMallocInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x20 };
-    byte g_b0900521eMallocSave[_countof(g_b0900521eMallocInfo)];
+    Byte g_b0900521eMallocTest[_countof(g_b0900521eMallocInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x20 };
+    Byte g_b0900521eMallocSave[_countof(g_b0900521eMallocInfo)];
     //_malloc:
     //000000006ADCC82C 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
     //000000006ADCC831 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
@@ -745,8 +745,8 @@ typedef enum testycontrol
     //000000006ADCC837 48 83 EC 20          sub         rsp,20h
 
     TestControl g_b0900521eCallocInfo[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eCallocTest[_countof(g_b0900521eCallocInfo)] = { 0x40, 0x53, 0x48, 0x83, 0xec, 0x20, 0x83, 0x64, 0x24, 0x40, 0x00, 0x4c, 0x8d, 0x44, 0x24, 0x40 };
-    byte g_b0900521eCallocSave[_countof(g_b0900521eCallocInfo)];
+    Byte g_b0900521eCallocTest[_countof(g_b0900521eCallocInfo)] = { 0x40, 0x53, 0x48, 0x83, 0xec, 0x20, 0x83, 0x64, 0x24, 0x40, 0x00, 0x4c, 0x8d, 0x44, 0x24, 0x40 };
+    Byte g_b0900521eCallocSave[_countof(g_b0900521eCallocInfo)];
     //_calloc
     //000000006ADCC7E4 40 53                push        rbx
     //000000006ADCC7E6 48 83 EC 20          sub         rsp,20h
@@ -754,8 +754,8 @@ typedef enum testycontrol
     //000000006ADCC7EF 4C 8D 44 24 40       lea         r8,[rsp+40h]
 
     TestControl g_b0900521eReallocInfo[] =                   { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eReallocTest[_countof(g_b0900521eReallocInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x20 };
-    byte g_b0900521eReallocSave[_countof(g_b0900521eReallocInfo)];
+    Byte g_b0900521eReallocTest[_countof(g_b0900521eReallocInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x20 };
+    Byte g_b0900521eReallocSave[_countof(g_b0900521eReallocInfo)];
     //_realloc
     //000000006ADCD50C 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
     //000000006ADCD511 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
@@ -765,9 +765,9 @@ typedef enum testycontrol
 
     TestControl g_b0900521eFreeInfo[] =                       { VEQU, VEQU, VEQU, VEQU, VOFF, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VMCP, VEQU, VEQU, VABS, VABS, VABS, VABS, VEQU, VEQU, VCRP, VEQU, VABS, VABS ,VABS,
         VABS, VEQU, VEQU, VEQU, VOFF, VC32, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VCRP, VEQU, VABS, VABS, VABS, VABS, VEQU, VEQU, VC32, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eFreeTest[_countof(g_b0900521eFreeInfo)] = { 0x48, 0x85, 0xc9, 0x74, 0x37, 0x53, 0x48, 0x83, 0xec, 0x20, 0x4c, 0x8b, 0xc1, 0x48, 0x8b, 0x0d, 0xdc, 0x73, 0x04, 0x00, 0x33, 0xd2, 0xff, 0x15, 0x44, 0xbb, 0x02,
+    Byte g_b0900521eFreeTest[_countof(g_b0900521eFreeInfo)] = { 0x48, 0x85, 0xc9, 0x74, 0x37, 0x53, 0x48, 0x83, 0xec, 0x20, 0x4c, 0x8b, 0xc1, 0x48, 0x8b, 0x0d, 0xdc, 0x73, 0x04, 0x00, 0x33, 0xd2, 0xff, 0x15, 0x44, 0xbb, 0x02,
         0x00, 0x85, 0xc0, 0x75, 0x17, 0xe8, 0x5f, 0xa1, 0xfb, 0xff, 0x48, 0x8b, 0xd8, 0xff, 0x15, 0xe2, 0xb8, 0x02, 0x00, 0x8b, 0xc8, 0xe8, 0xff, 0xa0, 0xfb, 0xff, 0x89, 0x03, 0x48, 0x83, 0xc4, 0x20, 0x5b, 0xc3 };
-    byte g_b0900521eFreeSave[_countof(g_b0900521eFreeInfo)];
+    Byte g_b0900521eFreeSave[_countof(g_b0900521eFreeInfo)];
     //_free
     //000000006ADCC7A0 48 85 C9             test        rcx,rcx
     //000000006ADCC7A3 74 37                je          000000006ADCC7DC
@@ -792,10 +792,10 @@ typedef enum testycontrol
     TestControl g_b0900521eMsizeInfo[] =                        { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VOFF, VC32, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU,
         VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VC32, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VEQU, VEQU, VOFF, VEQU, VEQU, VEQU, VMCP, VEQU, VEQU, VABS, VABS, VABS, VABS, VEQU, VEQU, VCRP,
         VEQU, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eMsizeTest[_countof(g_b0900521eMsizeInfo)] = { 0x48, 0x83, 0xec, 0x38, 0x48, 0x85, 0xc9, 0x75, 0x26, 0xe8, 0x4a, 0x96, 0xfb, 0xff, 0x48, 0x83, 0x64, 0x24, 0x20, 0x00, 0x45, 0x33, 0xc9, 0x45, 0x33, 0xc0,
+    Byte g_b0900521eMsizeTest[_countof(g_b0900521eMsizeInfo)] = { 0x48, 0x83, 0xec, 0x38, 0x48, 0x85, 0xc9, 0x75, 0x26, 0xe8, 0x4a, 0x96, 0xfb, 0xff, 0x48, 0x83, 0x64, 0x24, 0x20, 0x00, 0x45, 0x33, 0xc9, 0x45, 0x33, 0xc0,
         0x33, 0xd2, 0x33, 0xc9, 0xc7, 0x00, 0x16, 0x00, 0x00, 0x00, 0xe8, 0x5b, 0x7c, 0x00, 0x00, 0x48, 0x83, 0xc8, 0xff, 0xeb, 0x12, 0x4c, 0x8b, 0xc1, 0x48, 0x8b, 0x0d, 0x8b, 0x68, 0x04, 0x00, 0x33, 0xd2, 0xff,
         0x15, 0x13, 0xb0, 0x02, 0x00, 0x48, 0x83, 0xc4, 0x38, 0xc3 };
-    byte g_b0900521eMsizeSave[_countof(g_b0900521eMsizeInfo)];
+    Byte g_b0900521eMsizeSave[_countof(g_b0900521eMsizeInfo)];
     //_msize
     //000000006ADCD2CC 48 83 EC 38          sub         rsp,38h
     //000000006ADCD2D0 48 85 C9             test        rcx,rcx
@@ -825,8 +825,8 @@ typedef enum testycontrol
 
 
     TestControl g_b0900521eExpandInfo[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eExpandTest[_countof(g_b0900521eExpandInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x10, 0x48, 0x89, 0x6c, 0x24, 0x18, 0x48, 0x89, 0x74, 0x24, 0x20 };
-    byte g_b0900521eExpandSave[_countof(g_b0900521eExpandInfo)];
+    Byte g_b0900521eExpandTest[_countof(g_b0900521eExpandInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x10, 0x48, 0x89, 0x6c, 0x24, 0x18, 0x48, 0x89, 0x74, 0x24, 0x20 };
+    Byte g_b0900521eExpandSave[_countof(g_b0900521eExpandInfo)];
     //_expand
     //000000006ADCCE3C 48 89 5C 24 10       mov         qword ptr [rsp+10h],rbx
     //000000006ADCCE41 48 89 6C 24 18       mov         qword ptr [rsp+18h],rbp
@@ -834,9 +834,9 @@ typedef enum testycontrol
 
     TestControl g_b0900521eOperatorNewCtrl[] =                       { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, V___, V___, V___, V___, VEQU, VEQU, VEQU, VEQU, VEQU,
         VEQU, VEQU, VEQU, V___, V___, V___, V___, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU};
-    byte g_b0900521eOperatorNewTest[_countof(g_b0900521eOperatorNewCtrl)] = { 0x40, 0x53, 0x48, 0x83, 0xec, 0x40, 0x48, 0x8b, 0xd9, 0xeb, 0x0f, 0x48, 0x8b, 0xcb, 0xe8, 0x15, 0x47, 0xfb, 0xff, 0x85, 0xc0, 0x74, 0x13, 0x48,
+    Byte g_b0900521eOperatorNewTest[_countof(g_b0900521eOperatorNewCtrl)] = { 0x40, 0x53, 0x48, 0x83, 0xec, 0x40, 0x48, 0x8b, 0xd9, 0xeb, 0x0f, 0x48, 0x8b, 0xcb, 0xe8, 0x15, 0x47, 0xfb, 0xff, 0x85, 0xc0, 0x74, 0x13, 0x48,
         0x8b, 0xcb, 0xe8, 0xa5, 0xfe, 0xff, 0xff, 0x48, 0x85, 0xc0, 0x74, 0xe7, 0x48, 0x83, 0xc4, 0x40, 0x5b, 0xc3};
-    byte g_b0900521eOperatorNewSave[_countof(g_b0900521eOperatorNewCtrl)];
+    Byte g_b0900521eOperatorNewSave[_countof(g_b0900521eOperatorNewCtrl)];
     //_??2@YAPAXI@Z
     //000000006ADCC968 40 53                push        rbx
     //000000006ADCC96A 48 83 EC 40          sub         rsp,40h
@@ -855,8 +855,8 @@ typedef enum testycontrol
     //000000006ADCC991 C3                   ret
 
     TestControl g_b0900521eOperatorDeleteCtrl[] =                          { VEQU, V___, V___, V___, V___, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eOperatorDeleteTest[_countof(g_b0900521eOperatorDeleteCtrl)] = { 0xe9, 0x93, 0xfd, 0xff, 0xff, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc };
-    byte g_b0900521eOperatorDeleteSave[_countof(g_b0900521eOperatorDeleteCtrl)];
+    Byte g_b0900521eOperatorDeleteTest[_countof(g_b0900521eOperatorDeleteCtrl)] = { 0xe9, 0x93, 0xfd, 0xff, 0xff, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc };
+    Byte g_b0900521eOperatorDeleteSave[_countof(g_b0900521eOperatorDeleteCtrl)];
     //_??3@YAXPAX@Z
     //000000006ADCCA08 E9 93 FD FF FF       jmp         000000006ADCC7A0
     //000000006ADCCA0D CC                   int         3
@@ -868,8 +868,8 @@ typedef enum testycontrol
     //000000006ADCCA13 CC                   int         3
 
     TestControl g_b0900521eHeapWalkCtrl[] =                    { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eHeapWalkTest[_countof(g_b0900521eHeapWalkCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x18, 0x48, 0x89, 0x4c, 0x24, 0x08, 0x56, 0x57, 0x41, 0x54 };
-    byte g_b0900521eHeapWalkSave[_countof(g_b0900521eHeapWalkCtrl)];
+    Byte g_b0900521eHeapWalkTest[_countof(g_b0900521eHeapWalkCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x18, 0x48, 0x89, 0x4c, 0x24, 0x08, 0x56, 0x57, 0x41, 0x54 };
+    Byte g_b0900521eHeapWalkSave[_countof(g_b0900521eHeapWalkCtrl)];
     //_heapwalk
     //000000006ADCD108 48 89 5C 24 18       mov         qword ptr [rsp+18h],rbx
     //000000006ADCD10D 48 89 4C 24 08       mov         qword ptr [rsp+8],rcx
@@ -878,8 +878,8 @@ typedef enum testycontrol
     //000000006ADCD114 41 54                push        r12
 
     TestControl g_b0900521eStrdupCtrl[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eStrdupTest[_countof(g_b0900521eStrdupCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x30 };
-    byte g_b0900521eStrdupSave[_countof(g_b0900521eStrdupCtrl)];
+    Byte g_b0900521eStrdupTest[_countof(g_b0900521eStrdupCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x30 };
+    Byte g_b0900521eStrdupSave[_countof(g_b0900521eStrdupCtrl)];
     //_strdup
     //000000006AD97EE0 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
     //000000006AD97EE5 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
@@ -887,8 +887,8 @@ typedef enum testycontrol
     //000000006AD97EEB 48 83 EC 30          sub         rsp,30h
 
     TestControl g_b0900521eWcsdupCtrl[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0900521eWcsdupTest[_countof(g_b0900521eWcsdupCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x30 };
-    byte g_b0900521eWcsdupSave[_countof(g_b0900521eWcsdupCtrl)];
+    Byte g_b0900521eWcsdupTest[_countof(g_b0900521eWcsdupCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x30 };
+    Byte g_b0900521eWcsdupSave[_countof(g_b0900521eWcsdupCtrl)];
     //_wcsdup
     //000000006AD98A18 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
     //000000006AD98A1D 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
@@ -902,8 +902,8 @@ typedef enum testycontrol
 
     /* 10.0.30319.1   VC 10.0  (30319=766F)*/
     TestControl g_b0A00766fMallocInfo[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fMallocTest[_countof(g_b0A00766fMallocInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x20, 0x48, 0x8b, 0xd9 };
-    byte g_b0A00766fMallocSave[_countof(g_b0A00766fMallocInfo)];
+    Byte g_b0A00766fMallocTest[_countof(g_b0A00766fMallocInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x20, 0x48, 0x8b, 0xd9 };
+    Byte g_b0A00766fMallocSave[_countof(g_b0A00766fMallocInfo)];
     //_malloc
     //0000000056988BEC 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
     //0000000056988BF1 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
@@ -912,8 +912,8 @@ typedef enum testycontrol
     //0000000056988BFB 48 8B D9             mov         rbx,rcx
 
     TestControl g_b0A00766fCallocInfo[] = { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fCallocTest[_countof(g_b0A00766fCallocInfo)] = { 0x40, 0x53, 0x48, 0x83, 0xec, 0x20, 0x83, 0x64, 0x24, 0x40, 0x00, 0x4c, 0x8d, 0x44, 0x24, 0x40 };
-    byte g_b0A00766fCallocSave[_countof(g_b0A00766fCallocInfo)];
+    Byte g_b0A00766fCallocTest[_countof(g_b0A00766fCallocInfo)] = { 0x40, 0x53, 0x48, 0x83, 0xec, 0x20, 0x83, 0x64, 0x24, 0x40, 0x00, 0x4c, 0x8d, 0x44, 0x24, 0x40 };
+    Byte g_b0A00766fCallocSave[_countof(g_b0A00766fCallocInfo)];
     //_calloc
     //0000000056988E28 40 53                push        rbx
     //0000000056988E2A 48 83 EC 20          sub         rsp,20h
@@ -921,8 +921,8 @@ typedef enum testycontrol
     //0000000056988E33 4C 8D 44 24 40       lea         r8,[rsp+40h]
 
     TestControl g_b0A00766fReallocInfo[] =            { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fReallocTest[_countof(g_b0A00766fReallocInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x20, 0x48, 0x8b, 0xda, 0x48, 0x8b, 0xf9 };
-    byte g_b0A00766fReallocSave[_countof(g_b0A00766fReallocInfo)];
+    Byte g_b0A00766fReallocTest[_countof(g_b0A00766fReallocInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x20, 0x48, 0x8b, 0xda, 0x48, 0x8b, 0xf9 };
+    Byte g_b0A00766fReallocSave[_countof(g_b0A00766fReallocInfo)];
     //_realloc
     //00000000569897D0 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
     //00000000569897D5 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
@@ -933,9 +933,9 @@ typedef enum testycontrol
 
     TestControl g_b0A00766fFreeInfo[] =                       { VEQU, VEQU, VEQU, VEQU, VOFF, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VMCP, VEQU, VEQU, VABS, VABS, VABS, VABS, VEQU, VEQU, VCRP, VEQU, VABS, VABS, VABS, VABS,
      VEQU, VEQU, VEQU, VOFF, VC32, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VCRP, VEQU, VABS, VABS, VABS, VABS, VEQU, VEQU, VC32, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU};
-    byte g_b0A00766fFreeTest[_countof(g_b0A00766fFreeInfo)] = { 0x48, 0x85, 0xc9, 0x74, 0x37, 0x53, 0x48, 0x83, 0xec, 0x20, 0x4c, 0x8b, 0xc1, 0x48, 0x8b, 0x0d, 0x14, 0xe7, 0x04, 0x00, 0x33, 0xd2, 0xff, 0x15, 0x5c, 0x77, 0x02, 0x00,
+    Byte g_b0A00766fFreeTest[_countof(g_b0A00766fFreeInfo)] = { 0x48, 0x85, 0xc9, 0x74, 0x37, 0x53, 0x48, 0x83, 0xec, 0x20, 0x4c, 0x8b, 0xc1, 0x48, 0x8b, 0x0d, 0x14, 0xe7, 0x04, 0x00, 0x33, 0xd2, 0xff, 0x15, 0x5c, 0x77, 0x02, 0x00,
      0x85, 0xc0, 0x75, 0x17, 0xe8, 0xdf, 0xc9, 0xfb, 0xff, 0x48, 0x8b, 0xd8, 0xff, 0x15, 0xda, 0x73, 0x02, 0x00, 0x8b, 0xc8, 0xe8, 0x7f, 0xc9, 0xfb, 0xff, 0x89, 0x03, 0x48, 0x83, 0xc4, 0x20, 0x5b, 0xc3 };
-    byte g_b0A00766fFreeSave[_countof(g_b0A00766fFreeInfo)];
+    Byte g_b0A00766fFreeSave[_countof(g_b0A00766fFreeInfo)];
     //0000000056988CA8 48 85 C9             test        rcx,rcx
     //0000000056988CAB 74 37                je          free+3Ch (56988CE4h)
     //0000000056988CAD 53                   push        rbx
@@ -958,9 +958,9 @@ typedef enum testycontrol
 
     TestControl g_b0A00766fMsizeInfo[] =                        {VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VOFF, VC32, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VC32, VABS, VABS, VABS, VABS, VEQU, VEQU,
         VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VMCP, VEQU, VEQU, VABS, VABS, VABS, VABS, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU/*, VEQU, VEQU, VEQU, VOFF, VOFF, VOFF, VOFF*/};
-    byte g_b0A00766fMsizeTest[_countof(g_b0A00766fMsizeInfo)] = {0x48, 0x83, 0xec, 0x28, 0x48, 0x85, 0xc9, 0x75, 0x19, 0xe8, 0xc6, 0xc0, 0xfb, 0xff, 0xc7, 0x00, 0x16, 0x00, 0x00, 0x00, 0xe8, 0x33, 0x6e, 0x00, 0x00, 0x48, 0x83,
+    Byte g_b0A00766fMsizeTest[_countof(g_b0A00766fMsizeInfo)] = {0x48, 0x83, 0xec, 0x28, 0x48, 0x85, 0xc9, 0x75, 0x19, 0xe8, 0xc6, 0xc0, 0xfb, 0xff, 0xc7, 0x00, 0x16, 0x00, 0x00, 0x00, 0xe8, 0x33, 0x6e, 0x00, 0x00, 0x48, 0x83,
         0xc8, 0xff, 0x48, 0x83, 0xc4, 0x28, 0xc3, 0x4c, 0x8b, 0xc1, 0x48, 0x8b, 0x0d, 0xcc, 0xdd, 0x04, 0x00, 0x33, 0xd2, 0x48, 0x83, 0xc4, 0x28/*, 0x48, 0xff, 0x25, 0x47, 0x6e, 0x02, 0x00*/};
-    byte g_b0A00766fMsizeSave[_countof(g_b0A00766fMsizeInfo)];
+    Byte g_b0A00766fMsizeSave[_countof(g_b0A00766fMsizeInfo)];
     //00000000569895D8 48 83 EC 28          sub         rsp,28h
     //00000000569895DC 48 85 C9             test        rcx,rcx
     //00000000569895DF 75 19                jne         _msize+22h (569895FAh)
@@ -978,8 +978,8 @@ typedef enum testycontrol
 
 
     TestControl g_b0A00766fExpandInfo[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fExpandTest[_countof(g_b0A00766fExpandInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x10, 0x48, 0x89, 0x6c, 0x24, 0x18, 0x48, 0x89, 0x74, 0x24, 0x20, 0x57, 0x48, 0x83, 0xec, 0x30 };
-    byte g_b0A00766fExpandSave[_countof(g_b0A00766fExpandInfo)];
+    Byte g_b0A00766fExpandTest[_countof(g_b0A00766fExpandInfo)] = { 0x48, 0x89, 0x5c, 0x24, 0x10, 0x48, 0x89, 0x6c, 0x24, 0x18, 0x48, 0x89, 0x74, 0x24, 0x20, 0x57, 0x48, 0x83, 0xec, 0x30 };
+    Byte g_b0A00766fExpandSave[_countof(g_b0A00766fExpandInfo)];
     //00000000569892E4 48 89 5C 24 10       mov         qword ptr [rsp+10h],rbx
     //00000000569892E9 48 89 6C 24 18       mov         qword ptr [rsp+18h],rbp
     //00000000569892EE 48 89 74 24 20       mov         qword ptr [rsp+20h],rsi
@@ -990,9 +990,9 @@ typedef enum testycontrol
 
     TestControl g_b0A00766fOperatorNewCtrl[] =                       { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, V___, V___, V___, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU,
         VEQU, VEQU, V___, V___, V___, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU  };
-    byte g_b0A00766fOperatorNewTest[_countof(g_b0A00766fOperatorNewCtrl)] = { 0x40, 0x53, 0x48, 0x83, 0xec, 0x40, 0x48, 0x8b, 0xd9, 0xeb, 0x0f, 0x48, 0x8b, 0xcb, 0xe8, 0xd5, 0x65, 0xfb, 0xff, 0x85, 0xc0, 0x74, 0x13, 0x48, 0x8b,
+    Byte g_b0A00766fOperatorNewTest[_countof(g_b0A00766fOperatorNewCtrl)] = { 0x40, 0x53, 0x48, 0x83, 0xec, 0x40, 0x48, 0x8b, 0xd9, 0xeb, 0x0f, 0x48, 0x8b, 0xcb, 0xe8, 0xd5, 0x65, 0xfb, 0xff, 0x85, 0xc0, 0x74, 0x13, 0x48, 0x8b,
         0xcb, 0xe8, 0xe1, 0xfe, 0xff, 0xff, 0x48, 0x85, 0xc0, 0x74, 0xe7, 0x48, 0x83, 0xC4, 0x40, 0x5B, 0xc3 };
-    byte g_b0A00766fOperatorNewSave[_countof(g_b0A00766fOperatorNewCtrl)];
+    Byte g_b0A00766fOperatorNewSave[_countof(g_b0A00766fOperatorNewCtrl)];
     //0000000056BB8CEC 40 53                push        rbx
     //0000000056BB8CEE 48 83 EC 40          sub         rsp,40h
     //0000000056BB8CF2 48 8B D9             mov         rbx,rcx
@@ -1012,8 +1012,8 @@ typedef enum testycontrol
     //HACK:  This function is tiny, so we may have to steal reserved space from MS Detours (that's the 0xCCCCCCCCCCCCCC), and pray nobody patches
     //the next function, set_malloc_crt_max_wait
     TestControl g_b0A00766fOperatorDeleteCtrl[] =                          { VEQU, V___, V___, V___, V___, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fOperatorDeleteTest[_countof(g_b0A00766fOperatorDeleteCtrl)] = { 0xe9, 0x03, 0x03, 0x00, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc };
-    byte g_b0A00766fOperatorDeleteSave[_countof(g_b0A00766fOperatorDeleteCtrl)];
+    Byte g_b0A00766fOperatorDeleteTest[_countof(g_b0A00766fOperatorDeleteCtrl)] = { 0xe9, 0x03, 0x03, 0x00, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc };
+    Byte g_b0A00766fOperatorDeleteSave[_countof(g_b0A00766fOperatorDeleteCtrl)];
     //0000000056BB89A0 E9 03 03 00 00       jmp         free (56BB8CA8h)
     //0000000056BB89A5 CC                   int         3
     //0000000056BB89A6 CC                   int         3
@@ -1024,8 +1024,8 @@ typedef enum testycontrol
     //0000000056BB89AB CC                   int         3
 
     TestControl g_b0A00766fHeapWalkCtrl[] =                    { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fHeapWalkTest[_countof(g_b0A00766fHeapWalkCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x18, 0x48, 0x89, 0x4c, 0x24, 0x08, 0x56, 0x57, 0x41, 0x54, 0x48, 0x83, 0xec, 0x50, 0x48, 0x8b, 0xf9 };
-    byte g_b0A00766fHeapWalkSave[_countof(g_b0A00766fHeapWalkCtrl)];
+    Byte g_b0A00766fHeapWalkTest[_countof(g_b0A00766fHeapWalkCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x18, 0x48, 0x89, 0x4c, 0x24, 0x08, 0x56, 0x57, 0x41, 0x54, 0x48, 0x83, 0xec, 0x50, 0x48, 0x8b, 0xf9 };
+    Byte g_b0A00766fHeapWalkSave[_countof(g_b0A00766fHeapWalkCtrl)];
     //0000000056989488 48 89 5C 24 18       mov         qword ptr [rsp+18h],rbx
     //000000005698948D 48 89 4C 24 08       mov         qword ptr [rsp+8],rcx
     //0000000056989492 56                   push        rsi
@@ -1035,8 +1035,8 @@ typedef enum testycontrol
     //000000005698949A 48 8B F9             mov         rdi,rcx
 
     TestControl g_b0A00766fStrdupCtrl[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fStrdupTest[_countof(g_b0A00766fStrdupCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x30, 0x48, 0x8b, 0xd9 };
-    byte g_b0A00766fStrdupSave[_countof(g_b0A00766fStrdupCtrl)];
+    Byte g_b0A00766fStrdupTest[_countof(g_b0A00766fStrdupCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x30, 0x48, 0x8b, 0xd9 };
+    Byte g_b0A00766fStrdupSave[_countof(g_b0A00766fStrdupCtrl)];
     //0000000056955FFC 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
     //0000000056956001 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
     //0000000056956006 57                   push        rdi
@@ -1044,8 +1044,8 @@ typedef enum testycontrol
     //000000005695600B 48 8B D9             mov         rbx,rcx
 
     TestControl g_b0A00766fWcsdupCtrl[] =                  { VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU, VEQU };
-    byte g_b0A00766fWcsdupTest[_countof(g_b0A00766fWcsdupCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x30, 0x48, 0x8b, 0xd9 };
-    byte g_b0A00766fWcsdupSave[_countof(g_b0A00766fWcsdupCtrl)];
+    Byte g_b0A00766fWcsdupTest[_countof(g_b0A00766fWcsdupCtrl)] = { 0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xec, 0x30, 0x48, 0x8b, 0xd9 };
+    Byte g_b0A00766fWcsdupSave[_countof(g_b0A00766fWcsdupCtrl)];
     //0000000056956A90 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
     //0000000056956A95 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
     //0000000056956A9A 57                   push        rdi
@@ -1064,16 +1064,16 @@ typedef enum testycontrol
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    George.Dulchinos01/95
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Int32 isFuncPatchable             /* <= true if patchable */
+static int32_t isFuncPatchable             /* <= true if patchable */
 (
-byte        const * const crtFuncP,             /* => address of CRT function to patch */
+Byte const * const crtFuncP,             /* => address of CRT function to patch */
 TestControl const * const ctrlTable,            /* => mask table */
-byte        const * const testTable,            /* => test table */
-Int32               const tableLen              /* => test/mask table length */
+Byte const * const testTable,            /* => test table */
+int32_t             const tableLen              /* => test/mask table length */
 )
     {
-    Int32            i;
-    byte const * p;
+    int32_t          i;
+    Byte const * p;
 
     for (p=crtFuncP, i=0; i<tableLen; i++, p++)
         {
@@ -1090,23 +1090,23 @@ Int32               const tableLen              /* => test/mask table length */
 //X86-specific implementation of createPatchDataEntry. See createPatchDataEntry for description.
 static void createPatchDataEntryX86
 (
-byte               * const replacedCodeP,       /* <= code to replace that overwritten by 'jmp' */
-byte        const  * const crtFuncP,            /* => address of CRT function that will be patched */
+Byte * const replacedCodeP,       /* <= code to replace that overwritten by 'jmp' */
+Byte const  * const crtFuncP,            /* => address of CRT function that will be patched */
 TestControl const  * const relocTable,          /* => indicates if embedded addr needs reloc. */
-Int32                const patchBytes           /* => no. bytes to move into replaced code */
+int32_t              const patchBytes           /* => no. bytes to move into replaced code */
 )
     {
-    Int32                i;
-    Int32   const jumpDelta  = (Int32)(crtFuncP - replacedCodeP);
-    Int32        jumpDest;
-    Int32 const JUMP_INSTR_LEN = 5;
+    int32_t              i;
+    int32_t const jumpDelta  = (int32_t)(crtFuncP - replacedCodeP);
+    int32_t      jumpDest;
+    int32_t const JUMP_INSTR_LEN = 5;
     /* Copy bytes to be replaced; if necessary relocate addresses */
     memcpy (replacedCodeP, crtFuncP, patchBytes);
     for (i=0; i<patchBytes; i++)
         {
         if (relocTable[i] & V___)
             {
-            UInt32 * const p = (UInt32 *) (replacedCodeP + i);
+            uint32_t * const p = (uint32_t *) (replacedCodeP + i);
             jumpDest = *p;
             jumpDest += jumpDelta;
             *p = jumpDest;
@@ -1119,13 +1119,13 @@ Int32                const patchBytes           /* => no. bytes to move into rep
     jumpDest = jumpDelta - JUMP_INSTR_LEN;
     /* 0xe9 is a long relative jump in x86*/
     *(replacedCodeP+patchBytes) = 0xe9;
-    memcpy (replacedCodeP+patchBytes+1, &jumpDest, sizeof(Int32));
+    memcpy (replacedCodeP+patchBytes+1, &jumpDest, sizeof(int32_t));
     }
 #endif
 
 #if defined(_M_X64)
 //Take a 32-bit relative call and expand it to a 64-bit absolute call, so if we're nowhere near the CRT we can still call it.
-static void expandCall32(byte* const replacedCodeP, const TestControl* const relocTable, Int32 patchBytes, Int32* i, ptrdiff_t jumpDelta, Int32 * totalCodeSizeDiff)
+static void expandCall32(Byte* const replacedCodeP, const TestControl* const relocTable, int32_t patchBytes, int32_t* i, ptrdiff_t jumpDelta, int32_t * totalCodeSizeDiff)
     {
     /*Patching strategy:
         The nice thing about function calls is there's no way whatsoever the function can legally care about our rax.
@@ -1133,14 +1133,14 @@ static void expandCall32(byte* const replacedCodeP, const TestControl* const rel
         about blowing up some data. We need to insert a mov rax, imm64 instruction to position the address (0x48 0xb8 addr),
         then a good old call rax (0xff 0xd0) to take us to our happy place. Note: rewriting should be all-or-nothing, otherwise
         it's a pain to figure out what short jumps need to be changed and how.*/
-    const Int32 newCodeSize = 12; // 0x48 0xb8 (8 byte address), 0xff 0xd0 is 12 bytes long
-    const Int32 oldCodeSize = 5; // 0xe8 (4 byte offset) is 5 bytes long
-    const Int32 codeSizeDiff = newCodeSize - oldCodeSize;
-     byte * ip = replacedCodeP + *i + *totalCodeSizeDiff; //Pointer to modified instruction
+    const int32_t newCodeSize = 12; // 0x48 0xb8 (8 byte address), 0xff 0xd0 is 12 bytes long
+    const int32_t oldCodeSize = 5; // 0xe8 (4 byte offset) is 5 bytes long
+    const int32_t codeSizeDiff = newCodeSize - oldCodeSize;
+     Byte * ip = replacedCodeP + *i + *totalCodeSizeDiff; //Pointer to modified instruction
     //Make room for the new code
     memmove(ip+newCodeSize, (void*)(ip+oldCodeSize), patchBytes - (*i+oldCodeSize));
     //Destination is (end address of old instruction) -  (space consumed by other patches) + (offset recorded in op) + (distance to CRT)
-    const uintptr_t callDest = (uintptr_t)(ip+oldCodeSize) -  *totalCodeSizeDiff + *((Int32*)(ip+1)) + jumpDelta ;
+    const uintptr_t callDest = (uintptr_t)(ip+oldCodeSize) -  *totalCodeSizeDiff + *((int32_t*)(ip+1)) + jumpDelta ;
     //Write out our machine code
     ip[0] = 0x48; ip[1] = 0xb8; // mov rax,
     *(uintptr_t*)(ip+2) = callDest;// imm64
@@ -1151,17 +1151,17 @@ static void expandCall32(byte* const replacedCodeP, const TestControl* const rel
     }
 
 //Take an instruction that calls a function pointer, and rewrite it so it works from a high address.
-static void expandCallOverPointer(byte* const replacedCodeP,const TestControl* const relocTable, Int32 patchBytes, Int32* i, ptrdiff_t jumpDelta, Int32 * totalCodeSizeDiff)
+static void expandCallOverPointer(Byte* const replacedCodeP,const TestControl* const relocTable, int32_t patchBytes, int32_t* i, ptrdiff_t jumpDelta, int32_t * totalCodeSizeDiff)
     {
     //Like with expanding a direct call, we can do whatever we want with rax. In this case, we will do mov rax, addr (0x48, 0xb8 ...), followed by call qword ptr [rax] (0xff 0x10).
-    const Int32 newCodeSize = 12; //10 for move, two for call
-    const Int32 oldCodeSize = 6; //2 for op, 4 for addr
-    const Int32 codeSizeDiff = newCodeSize - oldCodeSize;
-    byte * ip = replacedCodeP + *i + *totalCodeSizeDiff;
+    const int32_t newCodeSize = 12; //10 for move, two for call
+    const int32_t oldCodeSize = 6; //2 for op, 4 for addr
+    const int32_t codeSizeDiff = newCodeSize - oldCodeSize;
+    Byte * ip = replacedCodeP + *i + *totalCodeSizeDiff;
     //Make room for the extended instruction.
     memmove(ip+newCodeSize, (void*)(ip+oldCodeSize), patchBytes - (*i+oldCodeSize));
     //Old end address of call instruction - change in code size + offset stored in instruction + change in function location = destination.
-    const uintptr_t callDest = (uintptr_t)(ip+oldCodeSize) -  *totalCodeSizeDiff + *((Int32*)(ip+2)) + jumpDelta ;
+    const uintptr_t callDest = (uintptr_t)(ip+oldCodeSize) -  *totalCodeSizeDiff + *((int32_t*)(ip+2)) + jumpDelta ;
     //Write out our machine code
     ip[0] = 0x48; ip[1] = 0xb8; // mov rax,
     *(uintptr_t*)(ip+2) = callDest;// imm64
@@ -1172,18 +1172,18 @@ static void expandCallOverPointer(byte* const replacedCodeP,const TestControl* c
     }
 
 //Take a 32-bit move offset to rcx over pointer and convert it to the equivalent 64-bit code that will work when the CRT is far away
-static void expandMovCP(byte* const replacedCodeP,const TestControl* const relocTable, Int32 patchBytes, Int32* i, ptrdiff_t jumpDelta, Int32* totalCodeSizeDiff)
+static void expandMovCP(Byte* const replacedCodeP,const TestControl* const relocTable, int32_t patchBytes, int32_t* i, ptrdiff_t jumpDelta, int32_t* totalCodeSizeDiff)
     {
     /*Patching strategy: We know rcx is going to get blown up by mov rcx, ... , so we can store intermediate data there, namely the address
     to jump to. We're going to do a mov rcx, (imm64 computed address), which in machine code is 48 B9 (address). Then we'll do a mov rcx, qword ptr [rcx],  which is 48 8B 09 in machine code*/
-    const Int32 newCodeSize =  13; // 0x48 + 0xb9 + 8 bytes + 0x48 + 0x8b +0x09 is 13 bytes.
-    const Int32 oldCodeSize =   7;//48 8B 0D + 4 bytes is 7 bytes
+    const int32_t newCodeSize =  13; // 0x48 + 0xb9 + 8 bytes + 0x48 + 0x8b +0x09 is 13 bytes.
+    const int32_t oldCodeSize =   7;//48 8B 0D + 4 bytes is 7 bytes
     const int codeSizeDiff = newCodeSize - oldCodeSize;
-    byte* ip = replacedCodeP + *i + *totalCodeSizeDiff;
+    Byte* ip = replacedCodeP + *i + *totalCodeSizeDiff;
     //Make some room
     memmove(ip+newCodeSize, (void*)(ip+oldCodeSize), patchBytes - (*i+oldCodeSize));
     //Source is our address + distance to CRT + offset stored in op - space consumed by patching
-    const uintptr_t moveSrc = oldCodeSize + (uintptr_t)ip + jumpDelta + *((Int32*)(ip+3)) - *totalCodeSizeDiff;
+    const uintptr_t moveSrc = oldCodeSize + (uintptr_t)ip + jumpDelta + *((int32_t*)(ip+3)) - *totalCodeSizeDiff;
     //Write our machine code
     ip[0]=0x48; ip[1]=0xb9;ip+=2;      // mov rcx, ...
     *(uintptr_t*)ip=moveSrc; ip+=8;    // mov rcx, sourceAddress
@@ -1213,12 +1213,12 @@ static signed char GetPatchingSizeChange(TestControl t)                    // WI
     }
 
 /* Adjust a short jump to account for the changes in code size that come with patching */
-static void adjustOffsetForCodeResize(byte* const replacedCodeP,const TestControl* const relocTable, Int32 patchBytes, Int32* i, Int32 codeSizeDiff)
+static void adjustOffsetForCodeResize(Byte* const replacedCodeP,const TestControl* const relocTable, int32_t patchBytes, int32_t* i, int32_t codeSizeDiff)
     {
     //Adjust the index to account for the increase in code size
-    Int32 offsetI = *i+ codeSizeDiff;
+    int32_t offsetI = *i+ codeSizeDiff;
     signed char offset = replacedCodeP[offsetI];                           // WIP_CHAR_OK
-    Int32 iTarget = offsetI+offset + 1; //Index of target instruction in control table.
+    int32_t iTarget = offsetI+offset + 1; //Index of target instruction in control table.
     if(iTarget <0)
         iTarget=0;
     if(iTarget>patchBytes)
@@ -1226,11 +1226,11 @@ static void adjustOffsetForCodeResize(byte* const replacedCodeP,const TestContro
     signed char sizeDelta=0;                                      // WIP_CHAR_OK
     //Jump is forward
     if(*i < iTarget)
-        for(Int32 j = *i;j<iTarget;j++)
+        for(int32_t j = *i;j<iTarget;j++)
             sizeDelta += GetPatchingSizeChange(relocTable[j]);
     //Jump is backward
     else
-        for(Int32 j = *i;j>iTarget;j--)
+        for(int32_t j = *i;j>iTarget;j--)
             sizeDelta -= GetPatchingSizeChange(relocTable[j]);
     //Make sure we can still fit the offset in a short jump.
     BeAssert(offset + sizeDelta <=127 && offset + sizeDelta >= -128);
@@ -1242,14 +1242,14 @@ static void adjustOffsetForCodeResize(byte* const replacedCodeP,const TestContro
 //X64-specific implementation of createPatchDataEntry. See createPatchDataEntry for description.
 static void createPatchDataEntryX64
 (
-byte               * const replacedCodeP,       /* <= code to replace that overwritten by 'jmp' */
-byte        const  * const crtFuncP,            /* => address of CRT function that will be patched */
+Byte * const replacedCodeP,       /* <= code to replace that overwritten by 'jmp' */
+Byte const  * const crtFuncP,            /* => address of CRT function that will be patched */
 TestControl const  * const relocTable,          /* => indicates if embedded addr needs reloc. */
-Int32                const patchBytes           /* => no. bytes to move into replaced code */
+int32_t              const patchBytes           /* => no. bytes to move into replaced code */
 )
     {
-    Int32       i;
-    Int32 codeSizeDiff = 0;
+    int32_t     i;
+    int32_t codeSizeDiff = 0;
     uintptr_t   jumpDest;
     ptrdiff_t   const jumpDelta  = (crtFuncP - replacedCodeP);
 
@@ -1281,7 +1281,7 @@ Int32                const patchBytes           /* => no. bytes to move into rep
         }
     //Jump back to CRT
     jumpDest = (uintptr_t) crtFuncP + patchBytes;
-    byte* jumpCode = replacedCodeP+patchBytes + codeSizeDiff;
+    Byte* jumpCode = replacedCodeP+patchBytes + codeSizeDiff;
     //mov rax, imm64
     jumpCode[0] = 0x48;
     jumpCode[1] = 0xb8;
@@ -1303,10 +1303,10 @@ Int32                const patchBytes           /* => no. bytes to move into rep
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void createPatchDataEntry
 (
-byte               * const replacedCodeP,       /* <= code to replace that overwritten by 'jmp' */
-byte        const  * const crtFuncP,            /* => address of CRT function that will be patched */
+Byte * const replacedCodeP,       /* <= code to replace that overwritten by 'jmp' */
+Byte const  * const crtFuncP,            /* => address of CRT function that will be patched */
 TestControl const  * const relocTable,          /* => indicates if embedded addr needs reloc. */
-Int32                const patchBytes           /* => no. bytes to move into replaced code */
+int32_t              const patchBytes           /* => no. bytes to move into replaced code */
 )
     {
 #if defined(_X86_)
@@ -1321,39 +1321,39 @@ Int32                const patchBytes           /* => no. bytes to move into rep
 #ifdef _X86_
 static void patchRuntimeFunctionX86
 (
-byte        * const crtFuncP,       /* => address of CRT function to patch */
-byte const  * const jumpToFuncP   /* => code to jump to instead */
+Byte * const crtFuncP,       /* => address of CRT function to patch */
+Byte const  * const jumpToFuncP   /* => code to jump to instead */
 )
     {
-    Int32           jumpDest;
+    int32_t         jumpDest;
     DWORD           oldProt;
     DWORD    const  fIsRunningWinNT = !(GetVersion() & 0x80000000);
     DWORD    const  fdwNewProtect   = fIsRunningWinNT ? PAGE_EXECUTE_WRITECOPY :  PAGE_EXECUTE_READWRITE;
-    Int32 const JUMP_INSTR_LEN = 5;
+    int32_t const JUMP_INSTR_LEN = 5;
 
     VirtualProtect (crtFuncP, JUMP_INSTR_LEN, fdwNewProtect, &oldProt);
     /* jmp rel imm32*/
     *crtFuncP = 0xe9;
-    jumpDest = (Int32)(jumpToFuncP - crtFuncP - JUMP_INSTR_LEN);
+    jumpDest = (int32_t)(jumpToFuncP - crtFuncP - JUMP_INSTR_LEN);
     /* Copy target address */
-    memcpy (crtFuncP+1, &jumpDest, sizeof(Int32));
+    memcpy (crtFuncP+1, &jumpDest, sizeof(int32_t));
     VirtualProtect (crtFuncP, JUMP_INSTR_LEN, oldProt, &oldProt);
-    FlushInstructionCache (GetCurrentProcess(), crtFuncP, sizeof(Int32)+1);
+    FlushInstructionCache (GetCurrentProcess(), crtFuncP, sizeof(int32_t)+1);
     }
 #endif
 
 #if defined(_M_X64)
 static void patchRuntimeFunctionX64
 (
-byte        * const crtFuncP,
-byte const  * const jumpToFuncP
+Byte * const crtFuncP,
+Byte const  * const jumpToFuncP
 )
     {
     intptr_t jumpDest= (intptr_t)jumpToFuncP;
     DWORD oldProt;
     DWORD   const   fIsRunningWinNT = !(GetVersion() & 0x80000000);
     DWORD   const fdwNewProtect     = fIsRunningWinNT ? PAGE_EXECUTE_WRITECOPY : PAGE_EXECUTE_READWRITE;
-    Int32 const JUMP_INSTR_LEN = 12;
+    int32_t const JUMP_INSTR_LEN = 12;
 
     VirtualProtect (crtFuncP, JUMP_INSTR_LEN, fdwNewProtect, &oldProt);
     /* mov rax, imm64 */
@@ -1374,8 +1374,8 @@ byte const  * const jumpToFuncP
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void patchRuntimeFunction
 (
-byte        * const crtFuncP,       /* => address of CRT function to patch */
-byte const  * const jumpToFuncP   /* => code to jump to instead */
+Byte * const crtFuncP,       /* => address of CRT function to patch */
+Byte const  * const jumpToFuncP   /* => code to jump to instead */
 )
     {
 #ifdef _X86_
@@ -1393,9 +1393,9 @@ byte const  * const jumpToFuncP   /* => code to jump to instead */
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void unpatchRuntimeFunction
 (
-byte        * const crtFuncP,       /* => address of CRT function to unpatch */
-byte const  * const savedFuncP,     /* => code saved before patch */
-Int32         const size            /* => length of patch */
+Byte * const crtFuncP,       /* => address of CRT function to unpatch */
+Byte const  * const savedFuncP,     /* => code saved before patch */
+int32_t       const size            /* => length of patch */
 )
     {
     DWORD           oldProt;
@@ -1412,7 +1412,7 @@ Int32         const size            /* => length of patch */
         }
     }
 
-typedef Int32 (__stdcall *tMessageBoxA)(void *hWnd,char *lpText, char *lpCaption, UInt32 uType);  // WIP_CHAR_OK
+typedef int32_t (__stdcall *tMessageBoxA)(void *hWnd,char *lpText, char *lpCaption, uint32_t uType);  // WIP_CHAR_OK
 #ifndef MB_OK
 #  define MB_OK 0
 #endif
@@ -1528,14 +1528,14 @@ void
 * Performs the initialization needed to call pagalloc (further initialization is done when first using pagalloc)
 * @bsimethod                                George.Dulchinos    01/95
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32   paPatch_patchCRuntimeMemFuncs
+int32_t paPatch_patchCRuntimeMemFuncs
 (
 void
 )
     {
     HINSTANCE                   hCrt = NULL, hTool = NULL;
-    byte                       *toolMallocP, *toolNhMallocP, *toolCallocP, *toolReallocP, *toolFreeP, *toolMsizeP, *toolExpandP, *toolHeapWalkP, *toolStrdupP, *toolWcsdupP;
-    byte                       *toolOperatorNewP, *toolOperatorDeleteP;
+    Byte *toolMallocP, *toolNhMallocP, *toolCallocP, *toolReallocP, *toolFreeP, *toolMsizeP, *toolExpandP, *toolHeapWalkP, *toolStrdupP, *toolWcsdupP;
+    Byte *toolOperatorNewP, *toolOperatorDeleteP;
     PagallocSetFreeHFunc        toolSetFreeHP;
     PagallocSetMsizeHFunc       toolSetMsizeHP;
     //Load the latest C runtime, so we can patch it.
@@ -1566,10 +1566,10 @@ void
         return false;
         }
 
-    crtMallocP   = (byte *)GetProcAddress (hCrt, "malloc");
+    crtMallocP   = (Byte *)GetProcAddress (hCrt, "malloc");
 
         {
-        Int32 i;
+        int32_t i;
         for (i=0, crtNhMallocP = crtMallocP;    (0xe8 != *crtNhMallocP)  &&  (i < 100);   i++, crtNhMallocP++)
             ;   // blank line.  Semicolon only.
         }
@@ -1579,33 +1579,33 @@ void
             crtNhMallocP = NULL;
         else if(0xe8 == *crtNhMallocP)
                 {
-                UInt32 *ofsNhMallocP = (UInt32 *)(++crtNhMallocP);
+                uint32_t *ofsNhMallocP = (uint32_t *)(++crtNhMallocP);
                 crtNhMallocP += (4 + (*ofsNhMallocP));
                 }
         else crtNhMallocP = NULL;
 
 
-        crtCallocP          = (byte *)GetProcAddress (hCrt, "calloc");
-        crtReallocP         = (byte *)GetProcAddress (hCrt, "realloc");
-        crtFreeP            = (byte *)GetProcAddress (hCrt, "free");
-        crtMsizeP           = (byte *)GetProcAddress (hCrt, "_msize");
-        crtExpandP          = (byte *)GetProcAddress (hCrt, "_expand");
+        crtCallocP          = (Byte *)GetProcAddress (hCrt, "calloc");
+        crtReallocP         = (Byte *)GetProcAddress (hCrt, "realloc");
+        crtFreeP            = (Byte *)GetProcAddress (hCrt, "free");
+        crtMsizeP           = (Byte *)GetProcAddress (hCrt, "_msize");
+        crtExpandP          = (Byte *)GetProcAddress (hCrt, "_expand");
 #if defined(_X86_)
-        crtOperatorNewP     = (byte *)GetProcAddress (hCrt, "??2@YAPAXI@Z");        // Mangled operator new
-        crtOperatorDeleteP  = (byte *)GetProcAddress (hCrt, "??3@YAXPAX@Z");        // Mangled operator delete
+        crtOperatorNewP     = (Byte *)GetProcAddress (hCrt, "??2@YAPAXI@Z");        // Mangled operator new
+        crtOperatorDeleteP  = (Byte *)GetProcAddress (hCrt, "??3@YAXPAX@Z");        // Mangled operator delete
 #elif defined(_M_X64)
-        crtOperatorNewP     = (byte *)GetProcAddress (hCrt, "??2@YAPEAX_K@Z");      // Mangled operator new
-        crtOperatorDeleteP  = (byte *)GetProcAddress (hCrt, "??3@YAXPEAX@Z");       // Mangled operator delete
+        crtOperatorNewP     = (Byte *)GetProcAddress (hCrt, "??2@YAPEAX_K@Z");      // Mangled operator new
+        crtOperatorDeleteP  = (Byte *)GetProcAddress (hCrt, "??3@YAXPEAX@Z");       // Mangled operator delete
 #else
 #error Patching support incomplete for this architecture: See papatch.h
 #endif
-        crtHeapWalkP        = (byte *)GetProcAddress (hCrt, "_heapwalk");
+        crtHeapWalkP        = (Byte *)GetProcAddress (hCrt, "_heapwalk");
 #if (_MSC_VER >= 1400)
-        crtStrdupP          = (byte *)GetProcAddress (hCrt, "_strdup");             // strdup
+        crtStrdupP          = (Byte *)GetProcAddress (hCrt, "_strdup");             // strdup
 #else
-        crtStrdupP          = (byte *)GetProcAddress (hCrt, "_mbsdup");             // strdup
+        crtStrdupP          = (Byte *)GetProcAddress (hCrt, "_mbsdup");             // strdup
 #endif
-        crtWcsdupP          = (byte *)GetProcAddress (hCrt, "_wcsdup");             // _wcsdup
+        crtWcsdupP          = (Byte *)GetProcAddress (hCrt, "_wcsdup");             // _wcsdup
 
         /*-----------------------------------------------------------------------------------
         First verify that we can safely patch each mem func. in the runtime.
@@ -1859,18 +1859,18 @@ void
 #if defined (STANDALONE) || defined (LMSERVER)
         /* if we do not have toolsubs available, resolve these addresses locally */
         OutputDebugString(_T("PAGALLOC: patching MSVCRT using static addresses.\r\n"));
-        toolMallocP         = (byte *)               pagalloc_malloc;
-        toolNhMallocP       = (byte *)               pagalloc_nh_malloc;
-        toolCallocP         = (byte *)               pagalloc_calloc;
-        toolReallocP        = (byte *)               pagalloc_realloc;
-        toolFreeP           = (byte *)               pagalloc_free;
-        toolMsizeP          = (byte *)               pagalloc_msize;
-        toolExpandP         = (byte *)               pagalloc_expand;
-        toolOperatorNewP    = (byte *)               pagalloc_operatorNew;
-        toolOperatorDeleteP = (byte *)               pagalloc_operatorDelete;
-        toolHeapWalkP       = (byte *)               pagalloc_heapWalk;
-        toolStrdupP         = (byte *)               pagalloc_strdup;
-        toolWcsdupP         = (byte *)               pagalloc_wcsdup;
+        toolMallocP         = (Byte *)               pagalloc_malloc;
+        toolNhMallocP       = (Byte *)               pagalloc_nh_malloc;
+        toolCallocP         = (Byte *)               pagalloc_calloc;
+        toolReallocP        = (Byte *)               pagalloc_realloc;
+        toolFreeP           = (Byte *)               pagalloc_free;
+        toolMsizeP          = (Byte *)               pagalloc_msize;
+        toolExpandP         = (Byte *)               pagalloc_expand;
+        toolOperatorNewP    = (Byte *)               pagalloc_operatorNew;
+        toolOperatorDeleteP = (Byte *)               pagalloc_operatorDelete;
+        toolHeapWalkP       = (Byte *)               pagalloc_heapWalk;
+        toolStrdupP         = (Byte *)               pagalloc_strdup;
+        toolWcsdupP         = (Byte *)               pagalloc_wcsdup;
         toolSetFreeHP       = (PagallocSetFreeHFunc) pagalloc_set_free_handler;
         toolSetMsizeHP      = (PagallocSetMsizeHFunc)pagalloc_set_msize_handler;
 #else /* !STANDALONE && !LMSERVER */
@@ -1889,18 +1889,18 @@ void
             }
         else
             {
-            toolMallocP         = (byte *)           GetProcAddress (hTool, "pagalloc_malloc");
-            toolNhMallocP       = (byte *)           GetProcAddress (hTool, "pagalloc_nh_malloc");
-            toolCallocP         = (byte *)           GetProcAddress (hTool, "pagalloc_calloc");
-            toolReallocP        = (byte *)           GetProcAddress (hTool, "pagalloc_realloc");
-            toolFreeP           = (byte *)           GetProcAddress (hTool, "pagalloc_free");
-            toolMsizeP          = (byte *)           GetProcAddress (hTool, "pagalloc_msize");
-            toolExpandP         = (byte *)           GetProcAddress (hTool, "pagalloc_expand");
-            toolOperatorNewP    = (byte *)           GetProcAddress (hTool, "pagalloc_operatorNew");
-            toolOperatorDeleteP = (byte *)           GetProcAddress (hTool, "pagalloc_operatorDelete");
-            toolHeapWalkP       = (byte *)           GetProcAddress (hTool, "pagalloc_heapWalk");
-            toolStrdupP         = (byte *)           GetProcAddress (hTool, "pagalloc_strdup");
-            toolWcsdupP         = (byte *)           GetProcAddress (hTool, "pagalloc_wcsdup");
+            toolMallocP         = (Byte *)           GetProcAddress (hTool, "pagalloc_malloc");
+            toolNhMallocP       = (Byte *)           GetProcAddress (hTool, "pagalloc_nh_malloc");
+            toolCallocP         = (Byte *)           GetProcAddress (hTool, "pagalloc_calloc");
+            toolReallocP        = (Byte *)           GetProcAddress (hTool, "pagalloc_realloc");
+            toolFreeP           = (Byte *)           GetProcAddress (hTool, "pagalloc_free");
+            toolMsizeP          = (Byte *)           GetProcAddress (hTool, "pagalloc_msize");
+            toolExpandP         = (Byte *)           GetProcAddress (hTool, "pagalloc_expand");
+            toolOperatorNewP    = (Byte *)           GetProcAddress (hTool, "pagalloc_operatorNew");
+            toolOperatorDeleteP = (Byte *)           GetProcAddress (hTool, "pagalloc_operatorDelete");
+            toolHeapWalkP       = (Byte *)           GetProcAddress (hTool, "pagalloc_heapWalk");
+            toolStrdupP         = (Byte *)           GetProcAddress (hTool, "pagalloc_strdup");
+            toolWcsdupP         = (Byte *)           GetProcAddress (hTool, "pagalloc_wcsdup");
             toolSetFreeHP       = (PagallocSetFreeHFunc) GetProcAddress (hTool, "pagalloc_set_free_handler");
             toolSetMsizeHP      = (PagallocSetMsizeHFunc)GetProcAddress (hTool, "pagalloc_set_msize_handler");
             }

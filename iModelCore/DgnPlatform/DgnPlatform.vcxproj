@@ -38,6 +38,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeOutput>DgnPlatform.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\VendorAPI\;$(ProjectDir)PrivateApi\;$(ProjectDir)\DgnCore\;$(ProjectDir)\DgnHandlers\;$(ProjectDir)\;$(ProjectDir)\PublicAPI\;$(ProjectDir)Tests\DgnProject\NonPublished\;$(ProjectDir)Tests\DgnProject\Performance\;$(ProjectDir)Tests\DgnProject\Published\;$(ProjectDir)Tests\DgnProject\BackDoor\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>DgnPlatform.exe</NMakeOutput>
@@ -45,9 +46,6 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <Text Include="readme.txt" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

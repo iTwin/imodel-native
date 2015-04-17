@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/NullContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -10,11 +10,11 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem*         NullContext::_DrawCached (CachedDrawHandleCR dh, IStrokeForCache& stroker, Int32 index) 
+QvElem* NullContext::_DrawCached (IStrokeForCache& stroker) 
     {
-    stroker._StrokeForCache (dh, *this);
+    stroker._StrokeForCache (*this);
 
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

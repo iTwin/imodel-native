@@ -2,37 +2,32 @@
 |
 |     $Source: DgnCore/SatelliteChangeSets.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#include <BeSQLite/BeSQLite.h>
+
 #include <DgnPlatform/DgnCore/SatelliteChangeSets.h>
 #include <Bentley/BeDirectoryIterator.h>
-#include <Logging/bentleylogging.h>
-
-#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Changes"))
 
 #define MUSTBEDBRESULT(stmt,RESULT) {auto rc = stmt; if (rc != RESULT) {SetLastError(rc); return BSIERROR;}}
 #define MUSTBEOK(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_OK)
 #define MUSTBEROW(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_ROW)
 #define MUSTBEDONE(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_DONE)
 
-static bool s_traceUpdate = false;
+BEGIN_UNNAMED_NAMESPACE
 
-static SchemaVersion s_currentVersion (0, 1, 0, 0);
+bool s_traceUpdate = false;
+SchemaVersion s_currentVersion (2, 0, 0, 0);
 
-USING_NAMESPACE_BENTLEY_SQLITE
-
-namespace {
 /*=================================================================================**//**
 * @bsiclass                                     Sam.Wilson                      07/14
 +===============+===============+===============+===============+===============+======*/
-struct SyncInfoProjectUpdaterChangeSet : ChangeSet
-    {
+struct SyncInfoChangeSet : ChangeSet
+{
     Db& m_db;
 
-    SyncInfoProjectUpdaterChangeSet (Db& db) : m_db(db) {;}
+    SyncInfoChangeSet(Db& db) : m_db(db) {}
 
     virtual ConflictResolution _OnConflict (ConflictCause cause, Changes::Change iter) override 
         {
@@ -50,38 +45,32 @@ struct SyncInfoProjectUpdaterChangeSet : ChangeSet
         //  somebody is confused and is applying changesets twice or out of order or something like that.
         // In all cases, applying this changeset is likely to corrupt the database from the application's
         //  point of view, so don't allow it.
-        //return CONFLICT_RESOLUTION_Abort;
-        return CONFLICT_RESOLUTION_Skip;
+        return ConflictResolution::Skip;
         }
-    };
-
-
-}
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson  09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String uint64ToString (UInt64 value) {return Utf8PrintfString("%lld",value);}
+Utf8String uint64ToString (uint64_t value) {return Utf8PrintfString("%lld",value);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson  09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt64 uint64FromString (Utf8StringCR str) 
+uint64_t uint64FromString (Utf8StringCR str) 
     {
-    UInt64 value;
-    if (BeStringUtilities::ParseUInt64 (value, str.c_str()) != BSISUCCESS)
-        return 0;
-    return value;
+    uint64_t value;
+    return (BSISUCCESS != BeStringUtilities::ParseUInt64(value, str.c_str())) ? 0 : value;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson  09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus expandData (bvector<byte>& buffer, void const* compresseddata, Int32 compressedsize, SatelliteChangeSets::Compressed compressOption)
+BentleyStatus expandData (bvector<Byte>& buffer, void const* compresseddata, int32_t compressedsize, SatelliteChangeSets::Compressed compressOption)
     {
     LzmaOutToBvectorStream  bvectorWriter (buffer);
 
-    BeFileLzmaInFromMemory memoryReader (compresseddata, (UInt32)compressedsize);
+    BeFileLzmaInFromMemory memoryReader (compresseddata, (uint32_t)compressedsize);
 
     LzmaDecoder decoder;
     ZipErrors result = decoder.Uncompress (bvectorWriter, memoryReader, true, NULL);
@@ -92,35 +81,37 @@ static BentleyStatus expandData (bvector<byte>& buffer, void const* compressedda
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson  09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus compressData (bvector<byte>& buffer, void const* data, Int32 size, SatelliteChangeSets::Compressed compressOption)
+BentleyStatus compressData (bvector<Byte>& buffer, void const* data, int32_t size, SatelliteChangeSets::Compressed compressOption)
     {
     LzmaOutToBvectorStream  bvectorWriter (buffer);
     
-    BeFileLzmaInFromMemory memoryReader (data, (UInt32)size);
+    BeFileLzmaInFromMemory memoryReader (data, (uint32_t)size);
     
-    LzmaEncoder encoder ((UInt32)size);
+    LzmaEncoder encoder ((uint32_t)size);
     ZipErrors result = encoder.Compress (bvectorWriter, memoryReader, NULL, false);
     
     return  ZIP_SUCCESS == result ? BSISUCCESS : BSIERROR;
     }
 
+END_UNNAMED_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::SavePropertyString (PropertySpecCR spec, Utf8StringCR stringData, UInt64 id, UInt64 subId)
+DbResult SatelliteChangeSets::SavePropertyString (PropertySpecCR spec, Utf8StringCR stringData, uint64_t id, uint64_t subId)
     {
     Statement stmt;
-    auto rc = stmt.Prepare (*m_project, "INSERT OR REPLACE INTO " CHANGES_TABLE_Property " (Namespace,Name,Id,SubId,TxnMode,StrData) VALUES(?,?,?,?,?,?)");
+    DbResult rc = stmt.Prepare (*m_dgndb, "INSERT OR REPLACE INTO " CHANGESET_ATTACH(BEDB_TABLE_Property) " (Namespace,Name,Id,SubId,TxnMode,StrData) VALUES(?,?,?,?,?,?)");
     if (BE_SQLITE_OK != rc)
         return  rc;
 
     int col=1;
-    stmt.BindText (col++, spec.GetNamespace(), Statement::MAKE_COPY_No);
-    stmt.BindText (col++, spec.GetName(), Statement::MAKE_COPY_No);
-    stmt.BindInt64 (col++, id);
-    stmt.BindInt64 (col++, subId);
-    stmt.BindInt (col++, 0);
-    stmt.BindText (col++, stringData, Statement::MAKE_COPY_No);
+    stmt.BindText(col++, spec.GetNamespace(), Statement::MakeCopy::No);
+    stmt.BindText(col++, spec.GetName(), Statement::MakeCopy::No);
+    stmt.BindInt64(col++, id);
+    stmt.BindInt64(col++, subId);
+    stmt.BindInt(col++, 0);
+    stmt.BindText(col++, stringData, Statement::MakeCopy::No);
     rc = stmt.Step();
     return (BE_SQLITE_DONE==rc) ? BE_SQLITE_OK : rc;
     }
@@ -128,32 +119,24 @@ DbResult SatelliteChangeSets::SavePropertyString (PropertySpecCR spec, Utf8Strin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::QueryProperty (Utf8StringR value, PropertySpecCR spec, UInt64 id, UInt64 subId) const
+DbResult SatelliteChangeSets::QueryProperty (Utf8StringR value, PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     Statement stmt;
-    DbResult rc = stmt.Prepare (*m_project, "SELECT StrData FROM " CHANGES_TABLE_Property " WHERE Namespace=? AND Name=? AND Id=? AND SubId=?");
+    DbResult rc = stmt.Prepare(*m_dgndb, "SELECT StrData FROM " CHANGESET_ATTACH(BEDB_TABLE_Property) " WHERE Namespace=? AND Name=? AND Id=? AND SubId=?");
     if (BE_SQLITE_OK != rc)
         return rc;
 
     int col = 1;
-    stmt.BindText (col++, spec.GetNamespace(), Statement::MAKE_COPY_No);
-    stmt.BindText (col++, spec.GetName(), Statement::MAKE_COPY_No);
-    stmt.BindInt64 (col++, id);
-    stmt.BindInt64 (col++, subId);
+    stmt.BindText(col++, spec.GetNamespace(), Statement::MakeCopy::No);
+    stmt.BindText(col++, spec.GetName(), Statement::MakeCopy::No);
+    stmt.BindInt64(col++, id);
+    stmt.BindInt64(col++, subId);
     rc = stmt.Step();
     if (BE_SQLITE_ROW != rc)
         return rc;
 
-    value.AssignOrClear (stmt.GetValueText(0));
-    return  BE_SQLITE_ROW;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    SamWilson       08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SatelliteChangeSets::SatelliteChangeSets () 
-    : m_lastError(BE_SQLITE_OK), m_isValid(false)
-    {
+    value.AssignOrClear(stmt.GetValueText(0));
+    return BE_SQLITE_ROW;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -161,130 +144,29 @@ SatelliteChangeSets::SatelliteChangeSets ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SatelliteChangeSets::~SatelliteChangeSets() 
     {
-    if (m_project != NULL)
-        m_project->DetachDb (CHANGES_ATTACH_ALIAS);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    SamWilson       08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-SatelliteChangeSets::ChangeSetInfo::ChangeSetInfo() 
-    :
-    m_sequenceNumber(0),
-    m_type(PatchSet)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    SamWilson       08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt8 SatelliteChangeSets::ChangeSetInfo::GetTypeAsInt() const {return (m_type==PatchSet)? 0: 1;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    SamWilson       08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::ChangeSetInfo::SetTypeFromInt (UInt8 type) 
-    {
-    if (type == 0)
-        m_type = PatchSet;
-    else if (type == 1)
-        m_type = ChangeSet;
-    else
-        {
-        BeDataAssert(false && "invalid type identifier");
-        return BSIERROR;    // Detect newer version above!
-        }
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::ChangeSetInfo::CreateTable (Db& db)
-    {
-    return db.CreateTable (CHANGES_TABLE_ChangeSet, "SequenceNumber INTEGER PRIMARY KEY, Type INT, Description CHAR, Time DATETIME, Data BLOB, Compressed INT");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::ChangeSetInfo::Insert (Db& db) const
-    {
-    Statement stmt;
-    stmt.Prepare (db, "INSERT INTO " CHANGES_TABLE_ChangeSet " (SequenceNumber,Type,Description,Time) VALUES (?,?,?,?)");
-    int col = 1;
-    stmt.BindInt64(col++, m_sequenceNumber);                                        // SequenceNumber
-    stmt.BindInt  (col++, GetTypeAsInt());                                          // Type
-    stmt.BindText (col++, m_description, Statement::MAKE_COPY_No);                  // Description
-    stmt.BindText (col++, Utf8String(m_time.ToString()), Statement::MAKE_COPY_Yes); // Time
-    return stmt.Step();
+    if (nullptr != m_dgndb)
+        m_dgndb->DetachDb(CHANGES_ATTACH_ALIAS);
     }
 
 #define CHANGSETINFO_COLS "SequenceNumber,Type,Description,Time"
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::ChangeSetInfo::Step (Statement& stmt)
+SatelliteChangeSets::ChangeSetInfo::ChangeSetInfo(Statement& stmt)
     {
-    auto result = stmt.Step();
-    if (BE_SQLITE_ROW != result)
-        return result;
+    if (BE_SQLITE_ROW != stmt.Step())
+        {
+        m_isValid = false;
+        return;
+        }
+
+    m_isValid = true;
 
     int col = 0;
-    m_sequenceNumber = stmt.GetValueInt64   (col++);    // SequenceNumber
-    SetTypeFromInt ((UInt8) stmt.GetValueInt(col++));   // Type
-    m_description   = stmt.GetValueText     (col++);    // Description
-    DateTime::FromString (m_time, stmt.GetValueText (col++));    // Time
-
-    return BE_SQLITE_ROW;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::ChangeSetInfo::Prepare (Statement& stmt, SatelliteChangeSets& db)
-    {
-    stmt.Finalize();
-    return stmt.Prepare ((*db.m_project), "SELECT " CHANGSETINFO_COLS " FROM " CHANGES_TABLE_ChangeSet);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::ChangeSetInfo::PrepareFindBySequenceNumber (Statement& stmt, SatelliteChangeSets& db, UInt64 cid)
-    {
-    stmt.Finalize();
-    auto result = stmt.Prepare ((*db.m_project), "SELECT " CHANGSETINFO_COLS " FROM " CHANGES_TABLE_ChangeSet" WHERE (SequenceNumber=?)");
-    stmt.BindInt64 (1, cid);
-    return result;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::ChangeSetInfo::PrepareFindLater (Statement& stmt, SatelliteChangeSets& db, UInt64 cid)
-    {
-    stmt.Finalize();
-    auto result = stmt.Prepare ((*db.m_project), "SELECT " CHANGSETINFO_COLS " FROM " CHANGES_TABLE_ChangeSet" WHERE (SequenceNumber>?)");
-    stmt.BindInt64 (1, cid);
-    return result;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::ChangeSetInfo::StepFindBySequenceNumber (Statement& stmt)
-    {
-    return Step(stmt);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SatelliteChangeSets::ChangeSetInfo::StepFindLater (Statement& stmt)
-    {
-    return Step(stmt);
+    m_sequenceNumber = stmt.GetValueInt64(col++);    // SequenceNumber
+    m_type = (ChangeSetType) stmt.GetValueInt(col++);   // Type
+    m_description   = stmt.GetValueText(col++);    // Description
+    DateTime::FromString (m_time, stmt.GetValueText(col++));    // Time
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -292,20 +174,21 @@ DbResult SatelliteChangeSets::ChangeSetInfo::StepFindLater (Statement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult SatelliteChangeSets::CreateTables()
     {
-    return ChangeSetInfo::CreateTable (*m_project);
+    return m_dgndb->CreateTable(CHANGESET_ATTACH(CHANGESET_Table), "SequenceNumber INTEGER PRIMARY KEY,Type INT,Description CHAR,Time DATETIME,Data BLOB,Compressed INT");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName SatelliteChangeSets::GetChangeSetFileName (Db& project, UInt64 csid, bool useProjectGuid)
+BeFileName SatelliteChangeSets::GetChangeSetFileName(Db& db, uint64_t csid, bool useGuid)
     {
     BeFileName dataFileName;
-    if (useProjectGuid)
-        dataFileName.SetNameA (project.GetDbGuid().ToString().c_str());
+    if (useGuid)
+        dataFileName.SetNameUtf8(db.GetDbGuid().ToString().c_str());
     else
-        dataFileName.SetNameA (project.GetDbFileName());
-    dataFileName.append (WPrintfString(L".%lld.changes",csid));
+        dataFileName.SetNameUtf8(db.GetDbFileName());
+
+    dataFileName.append(WPrintfString(L".%lld.changes", csid));
     return dataFileName;
     }
 
@@ -314,67 +197,63 @@ BeFileName SatelliteChangeSets::GetChangeSetFileName (Db& project, UInt64 csid, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DateTime toUtc (DateTime const& timeIn)
     {
-    DateTime time;
-    
-    if (DateTime::Compare (timeIn, time) == DateTime::CompareResult::Equals)
+    if (!timeIn.IsValid())
+        return DateTime::GetCurrentTimeUtc();
+
+    if (timeIn.GetInfo().GetKind() != DateTime::Kind::Local)
         return timeIn;
 
-    if (timeIn.GetInfo().GetKind () != DateTime::Kind::Local)
-        return timeIn;
-        
-    timeIn.ToUtc (time);
+    DateTime time;
+    timeIn.ToUtc(time);
     return time;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::InsertChangeSet (ChangeSetInfo& csinfo, UInt64 csid, Compressed compressOption, void const* data, Int32 datasize, ChangeSetType type, Utf8StringCR desc, DateTime const& timeIn)
+BentleyStatus SatelliteChangeSets::InsertChangeSet(ChangeSetInfo const &infoIn, Compressed compressOption, void const* data, int32_t datasize)
     {
-    Db& db = *m_project;
-
-    //  Fill out the new ChangeSetInfo to insert
-    csinfo.m_sequenceNumber = csid;
-    csinfo.m_type = type;
-    csinfo.m_description = desc;
-    csinfo.m_time = toUtc(timeIn);
-
-    // Insert ChangeSet row
-    if (csinfo.Insert (db) != BE_SQLITE_DONE)
-        return BSIERROR;
+    ChangeSetInfo info(infoIn);
+    info.m_time = toUtc(info.m_time);
 
     // store the changeset data (optionally compressed) in a column of the new row
     void const* dataToStore = data;
-    Int32 dataToStoreSize = datasize;
-    bvector<byte> compressedData;
-    if (compressOption != COMPRESSED_No)
+    int32_t dataToStoreSize = datasize;
+    bvector<Byte> compressedData;
+    if (compressOption != Compressed::No)
         {
         compressData (compressedData, data, datasize, compressOption);
         dataToStore = &compressedData[0];
-        dataToStoreSize = (Int32)compressedData.size();
+        dataToStoreSize = (int32_t)compressedData.size();
         }
 
     Statement stmt;
-    stmt.Prepare (db, "UPDATE " CHANGES_TABLE_ChangeSet " SET Data=?, Compressed=? WHERE (SequenceNumber=?)");
-    stmt.BindBlob (1, dataToStore, dataToStoreSize, Statement::MAKE_COPY_No);
-    stmt.BindInt (2, compressOption);
-    stmt.BindInt64 (3, csinfo.m_sequenceNumber);
-    MUSTBEDONE (stmt.Step());
+    stmt.Prepare(*m_dgndb, "INSERT INTO " CHANGESET_ATTACH(CHANGESET_Table) " (SequenceNumber,Type,Description,Time,Data,Compressed) VALUES (?,?,?,?,?,?)");
+    int col = 1;
+    stmt.BindInt64(col++, info.m_sequenceNumber);   
+    stmt.BindInt(col++, (int) info.m_type);         
+    stmt.BindText(col++, info.m_description, Statement::MakeCopy::No); 
+    stmt.BindText(col++, Utf8String(info.m_time.ToString()), Statement::MakeCopy::Yes); 
+    stmt.BindBlob(col++, dataToStore, dataToStoreSize, Statement::MakeCopy::No);
+    stmt.BindInt(col++, (int) compressOption);
+
+    auto rc = stmt.Step();
+    if (BE_SQLITE_DONE != rc)
+        return BSIERROR;
 
     // Update my range
-    UpdateChangeSetSequenceNumberRange (csid);
-
+    UpdateSequenceNumberRange(info.m_sequenceNumber);
     return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::ExtractChangeSetBySequenceNumber (BeSQLite::ChangeSet& cset, UInt64 cid)
+BentleyStatus SatelliteChangeSets::ExtractChangeSetBySequenceNumber(BeSQLite::ChangeSet& cset, uint64_t sequenceNumber)
     {
     Statement stmt;
-    stmt.Prepare (*m_project, "SELECT Data,length(Data),Compressed FROM " CHANGES_TABLE_ChangeSet " WHERE (SequenceNumber=?)");
-    stmt.BindInt64 (1, cid);
+    stmt.Prepare(*m_dgndb, "SELECT Data,length(Data),Compressed FROM " CHANGESET_ATTACH(CHANGESET_Table) " WHERE (SequenceNumber=?)");
+    stmt.BindInt64(1, sequenceNumber);
     if (stmt.Step() != BE_SQLITE_ROW)
         return BSIERROR;
 
@@ -382,56 +261,54 @@ BentleyStatus SatelliteChangeSets::ExtractChangeSetBySequenceNumber (BeSQLite::C
     int datasize = stmt.GetValueInt(1);
     Compressed compressed = (Compressed)(stmt.GetValueInt(2));
 
-    bvector<byte> expanded;
-    if (compressed != COMPRESSED_No)
+    bvector<Byte> expanded;
+    if (compressed != Compressed::No)
         {
         if (expandData (expanded, data, datasize, compressed) != BSISUCCESS)
             return BSIERROR;
         data = &expanded[0];
-        datasize = (Int32)expanded.size();
+        datasize = (int32_t)expanded.size();
         }
 
     MUSTBEOK (cset.FromData (datasize, data, false));
-
     return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::OnFatalError (UInt64 lastCsid)
+BentleyStatus SatelliteChangeSets::OnFatalError (uint64_t lastCsid)
     {
     Statement stmt;
-    stmt.Prepare (*m_project, "DELETE FROM " CHANGES_TABLE_ChangeSet " WHERE (SequenceNumber=?)");
+    stmt.Prepare (*m_dgndb, "DELETE FROM " CHANGESET_ATTACH(CHANGESET_Table) " WHERE (SequenceNumber=?)");
     stmt.BindInt64 (1, lastCsid);
     MUSTBEROW (stmt.Step());
 
-    m_project->SaveChanges();
+    m_dgndb->SaveChanges();
     return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::FindChangeSetBySequenceNumber (ChangeSetInfo& csinfo, UInt64 cid)
+SatelliteChangeSets::ChangeSetInfo SatelliteChangeSets::FindChangeSetBySequenceNumber(uint64_t sequenceNumber)
     {
     Statement stmt;
-    ChangeSetInfo::PrepareFindBySequenceNumber (stmt, *this, cid);
-    if (csinfo.StepFindBySequenceNumber (stmt) != BE_SQLITE_ROW)
-        return BSIERROR;
+    stmt.Prepare(*m_dgndb, "SELECT " CHANGSETINFO_COLS " FROM " CHANGESET_ATTACH(CHANGESET_Table) " WHERE (SequenceNumber=?)");
+    stmt.BindInt64(1, sequenceNumber);
 
-    return BSISUCCESS;
+    return ChangeSetInfo(stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::DetectChangeSets (T_ChangesFileDictionary& csfiles, ChangeSetRange& range, Db& project, bvector<BeFileName> const& candidateFiles)
+BentleyStatus SatelliteChangeSets::DetectChangeSets(T_ChangesFileDictionary& csfiles, ChangeSetRange& range, Db& db, bvector<BeFileName> const& candidateFiles)
     {
-    auto projectGuid = project.GetDbGuid();
+    auto dbGuid = db.GetDbGuid();
 
-    ProjectChangeSetProperties targetProjectProperties;
-    targetProjectProperties.GetChangeSetProperties (project);
+    ChangeSetProperties targetProperties;
+    targetProperties.LoadFromDb(db);
 
     range.m_earliest = UINT64_MAX;
     range.m_latest = 0;
@@ -439,23 +316,23 @@ BentleyStatus SatelliteChangeSets::DetectChangeSets (T_ChangesFileDictionary& cs
         {
         SatelliteChangeSets csfile;
         
-        if (csfile.AttachToProject (project, csFileName) != BSISUCCESS)             // WARNING - Attaching a db commits the current txn!
+        if (BSISUCCESS != csfile.AttachToDb(db, csFileName))    // WARNING - Attaching a db commits the current txn!
             continue;
 
         //  Only select changes files that apply to this project!
-        if (csfile.GetTargetProjectGuid() != projectGuid)
+        if (dbGuid != csfile.GetTargetDbGuid())
             continue;
 
         //  Only select changes that we haven't seen before.
-        auto endsWith = csfile.GetLastChangeSetSequenceNumber();
-        if (endsWith <= targetProjectProperties.m_latestChangeSetId)
+        uint64_t endsWith = csfile.GetLastSequenceNumber();
+        if (endsWith <= targetProperties.m_latestChangeSetId)
             continue;
 
-        auto startsWith = csfile.GetFirstChangeSetSequenceNumber();
+        uint64_t startsWith = csfile.GetFirstSequenceNumber();
 
-        if (csfiles.find (startsWith) != csfiles.end())
+        if (csfiles.find(startsWith) != csfiles.end())
             {
-            LOG.errorv (L"DetectChangeSets - %ls - duplicate changeset sequence numbers found. Something is badly wrong!", csFileName.c_str());
+            LOG.errorv(L"DetectChangeSets - %ls - duplicate changeset sequence numbers found. Something is badly wrong!", csFileName.c_str());
             return BSIERROR;
             }
 
@@ -474,52 +351,41 @@ BentleyStatus SatelliteChangeSets::DetectChangeSets (T_ChangesFileDictionary& cs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::ApplyChangeSets (UInt32& nChangesApplied, Db& project, bvector<BeFileName> const& csfilesIn, IApplyChangeSet& applier)
+BentleyStatus SatelliteChangeSets::ApplyChangeSets(uint32_t& nChangesApplied, Db& db, bvector<BeFileName> const& csfilesIn)
     {
     nChangesApplied = 0;
 
-    if (!project.IsDbOpen() || project.IsReadonly())
+    if (!db.IsDbOpen() || db.IsReadonly())
         {
-        LOG.errorv ("ApplyChangeSets - project %s is not open for read-write", project.GetDbFileName());
+        LOG.errorv ("ApplyChangeSets - Db %s is not open for read-write", db.GetDbFileName());
         return BSIERROR;
         }
 
-    //  ----------------------------------------
     //  Get the latest changeset known to the project
-    //  ----------------------------------------
-    ProjectChangeSetProperties targetProjectProperties;
-    targetProjectProperties.GetChangeSetProperties(project);
+    ChangeSetProperties targetProperties;
+    targetProperties.LoadFromDb(db);
 
-    //  ----------------------------------------
     // Pass 1: Detect the changes files that apply to this project and that come after targetProjectProperties.m_sequenceNumber
-    //  ----------------------------------------
     T_ChangesFileDictionary dictionary;
     ChangeSetRange range;
-    if (DetectChangeSets (dictionary, range, project, csfilesIn) != BSISUCCESS)
+    if (DetectChangeSets (dictionary, range, db, csfilesIn) != BSISUCCESS)
         return BSIERROR;
 
-    //  ----------------------------------------
-    //  Quick return if no applicable changes found
-    //  ----------------------------------------
-    if (dictionary.empty())
+    if (dictionary.empty()) //  Quick return if no applicable changes found
         return BSISUCCESS;
 
-    //  ----------------------------------------
     //  Integrity checks
-    //  ----------------------------------------
     // The first new change must come right after the last known change.
-    if (range.m_earliest != (targetProjectProperties.m_latestChangeSetId+1))
+    if (range.m_earliest != (targetProperties.m_latestChangeSetId+1))
         {
-        LOG.errorv ("ApplyChangeSets - project %s - LatestChangeSetId %lld + 1 is not in the range to be applied %lld-%lld.", project.GetDbFileName(), targetProjectProperties.m_latestChangeSetId, range.m_earliest, range.m_latest);
+        LOG.errorv ("ApplyChangeSets - Db %s - LatestChangeSetId %lld + 1 is not in the range to be applied %lld-%lld.", db.GetDbFileName(), targetProperties.m_latestChangeSetId, range.m_earliest, range.m_latest);
         return BSIERROR;
         }
 
-    //  ----------------------------------------
     // Pass 2: Apply relevant changesets in sequence
-    //  ----------------------------------------
-    ProjectChangeSetProperties csprops;
+    ChangeSetProperties csprops;
     
-    UInt64 endOfPrevious = UINT64_MAX;
+    uint64_t endOfPrevious = UINT64_MAX;
     BeFileName nameOfPrevious;
 
     for (auto const& record : dictionary)
@@ -527,12 +393,12 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets (UInt32& nChangesApplied, Db&
         auto const& csFileName = record.second;
 
         SatelliteChangeSets csfile;
-        if (csfile.AttachToProject (project, csFileName) != BSISUCCESS)        // WARNING - Attaching a db commits the current txn!
+        if (SUCCESS != csfile.AttachToDb(db, csFileName))        // WARNING - Attaching a db commits the current txn!
             continue;
 
         if (endOfPrevious != UINT64_MAX)
             {
-            if ((endOfPrevious+1) != csfile.GetFirstChangeSetSequenceNumber())
+            if ((endOfPrevious+1) != csfile.GetFirstSequenceNumber())
                 {
                 // The set of changes to apply must not skip any sequence numbers
                 LOG.errorv (L"ApplyChangeSets - A .changes file is missing. [%ls] does not lead directly to [%ls]. Stopping.", nameOfPrevious.c_str(), csFileName.c_str());
@@ -540,51 +406,55 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets (UInt32& nChangesApplied, Db&
                 }
             }
 
-        endOfPrevious = csfile.GetLastChangeSetSequenceNumber();
+        endOfPrevious = csfile.GetLastSequenceNumber();
         nameOfPrevious = csFileName;
 
-        csprops.m_latestChangeSetId = csfile.GetLastChangeSetSequenceNumber();
+        csprops.m_latestChangeSetId = csfile.GetLastSequenceNumber();
         csfile.GetExpirationDate (csprops.m_expirationDate);
 
-        ChangeSetInfo info;
         BeSQLite::Statement stmt;
-        ChangeSetInfo::Prepare (stmt, csfile);
-        while (info.Step (stmt) == BE_SQLITE_ROW)
+        stmt.Prepare(db, "SELECT " CHANGSETINFO_COLS " FROM " CHANGESET_ATTACH(CHANGESET_Table));
+
+        while (true)
             {
-            SyncInfoProjectUpdaterChangeSet changeSet (*csfile.m_project);
+            ChangeSetInfo info(stmt);
+            if (!info.IsValid())
+                break;
+
+            SyncInfoChangeSet changeSet(db);
             csfile.ExtractChangeSetBySequenceNumber (changeSet, info.m_sequenceNumber);
 
             if (s_traceUpdate)
-                changeSet.Dump (project);
+                changeSet.Dump(db);
 
-            DbResult applyResult = applier.ApplyChangeSet (project, changeSet);
+            DbResult applyResult = changeSet.ApplyChanges(db);
             if (applyResult != BE_SQLITE_OK)
                 {
                 BeAssert(false);
                 LOG.errorv ("ApplyChangeSets - changeset  %ls ApplyChanges failed with code %s", csFileName.c_str(), BeSQLite::Db::InterpretDbResult(applyResult));
-                project.AbandonChanges();
+                db.AbandonChanges();
                 return BSIERROR;
                 }
 
             // commit as we go along. This keeps down memory usage, and it allows us to re-start with first un-applied chagneset.
             csprops.m_latestChangeSetId = info.m_sequenceNumber;
-            if (csprops.SetChangeSetProperties (project) != BSISUCCESS)
+            if (SUCCESS != csprops.SaveToDb(db))
                 {
-                project.AbandonChanges();
+                db.AbandonChanges();
                 return BSIERROR;
                 }
 
-            auto saveResult = project.SaveChanges();
+            auto saveResult = db.SaveChanges();
             if (saveResult != BE_SQLITE_OK)
                 {
-                LOG.errorv ("ApplyChangeSets - project %s - SaveChanges failed with code %s.", project.GetDbFileName(), BeSQLite::Db::InterpretDbResult(saveResult));
-                project.AbandonChanges();
+                LOG.errorv ("ApplyChangeSets - Db %s - SaveChanges failed with code %s.", db.GetDbFileName(), BeSQLite::Db::InterpretDbResult(saveResult));
+                db.AbandonChanges();
                 return BSIERROR;
                 }
 
             ++nChangesApplied;
             }
-        }                                                               // WARNING - ~SatelliteChangeSets detaches, which commits the current txn!
+        }  // WARNING - ~SatelliteChangeSets detaches, which commits the current txn!
 
     return BSISUCCESS;
     }
@@ -592,12 +462,12 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets (UInt32& nChangesApplied, Db&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::ApplyChangeSets (UInt32& nChangesApplied, Db& project, T_ChangesFileDictionary const& csfilesIn, IApplyChangeSet& applier)
+BentleyStatus SatelliteChangeSets::ApplyChangeSets (uint32_t& nChangesApplied, Db& project, T_ChangesFileDictionary const& csfilesIn)
     {
     bvector<BeFileName> files;
     for (auto const& entry : csfilesIn)
         files.push_back (entry.second);
-    return ApplyChangeSets (nChangesApplied, project, files, applier);
+    return ApplyChangeSets (nChangesApplied, project, files);
     }
 
 //---------------------------------------------------------------------------------------
@@ -605,14 +475,11 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets (UInt32& nChangesApplied, Db&
 //---------------------------------------------------------------------------------------
 BentleyStatus SatelliteChangeSets::PerformVersionChecks()
     {
-    //  ---------------------------------------------------------------------
-    //  Look at the stored version and see if we have to upgrade
-    //  ---------------------------------------------------------------------
+    // Look at the stored version and see if we have to upgrade
     Utf8String versionString;
-    MUSTBEROW (QueryProperty (versionString, ChangesProperty::SchemaVersion()));
+    MUSTBEROW (QueryProperty (versionString, Property::SchemaVersion()));
 
-    SchemaVersion storedVersion (0,0,0,0);
-    storedVersion.FromJson (versionString.c_str());
+    SchemaVersion storedVersion(versionString.c_str());
         
     if (storedVersion.CompareTo (s_currentVersion) == 0)
         return BSISUCCESS;
@@ -623,24 +490,13 @@ BentleyStatus SatelliteChangeSets::PerformVersionChecks()
         return BSIERROR;
         }
 
-    //  ---------------------------------------------------------------------
     //  Upgrade
-    //  ---------------------------------------------------------------------
-
     //      when we change the syncInfo schema, add upgrade steps here ...
     
     //  Upgraded. Update the stored version.
-    MUSTBEOK (SavePropertyString (ChangesProperty::SchemaVersion(), s_currentVersion.ToJson().c_str()));
+    MUSTBEOK (SavePropertyString (Property::SchemaVersion(), s_currentVersion.ToJson().c_str()));
 
     return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-Db* SatelliteChangeSets::GetProject()
-    {
-    return m_project;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -670,47 +526,42 @@ BentleyStatus SatelliteChangeSets::CreateEmptyFile (BeFileNameCR dbNameIn, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::OnAttach (Db& targetProject, BeSQLite::SchemaVersion const& targetSchemaVersion)
+BentleyStatus SatelliteChangeSets::OnAttach(Db& targetProject, BeSQLite::SchemaVersion const& targetSchemaVersion)
     {
-    m_project = &targetProject;
+    m_dgndb = &targetProject;
 
-    if (!m_project->TableExists (CHANGES_TABLE_DIRECT_ChangeSet))
+    if (!targetProject.TableExists(CHANGESET_ATTACH(CHANGESET_Table)))
         {
-        //  -----------------------------------------
         //  We are creating a new .changes file
-        //  -----------------------------------------
         Utf8String currentProjectDbSchemaVersion;
-        m_project->QueryProperty (currentProjectDbSchemaVersion, Properties::SchemaVersion());
+        targetProject.QueryProperty (currentProjectDbSchemaVersion, Properties::SchemaVersion());
 
-        MUSTBEOK (SavePropertyString (ChangesProperty::SchemaVersion(), s_currentVersion.ToJson()));
+        MUSTBEOK (SavePropertyString (Property::SchemaVersion(), s_currentVersion.ToJson()));
         MUSTBEOK (SavePropertyString (Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToUtf8String()));
-        MUSTBEOK (SavePropertyString (ChangesProperty::ProjectGUID(), m_project->GetDbGuid().ToString()));
-        MUSTBEOK (SavePropertyString (ChangesProperty::ProjectDbSchemaVersion(), currentProjectDbSchemaVersion));
-        MUSTBEOK (SavePropertyString (ChangesProperty::ProjectSchemaVersion(), targetSchemaVersion.ToJson()));
+        MUSTBEOK (SavePropertyString (Property::DgnDbGuid(), targetProject.GetDbGuid().ToString()));
+        MUSTBEOK (SavePropertyString (Property::DgnDbSchemaVersion(), currentProjectDbSchemaVersion));
+        MUSTBEOK (SavePropertyString (Property::DbSchemaVersion(), targetSchemaVersion.ToJson()));
         // *** WIP_CONVERTER - I'd like to save project's last save time
 
         MUSTBEOK (CreateTables());
     
         SetValid (true);
-
         return BSISUCCESS;
         }
 
-    //  -----------------------------------------
     //  We are opening an existing .changes file
-    //  -----------------------------------------
-    if (PerformVersionChecks() != BSISUCCESS)
+    if (SUCCESS != PerformVersionChecks())
         return BSIERROR;
 
-    if (GetTargetProjectGuid() != m_project->GetDbGuid())
+    if (GetTargetDbGuid() != targetProject.GetDbGuid())
         {
-        LOG.errorv ("compatibility error - storedProjectGUID=%s, specifiedProjectGUID=%s", GetTargetProjectGuid().ToString().c_str(), m_project->GetDbGuid().ToString().c_str());
+        LOG.errorv ("compatibility error - storedDbGuid=%s, specifiedDbGuid=%s", GetTargetDbGuid().ToString().c_str(), targetProject.GetDbGuid().ToString().c_str());
         return BSIERROR;
         }
 
     Utf8String savedProjectDbSchemaVersion, currentProjectDbSchemaVersion;
-    if (QueryProperty (savedProjectDbSchemaVersion, ChangesProperty::ProjectDbSchemaVersion()) != BE_SQLITE_ROW
-        || m_project->QueryProperty (currentProjectDbSchemaVersion, Properties::SchemaVersion()) !=  BE_SQLITE_ROW
+    if (QueryProperty (savedProjectDbSchemaVersion, Property::DgnDbSchemaVersion()) != BE_SQLITE_ROW
+        || m_dgndb->QueryProperty (currentProjectDbSchemaVersion, Properties::SchemaVersion()) !=  BE_SQLITE_ROW
         || !savedProjectDbSchemaVersion.Equals (currentProjectDbSchemaVersion))
         {
         LOG.warningv ("compatibility error. ProjectDbSchemaVersion=%s does not match project SchemaVersion=%s.",
@@ -722,7 +573,7 @@ BentleyStatus SatelliteChangeSets::OnAttach (Db& targetProject, BeSQLite::Schema
     if (targetSchemaVersion.GetInt64 (SchemaVersion::VERSION_All) != 0)
         {
         Utf8String savedProjectSchemaVersion;
-        QueryProperty (savedProjectSchemaVersion, ChangesProperty::ProjectSchemaVersion());
+        QueryProperty (savedProjectSchemaVersion, Property::DgnDbSchemaVersion());
         if (targetSchemaVersion.ToJson() != savedProjectSchemaVersion)
             {
             LOG.warningv ("compatibility error - savedProjectSchemaVersion=%s, specifiedProjectSchemaVersion=%s", savedProjectSchemaVersion.c_str(), targetSchemaVersion.ToJson().c_str());
@@ -738,20 +589,20 @@ BentleyStatus SatelliteChangeSets::OnAttach (Db& targetProject, BeSQLite::Schema
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::AttachToProject (Db& targetProject, BeFileNameCR dbName)
+BentleyStatus SatelliteChangeSets::AttachToDb(Db& targetProject, BeFileNameCR dbName)
     {
     m_dbFileName = dbName;
-    MUSTBEOK (targetProject.AttachDb (Utf8String(dbName).c_str(), CHANGES_ATTACH_ALIAS));
-    return OnAttach (targetProject, SchemaVersion(0,0,0,0));
+    MUSTBEOK(targetProject.AttachDb(Utf8String(dbName).c_str(), CHANGES_ATTACH_ALIAS));
+    return OnAttach(targetProject, SchemaVersion(0,0,0,0));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeDbGuid SatelliteChangeSets::GetTargetProjectGuid()
+BeDbGuid SatelliteChangeSets::GetTargetDbGuid()
     {
     Utf8String projectGuidStr;
-    QueryProperty (projectGuidStr, ChangesProperty::ProjectGUID());
+    QueryProperty (projectGuidStr, Property::DgnDbGuid());
     BeDbGuid guid;
     guid.FromString (projectGuidStr.c_str());
     return guid;
@@ -760,66 +611,66 @@ BeDbGuid SatelliteChangeSets::GetTargetProjectGuid()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt64 SatelliteChangeSets::GetFirstChangeSetSequenceNumber()
+uint64_t SatelliteChangeSets::GetFirstSequenceNumber()
     {
     Utf8String str;
-    QueryProperty (str, ChangesProperty::FirstChangeSetSequenceNumber());
+    QueryProperty (str, Property::FirstSequenceNumber());
     return uint64FromString (str);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt64 SatelliteChangeSets::GetLastChangeSetSequenceNumber()
+uint64_t SatelliteChangeSets::GetLastSequenceNumber()
     {
     Utf8String str;
-    QueryProperty (str, ChangesProperty::LastChangeSetSequenceNumber());
+    QueryProperty (str, Property::LastSequenceNumber());
     return uint64FromString (str);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SatelliteChangeSets::UpdateChangeSetSequenceNumberRange (UInt64 csid)
+void SatelliteChangeSets::UpdateSequenceNumberRange(uint64_t csid)
     {
-    if (csid < GetFirstChangeSetSequenceNumber() || 0==GetFirstChangeSetSequenceNumber())
-        SavePropertyString (ChangesProperty::FirstChangeSetSequenceNumber(), uint64ToString(csid));
-    if (csid > GetLastChangeSetSequenceNumber())
-        SavePropertyString (ChangesProperty::LastChangeSetSequenceNumber(), uint64ToString(csid));
+    if (csid < GetFirstSequenceNumber() || 0==GetFirstSequenceNumber())
+        SavePropertyString(Property::FirstSequenceNumber(), uint64ToString(csid));
+    if (csid > GetLastSequenceNumber())
+        SavePropertyString(Property::LastSequenceNumber(), uint64ToString(csid));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::SetExpirationDate (DateTime const& expirationDate)
+BentleyStatus SatelliteChangeSets::SetExpirationDate(DateTime const& expirationDate)
     {
-    MUSTBEOK (SavePropertyString (Properties::ExpirationDate(), expirationDate.ToUtf8String()));
+    MUSTBEOK (SavePropertyString(Properties::ExpirationDate(), expirationDate.ToUtf8String()));
     return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SatelliteChangeSets::GetExpirationDate (DateTime& dt)
+void SatelliteChangeSets::GetExpirationDate(DateTime& dt)
     {
     Utf8String str;
-    QueryProperty (str, Properties::ExpirationDate());
-    DateTime::FromString (dt, str.c_str());
+    QueryProperty(str, Properties::ExpirationDate());
+    DateTime::FromString(dt, str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SatelliteChangeSets::SetLastError (BeSQLite::DbResult rc)
+void SatelliteChangeSets::SetLastError(BeSQLite::DbResult rc)
     {
     m_lastError = rc;
-    m_lastErrorDescription = m_project->GetLastError();
+    m_lastErrorDescription = m_dgndb->GetLastError();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SatelliteChangeSets::GetLastError (BeSQLite::DbResult& result, Utf8String& descr)
+void SatelliteChangeSets::GetLastError(BeSQLite::DbResult& result, Utf8String& descr)
     {
     result = m_lastError;
     descr = m_lastErrorDescription;
@@ -830,10 +681,10 @@ void SatelliteChangeSets::GetLastError (BeSQLite::DbResult& result, Utf8String& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SatelliteChangeSets::SaveChanges()
     {
-    if (!m_project->IsDbOpen())
+    if (!m_dgndb->IsDbOpen())
         return BSISUCCESS;
 
-    MUSTBEOK (m_project->SaveChanges());
+    MUSTBEOK(m_dgndb->SaveChanges());
     
     return BSISUCCESS;
     }
@@ -843,7 +694,7 @@ BentleyStatus SatelliteChangeSets::SaveChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SatelliteChangeSets::AbandonChanges()
     {
-    m_project->AbandonChanges();
+    m_dgndb->AbandonChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -851,26 +702,25 @@ void SatelliteChangeSets::AbandonChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SatelliteChangeSets::Close()
     {
-    m_project->CloseDb();
+    m_dgndb->CloseDb();
     }
+
+#define LAST_CHANGESET_ID_STR "changeset_lastId"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ProjectChangeSetProperties::SetChangeSetProperties (Db& project)
+BentleyStatus ChangeSetProperties::SaveToDb(Db& db)
     {
-    auto saveResult = project.SavePropertyString (Properties::LatestChangeSetId(), uint64ToString(m_latestChangeSetId));
-    if (saveResult != BE_SQLITE_OK)
+    db.SaveRepositoryLocalValue(LAST_CHANGESET_ID_STR, uint64ToString(m_latestChangeSetId));
+    if (m_expirationDate.IsValid())
         {
-        LOG.errorv ("ApplyChangeSets - project %s - save LatestChangeSetId failed with code %s.", project.GetDbFileName(), BeSQLite::Db::InterpretDbResult(saveResult));
-        return BSIERROR;
-        }
-
-    saveResult = project.SavePropertyString (Properties::ExpirationDate(), m_expirationDate.ToUtf8String());
-    if (saveResult != BE_SQLITE_OK)
-        {
-        LOG.errorv ("ApplyChangeSets - project %s - save ExpirationDate failed with code %s.", project.GetDbFileName(), BeSQLite::Db::InterpretDbResult(saveResult));
-        return BSIERROR;
+        auto saveResult = db.SavePropertyString(Properties::ExpirationDate(), m_expirationDate.ToUtf8String());
+        if (saveResult != BE_SQLITE_OK)
+            {
+            LOG.errorv("ApplyChangeSets - Db %s - save ExpirationDate failed with code %s.", db.GetDbFileName(), Db::InterpretDbResult(saveResult));
+            return BSIERROR;
+            }
         }
 
     return BSISUCCESS;
@@ -879,16 +729,15 @@ BentleyStatus ProjectChangeSetProperties::SetChangeSetProperties (Db& project)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ProjectChangeSetProperties::GetChangeSetProperties (Db& project)
+BentleyStatus ChangeSetProperties::LoadFromDb(Db& db)
     {
     Utf8String str;
-    if (project.QueryProperty (str, Properties::LatestChangeSetId()) != BeSQLite::BE_SQLITE_ROW)
-        return BSIERROR;
-    m_latestChangeSetId = uint64FromString (str);
+    DbResult rc = db.QueryRepositoryLocalValue(LAST_CHANGESET_ID_STR, str);
+    m_latestChangeSetId = (BE_SQLITE_ROW == rc) ? uint64FromString(str) : 0;
 
     Utf8String expirationDateString;
-    project.QueryProperty (expirationDateString, Properties::ExpirationDate());
-    DateTime::FromString (m_expirationDate, expirationDateString.c_str());
+    db.QueryProperty(expirationDateString, Properties::ExpirationDate());
+    DateTime::FromString(m_expirationDate, expirationDateString.c_str());
 
     return BSISUCCESS;
     }

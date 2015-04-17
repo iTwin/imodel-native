@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokePattern.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -278,12 +278,9 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, I
     DPoint3dCP  tan2 = NULL;
     DPoint3d    startTangent, endTangent;
 
-    // NEEDSWORK_V10: Linestyle api shouldn't require a DgnModel...should just need DgnProject or maybe ViewController...
-    DgnModelP   dgnModel = context->GetDgnProject ().Models ().GetModelById (context->GetDgnProject ().Models ().GetFirstModelId ());
+    // NEEDSWORK_V10: Linestyle api shouldn't require a DgnModel...should just need DgnDb or maybe ViewController...
 
-    BeAssert (NULL != dgnModel);
-
-    bool        hasWidth = (0 != _GetMaxWidth(dgnModel) || 0 != modifiers->GetMaxWidth());
+    bool        hasWidth = (0 != _GetMaxWidth(nullptr) || 0 != modifiers->GetMaxWidth());
 
     if (hasWidth)
         {
@@ -353,7 +350,7 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, I
         }
     else
         {
-        Int32 segFlag = FLAG_FirstSeg | FLAG_LastSeg;
+        int32_t segFlag = FLAG_FirstSeg | FLAG_LastSeg;
         if (IsSingleSegment())  // This should be the case where it is an arc (IsTreatAsSingleSegment), but the style itself says to be single segment
             segFlag |= FLAG_NoEndPhase;
         StrokeLocal (context, symbolProcessor, inPoints, nPoints, modifiers->GetTotalLength(), modifiers, tan1, tan2, segFlag);
@@ -708,7 +705,7 @@ void            LsStrokePatternComponent::FixDashWidths (double& orgWidth, doubl
     if (!_HasWidth())
         return;
 
-    for (UInt32 iStroke = 0; iStroke<m_nStrokes; iStroke++)
+    for (uint32_t iStroke = 0; iStroke<m_nStrokes; iStroke++)
         {
         LsStroke* pStroke = m_strokes+iStroke;
         // HasWidth will be false for gaps.  Only want to do this if there is some non-zero width.
@@ -1278,6 +1275,7 @@ void            LsStrokePatternComponent::SetContinuous ()
     m_strokes[0].m_length = fc_hugeVal;
     }
 
+#define RMAXI4                  2147483647.0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/99
 +---------------+---------------+---------------+---------------+---------------+------*/

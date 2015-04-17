@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/lstyle.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,12 +54,12 @@ struct LsElmComponent
     {
 public:
     virtual ~LsElmComponent () { }
-    virtual BentleyStatus FromResource (void* rsc, ElementId id, bool createSubComponents) = 0;
+    virtual BentleyStatus FromResource (void* rsc, DgnElementId id, bool createSubComponents) = 0;
     virtual BentleyStatus ToResource (void** rsc) const = 0;
-    virtual BentleyStatus FromElement (MSElementDescrCP elm, bool createSubComponents) = 0;
-    virtual BentleyStatus ToElement (MSElementDescrH elm) const = 0;
+    virtual BentleyStatus FromElement (DgnElementCP elm, bool createSubComponents) = 0;
+    virtual BentleyStatus ToElement (DgnElementP* elm) const = 0;
     virtual LsElementType GetType () const = 0;
-    virtual ElementId GetId () const = 0;
+    virtual DgnElementId GetId () const = 0;
     virtual WCharCP GetName () const = 0;
     virtual bool IsModified () const = 0;
 
@@ -81,8 +81,8 @@ public:
         LsElmComponentP     m_subComponent;
         double              m_offset;
 
-        UInt32              m_type;  // Used if no subcomponent; good for going to-from resources.
-        ElementId           m_id;
+        uint32_t            m_type;  // Used if no subcomponent; good for going to-from resources.
+        DgnElementId        m_id;
 
         LsComponentInfo ()
             {
@@ -92,10 +92,10 @@ public:
             }
 
         void                Destroy                         ();
-        UInt32              GetType                         () const {return m_subComponent ? (UInt32)m_subComponent->GetType() : m_type;}
+        uint32_t            GetType                         () const {return m_subComponent ? (uint32_t)m_subComponent->GetType() : m_type;}
         LsElementType       GetLsType                       () const;
-        UInt32              GetRscType                      () const;
-        ElementId           GetId                           () const {return m_subComponent ? m_subComponent->GetId() : m_id;}
+        uint32_t            GetRscType                      () const;
+        DgnElementId        GetId                           () const {return m_subComponent ? m_subComponent->GetId() : m_id;}
         double              GetOffset                       () const {return m_offset;}
         void                SetOffset                       (double offset) {m_offset = offset;}
         LsElmComponentP     GetSubComponent                 () const {return m_subComponent;}
@@ -107,23 +107,23 @@ private:
     bool                m_isModified;
     WChar               m_descr[LS_MAX_DESCR];
     WChar               m_styleName[LS_MAX_NAME]; // Stored on element, for round trip.  Kind of dumb though; remove in future file format.
-    ElementId           m_id;
+    DgnElementId        m_id;
     bvector<LsComponentInfo> m_components;
 
     size_t ResourceSize () const;
 #if defined (BEIJING_DGNPLATFORM_WIP_DWG)
 #endif
     virtual BentleyStatus   _DecomposeForDwg             (DecomposedDwgLineP  pDDLine) const override {return ERROR;}
-    StatusInt               ExtractCompoundComponent    (DwgLineStyleInfoP styleInfo, Int32* pNSegments, WCharP pStrings, Int32* pUnitMode,
+    StatusInt               ExtractCompoundComponent    (DwgLineStyleInfoP styleInfo, int32_t* pNSegments, WCharP pStrings, int32_t* pUnitMode,
                                             bool useUnits, WCharCP suggestedFontPathName, DgnModelP modelRef, LsDefinitionP nameRec) const;
 
 public:
-    virtual BentleyStatus FromResource (void* rsc, ElementId id, bool createSubComponents) override;
+    virtual BentleyStatus FromResource (void* rsc, DgnElementId id, bool createSubComponents) override;
     virtual BentleyStatus ToResource (void** rsc) const override;
-    virtual BentleyStatus FromElement (MSElementDescrCP elm, bool createSubComponents) override;
-    virtual BentleyStatus ToElement (MSElementDescrH elm) const override;
+    virtual BentleyStatus FromElement (DgnElementCP elm, bool createSubComponents) override;
+    virtual BentleyStatus ToElement (DgnElementP* elm) const override;
     virtual LsElementType GetType () const override {return LsElementType::Compound;}
-    virtual ElementId GetId () const override {return m_id;}
+    virtual DgnElementId GetId () const override {return m_id;}
     virtual WCharCP GetName () const override {return m_descr;}
     virtual bool IsModified () const override {return m_isModified;}
     virtual bool ExportableToDwg (bool checkSegmentCount, LineStyleDwgExportReason& reason) const override;
@@ -132,12 +132,12 @@ public:
 
     LsElmCompoundComponent ();
     ~LsElmCompoundComponent ();
-    UInt32 GetNumComponents () const {return static_cast<UInt32>(m_components.size());}
-    LsElmComponentP GetComponent (UInt32 iComp) const {return m_components[iComp].GetSubComponent();}
-    LsComponentInfo const & GetComponentInfo (UInt32 iComp) const {return m_components[iComp];}
-    UInt32 GetComponentType (UInt32 iComp) const {return m_components[iComp].GetType();}
-    ElementId GetComponentId (UInt32 iComp) const {return m_components[iComp].GetId();}
-    double GetComponentOffset (UInt32 iComp) const {return m_components[iComp].GetOffset();}
+    uint32_t GetNumComponents () const {return static_cast<uint32_t>(m_components.size());}
+    LsElmComponentP GetComponent (uint32_t iComp) const {return m_components[iComp].GetSubComponent();}
+    LsComponentInfo const & GetComponentInfo (uint32_t iComp) const {return m_components[iComp];}
+    uint32_t GetComponentType (uint32_t iComp) const {return m_components[iComp].GetType();}
+    DgnElementId GetComponentId (uint32_t iComp) const {return m_components[iComp].GetId();}
+    double GetComponentOffset (uint32_t iComp) const {return m_components[iComp].GetOffset();}
     };
 
 //=======================================================================================
@@ -188,7 +188,7 @@ public:
         double    GetStartWidth () const {return m_startWidth;}
         double    GetEndWidth () const {return m_endWidth;}
         LsCapMode GetCapMode () const {return m_capMode;}
-        Int32     GetResourceWidthMode () const;
+        int32_t   GetResourceWidthMode () const;
         bool      IsDash () const {return m_isDash;}
         bool      IsRigid () const {return m_isRigid;}
         bool      CanScale () const {return m_canScale;}
@@ -204,7 +204,7 @@ protected:
     bool                m_isModified;
     WChar             m_descr[LS_MAX_DESCR];
     WChar             m_styleName[LS_MAX_NAME];   // Stored on element, for round trip.  Kind of dumb though; remove in future file format.
-    ElementId           m_id;
+    DgnElementId        m_id;
     double              m_phase;
     double              m_orgAngle;
     double              m_endAngle;
@@ -214,7 +214,7 @@ protected:
 
     enum LsPhaseMode   m_phaseMode;
 
-    UInt32              m_maxIterate;
+    uint32_t            m_maxIterate;
     bvector<LsStrokeData>   m_strokes;
 
     size_t ResourceSize () const;
@@ -223,10 +223,10 @@ protected:
     virtual BentleyStatus   _DecomposeForDwg (DecomposedDwgLineP  pDDLine) const override {return ERROR;}
 
 public:
-    virtual BentleyStatus FromResource (void* rsc, ElementId id, bool createSubComponents) override;
+    virtual BentleyStatus FromResource (void* rsc, DgnElementId id, bool createSubComponents) override;
     virtual BentleyStatus ToResource (void** rsc) const override;
-    virtual BentleyStatus FromElement (MSElementDescrCP elm, bool createSubComponents) override;
-    virtual BentleyStatus ToElement (MSElementDescrH elm) const override;
+    virtual BentleyStatus FromElement (DgnElementCP elm, bool createSubComponents) override;
+    virtual BentleyStatus ToElement (DgnElementP* elm) const override;
     virtual LsElementType GetType () const override {return LsElementType::LineCode;}
     virtual WCharCP     GetName () const override {return m_descr;}
     virtual bool          IsModified () const override {return m_isModified;}
@@ -234,13 +234,13 @@ public:
     virtual double        GetLength () const override;
     virtual bool          HasComponentsFilled () const override {return true;}
     virtual bool          HasIterationLimit () const {return m_useIterationLimit;}
-    virtual UInt32        GetNumIterations () const {return m_maxIterate;}
+    virtual uint32_t      GetNumIterations () const {return m_maxIterate;}
     virtual bool          IsSingleSegmentMode () const {return m_singleSegment;}
     LsPhaseMode           GetPhaseMode () const {return m_phaseMode;}
     double                GetPhaseValue () const {return m_phase;}
     virtual bool          _HasUniformFullWidth (double *pWidth) const;
     virtual bool          HasWidth () const;
-    virtual ElementId     GetId () const override {return m_id;}
+    virtual DgnElementId  GetId () const override {return m_id;}
     virtual size_t        GetNumStrokes () const {return m_strokes.size();}
     virtual LsStrokeData const * GetStroke (size_t iStroke) const {return &(m_strokes[iStroke]);}
 
@@ -252,14 +252,14 @@ public:
 struct LsElmInternalComponent : public LsLineCodeComponent
 {
 private:
-    UInt32      m_hardwareLineCode;
+    uint32_t    m_hardwareLineCode;
     bool        m_isDefaultInternal;
 
 public:
-    virtual BentleyStatus FromResource (void* rsc, ElementId id, bool createSubComponents) override;
+    virtual BentleyStatus FromResource (void* rsc, DgnElementId id, bool createSubComponents) override;
     virtual BentleyStatus ToResource (void** rsc) const override;
-    virtual BentleyStatus FromElement (MSElementDescrCP elm, bool createSubComponents) override;
-    virtual BentleyStatus ToElement (MSElementDescrH elm) const override;
+    virtual BentleyStatus FromElement (DgnElementCP elm, bool createSubComponents) override;
+    virtual BentleyStatus ToElement (DgnElementP* elm) const override;
     virtual LsElementType GetType () const override {return LsElementType::Internal;}
     virtual WCharCP     GetName () const override {return m_descr;}
     virtual bool          IsModified () const override {return m_isModified;}
@@ -268,14 +268,14 @@ public:
     virtual bool          HasComponentsFilled () const override {return true;}
 
     bool                  HasIterationLimit () const {return false;}
-    UInt32                GetNumIterations () const {return 0;}
+    uint32_t              GetNumIterations () const {return 0;}
     bool                  IsSingleSegmentMode () const {return false;}
     virtual bool          IsContinuous () const override {return 0==m_hardwareLineCode ? true : false;}
     virtual bool          _HasUniformFullWidth (double *pWidth) const override {return m_isDefaultInternal;}
     virtual bool           HasWidth () const override {return false;} // Only has width if from element
 
     bool IsHardwareStyle () const {return (0 != m_hardwareLineCode ? true : false);}
-    UInt32 GetHardwareStyle () const {return m_hardwareLineCode;}
+    uint32_t GetHardwareStyle () const {return m_hardwareLineCode;}
 };
 
 enum SymbolLocation
@@ -295,10 +295,10 @@ struct LsLinePointComponent : public LsElmComponent
 {
     struct LsPointSymInfo
     {
-        ElementId               m_symbolID;                 // Used if there is no point symbol.
+        DgnElementId               m_symbolID;                 // Used if there is no point symbol.
         struct LsPointSymbolComponent*      m_pointSymbol;
 
-        UShort                  m_strokeNo;
+        unsigned short          m_strokeNo;
         enum SymbolLocation     m_location;
 
         bool                    m_adjustedRotation;      // Adjust rotation left->right.
@@ -316,16 +316,16 @@ struct LsLinePointComponent : public LsElmComponent
 
         struct SymbolRef*       m_symbolRef;            // For now, need this for DWG decomp.  Have to keep it around and free it with the object.
 
-        void    SetModifiers    (UShort modifiers);
-        UShort  GetModifiers    () const;
+        void    SetModifiers    (unsigned short modifiers);
+        unsigned short GetModifiers    () const;
 
         struct LsPointSymbolComponent* GetSymbol () const {return m_pointSymbol;}
         struct SymbolRef* GetSymbolRef () const;
         LsPointSymInfo ();
         ~LsPointSymInfo ();
-        BentleyStatus LoadSymbFromResource (RscFileHandle rfHandle, UInt32 type, bool createSubComponents);
+        BentleyStatus LoadSymbFromResource (RscFileHandle rfHandle, uint32_t type, bool createSubComponents);
 
-        Int32 GetStrokeNumber () const {return m_strokeNo;}
+        int32_t GetStrokeNumber () const {return m_strokeNo;}
         struct LsPointSymbolComponent* GetSymbolComponent () const {return GetSymbol();}
 
         SymbolLocation GetStrokeLocation () const {return m_location;}
@@ -352,9 +352,9 @@ private:
     bool                m_isModified;
     WChar             m_descr[LS_MAX_DESCR];
     WChar             m_styleName[LS_MAX_NAME];   // Stored on element, for round trip.  Kind of dumb though; remove in future file format.
-    ElementId           m_id;
+    DgnElementId           m_id;
     LsElementType          m_lineCodeType;
-    ElementId           m_lineCodeID;               // Used if there is no m_lineCodeComponent
+    DgnElementId           m_lineCodeID;               // Used if there is no m_lineCodeComponent
     LsLineCodeComponent*        m_lineCodeComponent;
     bvector<LsPointSymInfo*> m_symbols;
 
@@ -362,10 +362,10 @@ private:
     virtual BentleyStatus _DecomposeForDwg (DecomposedDwgLineP pDDLine) const override {return (SUCCESS);}
 
 public:
-    virtual BentleyStatus FromResource (void* rsc, ElementId id, bool createSubComponents) override;
+    virtual BentleyStatus FromResource (void* rsc, DgnElementId id, bool createSubComponents) override;
     virtual BentleyStatus ToResource (void** rsc) const override;
-    virtual BentleyStatus FromElement (MSElementDescrCP elm, bool createSubComponents) override;
-    virtual BentleyStatus ToElement (MSElementDescrH elm) const override;
+    virtual BentleyStatus FromElement (DgnElementCP elm, bool createSubComponents) override;
+    virtual BentleyStatus ToElement (DgnElementP* elm) const override;
     virtual LsElementType GetType () const override {return LsElementType::LinePoint;}
     virtual WCharCP GetName () const override {return m_descr;}
     virtual bool IsModified () const override {return m_isModified;}
@@ -378,13 +378,13 @@ public:
 
     BentleyStatus DecomposeForDwgPoint (DecomposedDwgLineP pDDLine) const;
 
-    virtual ElementId GetId () const override {return m_id;}
-    ElementId GetLineCodeId () const {return NULL == m_lineCodeComponent ? m_lineCodeID : m_lineCodeComponent->GetId();}
+    virtual DgnElementId GetId () const override {return m_id;}
+    DgnElementId GetLineCodeId () const {return NULL == m_lineCodeComponent ? m_lineCodeID : m_lineCodeComponent->GetId();}
     LsLineCodeComponent* GetLineCodeComponent () const {return m_lineCodeComponent;}
     BentleyStatus LoadLineCodeFromResource (RscFileHandle rfHandle, bool createSubComponents);
 
     size_t GetNumSymbols () const {return m_symbols.size();}
-    LsPointSymInfo* GetSymbolInfo (UInt32 iSymbol) const {return m_symbols[iSymbol];}
+    LsPointSymInfo* GetSymbolInfo (uint32_t iSymbol) const {return m_symbols[iSymbol];}
     void SetLineCode (const LsLineCodeComponent& lcComp) {m_lineCodeID = lcComp.GetId();}
  };
 
@@ -403,16 +403,16 @@ private:
     bool                m_isModified;
     WChar             m_descr[LS_MAX_DESCR];
     WChar             m_styleName[LS_MAX_NAME];   // Stored on element, for round trip.  Kind of dumb though; remove in future file format.
-    ElementId           m_id;
+    DgnElementId        m_id;
     DRange3d            m_range;
 
     double              m_muDef;                    // Master units definition (in PU).
     bool                m_noScale;                  // Acad compat - don't scale symbol at all.
-    MSElementDescrP     m_elementChain;
+    DgnElementPtr     m_elementChain;
 
     size_t ResourceSize () const;
     BentleyStatus ToResourceNoSymbols (void** outRsc) const;
-    BentleyStatus FromResourceNoSymbols (void* rsc, ElementId id);
+    BentleyStatus FromResourceNoSymbols (void* rsc, DgnElementId id);
     virtual BentleyStatus _DecomposeForDwg (DecomposedDwgLineP pDDLine) const override {return (SUCCESS);}
 
 public:
@@ -425,28 +425,30 @@ public:
 
     ~LsPointSymbolComponent ()
         {
-        RELEASE_AND_CLEAR (m_elementChain);
+        m_elementChain = nullptr;
         }
 
-    virtual BentleyStatus FromResource (void* rsc, ElementId id, bool createSubComponents) override;
+    virtual BentleyStatus FromResource (void* rsc, DgnElementId id, bool createSubComponents) override;
     virtual BentleyStatus ToResource (void** rsc) const override;
             BentleyStatus ToResource (void** outRsc, bool asV7Element, bool forResourceFile) const;
-    virtual BentleyStatus FromElement (MSElementDescrCP elm, bool createSubComponents) override;
-    virtual BentleyStatus ToElement (MSElementDescrH elm) const override;
+    virtual BentleyStatus FromElement (DgnElementCP elm, bool createSubComponents) override;
+    virtual BentleyStatus ToElement (DgnElementP* elm) const override;
     virtual LsElementType GetType () const override {return LsElementType::PointSymbol;}
-    virtual ElementId     GetId () const override {return m_id;}
-    virtual WCharCP     GetName () const override {return m_descr;}
+    virtual DgnElementId  GetId () const override {return m_id;}
+    virtual WCharCP       GetName () const override {return m_descr;}
     virtual bool          IsModified () const override {return m_isModified;}
     virtual bool          ExportableToDwg (bool checkSegmentCount, LineStyleDwgExportReason& reason) const override {return true;}
     virtual double        GetLength () const override {return 0.0;}
     virtual bool          HasComponentsFilled () const override {return true;}
 
-    MSElementDescrCP GetElements () const {return m_elementChain;}
+    DgnElementCP GetElements () const {return m_elementChain.get();}
 
     DRange3d GetRange () const {return m_range;}
     double GetUnitScale () const {return m_muDef;}
     bool SuppressScale () const {return m_noScale;}
+#if defined (NEEDS_WORK_DGNITEM)
     bool Is3d () const {return GetElements()->Element().Is3d();}
+#endif
 };
 
 typedef struct ILinestyleInfoHandle*        ILinestyleInfoHandleP;
@@ -465,7 +467,7 @@ public:
     virtual LsElementType GetType () const = 0;
     virtual struct ILinestyleComponentHandle const * GetComponentHandle () const { return NULL; }
     virtual struct ILinestyleNameHandle const * GetNameHandle () const { return NULL; }
-    virtual ElementId GetIdKey () const = 0;
+    virtual DgnElementId GetIdKey () const = 0;
     };
 
 
@@ -479,7 +481,7 @@ public:
 
     virtual WCharCP GetName () const = 0;
     virtual LsElementType GetType () const override = 0;
-    virtual ElementId GetIdKey () const override = 0;
+    virtual DgnElementId GetIdKey () const override = 0;
     virtual LsElmComponentCP GetStyleDef (DgnModelP modelRef, bool loadIfNotLoaded) const = 0;
     virtual StatusInt SetStyleDef (LsElmComponentCP component) = 0;
     virtual BentleyStatus Save (DgnModelP modelRef) const = 0;
@@ -495,13 +497,13 @@ struct ILinestyleNameHandle : public ILinestyleInfoHandle
 public:
     virtual ~ILinestyleNameHandle () { }
     virtual WCharCP GetName () const = 0;
-    virtual Int32 GetId () const = 0;
+    virtual int32_t GetId () const = 0;
     virtual LsElementType GetType () const override = 0;
-    virtual ElementId GetIdKey () const override = 0;
+    virtual DgnElementId GetIdKey () const override = 0;
 
     virtual struct ILinestyleNameHandle const * GetNameHandle () const override { return this; }
 };
 
-typedef std::map<ElementId, ILinestyleInfoHandle*>   StyleInfoHandleMap;
+typedef std::map<DgnElementId, ILinestyleInfoHandle*>   StyleInfoHandleMap;
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

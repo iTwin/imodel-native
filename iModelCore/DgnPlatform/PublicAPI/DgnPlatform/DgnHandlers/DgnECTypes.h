@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/DgnECTypes.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,10 +39,10 @@ struct DgnECExtendedType
     Standard extended types which can be specified by integer ID in an ECSchema
     @bsiclass
     +---------------+---------------+---------------+---------------+---------------+------*/
-    enum StandardType : UInt16
+    enum StandardType : uint16_t
         {
 /*__PUBLISH_SECTION_END__*/
-        NotStandard                         = static_cast <UInt16> (-1),
+        NotStandard                         = static_cast <uint16_t> (-1),
 /*__PUBLISH_SECTION_START__*/
         //! Element type id : int
         ElementType                         = 1,
@@ -173,16 +173,16 @@ struct DgnECExtendedType
 
 private:
     WString                         m_name;
-    UInt16                          m_id;
+    uint16_t                        m_id;
     mutable IDgnECTypeAdapterPtr    m_typeAdapter;        // mutable because it is lazily initialized
 
-    DgnECExtendedType (WCharCP name, UInt16 id) : m_name (name), m_id (id) { }
+    DgnECExtendedType (WCharCP name, uint16_t id) : m_name (name), m_id (id) { }
 public:
     DGNPLATFORM_EXPORT WCharCP                 GetName() const         { return m_name.c_str(); }
 
     //! Every extended type has a unique id. For standard types, this is equal to the corresponding StandardType enum value.
     //! For non-standard types, the id is dynamically assigned at run-time.
-    DGNPLATFORM_EXPORT UInt16                  GetId() const           { return m_id; }
+    DGNPLATFORM_EXPORT uint16_t                GetId() const           { return m_id; }
     DGNPLATFORM_EXPORT bool                    IsStandardType() const  { return m_id >= STANDARD_First && m_id <= STANDARD_Last; }
     DGNPLATFORM_EXPORT StandardType            GetStandardType() const { return IsStandardType() ? (StandardType)m_id : NotStandard; }
 
@@ -219,24 +219,24 @@ struct IDgnECTypeAdapterContext : ECN::IECTypeAdapterContext
     {
 /*__PUBLISH_SECTION_END__*/
 protected:
-    virtual DgnProjectP                     _GetDgnProject() const = 0;
+    virtual DgnDbP                     _GetDgnProject() const = 0;
     virtual DgnModelP                    _GetDgnModel() const = 0;
-    virtual UInt32                          _GetComponentIndex() const = 0;
+    virtual uint32_t                        _GetComponentIndex() const = 0;
     virtual bool                            _Is3d() const = 0;
 public:
 
-    DgnProjectP GetDgnProject() const {return _GetDgnProject();}
+    DgnDbP GetDgnDb() const {return _GetDgnProject();}
     DGNPLATFORM_EXPORT  DgnModelP            GetDgnModel() const;
 
     //! The following are relevant to adapters for point types.
-    DGNPLATFORM_EXPORT  UInt32                  GetComponentIndex() const;
+    DGNPLATFORM_EXPORT  uint32_t                GetComponentIndex() const;
     DGNPLATFORM_EXPORT  bool                    Is3d() const;
 
     static ECN::IECTypeAdapterContextPtr        CreateBase (ECN::ECPropertyCR ecproperty, ECN::IECInstanceCR instance);
 
 /*__PUBLISH_SECTION_START__*/
 public:
-    static const UInt32 COMPONENT_INDEX_None    = -1;
+    static const uint32_t COMPONENT_INDEX_None    = -1;
     };
 
 /*=================================================================================**//**
@@ -248,7 +248,7 @@ struct IDgnECStandaloneTypeAdapterContext : IDgnECTypeAdapterContext
     {
 /*__PUBLISH_SECTION_END__*/
 protected:
-    virtual bool                            _ReInitialize (ECN::ECPropertyCR ecproperty, UInt32 componentIndex, DgnProjectP dgnFile, DgnModelP modelRef) = 0;
+    virtual bool                            _ReInitialize (ECN::ECPropertyCR ecproperty, uint32_t componentIndex, DgnDbP dgnFile, DgnModelP modelRef) = 0;
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Re-initialize this context
@@ -258,7 +258,7 @@ public:
     //! @param[in] dgnFile          The DgnFile from which the property value originated
     //! @param[in] modelRef         The DgnModel associated with the property value
     //! @return true if the context was successfully re-initialized
-    DGNPLATFORM_EXPORT bool                 ReInitialize (ECN::ECPropertyCR ecproperty, UInt32 componentIndex=COMPONENT_INDEX_None, DgnProjectP dgnFile=NULL, DgnModelP modelRef=NULL);
+    DGNPLATFORM_EXPORT bool                 ReInitialize (ECN::ECPropertyCR ecproperty, uint32_t componentIndex=COMPONENT_INDEX_None, DgnDbP dgnFile=NULL, DgnModelP modelRef=NULL);
     };
 /*__PUBLISH_SECTION_END__*/
 
@@ -271,23 +271,23 @@ private:
     enum IS3D_State { IS3D_Uninitialized, IS3D_True, IS3D_False };
 
     ECN::ECPropertyCP           m_property;
-    UInt32                      m_componentIndex;
+    uint32_t                    m_componentIndex;
     mutable IS3D_State          m_is3d;
-    DgnProjectP                    m_dgnfile;
+    DgnDbP                    m_dgnfile;
     DgnModelP                m_modelRef;
 
-    StandaloneTypeAdapterContext (ECN::ECPropertyCR prop, UInt32 comp,  DgnProjectP file, DgnModelP model)
+    StandaloneTypeAdapterContext (ECN::ECPropertyCR prop, uint32_t comp,  DgnDbP file, DgnModelP model)
         : m_property (&prop), m_componentIndex (comp), m_is3d (IS3D_Uninitialized), m_dgnfile(file), m_modelRef(model) { }
 
     static bool Is3dContext (DgnModelP modelRef, ECN::ECPropertyCR ecprop);
 
     virtual ECN::ECPropertyCP   _GetProperty() const override           { return m_property; }
-    virtual UInt32              _GetComponentIndex() const override     { return m_componentIndex; }
+    virtual uint32_t            _GetComponentIndex() const override     { return m_componentIndex; }
     virtual bool                _Is3d() const override;
-    virtual DgnProjectP _GetDgnProject() const override { return m_dgnfile; }
+    virtual DgnDbP _GetDgnProject() const override { return m_dgnfile; }
     virtual DgnModelP        _GetDgnModel() const override           { return m_modelRef; }
     virtual ECN::IECInstanceCP  _GetECInstance() const override         { BeAssert (false && "Unused in Graphite"); return NULL; }
-    virtual bool  _ReInitialize (ECN::ECPropertyCR ecproperty, UInt32 componentIndex, DgnProjectP dgnFile, DgnModelP modelRef) override;
+    virtual bool  _ReInitialize (ECN::ECPropertyCR ecproperty, uint32_t componentIndex, DgnDbP dgnFile, DgnModelP modelRef) override;
     virtual ECN::IECClassLocaterR _GetUnitsECClassLocater() const override;
 
 public:
@@ -296,7 +296,7 @@ public:
     //! @param[in] componentIndex   For point properties, the component index (x=0,y=1,z=2) if the type adapter should operate only on a single component of the point
     //! @param[in] dgnFile          The DgnFile from which the property value originated
     //! @param[in] modelRef         The DgnModel associated with the property value
-    DGNPLATFORM_EXPORT static IDgnECStandaloneTypeAdapterContextPtr Create (ECN::ECPropertyCR ecprop, UInt32 componentIndex, DgnProjectP file, DgnModelP modelRef);
+    DGNPLATFORM_EXPORT static IDgnECStandaloneTypeAdapterContextPtr Create (ECN::ECPropertyCR ecprop, uint32_t componentIndex, DgnDbP file, DgnModelP modelRef);
     };
 
 /*__PUBLISH_SECTION_START__*/
@@ -323,7 +323,7 @@ private:
 
 protected:
     virtual bool            _HasStandardValues() const override     { return false; }
-    virtual bool            _SupportsUnits() const override              { return false; }
+    virtual bool            _SupportsUnits() const override         { return false; }
     virtual bool            _IsStruct() const override              { return false; }
     virtual bool            _AllowExpandMembers() const override    { return false; }
     //! Default implementation returns false, indicating properties represented by this adapter should be ignored for EC string comparison queries
@@ -343,7 +343,7 @@ protected:
     virtual bool            _CanConvertToString (IDgnECTypeAdapterContextCR) const { return true; }
 
     //! Default implementations assume no conversion needed.
-    virtual bool            _RequiresExpressionTypeConversion() const override { return false; }
+    virtual bool            _RequiresExpressionTypeConversion (ECN::EvaluationOptions evalOptions) const override { return false; }
     virtual bool            _ConvertToExpressionType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const { return true; }
     virtual bool            _ConvertFromExpressionType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context) const { return true; }
 
@@ -352,6 +352,8 @@ protected:
     //! -Else assumes no display type and ConvertToDisplayType() returns false. 
     DGNPLATFORM_EXPORT virtual bool            _GetDisplayType (ECN::PrimitiveType& type) const override;
     DGNPLATFORM_EXPORT virtual bool            _ConvertToDisplayType (ECN::ECValueR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP opts) const;
+
+    DGNPLATFORM_EXPORT virtual bool            _IsOrdinalType () const override;
 
     // Called immediately before the formatting instance is serialized to a persistent format.
     virtual void            _PreprocessFormatterForSerialization (ECN::IECInstanceR formatter) const { }

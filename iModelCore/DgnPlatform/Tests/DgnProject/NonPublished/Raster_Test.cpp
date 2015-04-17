@@ -2,13 +2,13 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/Raster_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <DgnPlatform/DgnHandlers/RasterHandlers.h>
 #include <Logging/bentleylogging.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -28,12 +28,12 @@ struct DgnRasterTest : public ::testing::Test
     {
     public:
         ScopedDgnHost           m_host;
-        DgnProjectPtr      project;
-        DgnProjectP file;
+        DgnDbPtr      project;
+        DgnDbP file;
         DgnModelP model0;
 
         void SetupProject ();
-        UInt32 GetModelColorIndex(RgbColorDef);
+        uint32_t GetModelColorIndex(RgbColorDef);
         void GetViewStates(bool *);
         void CreateAttachmentTest(bool);
     };
@@ -45,8 +45,8 @@ struct TestRasterProperties
         bool* tViewStates;
         long tDisplayOrder;
         int tViewStatesCount;
-        UInt32 tForegroundColor, tBackgroundColor;
-        UInt8 tForegroundTransparency, tBackgroundTransparency, tImageTransparency;
+        uint32_t tForegroundColor, tBackgroundColor;
+        uint8_t tForegroundTransparency, tBackgroundTransparency, tImageTransparency;
         DVec3d tUVector, tVVector;
         DPoint3d tOrigin;
         DPoint2d tExtent, tScanResolution;
@@ -55,8 +55,8 @@ struct TestRasterProperties
         void SetTestRasterProperties (WString sourceUrl, WString attachDescription, WString logicalName, bool snappable, bool locked, 
             bool viewIndependentState, bool openReadWrite, DVec3d uVector, 
             DVec3d vVector, DPoint3d origin, DPoint2d extent, DPoint2d scanResolution, bool* viewStates, int viewStatesCount, bool invertState,
-            bool printState, bool clipState, bool transparencyState, bool binaryInvertState, long displayOrder, UInt32 foregroundColor, 
-            UInt32 backgroundColor, UInt8 foregroundTransparency, UInt8 backgroundTransparency, UInt8 imageTransparency);
+            bool printState, bool clipState, bool transparencyState, bool binaryInvertState, long displayOrder, uint32_t foregroundColor, 
+            uint32_t backgroundColor, uint8_t foregroundTransparency, uint8_t backgroundTransparency, uint8_t imageTransparency);
         void IsEqual (TestRasterProperties testStyle);
     };
 
@@ -75,6 +75,20 @@ void DgnRasterTest::GetViewStates (bool * testViewStates)
         testViewStates[i] = true;
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnModelP DgnModels::getAndFill(DgnDbR db, DgnModelId modelID)
+    {
+    DgnModelP dgnModel = db.Models().GetModelById (modelID);
+    if (dgnModel == NULL)
+        return NULL;
+
+    dgnModel->FillModel();
+    return  dgnModel;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * Set up method that opens an existing .dgndb project file
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
@@ -85,17 +99,17 @@ void DgnRasterTest::SetupProject ()
     DgnDbTestDgnManager::CreateProjectFromDgn (project, DgnDbTestDgnManager::GetOutputFilePath (L"RasterColorModes.dgndb"), DgnDbTestDgnManager::GetSeedFilePath (L"RasterColorModes.i.dgn.v8"));
     ASSERT_TRUE( project != NULL);
 
-    file = &(dynamic_cast<DgnProject*>(project.get())->GetDgnFile());
-    model0 = (*file).GetAndFillModelById (NULL, DgnModelId(0),true);
+    file = &(dynamic_cast<DgnDb*>(project.get())->GetDgnFile());
+    model0 = getAndFill(*file, DgnModelId(0));
     };
 
 /*---------------------------------------------------------------------------------**//**
 * Gets model color index from model
 * @bsimethod                                    Algirdas.Mikoliunas            04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 DgnRasterTest::GetModelColorIndex(RgbColorDef color) {
+uint32_t DgnRasterTest::GetModelColorIndex(RgbColorDef color) {
 
-    UInt32      colorIndex(0);
+    uint32_t    colorIndex(0);
     EXPECT_EQ (SUCCESS, RasterFrameHandler::ColorIndexFromRgbInModel(colorIndex, (*model0), color));
     
     return colorIndex;
@@ -120,8 +134,8 @@ void DgnRasterTest::CreateAttachmentTest(bool fromExisting) {
     GetViewStates(testViewStates);
 
     RgbColorDef whiteColor = {255, 255, 255}, greyColor = {53, 37, 53};
-    UInt32 whiteColorIndex = GetModelColorIndex(whiteColor);
-    UInt32 greyColorIndex = GetModelColorIndex(greyColor);
+    uint32_t whiteColorIndex = GetModelColorIndex(whiteColor);
+    uint32_t greyColorIndex = GetModelColorIndex(greyColor);
 
     TestRasterProperties rasterData, newRasterData;
     rasterData.SetTestRasterProperties (
@@ -206,8 +220,8 @@ void DgnRasterTest::CreateAttachmentTest(bool fromExisting) {
 void TestRasterProperties::SetTestRasterProperties (WString sourceUrl, WString attachDescription, WString logicalName, bool snappable, bool locked, 
             bool viewIndependentState, bool openReadWrite, DVec3d uVector, 
             DVec3d vVector, DPoint3d origin, DPoint2d extent, DPoint2d scanResolution, bool* viewStates, int viewStatesCount, bool invertState,
-            bool printState, bool clipState, bool transparencyState, bool binaryInvertState, long displayOrder, UInt32 foregroundColor, 
-            UInt32 backgroundColor, UInt8 foregroundTransparency, UInt8 backgroundTransparency, UInt8 imageTransparency)
+            bool printState, bool clipState, bool transparencyState, bool binaryInvertState, long displayOrder, uint32_t foregroundColor, 
+            uint32_t backgroundColor, uint8_t foregroundTransparency, uint8_t backgroundTransparency, uint8_t imageTransparency)
     {
     tSourceUrl = sourceUrl;
     tAttachDescription = attachDescription;
@@ -331,9 +345,9 @@ TEST_F(DgnRasterTest, CheckImportParameters)
     SetupProject();
     
     RgbColorDef blackColor = {0, 0, 0}, whiteColor = {255, 255, 255}, greyColor = {53, 37, 53};
-    UInt32 blackColorIndex = GetModelColorIndex(blackColor);
-    UInt32 whiteColorIndex = GetModelColorIndex(whiteColor);
-    UInt32 greyColorIndex = GetModelColorIndex(greyColor);
+    uint32_t blackColorIndex = GetModelColorIndex(blackColor);
+    uint32_t whiteColorIndex = GetModelColorIndex(whiteColor);
+    uint32_t greyColorIndex = GetModelColorIndex(greyColor);
 
     const int viewStatesCount = 8;
     int i;
@@ -465,8 +479,8 @@ TEST_F(DgnRasterTest, ChangeAttachmentSettings)
         }
 
     RgbColorDef color1 = {11, 12, 13}, color2 = {222, 223, 224};
-    UInt32 color1Index = GetModelColorIndex(color1);
-    UInt32 color2Index = GetModelColorIndex(color2);
+    uint32_t color1Index = GetModelColorIndex(color1);
+    uint32_t color2Index = GetModelColorIndex(color2);
 
     TestRasterProperties rasterTest, updatedRasterTest;
     rasterTest.SetTestRasterProperties (
@@ -556,7 +570,7 @@ TEST_F(DgnRasterTest, CreateAndRetrieveRgbColor)
     {
     SetupProject();
 
-    UInt32 colorIndex = 0;
+    uint32_t colorIndex = 0;
     RgbColorDef rgbColor = {1, 22, 133}, rgbColorRet;
 
     EXPECT_EQ(SUCCESS, RasterFrameHandler::ColorIndexFromRgbInModel(colorIndex, *model0, rgbColor));
@@ -635,7 +649,7 @@ TEST_F(DgnRasterTest, SearchPath)
     SetupProject();
     RasterFrameElementCollection rastersCollection(*model0);
     //Get directory where file is placed
-    DgnProjectP    dgnFile = model0->GetDgnProject();
+    DgnDbP    dgnFile = model0->GetDgnDb();
     WString fileDirectory = BeFileName::GetDirectoryName(dgnFile->GetFileName().c_str());
     FOR_EACH(ElementHandleCR rasterEh , rastersCollection)
         {

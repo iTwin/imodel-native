@@ -1,0 +1,113 @@
+//--------------------------------------------------------------------------------------
+//     $Source: DgnCore/ElementGraphics.fbs $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//--------------------------------------------------------------------------------------
+
+namespace BentleyG06.DgnPlatform.FB;
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+enum GradientMode : byte {None, Linear, Curved, Cylindrical, Spherical, Hemispherical}
+enum BoundaryType : byte {None, Open, Closed, Filled}
+enum FillDisplay : byte {None, ByView, Always, Blanking}
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+struct DPoint3d {x:double; y:double; z:double;}
+struct DPoint2d {x:double; y:double;}
+struct DVec3d {x:double; y:double; z:double;}
+struct Transform {x00:double; x01:double; x02:double; tx:double; x10:double; x11:double; x12:double; ty:double; x20:double; x21:double; x22:double; tz:double;}
+struct FaceSymbology {index:uint; color:uint; transparency:double; materialId:long;}
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table PointPrimitive
+    {
+    coords:[DPoint3d];
+    boundary:BoundaryType; // point string, line string, or shape
+
+    } // PointPrimitive
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table PointPrimitive2d
+    {
+    coords:[DPoint2d];
+    boundary:BoundaryType; // point string, line string, or shape
+
+    } // PointPrimitive2d
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table ArcPrimitive
+    {
+    center:DPoint3d;
+    vector0:DVec3d;
+    vector90:DVec3d;
+    start:double;
+    sweep:double; // 0.0 means full sweep
+    boundary:BoundaryType; // 360 degree arc or ellipse
+
+    } // ArcPrimitive
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table BRepData
+    {
+    entityTransform:Transform;
+    entityData:[ubyte];
+    faceAttachments:[FaceSymbology];
+
+    } // BRepData
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table BeginSubCategory
+    {
+    subCategoryId:long;
+    origin:DPoint3d;
+    yaw:double;
+    pitch:double;
+    roll:double;
+
+    } // BeginSubCategory
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table BasicSymbology
+    {
+    color:uint;
+    weight:uint;
+    transparency:double; // contributes to net transparency, not an override.
+    displayPriority:int; // contributes to net display priority, not an override. (2d only)
+    useColor:ubyte;
+    useWeight:ubyte;
+
+    } // BasicSymbology
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table AreaFill
+    {
+    fill:FillDisplay;
+    color:uint;
+    transparency:double;
+    mode:GradientMode;
+    flags:ushort;
+    angle:double;
+    tint:double;
+    shift:double;
+    colors:[uint];
+    values:[double];
+
+    } // AreaFill
+

@@ -17,6 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! Used to draw an AnnotationLeader.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationLeaderDraw : public RefCountedBase

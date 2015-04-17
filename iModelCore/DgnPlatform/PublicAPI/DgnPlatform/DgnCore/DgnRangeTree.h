@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnRangeTree.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,12 +22,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct DRTNode
 {
-    enum class NodeType
-    {
-        Internal,
-        Leaf,
-        ElemRefLeaf,
-    };
+    enum class NodeType {Internal, Leaf};
 
 protected:
     DRange3d         m_nodeRange;
@@ -49,30 +44,30 @@ public:
     DRange3dCR GetRangeCR() {return m_nodeRange;}
     bool Overlaps (DRange3dCR range) const;
     bool CompletelyContains (DRange3dCR range) const;
-    RangeMatchStatus TraverseElementRefs (struct DRTElementRefTraverser& traverser, bool is3d);
+    RangeMatchStatus TraverseDgnElements (struct DRTDgnElementTraverser& traverser, bool is3d);
     RangeMatchStatus Traverse (ElemRangeIndex::Traverser&, bool);
 };
 
-typedef DRange3dCR (*PFGetRangeForElement) (PersistentElementRefP elRef);
+typedef DRange3dCR (*PFGetRangeForElement) (DgnElementP elRef);
 
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      10/2009
 +===============+===============+===============+===============+===============+======*/
 struct DRTLeafNode : DRTNode
 {
-    PersistentElementRefP*  m_endChild;
-    PersistentElementRefP   m_firstChild[1];
+    GeometricElementCP*  m_endChild;
+    GeometricElementCP   m_firstChild[1];
 
     DRTLeafNode (bool is3d, NodeType nodeType = NodeType::Leaf) : DRTNode (nodeType, is3d) {m_endChild = m_firstChild;}
 
     void ClearChildren () { m_endChild = m_firstChild; ClearRange();}
     void SplitLeafNode (DgnRangeTreeR);
-    void AddElementToLeaf (DRange3dCR range, PersistentElementRefP element, DgnRangeTreeR);
+    void AddElementToLeaf (DRange3dCR range, GeometricElementCR element, DgnRangeTreeR);
     void ValidateLeafRange();
-    bool DropElementFromLeaf (DRange3dCR range, PersistentElementRefP elementRef, DgnRangeTreeR);
+    bool DropElementFromLeaf (DRange3dCR range, GeometricElementCP elementRef, DgnRangeTreeR);
     size_t GetEntryCount() const {return m_endChild - m_firstChild;}
     RangeMatchStatus Traverse (ElemRangeIndex::Traverser&, bool);
-    RangeMatchStatus TraverseElementRefs (struct DRTElementRefTraverser& traverser, bool is3d);
+    RangeMatchStatus TraverseDgnElements (struct DRTDgnElementTraverser& traverser, bool is3d);
     PFGetRangeForElement GetRangeFunction ();
 };
 
@@ -86,18 +81,18 @@ struct DRTInternalNode : DRTNode
 
     DRTInternalNode(bool is3d) : DRTNode (NodeType::Internal, is3d) {m_endChild = m_firstChild;}
 
-    void AddElement (DRange3dCR range, PersistentElementRefP element, DgnRangeTreeR);
+    void AddElement (DRange3dCR range, GeometricElementCR element, DgnRangeTreeR);
     DRTNodeP ChooseBestNode (DRange3dCP pRange, DgnRangeTreeR root);
     void AddInternalNode (DRTNodeP child, DgnRangeTreeR root);
     void SplitInternalNode (DgnRangeTreeR);
-    bool DropElement (DRange3dCR range, PersistentElementRefP elementRef, DgnRangeTreeR);
+    bool DropElement (DRange3dCR range, GeometricElementCP elementRef, DgnRangeTreeR);
     void DropRange (DRange3dCR range);
     void DropNode (DRTNodeP child, DgnRangeTreeR root);
     void ValidateInternalRange();
     size_t GetEntryCount() const {return m_endChild - m_firstChild;}
     void ClearChildren () { m_endChild = m_firstChild; ClearRange();}
     RangeMatchStatus Traverse (ElemRangeIndex::Traverser&, bool);
-    RangeMatchStatus TraverseElementRefs (struct DRTElementRefTraverser& traverser, bool is3d);
+    RangeMatchStatus TraverseDgnElements (struct DRTDgnElementTraverser& traverser, bool is3d);
     size_t GetLeafCount ();
     size_t GetNodeCount ();
     size_t GetElementCount ();
@@ -124,25 +119,25 @@ private:
     size_t      m_internalNodeSize;
     size_t      m_leafNodeSize;
 
-    void LoadTree (DgnModelR);
+    void LoadTree (DgnModelCR);
     DRTInternalNodeP AllocateInternalNode () {return new (m_internalNodes.AllocateNode()) DRTInternalNode(m_is3d);}
     DRTLeafNodeP AllocateLeafNode (DRTNode::NodeType nodeType = DRTNode::NodeType::Leaf) {return new (m_leafNodes.AllocateNode()) DRTLeafNode(m_is3d, nodeType);}
     void FreeInternalNode (DRTInternalNodeP node) {m_internalNodes.FreeNode(node);}
     void FreeLeafNode (DRTLeafNodeP node) {m_leafNodes.FreeNode(node);}
 
-    virtual void _AddElement(PersistentElementRefP elemRef, DRange3dCR, int& stamp);
-    virtual StatusInt _RemoveElement(PersistentElementRefP elemRef, DRange3dCR, int& stamp);
+    virtual void _AddElement(GeometricElementCR element, DRange3dCR, int& stamp);
+    virtual StatusInt _RemoveElement(GeometricElementCR element, DRange3dCR, int& stamp);
     virtual DRange3dCP _GetDgnModelRange();
 
 public:
-    DgnRangeTree(DgnModelR, size_t leafSize);
+    DgnRangeTree(DgnModelCR, size_t leafSize);
     virtual ~DgnRangeTree();
     DRTNodeP GetRoot(){return m_root;}
     size_t GetInternalNodeSize() {return m_internalNodeSize;}
     size_t GetLeafNodeSize() {return m_leafNodeSize;}
     void SetNodeSizes (size_t internalNodeSize, size_t leafNodeSize);
 
-    DGNPLATFORM_EXPORT void ProcessOcclusionSorted (ViewContextR, DgnModelP, RangeTreeProgressMonitor* monitor, bool doFrustumCull, UInt32* timeOut);
+    DGNPLATFORM_EXPORT void ProcessOcclusionSorted (ViewContextR, DgnModelP, RangeTreeProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);
 };
 
 //=======================================================================================
@@ -153,9 +148,9 @@ struct OcclusionScorer
     DMatrix4d   m_localToNpc;
     DPoint3d    m_cameraPosition;
     double      m_lodFilterNPCArea;
-    UInt32      m_orthogonalProjectionIndex;
+    uint32_t    m_orthogonalProjectionIndex;
     bool        m_cameraOn;
-    void InitForViewport(ViewportCR viewport, double minimumSizePixels);
+    void InitForViewport(DgnViewportCR viewport, double minimumSizePixels);
     bool ComputeEyeSpanningRangeOcclusionScore (double* score, DPoint3dCP rangeCorners, bool doFrustumCull);
     bool ComputeNPC (DPoint3dR npcOut, DPoint3dCR localIn);
     bool ComputeOcclusionScore (double* score, bool& overlap, bool& spansEyePlane, bool& eliminatedByLOD, DPoint3dCP localCorners, bool doFrustumCull);
@@ -182,17 +177,17 @@ struct RtreeViewFilter : BeSQLite::RTreeMatch
     BeSQLite::RTree3dVal    m_boundingRange;    // only return entries whose range intersects this cube.
     BeSQLite::RTree3dVal    m_frontFaceRange;
     OcclusionScorer         m_scorer;
-    UInt32                  m_nCalls;
-    UInt32                  m_nScores;
-    UInt32                  m_nSkipped;
+    uint32_t                m_nCalls;
+    uint32_t                m_nScores;
+    uint32_t                m_nSkipped;
     DVec3d                  m_viewVec;  // vector from front face to back face
     ClipVectorPtr           m_clips;
-    ElementIdSet const*     m_exclude;
+    DgnElementIdSet const*  m_exclude;
 
     bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
     void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
     bool SkewTest(BeSQLite::RTree3dValCP);
-    DGNPLATFORM_EXPORT RtreeViewFilter(ViewportCR, BeSQLiteDbR db, double minimumSizeScreenPixels, ElementIdSet const* exclude);
+    DGNPLATFORM_EXPORT RtreeViewFilter(DgnViewportCR, BeSQLiteDbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
     };
 
 //=======================================================================================
@@ -200,13 +195,13 @@ struct RtreeViewFilter : BeSQLite::RTreeMatch
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
     {
-    typedef bmultimap<double, Int64> T_OcclusionScoreMap;
+    typedef bmultimap<double, int64_t> T_OcclusionScoreMap;
 
     struct SecondaryFilter
         {
         OverlapScorer       m_scorer;
-        UInt32              m_hitLimit;
-        UInt32              m_occlusionMapCount;
+        uint32_t            m_hitLimit;
+        uint32_t            m_occlusionMapCount;
         double              m_occlusionMapMinimum;
         T_OcclusionScoreMap m_occlusionScoreMap;
         double              m_lastScore;
@@ -216,48 +211,48 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
     bool                    m_passedSecondaryTest;
     bool                    m_useSecondary;
     bool                    m_eliminatedByLOD;
-    UInt32                  m_hitLimit;
-    UInt32                  m_occlusionMapCount;
-    Int64                   m_lastId;
+    uint32_t                m_hitLimit;
+    uint32_t                m_occlusionMapCount;
+    int64_t                 m_lastId;
     T_OcclusionScoreMap     m_occlusionScoreMap;
     double                  m_occlusionMapMinimum;
     double                  m_lastScore;
     SecondaryFilter         m_secondaryFilter;
     ICheckStopP             m_checkStop;
-    ElementIdSet const*     m_alwaysDraw;
+    DgnElementIdSet const*  m_alwaysDraw;
 
     virtual int _TestRange(BeSQLite::RTreeMatch::QueryInfo const&) override;
     virtual void _StepAggregate(BeSQLite::DbFunction::Context*, int nArgs, BeSQLite::DbValue* args) override {RangeAccept(args[0].GetValueInt64());}
-    void RangeAccept(Int64 elementId) ;
+    void RangeAccept(int64_t elementId) ;
     double MaxOcclusionScore();
 
 public:
-    DGNPLATFORM_EXPORT DgnDbRTree3dViewFilter(ViewportCR, ICheckStopP, BeSQLiteDbR db, UInt32 hitLimit, double minimumSizeScreenPixels, ElementIdSet const* alwaysDraw, ElementIdSet const* neverDraw);
+    DGNPLATFORM_EXPORT DgnDbRTree3dViewFilter(DgnViewportCR, ICheckStopP, BeSQLiteDbR db, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
     void SetChceckStop(ICheckStopP checkStop) {m_checkStop = checkStop;}
-    void InitializeSecondaryTest(DRange3dCR volume, UInt32 hitLimit);
-    void GetStats(UInt32& nAcceptCalls, UInt32&nScores) { nAcceptCalls = m_nCalls; nScores = m_nScores; }
+    void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
+    void GetStats(uint32_t& nAcceptCalls, uint32_t&nScores) { nAcceptCalls = m_nCalls; nScores = m_nScores; }
     };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
-struct ProgressiveViewFilter : IProgressiveDisplay, RtreeViewFilter
+struct ProgressiveViewFilter : RefCounted<IProgressiveDisplay>, RtreeViewFilter
 {
     friend struct QueryViewController;
 
     ViewContextP                 m_context;
-    UInt32                       m_nThisPass;
-    UInt32                       m_nLastPass;
+    uint32_t                     m_nThisPass;
+    uint32_t                     m_nLastPass;
     bool                         m_drewElementThisPass;
     bool                         m_setTimeout;
-    PersistentElementRefList&    m_existing;
-    DgnProjectR                  m_project;
-    UInt64                       m_elementReleaseTrigger;
-    UInt64                       m_purgeTrigger;
+    DgnModelR                    m_existing;
+    DgnDbR                       m_dgndb;
+    uint64_t                     m_elementReleaseTrigger;
+    uint64_t                     m_purgeTrigger;
     BeSQLite::CachedStatementPtr m_rangeStmt;
     static const double          s_purgeFactor ;
-    ProgressiveViewFilter(ViewportCR vp, DgnProjectR project, PersistentElementRefList& existing, ElementIdSet const* exclude, UInt64 maxMemory, BeSQLite::CachedStatement* stmt)
-         : RtreeViewFilter (vp, project, 0.0, exclude), m_project(project), m_existing(existing), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
+    ProgressiveViewFilter(DgnViewportCR vp, DgnDbR project, DgnModelR existing, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
+         : RtreeViewFilter (vp, project, 0.0, exclude), m_dgndb(project), m_existing(existing), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
         {
         m_nThisPass = m_nLastPass = 0;
         m_drewElementThisPass = m_setTimeout = false;
@@ -267,7 +262,7 @@ struct ProgressiveViewFilter : IProgressiveDisplay, RtreeViewFilter
 
     virtual int _TestRange (BeSQLite::RTreeMatch::QueryInfo const&) override;
     virtual void _StepAggregate(BeSQLite::DbFunction::Context*, int nArgs, BeSQLite::DbValue* args) override;
-    virtual bool _WantTimeoutSet(UInt32& limit) override;
+    virtual bool _WantTimeoutSet(uint32_t& limit) override;
     virtual Completion _Process(ViewContextR context) override;
 };
 

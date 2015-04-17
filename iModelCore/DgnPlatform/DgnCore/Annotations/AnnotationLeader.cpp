@@ -16,12 +16,12 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderPtr AnnotationLeader::Create(DgnProjectR project) { return new AnnotationLeader(project); }
-AnnotationLeader::AnnotationLeader(DgnProjectR project) :
+AnnotationLeaderPtr AnnotationLeader::Create(DgnDbR project) { return new AnnotationLeader(project); }
+AnnotationLeader::AnnotationLeader(DgnDbR project) :
     T_Super()
     {
     // Making additions or changes? Please check CopyFrom and Reset.
-    m_project = &project;
+    m_dgndb = &project;
     m_sourceAttachmentType = AnnotationLeaderSourceAttachmentType::Invalid;
     m_targetAttachmentType = AnnotationLeaderTargetAttachmentType::Invalid;
     }
@@ -29,7 +29,7 @@ AnnotationLeader::AnnotationLeader(DgnProjectR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderPtr AnnotationLeader::Create(DgnProjectR project, DgnStyleId styleID)
+AnnotationLeaderPtr AnnotationLeader::Create(DgnDbR project, DgnStyleId styleID)
     {
     auto leader = AnnotationLeader::Create(project);
     leader->SetStyleId(styleID, SetAnnotationLeaderStyleOptions::Direct);
@@ -46,11 +46,11 @@ AnnotationLeaderR AnnotationLeader::operator=(AnnotationLeaderCR rhs) { T_Super:
 void AnnotationLeader::CopyFrom(AnnotationLeaderCR rhs)
     {
     // Making additions or changes? Please check constructor and Reset.
-    m_project = rhs.m_project;
+    m_dgndb = rhs.m_dgndb;
     m_styleID = rhs.m_styleID;
     m_styleOverrides = rhs.m_styleOverrides;
     m_sourceAttachmentType = rhs.m_sourceAttachmentType;
-    m_sourceAttachmentDataForId.reset(rhs.m_sourceAttachmentDataForId ? new UInt32(*rhs.m_sourceAttachmentDataForId) : NULL);
+    m_sourceAttachmentDataForId.reset(rhs.m_sourceAttachmentDataForId ? new uint32_t(*rhs.m_sourceAttachmentDataForId) : NULL);
     m_targetAttachmentType = rhs.m_targetAttachmentType;
     m_targetAttachmentDataForPhysicalPoint.reset(rhs.m_targetAttachmentDataForPhysicalPoint ? new DPoint3d(*rhs.m_targetAttachmentDataForPhysicalPoint) : NULL);
     }
@@ -72,15 +72,15 @@ void AnnotationLeader::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-DgnProjectR AnnotationLeader::GetDgnProjectR() const { return *m_project; }
+DgnDbR AnnotationLeader::GetDgnProjectR() const { return *m_dgndb; }
 DgnStyleId AnnotationLeader::GetStyleId() const { return m_styleID; }
-AnnotationLeaderStylePtr AnnotationLeader::CreateEffectiveStyle() const { return m_project->Styles().AnnotationLeaderStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+AnnotationLeaderStylePtr AnnotationLeader::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationLeaderStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
 AnnotationLeaderStylePropertyBagCR AnnotationLeader::GetStyleOverrides() const { return m_styleOverrides; }
 AnnotationLeaderStylePropertyBagR AnnotationLeader::GetStyleOverridesR() { return m_styleOverrides; }
 AnnotationLeaderSourceAttachmentType AnnotationLeader::GetSourceAttachmentType() const { return m_sourceAttachmentType; }
 void AnnotationLeader::SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType value) { m_sourceAttachmentType = value; }
-UInt32 const* AnnotationLeader::GetSourceAttachmentDataForId() const { return m_sourceAttachmentDataForId.get(); }
-void AnnotationLeader::SetSourceAttachmentDataForId(UInt32 const* value) { m_sourceAttachmentDataForId.reset(value ? new UInt32(*value) : NULL); }
+uint32_t const* AnnotationLeader::GetSourceAttachmentDataForId() const { return m_sourceAttachmentDataForId.get(); }
+void AnnotationLeader::SetSourceAttachmentDataForId(uint32_t const* value) { m_sourceAttachmentDataForId.reset(value ? new uint32_t(*value) : NULL); }
 AnnotationLeaderTargetAttachmentType AnnotationLeader::GetTargetAttachmentType() const { return m_targetAttachmentType; }
 void AnnotationLeader::SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType value) { m_targetAttachmentType = value; }
 DPoint3dCP AnnotationLeader::GetTargetAttachmentDataForPhysicalPoint() const { return m_targetAttachmentDataForPhysicalPoint.get(); }
@@ -100,8 +100,8 @@ void AnnotationLeader::SetStyleId(DgnStyleId value, SetAnnotationLeaderStyleOpti
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
-static const UInt32 CURRENT_MAJOR_VERSION = 1;
-static const UInt32 CURRENT_MINOR_VERSION = 0;
+static const uint32_t CURRENT_MAJOR_VERSION = 1;
+static const uint32_t CURRENT_MINOR_VERSION = 0;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
@@ -203,7 +203,7 @@ BentleyStatus AnnotationLeaderPersistence::DecodeFromFlatBuf(AnnotationLeaderR l
         case FB::AnnotationLeaderSourceAttachmentType_ById:
             {
             PRECONDITION(fbLeader.has_sourceAttachmentId(), ERROR);
-            UInt32 sourceAttachmentId = fbLeader.sourceAttachmentId();
+            uint32_t sourceAttachmentId = fbLeader.sourceAttachmentId();
 
             leader.SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
             leader.SetSourceAttachmentDataForId(&sourceAttachmentId);

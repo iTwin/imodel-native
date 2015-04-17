@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/QueryView.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -21,7 +21,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::QueryViewController (DgnProjectR project, DgnViewId id) : T_Super (project, id), m_queryModel(*new QueryModel(project))
+QueryViewController::QueryViewController (DgnDbR dgndb, DgnViewId id) : CameraViewController(dgndb, id), m_queryModel(*new QueryModel(dgndb))
     {
     m_forceNewQuery = true; 
     m_lastUpdateType = DrawPurpose::NotSpecified;
@@ -43,7 +43,7 @@ QueryViewController::~QueryViewController()
 // On iOS we draw less in a frame that occurs while the query is running.
 // Holding back some leads to fewer flashing frames.
 static double s_dynamicLoadFrequency = 0.75;
-static UInt32 s_dynamicLoadTrigger = 800;
+static uint32_t s_dynamicLoadTrigger = 800;
 static double s_threshold = .2;
 
 /*---------------------------------------------------------------------------------**//**
@@ -51,8 +51,8 @@ static double s_threshold = .2;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::ComputeFps ()
     {
-    UInt64 currentTime  = BeTimeUtilities::QueryMillisecondsCounter ();
-    UInt64 deltaTime    = currentTime - m_lastUpdateTime;
+    uint64_t currentTime  = BeTimeUtilities::QueryMillisecondsCounter ();
+    uint64_t deltaTime    = currentTime - m_lastUpdateTime;
     m_fps = 1000.0 / (deltaTime == 0 ? 1 : deltaTime);
     m_lastUpdateTime = currentTime;
     }
@@ -60,7 +60,7 @@ void QueryViewController::ComputeFps ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
 //--------------+------------------------------------------------------------------------
-bool QueryViewController::_WantElementLoadStart(ViewportR vp, double currentTime, double lastQueryTime, UInt32 maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum)
+bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum)
     {
     if (maxElementsDrawnInDynamicUpdate > s_dynamicLoadTrigger || maxElementsDrawnInDynamicUpdate >= m_queryModel.GetElementCount())
         {
@@ -71,7 +71,7 @@ bool QueryViewController::_WantElementLoadStart(ViewportR vp, double currentTime
         return true;
         }
 
-    static UInt32 s_numberOfCpus;
+    static uint32_t s_numberOfCpus;
     if (0 == s_numberOfCpus)
         s_numberOfCpus = BeSystemInfo::GetNumberOfCpus();
 
@@ -108,7 +108,7 @@ bool QueryViewController::_WantElementLoadStart(ViewportR vp, double currentTime
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnDynamicUpdate (ViewportR vp, ViewContextR context, DynamicUpdateInfo& info)
+void QueryViewController::_OnDynamicUpdate (DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info)
     {
     DrawPurpose newUpdateType = info.GetDoBackingStore() ? DrawPurpose::Update : DrawPurpose::UpdateDynamic;
     m_lastUpdateType = newUpdateType;
@@ -152,7 +152,7 @@ void QueryViewController::_OnDynamicUpdate (ViewportR vp, ViewContextR context, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnHealUpdate (ViewportR vp, ViewContextR context, bool fullHeal)
+void QueryViewController::_OnHealUpdate (DgnViewportR vp, ViewContextR context, bool fullHeal)
     {
     m_lastUpdateType = DrawPurpose::UpdateHealing;
     if (!m_forceNewQuery && !fullHeal)
@@ -175,7 +175,7 @@ void QueryViewController::_OnHealUpdate (ViewportR vp, ViewContextR context, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnFullUpdate (ViewportR vp, ViewContextR context, FullUpdateInfo& info)
+void QueryViewController::_OnFullUpdate (DgnViewportR vp, ViewContextR context, FullUpdateInfo& info)
     {
     m_lastUpdateType = DrawPurpose::Update;
     LoadElementsForUpdate (vp, DrawPurpose::Update, &context, true, true, false);
@@ -185,7 +185,7 @@ void QueryViewController::_OnFullUpdate (ViewportR vp, ViewContextR context, Ful
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::LoadElementsForUpdate (ViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, 
+void QueryViewController::LoadElementsForUpdate (DgnViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, 
                                                 bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort)
     {
     QueryModel::Selector& selector = m_queryModel.GetSelector();
@@ -217,9 +217,9 @@ void QueryViewController::LoadElementsForUpdate (ViewportR viewport, DrawPurpose
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-void QueryViewController::StartSelectProcessing (ViewportR viewport, DrawPurpose updateType)
+void QueryViewController::StartSelectProcessing (DgnViewportR viewport, DrawPurpose updateType)
     {
-    UInt32 hitLimit = GetMaxElementsToLoad();
+    uint32_t hitLimit = GetMaxElementsToLoad();
     double minimumPixels = _GetMinimumSizePixels(updateType);
 
     size_t lastSize = 0;
@@ -231,9 +231,9 @@ void QueryViewController::StartSelectProcessing (ViewportR viewport, DrawPurpose
     // draw all of the elements then load 50% more than what was drawn.
     if (DrawPurpose::UpdateDynamic == updateType && m_maxDrawnInDynamicUpdate > 0 && m_maxDrawnInDynamicUpdate < lastSize)
         {
-        UInt32 computedLimit = (UInt32)(1.5 * m_maxDrawnInDynamicUpdate);
+        uint32_t computedLimit = (uint32_t)(1.5 * m_maxDrawnInDynamicUpdate);
         if (hitLimit > computedLimit)
-            hitLimit = std::min(computedLimit,(UInt32)MAX_TO_DRAW_IN_DYNAMIC_UPDATE);
+            hitLimit = std::min(computedLimit,(uint32_t)MAX_TO_DRAW_IN_DYNAMIC_UPDATE);
         }
 
     QueryModel::Selector& selector = m_queryModel.GetSelector();
@@ -270,19 +270,19 @@ void QueryViewController::SaveSelectResults()
     m_queryModel.SaveQueryResults();
     m_lastQueryTime = BeTimeUtilities::QuerySecondsCounter();
 
-    DgnElementPool& pool = m_queryModel.GetDgnProject().Models().ElementPool();
+    DgnElementPool& pool = m_queryModel.GetDgnDb().Elements().GetPool();
 
 #if defined (TRACE_ELEMENT_POOL_USE)
     DgnElementPool::Totals totals = pool.GetTotals();
     DgnElementPool::Statistics stats = pool.GetStatistics();
-    UInt64 start = BeTimeUtilities::QueryMillisecondsCounter();
+    uint64_t start = BeTimeUtilities::QueryMillisecondsCounter();
 #endif
 
     pool.ResetStatistics();
     pool.Purge(GetMaxElementMemory());
 
 #if defined (TRACE_ELEMENT_POOL_USE)
-    UInt32 elapsed = (UInt32)(BeTimeUtilities::QueryMillisecondsCounter() - start);
+    uint32_t elapsed = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
     DgnElementPool::Statistics postStats = pool.GetStatistics();
     NotificationManager::OutputPrompt (WPrintfString(L"Elms=%u,Free=%u,Mem=%.3f",totals.m_entries,totals.m_unreferenced,(double)totals.m_allocedBytes/(1024.*1024.)));
     NotificationManager::OutputMessage (NotifyMessageDetails(OutputMessagePriority::Info, WPrintfString(L"purge time %d viewed=%u,new=%u,purged=%u",elapsed, m_queryModel.GetElementCount(),stats.m_newElements,postStats.m_purged)));
@@ -309,7 +309,7 @@ void QueryViewController::EmptyQueryModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::SetAlwaysDrawn(ElementIdSet const& newSet, bool exclusive)
+void QueryViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
     m_queryModel.GetSelector().RequestAbort(true);
     m_noQuery = exclusive;
@@ -331,7 +331,7 @@ void QueryViewController::ClearAlwaysDrawn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::SetNeverDrawn(ElementIdSet const& newSet)
+void QueryViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     m_queryModel.GetSelector().RequestAbort(true);
     m_neverDrawn = newSet;
@@ -351,7 +351,7 @@ void QueryViewController::ClearNeverDrawn()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-void QueryViewController::EnableSecondaryQueryRange(UInt32 hitLimit, DRange3dCR volume)
+void QueryViewController::EnableSecondaryQueryRange(uint32_t hitLimit, DRange3dCR volume)
     {
     m_secondaryHitLimit = hitLimit;
     m_secondaryVolume = volume;
@@ -362,7 +362,7 @@ void QueryViewController::EnableSecondaryQueryRange(UInt32 hitLimit, DRange3dCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_ChangeModelDisplay (DgnModelId modelId, bool onOff) 
     {
-    if (onOff == m_viewedModels.IsModelOn (modelId))
+    if (onOff == m_viewedModels.Contains(modelId))
         return;
 
     if (onOff)
@@ -371,7 +371,7 @@ void QueryViewController::_ChangeModelDisplay (DgnModelId modelId, bool onOff)
         m_viewedModels.insert(modelId);
         //  Ensure the model is in the m_loadedModels list.  QueryModel 
         //  must not do this in the query thread.
-        m_project.Models().GetModelById(modelId);
+        m_dgndb.Models().GetModelById(modelId);
         }
     else
         {
@@ -383,9 +383,9 @@ void QueryViewController::_ChangeModelDisplay (DgnModelId modelId, bool onOff)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnLevelChange(bool singleEnabled) 
+void QueryViewController::_OnCategoryChange(bool singleEnabled) 
     {
-    T_Super::_OnLevelChange(singleEnabled); 
+    T_Super::_OnCategoryChange(singleEnabled); 
     m_forceNewQuery = true;
     if (!singleEnabled)
         EmptyQueryModel();
@@ -394,14 +394,14 @@ void QueryViewController::_OnLevelChange(bool singleEnabled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::QueryModelExtents (DRange3dR range, ViewportR vp)
+void QueryViewController::QueryModelExtents (DRange3dR range, DgnViewportR vp)
     {
     // make sure this is local variable so it is removed before the call to LoadElementsForUpdate below.
-    DgnDbRTreeFitFilter filter (m_project);
+    DgnDbRTreeFitFilter filter (m_dgndb);
 
     Statement getRange;
-    DbResult rc = getRange.Prepare (m_project, _GetRTreeMatchSql(vp).c_str());
-    BindModelAndLevel (getRange);
+    DbResult rc = getRange.Prepare (m_dgndb, _GetRTreeMatchSql(vp).c_str());
+    BindModelAndCategory (getRange);
 
     rc = filter.StepRTree(getRange);
     BeAssert (rc == BE_SQLITE_ROW);
@@ -411,7 +411,7 @@ void QueryViewController::QueryModelExtents (DRange3dR range, ViewportR vp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::_OnComputeFitRange (DRange3dR range, ViewportR vp, FitViewParamsR) 
+bool QueryViewController::_OnComputeFitRange (DRange3dR range, DgnViewportR vp, FitViewParamsR) 
     {
     QueryModelExtents (range, vp);
     if (range.IsNull())
@@ -432,20 +432,17 @@ bool QueryViewController::_OnComputeFitRange (DRange3dR range, ViewportR vp, Fit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String QueryViewController::_GetRTreeMatchSql(ViewportR) 
+Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR) 
     {
-    GetLevelDisplayMask(); // this is to make sure the level bitmask gets loaded.
-
     //  The query produces a thread race condition if it calls QueryModelById and 
     //  the model is not already loaded.
     for (auto& id : GetViewedModels())
-        m_project.Models().GetModelById(id);
+        m_dgndb.Models().GetModelById(id);
 
-
-    return Utf8String ("SELECT rTreeAccept(a.ElementId) FROM "\
-           DGN_VTABLE_PrjRTree " AS a, " DGN_TABLE_Element " AS b "\
-           "WHERE a.ElementId MATCH rTreeMatch(1) AND a.ElementId=b.Id"\
-           " AND InVirtualSet(@vSet,b.ModelId,b.LevelId)");
+    return Utf8String ("SELECT rTreeAccept(r.ElementId) FROM "
+           DGN_VTABLE_PrjRTree " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e "
+           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId"
+           " AND InVirtualSet(@vSet,e.ModelId,e.CategoryId)");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,16 +450,16 @@ Utf8String QueryViewController::_GetRTreeMatchSql(ViewportR)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryViewController::_IsInSet (int nVals, DbValue const* vals) const 
     {
-    BeAssert (nVals == 2);   // we need ModelId and Level
+    BeAssert (nVals == 2);   // we need ModelId and Category
 
-    // check that both the model is on and the level is on.
-    return m_viewedModels.IsModelOn(DgnModelId(vals[0].GetValueInt64())) && m_levels.IsLevelOn(vals[1].GetValueInt());
+    // check that both the model is on and the category is on.
+    return m_viewedModels.Contains(DgnModelId(vals[0].GetValueInt64())) && m_viewedCategories.Contains(DgnCategoryId(vals[1].GetValueInt64()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnAttachedToViewport(ViewportR) 
+void QueryViewController::_OnAttachedToViewport(DgnViewportR) 
     {
     m_forceNewQuery = true;
     }
@@ -470,13 +467,12 @@ void QueryViewController::_OnAttachedToViewport(ViewportR)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::BindModelAndLevel (BeSQLiteStatementR stmt) const
+void QueryViewController::BindModelAndCategory (BeSQLiteStatementR stmt) const
     {
     int vSetIdx = stmt.GetParameterIndex("@vSet");
     if (0 == vSetIdx)
         return;
 
-    BeAssert (GetViewedLevels().IsValid());
     stmt.BindVirtualSet(vSetIdx, *this);
     }
 
@@ -504,25 +500,34 @@ void QueryViewController::_DrawView(ViewContextR context)
     if (DrawPurpose::Pick == context.GetDrawPurpose() )
         {
         context.VisitDgnModel (&m_queryModel);
+
+        // Allow models to participate in picking
+        for (DgnModelId modelId : GetViewedModels())
+            {
+            DgnModel* model = GetDgnDb().Models().GetModelById(modelId);
+            if (nullptr != model)
+                model->_AddGraphicsToScene (context);
+            }
+
         return;
         }
 
     context.GetViewport()->ClearProgressiveDisplay();
 
     bool isDynamicUpdate = context.GetDrawPurpose() == DrawPurpose::UpdateDynamic;
-    UInt32 maxToDraw = isDynamicUpdate ? m_maxToDrawInDynamicUpdate : UINT_MAX;
+    uint32_t maxToDraw = isDynamicUpdate ? m_maxToDrawInDynamicUpdate : UINT_MAX;
 
-    const UInt64 maxMem = GetMaxElementMemory();
+    const uint64_t maxMem = GetMaxElementMemory();
 #if !defined (_X64_)
-    const Int64 purgeTrigger = static_cast <Int64> (1.5 * static_cast <double> (maxMem));
+    const int64_t purgeTrigger = static_cast <int64_t> (1.5 * static_cast <double> (maxMem));
 #endif
-    const UInt32 intermediatePaintsThreshold = (UInt32)(1.1 * m_intermediatePaintsThreshold);
+    const uint32_t intermediatePaintsThreshold = (uint32_t)(1.1 * m_intermediatePaintsThreshold);
 
     context.SetIntermediatePaintsBlocked(true);
     context.SetFilterLODFlag(FILTER_LOD_Off); // there's no point in doing lod filtering on the elements we've found by a QueryView
 
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
-    UInt32 numDrawn = 0;
+    uint32_t numDrawn = 0;
     while (numDrawn < results->m_elements.size())
         {
         if (intermediatePaintsThreshold == numDrawn)
@@ -531,15 +536,16 @@ void QueryViewController::_DrawView(ViewContextR context)
             context.SetIntermediatePaintsBlocked(false);
             }
 
-        PersistentElementRefP element = results->m_elements[numDrawn];
-        ElementHandle elemHandle (element);
-        context.VisitElemHandle (elemHandle, false, true);
+        GeometricElementCP geom = results->m_elements[numDrawn]->_ToGeometricElement();
+
+        if (nullptr != geom)
+            context.VisitElement (*geom);
 
         if (context.WasAborted() || ++numDrawn >= maxToDraw)
             break;
 
 #if !defined (_X64_)
-        DgnElementPool& pool = m_queryModel.GetDgnProject().Models().ElementPool();
+        DgnElementPool& pool = m_queryModel.GetDgnDb().Elements().GetPool();
         if (numDrawn > results->m_drawnBeforePurge && pool.GetTotalAllocated() > purgeTrigger)
             {
             QueryModel::Selector& selector = m_queryModel.GetSelector();
@@ -547,28 +553,28 @@ void QueryViewController::_DrawView(ViewContextR context)
             // Testing for selector.IsActive prevents race conditions between the work thread and the 
             // query thread. Testing for HasSelectResults prevents this logic from purging elements that
             // are in the selected-elements list. Adding elements to that list does not increment the reference 
-            // count. ElementRefs use reference counting that is not thread safe so all reference counting is done
+            // count. DgnElements use reference counting that is not thread safe so all reference counting is done
             // in the work thread.
             if (!selector.IsActive() && !selector.HasSelectResults())
                 {
                 results->m_drawnBeforePurge = numDrawn;
                 pool.Purge(maxMem);  //  the pool may contain unused elements
 
-                Int64   lastTotalAllocated;
+                int64_t lastTotalAllocated;
                 while ((lastTotalAllocated = pool.GetTotalAllocated()) > purgeTrigger && results->m_elements.size() > numDrawn)
                     {
                     if (context.CheckStop())
                         break;
 
-                    UInt32 entriesToRemove = (UInt32)results->m_elements.size() - numDrawn;
+                    uint32_t entriesToRemove = (uint32_t)results->m_elements.size() - numDrawn;
                     if (entriesToRemove > 25)
                         entriesToRemove /= 2;
 
                     if (entriesToRemove > results->m_elements.size()/4)
-                        entriesToRemove = (UInt32)results->m_elements.size()/4;
+                        entriesToRemove = (uint32_t)results->m_elements.size()/4;
 
-                    UInt32 newSize = (UInt32)results->m_elements.size() - entriesToRemove;
-                    BeAssert ((Int32)newSize > 0);
+                    uint32_t newSize = (uint32_t)results->m_elements.size() - entriesToRemove;
+                    BeAssert ((int32_t)newSize > 0);
                     m_queryModel.ResizeElementList(newSize);
                     pool.Purge(maxMem);  //  the pool may contain unused elements
                     //  This happens if entriesToRemove is 0 (exceeded maximum memory with fewer than 4 elements).
@@ -592,25 +598,26 @@ void QueryViewController::_DrawView(ViewContextR context)
     if (context.WasAborted())
         return;
 
-    // Next, draw available reality data. It may be transparent, so we draw it after the element data. Note that reality data handlers will schedule themselves for progressive display as needed.
-    bvector<RefCountedPtr<IRealityDataHandler>> realityHandlers;
-    T_HOST.GetRealityDataAdmin()._GetRealityDataHandlers (realityHandlers, *context.GetViewport());
-
-    for (auto realityHandler : realityHandlers)
-        realityHandler->_DrawView (context);
+    // Next, allow external data models to draw or schedule external data.
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModel* model = GetDgnDb().Models().GetModelById(modelId);
+        if (nullptr != model)
+            model->_AddGraphicsToScene (context);
+        }
 
     //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.
     if ((DrawPurpose::UpdateHealing == context.GetDrawPurpose() || 
          DrawPurpose::Update == context.GetDrawPurpose()) && (results->m_reachedMaxElements || results->m_eliminatedByLOD) && !m_noQuery)
         {
         HighPriorityOperationBlock highPriority;  //  see comments in BeSQLite.h
-        ViewportP vp = context.GetViewport();
-        DgnProjectR project = m_queryModel.GetDgnProject();
+        DgnViewportP vp = context.GetViewport();
+        DgnDbR project = m_queryModel.GetDgnDb();
         CachedStatementPtr rangeStmt;
         project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
-        BindModelAndLevel(*rangeStmt);
+        BindModelAndCategory(*rangeStmt);
 
-        ProgressiveViewFilter* pvFilter = new ProgressiveViewFilter(*vp, project, *m_queryModel.GetGraphicElementsP(),
+        ProgressiveViewFilter* pvFilter = new ProgressiveViewFilter(*vp, project, m_queryModel,
                                                 m_neverDrawn.empty() ? NULL : &m_neverDrawn, maxMem, rangeStmt.get());
         if (GetClipVector().IsValid())
             pvFilter->SetClipVector(*GetClipVector());
@@ -623,26 +630,26 @@ void QueryViewController::_DrawView(ViewContextR context)
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
 #if defined (_X64_)
-UInt64 QueryViewController::GetMaxElementMemory()
+uint64_t QueryViewController::GetMaxElementMemory()
     {
-    UInt64 oneGig = 1024 * 1024 * 1024;
+    uint64_t oneGig = 1024 * 1024 * 1024;
     return 8 * oneGig;
     }
 #else
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
-UInt64 QueryViewController::GetMaxElementMemory()
+uint64_t QueryViewController::GetMaxElementMemory()
     {
-    UInt64 oneMeg = 1024 * 1024;
+    uint64_t oneMeg = 1024 * 1024;
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-    UInt64 baseValue = 2000;
+    uint64_t baseValue = 2000;
 #else
-    UInt64 baseValue = BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * oneMeg) ? 50 : 30;
+    uint64_t baseValue = BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * oneMeg) ? 50 : 30;
 #endif
     baseValue *= oneMeg;
 
-    Int32 inputFactor = _GetMaxElementFactor();
+    int32_t inputFactor = _GetMaxElementFactor();
     bool decrease = false;
     if (inputFactor < 0)
         {
@@ -657,13 +664,13 @@ UInt64 QueryViewController::GetMaxElementMemory()
 
     if (decrease)
         {
-        UInt64 decrementRange = baseValue - 7 * oneMeg;
-        baseValue -= static_cast <UInt64> (static_cast <double> (decrementRange) * maxMemoryFactor);
+        uint64_t decrementRange = baseValue - 7 * oneMeg;
+        baseValue -= static_cast <uint64_t> (static_cast <double> (decrementRange) * maxMemoryFactor);
         }
     else
         {
-        UInt64 incrementRange = 70 * oneMeg;
-        baseValue += static_cast <UInt64> (static_cast <double> (incrementRange) * maxMemoryFactor);
+        uint64_t incrementRange = 70 * oneMeg;
+        baseValue += static_cast <uint64_t> (static_cast <double> (incrementRange) * maxMemoryFactor);
         }
 
     return baseValue;
@@ -673,10 +680,10 @@ UInt64 QueryViewController::GetMaxElementMemory()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
-UInt32 QueryViewController::GetMaxElementsToLoad()
+uint32_t QueryViewController::GetMaxElementsToLoad()
     {
-    UInt32  maxElementsToLoad = _GetMaxElementsToLoad();
-    Int32  inputFactor = _GetMaxElementFactor();
+    uint32_t maxElementsToLoad = _GetMaxElementsToLoad();
+    int32_t inputFactor = _GetMaxElementFactor();
 
     if (inputFactor < -100)
         inputFactor = -100;

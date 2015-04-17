@@ -18,6 +18,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! This enumerates all possible ways to apply an AnnotationLeaderStyle to an AnnotationLeader.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum struct SetAnnotationLeaderStyleOptions
@@ -30,28 +31,34 @@ enum struct SetAnnotationLeaderStyleOptions
 }; // SetAnnotationLeaderStyleOptions
 
 //=======================================================================================
+//! This enumerates all possible annotation leader source attachment types (e.g. how a leader connects to the frame).
 // Members should match AnnotationLeader::SourceAttachmentType in Annotations.proto.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum struct AnnotationLeaderSourceAttachmentType
 {
     Invalid = 0,
-    Id = 1
+    Id = 1 //<! Uses the ID of an attachment point defined by the frame. To get attachment point IDs, see AnnotationFrameLayout.
 
 }; // AnnotationLeaderSourceAttachmentType
 
 //=======================================================================================
+//! This enumerates all possible annotation leader target attachment types (e.g. how a leader connects to its target).
 // Members should match AnnotationLeader::TargetAttachmentType in Annotations.proto.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum struct AnnotationLeaderTargetAttachmentType
 {
     Invalid = 0,
-    PhysicalPoint = 1
+    PhysicalPoint = 1 //!< Uses a physical 3D point to connect to; no association is kept to what it is pointing at.
 
 }; // AnnotationLeaderTargetAttachmentType
 
 //=======================================================================================
+//! An AnnotationLeader is a line and optional terminator from an AnnotationFrame to another object in the project for a TextAnnotation. AnnotationLeader is merely a data object; see AnnotationLeaderLayout for size and geometry, and AnnotationLeaderDraw for drawing.
+//! @note An AnnotationLeader must be created with an AnnotationLeaderStyle; if a style does not exist, you must first create and store one, and then used its ID to create an AnnotationLeader. While an AnnotationLeader must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
+//! @note Since different data is needed for each attachment type, use the appropriate Get/Set...AttachmentDataFor... methods based on the type of attachment you have set.
+//! @note It is invalid to set an attachment type without also setting its data.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationLeader : public RefCountedBase
@@ -61,13 +68,13 @@ private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationLeaderPersistence;
 
-    DgnProjectP m_project;
+    DgnDbP m_dgndb;
     
     DgnStyleId m_styleID;
     AnnotationLeaderStylePropertyBag m_styleOverrides;
 
     AnnotationLeaderSourceAttachmentType m_sourceAttachmentType;
-    std::unique_ptr<UInt32> m_sourceAttachmentDataForId;
+    std::unique_ptr<uint32_t> m_sourceAttachmentDataForId;
     
     AnnotationLeaderTargetAttachmentType m_targetAttachmentType;
     std::unique_ptr<DPoint3d> m_targetAttachmentDataForPhysicalPoint;
@@ -76,17 +83,17 @@ private:
     void Reset();
 
 public:
-    DGNPLATFORM_EXPORT explicit AnnotationLeader(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit AnnotationLeader(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationLeader(AnnotationLeaderCR);
     DGNPLATFORM_EXPORT AnnotationLeaderR operator=(AnnotationLeaderCR);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnProjectR);
-    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnProjectR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR);
+    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT AnnotationLeaderPtr Clone() const;
 
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProjectR() const;
+    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationLeaderStyleOptions);
     DGNPLATFORM_EXPORT AnnotationLeaderStylePtr CreateEffectiveStyle() const;
@@ -95,8 +102,8 @@ public:
 
     DGNPLATFORM_EXPORT AnnotationLeaderSourceAttachmentType GetSourceAttachmentType() const;
     DGNPLATFORM_EXPORT void SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType);
-    DGNPLATFORM_EXPORT UInt32 const* GetSourceAttachmentDataForId() const;
-    DGNPLATFORM_EXPORT void SetSourceAttachmentDataForId(UInt32 const*);
+    DGNPLATFORM_EXPORT uint32_t const* GetSourceAttachmentDataForId() const;
+    DGNPLATFORM_EXPORT void SetSourceAttachmentDataForId(uint32_t const*);
     
     DGNPLATFORM_EXPORT AnnotationLeaderTargetAttachmentType GetTargetAttachmentType() const;
     DGNPLATFORM_EXPORT void SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType);

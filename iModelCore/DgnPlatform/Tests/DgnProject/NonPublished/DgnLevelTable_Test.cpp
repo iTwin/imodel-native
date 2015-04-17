@@ -18,11 +18,11 @@ struct TestLevelProperties
     {
     public:
         WString         tlName;
-        UInt32          tlColor;
-        UInt32          tlWeight;
-        UInt32          tlStyle;
+        uint32_t        tlColor;
+        uint32_t        tlWeight;
+        uint32_t        tlStyle;
 
-        void SetTestLevelProperties (WString Name, UInt32 color, UInt32 weight, UInt32 style)
+        void SetTestLevelProperties (WString Name, uint32_t color, uint32_t weight, uint32_t style)
             {
             tlName = Name;
             tlColor = color;
@@ -46,7 +46,7 @@ TEST(DgnLevelTableTests,MergeLevelMasks)
     if (true)
         {
         DgnDbTestDgnManager tdm (L"refLevelMasks.idgndb", __FILE__, OPENMODE_READONLY);
-        DgnProjectP project = tdm.GetDgnProjectP();
+        DgnDbP project = tdm.GetDgnProjectP();
         ASSERT_TRUE( project != NULL );
 
         DgnViewId viewId;
@@ -75,7 +75,7 @@ TEST(DgnLevelTableTests,MergeLevelMasks)
     if (true)
         {
         DgnDbTestDgnManager tdm (L"masterLevelMasks.idgndb", __FILE__, OPENMODE_READONLY);
-        DgnProjectP project = tdm.GetDgnProjectP();
+        DgnDbP project = tdm.GetDgnProjectP();
         ASSERT_TRUE( project != NULL );
 
         DgnViewId viewId;
@@ -92,7 +92,7 @@ TEST(DgnLevelTableTests,MergeLevelMasks)
 
         FOR_EACH(DgnLevels::Iterator::Entry const& level, project->Levels().MakeIterator())
             {
-            UInt32 iBit = (UInt32)(level.GetLevelId().GetValue()-1);
+            uint32_t iBit = (uint32_t)(level.GetLevelId().GetValue()-1);
 
             if (0 == strcmp (level.GetName(), "RefLevel2"))
                 ASSERT_FALSE( levelMask.Test(iBit) ) << L"master file turns off display of 'RefLevel2'";
@@ -107,7 +107,7 @@ TEST(DgnLevelTableTests,TurnOffLevelInView)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
     DgnViewId viewId;
@@ -141,7 +141,7 @@ TEST(DgnLevelTableTests,IModelMergeLevels)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"master.i.idgndb", __FILE__, OPENMODE_READONLY, TestDgnManager::DGNINITIALIZEMODE_None);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
     // Check that levels were correctly imported:
@@ -212,7 +212,7 @@ TEST(DgnLevelTableTests,IModelCopyAndRenameLevels)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"master2.i.idgndb", __FILE__, OPENMODE_READONLY, TestDgnManager::DGNINITIALIZEMODE_None);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
     // Check that levels were correctly imported:
@@ -274,7 +274,7 @@ TEST(DgnLevelTableTests,UpdateLevel)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
     DgnLevelTableRow level = project->Levels().QueryLevelByName ("Default");
@@ -300,7 +300,7 @@ TEST(DgnLevelTableTests, WorkWithLevels)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"ElementsSymbologyByLevel.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL);
 
     auto const& levelTable = project->Levels();
@@ -326,7 +326,7 @@ TEST(DgnLevelTableTests, WorkWithLevels)
 
 struct SetVt : BeSQLite::VirtualSet
 {
-    bset<UInt32> m_set;
+    bset<uint32_t> m_set;
     virtual bool _IsInSet (int nVals, DbValue const* vals) const override {BeAssert(nVals==1); return m_set.end() != m_set.find(vals[0].GetValueInt());}
 };
 
@@ -339,7 +339,7 @@ TEST(DgnLevelTableTests, QueryLevelIdFromTable)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto const& levelTable = project->Levels();
@@ -377,7 +377,7 @@ TEST(DgnLevelTableTests, QueryNonExistingLevelIdFromTable)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto const& levelTable = project->Levels();
@@ -396,7 +396,7 @@ TEST(DgnLevelTableTests, LevelsAndFacets)
     Utf8CP descriptionValue = "TestDescription";
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto& levelTable = project->Levels();
@@ -514,7 +514,7 @@ TEST(DgnLevelTableTests, InsertLevelExistingNameToTable)
     Utf8CP descriptionValue = "TestDescription";
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto& levelTable = project->Levels();
@@ -534,7 +534,7 @@ TEST(DgnLevelTableTests, DeleteLevelFromTable)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto& levelTable = project->Levels();
@@ -558,7 +558,7 @@ TEST(DgnLevelTableTests, UpdateLevelInTable)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto& levelTable = project->Levels();
@@ -589,7 +589,7 @@ TEST(DgnLevelTableTests, UpdateLevelColor)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto& levelTable = project->Levels();
@@ -613,7 +613,7 @@ TEST(DgnLevelTableTests, UpdateLevelWithExistingName)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto& levelTable = project->Levels();
@@ -647,7 +647,7 @@ TEST(DgnLevelTableTests, LevelIterFilter)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     DgnLevels::Iterator levelIter = project->Levels().MakeIterator("WHERE Name LIKE @filter");
@@ -677,7 +677,7 @@ TEST(DgnLevelTableTests, GetHighestLevelId)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     auto const& levelTable = project->Levels();
@@ -693,7 +693,7 @@ TEST(DgnLevelTableTests, GetIteratorRowProperties)
     ScopedDgnHost autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"SiteLayout.i.idgndb", __FILE__, OPENMODE_READWRITE);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     DgnLevels::Iterator iter = DgnLevels::Iterator (*project, " WHERE Name = 'ECT_PAGE_LINENUMBER_REGION'");

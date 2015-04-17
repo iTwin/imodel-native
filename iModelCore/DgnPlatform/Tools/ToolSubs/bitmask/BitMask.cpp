@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/bitmask/BitMask.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -36,15 +36,15 @@ size_t          BitMask::s_totalBitMaskMemoryMalloced;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool     FindHighestBitInArray
 (
-UInt32*         highestFound,           // <= highest found.
-UInt32          arraySize,              // => IN number of bits to set
-const UInt32*   pBitArrayIn             // => IN bit index array
+uint32_t*         highestFound,           // <= highest found.
+uint32_t        arraySize,              // => IN number of bits to set
+const uint32_t*   pBitArrayIn             // => IN bit index array
 )
     {
     bool    anyValid = false;
-    UInt32  maxBitNum = 0;
+    uint32_t maxBitNum = 0;
 
-    for (UInt32 iArray = 0; iArray < arraySize; iArray++, pBitArrayIn++)
+    for (uint32_t iArray = 0; iArray < arraySize; iArray++, pBitArrayIn++)
         {
         if ( (*pBitArrayIn != 0xffffffff) && (*pBitArrayIn >= maxBitNum) )
             {
@@ -59,15 +59,15 @@ const UInt32*   pBitArrayIn             // => IN bit index array
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            BitMask::AllocBitArray (UInt32 numBits)
+void            BitMask::AllocBitArray (uint32_t numBits)
     {
     BeAssert (NULL == m_bitArray);
 
-    UInt32  arraySize  = SHORTS_FROM_BITS (numBits);
-    UInt32  arrayBytes = arraySize * sizeof (UInt16);
+    uint32_t arraySize  = SHORTS_FROM_BITS (numBits);
+    uint32_t arrayBytes = arraySize * sizeof (uint16_t);
 
     if (arrayBytes > 0)
-        m_bitArray      = static_cast <UInt16*> (memutil_malloc (arrayBytes, HEAPSIG_BitMask));
+        m_bitArray      = static_cast <uint16_t*> (bentleyAllocator_malloc(arrayBytes));
 
     m_numValidBits  = numBits;
 #if defined (DEBUG_BITMASK)
@@ -78,7 +78,7 @@ void            BitMask::AllocBitArray (UInt32 numBits)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            BitMask::ReallocBitArray (UInt32 newNumBits)
+void            BitMask::ReallocBitArray (uint32_t newNumBits)
     {
     if (NULL == m_bitArray)
         {
@@ -92,12 +92,12 @@ void            BitMask::ReallocBitArray (UInt32 newNumBits)
     else
         {
         // change size.
-        UInt32  oldArraySize = SHORTS_FROM_BITS (m_numValidBits) * sizeof (UInt16);
-        UInt32  newArraySize = SHORTS_FROM_BITS (newNumBits) * sizeof (UInt16);
+        uint32_t oldArraySize = SHORTS_FROM_BITS (m_numValidBits) * sizeof (uint16_t);
+        uint32_t newArraySize = SHORTS_FROM_BITS (newNumBits) * sizeof (uint16_t);
 
         if (oldArraySize != newArraySize)
             {
-            m_bitArray      = static_cast <UInt16*> (memutil_realloc (m_bitArray, newArraySize));
+            m_bitArray      = static_cast <uint16_t*> (memutil_realloc (m_bitArray, newArraySize));
 #if defined (DEBUG_BITMASK)
             s_totalBitMaskMemoryMalloced += (newArraySize - oldArraySize);
 #endif
@@ -118,7 +118,7 @@ void            BitMask::FreeBitArray ()
         return;
 
 #if defined (DEBUG_BITMASK)
-    s_totalBitMaskMemoryMalloced -= (SHORTS_FROM_BITS (m_numValidBits) * sizeof (UInt16));
+    s_totalBitMaskMemoryMalloced -= (SHORTS_FROM_BITS (m_numValidBits) * sizeof (uint16_t));
 #endif
     memutil_free (m_bitArray);
     m_bitArray  = NULL;
@@ -190,11 +190,11 @@ void            BitMask::SetDefaultBitValue (bool defaultBitValue)
         return;
 
     // make sure all bits beyond the valid bits are set to the default value.
-    UInt16  arrayIndex = static_cast <UInt16> (SHORT_INDEX_FROM_BIT (m_numValidBits));
-    UInt    numBitsToSet = (16 - (m_numValidBits % 16)) % 16;
-    UInt16 *pShort = &m_bitArray[arrayIndex];
-    UInt    iBit;
-    UInt16  bitMask;
+    uint16_t arrayIndex = static_cast <uint16_t> (SHORT_INDEX_FROM_BIT (m_numValidBits));
+    unsigned int numBitsToSet = (16 - (m_numValidBits % 16)) % 16;
+    uint16_t *pShort = &m_bitArray[arrayIndex];
+    unsigned int iBit;
+    uint16_t bitMask;
     for (iBit=0, bitMask = 1 << 15; iBit < numBitsToSet; iBit++, bitMask = bitMask >> 1)
         {
         if (defaultBitValue)
@@ -209,7 +209,7 @@ void            BitMask::SetDefaultBitValue (bool defaultBitValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          BitMask::GetCapacity () const
+uint32_t        BitMask::GetCapacity () const
     {
     return m_numValidBits;
     }
@@ -217,7 +217,7 @@ UInt32          BitMask::GetCapacity () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BitMask::EnsureCapacity (UInt32 numBits)
+StatusInt       BitMask::EnsureCapacity (uint32_t numBits)
     {
     // this method only increases the capacity - never decreases it.
     if (0xffffffff == numBits)
@@ -226,13 +226,13 @@ StatusInt       BitMask::EnsureCapacity (UInt32 numBits)
     if (m_numValidBits >= numBits)
         return SUCCESS;
 
-    UInt32      numShorts     = SHORTS_FROM_BITS (numBits);
-    UInt32      currentShorts = SHORTS_FROM_BITS (m_numValidBits);
+    uint32_t    numShorts     = SHORTS_FROM_BITS (numBits);
+    uint32_t    currentShorts = SHORTS_FROM_BITS (m_numValidBits);
 
     if (numShorts > currentShorts)
         {
         ReallocBitArray (numBits);
-        memset ((m_bitArray + currentShorts), m_defaultBitValue ? 0xffff : 0, sizeof(UInt16) * (numShorts - currentShorts));
+        memset ((m_bitArray + currentShorts), m_defaultBitValue ? 0xffff : 0, sizeof(uint16_t) * (numShorts - currentShorts));
         }
     else
         {
@@ -246,14 +246,14 @@ StatusInt       BitMask::EnsureCapacity (UInt32 numBits)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BitMask::SetCapacity (UInt32 numBits)
+StatusInt       BitMask::SetCapacity (uint32_t numBits)
     {
     if (numBits > m_numValidBits)
         return EnsureCapacity (numBits);
 
     // this method also makes the bit mask smaller.
-    UInt32      numShorts     = SHORTS_FROM_BITS (numBits);
-    UInt32      currentShorts = SHORTS_FROM_BITS (m_numValidBits);
+    uint32_t    numShorts     = SHORTS_FROM_BITS (numBits);
+    uint32_t    currentShorts = SHORTS_FROM_BITS (m_numValidBits);
 
     if (numShorts < currentShorts)
         {
@@ -271,21 +271,21 @@ StatusInt       BitMask::SetCapacity (UInt32 numBits)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BitMask::SetBits (UInt32 arraySize, const UInt32* bitIndexArray, bool value)
+StatusInt       BitMask::SetBits (uint32_t arraySize, const uint32_t* bitIndexArray, bool value)
     {
     if ( (NULL == bitIndexArray) || (0 == arraySize) )
         return BSIERROR;
 
     // make sure we have enough bits.
-    UInt32  highestBitIndex;
+    uint32_t highestBitIndex;
     if (!FindHighestBitInArray (&highestBitIndex, arraySize, bitIndexArray))
         return SUCCESS;
 
     // ensure that the bit array is large enough.
     EnsureCapacity (highestBitIndex+1);
 
-    UInt32          iArray;
-    const UInt32*   pBitIndex;
+    uint32_t        iArray;
+    const uint32_t*   pBitIndex;
     for (iArray = 0, pBitIndex = bitIndexArray; iArray < arraySize; iArray++, pBitIndex++)
         {
         if (*pBitIndex != 0xffffffff)
@@ -306,7 +306,7 @@ StatusInt       BitMask::SetBits (UInt32 arraySize, const UInt32* bitIndexArray,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt  BitMask::SetBit (UInt32 bitIndex, bool value)
+StatusInt  BitMask::SetBit (uint32_t bitIndex, bool value)
     {
     return SetBits (1, &bitIndex, value);
     }
@@ -314,7 +314,7 @@ StatusInt  BitMask::SetBit (UInt32 bitIndex, bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BitMask::Set (UInt32 bitIndex)
+StatusInt       BitMask::Set (uint32_t bitIndex)
     {
     return SetBits (1, &bitIndex, true);
     }
@@ -322,7 +322,7 @@ StatusInt       BitMask::Set (UInt32 bitIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BitMask::Clear (UInt32 bitIndex)
+StatusInt       BitMask::Clear (uint32_t bitIndex)
     {
     return SetBits (1, &bitIndex, false);
     }
@@ -330,7 +330,7 @@ StatusInt       BitMask::Clear (UInt32 bitIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BitMask::SetFromBitArray (UInt32 numValidBits, const UInt16* pBitArrayIn)
+StatusInt       BitMask::SetFromBitArray (uint32_t numValidBits, const uint16_t* pBitArrayIn)
     {
     if (numValidBits <= 0 || NULL == pBitArrayIn)
         {
@@ -342,14 +342,14 @@ StatusInt       BitMask::SetFromBitArray (UInt32 numValidBits, const UInt16* pBi
     if (SUCCESS != (status = SetCapacity (numValidBits)))
         return  status;
 
-    memcpy (m_bitArray, pBitArrayIn, sizeof(UInt16) * SHORTS_FROM_BITS (numValidBits));
+    memcpy (m_bitArray, pBitArrayIn, sizeof(uint16_t) * SHORTS_FROM_BITS (numValidBits));
 
     // make sure all bits beyond the valid bits are set to the default value */
-    UInt    arrayIndex = SHORT_INDEX_FROM_BIT (numValidBits);
-    UInt16 *pShort = &m_bitArray[arrayIndex];
-    UInt    numBitsToSet = (16 - (numValidBits % 16)) % 16;
-    UInt16  bitMask;
-    UInt    iBit;
+    unsigned int arrayIndex = SHORT_INDEX_FROM_BIT (numValidBits);
+    uint16_t *pShort = &m_bitArray[arrayIndex];
+    unsigned int numBitsToSet = (16 - (numValidBits % 16)) % 16;
+    uint16_t bitMask;
+    unsigned int iBit;
     for (iBit=0, bitMask = 1 << 15; iBit < numBitsToSet; iBit++, bitMask = bitMask >> 1)
         {
         if (m_defaultBitValue)
@@ -373,9 +373,9 @@ StatusInt       BitMask::SetFromBitMask (BitMaskCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BitMask::SetByBitPosition (UInt32 bitArrayOffset, UInt16 bitPosition, bool value)
+StatusInt       BitMask::SetByBitPosition (uint32_t bitArrayOffset, uint16_t bitPosition, bool value)
     {
-    UInt32  currentArraySize = SHORTS_FROM_BITS (m_numValidBits);
+    uint32_t currentArraySize = SHORTS_FROM_BITS (m_numValidBits);
     if (bitArrayOffset >= currentArraySize)
         return BSIERROR;
 
@@ -392,9 +392,9 @@ StatusInt       BitMask::SetByBitPosition (UInt32 bitArrayOffset, UInt16 bitPosi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            BitMask::SetAll (bool value)
     {
-    UInt16 setValue = value ? 0xffff : 0;
+    uint16_t setValue = value ? 0xffff : 0;
     if (NULL != m_bitArray)
-        memset (m_bitArray, setValue, sizeof(UInt16) * SHORTS_FROM_BITS (m_numValidBits));
+        memset (m_bitArray, setValue, sizeof(uint16_t) * SHORTS_FROM_BITS (m_numValidBits));
 
     // when we set all, we set the default value, too */
     m_defaultBitValue = value;
@@ -419,7 +419,7 @@ void BitMask::ClearAll ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BitMask::SetFromString (Utf8StringCR sourceString, UInt32 indexOrigin, UInt32 maxIndexIn)
+void BitMask::SetFromString (Utf8StringCR sourceString, uint32_t indexOrigin, uint32_t maxIndexIn)
     {
     size_t  stringLen = sourceString.length();
     if (0 == stringLen)
@@ -438,10 +438,10 @@ void BitMask::SetFromString (Utf8StringCR sourceString, UInt32 indexOrigin, UInt
     /* get the first substring into temp (substrings are n or n-m) */
     while ( (0 != *pString) && (*pString >= '0') && (*pString <= '9') && (NULL != (pString = BeStringUtilities::Strtok (pString, " ,", &pStringContext))) )
         {
-        UInt32 startRange, endRange;
+        uint32_t startRange, endRange;
 
         /* extract "startRange" (and possibly "endRange") from the substring */
-        int scanCount = BE_STRING_UTILITIES_UTF8_SSCANF (pString, "%u-%u", &startRange, &endRange);
+        int scanCount = BE_STRING_UTILITIES_UTF8_SSCANF (pString, "%u-%u", (uint32_t*) &startRange, (uint32_t*) &endRange);
 
         /* if "endRange" not specified, set it to be the same as "startRange" */
         if (scanCount < 2)
@@ -450,7 +450,7 @@ void BitMask::SetFromString (Utf8StringCR sourceString, UInt32 indexOrigin, UInt
         /* make sure "startRange" is greater than or equal to "endRange" */
         if (endRange < startRange)
             {
-            UInt32      tempRange;
+            uint32_t    tempRange;
             tempRange  = endRange;
             endRange   = startRange;
             startRange = tempRange;
@@ -467,7 +467,7 @@ void BitMask::SetFromString (Utf8StringCR sourceString, UInt32 indexOrigin, UInt
         endRange   -= indexOrigin;
 
         /* set all bits in the range */
-        for (UInt32 iRange = startRange; iRange <= endRange; iRange++)
+        for (uint32_t iRange = startRange; iRange <= endRange; iRange++)
             {
             if (iRange < maxIndexIn)
                 SetBits (1, &iRange, 1);
@@ -488,16 +488,16 @@ void BitMask::SetFromString (Utf8StringCR sourceString, UInt32 indexOrigin, UInt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BitMask::ToString (Utf8StringR stringOut, UInt32 indexOrigin) const
+void BitMask::ToString (Utf8StringR stringOut, uint32_t indexOrigin) const
     {
     stringOut = "";
 
     bool        bFirstPass = true, bCurrentRun = false;
     char        currentString[100];
-    UInt32      lastBit = 0, firstBitRange = 0, lastBitRange = 0, nextBit = 0;
-    UInt32      numBits = GetCapacity();
+    uint32_t    lastBit = 0, firstBitRange = 0, lastBitRange = 0, nextBit = 0;
+    uint32_t    numBits = GetCapacity();
 
-    for (UInt32 iBit = 0; iBit < numBits; iBit++)
+    for (uint32_t iBit = 0; iBit < numBits; iBit++)
         {
         if (!Test (iBit))
             continue;
@@ -566,14 +566,14 @@ void            BitMask::Dump
 (
 FILE*           pFileIn,        // => IN file to dump into */
 bool            asString,       // => IN if true, then dump as a string, else dump as bits
-UInt32          indexOrigin
+uint32_t        indexOrigin
 ) const
     {
     if (!asString)
         {
-        for (UInt32 iBit = 0; iBit < m_numValidBits; iBit++)
+        for (uint32_t iBit = 0; iBit < m_numValidBits; iBit++)
             {
-            UInt16 *pShort = &m_bitArray[SHORT_INDEX_FROM_BIT(iBit)];
+            uint16_t *pShort = &m_bitArray[SHORT_INDEX_FROM_BIT(iBit)];
 
             if (*pShort & SHORT_MASK_FROM_BIT (iBit))
                 toolSubsystem_fwprintf(pFileIn, L"1");
@@ -606,14 +606,14 @@ UInt32          indexOrigin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BitMask::Invert (UInt32 bitIndex)
+StatusInt       BitMask::Invert (uint32_t bitIndex)
     {
     if (bitIndex > m_numValidBits)
         return BSIERROR;
 
-    UInt32  arrayIndex      = SHORT_INDEX_FROM_BIT (bitIndex);
-    UInt16  bitPositionMask = SHORT_MASK_FROM_BIT (bitIndex);
-    UInt16  *pShort         = &m_bitArray[arrayIndex];
+    uint32_t arrayIndex      = SHORT_INDEX_FROM_BIT (bitIndex);
+    uint16_t bitPositionMask = SHORT_MASK_FROM_BIT (bitIndex);
+    uint16_t *pShort         = &m_bitArray[arrayIndex];
 
     *pShort = *pShort ^ bitPositionMask;
 
@@ -625,9 +625,9 @@ StatusInt       BitMask::Invert (UInt32 bitIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            BitMask::InvertAll ()
     {
-    UInt32      numShorts = SHORTS_FROM_BITS (m_numValidBits);
-    UInt16*     pShort;
-    UInt32      iShort;
+    uint32_t    numShorts = SHORTS_FROM_BITS (m_numValidBits);
+    uint16_t*     pShort;
+    uint32_t    iShort;
 
     for (iShort = 0, pShort = m_bitArray; iShort < numShorts; iShort++, pShort++)
         *pShort = ~(*pShort);
@@ -639,7 +639,7 @@ void            BitMask::InvertAll ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            BitMask::Test (UInt32 bitIndex) const
+bool            BitMask::Test (uint32_t bitIndex) const
     {
     if (bitIndex < m_numValidBits)
         {
@@ -657,7 +657,7 @@ bool            BitMask::Test (UInt32 bitIndex) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-const UInt16*   BitMask::GetBitArray () const
+const uint16_t*   BitMask::GetBitArray () const
     {
     return m_bitArray;
     }
@@ -667,9 +667,9 @@ const UInt16*   BitMask::GetBitArray () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            BitMask::Test (BitMaskCR testMask) const
     {
-    const UInt16*   bitMaskP  = m_bitArray;
-    const UInt16*   testMaskP = testMask.m_bitArray;
-    const UInt16*   endBitMaskP;
+    const uint16_t*   bitMaskP  = m_bitArray;
+    const uint16_t*   testMaskP = testMask.m_bitArray;
+    const uint16_t*   endBitMaskP;
     int     lastIndex = SHORTS_FROM_BITS (m_numValidBits);
     int     testIndex = SHORTS_FROM_BITS (testMask.m_numValidBits);
 
@@ -687,10 +687,10 @@ bool            BitMask::Test (BitMaskCR testMask) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          BitMask::GetNumBitsSet () const
+uint32_t        BitMask::GetNumBitsSet () const
     {
-    UInt32      numBitsSet = 0;
-    for (UInt32 iBitIndex = 0; iBitIndex < m_numValidBits; iBitIndex++)
+    uint32_t    numBitsSet = 0;
+    for (uint32_t iBitIndex = 0; iBitIndex < m_numValidBits; iBitIndex++)
         {
         if (Test (iBitIndex))
             numBitsSet++;
@@ -712,9 +712,9 @@ bool            BitMask::IsEqual (BitMaskCP other) const
     if (m_numValidBits != other->m_numValidBits)
         return false;
 
-    UInt16 *pShortArray1 = m_bitArray;
-    UInt16 *pShortArray2 = other->m_bitArray;
-    for (UInt32 iShort = 0, numShorts = SHORTS_FROM_BITS (m_numValidBits); iShort < numShorts; iShort++, pShortArray1++, pShortArray2++)
+    uint16_t *pShortArray1 = m_bitArray;
+    uint16_t *pShortArray2 = other->m_bitArray;
+    for (uint32_t iShort = 0, numShorts = SHORTS_FROM_BITS (m_numValidBits); iShort < numShorts; iShort++, pShortArray1++, pShortArray2++)
         {
         if (*pShortArray1 != *pShortArray2)
             return false;
@@ -733,9 +733,9 @@ bool            BitMask::AnyBitSet () const
 
 
     // test the part of the array that is fully populated.
-    UInt32          lastFullIndex = m_numValidBits/16;
-    const UInt16*   bitMaskP      = m_bitArray;
-    const UInt16*   endBitMaskP;
+    uint32_t        lastFullIndex = m_numValidBits/16;
+    const uint16_t*   bitMaskP      = m_bitArray;
+    const uint16_t*   endBitMaskP;
     for (bitMaskP = m_bitArray, endBitMaskP = bitMaskP + lastFullIndex; bitMaskP < endBitMaskP; bitMaskP++)
         {
         if (0 != *bitMaskP)
@@ -743,7 +743,7 @@ bool            BitMask::AnyBitSet () const
         }
 
     // if we got here, need to test the individual bits of the last bitMask.
-    for (UInt32 iBit = lastFullIndex * sizeof(UInt16); iBit < m_numValidBits; iBit++)
+    for (uint32_t iBit = lastFullIndex * sizeof(uint16_t); iBit < m_numValidBits; iBit++)
         {
         if (Test (iBit))
             return true;
@@ -769,8 +769,8 @@ BitMaskP        BitMask::Clone (BitMaskCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            BitMask::LogicalOperation (BitMaskCR source, BitMaskOperation operation)
     {
-    UInt32          inputValidBits  = source.m_numValidBits;
-    UInt32          outputValidBits = m_numValidBits;
+    uint32_t        inputValidBits  = source.m_numValidBits;
+    uint32_t        outputValidBits = m_numValidBits;
 
     /* if the defaultBitValue of the output bitMask is true, then widen unless BitMaskOperation::Or/BitMaskOperation::OrNot, which can never clear a bit */
     /* if the defaultBitValue of the output bitMask is false, then widen unless BitMaskOperation::And/BitMaskOperation::AndNot, which can never set a bit */
@@ -782,12 +782,12 @@ void            BitMask::LogicalOperation (BitMaskCR source, BitMaskOperation op
         }
 
     // find the end of the loop */
-    UInt32          outputValidShorts;
-    UInt32          outputCount;
+    uint32_t        outputValidShorts;
+    uint32_t        outputCount;
     outputCount = outputValidShorts = SHORTS_FROM_BITS (m_numValidBits);
 
     /* now we have to worry about the case where the input bitmask is narrower than the output bit mask */
-    UInt32          inputValidShorts;
+    uint32_t        inputValidShorts;
     if (outputValidShorts > (inputValidShorts = SHORTS_FROM_BITS (inputValidBits)))
         {
         bool    outputCouldChangeFromDefaultBits = ( (operation == BitMaskOperation::Xor) ||
@@ -797,15 +797,15 @@ void            BitMask::LogicalOperation (BitMaskCR source, BitMaskOperation op
             outputCount = inputValidShorts;
         }
 
-    UInt16         *pOutEnd;
-    const UInt16   *pInEnd;
-    const UInt16   *pIn;
-    UInt16         *pOut;
-    UInt16          defaultInMask = (0 == source.m_defaultBitValue) ? 0 : 0xffff;
+    uint16_t       *pOutEnd;
+    const uint16_t *pInEnd;
+    const uint16_t *pIn;
+    uint16_t       *pOut;
+    uint16_t        defaultInMask = (0 == source.m_defaultBitValue) ? 0 : 0xffff;
     for (pIn = source.m_bitArray, pOut = m_bitArray, pOutEnd = pOut + outputCount, pInEnd = pIn + inputValidShorts;
                 pOut < pOutEnd; pOut++, pIn++)
         {
-        UInt16  input = (pIn < pInEnd) ? *pIn : defaultInMask;
+        uint16_t input = (pIn < pInEnd) ? *pIn : defaultInMask;
 
         if (operation == BitMaskOperation::Or)
             *pOut = *pOut | input;
@@ -866,14 +866,14 @@ void            BitMask::OrNot (BitMaskCR source)
 
 // NOTE: DO NOT change the BoolInt's in the two functions below to bool - the byte arrays created this way are stored persistently in V8 files!
 /*----------------------------------------------------------------------------------*//**
-* Copy the contents of the bitmask to a byte array so it can be written to a file
+* Copy the contents of the bitmask to a Byte array so it can be written to a file
 * @bsimethod                    ChuckKirschman                  07/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public StatusInt  bitMask_toFileByteArray
 (
 BitMaskCP       pBitMaskIn,           /* => IN bit mask array */
-UInt16*         pNumBytes,             /* <= OUT number of filled bytes in pByteArray */
-byte**          pByteArray            /* <= Pointer to place for buffer.  Up to caller to free. */
+uint16_t*         pNumBytes,             /* <= OUT number of filled bytes in pByteArray */
+Byte**          pByteArray            /* <= Pointer to place for buffer.  Up to caller to free. */
 )
     {
 
@@ -888,8 +888,8 @@ byte**          pByteArray            /* <= Pointer to place for buffer.  Up to 
         return (SUCCESS);
         }
 
-    UInt32  numValidBits  = pBitMaskIn->GetCapacity();
-    UInt16  bytesRequired = SHORTS_FROM_BITS (numValidBits) * sizeof(UInt16) + sizeof(UInt32) + sizeof (UInt32) & 0xffff;
+    uint32_t numValidBits  = pBitMaskIn->GetCapacity();
+    uint16_t bytesRequired = SHORTS_FROM_BITS (numValidBits) * sizeof(uint16_t) + sizeof(uint32_t) + sizeof (uint32_t) & 0xffff;
 
     if (NULL != pNumBytes)
         *pNumBytes = bytesRequired;
@@ -897,36 +897,36 @@ byte**          pByteArray            /* <= Pointer to place for buffer.  Up to 
     if (NULL == pByteArray)
         return SUCCESS;
 
-    byte    *pByte, *pBuffer;
-    if (NULL == (pBuffer = (byte *)memutil_calloc (bytesRequired, sizeof *pByte, HEAPSIG_BitMaskCpy)))
+    Byte *pByte, *pBuffer;
+    if (NULL == (pBuffer = (Byte *)bentleyAllocator_calloc (bytesRequired * (sizeof *pByte))))
         return BSIERROR;
 
     pByte = pBuffer;
-    memcpy (pByte, &numValidBits, sizeof (UInt32));
-    pByte += sizeof (UInt32);
+    memcpy (pByte, &numValidBits, sizeof (uint32_t));
+    pByte += sizeof (uint32_t);
 
-    UInt32  defaultBitValue = pBitMaskIn->GetDefaultBitValue();
-    memcpy (pByte, &defaultBitValue, sizeof (UInt32));
-    pByte += sizeof (UInt32);
+    uint32_t defaultBitValue = pBitMaskIn->GetDefaultBitValue();
+    memcpy (pByte, &defaultBitValue, sizeof (uint32_t));
+    pByte += sizeof (uint32_t);
 
-    memcpy (pByte, pBitMaskIn->GetBitArray(), SHORTS_FROM_BITS (numValidBits) * sizeof(UInt16));
+    memcpy (pByte, pBitMaskIn->GetBitArray(), SHORTS_FROM_BITS (numValidBits) * sizeof(uint16_t));
     *pByteArray = pBuffer;
 
     return SUCCESS;
     }
 
 /*----------------------------------------------------------------------------------*//**
-* Get the contents of the bitmask from a byte array that was read from a file
+* Get the contents of the bitmask from a Byte array that was read from a file
 * @bsimethod                    ChuckKirschman                  07/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public StatusInt  bitMask_fromFileByteArray
 (
 BitMaskH        ppBitMaskOut,           /* => IN bit mask array */
-const UInt16    numBytes,               /* => IN number of bytes in pByteArray */
-const byte*     pByteArray              /* => IN buffer to hold bytes.  It should be numBytes long */
+const uint16_t  numBytes,               /* => IN number of bytes in pByteArray */
+const Byte*     pByteArray              /* => IN buffer to hold bytes.  It should be numBytes long */
 )
     {
-    const byte  *pByte = pByteArray;
+    const Byte *pByte = pByteArray;
 
     if (NULL == ppBitMaskOut)
         return BSIERROR;
@@ -936,34 +936,34 @@ const byte*     pByteArray              /* => IN buffer to hold bytes.  It shoul
     if (0 == numBytes)
         return SUCCESS;
 
-    UInt32 numValidBits;
+    uint32_t numValidBits;
     memcpy (&numValidBits, pByte, sizeof (numValidBits));
     pByte += sizeof (numValidBits);
 
-    UInt32  defaultBitValue;
-    memcpy (&defaultBitValue, pByte, sizeof (UInt32));
-    pByte += sizeof (UInt32);
+    uint32_t defaultBitValue;
+    memcpy (&defaultBitValue, pByte, sizeof (uint32_t));
+    pByte += sizeof (uint32_t);
 
     /* Some error checking - the required size must equal the number of bytes remaining */
-    UInt32 numBytesRemaining = numBytes - sizeof (UInt32) - sizeof (UInt32);
-    UInt32 bitMaskSizeBytes  = SHORTS_FROM_BITS (numValidBits) * sizeof(UInt16);
+    uint32_t numBytesRemaining = numBytes - sizeof (uint32_t) - sizeof (uint32_t);
+    uint32_t bitMaskSizeBytes  = SHORTS_FROM_BITS (numValidBits) * sizeof(uint16_t);
 
     if (numBytesRemaining != bitMaskSizeBytes)
         return BSIERROR;
 
     *ppBitMaskOut = BitMask::Create (TO_BOOL (defaultBitValue));
-    (*ppBitMaskOut)->SetFromBitArray (bitMaskSizeBytes * 8, (const UInt16 *)pByte);
+    (*ppBitMaskOut)->SetFromBitArray (bitMaskSizeBytes * 8, (const uint16_t *)pByte);
 
     return SUCCESS;
     }
 
 /*----------------------------------------------------------------------------------*//**
-* Copy the contents of the bitmask to a byte array so it can be written to a file
+* Copy the contents of the bitmask to a Byte array so it can be written to a file
 * @bsimethod                    ChuckKirschman                  07/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public void     bitMask_freeFileByteArray
 (
-byte**  pByteArray            /* => buffer to free */
+Byte**  pByteArray            /* => buffer to free */
 )
     {
     if (NULL != pByteArray && NULL != *pByteArray)

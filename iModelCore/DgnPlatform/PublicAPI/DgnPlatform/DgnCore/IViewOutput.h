@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/IViewOutput.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -120,7 +120,7 @@ enum NpcCorners     /// The 8 corners of the NPC cube.
     NPC_CORNER_COUNT  = 8
 };
 
-//! Status Values for Viewport methods
+//! Status Values for DgnViewport methods
 enum class ViewportStatus   
 {
     Success            = 0,
@@ -150,21 +150,6 @@ enum class DrawExportFlags
     DeferTransparent    = 4,
 };
 
-//__PUBLISH_SECTION_END__
-
-//=======================================================================================
-//! Interface to manage Glyph caching.
-// @bsiclass
-//=======================================================================================
-struct     IDgnGlyphLayoutListener
-{
-virtual void    _OnGlyphAnnounced (/*added in graphite:*/DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset) = 0;
-virtual UInt32  _OnFontAnnounced (TextStringCR) = 0;
-virtual bool    _DidCacheGlyphs () = 0;
-};
-
-//__PUBLISH_SECTION_START__
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -180,12 +165,12 @@ struct IViewOutput : IRefCounted, IViewDraw
 //__PUBLISH_SECTION_END__
 
 protected:
-    virtual void      _SetViewAttributes (ViewFlags viewFlags, RgbColorDef const& bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText, CookedDisplayStyleCP displayOverrides) = 0;
+    virtual void      _SetViewAttributes (ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
     virtual DgnDisplayCoreTypes::DeviceContextP    _GetScreenDC () const = 0;
     virtual StatusInt _AssignDC (DgnDisplayCoreTypes::DeviceContextP) = 0;
     virtual void      _AddLights (bool    threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
     virtual void      _AdjustBrightness (bool useFixedAdaptation, double brightness) = 0;
-    virtual UInt64    _GetLightStamp () = 0;
+    virtual uint64_t  _GetLightStamp () = 0;
     virtual void      _DefineFrustum (DPoint3dCR frustPts, double fraction, bool is2d) = 0;
     virtual void      _SetDrawBuffer (DgnDrawBuffer drawBuffer, BSIRectCP subRect) = 0;
     virtual DgnDrawBuffer _GetDrawBuffer () const = 0;
@@ -219,30 +204,24 @@ protected:
     virtual bool      _CheckNeedsHeal (BSIRect* rect) = 0;
     virtual void      _BeginDecorating (BSIRect const* rect) = 0;
     virtual void      _BeginOverlayMode () = 0;
-    virtual void      _OnElementStart (ElementRefP elemRef) = 0;
-    virtual void      _OnElementEnd (ElementRefP elemRef) = 0;
     virtual bool      _LocateQvElem (QvElem*, DPoint2dCR borePt, double radius, DPoint3dR hitPt, DVec3dP hitNormal, int (*stopProc)(CallbackArgP), CallbackArgP arg) = 0;
     virtual void      _AbortOutstandingOperations () = 0; // Used in multithreaded case.
     virtual void      _SetIdleCallback (bool (*)(CallbackArgP userData), CallbackArgP userData) = 0; // Used in multithreaded case.
     virtual QvView*   _GetQvView () const = 0; // May return NULL
-    virtual void      _DefineColorMap (DgnColorMapCP) = 0;
-    virtual void      _ModifyColorMapEntry (int index, UInt32 color) = 0;
-    virtual int       _GetHighestUsedColorIndex (QvElem*) = 0;
     virtual void      _SetFlashMode (bool newMode) = 0;
-    virtual uintptr_t _GetColorTableId () = 0;
-    virtual BentleyStatus _FillImageCaptureBuffer (bvector<UChar>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, bool topDown) = 0; // new in graphite
+    virtual BentleyStatus _FillImageCaptureBuffer (bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
     virtual int       _GetVisibleTiles(QvMRImageP mri, size_t bufSize, int* lrc) = 0;
 
 public:
-    virtual UInt32 AddRef() const = 0;
-    virtual UInt32 Release() const = 0;
+    virtual uint32_t AddRef() const = 0;
+    virtual uint32_t Release() const = 0;
 
-    DGNPLATFORM_EXPORT void SetViewAttributes (ViewFlags viewFlags, RgbColorDef const& bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText, CookedDisplayStyleCP displayOverrides);
+    DGNPLATFORM_EXPORT void SetViewAttributes (ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText);
     DGNPLATFORM_EXPORT DgnDisplayCoreTypes::DeviceContextP GetScreenDC () const;
     DGNPLATFORM_EXPORT StatusInt AssignDC (DgnDisplayCoreTypes::DeviceContextP);
-    DGNPLATFORM_EXPORT void      AddLights (bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = NULL);
-    DGNPLATFORM_EXPORT void      AdjustBrightness (bool useFixedAdaptation, double brightness);
-    DGNPLATFORM_EXPORT UInt64    GetLightStamp ();
+    DGNPLATFORM_EXPORT void AddLights (bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = NULL);
+    DGNPLATFORM_EXPORT void AdjustBrightness (bool useFixedAdaptation, double brightness);
+    DGNPLATFORM_EXPORT uint64_t GetLightStamp ();
     DGNPLATFORM_EXPORT void DefineFrustum (DPoint3dCR frustPts, double fraction, bool is2d);
     DGNPLATFORM_EXPORT void SetDrawBuffer (DgnDrawBuffer drawBuffer, BSIRect const* subRect);
     DGNPLATFORM_EXPORT DgnDrawBuffer GetDrawBuffer () const;
@@ -274,18 +253,12 @@ public:
     DGNPLATFORM_EXPORT void HealComplete (bool aborted);
     DGNPLATFORM_EXPORT void BeginDecorating (BSIRectCP rect);
     DGNPLATFORM_EXPORT void BeginOverlayMode ();
-    DGNPLATFORM_EXPORT void OnElementStart (ElementRefP elemRef);
-    DGNPLATFORM_EXPORT void OnElementEnd (ElementRefP elemRef);
     DGNPLATFORM_EXPORT bool LocateQvElem(QvElem*, DPoint2dCR borePt, double radius, DPoint3dR hitPt, DVec3dP hitNormal, int(*stopProc)(CallbackArgP), CallbackArgP arg);
     DGNPLATFORM_EXPORT void AbortOutstandingOperations (); // Used in multithreaded case.
     DGNPLATFORM_EXPORT void SetIdleCallback (bool (*)(CallbackArgP userData), CallbackArgP userData); // Used in multithreaded case.
     DGNPLATFORM_EXPORT QvView* GetQvView () const; // May return NULL
-    DGNPLATFORM_EXPORT void DefineColorMap (DgnColorMapCP);
-    DGNPLATFORM_EXPORT void ModifyColorMapEntry (int index, UInt32 color);
-    DGNPLATFORM_EXPORT int GetHighestUsedColorIndex (QvElem*);
     DGNPLATFORM_EXPORT void SetFlashMode (bool newMode);
-    DGNPLATFORM_EXPORT uintptr_t GetColorTableId ();
-    DGNPLATFORM_EXPORT BentleyStatus FillImageCaptureBuffer (bvector<UChar>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, bool topDown); // new in graphite
+    DGNPLATFORM_EXPORT BentleyStatus FillImageCaptureBuffer (bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown);
     DGNPLATFORM_EXPORT int GetVisibleTiles(QvMRImageP mri, size_t bufSize, int* lrc);
 
 //__PUBLISH_CLASS_VIRTUAL__

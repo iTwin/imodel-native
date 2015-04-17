@@ -50,7 +50,7 @@ WStringP    m_preDefined;    /* hidden level for built-in macros */
 WStringP    m_system;
 WStringP    m_appl;
 WStringP    m_site;
-WStringP    m_project;
+WStringP    m_dgndb;
 WStringP    m_user;
 bool        m_locked;
 
@@ -64,7 +64,7 @@ MacroEntry ()
     m_system        = NULL;
     m_appl          = NULL;
     m_site          = NULL;
-    m_project       = NULL;
+    m_dgndb       = NULL;
     m_user          = NULL;
     m_locked        = NULL;
     }
@@ -84,8 +84,8 @@ MacroEntry ()
         delete m_appl;
     if (CFGVAR_DEFINED_NULL != m_site)
         delete m_site;
-    if (CFGVAR_DEFINED_NULL != m_project)
-        delete m_project;
+    if (CFGVAR_DEFINED_NULL != m_dgndb)
+        delete m_dgndb;
     if (CFGVAR_DEFINED_NULL != m_user)
         delete m_user;
     }
@@ -139,9 +139,9 @@ WCharCP     GetTranslationFromLevel (ConfigurationVariableLevel fromLevel, WChar
                 }
 
         case ConfigurationVariableLevel::Project:
-            if (m_project != NULL)
+            if (m_dgndb != NULL)
                 {
-                translation = m_project;
+                translation = m_dgndb;
                 break;
                 }
 
@@ -205,7 +205,7 @@ BentleyStatus   GetTranslationAtSpecificLevel (WStringP envStr, ConfigurationVar
             break;
 
         case ConfigurationVariableLevel::Project:
-            translation = m_project;
+            translation = m_dgndb;
             break;
 
         case ConfigurationVariableLevel::Site:
@@ -275,7 +275,7 @@ BentleyStatus   RemoveAtLevel (ConfigurationVariableLevel level, bool removeLock
             break;
 
         case ConfigurationVariableLevel::Project:
-            translation = &m_project;
+            translation = &m_dgndb;
             break;
 
         case ConfigurationVariableLevel::User:
@@ -310,7 +310,7 @@ ConfigurationVariableLevel  GetLevelOfDefinition ()
     if (m_user != NULL)
         return ConfigurationVariableLevel::User;
 
-    if (m_project != NULL)
+    if (m_dgndb != NULL)
         return ConfigurationVariableLevel::Project;
 
     if (m_site != NULL)
@@ -365,8 +365,8 @@ void    SetTranslation (WCharCP translation, ConfigurationVariableLevel level)
             break;
 
         case ConfigurationVariableLevel::Project:
-            delete m_project;
-            m_project = setTrans;
+            delete m_dgndb;
+            m_dgndb = setTrans;
             break;
 
         case ConfigurationVariableLevel::User:
@@ -409,7 +409,7 @@ bool    HasTranslationAtLevel (ConfigurationVariableLevel level)
                 return true;
 
         case ConfigurationVariableLevel::Project:
-            if (m_project != NULL)
+            if (m_dgndb != NULL)
                 return true;
 
         case ConfigurationVariableLevel::Site:
@@ -457,7 +457,7 @@ void    SetLocked (bool locked)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool     HasAnyTranslation ()
     {
-    return ( (NULL != m_user) || (NULL != m_project) || (NULL != m_site) || (NULL != m_appl) || (NULL != m_system) || (NULL != m_preDefined) ||  (NULL != m_sysEnv) );
+    return ( (NULL != m_user) || (NULL != m_dgndb) || (NULL != m_site) || (NULL != m_appl) || (NULL != m_system) || (NULL != m_preDefined) ||  (NULL != m_sysEnv) );
     }
 
 /*---------------------------------------------------------------------------------**//**

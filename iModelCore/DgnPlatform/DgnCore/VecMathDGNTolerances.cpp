@@ -2,12 +2,12 @@
 |
 |     $Source: DgnCore/VecMathDGNTolerances.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/VecMath.h>
-
+#include <Geom/internal/dsegment3d.fdf>
 /*---------------------------------------------------------------------------------**//**
 * see Quaternion Interpolation with extra spins (Jack Morrison, Graphic Gems III)
 * @bsimethod                                                    RayBentley      11/94
@@ -387,7 +387,7 @@ void LegacyMath::TMatrix::SetMatrixColumn (TransformP transformP, DPoint3dCP vec
     {
     if (vectorP)
         {
-        columnIndex = bsiGeom_cyclic3dAxis (columnIndex);
+        columnIndex = Angle::Cyclic3dAxis (columnIndex);
         transformP->form3d[0][columnIndex] = vectorP->x;
         transformP->form3d[1][columnIndex] = vectorP->y;
         transformP->form3d[2][columnIndex] = vectorP->z;
@@ -401,7 +401,7 @@ void LegacyMath::TMatrix::SetMatrixRow (TransformP transformP, DPoint3dCP vector
     {
     if (vectorP)
         {
-        rowIndex = bsiGeom_cyclic3dAxis (rowIndex);
+        rowIndex = Angle::Cyclic3dAxis (rowIndex);
         transformP->form3d[rowIndex][0] = vectorP->x;
         transformP->form3d[rowIndex][1] = vectorP->y;
         transformP->form3d[rowIndex][2] = vectorP->z;
@@ -799,7 +799,7 @@ DPoint3d   const *planeNormalP
     double bb = bsiDPoint3d_dotDifference (planePointP, lineStartP, (DVec3dCP) planeNormalP);
 
     if (    bsiDPoint3d_arePerpendicular (lineDirectionP, planeNormalP)
-        || !bsiTrig_safeDivide (&parameter, bb, aa, 0.0))
+        || !DoubleOps::SafeDivide (parameter, bb, aa, 0.0))
         status = ERROR;
     if (parameterP)
         *parameterP = parameter;
@@ -914,8 +914,10 @@ DPoint3dCP    anchor
 
     bsiRotMatrix_factorRotateScaleRotate (&matrixR, &rotMatrix1, NULL, &rotMatrix2);
     bsiRotMatrix_multiplyRotMatrixRotMatrix (&matrixU, &rotMatrix1, &rotMatrix2);
-    bsiRotMatrix_multiplyDPoint3dArray (&matrixU, &U_anchor, anchor, 1);
-    bsiRotMatrix_multiplyDPoint3dArray (&matrixR, &R_anchor, anchor, 1);
+    matrixU.Multiply (U_anchor, *anchor);
+    matrixR.Multiply (R_anchor, *anchor);
+    //bsiRotMatrix_multiplyDPoint3dArray (&matrixU, &U_anchor, anchor, 1);
+    //bsiRotMatrix_multiplyDPoint3dArray (&matrixR, &R_anchor, anchor, 1);
     bsiDPoint3d_add3ScaledDPoint3d (&newTranslation,  NULL,
                         &R_anchor, 1.0,
                         &oldTranslation, 1.0,

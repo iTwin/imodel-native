@@ -2,18 +2,18 @@
 |
 |  $Source: Tests/DgnProject/Performance/DgnECPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "DgnECPerformanceTests.h"
 #include "TestSchemaHelper.h"
 #include <ECObjects/ECObjectsAPI.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 
 USING_NAMESPACE_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-
+USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
 double PerformanceDgnECTests::s_increment = 5.0;
@@ -257,7 +257,7 @@ DgnDbTestDgnManager tdm
 
 TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstances)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, OPENMODE_READWRITE);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
 
     ECSchemaPtr schema;
     PerformanceTestFixture::ImportTestSchema (schema, tdm, 25, 25);
@@ -267,7 +267,7 @@ TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstances)
 
 TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstancesWithComplexSchema)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, OPENMODE_READWRITE);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
 
     ECSchemaPtr schema;
     PerformanceTestFixture::ImportComplexTestSchema (schema, tdm);

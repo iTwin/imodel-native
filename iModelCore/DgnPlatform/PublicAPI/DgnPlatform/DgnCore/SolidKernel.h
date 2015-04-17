@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/SolidKernel.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -170,7 +170,7 @@ typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to 
 //=======================================================================================
 struct BRepSubEntityTopo : IElemTopology
 {
-UInt32  m_entityTag;
+uint32_t m_entityTag;
 
 BRepSubEntityTopo () {m_entityTag = 0;}
 explicit BRepSubEntityTopo (BRepSubEntityTopo const& from) {m_entityTag = from.m_entityTag;}
@@ -187,17 +187,10 @@ struct FaceAttachment
 {
 private:
 
-UInt32          m_elmColorIndex;
-UInt32          m_elmColorTBGR;
-UInt32          m_weight;
-Int32           m_style;
-LevelId         m_level;
+DgnCategoryId   m_category;
+ColorDef        m_color;
 double          m_transparency;
 MaterialCP      m_material;
-UInt32          m_lineColorTBGR;    // From ElemMatSymb
-int             m_lineColorIndex;   // From ElemMatSymb
-UInt32          m_rasterWidth;      // From ElemMatSymb
-UInt32          m_rasterPat;        // From ElemMatSymb
 
 public:
 
@@ -223,9 +216,6 @@ struct IFaceMaterialAttachments : public IRefCounted
 {
 //__PUBLISH_SECTION_END__
 //__PUBLISH_SCOPE_1_START__
-virtual bool _SuppressWireframeRules () const {return false;} // BRepCellHeaderHandler calls UseChildren for wireframe display...
-virtual bool _SuppressWireframeSilhouettesOnly () const {return false;} // Won't work if QvElem also has bspline surface or solid primitive...
-
 virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap () const = 0;
 virtual T_FaceAttachmentsMap const& _GetFaceAttachmentsMap () const = 0;
 
@@ -289,10 +279,10 @@ virtual int         _GetFinEdgeCount () = 0;
 virtual int const*  _GetFacetFace () = 0;           // NOTE: Parasolid only hidden face support (array of face tags)
 virtual int         _GetFacetFaceCount () = 0;
 
-virtual bool        _GetEdgeCurveId (CurveTopologyId& edgeId, Int32 edge, bool useHighestId) = 0; 
+virtual bool        _GetEdgeCurveId (CurveTopologyId& edgeId, int32_t edge, bool useHighestId) = 0; 
 
-virtual bool        _IsHiddenFace (Int32 entityTag) = 0;
-virtual bool        _IsHiddenEdge (Int32 entityTag) = 0;
+virtual bool        _IsHiddenFace (int32_t entityTag) = 0;
+virtual bool        _IsHiddenEdge (int32_t entityTag) = 0;
 
 virtual T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap () = 0;
 virtual T_FaceAttachmentsMap const* _GetFaceAttachmentsMap () = 0;

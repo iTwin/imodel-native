@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/QvViewport.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,10 +15,10 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                      KeithBentley    10/02
 //=======================================================================================
-struct QvViewport : public Viewport
+struct QvViewport : public DgnViewport
 {
 //__PUBLISH_SECTION_END__
-    DEFINE_T_SUPER(Viewport)
+    DEFINE_T_SUPER(DgnViewport)
 protected:
     ICachedDrawP    m_cachedOutput;
 
@@ -39,10 +39,10 @@ public:
     DGNVIEW_EXPORT void Resized ();
     DGNVIEW_EXPORT DgnDisplayCoreTypes::WindowP GetWindowHandle () const;
     DGNVIEW_EXPORT static bool IsTextureIdDefined (uintptr_t textureId);
-    DGNVIEW_EXPORT static void DefineTextureId (uintptr_t textureId, Point2dCR imageSize, bool enableAlpha, UInt32 imageFormat, byte const* imageData);
+    DGNVIEW_EXPORT static void DefineTextureId (uintptr_t textureId, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, Byte const* imageData);
     DGNVIEW_EXPORT static void DeleteTextureId (uintptr_t textureId);
 
-    DGNVIEW_EXPORT static void DefineTile (uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, UInt32 imageFormat, UInt32 pitch, byte const* imageData);
+    DGNVIEW_EXPORT static void DefineTile (uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, uint32_t pitch, Byte const* imageData);
     DGNVIEW_EXPORT static void AddMosaic (QvElem* qvElem, int numX, int numY, uintptr_t* tileIds, DPoint3d const* verts);
 
 //__PUBLISH_CLASS_VIRTUAL__

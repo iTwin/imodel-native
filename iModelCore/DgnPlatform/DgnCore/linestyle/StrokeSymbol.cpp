@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokeSymbol.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -30,8 +30,10 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
 * calculate the "maximum offset from the origin" for this element descriptor chain.
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double getDescrMaxOffset (MSElementDescrVec const& elems, DgnModelP model, double angle)
+static double getDescrMaxOffset (DgnElementPtrVec const& elems, DgnModelP model, double angle)
     {
+#if defined (NEEDSWORK_DGNITEM)
+    // This is wrong...needs to be based on the curve vector, not the element!
     double      maxWidth = 0, test;
 
     Transform transform;
@@ -39,15 +41,13 @@ static double getDescrMaxOffset (MSElementDescrVec const& elems, DgnModelP model
 
     for (auto descr: elems)
         {
-        if (model)
-            descr->SetDgnModel(*model); // Probably no longer necessary?
 
         EditElementHandle  tmpElHandle (descr.get(), false);
-        DisplayHandlerP    handler = tmpElHandle.GetDisplayHandler();
+        ElementHandlerR    handler = tmpElHandle.GetElementHandler();
 
         DRange3d    range;
 
-        if (handler && SUCCESS == handler->CalcElementRange (tmpElHandle, range, &transform))
+        if (SUCCESS == handler.CalcElementRange (tmpElHandle, range, &transform))
             {
             // only consider the y component of the range for offset
             if ((test = fabs (range.low.y)) > maxWidth)
@@ -65,6 +65,9 @@ static double getDescrMaxOffset (MSElementDescrVec const& elems, DgnModelP model
         }
 
     return maxWidth;
+#else
+    return 0.0;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -195,15 +198,17 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsSymbolComponent::_Draw (ViewContextR context)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     DgnModelP   dgnCacheP = NULL;
-    ViewportP   vp = context.GetViewport();
+    DgnViewportP   vp = context.GetViewport();
 
     if (NULL != vp)
         dgnCacheP = vp->GetViewController ().GetTargetModel ();
 
     XGraphicsContainer::DrawXGraphicsFromMemory (context, GetXGraphicsData (),
-                                                static_cast <Int32> (GetXGraphicsSize ()), 
+                                                static_cast <int32_t> (GetXGraphicsSize ()), 
                                                 dgnCacheP, XGraphicsContainer::DRAW_OPTION_None);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -246,31 +251,14 @@ LsSymbolComponent::~LsSymbolComponent ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::SetXGraphics (byte const *data, size_t dataSize)
+void LsSymbolComponent::SetXGraphics (Byte const *data, size_t dataSize)
     {
     if (NULL != m_xGraphicsData)
-        memutil_free (const_cast <byte*> (m_xGraphicsData));
+        bentleyAllocator_free (const_cast <Byte*> (m_xGraphicsData));
 
     m_xGraphicsSize = dataSize;
-    m_xGraphicsData = (byte*)memutil_malloc (dataSize, HEAPSIG_LineStyleSymbol);
-    memcpy (const_cast <byte*> (m_xGraphicsData), data, dataSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP LsSymbolComponent::GetSymbolDgnModel (ViewContextCP context) const
-    {
-    // we need to specify the modelref as the modelRef for the style we're drawing since
-    // it is not in m_elmDscr. This makes fonts, for example, pick the right file.
-    LineStyleSymbP  styleSymb;
-    ViewContextP    vc = const_cast <ViewContextP> (context);
-
-    if (NULL == vc->GetCurrLineStyle (&styleSymb) || NULL == styleSymb)
-        return NULL;
-
-    // NEEDSWORK_V10: Linestyle api shouldn't require a DgnModel...should just need DgnProject or maybe ViewController...
-    return context->GetDgnProject ().Models ().GetModelById (context->GetDgnProject ().Models ().GetFirstModelId ());
+    m_xGraphicsData = (Byte*)bentleyAllocator_malloc(dataSize);
+    memcpy (const_cast <Byte*> (m_xGraphicsData), data, dataSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,92 +269,6 @@ StatusInt       LsSymbolComponent::_DoStroke (ViewContextP context, DPoint3dCP i
     BeAssert (0);  // symbol components should never be drawn this way
     return  SUCCESS;
     }
-
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   04/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 computeComplexCmpnSizeFromBuffer (byte *pCur, byte *pEnd)
-    {
-    int     cmpnCount = ((DgnElementP) pCur)->GetComplexComponentCount();
-
-    if (0 == cmpnCount)
-        return 0;
-
-    pCur += ((DgnElementP) pCur)->Size(); // Advance to first component...
-
-    if (pCur > pEnd)
-        return 0;
-
-    size_t  cmpnSize = 0;
-
-    for (int i=0; i < cmpnCount; i++)
-        {
-        size_t  elemSize = ((DgnElementP) pCur)->Size();
-
-        cmpnSize += elemSize;
-        pCur += elemSize;
-
-        if (pCur > pEnd)
-            return 0;
-        }
-
-    return static_cast <UInt32> (cmpnSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int createSymbolDscrV8 (MSElementDescrVec& symVec, MSElementDescrP hdr, byte *pSymBuf, int bufSize, int threeD, DgnModelP model)
-    {
-    if (NULL == model)
-        return ERROR;
-
-    byte    *pCur = pSymBuf;
-    byte    *pEnd = pCur + bufSize;
-
-    while (pCur < pEnd)
-        {
-        DgnElementP tmpElmP = (DgnElementP) pCur;
-        size_t      elemSize = tmpElmP->Size();
-        UInt32      cmpnSize = computeComplexCmpnSizeFromBuffer (pCur, pEnd);
-
-        pCur += elemSize;
-
-        // Clear the unique id and graphic group number
-        tmpElmP->InvalidateElementId();
-
-        MSElementDescrPtr tmpEdP = MSElementDescr::Allocate (*tmpElmP, *model);
-
-        if (cmpnSize)
-            {
-            createSymbolDscrV8(symVec, tmpEdP.get(), pCur, cmpnSize, threeD, model);
-            pCur += cmpnSize;
-            }
-
-        if (NULL != hdr)
-            hdr->AddComponent(*tmpEdP);
-        else
-            symVec.push_back(tmpEdP);
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-int LineStyleUtil::CreateSymbolDscr (MSElementDescrVec& symVec, byte *symBufP, int bufSize, int threeD, UInt32 rscType, DgnModelP model)
-    {
-    int status = SUCCESS;
-
-    status = createSymbolDscrV8 (symVec, NULL, symBufP, bufSize, threeD, model);
-
-    /* Remove any custom line styles from the point descriptors.  This prevents circular line style usage */
-    lsutil_removeCustomLineStyles (symVec);
-    return status;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
@@ -391,8 +293,9 @@ void LsSymbolComponent::_PostProcessLoad (DgnModelP modelRef)
         }
 
     if (GetXGraphicsData() != NULL)
-        return;    //  if the component was saved as XGraphics then the data is already loaded and there is no MSElementDescr
+        return;    //  if the component was saved as XGraphics then the data is already loaded and there is no DgnElementDescr
 
+#if defined (NEEDS_WORK_DGNITEM)
     XGraphicsRecorder   recorder (modelRef);
 
     recorder.EnableInitialWeightMatSym ();
@@ -410,9 +313,10 @@ void LsSymbolComponent::_PostProcessLoad (DgnModelP modelRef)
     XGraphicsContainerR    xGraphicsContainer = const_cast <XGraphicsContainerR> (recorder.GetContainer ());
     
     size_t                  dataSize = xGraphicsContainer.GetDataSize ();
-    byte const*             data = xGraphicsContainer.GetData ();
+    Byte const*             data = xGraphicsContainer.GetData ();
     
     SetXGraphics (data, dataSize);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -443,7 +347,7 @@ LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsRscReader* reader)
 #if defined (NEEDS_WORK_DGNITEM)
     if (symRsc->GetSymbolType() == PointSymRsc::ST_Elements)
         {
-        LineStyleUtil::CreateSymbolDscr (symbComp->GetElementsR(), symRsc->symBuf, symRsc->nBytes, (symRsc->symFlags & LSSYM_3D) ? true : false, reader->GetRscType(), reader->GetDgnProject().Models().GetDictionaryModel());
+        LineStyleUtil::CreateSymbolDscr (symbComp->GetElementsR(), symRsc->symBuf, symRsc->nBytes, (symRsc->symFlags & LSSYM_3D) ? true : false, reader->GetRscType(), reader->GetDgnDb().Models().GetDictionaryModel());
         }
     else
 #endif
@@ -484,7 +388,7 @@ void LsSymbolComponent::FreeGraphics (bool freeDescr, bool freeXGraphics)
     if (freeXGraphics && NULL != m_xGraphicsData)
         {
         m_xGraphicsSize = 0;
-        memutil_free (const_cast <byte*> (m_xGraphicsData));
+        bentleyAllocator_free(const_cast <Byte*> (m_xGraphicsData));
         }
     }
 
@@ -499,11 +403,11 @@ void LsSymbolComponent::AddGraphics (EditElementHandleR eeh)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsSymbolComponent::AddSymbolGraphicsAsProperty (UInt32& componentId, DgnProjectR project, byte const*data, size_t size, PointSymRsc::SymbolType symbolType)
+BentleyStatus LsSymbolComponent::AddSymbolGraphicsAsProperty (uint32_t& componentId, DgnDbR project, Byte const*data, size_t size, PointSymRsc::SymbolType symbolType)
     {
     PropertySpec spec = PointSymRsc::ST_Elements == symbolType ? LineStyleProperty::SymbolElements () : LineStyleProperty::SymbolXGraphics();
     GetNextComponentId (componentId, project, spec);
-    project.SaveProperty (spec, data, (UInt32)size, componentId, 0);
+    project.SaveProperty (spec, data, (uint32_t)size, componentId, 0);
 
     return BSISUCCESS;
     }

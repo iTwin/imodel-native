@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/LineStyleManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@
 #include "LineStyle.h"
 
 //__PUBLISH_SECTION_END__
-typedef UInt32 RscFileHandle;
+typedef uint32_t RscFileHandle;
 #include "../DgnCore/LsLocal.h"
 #include <Bentley/WString.h>
 #include <Bentley/bvector.h>
@@ -127,12 +127,12 @@ private:
     virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
 
 public:
-    //  DGNPLATFORM_EXPORT void OnNewMasterFile (DgnProjectP);  THESE SHOULD RESPOND TO NEW PROJECT
-    //  DGNPLATFORM_EXPORT void OnDesignFileClosed (DgnProjectP);
+    //  DGNPLATFORM_EXPORT void OnNewMasterFile (DgnDbP);  THESE SHOULD RESPOND TO NEW PROJECT
+    //  DGNPLATFORM_EXPORT void OnDesignFileClosed (DgnDbP);
     DGNPLATFORM_EXPORT static LineStyleManagerR GetManager ();
 
-    DGNPLATFORM_EXPORT static UInt32 ConvertToResourceType (LsElementType lsType);
-    DGNPLATFORM_EXPORT static LsElementType ConvertToLsElementType (UInt32 resourceType);
+    DGNPLATFORM_EXPORT static uint32_t ConvertToResourceType (LsElementType lsType);
+    DGNPLATFORM_EXPORT static LsElementType ConvertToLsElementType (uint32_t resourceType);
 
     DGNPLATFORM_EXPORT void Initialize ();
     DGNPLATFORM_EXPORT void Terminate ();
@@ -153,7 +153,7 @@ public:
     //!  @param[in]     dgnFile         The DgnFile of interest.
     //!  @return The name of the style corresponding to the number. If the style number corresponds to an entry
     //!  in the design file's LsMap then this returns the name as stored in the map.  Otherwise, this returns a zero-length string.
-    DGNPLATFORM_EXPORT static WString GetNameFromNumber (Int32 styleNumber, DgnProjectP dgnFile);
+    DGNPLATFORM_EXPORT static WString GetNameFromNumber (int32_t styleNumber, DgnDbP dgnFile);
 
     //!  Gets a name corresponding to the style number.  This method will return printable strings for line codes, ByLevel, and ByCell.
     //!  @param[in]     styleNumber     A style number for a style known to the design file.
@@ -164,7 +164,7 @@ public:
     //!  If style number is STYLE_ByLevel, STYLE_ByCell, or, STYLE_Invalid this returns the name of the value.
     //!  For example, if style number is STYLE_ByLevel this returns "STYLE_ByLevel".  The string is not localized -- it is the
     //!  same for any locale.   Otherwise, this returns a zero-length string.
-    DGNPLATFORM_EXPORT static WString GetStringFromNumber (Int32 styleNumber, DgnProjectP project);
+    DGNPLATFORM_EXPORT static WString GetStringFromNumber (int32_t styleNumber, DgnDbP project);
 
     //!  Gets the number corresponding to the line style name.  The case must be correct for the search to succeed.
     //!  This searches the design file's LsMap to find an entry with the specified name and returns the number that
@@ -173,7 +173,7 @@ public:
     //!  @param[in]     name            The name to use as the search key.
     //!  @param[in]     dgnFile         The DgnFile of interest.
     //!  @return style number if found, otherwise STYLE_Invalid.
-    DGNPLATFORM_EXPORT static Int32 GetNumberFromName (Utf8CP name, DgnProjectP dgnFile);
+    DGNPLATFORM_EXPORT static int64_t GetNumberFromName (Utf8CP name, DgnDbP dgnFile);
 
     //!  Gets the number corresponding to the line style name.  The case must be correct for the search to succeed.
     //!  This searches the design file's LsMap to find an entry with the specified name and returns the number that
@@ -182,12 +182,12 @@ public:
     //!  @param[in]     name            The name to use as the search key.
     //!  @param[in]     dgnFile         The DgnFile of interest.
     //!  @return style number if found, otherwise STYLE_Invalid.
-    DGNPLATFORM_EXPORT static Int32 GetNumberFromName (WCharCP name, DgnProjectP dgnFile);
+    DGNPLATFORM_EXPORT static int64_t GetNumberFromName (WCharCP name, DgnDbP dgnFile);
 
 #ifdef DGNV10FORMAT_CHANGES_WIP_LINESTYLES
     //!  Gets the number corresponding to the line style name.  The case must be correct for the search to succeed.
     //! @DotNetMethodExclude
-    static Int32 GetNumberFromName (Utf8CP name, DgnModelP modelRef) {return GetNumberFromName (name, GetDgnProject(modelRef));}
+    static int32_t GetNumberFromName (Utf8CP name, DgnModelP modelRef) {return GetNumberFromName (name, GetDgnDb(modelRef));}
 
     //! Gets the number corresponding to the line style name, importing the style to the design file if necessary.
     //! a given design file.
@@ -196,7 +196,7 @@ public:
     //! @param[in]      createIdIfNecessary Add an entry to the file LsDgnFileMap if it is not already there
     //! @param[in]      transferComponents If adding an entry to the LsDgnFileMap, also copy components to the design file.
     //! @return style number if possible, otherwise STYLE_Invalid.
-    DGNPLATFORM_EXPORT static Int32 GetNumberFromName (Utf8CP name, DgnProjectR dgnFile, bool createIdIfNecessary, bool transferComponents);
+    DGNPLATFORM_EXPORT static int32_t GetNumberFromName (Utf8CP name, DgnDbR dgnFile, bool createIdIfNecessary, bool transferComponents);
 #endif
 
     //! Uses the styleNumber to find a LsMapEntry in the design file's LsDgnFileMap by name and returns the LsDefinitionP the
@@ -206,10 +206,10 @@ public:
     //!  @param[in]     styleNumber     A style number for a style known to the design file.
     //!  @param[in]     dgnFile         The DgnFile of interest.
     //! @return the LsDefinition or NULL if not found.
-    DGNPLATFORM_EXPORT static LsDefinitionP ResolveLineStyle (Int32 styleNumber, DgnProjectP dgnFile);
+    DGNPLATFORM_EXPORT static LsDefinitionP ResolveLineStyle (int32_t styleNumber, DgnDbP dgnFile);
 
     //! Find a line style in the LsSystemMap by name.  The LsSystemMap is initialized at startup and remains valid for the entire
-    //! MicroStation session. That is, for a given \c lineStyleName, this method will always return the same value if the line style exists.
+    //! session. That is, for a given \c lineStyleName, this method will always return the same value if the line style exists.
     //! @param[in]      name            The name of the line style
     //! @return the LsDefinition or NULL if not found.  This returns NULL for the special names like "STYLE_ByLevel" and "1" that GetNumberFromName recognizes.
     DGNPLATFORM_EXPORT static LsDefinitionP FindSystemLineStyle (Utf8CP name);

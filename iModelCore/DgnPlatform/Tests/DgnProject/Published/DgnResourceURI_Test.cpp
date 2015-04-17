@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnResourceURI_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -128,16 +128,16 @@ TEST(DgnResourceURI_Test, TestDgnElements)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
     DgnModelP defaultModel = project->Models().GetModelById (project->Models().GetFirstModelId());
     ASSERT_TRUE( defaultModel != nullptr );
     defaultModel->FillModel();
 
-    bmap<Utf8String, PersistentElementRefP> uris;
+    bmap<Utf8String, PersistentDgnElementP> uris;
 
-    FOR_EACH (PersistentElementRefP ref, defaultModel->GetElementsCollection ())
+    FOR_EACH (PersistentDgnElementP ref, defaultModel->GetElementsCollection ())
         {
         DgnResourceURI uri;
         ASSERT_TRUE( SUCCESS == ref->CreateDgnResourceURI (uri) );
@@ -148,7 +148,7 @@ TEST(DgnResourceURI_Test, TestDgnElements)
         {
         DgnResourceURI uri;
         ASSERT_TRUE( DgnResourceURI::PARSE_STATUS_SUCCESS == uri.FromEncodedString (pair.first.c_str()) );
-        PersistentElementRefPtr ref = project->Models().GetElementById (project->Models().GetElementByURI (uri));
+        PersistentDgnElementPtr ref = project->Models().GetElementById (project->Models().GetElementByURI (uri));
         ASSERT_EQ( ref.get(), pair.second );
         }
     }
@@ -161,7 +161,7 @@ TEST(DgnResourceURI_Test, TestECInstances)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm (L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
     DgnModelP defaultModel = project->Models().GetModelById (project->Models().GetFirstModelId());
@@ -170,7 +170,7 @@ TEST(DgnResourceURI_Test, TestECInstances)
 
     bmap<Utf8String, BeSQLite::EC::ECInstanceKey> uris;
 
-    FOR_EACH (PersistentElementRefP ref, defaultModel->GetElementsCollection ())
+    FOR_EACH (PersistentDgnElementP ref, defaultModel->GetElementsCollection ())
         {
         ElementHandle eh (ref);
         BeSQLite::EC::ECInstanceKey instanceKey;
@@ -203,7 +203,7 @@ TEST(DgnResourceURI_Test, TestBuildUriPath)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm(L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
            
     DgnResourceURI::UriToken key, value;
@@ -227,7 +227,7 @@ TEST(DgnResourceURI_Test, TestBuildUriQueryParams)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm(L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
                   
     DgnResourceURI::UriToken key, value;
@@ -258,7 +258,7 @@ TEST(DgnResourceURI_Test, TestBuildUriSetEncodedPath)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm(L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
         
     DgnResourceURI::UriToken key, value;
@@ -286,7 +286,7 @@ TEST(DgnResourceURI_Test, TestBuildUriSetEncodedQuery)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm(L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
         
     DgnResourceURI::UriToken key, value;
@@ -310,7 +310,7 @@ TEST(DgnResourceURI_Test, TestBuildUriUtf8StringCRQuery)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm(L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
         
     DgnResourceURI::UriToken key, value;
@@ -336,7 +336,7 @@ TEST(DgnResourceURI_Test, TestBuildUriAppendPath)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm(L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     DgnResourceURI::UriToken key, value;
@@ -363,7 +363,7 @@ TEST(DgnResourceURI_Test, TestBuildUriParseCompleteURI)
     ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm(L"Mobile_file.i.idgndb", __FILE__, OPENMODE_READONLY);
-    DgnProjectP project = tdm.GetDgnProjectP();
+    DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     DgnResourceURI::UriToken key, value;

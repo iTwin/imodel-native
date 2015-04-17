@@ -156,7 +156,7 @@ TEST_F(BeTextFileTests, BeTextFileOpenToRead)
         ReadFileSetUp(encoding);
         BeFileStatus status;
         m_fileReadPtr = BeTextFile::Open(status, m_fileReadName.GetName(), TextFileOpenType::Read, TextFileOptions::NewLinesToSpace, encoding);
-        ASSERT_TRUE(BeFileStatus::Success ==status)<<"Failed to open file as read-only, used encoding: "<<(UInt32)encoding;
+        ASSERT_TRUE(BeFileStatus::Success ==status)<<"Failed to open file as read-only, used encoding: "<<(uint32_t)encoding;
         //Read from file
         WString line;
         TextFileReadStatus read_status;
@@ -167,7 +167,7 @@ TEST_F(BeTextFileTests, BeTextFileOpenToRead)
                         L" for sustaining infrastructure. Founded in 1984, Bentley has nearly 3,000 colleagues in more than 45"
                         L" countries, $500 million in annual revenues, and, since 2001, has invested more than $1 billion ";
         int c = line.CompareTo(line2);
-        EXPECT_TRUE (c == 0)<<c<<"Line comparison failed (Issue 2191), used encoding: "<<(UInt32)encoding; //<<endl<<line.c_str()<<line2.c_str();
+        EXPECT_TRUE (c == 0)<<c<<"Line comparison failed (Issue 2191), used encoding: "<<(uint32_t)encoding; //<<endl<<line.c_str()<<line2.c_str();
         CloseFiles();
         }
     }
@@ -191,7 +191,7 @@ TEST_F(BeTextFileTests, BeTextFileOpenToWrite)
         TextFileWriteStatus writeStatus;
         WCharCP fileLine =  L"Hi, I am new line!";
         writeStatus = m_fileWritePtr->PutLine(fileLine, true);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //Close file
         m_fileWritePtr->Close();
         m_fileWritePtr = NULL;
@@ -199,57 +199,57 @@ TEST_F(BeTextFileTests, BeTextFileOpenToWrite)
         //Open file as read and check first char
         m_fileReadPtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Read, TextFileOptions::NewLinesToSpace, encoding);
         //Check if file was opened
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file as read-only, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file as read-only, used encoding: "<<(uint32_t)encoding;
         WChar charFromFile = m_fileReadPtr->GetChar();
         Utf16Char charExpected = 0;
         //Verify according used encoding
         if(encoding == TextFileEncoding::CurrentLocale )
             {
             BeStringUtilities::WCharToCurrentLocaleChar(m_lineToCurrentLocale, fileLine);
-            EXPECT_EQ(m_lineToCurrentLocale.at(0), charFromFile)<<"First char does not match, used encoding :"<<(UInt32)encoding;
+            EXPECT_EQ(m_lineToCurrentLocale.at(0), charFromFile)<<"First char does not match, used encoding :"<<(uint32_t)encoding;
             }
         else if (encoding == TextFileEncoding::Utf8)
                 {
                 BeStringUtilities::WCharToUtf8(m_lineToUtf8, fileLine);
-                EXPECT_EQ(m_lineToUtf8.at(0), charFromFile)<<"First char does not match, used encoding :"<<(UInt32)encoding;
+                EXPECT_EQ(m_lineToUtf8.at(0), charFromFile)<<"First char does not match, used encoding :"<<(uint32_t)encoding;
                 }
         else if (encoding == TextFileEncoding::Utf16)
                 {
                 BeStringUtilities::WCharToUtf16 (m_lineToUtf16, fileLine, BeStringUtilities::AsManyAsPossible);
                 charExpected = m_lineToUtf16.front();
-                EXPECT_EQ(charExpected, charFromFile)<<"First char does not match, used encoding :"<<(UInt32)encoding;
+                EXPECT_EQ(charExpected, charFromFile)<<"First char does not match, used encoding :"<<(uint32_t)encoding;
                 }
         //Read first char again
         status = m_fileReadPtr->Rewind();
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(uint32_t)encoding;
         charFromFile = m_fileReadPtr->GetChar();
         //If encoding was utf 8 or utf 16 first char ir encoding, so need to read one more
         if(encoding == TextFileEncoding::CurrentLocale )
-            EXPECT_EQ(m_lineToCurrentLocale.at(0), charFromFile)<<"Failed to rewind file with encoding: "<<(UInt32)encoding;
+            EXPECT_EQ(m_lineToCurrentLocale.at(0), charFromFile)<<"Failed to rewind file with encoding: "<<(uint32_t)encoding;
         else if (encoding == TextFileEncoding::Utf8)
             {
             charFromFile = m_fileReadPtr->GetChar();
-            EXPECT_EQ(m_lineToUtf8.at(0), charFromFile)<<"Failed to rewind file with encoding: "<<(UInt32)encoding;
+            EXPECT_EQ(m_lineToUtf8.at(0), charFromFile)<<"Failed to rewind file with encoding: "<<(uint32_t)encoding;
             }
         else if (encoding == TextFileEncoding::Utf16)
             {
             charFromFile = m_fileReadPtr->GetChar();
-            EXPECT_EQ(charExpected, charFromFile)<<"Failed to rewind file with encoding: "<<(UInt32)encoding;
+            EXPECT_EQ(charExpected, charFromFile)<<"Failed to rewind file with encoding: "<<(uint32_t)encoding;
             }
         //Get current position
-        UInt64 currentPos;
+        uint64_t currentPos;
         status = m_fileReadPtr->GetPointer(currentPos);
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to get pointer, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to get pointer, used encoding: "<<(uint32_t)encoding;
         //Move to another position in file
         BeFileSeekOrigin position = BeFileSeekOrigin::Current;
-        UInt64 movePos = 4;
+        uint64_t movePos = 4;
         status = m_fileReadPtr->SetPointer(movePos, position);
         EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to set pointer";
         //Get new position
-        UInt64 newPos;
+        uint64_t newPos;
         status = m_fileReadPtr->GetPointer(newPos);
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to get pointer, used encoding: "<<(UInt32)encoding;
-        EXPECT_EQ((newPos-movePos), currentPos)<<"New position should be higher than old one by 7, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to get pointer, used encoding: "<<(uint32_t)encoding;
+        EXPECT_EQ((newPos-movePos), currentPos)<<"New position should be higher than old one by 7, used encoding: "<<(uint32_t)encoding;
         CloseFiles();
         }
     }
@@ -271,21 +271,21 @@ TEST_F(BeTextFileTests, BeTextFileTryToWriteToReadOnlyFile)
         try
             {
             m_fileWritePtr = BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Read, TextFileOptions::None, encoding);
-            ASSERT_TRUE(BeFileStatus::Success ==status)<<"Failed to open file as read, used encoding: "<<(UInt32)encoding;
+            ASSERT_TRUE(BeFileStatus::Success ==status)<<"Failed to open file as read, used encoding: "<<(uint32_t)encoding;
             //Fail to write to file
             TextFileWriteStatus writeStatus;
             WCharCP fileLine =  L"gi, I am new line!";
             writeStatus = m_fileWritePtr->PutLine(fileLine, false);
-            EXPECT_TRUE(TextFileWriteStatus::Success != writeStatus)<<"Should not be able to write to read-only file, used encoding: "<<(UInt32)encoding;
+            EXPECT_TRUE(TextFileWriteStatus::Success != writeStatus)<<"Should not be able to write to read-only file, used encoding: "<<(uint32_t)encoding;
         
             //Fail to printf directly to file
             writeStatus = m_fileWritePtr->PrintfTo(false, L"Characters: %lc %lc ", L'a', 65);
-            EXPECT_TRUE(TextFileWriteStatus::Success != writeStatus)<<"Suceeded to write to read-only file, used encoding: "<<(UInt32)encoding;
+            EXPECT_TRUE(TextFileWriteStatus::Success != writeStatus)<<"Suceeded to write to read-only file, used encoding: "<<(uint32_t)encoding;
     
             //Verify that there is no line in file
             WString getLine;
             TextFileReadStatus read_status =  m_fileWritePtr->GetLine(getLine);
-            EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should be empty, used encoding: "<<(UInt32)encoding<<"   "<<getLine.c_str();
+            EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should be empty, used encoding: "<<(uint32_t)encoding<<"   "<<getLine.c_str();
             CloseFiles();
             }
         catch(wchar_t const*) 
@@ -307,35 +307,35 @@ TEST_F(BeTextFileTests, BeTextFileChangePointerAndGetChar)
     BeFileStatus status;
     m_fileReadPtr =    BeTextFile::Open(status, m_fileReadName .GetName(), TextFileOpenType::Read, TextFileOptions::None, 
                                         TextFileEncoding::CurrentLocale);
-    EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file as read, used encoding: "<<(UInt32)encoding;
+    EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file as read, used encoding: "<<(uint32_t)encoding;
     WChar firstChar = m_fileReadPtr->GetChar();
     //Set pointer to begining and read first char again
     BeFileSeekOrigin position = BeFileSeekOrigin::Begin;
-    UInt64 movePos = 0;
+    uint64_t movePos = 0;
     status = m_fileReadPtr->SetPointer(movePos, position);
     EXPECT_TRUE(BeFileStatus::Success == status);
     WChar firstCharWithPointer = m_fileReadPtr->GetChar();
     EXPECT_TRUE(firstChar == firstCharWithPointer)<<"First char was "<<(char)firstChar<<" not "<<(char)firstCharWithPointer<<
-                                                    " Failed to  set pointer to begining, used encoding: "<<(UInt32)encoding;
+                                                    " Failed to  set pointer to begining, used encoding: "<<(uint32_t)encoding;
     //Rewind file and read first char again
     m_fileReadPtr->Rewind();
     WChar firstCharWithRewind = m_fileReadPtr->GetChar();
     EXPECT_TRUE(firstChar == firstCharWithRewind)<<"First char was "<<(char)firstChar<<" not "<<(char)firstCharWithRewind<<
-                                                    " Failed to  Rewind() file, used encoding: "<<(UInt32)encoding;
+                                                    " Failed to  Rewind() file, used encoding: "<<(uint32_t)encoding;
     //get second char
     m_fileReadPtr->Rewind();
     position = BeFileSeekOrigin::Current;
     movePos = 2;
     status = m_fileReadPtr->SetPointer(movePos, position);
     WChar secondChar = m_fileReadPtr->GetChar();
-    EXPECT_EQ(110, secondChar)<<"Second char is n not "<<(char)secondChar<<" Failed to  Rewind() file, used encoding: "<<(UInt32)encoding;
+    EXPECT_EQ(110, secondChar)<<"Second char is n not "<<(char)secondChar<<" Failed to  Rewind() file, used encoding: "<<(uint32_t)encoding;
     //Set pointer to end and get WEOF while trying to read char
     position = BeFileSeekOrigin::End;
     movePos = 0;
     status = m_fileReadPtr->SetPointer(movePos, position);
     EXPECT_TRUE(BeFileStatus::Success == status);
     WChar WEOFChar = m_fileReadPtr->GetChar();
-    EXPECT_TRUE(WEOFChar == WEOF)<<"It should be WEOF not "<<(char)WEOFChar<<" Failed to set pointer to end position, used encoding: "<<(UInt32)encoding;
+    EXPECT_TRUE(WEOFChar == WEOF)<<"It should be WEOF not "<<(char)WEOFChar<<" Failed to set pointer to end position, used encoding: "<<(uint32_t)encoding;
     CloseFiles();
     }
 
@@ -356,21 +356,21 @@ TEST_F(BeTextFileTests, BeTextFileChangePointerAndWriteToFile)
         //Open file
         m_fileWritePtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Write, TextFileOptions::None, encoding);
         //Check if file was opened
-        ASSERT_TRUE(m_fileWritePtr != NULL)<<"Failed to open file as write, used encoding: "<<(UInt32)encoding;
+        ASSERT_TRUE(m_fileWritePtr != NULL)<<"Failed to open file as write, used encoding: "<<(uint32_t)encoding;
         EXPECT_TRUE(BeFileStatus::Success == status);
         //Write to file
         TextFileWriteStatus writeStatus;
         WCharCP fileLine =  L"gi, I am new line!";
         writeStatus = m_fileWritePtr->PutLine(fileLine, false);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //Set position to begining and write one letter
         BeFileSeekOrigin position = BeFileSeekOrigin::Begin;
-        UInt64 movePos = 0;
+        uint64_t movePos = 0;
         status = m_fileWritePtr->SetPointer(movePos, position);
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to set pointer, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to set pointer, used encoding: "<<(uint32_t)encoding;
         fileLine =  L"P";
         writeStatus = m_fileWritePtr->PutLine(fileLine, false);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //Change pointer for current position and rewrite part of the text
         position = BeFileSeekOrigin::Current;
         //UTF16 takes 2 bytes, while utf8 takes 1 byte
@@ -379,25 +379,25 @@ TEST_F(BeTextFileTests, BeTextFileChangePointerAndWriteToFile)
         else
             movePos = 8;
         status = m_fileWritePtr->SetPointer(movePos, position);
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to set pointer, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to set pointer, used encoding: "<<(uint32_t)encoding;
         fileLine =  L"corrected line!";
         writeStatus = m_fileWritePtr->PutLine(fileLine, false);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //Set position to begining and correct spelling of "Pi" to "Hi"
         status = m_fileWritePtr->Rewind();
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(UInt32)encoding;
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to set pointer, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(uint32_t)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to set pointer, used encoding: "<<(uint32_t)encoding;
         fileLine =  L"H";
         writeStatus = m_fileWritePtr->PutLine(fileLine, false);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //add smile to the end
         position = BeFileSeekOrigin::End;
         movePos = 0;
         status = m_fileWritePtr->SetPointer(movePos, position);
-        EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to set pointer, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to set pointer, used encoding: "<<(uint32_t)encoding;
         fileLine =  L":)";
         writeStatus = m_fileWritePtr->PutLine(fileLine, false);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //------------Verification-----------------------------------
         //Verify that file only contains "Hi, I am corrected line!:)" text
         status = m_fileWritePtr->Rewind();
@@ -406,17 +406,17 @@ TEST_F(BeTextFileTests, BeTextFileChangePointerAndWriteToFile)
             {
             m_fileWritePtr->GetChar();
             }
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(uint32_t)encoding;
         WString getLine;
         TextFileReadStatus read_status;
         read_status =  m_fileWritePtr->GetLine(getLine);
-        EXPECT_TRUE(TextFileReadStatus::Success ==read_status)<<"Failed to read line from file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileReadStatus::Success ==read_status)<<"Failed to read line from file, used encoding: "<<(uint32_t)encoding;
         WString expectedLine = L"Hi, I am corrected line!:)";
         int c = getLine.CompareTo(expectedLine);
-        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<(UInt32)encoding; //<<"  "<<getLine.c_str()<<"  "<<expectedLine.c_str();
+        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<(uint32_t)encoding; //<<"  "<<getLine.c_str()<<"  "<<expectedLine.c_str();
         //Verify that there is no another line
         read_status =  m_fileWritePtr->GetLine(getLine);
-        EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should contain only two lines, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should contain only two lines, used encoding: "<<(uint32_t)encoding;
         CloseFiles();
         }
     }
@@ -436,36 +436,36 @@ TEST_F(BeTextFileTests, BeTextFileWriteToFileWithPutAndPrintf)
         BeFileStatus status;
         //Open file
         m_fileWritePtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Write, TextFileOptions::KeepNewLine, encoding);
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file to write, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file to write, used encoding: "<<(uint32_t)encoding;
         //Add line to file
         TextFileWriteStatus writeStatus;
         WCharCP line = L"Hi, I am appended line!";
         writeStatus = m_fileWritePtr->PutLine(line, true);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //printf directly to file
         writeStatus = m_fileWritePtr->PrintfTo(false, L"Characters: %lc %lc ", L'a', 65);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         m_fileWritePtr->Close();
         //--------------Verification-------------------------
         //Check file, it should contain two lines
         m_fileWritePtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Read, TextFileOptions::KeepNewLine, encoding);
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file to write, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file to write, used encoding: "<<(uint32_t)encoding;
         WString getLine;
         TextFileReadStatus read_status;
         read_status =  m_fileWritePtr->GetLine(getLine);
-        ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"Failed to read line from file, used encoding: "<<(UInt32)encoding;
+        ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"Failed to read line from file, used encoding: "<<(uint32_t)encoding;
         WString line2 = L"Hi, I am appended line!\n";
         int c = getLine.CompareTo(line2);
-        EXPECT_TRUE (c == 0)<<"Line comparison failed (issue 2191), used encoding: "<<(UInt32)encoding; //<<"  "<<getLine.c_str()<<"   "<<line2.c_str();
+        EXPECT_TRUE (c == 0)<<"Line comparison failed (issue 2191), used encoding: "<<(uint32_t)encoding; //<<"  "<<getLine.c_str()<<"   "<<line2.c_str();
         //Verify second line
         read_status =  m_fileWritePtr->GetLine(getLine);
-        ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"Failed to read line from file(issue 2191), used encoding: "<<(UInt32)encoding;
+        ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"Failed to read line from file(issue 2191), used encoding: "<<(uint32_t)encoding;
         line2 = L"Characters: a A ";
         c = getLine.CompareTo(line2);
-        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<(UInt32)encoding; //<<" "<<getLine.c_str()<<" "<<line2.c_str();
+        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<(uint32_t)encoding; //<<" "<<getLine.c_str()<<" "<<line2.c_str();
         //Verify that there is no third line
         read_status =  m_fileWritePtr->GetLine(getLine);
-        EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should contain only two lines, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should contain only two lines, used encoding: "<<(uint32_t)encoding;
         CloseFiles();
         }
     }
@@ -533,7 +533,7 @@ TEST_F(BeTextFileTests, CountLinesInFile)
                 }
             --linesRead;
             EXPECT_EQ(linesRead, linesWrote)<<"Count of lines read: "<<linesRead<<" count of lines that were written to file "<<
-                                                linesWrote<<" used encoding: "<<(UInt32)encoding<<" with option "<<(UInt32)option<<" (Issue 2191)";
+                                                linesWrote<<" used encoding: "<<(uint32_t)encoding<<" with option "<<(uint32_t)option<<" (Issue 2191)";
             fileReadPtr -> Close(); 
             }
         }
@@ -559,7 +559,7 @@ TEST_F(BeTextFileTests, CountCharsInFile)
             //Open file
             BeFileStatus status;
             m_fileWritePtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Write, option, encoding);
-            EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file for writing, used encoding: "<<(UInt32)encoding;
+            EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file for writing, used encoding: "<<(uint32_t)encoding;
             WCharCP line = L"Hi";
             int linesWrote = 10;
             TextFileWriteStatus writeStatus;
@@ -567,13 +567,13 @@ TEST_F(BeTextFileTests, CountCharsInFile)
             for(int i = 0; i<linesWrote; i++)
                 {
                 writeStatus = m_fileWritePtr->PutLine(line, true);
-                EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+                EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
                 }
             //one additiona empty line because of second argument of m_fileWritePtr->PutLine(line, true); 
             m_fileWritePtr->Close();
             //--------------Verification-------------------------
             m_fileReadPtr = BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Read, option, encoding);
-            EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to prepare to read from first position again, used encoding: "<<(UInt32)encoding;
+            EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to prepare to read from first position again, used encoding: "<<(uint32_t)encoding;
             int charRead = 1;
             WChar getChar = m_fileReadPtr->GetChar();
             //Count how many lines there is in file
@@ -584,7 +584,7 @@ TEST_F(BeTextFileTests, CountCharsInFile)
                 }
             --charRead;
             EXPECT_EQ(sizeof(linesWrote)*linesWrote, charRead)<<"Count of chars read: "<<charRead<<" count of chars that were written to  file "
-                                                                <<sizeof(linesWrote)*linesWrote<<" used encoding: "<<(UInt32)encoding<<" with option"<<(UInt32)option;
+                                                                <<sizeof(linesWrote)*linesWrote<<" used encoding: "<<(uint32_t)encoding<<" with option"<<(uint32_t)option;
             m_fileReadPtr -> Close();
             }
             }
@@ -608,12 +608,12 @@ TEST_F(BeTextFileTests, BeTextFileReadFromOneAppendToAnother)
         BeFileStatus status;
         m_fileReadPtr = BeTextFile::Open(status, m_fileReadName .GetName(), TextFileOpenType::Read, TextFileOptions::None, encoding);
         //Check if file was opened
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file as read-only, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file as read-only, used encoding: "<<(uint32_t)encoding;
         //Read from file
         WString line;
         TextFileReadStatus read_status;
         read_status =  m_fileReadPtr->GetLine(line);
-        ASSERT_TRUE(read_status == TextFileReadStatus::Success)<<"Failed to read line from file, used encoding: "<<(UInt32)encoding;
+        ASSERT_TRUE(read_status == TextFileReadStatus::Success)<<"Failed to read line from file, used encoding: "<<(uint32_t)encoding;
         WString line2 = L"Bentley Systems, IncorporatedBentley is the global leader dedicated to providing architects, engineers,"
                         L" constructors, and owner-operators with comprehensive architecture and engineering software solutions"
                         L" for sustaining infrastructure. Founded in 1984, Bentley has nearly 3,000 colleagues in more than 45"
@@ -627,20 +627,20 @@ TEST_F(BeTextFileTests, BeTextFileReadFromOneAppendToAnother)
         m_fileAppendPtr =    BeTextFile::Open(status2, m_fileAppendName.GetName(), TextFileOpenType::Append, TextFileOptions::KeepNewLine, 
                                               encoding);
         //Check if file was opened
-        EXPECT_TRUE(BeFileStatus::Success == status2)<<"Failed to open file as append, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status2)<<"Failed to open file as append, used encoding: "<<(uint32_t)encoding;
         //Write to file
         TextFileWriteStatus writeStatus2;
         writeStatus2 = m_fileAppendPtr->PutLine(fileLine, false);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus2)<<"Failed to append line to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus2)<<"Failed to append line to file, used encoding: "<<(uint32_t)encoding;
         //----------Verification------------------------------
         status = m_fileAppendPtr->Rewind();
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(uint32_t)encoding;
         if(encoding ==TextFileEncoding::Utf8 || encoding ==TextFileEncoding::Utf16)
             m_fileAppendPtr->GetChar();
         WString getLine;
         WString lastLine;
         read_status =  m_fileAppendPtr->GetLine(getLine);
-        ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"File should contain at least one line, used encoding: "<<(UInt32)encoding;
+        ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"File should contain at least one line, used encoding: "<<(uint32_t)encoding;
         lastLine = getLine;
         while(read_status ==TextFileReadStatus::Success)
             {
@@ -652,7 +652,7 @@ TEST_F(BeTextFileTests, BeTextFileReadFromOneAppendToAnother)
             }
         ASSERT_TRUE(TextFileReadStatus::Eof == read_status);
         c = getLine.CompareTo(line2);
-        EXPECT_TRUE (c == 0)<<"Line comparison failed(issue 2191), used encoding: "<<(UInt32)encoding; //<<" "<<getLine.c_str()<<" "<<line2.c_str();
+        EXPECT_TRUE (c == 0)<<"Line comparison failed(issue 2191), used encoding: "<<(uint32_t)encoding; //<<" "<<getLine.c_str()<<" "<<line2.c_str();
         CloseFiles();
         }
     }
@@ -672,39 +672,39 @@ TEST_F(BeTextFileTests, BeTextFileRewind)
         BeFileStatus status;
         //Open file
         m_fileWritePtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Write, TextFileOptions::None, encoding);
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file as write, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file as write, used encoding: "<<(uint32_t)encoding;
         //Write to file two lines
         TextFileWriteStatus writeStatus;
         WCharCP fileLine =  L"Hi, I am old line!";
         writeStatus = m_fileWritePtr->PutLine(fileLine, true);
         writeStatus = m_fileWritePtr->PutLine(fileLine, false);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //Set pointer to begining and rewrite first line
         status = m_fileWritePtr->Rewind();
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(uint32_t)encoding;
         fileLine =  L"Hi, I am new line!";
         writeStatus = m_fileWritePtr->PutLine(fileLine, true);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<(uint32_t)encoding;
         //--------------Verification-----------------------
         //Check file, it should contain two lines
         //Set pointer to begining and read first line, verify it is correct
         status = m_fileWritePtr->Rewind();
         if(encoding ==TextFileEncoding::Utf8 || encoding ==TextFileEncoding::Utf16)
             m_fileWritePtr->GetChar();
-        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to prepare to read from first position again, used encoding: "<<(uint32_t)encoding;
         WString line;
         TextFileReadStatus read_status;
         read_status =  m_fileWritePtr->GetLine(line);
-        EXPECT_TRUE(TextFileReadStatus::Success ==read_status)<<"Failed to read line from file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileReadStatus::Success ==read_status)<<"Failed to read line from file, used encoding: "<<(uint32_t)encoding;
         WString line2 = L"Hi, I am new line!";
         int c = line.CompareTo(line2);
-        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<(UInt32)encoding; //<<line.c_str()<<" "<<line2.c_str();
+        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<(uint32_t)encoding; //<<line.c_str()<<" "<<line2.c_str();
         //Verify second line
         read_status =  m_fileWritePtr->GetLine(line);
-        EXPECT_TRUE(TextFileReadStatus::Success ==read_status)<<"Failed to read line from file, used encoding: "<<(UInt32)encoding;
+        EXPECT_TRUE(TextFileReadStatus::Success ==read_status)<<"Failed to read line from file, used encoding: "<<(uint32_t)encoding;
         line2 = L"Hi, I am old line!";
         c = line.CompareTo(line2);
-        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<(UInt32)encoding; //<<" "<<line.c_str()<<" "<<line2.c_str();
+        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<(uint32_t)encoding; //<<" "<<line.c_str()<<" "<<line2.c_str();
         //Verify that there is no third line
         read_status =  m_fileWritePtr->GetLine(line);
         EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should contain only two lines.";

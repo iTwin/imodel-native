@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/StoredExpression.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*---------------------------------------------------------
 Format of XAttribute Data
-   ==== NE_INITIAL_VERSION ==== (this version was never in a released version of MicroStation, it way in the first 8.11 beta version)
+   ==== NE_INITIAL_VERSION ==== (this version was never in a released version, it way in the first 8.11 beta version)
     Int16    nameLength
     WChar* name
     Int16    descriptionLength
@@ -121,9 +121,9 @@ public:
     //! @param[in]   dgnfile   Dgn file to process.
     DGNPLATFORM_EXPORT static size_t                      CollectKeywordNames       (T_WStringVector& keywordVector, DgnFile& dgnfile);
 
-    //! Get the ElementRefP that is associated with the Stored Expressions XAttributes. All the Stored Expressions in the file are associated with this one element.
+    //! Get the DgnElementP that is associated with the Stored Expressions XAttributes. All the Stored Expressions in the file are associated with this one element.
     //! @param[in]  dgnfile   Dgn file to process.
-    DGNPLATFORM_EXPORT static ElementRefP                  GetElementRef            (DgnFile& dgnfile);
+    DGNPLATFORM_EXPORT static DgnElementP                  GetDgnElement            (DgnFile& dgnfile);
 };
 
 //=======================================================================================

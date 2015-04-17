@@ -55,9 +55,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 |   Dimension primitive part names and macros                           |
 |                                                                       |
 +----------------------------------------------------------------------*/
-#define ADIM_GETTYPE(dimVar)                    (DimensionPartType)((byte)((dimVar & 0x000000f0) >> 4))
-#define ADIM_GETSUB(dimVar)                     (DimensionPartSubType)((byte)(dimVar & 0x0000000f))
-#define ADIM_GETSEG(dimVar)                     ((byte)((dimVar & 0x0000ff00) >> 8))
+#define ADIM_GETTYPE(dimVar)                    (DimensionPartType)((Byte)((dimVar & 0x000000f0) >> 4))
+#define ADIM_GETSUB(dimVar)                     (DimensionPartSubType)((Byte)(dimVar & 0x0000000f))
+#define ADIM_GETSEG(dimVar)                     ((Byte)((dimVar & 0x0000ff00) >> 8))
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -134,45 +134,45 @@ public:
 struct DimToolTemplate
     {
 #if !defined (BITFIELDS_REVERSED)
-    UShort  first_term:3;
-    UShort  left_term:3;
-    UShort  right_term:3;
-    UShort  bowtie_symbol:3;
-    UShort  pre_symbol:3;
-    UShort  stacked:1;
+    unsigned short first_term:3;
+    unsigned short left_term:3;
+    unsigned short right_term:3;
+    unsigned short bowtie_symbol:3;
+    unsigned short pre_symbol:3;
+    unsigned short stacked:1;
 
-    UShort  post_symbol:3;
-    UShort  above_symbol:3;
-    UShort  left_witness:1;
-    UShort  right_witness:1;
-    UShort  vertical_text:1;
-    UShort  nofit_vertical:1;
-    UShort  centermark:1;
-    UShort  centerLeft:1;
-    UShort  centerRight:1;
-    UShort  centerTop:1;
-    UShort  centerBottom:1;
-    UShort  altExt:1;
+    unsigned short post_symbol:3;
+    unsigned short above_symbol:3;
+    unsigned short left_witness:1;
+    unsigned short right_witness:1;
+    unsigned short vertical_text:1;
+    unsigned short nofit_vertical:1;
+    unsigned short centermark:1;
+    unsigned short centerLeft:1;
+    unsigned short centerRight:1;
+    unsigned short centerTop:1;
+    unsigned short centerBottom:1;
+    unsigned short altExt:1;
 #else
-    UShort  altExt:1;
-    UShort  centerBottom:1;
-    UShort  centerTop:1;
-    UShort  centerRight:1;
-    UShort  centerLeft:1;
-    UShort  centermark:1;
-    UShort  nofit_vertical:1;
-    UShort  vertical_text:1;
-    UShort  right_witness:1;
-    UShort  left_witness:1;
-    UShort  above_symbol:3;
-    UShort  post_symbol:3;
+    unsigned short altExt:1;
+    unsigned short centerBottom:1;
+    unsigned short centerTop:1;
+    unsigned short centerRight:1;
+    unsigned short centerLeft:1;
+    unsigned short centermark:1;
+    unsigned short nofit_vertical:1;
+    unsigned short vertical_text:1;
+    unsigned short right_witness:1;
+    unsigned short left_witness:1;
+    unsigned short above_symbol:3;
+    unsigned short post_symbol:3;
 
-    UShort  stacked:1;
-    UShort  pre_symbol:3;
-    UShort  bowtie_symbol:3;
-    UShort  right_term:3;
-    UShort  left_term:3;
-    UShort  first_term:3;
+    unsigned short stacked:1;
+    unsigned short pre_symbol:3;
+    unsigned short bowtie_symbol:3;
+    unsigned short right_term:3;
+    unsigned short left_term:3;
+    unsigned short first_term:3;
 #endif
     };
 
@@ -190,9 +190,9 @@ struct AdimSegmentTextBoxes
     {
     struct
         {
-        UShort      hasPrimary:1;
-        UShort      hasSecondary:1;
-        UShort      unused:14;
+        unsigned short hasPrimary:1;
+        unsigned short hasSecondary:1;
+        unsigned short unused:14;
         }   flags;
 
     AdimRotatedTextBox  primary;
@@ -213,9 +213,9 @@ struct DimTermDirs
     {
     struct
         {
-        UShort      hasLeftTerm:1;
-        UShort      hasRightTerm:1;
-        UShort      unused:14;
+        unsigned short hasLeftTerm:1;
+        unsigned short hasRightTerm:1;
+        unsigned short unused:14;
         }   flags;
 
     DPoint3d        leftDir;
@@ -225,7 +225,7 @@ struct DimTermDirs
 
 struct DimDerivedData
     {
-    UShort                  flags;
+    unsigned short          flags;
 
     int                     numSegments;
     DimTermDirs            *pTermDirs;      // NULL, or provide a buffer of nSegments * sizeof (DimTermDirs)
@@ -233,7 +233,7 @@ struct DimDerivedData
     bool                   *pIsTextOutside; // NULL, or provide a buffer of nSegments * sizeof (bool)
     DPoint3dP               pArcDefPoint;   // NULL, or provide a buffer of sizeof (DPoint3d)
     AdimSegmentTextBoxes   *pTextBoxes;     // NULL, or provide a buffer of nSegments * sizeof (AdimSegmentTextBoxes)
-    UInt16                 *pChainType;     // NULL, or provide a buffer of nSegments * sizeof (UInt16)
+    uint16_t               *pChainType;     // NULL, or provide a buffer of nSegments * sizeof (UInt16)
     double                 *pDimValues;     // NULL, or provide a buffer of nSegments * sizeof (double)
     bool                   *pSuperscripted; // NULL, or provide a buffer of nSegments * sizeof (bool)
     bool                   *pDelimiterOmitted; // NULL, or provide a buffer of nSegments * sizeof (bool)

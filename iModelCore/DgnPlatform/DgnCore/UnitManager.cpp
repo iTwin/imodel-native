@@ -643,8 +643,7 @@ private:
 
     UserUnitTable() : m_containsStandardUnits (false)   { }
 
-    bool                    ParseLine (WStringR labels, WStringR singularName, WStringR pluralName, double& numerator, double& denominator, UInt32& base, UInt32& system, WCharCP input) const;
-    StatusInt               GetNextUserFileUnitDef (UnitInfo& unitInfo, WStringR nameSingular, WStringR namePlural, WStringR labels, BeTextFileR file) const;
+    bool                    ParseLine (WStringR labels, WStringR singularName, WStringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, WCharCP input) const;
     StatusInt               AddEntry (UserUnitTableEntryCR newEntry);
     void                    PopulateFromFile();
     void                    PopulateFromStandardUnits();
@@ -969,7 +968,7 @@ void UserUnitTable::PopulateFromFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserUnitTable::ParseLine (WStringR labels, WStringR singularName, WStringR pluralName, double& numerator, double& denominator, UInt32& base, UInt32& system, WCharCP input) const
+bool UserUnitTable::ParseLine (WStringR labels, WStringR singularName, WStringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, WCharCP input) const
     {
     static const WChar separator = ';';
     WCharCP a = input,
@@ -991,48 +990,6 @@ bool UserUnitTable::ParseLine (WStringR labels, WStringR singularName, WStringR 
             1 == BE_STRING_UTILITIES_SWSCANF (e+1, L"%lf", &denominator) &&
             1 == BE_STRING_UTILITIES_SWSCANF (f+1, L"%d", &base) &&
             1 == BE_STRING_UTILITIES_SWSCANF (g+1, L"%d", &system);        
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UserUnitTable::GetNextUserFileUnitDef (UnitInfo& unitInfo, WStringR nameSingular, WStringR namePlural, WStringR labels, BeTextFileR file) const
-    {
-// *** WIP_ForeignFormat - We should move this code into foreignformat.
-
-#if defined (WIP_FOREIGN_FORMAT)
-    static const WChar commentIndicator = '#';
-
-    UInt32            base, system;
-    memset (&unitInfo, 0, sizeof (unitInfo));
-
-    WString line;
-    while (TextFileReadStatus::Success == file.GetLine (line))
-        {
-        if (commentIndicator == line[0])
-            continue;       // skipping comments
-        else if  (!ParseLine (labels, nameSingular, namePlural, unitInfo.numerator, unitInfo.denominator, base, system, line.c_str()))
-            continue;       // skipping empty or invalid lines
-
-        WCharCP firstLabelStart = labels.c_str();
-        size_t commaPos = labels.find (';');
-        WCharCP firstLabelEnd = labels.c_str() + (-1 != commaPos ? commaPos : labels.length());
-        
-        WString firstLabel;
-        makeStrippedString (firstLabel, firstLabelStart, firstLabelEnd-1);
-        BeStringUtilities::Wcsncpy (unitInfo.label, MAX_UNIT_LABEL_LENGTH, firstLabel.c_str());
-
-        unitInfo.flags.base = base;
-        unitInfo.flags.system = system;
-        return SUCCESS;
-        }
-
-    // EOF
-    return ERROR;
-#else
-    BeAssert (false);
-    return ERROR;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

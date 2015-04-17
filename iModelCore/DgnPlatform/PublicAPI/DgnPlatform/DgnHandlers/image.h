@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/image.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -337,7 +337,7 @@ typedef enum
 #if ! defined (resource)
 typedef struct msMovieFrame
     {
-    byte        *dataP;
+    Byte *dataP;
     WChar     fileName[DGNPLATFORM_RESOURCE_MAXFILELENGTH];
     int         imageFormat;
     BSIRect     changeRect;
@@ -350,9 +350,9 @@ typedef struct msMovies
     Point2d     size;
     int         nFrames;
     int         speed;
-    byte        redMap[256];
-    byte        grnMap[256];
-    byte        bluMap[256];
+    Byte redMap[256];
+    Byte grnMap[256];
+    Byte bluMap[256];
     int         paletteSize;
     double      gammaCorrection;
     bool        buffered;

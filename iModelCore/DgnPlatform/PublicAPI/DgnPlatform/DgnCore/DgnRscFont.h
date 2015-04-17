@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnRscFont.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,14 +36,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct RscGlyphHeader;
 struct RscGlyphDataOffset;
 
-typedef bmap<FontChar, std::pair<UInt8, UInt8> > T_RscFontFractionMap;
+typedef bmap<FontChar, std::pair<uint8_t, uint8_t> > T_RscFontFractionMap;
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     08/2012
 //=======================================================================================
 struct IRscDataAccessor
     {
-    public: virtual BentleyStatus   _Embed                  (DgnProjectR, UInt32 fontNumber) = 0;
+    public: virtual BentleyStatus   _Embed                  (DgnDbR, uint32_t fontNumber) = 0;
     public: virtual BentleyStatus   _ReadFontHeader         (bvector<Byte>&) = 0;
     public: virtual BentleyStatus   _ReadFractionMap        (T_RscFontFractionMap&) = 0;
     public: virtual BentleyStatus   _ReadGlyphData          (Byte*, size_t dataOffset, size_t dataSize) = 0;
@@ -53,19 +53,24 @@ struct IRscDataAccessor
     public: virtual                 ~IRscDataAccessor       () { }
     }; // IRscDataAccessor
 
-typedef Int16           RscFontVec;
-typedef UShort          RscFontDist;
-typedef struct SPoint2d RscFontPoint2d;
+typedef int16_t         RscFontVec;
+typedef unsigned short  RscFontDist;
+struct RscFontPoint2d
+    {
+    int16_t     x;
+    int16_t     y;
+    };
+
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     08/2012
 //=======================================================================================
 struct RscFontVersion
     {
-    byte    version;    // major version number
-    byte    release;    // sub release within a version
-    byte    stage;      // development, alpha, beta, release
-    byte    fixes;      // fixes within stage
+    Byte version;    // major version number
+    Byte release;    // sub release within a version
+    Byte stage;      // development, alpha, beta, release
+    Byte fixes;      // fixes within stage
     
     }; // RscFontVersion
 
@@ -74,8 +79,8 @@ struct RscFontVersion
 //=======================================================================================
 struct RscFontDate
     {
-    Int32   julian; // julian date
-    Int32   secs;   // seconds since midnight
+    int32_t julian; // julian date
+    int32_t secs;   // seconds since midnight
     
     }; // RscFontDate
 
@@ -97,9 +102,9 @@ struct RscGlyphBoundingBox
 //=======================================================================================
 struct RscFontFraction
     {
-    UInt8   numerator;
-    UInt8   denominator;
-    UInt16  charCode;
+    uint8_t numerator;
+    uint8_t denominator;
+    uint16_t charCode;
     
     }; // RscFontFraction
 
@@ -110,13 +115,13 @@ static const size_t MAX_FRACTION_MAP_COUNT = 76;
 //=======================================================================================
 struct RscGlyphHeader
     {
-    UInt16      code;           // character/glyph code
+    uint16_t    code;           // character/glyph code
     RscFontDist width;          // distance to next character
     RscFontVec  leftEdge;       // distance to left edge of glyph from origin
     RscFontVec  rightEdge;      // distance to right edge of glyph from origin
-    UInt32      unused;
-    Int32       kernOffset;     // not used
-    Int32       symbJust;       // if symbol font, justification for this char
+    uint32_t    unused;
+    int32_t     kernOffset;     // not used
+    int32_t     symbJust;       // if symbol font, justification for this char
     
     }; // RscGlyphHeader
 
@@ -125,8 +130,8 @@ struct RscGlyphHeader
 //=======================================================================================
 struct RscGlyphDataOffset
     {
-    Int32   offset;
-    Int32   size;
+    int32_t offset;
+    int32_t size;
     
     }; // RscGlyphDataOffset
 
@@ -135,9 +140,9 @@ struct RscGlyphDataOffset
 //=======================================================================================
 struct RscGlyphData
     {
-    UInt32  unused;
-    Int32   length;     // total length of font elems (specified in bytes)
-    Int32   numElems;   // number of font elements in glyph The elements will follow this header
+    uint32_t unused;
+    int32_t length;     // total length of font elems (specified in bytes)
+    int32_t numElems;   // number of font elements in glyph The elements will follow this header
     
     }; // RscGlyphData
 
@@ -146,9 +151,9 @@ struct RscGlyphData
 //=======================================================================================
 struct RscGlyphElement
     {
-    UChar           type;       // element type
-    UChar           color;      // 0=no color
-    UShort          numVerts;   // number of points
+    unsigned char   type;       // element type
+    unsigned char   color;      // 0=no color
+    unsigned short  numVerts;   // number of points
     RscFontPoint2d  vertice[1]; // points
     
     }; // RscGlyphElement
@@ -174,16 +179,16 @@ struct RscFontHeader
     {
     RscFontVersion      version;        // format version
     RscFontDate         creation;       // creation date
-    UShort              machine;
-    UShort              type;           // type of font
-    UInt32              flags;          // various flags
-    UInt32              totalKern;      // total number of kerning pairs
-    UInt32              totalLig;       // total number of ligature values
-    UInt32              number;         // font number (backpointer to self)
-    UInt16              totalChars;     // total number of characters in font
-    UInt16              firstChar;      // character id of first character
-    UInt16              lastChar;       // character id of last character
-    UInt16              defaultChar;    // char to be used if a character is missing
+    unsigned short      machine;
+    unsigned short      type;           // type of font
+    uint32_t            flags;          // various flags
+    uint32_t            totalKern;      // total number of kerning pairs
+    uint32_t            totalLig;       // total number of ligature values
+    uint32_t            number;         // font number (backpointer to self)
+    uint16_t            totalChars;     // total number of characters in font
+    uint16_t            firstChar;      // character id of first character
+    uint16_t            lastChar;       // character id of last character
+    uint16_t            defaultChar;    // char to be used if a character is missing
     RscFontPoint2d      origin;         // should always be zero (future support)
     RscGlyphBoundingBox maxbrr;         // maximized bounding ranges
     RscFontVec          ascender;       // distance above baseline
@@ -193,16 +198,16 @@ struct RscFontHeader
     RscFontDist         N_width;        // width of lower-case 'n'
     RscFontVec          kernTracks[4];  // kerning tracks
     RscFontVec          resv0;          // reserved padding
-    UInt32              fractMap;       // resource ID of fractions map
-    UInt32              unicodeMap;     // resource ID of unicode map
-    UInt32              m_filledFlag:1; // if true, all glyphs in this font that have polygons should be treated as filled.
-    UInt32              m_unused:31;
-    Int16               languageId;     // language id
-    UShort              nFamilyName;    // offset into 'name' of the family's name
-    UShort              nFontName;      // offset into 'name' of the font's name
-    UShort              nFastName;      // offset into 'name' for the fast font's name
-    UShort              nDescript;      // offset into 'name' for font's description
-    UShort              nName;          // number of characters used in 'name' (incl. nulls)
+    uint32_t            fractMap;       // resource ID of fractions map
+    uint32_t            unicodeMap;     // resource ID of unicode map
+    uint32_t            m_filledFlag:1; // if true, all glyphs in this font that have polygons should be treated as filled.
+    uint32_t            m_unused:31;
+    int16_t             languageId;     // language id
+    unsigned short      nFamilyName;    // offset into 'name' of the family's name
+    unsigned short      nFontName;      // offset into 'name' of the font's name
+    unsigned short      nFastName;      // offset into 'name' for the fast font's name
+    unsigned short      nDescript;      // offset into 'name' for font's description
+    unsigned short      nName;          // number of characters used in 'name' (incl. nulls)
     char                name[1];        // font name data (null terminated)
     
     }; // RscFontHeader
@@ -274,7 +279,7 @@ public:
 private:
     IRscDataAccessor* m_data;
     LangCodePage m_codePage;
-    UInt32 m_v8FontNumber;
+    uint32_t m_v8FontNumber;
     FontChar m_degreeCharCode;
     FontChar m_diameterCharCode;
     FontChar m_plusMinusCharCode;
@@ -287,7 +292,7 @@ private:
 
 protected:
     virtual bool _ContainsCharacter (WChar) const override;
-    virtual DgnFontPtr _Embed (DgnProjectR) const override;
+    virtual DgnFontPtr _Embed (DgnDbR) const override;
     virtual LangCodePage _GetCodePage () const override;
     virtual FontChar _GetDegreeCharCode () const override;
     virtual double _GetDescenderRatio () const override;
@@ -299,29 +304,29 @@ protected:
     virtual BentleyStatus _LayoutGlyphs (DgnGlyphLayoutContextCR, DgnGlyphLayoutResultR) const override;
     virtual WChar _RemapFontCharToUnicodeChar (FontChar) const override;
     virtual FontChar _RemapUnicodeCharToFontChar (WChar) const override;
-    virtual bool _ShouldDrawWithLineWeight () const override;
-    DgnRscFont (Utf8CP name, DgnFontConfigurationData const&, UInt32 fontNumber, DgnProjectCR);
-    DgnRscFont (Utf8CP name, DgnFontConfigurationData const& config, IRscDataAccessor* accessor, UInt32 v8FontNumber, bool isLastResort);
+    virtual bool _CanDrawWithLineWeight () const override;
+    DgnRscFont (Utf8CP name, DgnFontConfigurationData const&, uint32_t fontNumber, DgnDbCR);
+    DgnRscFont (Utf8CP name, DgnFontConfigurationData const& config, IRscDataAccessor* accessor, uint32_t v8FontNumber, bool isLastResort);
     void EnsureFontIsLoaded () const;
     FontChar GetDefaultCharCode () const;
 
 public:
     virtual ~DgnRscFont ();
     static void       AcquireSystemFonts (T_FontCatalogMap&);
-    static DgnFontPtr CreateFromEmbeddedFont (Utf8CP name, UInt32 fontNumber, DgnProjectCR);
+    static DgnFontPtr CreateFromEmbeddedFont (Utf8CP name, uint32_t fontNumber, DgnDbCR);
     static DgnFontPtr CreateLastResortFont ();
-    static DgnFontPtr CreateMissingFont(Utf8CP name, UInt32 v8FontNumber);
-    DGNPLATFORM_EXPORT DgnRscGlyphCP FindGlyphCP (FontChar) const;
-    DGNPLATFORM_EXPORT BentleyStatus FontCharToFraction (UInt8& numerator, UInt8& denominator, FontChar) const;
-    DGNPLATFORM_EXPORT FontChar FractionToFontChar (UInt8 numerator, UInt8 denominator, bool reduce = true) const;
-    DGNPLATFORM_EXPORT UInt32 GetV8FontNumber () const;
+    static DgnFontPtr CreateMissingFont(Utf8CP name, uint32_t v8FontNumber);
+    DgnRscGlyphCP FindGlyphCP (FontChar) const;
+    DGNPLATFORM_EXPORT BentleyStatus FontCharToFraction (uint8_t& numerator, uint8_t& denominator, FontChar) const;
+    DGNPLATFORM_EXPORT FontChar FractionToFontChar (uint8_t numerator, uint8_t denominator, bool reduce = true) const;
+    DGNPLATFORM_EXPORT uint32_t GetV8FontNumber () const;
     static void OnHostTermination ();
 
     //  The following functions are used by the FontManager when foreignformat calls InitializeRscFontFinder
     static void RegisterIDgnFontFinder (IDgnFontFinder&);
 
     //  The following functions are used by the RscFontImporter in ForeignFormat/DgnV8
-    DGNPLATFORM_EXPORT static DgnRscFont* Create (Utf8CP name, DgnFontConfigurationData const& config, IRscDataAccessor* accessor, UInt32 v8FontNumber, bool isLastResort) {return new DgnRscFont(name,config,accessor,v8FontNumber,isLastResort);}
+    DGNPLATFORM_EXPORT static DgnRscFont* Create (Utf8CP name, DgnFontConfigurationData const& config, IRscDataAccessor* accessor, uint32_t v8FontNumber, bool isLastResort) {return new DgnRscFont(name,config,accessor,v8FontNumber,isLastResort);}
 
     DGNPLATFORM_EXPORT static  BeSQLite::PropertySpec    CreateEmbeddedFontHeaderPropertySpec        ();
     DGNPLATFORM_EXPORT static  BeSQLite::PropertySpec    CreateEmbeddedFractionsPropertySpec         ();

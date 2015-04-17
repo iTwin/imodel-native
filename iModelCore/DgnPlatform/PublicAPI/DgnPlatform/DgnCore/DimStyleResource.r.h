@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DimStyleResource.r.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,14 +23,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 typedef struct PropToOverrideMap
     {
 #ifdef resource
-    Int32           override;
-    Int32           property;
+    int32_t         override;
+    int32_t         property;
 #else
     DimStyleProp    m_override;
     DimStyleProp    m_property;
 #endif
-    Int32           inverted;
-    Int32           notInDimElm;
+    int32_t         inverted;
+    int32_t         notInDimElm;
     } PropToOverrideMap;
 
 typedef struct DimStylePropToOverrideMapRsc
@@ -38,7 +38,7 @@ typedef struct DimStylePropToOverrideMapRsc
 #ifdef resource
     PropToOverrideMap   map[];
 #else
-    ULong               nMaps;
+    unsigned long       nMaps;
     PropToOverrideMap   map[1];
 #endif
     } DimStylePropToOverrideMapRsc;

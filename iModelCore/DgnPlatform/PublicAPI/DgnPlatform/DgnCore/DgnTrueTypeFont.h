@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnTrueTypeFont.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -83,7 +83,7 @@ private:
 #endif
 
     typedef bmap<FontChar, DgnTrueTypeGlyph*> T_GlyphMap;
-    typedef bmap<UInt16, DgnTrueTypeGlyph*> T_GlyphIndexMap;
+    typedef bmap<uint16_t, DgnTrueTypeGlyph*> T_GlyphIndexMap;
 
 // WIP_NONPORT - TrueType
 #if defined (BENTLEY_WIN32)
@@ -108,20 +108,22 @@ private:
     mutable bool m_wasLoaded;
     mutable double m_scaleFactor;
     mutable double m_descenderRatio;
+    mutable T_GlyphMap m_glyphCodeGlyphMap;
+    mutable T_GlyphMap m_glyphIndexGlyphMap;
 
 // WIP_NONPORT - TrueType
 #if defined (BENTLEY_WIN32)
     mutable void* m_uniscribeScriptCaches[SCRIPT_CACHE_INDEX_Max];
 #endif
 
-    BentleyStatus ComputeAdvanceWidths(WCharCP chars, size_t totalNumChars, T_DoubleVectorR outAdvanceWidths, bvector<DPoint2d>& outGlyphOffsets, bvector<bool>& glyphIndexMask, DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes, T_DoubleVectorR leadingCaretOffsets, T_DoubleVectorR trailingCaretOffsets, DgnGlyphLayoutContextCR, double existingUnitCaretOffset, bool shouldDisableGlyphShaping, bool shouldAllowMissingGlyphs) const;
+    BentleyStatus ComputeAdvanceWidths(WCharCP chars, size_t totalNumChars, T_DoubleVectorR outAdvanceWidths, bvector<DPoint2d>& outGlyphOffsets, bvector<bool>& glyphIndexMask, DgnGlyphLayoutResult::T_GlyphCodesR outGlyphCodes, DgnGlyphLayoutContextCR, bool shouldDisableGlyphShaping, bool shouldAllowMissingGlyphs) const;
     void EnsureFontIsLoaded () const;
     WChar FixDiameterCharCode (WChar) const;
     BentleyStatus LayoutGlyphsInternal (DgnGlyphLayoutContextCR, DgnGlyphLayoutResultR, WCharCP processedChars, size_t numChars) const;
 
 protected:
     virtual bool _ContainsCharacter (WChar) const override;
-    virtual DgnFontPtr _Embed (DgnProjectR) const override;
+    virtual DgnFontPtr _Embed (DgnDbR) const override;
     virtual LangCodePage _GetCodePage () const override;
     virtual FontChar _GetDegreeCharCode () const override;
     virtual double _GetDescenderRatio () const override;
@@ -131,7 +133,7 @@ protected:
     virtual DgnFontVariant _GetVariant () const override;
     virtual bool _IsGlyphBlank (FontChar) const override;
     virtual BentleyStatus _LayoutGlyphs (DgnGlyphLayoutContextCR, DgnGlyphLayoutResultR) const override;
-    virtual bool _ShouldDrawWithLineWeight () const override;
+    virtual bool _CanDrawWithLineWeight () const override;
 
 // WIP_NONPORT - TrueType
 #if defined (BENTLEY_WIN32)
@@ -139,23 +141,24 @@ protected:
 #else
     DgnTrueTypeFont (Utf8CP name, WCharCP filePath, DgnFontConfigurationData const&);
 #endif
-    DgnTrueTypeFont (Utf8CP name, DgnFontConfigurationData const&, UInt32 fontNumber, DgnProjectCR);
+    DgnTrueTypeFont (Utf8CP name, DgnFontConfigurationData const&, uint32_t fontNumber, DgnDbCR);
 
 public:
     virtual ~DgnTrueTypeFont ();
     static void AcquireSystemFonts (T_FontCatalogMap&);
-    static DgnFontPtr CreateFromEmbeddedFont (Utf8CP name, UInt32 fontNumber, DgnProjectCR);
+    static DgnFontPtr CreateFromEmbeddedFont (Utf8CP name, uint32_t fontNumber, DgnDbCR);
     static DgnFontPtr CreateLastResortFont ();
     static DgnFontPtr CreateMissingFont (Utf8CP name);
     DGNPLATFORM_EXPORT double GetScaleFactor () const;
     static void OnHostTermination ();
     DGNPLATFORM_EXPORT static BeSQLite::PropertySpec CreateEmbeddedFontPropertySpec();
+    DgnTrueTypeGlyphCP FindGlyphCP(FontChar, bool isGlyphIndex, bool isBold, bool isItalic) const;
 
 // WIP_NONPORT - TrueType
 #if defined (BENTLEY_WIN32)
     static DgnFontPtr CreateDecoratorLogicalFont ();
     DGNPLATFORM_EXPORT static BentleyStatus GetFontFaceNameFromFileName (WStringR faceName, WCharCP fileName);
-    DGNPLATFORM_EXPORT BentleyStatus GetPitchAndCharSet (byte& pitch, byte& charSet) const;
+    DGNPLATFORM_EXPORT BentleyStatus GetPitchAndCharSet (Byte& pitch, Byte& charSet) const;
 #endif
 
 // __PUBLISH_CLASS_VIRTUAL__

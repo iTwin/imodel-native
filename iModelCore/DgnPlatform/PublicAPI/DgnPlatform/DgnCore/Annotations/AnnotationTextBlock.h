@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationTextBlock.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -39,6 +39,7 @@ typedef AnnotationRunCollection& AnnotationRunCollectionR;
 typedef AnnotationRunCollection const& AnnotationRunCollectionCR;
 
 //=======================================================================================
+//! This enumerates all possible ways to apply an AnnotationTextStyle to an AnnotationTextBlock objects.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum struct SetAnnotationTextStyleOptions
@@ -52,6 +53,7 @@ enum struct SetAnnotationTextStyleOptions
 }; // SetAnnotationTextStyleOptions
 
 //=======================================================================================
+//! This enumerates all possible annotation run types.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum struct AnnotationRunType
@@ -63,6 +65,8 @@ enum struct AnnotationRunType
 }; // AnnotationRunType
 
 //=======================================================================================
+//! A "run" is typically a sequence of characters that share a single format/style, but other specialized run types exist. In the hierarchy of block/paragraph/run, run is the most granular piece of the block, and contains the actual character data. When laid out on screen, a single run may span multiple lines, but it can never span different formats/styles.
+//! @note A run must be created with an AnnotationTextStyle; if a style does not exist, you must first create and store one, and then used its ID to create a run. Not all properties of an AnnotationTextStyle apply to runs; see AnnotationTextStyleProperty to determine which properties pertain to runs. While a run must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationRunBase : public RefCountedBase
@@ -75,12 +79,12 @@ private:
     void CopyFrom(AnnotationRunBaseCR);
 
 protected:
-    DgnProjectP m_project;
+    DgnDbP m_dgndb;
 
     DgnStyleId m_styleID;
     AnnotationTextStylePropertyBag m_styleOverrides;
     
-    DGNPLATFORM_EXPORT explicit AnnotationRunBase(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit AnnotationRunBase(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationRunBase(AnnotationRunBaseCR);
     DGNPLATFORM_EXPORT AnnotationRunBaseR operator=(AnnotationRunBaseCR);
 
@@ -92,7 +96,7 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT AnnotationRunBasePtr Clone() const;
     
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProjectR() const;
+    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT AnnotationRunType GetType() const;
     DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationTextStyleOptions);
@@ -102,7 +106,25 @@ public:
     
 }; // AnnotationRunBase
 
+//__PUBLISH_SECTION_END__
+
 //=======================================================================================
+//! Specifies if an AnnotationTextRun is normal, subscript, or superscript.
+// The values of the members are expected to match the flatbuffers AnnotationTextRunSubSuperScript.
+// @bsiclass                                                    Jeff.Marker     01/2015
+//=======================================================================================
+enum struct AnnotationTextRunSubSuperScript
+    {
+    Neither = 0,
+    SubScript = 1,
+    SuperScript = 2
+
+}; // AnnotationTextRunSubSuperScript
+
+//__PUBLISH_SECTION_START__
+
+//=======================================================================================
+//! A text run is the most common specialization of AnnotationRunBase, and contains a sequence of characters.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationTextRun : public AnnotationRunBase
@@ -112,6 +134,7 @@ private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
     Utf8String m_content;
+    AnnotationTextRunSubSuperScript m_subsuperscript;
 
     void CopyFrom(AnnotationTextRunCR);
 
@@ -120,23 +143,31 @@ protected:
     virtual AnnotationRunType _GetType() const override;
     
 public:
-    DGNPLATFORM_EXPORT explicit AnnotationTextRun(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit AnnotationTextRun(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationTextRun(AnnotationTextRunCR);
     DGNPLATFORM_EXPORT AnnotationTextRunR operator=(AnnotationTextRunCR);
 
+    DGNPLATFORM_EXPORT AnnotationTextRunSubSuperScript GetSubSuperScript() const;
+    DGNPLATFORM_EXPORT void SetSubSuperScript(AnnotationTextRunSubSuperScript);
+
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnProjectR);
-    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnProjectR, DgnStyleId);
-    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnProjectR, DgnStyleId, Utf8CP);
+    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR);
+    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnStyleId, Utf8CP);
     DGNPLATFORM_EXPORT AnnotationTextRunPtr CloneAsTextRun() const;
 
     DGNPLATFORM_EXPORT Utf8StringCR GetContent() const;
     DGNPLATFORM_EXPORT void SetContent(Utf8CP);
+    DGNPLATFORM_EXPORT bool IsSubScript() const;
+    DGNPLATFORM_EXPORT void SetIsSubScript(bool);
+    DGNPLATFORM_EXPORT bool IsSuperScript() const;
+    DGNPLATFORM_EXPORT void SetIsSuperScript(bool);
 
 }; // AnnotationTextRun
 
 //=======================================================================================
+//! A fraction run is a specialization of AnnotationRunBase that represents a stacked fraction.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationFractionRun: public AnnotationRunBase
@@ -155,15 +186,15 @@ protected:
     virtual AnnotationRunType _GetType() const override;
     
 public:
-    DGNPLATFORM_EXPORT explicit AnnotationFractionRun(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit AnnotationFractionRun(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationFractionRun(AnnotationFractionRunCR);
     DGNPLATFORM_EXPORT AnnotationFractionRunR operator=(AnnotationFractionRunCR);
     
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnProjectR);
-    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnProjectR, DgnStyleId);
-    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnProjectR, DgnStyleId, Utf8CP numerator, Utf8CP denominator);
+    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR);
+    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnStyleId, Utf8CP numerator, Utf8CP denominator);
     DGNPLATFORM_EXPORT AnnotationFractionRunPtr CloneAsFractionRun() const;
 
     DGNPLATFORM_EXPORT Utf8StringCR GetDenominatorContent() const;
@@ -174,6 +205,7 @@ public:
 }; // AnnotationFractionRun
 
 //=======================================================================================
+//! A line break run is a specialization of AnnotationRunBase that manually breaks a line within a paragraph.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationLineBreakRun : public AnnotationRunBase
@@ -187,19 +219,21 @@ protected:
     virtual AnnotationRunType _GetType() const override;
     
 public:
-    DGNPLATFORM_EXPORT explicit AnnotationLineBreakRun(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit AnnotationLineBreakRun(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationLineBreakRun(AnnotationLineBreakRunCR);
     DGNPLATFORM_EXPORT AnnotationLineBreakRunR operator=(AnnotationLineBreakRunCR);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnProjectR);
-    DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnProjectR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR);
+    DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT AnnotationLineBreakRunPtr CloneAsLineBreakRun() const;
 
 }; // AnnotationLineBreakRun
 
 //=======================================================================================
+//! A paragraph is a collection of runs. In a block, individual paragraphs are started on their own "line", similar to how an AnnotationLineBreakRun operates within a paragraph.
+//! @note A paragraph must be created with an AnnotationTextStyle; if a style does not exist, you must first create and store one, and then used its ID to create a run. Not all properties of an AnnotationTextStyle apply to paragraphs; see AnnotationTextStyleProperty to determine which properties pertain to paragraphs. While a paragraph must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationParagraph : public RefCountedBase
@@ -209,7 +243,7 @@ private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
 
-    DgnProjectP m_project;
+    DgnDbP m_dgndb;
 
     DgnStyleId m_styleID;
     AnnotationTextStylePropertyBag m_styleOverrides;
@@ -219,18 +253,18 @@ private:
     void CopyFrom(AnnotationParagraphCR);
 
 public:
-    DGNPLATFORM_EXPORT explicit AnnotationParagraph(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit AnnotationParagraph(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationParagraph(AnnotationParagraphCR);
     DGNPLATFORM_EXPORT AnnotationParagraphR operator=(AnnotationParagraphCR);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnProjectR);
-    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnProjectR, DgnStyleId);
-    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnProjectR, DgnStyleId, AnnotationRunBaseR);
+    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR);
+    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnStyleId, AnnotationRunBaseR);
     DGNPLATFORM_EXPORT AnnotationParagraphPtr Clone() const;
 
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProjectR() const;
+    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationTextStyleOptions);
     DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle() const;
@@ -242,6 +276,8 @@ public:
 }; // AnnotationParagraph
 
 //=======================================================================================
+//! A block is a collection of paragraphs, and contains some unique formatting properties that cannot be on paragraphs or runs, such as justification. AnnotationTextBlock is merely a data object; see AnnotationTextBlockLayout for size/position/lines, and AnnotationTextBlockDraw for drawing. By default, no word-wrapping occurs. You can define a physical word wrap distance by calling SetDocumentWidth; runs will then automatically be split according to line break rules when performing layout.
+//! @note A block must be created with an AnnotationTextStyle; if a style does not exist, you must first create and store one, and then used its ID to create a block. Not all properties of an AnnotationTextStyle apply to blocks; see AnnotationTextStyleProperty to determine which properties pertain to blocks. While a block must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationTextBlock : public RefCountedBase
@@ -256,14 +292,14 @@ struct AnnotationTextBlock : public RefCountedBase
         Center = 2,
         Right = 3
     
-    }; // HorizontalAlignment
+    }; // HorizontalJustification
 
 //__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
 
-    DgnProjectP m_project;
+    DgnDbP m_dgndb;
     
     double m_documentWidth;
     HorizontalJustification m_justification;
@@ -277,19 +313,19 @@ private:
     void Reset();
 
 public:
-    DGNPLATFORM_EXPORT explicit AnnotationTextBlock(DgnProjectR);
+    DGNPLATFORM_EXPORT explicit AnnotationTextBlock(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationTextBlock(AnnotationTextBlockCR);
     DGNPLATFORM_EXPORT AnnotationTextBlockR operator=(AnnotationTextBlockCR);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnProjectR);
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnProjectR, DgnStyleId);
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnProjectR, DgnStyleId, AnnotationParagraphR);
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnProjectR, DgnStyleId, Utf8CP);
+    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR);
+    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId, AnnotationParagraphR);
+    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId, Utf8CP);
     DGNPLATFORM_EXPORT AnnotationTextBlockPtr Clone() const;
 
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProjectR() const;
+    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT double GetDocumentWidth() const;
     DGNPLATFORM_EXPORT void SetDocumentWidth(double);
     DGNPLATFORM_EXPORT HorizontalJustification GetJustification() const;

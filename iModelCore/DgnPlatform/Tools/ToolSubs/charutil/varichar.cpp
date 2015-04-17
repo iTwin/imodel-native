@@ -57,8 +57,8 @@ enum VariCharAnalysisFlags
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2011
 //---------------------------------------------------------------------------------------
-static  Byte    extractLowByte  (UInt16 word)                   { return (Byte)(word & 0xff); }
-static  Byte    extractHighByte (UInt16 word)                   { return (Byte)((word >> 8) & 0xff); }
+static  Byte    extractLowByte  (uint16_t word)                   { return (Byte)(word & 0xff); }
+static  Byte    extractHighByte (uint16_t word)                   { return (Byte)((word >> 8) & 0xff); }
 static  bool    isUnicode       (VariCharAnalysisFlags flags)   { return (VARI_CHAR_FLAG_Unicode == (flags & VARI_CHAR_FLAG_Unicode)); }
 static  bool    isWide          (VariCharAnalysisFlags flags)   { return (VARI_CHAR_FLAG_Wide == (flags & VARI_CHAR_FLAG_Wide)); }
 
@@ -70,13 +70,13 @@ static VariCharAnalysisFlags classifyString(VariCharCP variBuffer)
     if ((NULL == variBuffer) || (0 == *variBuffer))
         return VARI_CHAR_FLAG_None;
 
-    UInt16 code1 = *((UInt16*)variBuffer);
+    uint16_t code1 = *((uint16_t*)variBuffer);
 
     switch(code1)
         {
         case UNICODE_INDUCER:
             {
-            UInt16 code2 = *((UInt16*)(variBuffer + 2));
+            uint16_t code2 = *((uint16_t*)(variBuffer + 2));
             
             if (code2 == UNICODE_NARROW)
                 return VARI_CHAR_FLAG_Unicode;
@@ -87,7 +87,7 @@ static VariCharAnalysisFlags classifyString(VariCharCP variBuffer)
         case UNICODE_INDUCER_SWAP:
             {
             VariCharAnalysisFlags   result  =(VariCharAnalysisFlags)(VARI_CHAR_FLAG_Unicode | VARI_CHAR_FLAG_Byteswap);
-            UInt16                  code2   = *((UInt16*)(variBuffer + 2));
+            uint16_t                code2   = *((uint16_t*)(variBuffer + 2));
             
             if (code2 != UNICODE_NARROW_SWAP)
                 result =(VariCharAnalysisFlags)(result | VARI_CHAR_FLAG_Wide);
@@ -131,7 +131,7 @@ static size_t computeNumInducerBytes(VariCharAnalysisFlags flags)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2011
 //---------------------------------------------------------------------------------------
-static bool canBeStoredAsNarrow(UInt16 const* pWide)
+static bool canBeStoredAsNarrow (uint16_t const* pWide)
     {
     for (; *pWide; ++pWide)
         {
@@ -163,7 +163,7 @@ BentleyStatus VariCharConverter::UnicodeToVariChar(bvector<VariChar>& variBuffer
         BeStringUtilities::WCharToUtf16(utf16String, uniString);
         
         // If all high bytes are zero, we can write a "narrow" UTF-16LE string by omitting them and saving space.
-        bool isNarrow = canBeStoredAsNarrow((UInt16 const*)&utf16String[0]);
+        bool isNarrow = canBeStoredAsNarrow((uint16_t const*)&utf16String[0]);
 
         variBuffer.clear();
 
@@ -202,7 +202,7 @@ BentleyStatus VariCharConverter::UnicodeToVariChar(bvector<VariChar>& variBuffer
     
     // Locale VariChar it is then...
     // "Wide" dedicates two bytes to every character. In a locale scenario, each Unicode character goes to locale char* separately, and the conversion has the high byte padded if necessary.
-    bvector<UInt16> localeString;
+    bvector<uint16_t> localeString;
     WCharCP         uniEnd          =(uniString + wcslen(uniString) + 1);
     
     // Don't attempt to convert the NULL terminator, and always add it at the end.
@@ -273,7 +273,7 @@ BentleyStatus VariCharConverter::UnicodeToVariChar(bvector<VariChar>& variBuffer
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus VariCharConverter::FontCharToVariChar(bvector<VariChar>& variBuffer, UInt16 const* fontChars, size_t numFontChars, bool isUnicode, bool shouldNullTerminate)
+BentleyStatus VariCharConverter::FontCharToVariChar(bvector<VariChar>& variBuffer, uint16_t const* fontChars, size_t numFontChars, bool isUnicode, bool shouldNullTerminate)
     {
     variBuffer.clear();
     if (shouldNullTerminate)
@@ -411,7 +411,7 @@ BentleyStatus VariCharConverter::VariCharToUnicode(WStringR uniString, VariCharC
     // "Wide" dedicates two bytes to every character. In a locale scenario, each Unicode character goes to locale char* separately, and the conversion has the high byte padded if necessary.
     if (isWide(classification))
         {
-        for (VariCharCP variIter = variBuffer; variIter < variEnd; variIter += sizeof(UInt16))
+        for (VariCharCP variIter = variBuffer; variIter < variEnd; variIter += sizeof(uint16_t))
             {
             char localeBuffer[3];
 
@@ -536,7 +536,7 @@ VariCharConverter::Result VariCharConverter::VariCharToUnicode(WCharP unicodeBuf
         WCharP unicodeChar = unicodeBuffer;
         WCharP unicodeEnd = (unicodeBuffer + numUnicodeChars);
         
-        for (; variIter < variEnd && unicodeChar < unicodeEnd; variIter += sizeof(UInt16))
+        for (; variIter < variEnd && unicodeChar < unicodeEnd; variIter += sizeof(uint16_t))
             {
             char localeBuffer[3];
             if (0 == *(variIter + 1))
@@ -589,7 +589,7 @@ BentleyStatus VariCharConverter::VariCharToUnicode(Utf8StringR uniString, VariCh
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus VariCharConverter::VariCharToFontChar(bvector<UInt16>& fontChars, VariCharCP variBuffer, size_t numVariBytes)
+BentleyStatus VariCharConverter::VariCharToFontChar(bvector<uint16_t>& fontChars, VariCharCP variBuffer, size_t numVariBytes)
     {
     fontChars.clear();
     fontChars.push_back(0);
@@ -668,15 +668,15 @@ size_t VariCharConverter::ComputeNumBytes(VariCharCP variBuffer)
     if (isWide(classification))
         {
         VariCharCP variIter = variBuffer + numInducerBytes;
-        for (; 0 != *(Utf16CP)variIter; variIter += sizeof(UInt16))
+        for (; 0 != *(Utf16CP)variIter; variIter += sizeof (uint16_t))
             ;
         
-        return ((variIter - variBuffer) + sizeof(UInt16));
+        return ((variIter - variBuffer) + sizeof (uint16_t));
         }
     
     VariCharCP variIter = variBuffer + numInducerBytes;
-    for (; 0 != *(UInt8 const*)variIter; variIter += sizeof(UInt8))
+    for (; 0 != *(uint8_t const*)variIter; variIter += sizeof (uint8_t))
         ;
         
-    return ((variIter - variBuffer) + sizeof(UInt8));
+    return ((variIter - variBuffer) + sizeof (uint8_t));
     }

@@ -2,145 +2,38 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/ElementGraphics.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#include <DgnPlatform/DgnPlatform.h>
+#include "../DgnPlatform.h"
+#include "SolidKernel.h"
+#include "ViewContext.h"
 #include "DgnFontManager.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
 //__PUBLISH_SECTION_END__
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ElementGraphics
+struct EXPORT_VTABLE_ATTRIBUTE WireframeGeomUtil
 {
-enum class OpCode : UInt32
-    {
-    Invalid         = 0,
-    Header          = 1, //!< Required to be first opcode.
-    PushTransform   = 2,
-    PopTransform    = 3,
-    IGeometry       = 4,
-    };
+static bool CollectRules (DgnExtrusionDetailR, bvector<DSegment3d>&, bvector<bool>&, ViewContextP = NULL);
+static bool CollectRules (DgnRotationalSweepDetailR, bvector<DEllipse3d>&, bvector<bool>&, ViewContextP = NULL);
+static bool CollectRules (DgnRuledSweepDetailR, bvector<DSegment3d>&, bvector<bool>&, ViewContextP = NULL);
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct Header
-    {
-    UInt32          m_version:8;
-    UInt32          m_reserved:24;
-    UInt32          m_flags;
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidPrimitiveCR, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (MSBsplineSurfaceCR, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidKernelEntityCR, bool includeEdges = true, bool includeFaceIso = false);
 
-    Header (UInt8 version = 1, UInt32 flags = 0) : m_version (version), m_reserved (0), m_flags (flags) {}
+DGNPLATFORM_EXPORT static void Draw (ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
+DGNPLATFORM_EXPORT static void Draw (MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
+DGNPLATFORM_EXPORT static void Draw (ISolidKernelEntityCR, ViewContextR, IFaceMaterialAttachmentsCP attachments = NULL, bool includeEdges = true, bool includeFaceIso = true);
 
-    }; // Header
+DGNPLATFORM_EXPORT static void DrawOutline (CurveVectorCR, IDrawGeomR);
+DGNPLATFORM_EXPORT static void DrawOutline2d (CurveVectorCR, IDrawGeomR, double zDepth);
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct Operation
-    {
-    OpCode          m_opCode;
-    UInt32          m_dataSize;
-    UInt8 const*    m_data;
-
-    Operation () : m_opCode (OpCode::Invalid), m_dataSize (0), m_data (NULL) {}
-    Operation (OpCode opCode, UInt32 dataSize = 0, UInt8 const* data = NULL) : m_opCode (opCode), m_dataSize (dataSize), m_data (data) {}
-
-    }; // Operation
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct Writer
-    {
-    bvector<UInt8>  m_buffer;
-
-    Writer () {Header hdr; Append (Operation (OpCode::Header, (UInt32) sizeof (hdr), (const UInt8 *) &hdr));}
-
-    DGNPLATFORM_EXPORT void Append (Operation const& xgOp);
-
-    void PushTransform (TransformCR transform) {Append (Operation (OpCode::PushTransform, (UInt32) sizeof (transform), (const UInt8 *) &transform));}
-    void PopTransform () {Append (Operation (OpCode::PopTransform));}
-
-    DGNPLATFORM_EXPORT void Append (IGeometryCR geom);
-
-    }; // Writer;
-    
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct Reader
-    {
-    static Header const* GetHeader (Operation const& xgOp) {return (OpCode::Header == xgOp.m_opCode ? (Header const*) xgOp.m_data : NULL);}
-    static TransformCP GetTransform (Operation const& xgOp) {return (OpCode::PushTransform == xgOp.m_opCode ? (TransformCP) xgOp.m_data : NULL);}
-
-    DGNPLATFORM_EXPORT static IGeometryPtr Get (Operation const& xgOp);
-
-    }; // Reader
-
-typedef UInt8 const* UInt8CP;
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct Iterator : std::iterator<std::forward_iterator_tag, UInt8CP const>
-    {
-    private:
-
-    Operation       m_xgOp;
-    UInt8CP         m_data;
-    size_t          m_dataOffset;
-    size_t          m_totalDataSize;
-
-    DGNPLATFORM_EXPORT void ToNext ();
-
-    Iterator (UInt8 const* data, size_t totalDataSize) {m_dataOffset = 0; m_data = data; m_totalDataSize = totalDataSize; ToNext ();}
-    Iterator () {m_dataOffset = 0; m_data = NULL; m_totalDataSize = 0;}
-
-    friend struct ElementGraphics;
-
-    public:
-
-    Iterator&        operator++() {ToNext (); return *this;}
-    bool             operator==(Iterator const& rhs) const {return m_dataOffset == rhs.m_dataOffset;}
-    bool             operator!=(Iterator const& rhs) const {return !(*this == rhs);}
-    Operation const& operator*() const {return m_xgOp;}
-
-    }; // Iterator
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct Collection
-    {
-    UInt8 const* m_data;
-    size_t       m_dataSize;
-
-    public:
-
-    typedef Iterator const_iterator;
-    typedef const_iterator iterator; //!< only const iteration is possible
-    
-    Collection (UInt8 const* data, size_t dataSize) : m_data (data), m_dataSize (dataSize) {}
-
-    const_iterator begin () const {return const_iterator (m_data, m_dataSize);}
-    const_iterator end   () const {return const_iterator ();}
-
-    DGNPLATFORM_EXPORT void Draw (ViewContextR) const;
-
-    }; // Collection
-
-}; // ElementGraphics
-
+}; // WireframeGeomUtil
 //__PUBLISH_SECTION_START__
 
 /// @addtogroup GeometryCollectors
@@ -274,19 +167,14 @@ DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, El
 
 //! Call _OutputGraphics on the supplied processor and send whatever it draws to it's process methods.
 //! @param[in] processor The object to send the Draw output to.
-//! @param[in] project The DgnProject to set for the ViewContext.
+//! @param[in] dgnDb The DgnDb to set for the ViewContext.
 //! @bsimethod
-DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, DgnProjectR project);
+DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, DgnDbR dgnDb);
 
 //__PUBLISH_SECTION_END__
-DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, IDisplaySymbolR dispSymbol, DgnProjectR project);
-DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor); //! !!!FOR INTERNAL USE ONLY!!! Must call context.SetDgnProject in _OutputGraphics...
+DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, IDisplaySymbolR dispSymbol, DgnDbR dgnDb);
+DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor); //! !!!FOR INTERNAL USE ONLY!!! Must call context.SetDgnDb in _OutputGraphics...
 //__PUBLISH_SECTION_START__
-
-#if !defined (DOCUMENTATION_GENERATOR)
-//! Output debug information for extended element graphics to console.
-DGNPLATFORM_EXPORT static void DebugXGraphics (ElementHandleCR eh);
-#endif
 
 }; // ElementGraphicsOutput
 

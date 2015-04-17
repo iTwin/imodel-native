@@ -2,12 +2,14 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnProperties.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
+
+#include <DgnPlatform/DgnPlatform.h>
 
 #define PROPERTY_APPNAME_DgnFile     "dgn_File"
 #define PROPERTY_APPNAME_DgnFont     "dgn_Font"
@@ -29,52 +31,6 @@ typedef BeSQLite::PropertySpec DbPropSpec;
 typedef DbPropSpec::ProperyTxnMode DbPropTxnMode;
 
 //=======================================================================================
-// Persistent DgnFile-based properties and settings
-// @bsiclass                                                    Keith.Bentley   02/12
-//=======================================================================================
-struct DgnFileProperty
-{
-    struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting) : DbPropSpec (name, PROPERTY_APPNAME_DgnFile, setting) {}
-        };
-    struct FileProperty : Spec {FileProperty (Utf8CP name) : Spec(name, DbPropSpec::TXN_MODE_Normal){}};
-
-    struct CachedProperty : Spec {CachedProperty (Utf8CP name) : Spec(name, DbPropSpec::TXN_MODE_Cached){}};
-    static CachedProperty NextGraphicGroup() {return CachedProperty("NextGG");}
-    static CachedProperty NextTextNode()     {return CachedProperty("NextTN");}
-    static FileProperty SchemaVersion()      {return FileProperty("SchemaVersion");}
-};
-
-//=======================================================================================
-// Persistent model-based property names that are defined at the "system" level. Only properties created and maintained by
-// DgnPlatform code should appear in this list. Applications should create a parallel property name list, but
-// should choose an appropriate Namespace string (which of course should NOT start with "dgn_").
-// @bsiclass                                                    Keith.Bentley   03/11
-//=======================================================================================
-struct DgnModelProperty
-{
-    struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting) : DbPropSpec (name, PROPERTY_APPNAME_DgnModel, setting) {}
-        };
-
-    struct ModelProperty : Spec {ModelProperty (Utf8CP name) : Spec(name, DbPropSpec::TXN_MODE_Normal){}};
-    struct ModelSetting  : Spec {ModelSetting (Utf8CP name)  : Spec(name, DbPropSpec::TXN_MODE_Setting) {}};
-
-    static ModelSetting  ModelSettings()       {return ModelSetting("ModelSettings");}
-    static ModelProperty Author()              {return ModelProperty("Author");}
-    static ModelProperty Title()               {return ModelProperty("Title");}
-    static ModelProperty Subject()             {return ModelProperty("Subject");}
-    static ModelProperty Keywords()            {return ModelProperty("Keywords");}
-    static ModelProperty Comments()            {return ModelProperty("Comments");}
-    static ModelProperty LastAuthor()          {return ModelProperty("LastAuthor");}
-    static ModelProperty EditTime()            {return ModelProperty("EditTime");}
-    static ModelProperty LastPrinted()         {return ModelProperty("LastPrinted");}
-    static ModelProperty ModelProperties()     {return ModelProperty("ModelProps");}
-};
-
-//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/12
 //=======================================================================================
 struct DgnProjectProperty
@@ -92,7 +48,6 @@ struct DgnProjectProperty
     static ProjectProperty Description()     {return ProjectProperty("Description");}
     static ProjectProperty Client()          {return ProjectProperty("Client");}
     static ProjectProperty SeedProjectId()   {return ProjectProperty("SeedProjectId");}
-    static ProjectProperty ColorTable()      {return ProjectProperty("ColorTable");}
     static ProjectProperty ProjectType()     {return ProjectProperty("ProjectType");}
     static ProjectProperty LastEditor()      {return ProjectProperty("LastEditor");}
     static ProjectProperty Extents()         {return ProjectProperty("Extents");}
@@ -157,11 +112,14 @@ struct DgnEmbeddedProjectProperty
     static ProjectProperty Name()            {return ProjectProperty("Name");}
     static ProjectProperty Description()     {return ProjectProperty("Description");}
     static ProjectProperty Client()          {return ProjectProperty("Client");}
-    static ProjectProperty BoundProjectFormat() {return ProjectProperty("BoundProjectFormat");}
     static ProjectProperty LastEditor()      {return ProjectProperty("LastEditor");}
     static ProjectProperty Thumbnail()       {return ProjectProperty("Thumbnail");}
     static ProjectProperty CreationDate()    {return ProjectProperty("CreationDate");}
-    static ProjectProperty ExpirationDate()  {return ProjectProperty("ExpirationDate");}
+    
+    // Added by Keith Bertram. 3/27/2015. It was decided that it was advantageous to have the LatestChangeSetId property 
+    // available within the imodel so the application does not have to extract the idgndb just to determine if change sets
+    // are available for the imodel.
+    static ProjectProperty LatestChangeSetId()    {return ProjectProperty("LatestChangeSetId");}
 };
 
 //=======================================================================================
@@ -180,22 +138,6 @@ struct DgnViewProperty
     static ViewSetting Settings()     {return ViewSetting("Settings");}
     static ViewSetting DefaultView()  {return ViewSetting("DefaultView");}
     static ViewProperty Thumbnail()   {return ViewProperty("Thumbnail", DbPropSpec::COMPRESS_PROPERTY_No);}
-};
-
-//=======================================================================================
-// @bsiclass                                                    MattGooding     10/12
-//=======================================================================================
-struct DgnMaterialProperty
-{
-    struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting) : DbPropSpec (name, PROPERTY_APPNAME_DgnMaterial, setting) {}
-        };
-
-    struct MaterialProperty : Spec {MaterialProperty (Utf8CP name) : Spec(name, DbPropSpec::TXN_MODE_Normal){}};
-    struct MaterialSetting  : Spec {MaterialSetting (Utf8CP name)  : Spec(name, DbPropSpec::TXN_MODE_Setting){}};
-
-    static MaterialSetting XmlMaterial()            {return MaterialSetting("XmlMaterial");}
 };
 
 //=======================================================================================

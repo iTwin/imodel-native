@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/DimensionHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,8 +56,8 @@ struct      IDimCreateData
     virtual RotMatrixCR                     _GetDimRMatrix()    const = 0;                          //!< Supplies a rotation matrix that determines the orientation of the dimension.
     virtual RotMatrixCR                     _GetViewRMatrix()   const = 0;                          //!< Supplies a rotation matrix that determines the orientation of text within the dimension.
 #if defined (NEEDS_WORK_DGNITEM)
-    virtual ElementRefP                     _GetSharedCell (WCharCP name) const
-        {return ISharedCellQuery::FindDefinitionByName (name, *_GetDimStyle().GetDgnProject()).get();}
+    virtual DgnElementP                     _GetSharedCell (WCharCP name) const
+        {return ISharedCellQuery::FindDefinitionByName (name, *_GetDimStyle().GetDgnDb()).get();}
 #endif
     };
 
@@ -406,17 +406,17 @@ struct DimensionTextPartId : public ITextPartId
     {
     //__PUBLISH_SECTION_END__
     private:
-    UInt32                   m_partSegment;
+    uint32_t                 m_partSegment;
     DimensionTextPartType    m_partType;
     DimensionTextPartSubType m_partSubType;
     
-    DimensionTextPartId (UInt32 partSegment, DimensionTextPartType partType, DimensionTextPartSubType partSubType);
+    DimensionTextPartId (uint32_t partSegment, DimensionTextPartType partType, DimensionTextPartSubType partSubType);
 
     public:
     //__PUBLISH_SECTION_START__
 
         //!  Queries the segment associated with this part.
-        DGNPLATFORM_EXPORT UInt32                       GetPartSegment  () const;
+        DGNPLATFORM_EXPORT uint32_t                     GetPartSegment  () const;
         //!  Queries the part type associated with this part.
         DGNPLATFORM_EXPORT DimensionTextPartType        GetPartType     () const;
         //!  Queries the part sub type associated with this part.
@@ -427,13 +427,13 @@ struct DimensionTextPartId : public ITextPartId
         //! @param        partSegment IN  segment number
         //! @param        partType    IN  part type
         //! @param        partSubType IN  part subtype
-        DGNPLATFORM_EXPORT static ITextPartIdPtr Create (UInt32 partSegment, DimensionPartType partType, DimensionPartSubType partSubType);
+        DGNPLATFORM_EXPORT static ITextPartIdPtr Create (uint32_t partSegment, DimensionPartType partType, DimensionPartSubType partSubType);
 
         //!  Create a new dimension text part.
         //! @param        partSegment IN  segment number
         //! @param        partType    IN  part type
         //! @param        partSubType IN  part subtype
-        DGNPLATFORM_EXPORT static ITextPartIdPtr Create (UInt32 partSegment, DimensionTextPartType partType, DimensionTextPartSubType partSubType);
+        DGNPLATFORM_EXPORT static ITextPartIdPtr Create (uint32_t partSegment, DimensionTextPartType partType, DimensionTextPartSubType partSubType);
     
     }; // DimensionTextPartId
 
@@ -479,7 +479,7 @@ protected:
 //virtual ITransactionHandlerP                        _GetITransactionHandler() override {return this;} removed in Graphite
 virtual IAnnotationHandlerP                         _GetIAnnotationHandler (ElementHandleCR)  override {return this;}
 
-DGNPLATFORM_EXPORT virtual void                     _GetTypeName (WStringR string, UInt32 desiredLength) override;
+DGNPLATFORM_EXPORT virtual void                     _GetTypeName (WStringR string, uint32_t desiredLength) override;
 DGNPLATFORM_EXPORT virtual void                     _QueryProperties (ElementHandleCR eh, PropertyContextR context) override;
 DGNPLATFORM_EXPORT virtual void                     _EditProperties (EditElementHandleR eeh, PropertyContextR context) override;
 
@@ -577,17 +577,17 @@ DGNPLATFORM_EXPORT StatusInt        DropDimensionToSegments (ElementAgendaR drop
 DGNPLATFORM_EXPORT StatusInt        InsertStrings (EditElementHandleR eeh, DimStrings const&, int pointNo);
 DGNPLATFORM_EXPORT StatusInt        GetStrings (ElementHandleCR eeh, DimStrings&, int pointNo, DimStringConfig* stringConfig);
 DGNPLATFORM_EXPORT StatusInt        OverallSetRefScale (EditElementHandleR dimElement, double* value);
-DGNPLATFORM_EXPORT StatusInt        OverallSetAngleQuadrant (EditElementHandleR dimElement, UInt16* value);
+DGNPLATFORM_EXPORT StatusInt        OverallSetAngleQuadrant (EditElementHandleR dimElement, uint16_t* value);
 DGNPLATFORM_EXPORT void             SetRadialDimensionCrossCenterFlag (EditElementHandleR dimElement, bool value);
 
 DGNPLATFORM_EXPORT StatusInt        SetTextFromDescr (EditElementHandleR dimElement, ElementHandleCR textElementIn, bool bHasValuePlaceHolder, int iSegmentNo, int iPartType, int iSubType);
 DGNPLATFORM_EXPORT StatusInt        GetTextDescr (ElementHandleCR dimElement, EditElementHandleR textElement, int iSegmentNo, int iPartType, int iSubType) const;
 DGNPLATFORM_EXPORT StatusInt        GetTextStyle (ElementHandleCR dimElement, MdlTextStyle* pTextStyleOut) const;
 DGNPLATFORM_EXPORT StatusInt        SetTextStyle  (EditElementHandleR dimElm, const MdlTextStyle*  pTextStyle, bool setOverrideFlags, bool sizeChangeAllowed);
-DGNPLATFORM_EXPORT StatusInt        GetTextStyleID (ElementHandleCR dimElement, UInt32* pTextStyleID) const;
-DGNPLATFORM_EXPORT StatusInt        SetTextStyleID (EditElementHandleR eh, UInt32 textStyleID);
+DGNPLATFORM_EXPORT StatusInt        GetTextStyleID (ElementHandleCR dimElement, uint32_t* pTextStyleID) const;
+DGNPLATFORM_EXPORT StatusInt        SetTextStyleID (EditElementHandleR eh, uint32_t textStyleID);
 
-DGNPLATFORM_EXPORT void             ChangeFont (EditElementHandleR dimElement, UInt32 font, UInt32 bigFont);
+DGNPLATFORM_EXPORT void             ChangeFont (EditElementHandleR dimElement, uint32_t font, uint32_t bigFont);
 
 //__PUBLISH_SECTION_START__
 

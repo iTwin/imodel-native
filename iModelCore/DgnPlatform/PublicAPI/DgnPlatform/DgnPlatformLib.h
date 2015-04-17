@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformLib.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,12 +10,10 @@
 #include <Bentley/WString.h>
 #include "DgnPlatform.h"
 #include "DgnCore/IViewOutput.h"
-#include "DgnCore/DgnCore.h"
 #include "DgnCore/ColorUtil.h"
 #include "DgnCore/NotificationManager.h"
 #include "DgnCore/ITxnManager.h"
 #include "DgnCore/SolidKernel.h"
-#include "DgnCore/DgnTextStyle.h"
 #include "DgnCore/RealityDataCache.h"
 #include "DgnCore/DgnViewport.h"
 #include <BeSQLite/L10N.h>
@@ -30,7 +28,6 @@ DGNPLATFORM_TYPEDEFS (DgnHost)
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //__PUBLISH_SECTION_END__
-
 
 /*=================================================================================**//**
 @addtogroup DgnPlatformHost
@@ -50,14 +47,14 @@ The application must associate a Host with a thread before using DgnPlatform in 
 
 Most functions in DgnPlatform are <em>not</em> thread-safe. DgnPlatform can safely be used by multiple threads concurrently,
 provided that each thread is associated with its own DgnPlatformLib::Host. The Host object holds the context data and
-owns the DgnProject that the thread can use. (Host sharing is discussed below.)
+owns the DgnDb that the thread can use. (Host sharing is discussed below.)
 
 There are several options for associating a Host with a thread:
 \li The simplest option is to create a Host and then call DgnPlatformLib::Initialize in a thread before calling any other DgnPlatform functions in that thread. The thread should call DgnPlatformLib::Host::Terminate before it exits.
 \li You can move a Host from one thread to another. Initialize the Host in thread A. Then call call DgnPlatformLib::ForgetHost in thread A and DgnPlatformLib::AdoptHost in thread B. Thread B should call DgnPlatformLib::Host::Terminate before it exits.
 \li A related option is to initialize a Host in one thread for use by another thread. In this case, thread A would call DgnPlatformLib::Intialize on a Host and pass false for the argument to adopt the host. Thread B would then call DgnPlatformLib::AdoptHost to take ownership of the host and should call DgnPlatformLib::Host::Terminate before it exits.
 
-Note that a DgnProject may be used only in a thread that is associated with the Host that was used to open it. So, you cannot open a file in
+Note that a DgnDb may be used only in a thread that is associated with the Host that was used to open it. So, you cannot open a file in
 one thread and then try to use it in another thread, unless both threads are associated with the same host.
 
 Host Sharing. You can share a single host among multiple threads, but only if you are prepared to synchronize access to it.
@@ -100,6 +97,7 @@ public:
         friend class DgnPlatformLib;
 
     public:
+
         //! Provides Exception handling capabilities
         struct ExceptionHandler : IHostObject
             {
@@ -129,10 +127,10 @@ public:
             //! Handle an assertion failure.
             virtual void _HandleAssert (WCharCP message, WCharCP file, unsigned line) {}
             virtual TerminationCondition _SetTerminationCondition (TerminationCondition when) {return when;}
-            DGNPLATFORM_EXPORT virtual UInt32 _ResetFloatingPointExceptions (UInt32 newFpuMask);
-            virtual UInt32 _QueryUser (bool attemptRecovery, WCharCP productName) {return 0;}
-            virtual UInt32 _EnterCoreCriticalSection (CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
-            virtual UInt32 _ReleaseCoreCriticalSection (CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
+            DGNPLATFORM_EXPORT virtual uint32_t _ResetFloatingPointExceptions (uint32_t newFpuMask);
+            virtual uint32_t _QueryUser (bool attemptRecovery, Utf8CP productName) {return 0;}
+            virtual uint32_t _EnterCoreCriticalSection (CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
+            virtual uint32_t _ReleaseCoreCriticalSection (CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
             virtual void   _RestoreCoreCriticalSection (CharCP, int) {} // WIP_CHAR_OK - Just for diagnostic purposes
             virtual void    _OnHostTermination (bool isProcessShutdown) {delete this;}
             virtual bool    _ConIOEnabled() {return false;}
@@ -218,13 +216,13 @@ public:
             //! By default, this will query the ConfigurationAdmin for MS_LINFILELIST.
             DGNPLATFORM_EXPORT virtual bool _GetLocalLinFilePaths (WStringR);
             //! Notifies the host that the LineStyleManager has loaded the LsDgnFileMap for the specified design file.  No action is necessary.
-            virtual void _LoadedNameMap (DgnProjectR) {}
+            virtual void _LoadedNameMap (DgnDbR) {}
             //! Notifies the host that the LineStyleManager has loaded an entry to the name map for a design file.  No action is necessary.
-            virtual void _AddedNameMapEntry (DgnProjectP, int lineStyleId) {}
+            virtual void _AddedNameMapEntry (DgnDbP, int lineStyleId) {}
             //! Notifies the host that the LineStyleManager has removed an entry from the name map for a design file.  No action is necessary.
-            virtual void _RemovedNameMapEntry (DgnProjectP, int lineStyleId) {}
+            virtual void _RemovedNameMapEntry (DgnDbP, int lineStyleId) {}
             //! Notifies the host that the LineStyleManager has changed an entry in the name map for a design file.  No action is necessary.
-            virtual void _ChangedNameMapEntry (DgnProjectP, int lineStyleId) {}
+            virtual void _ChangedNameMapEntry (DgnDbP, int lineStyleId) {}
             //! Notifies the host that the LineStyleManager encountered bad line style data in the specified resource file.   No action is necessary.
             virtual void _ReportCorruptedNameMap (WCharCP filename) {}
             //! Queries for a setting.
@@ -242,103 +240,26 @@ public:
             //! Determine whether DgnPlatform should attempt to determine materials for geometry during display.
             virtual bool _WantDisplayMaterials () {return true;}
             //! Convert a stored material preview from a jpeg data block to an rgb image
-            virtual BentleyStatus _GetMaterialPreviewAsRGB (byte *rgbImage, Point2dCR outSize, byte const* jpegImage, size_t jpegDataSize) {return ERROR;}
+            virtual BentleyStatus _GetMaterialPreviewAsRGB (Byte *rgbImage, Point2dCR outSize, Byte const* jpegImage, size_t jpegDataSize) {return ERROR;}
             //! Convert an RGB image to a jpeg compressed
-            virtual BentleyStatus _GetMaterialPreviewJPEGFromRGB (byte** jpegDataP, size_t& jpegDataSize, byte const* rgb, Point2dCR size) {return ERROR;}
+            virtual BentleyStatus _GetMaterialPreviewJPEGFromRGB (Byte** jpegDataP, size_t& jpegDataSize, Byte const* rgb, Point2dCR size) {return ERROR;}
             //! Create an RGB image from a buffer
-            virtual BentleyStatus _CreateImageFileFromRGB (WStringCR fileName, byte *image, Point2dCR size, bool isRGBA)  {return ERROR;};
+            virtual BentleyStatus _CreateImageFileFromRGB (WStringCR fileName, Byte *image, Point2dCR size, bool isRGBA)  {return ERROR;};
             };
 
         //! Supervise the processing of Raster Attachments
         struct RasterAttachmentAdmin : IHostObject
             {
-            //! Publishing actions for raster, georaster and raster DEM in i-model.
-            //! Publish_Exclude: exclude the raster, georaster or raster DEM from i-model.
-            //! Publish_KeepOriginal: Keep the raster, georaster or raster DEM in the i-model as it is.
-            //! Publish_Embed: Embed the raster, GeoRaster or raster DEM.
-            enum PublishingAction
-                {
-                Publish_Exclude         = 0,
-                Publish_KeepOriginal    = 1,
-                Publish_Embed           = 2,
-                };
-
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
             virtual int _GetVersion() const {return 1;} // Do not override!
             virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
 
-            //! Output RasterFrame geometry that represent the raster range. The resulting range will be stored in the element.
-            //! Normally, host don't need to override this method.
-            //! @param[in] rasterEh The raster frame element to draw.
-            //! @param[in] ViewContextR The context to output to.
-            //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputForRangeCalculation(ElementHandleCR rasterEh, ViewContextR ViewContextR){return ERROR;}
-
-            //! Output a RasterFrame element to the supplied view context.
-            //! @param[in] rasterEh The raster frame element to draw.
-            //! @param[in] ViewContextR The context to output the raster to.
-            //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputRaster(ElementHandleCR rasterEh, ViewContextR ViewContextR){return ERROR;};
-
-            //! Get a brief string describing the element.
-            //! @param[in]  rasterEh        The raster element.
-            //! @param[out] string          The description string to be filled in.
-            //! @param[in]  desiredLength   The largest number of characters the caller wishes to see in the description. Implementers should
-            //!   endeavor to honor this if possible, and should return the most elaborate description possible within
-            //!   the desired length. However, implementers should never truncate the description to nonsense, even if the minimum sensible length exceeds
-            //!   desiredLength. Callers must be prepared for strings that exceed desiredLength.
-            //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _GetDescription(ElementHandleCR rasterEh, WStringR string, UInt32 desiredLength) {return ERROR;}
-
-            //! Called by DgnPlatform when it required access to raster attachment source file information.
-            //! The admin should create and return a implementation of IRasterSourceFileQuery corresponding to the specified raster attachment.
-            //! @param[out]     pIRasterSourceFileQuery     A refCounted pointer to implementation of an IRasterSourceFileQuery interface.
-            //! @param[in]      eh                          A pointer to corresponding raster attachment elementHandle.
-            //! @return SUCCESS if operation was handled.
-            //! @note: Required to fix invalid Raster Attachment matrix that came from a v7 to v8 design file conversion.
-            DGNPLATFORM_EXPORT virtual BentleyStatus _CreateIRasterSourceFileQuery (IRasterSourceFileQueryPtr& pIRasterSourceFileQuery, ElementHandleCR eh) const   {return BSIERROR;}
-
-            //! Called after a raster attachment element is loaded in a DgnModel.
-            //! @param[in]      rasterEh        The raster frame element.
-            virtual void _OnElementLoaded (ElementHandleCR rasterEh) {}
-
-            //! Load DgnRaster objects in provided modelRef.
-            //! @param[in]      modelRef         The DgnModel where the rasters will be loaded.
-            virtual void _LoadRasters(DgnModelR modelRef) {}
-
-            //! Called after a raster attachment element is added to a model.
-            //! @param[in]      element         The raster frame element.
-            virtual void _OnAdded                (ElementHandleP element) {}
-
-            //! Called after a raster attachment element is deleted from a model.
-            //! @param[in]      element         The raster frame element.
-            virtual void _OnDeleted              (ElementHandleP element) {}
-
-            //! Called by DgnPlatform to requested to clip the specified element, that is, to
-            //!   return the portions of the element that are inside/outside the clip criteria.
-            //!   status parameter will be set to the outcome of the operation.
-            //! @param[in]      inside          Part of element inside fence.
-            //! @param[in]      outside         Part of element outside fence.
-            //! @param[in]      element         Element to clip.
-            //! @param[in]      fp              The fence parameters to apply.
-            //! @param[in]      options
-            //! @return SUCCESS if the element could be clipped.
-            virtual StatusInt _OnFenceClip (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR element, FenceParamsP fp, FenceClipFlags options) const  {return ERROR;};
-
-            //! Called when a new raster attachment is created and no template element is provided.
-            virtual void _ApplyDefaultSettings (EditElementHandleR) {}
-
-            //! Get the action that need to be done when when publishing with i-model
-            //! @param    rasterEh      IN the raster element.
-            //! @return PublishingAction
-            virtual PublishingAction _GetPublishingAction(ElementHandleCR rasterEh) {return Publish_Exclude;}
-
             //Control if raster are displayed or not
-            virtual bool                    _IsDisplayEnable() const                {return true;}
+            virtual bool _IsDisplayEnable() const {return true;}
 
             //Control if raster locate logic can locate raster by its interior or by its border only.
-            virtual bool                    _IsIgnoreInterior () const              {return false;}
+            virtual bool _IsIgnoreInterior() const {return false;}
             };
 
         //! Admin for PointCloud services
@@ -385,7 +306,7 @@ public:
             //! If the point cloud is bigger than this value (in Mb), it is reduced to this value. This value is used
             //! only when the publishing action is Publish_ReduceSize.
             //! @return the publishing size (in Mb).
-            virtual UInt32              _GetPublishingEmbedSize () const {return 10;}
+            virtual uint32_t            _GetPublishingEmbedSize () const {return 10;}
 
             //! Get the display type to use for point clouds
             //! @return the display query type.
@@ -393,7 +314,7 @@ public:
 
             //! Copy the spatial reference from a point cloud file to a point cloud element
             //! @param[in]      eRef         The point cloud element.
-            virtual BentleyStatus _SyncSpatialReferenceFromFile(ElementRefP eRef) { return ERROR; }
+            virtual BentleyStatus _SyncSpatialReferenceFromFile(DgnElementP eRef) { return ERROR; }
 
             //! returns whether we should automatically synchronize the spatial reference from the POD file
             virtual bool _GetAutomaticallySyncSpatialReferenceFromFile() const   { return false; }
@@ -412,18 +333,12 @@ public:
         struct RealityDataAdmin : IHostObject
         {
         private:
-            IRealityDataCache* m_dataCache;
+            RealityDataCachePtr m_cache;
 
         public:
-            RealityDataAdmin () : m_dataCache (NULL) {}
-            virtual void _OnHostTermination (bool isProgramExit) { DELETE_AND_CLEAR (m_dataCache); delete this;}
+            virtual void _OnHostTermination(bool isProgramExit) {delete this;}
 
-            //! Supply the IRealityDatahandlers that should be registered with progressive display.
-            virtual void _GetRealityDataHandlers (bvector<RefCountedPtr<IRealityDataHandler>>& handlers, ViewportR vp) {;}
-
-            DGNPLATFORM_EXPORT virtual IRealityDataCache& _SupplyCache ();
-
-            DGNPLATFORM_EXPORT IRealityDataCache& GetCache ();
+            DGNPLATFORM_EXPORT RealityDataCache& GetCache();
         };
 
         //! Supervise various graphics operations.
@@ -478,7 +393,7 @@ public:
             virtual void _DeleteSymbol (IDisplaySymbol* symbol) {}
 
             //! Define a texture
-            virtual void _DefineTextureId (uintptr_t textureId, Point2dCR imageSize, bool enableAlpha, UInt32 imageFormat, byte const* imageData) {}
+            virtual void _DefineTextureId (uintptr_t textureId, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, Byte const* imageData) {}
 
             //! Check if a texture is defined
             virtual bool _IsTextureIdDefined (uintptr_t textureId) {return false;}
@@ -487,7 +402,7 @@ public:
             virtual void _DeleteTexture (uintptr_t textureId) {}
 
             //! Define a tile texture
-            virtual void _DefineTile (uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, UInt32 imageFormat, UInt32 pitch, byte const* imageData) {}
+            virtual void _DefineTile (uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, uint32_t pitch, Byte const* imageData) {}
 
             //! Draw a tile texture
             virtual void _DrawTile (IViewDrawR, uintptr_t textureId, DPoint3d const* verts) {}
@@ -499,7 +414,7 @@ public:
             virtual void _DeleteQvMRImage(QvMRImage* qvMRI) {}
 
             //! Add an image tile to a qvMRImage.
-            virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, byte const* pBuffer) {return NULL;}
+            virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return NULL;}
 
             //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
             virtual int _DefineCIFormat(int dataType, int numColors, unsigned long const* pTBGRColors){return 0;}
@@ -514,14 +429,14 @@ public:
             virtual ControlPolyDisplay _GetControlPolyDisplay () {return CONTROLPOLY_DISPLAY_ByElement;}
 
             //! @return The max number of components before a cell will be drawn "fast" when ViewFlags.fast_cell is enabled.
-            virtual UInt32 _GetFastCellThreshold () {return 1;}
+            virtual uint32_t _GetFastCellThreshold () {return 1;}
 
             //! Gets the default (TrueType) font name to use for decorators. Defaults to L"MS Shell Dlg 2". This font should be the same or similar to that used in normal dialog boxes.
             virtual Utf8String _GetDecoratorFontName () {return Utf8String ("MS Shell Dlg 2");}
 
             virtual bool _WantInvertBlackBackground() {return false;}
 
-            virtual bool _GetModelBackgroundOverride (IntColorDef& rgbColor, DgnModelType modelType) {return false;}
+            virtual bool _GetModelBackgroundOverride (ColorDef& rgbColor, DgnModelType modelType) {return false;}
 
             //! If true, the UI icons that this library loads will be processed to darken their edges to attempt to increase visibility.
             virtual bool _ShouldEnhanceIconEdges () {return false;}
@@ -531,7 +446,7 @@ public:
             virtual void _CacheQvGeometryMap (ViewContextR viewContext, uintptr_t rendMatID) {}
 
             // Send material to QuickVision.
-            virtual BentleyStatus _SendMaterialToQV (MaterialCR material, UInt32 elementColor, ViewportP viewport) {return ERROR;}
+            virtual BentleyStatus _SendMaterialToQV (MaterialCR material, ColorDef elementColor, DgnViewportP viewport) {return ERROR;}
 
             //! Supported color depths for this library's UI icons.
             enum IconColorDepth
@@ -544,21 +459,15 @@ public:
             virtual IconColorDepth _GetIconColorDepth () {return ICON_COLOR_DEPTH_32;}
 
             //! Get the longest amount of time allowed between clicks to be interpreted as a double click. Units are milliseconds.
-            virtual UInt32 _GetDoubleClickTimeout() {return 500;} // default to 1/2 second
-
-            virtual bool _WantRPCDisplay () {return false;}
-
-            virtual bool _IsSmartContentRPC (ElementHandleCR eh) {return false;}
-
-            virtual BentleyStatus _DrawRPC (ElementHandleCR eh, ViewContextR context) {return ERROR;}
+            virtual uint32_t _GetDoubleClickTimeout() {return 500;} // default to 1/2 second
 
             //! Return minimum ratio between near and far clip planes for cameras - for z-Buffered output this is dictated by the depth of the z-Buffer
             //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
             virtual double _GetCameraFrustumNearScaleLimit () { return 1.0E-6; }
 
-            virtual void _DrawPathInVp (DisplayPathCP, ViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
+            virtual void _DrawPathInVp (DisplayPathCP, DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
 
-            DGNPLATFORM_EXPORT virtual void _GetInfoString (DisplayPathCP, WStringR pathDescr, WCharCP delimiter) const;
+            DGNPLATFORM_EXPORT virtual void _GetInfoString (DisplayPathCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
 
             //! Gets the directory that holds the sprite definition files.
             virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace) { return BSIERROR; }
@@ -593,6 +502,12 @@ public:
             //! @note: Used by _OutputBodyAsWireframe to produce hatch lines for non-planar faces.
             virtual int _GetVIsoparametricsNumber () const {return 10;}
 
+            //! Get the solid kernel to storage unit scale. Storage units are meters, and a solid kernel unit also meters.
+            //! @return storage unit to solid kernel scale to be used when creating a new ISolidKernelEntity.
+            //! @note: Current scale will support single solids up to 1km, should be more than adequate 
+            //!        to handle any sensible scenario with a high degree of linear precision.
+            virtual double _GetSolidScale () const {return 1.0;}
+
             //! Produce a facet topology table for the supplied ISolidKernelEntity.
             //! @param[out] out Facet topology information for solid kernel entity.
             //! @param[in] in The solid kernel entity to draw.
@@ -611,15 +526,13 @@ public:
             //! @note: Required to drop brep elements to geometry.
             virtual BentleyStatus _FacetBody (IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, IFacetOptionsR options, IFaceMaterialAttachmentsCP attachments = NULL) const {return _FacetBody (out, in, 0.0, attachments);}
 
-            //! Collect face material and color attachment information for the supplied ISolidKernelEntity.
+            //! Initialize per-face material and color information for the supplied ISolidKernelEntity using the supplied ElemDisplayParams.
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] context The context to output the body to.
-            //! @param[in] baseParams The "natural" ElemDisplayParams for faces that don't have an attachment override.
+            //! @param[in] baseParams The "natural" ElemDisplayParams to use for faces that won't have an explicit material/color set.
             //! @param[in] subElemIdOffset Sub-entity base id (optional: for multi-body face material attachments).
-            //! @param[in] eh Element to use for per-face symbology template (optional: for feature solid color per-feature).
-            //! @param[in] useMaterialAttrib Whether to look for material attributes attached to faces.
             //! @return IFaceMaterialAttachmentsPtr with face attachment information.
-            virtual IFaceMaterialAttachmentsPtr _GetFaceMaterialAttachments (ISolidKernelEntityCR in, ViewContextR context, ElemDisplayParamsCR baseParams, int subElemIdOffset = 0, ElementHandleCP eh = NULL, bool useMaterialAttrib = true) const {return NULL;}
+            virtual IFaceMaterialAttachmentsPtr _InitFaceMaterialAttachments (ISolidKernelEntityCR in, ViewContextR context, ElemDisplayParamsCR baseParams, int subElemIdOffset = 0) const {return NULL;}
 
             //! Output a ISolidKernelEntity as one or more closed planar shapes (may have holes) and surfaces to the supplied view context.
             //! @param[in] in The solid kernel entity to draw.
@@ -648,7 +561,7 @@ public:
             //! @param[in] clipMask mask detailing which directions are being clipped.
             //! @param[in] compoundDrawState - used for generating CurvePrimitiveId - cannot be extracted from context as this is only for output (not context for this cut).
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyCut (ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask, CompoundDrawStateP compoundDrawState) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyCut (ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask, CompoundDrawState* compoundDrawState) const {return ERROR;}
 
             //! Stretch faces/edges of a solid/surface kernel entity.
             //! @param[in] in The solid kernel entity to strecth.
@@ -678,9 +591,8 @@ public:
             //! @param[out] output clipped portion
             //! @param[in] input The curve vector to clip.
             //! @param[in] clip clip descriptor to clip against.
-            //! @param[in] transformToDgn The transform from the input curve and the clip to the modelRef uor coordinates.
-            //! @param[in] project DgnProject to use to establish units.
-            virtual BentleyStatus _ClipCurveVector (bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clip, TransformCP transformToDgn, DgnProjectR project) const {return ERROR;}
+            //! @param[in] transformToDgn The transform from the input curve and the clip to uor coordinates.
+            virtual BentleyStatus _ClipCurveVector (bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clip, TransformCP transformToDgn) const {return ERROR;}
 
             //! Clip a body.
             //! @param[out] output clipped portion.
@@ -707,13 +619,6 @@ public:
             //! @return true if the supplied entity has the specified query.
             virtual bool _QueryEntityData (ISolidKernelEntityCR in, ISolidKernelEntity::KernelEntityQuery query) const {return false;}
 
-            //! Process any properties stored on the brep of a surface/solid such as material face assignments.
-            //! @param[in] in The solid kernel entity to process.
-            //! @param[in] context The property context to announce the properties to.
-            //! @return true if a property required remap and element brep data needs to be update.
-            //! @note Supported for Parasolid entities only.
-            virtual bool _ProcessProperties (ISolidKernelEntityR in, PropertyContextR context) const {return false;}
-
             //! Query if input ISolidKernelEntity are geometrically equal (differ only by a transform).
             //! @param[in] entity1 The first of the solid kernel entities to compare.
             //! @param[in] entity2 The second of the solid kernel entities to compare.
@@ -734,32 +639,28 @@ public:
             //! Create an ISolidKernelEntity from the supplied curve vector.
             //! @param[out] out Ref counted pointer to new solid kernel entity.
             //! @param[in] profile The profile to create a wire or planar sheet body from.
-            //! @param[in] project DgnProject to use to establish units.
             //! @param[in] curveToDgn Optional transform from curve to modelRef UOR coordinates.
             //! @param[in] idMap Optional map of edge tags to curve topology ids.
             //! @return SUCCESS if out holds a valid solid kernel entity.
-            virtual BentleyStatus _CreateBodyFromCurveVector (ISolidKernelEntityPtr& out, CurveVectorCR profile, DgnProjectR project, TransformCP curveToDgn = NULL, struct EdgeToCurveIdMap* idMap = NULL) const {return ERROR;}
+            virtual BentleyStatus _CreateBodyFromCurveVector (ISolidKernelEntityPtr& out, CurveVectorCR profile, TransformCP curveToDgn = NULL, struct EdgeToCurveIdMap* idMap = NULL) const {return ERROR;}
 
             //! Create an ISolidKernelEntity from the supplied solid primitve data.
             //! @param[out] out Ref counted pointer to new solid kernel entity.
             //! @param[in] primitive The solid primitive definition.
-            //! @param[in] project DgnProject to use to establish units.
             //! @return SUCCESS if out holds a valid solid kernel entity.
-            virtual BentleyStatus _CreateBodyFromSolidPrimitive (ISolidKernelEntityPtr& out, ISolidPrimitiveCR primitive, DgnProjectR project) const {return ERROR;}
+            virtual BentleyStatus _CreateBodyFromSolidPrimitive (ISolidKernelEntityPtr& out, ISolidPrimitiveCR primitive) const {return ERROR;}
 
             //! Create an ISolidKernelEntity from the supplied bspline surface.
             //! @param[out] out Ref counted pointer to new solid kernel entity.
             //! @param[in] surface The bspline surface to represent as a surface entity.
-            //! @param[in] project DgnProject to use to establish units.
             //! @return SUCCESS if out holds a valid solid kernel entity.
-            virtual BentleyStatus _CreateBodyFromBSurface (ISolidKernelEntityPtr& out, MSBsplineSurfaceCR surface, DgnProjectR project) const {return ERROR;}
+            virtual BentleyStatus _CreateBodyFromBSurface (ISolidKernelEntityPtr& out, MSBsplineSurfaceCR surface) const {return ERROR;}
 
             //! Create an ISolidKernelEntity from the supplied polyface data.
             //! @param[out] out Ref counted pointer to new solid kernel entity.
             //! @param[in] meshData The polyface data to represent as a surface or solid entity.
-            //! @param[in] project DgnProject to use to establish units.
             //! @return SUCCESS if out holds a valid solid kernel entity.
-            virtual BentleyStatus _CreateBodyFromPolyface (ISolidKernelEntityPtr& out, PolyfaceQueryCR meshData, DgnProjectR project) const {return ERROR;}
+            virtual BentleyStatus _CreateBodyFromPolyface (ISolidKernelEntityPtr& out, PolyfaceQueryCR meshData) const {return ERROR;}
 
             //! Transmit a part to a logical block of data (in binary format) using the solid kernel.
             //! Implementing this method is required for creating smart surfaces and solids.
@@ -774,7 +675,7 @@ public:
             //! @note The output ppBuffer is assumed to be owned by the input ISolidKernelEntityP who is responsible for freeing it
             //!       if necessary when its destructor is called.
             //! @see BrepCellHeaderHandler::CreateBRepCellElement
-            virtual BentleyStatus _SaveEntityToMemory (void** ppBuffer, UInt32& bufferSize, ISolidKernelEntityCR in) const {return ERROR;}
+            virtual BentleyStatus _SaveEntityToMemory (uint8_t** ppBuffer, size_t& bufferSize, ISolidKernelEntityCR in) const {return ERROR;}
 
             //! Receive a part archived in binary format and instantiate an entity in the solid kernel for the current session.
             //! Implementing this method is required to query/output smart surfaces and solids.
@@ -787,7 +688,7 @@ public:
             //! @note For Parasolid use PK_PART_RECEIVE.
             //! @note For ACIS use api_restore_entity_list_file.
             //! @see IBRepQuery::GetBRepDataEntity
-            virtual BentleyStatus _RestoreEntityFromMemory (ISolidKernelEntityPtr& out, void const* pBuffer, UInt32 bufferSize, ISolidKernelEntity::SolidKernelType kernelType, TransformCR transform) const {return ERROR;}
+            virtual BentleyStatus _RestoreEntityFromMemory (ISolidKernelEntityPtr& out, uint8_t const* pBuffer, size_t bufferSize, ISolidKernelEntity::SolidKernelType kernelType, TransformCR transform) const {return ERROR;}
 
             //! Create an ISolidKernelEntity suitable for modification from the input entity.
             //! @param[out] out Ref counted pointer to new solid kernel entity.
@@ -968,6 +869,10 @@ public:
             virtual bool    _AllowDgnCoordinateReadout () const {return true;}
             };
 
+        struct CompareTableNames {bool operator()(Utf8CP a, Utf8CP b) const {return strcmp(a, b) < 0;}};
+        typedef bmap<Utf8CP,DgnDomain::TableHandler*,CompareTableNames> T_TableHandlers;
+        typedef bvector<DgnDomain*> T_RegisteredDomains;
+
     protected:
         IKnownLocationsAdmin*   m_knownLocationsAdmin;
         ExceptionHandler*       m_exceptionHandler;
@@ -977,7 +882,6 @@ public:
         RasterAttachmentAdmin*  m_rasterAttachmentAdmin;
         PointCloudAdmin*        m_pointCloudAdmin;
         NotificationAdmin*      m_notificationAdmin;
-        ElementHandlerLoaderP   m_elementHandlerLoader;
         GraphicsAdmin*          m_graphicsAdmin;
         MaterialAdmin*          m_materialAdmin;
         SolidsKernelAdmin*      m_solidsKernelAdmin;
@@ -989,13 +893,17 @@ public:
         LineStyleManagerP       m_lineStyleManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
-        WString                 m_productName;
-
+        Utf8String              m_productName;
+        T_TableHandlers         m_tableHandlers;
+        T_RegisteredDomains     m_registeredDomains;
+        
         // Get the version of the DgnPlatform api. Do not override this method.
         virtual int _GetVersion() const {return 1;}
 
     public:
-
+        T_TableHandlers&  TableHandlers() {return m_tableHandlers;}
+        T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
+        
         DGNPLATFORM_EXPORT virtual void _OnAssert (WCharCP _Message, WCharCP _File, unsigned _Line);
 
         virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() = 0;
@@ -1020,9 +928,6 @@ public:
         //! Supply the NotificationAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual NotificationAdmin& _SupplyNotificationAdmin();
 
-        //! Supply the ElementHandlerLoader for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
-        DGNPLATFORM_EXPORT virtual ElementHandlerLoaderR _SupplyElementHandlerLoader();
-
         //! Supply the GraphicsAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual GraphicsAdmin& _SupplyGraphicsAdmin();
 
@@ -1042,7 +947,7 @@ public:
         DGNPLATFORM_EXPORT virtual RealityDataAdmin& _SupplyRealityDataAdmin();
 
         //! Supply the product name to be used to describe the host.
-        virtual void _SupplyProductName(WStringR) = 0;
+        virtual void _SupplyProductName(Utf8StringR) = 0;
 
         virtual BeSQLite::L10N::SqlangFiles  _SupplySqlangFiles() = 0;
 
@@ -1056,7 +961,6 @@ public:
             m_rasterAttachmentAdmin = 0;
             m_pointCloudAdmin = 0;
             m_notificationAdmin = 0;
-            m_elementHandlerLoader = 0;
             m_graphicsAdmin = 0;
             m_materialAdmin = 0;
             m_solidsKernelAdmin = 0;
@@ -1068,6 +972,7 @@ public:
             m_lineStyleManager = 0;
             m_formatterAdmin = 0;
             m_realityDataAdmin = 0;
+
             };
 
         virtual ~Host() {}
@@ -1081,7 +986,6 @@ public:
         RasterAttachmentAdmin&  GetRasterAttachmentAdmin() {return *m_rasterAttachmentAdmin;}
         PointCloudAdmin&        GetPointCloudAdmin()       {return *m_pointCloudAdmin;}
         NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
-        ElementHandlerLoaderR   GetElementHandlerLoader()  {return *m_elementHandlerLoader;}
         GraphicsAdmin&          GetGraphicsAdmin()         {return *m_graphicsAdmin;}
         MaterialAdmin&          GetMaterialAdmin()         {return *m_materialAdmin;}
         SolidsKernelAdmin&      GetSolidsKernelAdmin()     {return *m_solidsKernelAdmin;}
@@ -1093,7 +997,7 @@ public:
         LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
-        WCharCP                 GetProductName()           {return m_productName.c_str();}
+        Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin (NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
 
@@ -1107,15 +1011,9 @@ public:
         DGNPLATFORM_EXPORT void Terminate(bool onProgramExit);
         };
 
-public:
-    static bool InStaticInitialization();
+    static void StaticInitialize ();
 
 public:
-    //! Call this function once per program run to initialize DgnPlatform globals and other state that is shared by all hosts and threads.
-    //! If the host program does not call StaticInitialize, then the first call to Initialize will call it.
-    //! @param sia      helper object. Pass NULL to get default behavior.
-    DGNPLATFORM_EXPORT static void StaticInitialize ();
-
     //! Must be called before DgnPlatform services can be used on a thread.
     //! Optionally associates the host with the curent thread. See \ref HostsAndThreads.
     //! @remarks The caller should call StaticInitialize first, before calling this method, otherwise it will call StaticInitialize.

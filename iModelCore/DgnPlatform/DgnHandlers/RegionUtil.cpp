@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/RegionUtil.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -368,19 +368,17 @@ void            RegionGraphicsDrawGeom::_SetDrawViewFlags (ViewFlagsCP flags)
     T_Super::_SetDrawViewFlags (flags);
 
     // Prefer "edge" geometry...
-    m_viewFlags.SetRenderMode (MSRenderMode::Wireframe);
+    m_viewFlags.SetRenderMode (DgnRenderMode::Wireframe);
 
     // Apply overrides to flags...
     m_viewFlags.inhibitLineStyles = true;
     m_viewFlags.fill              = false;
     m_viewFlags.patterns          = false;
-    m_viewFlags.text_nodes        = false;
 
     // Only turn off text, otherwise find text based on current view attribute...
     if (m_interiorText)
         return;
 
-    m_viewFlags.dimens            = false;
     m_viewFlags.fast_text         = true;
     }
 
@@ -739,18 +737,16 @@ void            RegionGraphicsDrawGeom::_DrawTextString (TextStringCR text, doub
     if (!m_interiorText)
         return;
 
+    if (text.GetText().empty())
+        return;
+
     AutoRestore <bool> saveInTextDraw (&m_inTextDraw, true);
 
-    DPoint2d    offset;
+    double padding = (text.GetStyle().GetHeight() * m_textMarginFactor);
     DPoint3d    points[5];
 
-    if (text.GetProperties ().ShouldUseBackground ())
-        text.GetProperties ().GetBackgroundStyle (NULL, NULL, NULL, NULL, &offset);
-    else
-        offset.x = offset.y = (text.GetHeight () * m_textMarginFactor);
-
-    if (SUCCESS != text.GenerateBoundingShape (points, &offset))
-        return;
+    text.ComputeBoundingShape(points, padding);
+    text.ComputeTransform().Multiply(points, _countof(points));
 
     CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
 
@@ -1038,9 +1034,7 @@ void            RegionGraphicsContext::_DrawTextString (TextStringCR text)
     text.GetGlyphSymbology (*GetCurrentDisplayParams ());
     CookDisplayParams ();
 
-    double      priority = GetDisplayPriority ();
-    
-    GetIDrawGeom ().DrawTextString (text, text.Is3d () ? NULL : &priority);
+    GetIDrawGeom ().DrawTextString (text, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1051,12 +1045,17 @@ BentleyStatus   RegionGraphicsContext::VisitFloodCandidate (ElementHandleCR eh, 
     if (!eh.IsValid ())
         return ERROR;
 
+    GeometricElementCP geomElement = eh.GetGeometricElement();
+
+    if (nullptr == geomElement)
+        return ERROR;
+
     ViewContext::ContextMark mark (this);
 
     if (trans)
         _PushTransform (*trans);
 
-    return (BentleyStatus) _VisitElemHandle (eh, false, NULL != m_viewport);
+    return (BentleyStatus) _VisitElement (*geomElement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1068,7 +1067,12 @@ BentleyStatus   RegionGraphicsContext::PushBooleanCandidate (ElementHandleCR eh,
         _PushTransform (*trans);
 
     if (eh.IsPersistent ())
-        _SetCurrentElement (eh.GetElementRef ()); // Push path entry since we aren't calling _VisitElemHandle...
+        {
+        GeometricElementCP geomElement = eh.GetGeometricElement();
+
+        if (nullptr != geomElement)
+            _SetCurrentElement (geomElement); // Push path entry since we aren't calling _VisitElement...
+        }
 
     return SUCCESS;
     }
@@ -1081,6 +1085,7 @@ BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate (ElementHandleCR eh
     if (!eh.IsValid())
         return ERROR;
 
+#if defined (V10_WIP_ELEMENTHANDLER)
     CurveVectorPtr  curves = ICurvePathQuery::ElementToCurveVector (eh);
 
     if (!curves.IsValid ())
@@ -1115,6 +1120,12 @@ BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate (ElementHandleCR eh
 
         return SUCCESS;
         }
+#else
+    CurveVectorPtr  curves;
+
+    if (!curves.IsValid ())
+        return SUCCESS;
+#endif
 
     // Require closed (or phsically closed) for booleans (Ignore for update of AssocRegions from DWG can have open roots that form closed area)...
     if (!curves->IsAnyRegionType () && !m_updateAssocRegion)
@@ -1198,7 +1209,7 @@ BentleyStatus   RegionGraphicsContext::SetTargetModel (DgnModelR targetModel)
     _SetupOutputs ();
 
     m_targetModel = &targetModel;
-    SetDgnProject (targetModel.GetDgnProject ());
+    SetDgnDb (targetModel.GetDgnDb ());
 
     SetViewFlags (GetViewFlags ()); // Force _SetDrawViewFlags to be called on output...
 
@@ -1267,6 +1278,7 @@ bool            RegionGraphicsContext::GetAdjustedSeedPoints (bvector<DPoint3d>*
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR eeh, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     switch (region.GetBoundaryType ())
         {
         case CurveVector::BOUNDARY_TYPE_UnionRegion:
@@ -1293,10 +1305,8 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR e
 
             params.SetType (RegionType::Union);
 
-#if defined (NEEDS_WORK_DGNITEM)
             if (SUCCESS != AssocRegionCellHeaderHandler::CreateAssocRegionElement (eeh, solidAgenda, NULL, 0, NULL, 0, params, NULL))
                 return ERROR;
-#endif
             
             break;
             }
@@ -1330,10 +1340,8 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR e
                     }
                 }
 
-#if defined (NEEDS_WORK_DGNITEM)
             if (SUCCESS != GroupedHoleHandler::CreateGroupedHoleElement (eeh, solidEeh, holeAgenda))
                 return ERROR;
-#endif
 
             break;
             }
@@ -1427,7 +1435,6 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR e
                     }
                 }
 
-#if defined (NEEDS_WORK_DGNITEM)
             AssocRegionCellHeaderHandler::SetLoopOedCode (eeh, loopOEDCode);
 
             // NOTE: Loop roots are only for DWG which doesn't allow far roots, so it's ok to create the dependency even in dynamics...
@@ -1435,12 +1442,14 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR e
 
             getDependencyRoots (depRoots, loopRoots, _GetViewTarget (), false); // Create DependencyRoot from path (may NOT be far root)...
             AssocRegionCellHeaderHandler::SetLoopRoots (eeh, &depRoots[0], depRoots.size ());
-#endif
             break;
             }
         }
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1569,7 +1578,7 @@ BentleyStatus   RegionGraphicsContext::UpdateAssociativeRegion (EditElementHandl
     bvector<DisplayPathCP>  regionRoots;
 
     // NOTE: Can't use model dimension to update assoc region boundary in dictionary model...
-    if (SUCCESS != CreateRegionElements (out, *region, &regionRoots, eeh.GetElementCP ()->Is3d()))
+    if (SUCCESS != CreateRegionElements (out, *region, &regionRoots, eeh.GetDgnModelP ()->Is3d()))
         return ERROR;
 
 #if defined (NEEDS_WORK_DGNITEM)
@@ -1583,9 +1592,9 @@ BentleyStatus   RegionGraphicsContext::UpdateAssociativeRegion (EditElementHandl
         }
 
     return AssocRegionCellHeaderHandler::UpdateAssocRegionBoundary (eeh, out);
+#else
+    return ERROR;
 #endif
-
-        return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1747,7 +1756,7 @@ BentleyStatus   RegionGraphicsContext::AddFaceLoopsAtPoints (DPoint3dCP seedPoin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PopulateGraph (ViewportP vp, ElementAgendaCP in)
+BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, ElementAgendaCP in)
     {
     m_operation = RegionType::Flood;
     m_setupScan = true;

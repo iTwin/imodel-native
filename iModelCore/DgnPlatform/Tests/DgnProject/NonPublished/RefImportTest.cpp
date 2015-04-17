@@ -2,35 +2,34 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/RefImportTest.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+USING_NAMESPACE_BENTLEY_SQLITE
+
+# ifdef WIP_NoMoreTextElements
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void countModelsInFirstView (size_t& count, DgnProjectR project)
+static void countModelsInFirstView (size_t& count, DgnDbR project)
     {
     count = 0;
     for (auto& viewEntry : project.Views().MakeIterator())
         {
-        if (viewEntry.GetDgnViewType() == DGNVIEW_TYPE_Physical)
+        if (viewEntry.GetDgnViewType() == DgnViewType::Physical)
             {
             auto view = project.Views().QueryViewById (viewEntry.GetDgnViewId());
-            auto selectorId = view.GetDgnModelSelectorId();
-            ASSERT_TRUE( selectorId.IsValid() );
+            
+            PhysicalViewController phys(project, viewEntry.GetDgnViewId());
+            phys.Load();
 
-            DgnModelSelection selection (project,selectorId);
-            ASSERT_TRUE( selection.Load() == BeSQLite::BE_SQLITE_OK );
-
-            for (auto selectedModelId : selection)
+            for (auto selectedModelId : phys.GetViewedModels())
                 {
                 ++count;
                 }
 
-            ASSERT_TRUE( view.GetBaseModelId().IsValid() ); // The base model is also counted
-            ++count;
             break;
             }
         }
@@ -39,7 +38,7 @@ static void countModelsInFirstView (size_t& count, DgnProjectR project)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void countTextElementsInProject (size_t& modelCount, size_t& textElementCount, DgnProjectR project)
+static void countTextElementsInProject (size_t& modelCount, size_t& textElementCount, DgnDbR project)
     {
     //  There should be 4 models containing a total of 4 text elements
     modelCount=0;
@@ -49,7 +48,7 @@ static void countTextElementsInProject (size_t& modelCount, size_t& textElementC
         ++modelCount;
 
         auto dgnModel = project.Models().GetAndFillModelById (NULL, modelEntry.GetModelId(), /*fillCache*/true);
-        for (auto ref : *dgnModel->GetGraphicElementsP())
+        for (auto ref : *dgnModel)
             {
             ElementHandle eh (ref);
             if (NULL != dynamic_cast<ITextQuery*>(&eh.GetHandler()))
@@ -61,7 +60,7 @@ static void countTextElementsInProject (size_t& modelCount, size_t& textElementC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void countModelsAndTextElements (DgnProjectR project, size_t expectedModelCount, size_t expectedTextElementCount)
+static void countModelsAndTextElements (DgnDbR project, size_t expectedModelCount, size_t expectedTextElementCount)
     {
     //  There should be at least one physical view, which selects all 4 models.
     size_t modelCount = 0;
@@ -83,7 +82,7 @@ static void countModelsAndTextElements (DgnProjectR project, size_t expectedMode
 TEST (RefImport, DupDirectAttachments)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"master3d_dup_direct_attachments.i.idgndb", __FILE__, OPENMODE_READONLY);
+    DgnDbTestDgnManager tdm (L"master3d_dup_direct_attachments.i.idgndb", __FILE__, Db::OPEN_Readonly);
     auto project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
     countModelsAndTextElements (*project, 4, 4);
@@ -95,7 +94,7 @@ TEST (RefImport, DupDirectAttachments)
 TEST (RefImport, LiveNesting)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"master3d_live_nesting.i.idgndb", __FILE__, OPENMODE_READONLY);
+    DgnDbTestDgnManager tdm (L"master3d_live_nesting.i.idgndb", __FILE__, Db::OPEN_Readonly);
     auto project = tdm.GetDgnProjectP();
     countModelsAndTextElements (*project, 4, 4);
     }
@@ -106,7 +105,7 @@ TEST (RefImport, LiveNesting)
 TEST (RefImport, NoNesting)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"master3d_no_nesting.i.idgndb", __FILE__, OPENMODE_READONLY);
+    DgnDbTestDgnManager tdm (L"master3d_no_nesting.i.idgndb", __FILE__, Db::OPEN_Readonly);
     auto project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
     countModelsAndTextElements (*project, 3, 3);
@@ -118,8 +117,10 @@ TEST (RefImport, NoNesting)
 TEST (RefImport, BFS)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"tfs96614.i.idgndb", __FILE__, OPENMODE_READONLY);
+    DgnDbTestDgnManager tdm (L"tfs96614.i.idgndb", __FILE__, Db::OPEN_Readonly);
     auto project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
     countModelsAndTextElements (*project, 4, 4);
     }
+
+#endif

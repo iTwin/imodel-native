@@ -100,8 +100,8 @@ char            **sourcePtr
 
     *patptr++ = o & 0xff;
 
-    cp = patptr;        /* remember where byte count is */
-    *patptr++ = 0;      /* and initialize byte count */
+    cp = patptr;        /* remember where Byte count is */
+    *patptr++ = 0;      /* and initialize Byte count */
 
     while ((c = *((*sourcePtr)++)) && c!=']')
         {
@@ -133,7 +133,7 @@ char            **sourcePtr
         return NULL; /* class too large */
     if (c == 0)
         return NULL; /* empty class */
-    *cp = c & 0xff;            /* fill in byte count */
+    *cp = c & 0xff;            /* fill in Byte count */
 
     return  patptr;
     }
@@ -327,7 +327,7 @@ char    *regexBuf               /* source for regular expression */
 
             spp = patptr;               /* Save pattern end     */
             while (--patptr > lp)       /* Move pattern down... */
-                    *patptr = patptr[-1];       /* one byte     */
+                    *patptr = patptr[-1];       /* one Byte */
 
 #if defined (supportingMinus)
             *patptr =   (c == '*') ? STAR :
@@ -494,8 +494,8 @@ WCharCP*    sourcePtr
 
     *patptr++ = o & 0xff;
 
-    cp = patptr;        /* remember where byte count is */
-    *patptr++ = 0;      /* and initialize byte count */
+    cp = patptr;        /* remember where Byte count is */
+    *patptr++ = 0;      /* and initialize Byte count */
 
     while ((c = *((*sourcePtr)++)) && c!=']')
         {
@@ -527,7 +527,7 @@ WCharCP*    sourcePtr
         return NULL; /* class too large */
     if (c == 0)
         return NULL; /* empty class */
-    *cp = c & 0xffff;            /* fill in byte count */
+    *cp = c & 0xffff;            /* fill in Byte count */
 
     return  patptr;
     }
@@ -727,7 +727,7 @@ WCharCP     regexBuf               /* source for regular expression */
 
             spp = patptr;               /* Save pattern end     */
             while (--patptr > lp)       /* Move pattern down... */
-                    *patptr = patptr[-1];       /* one byte     */
+                    *patptr = patptr[-1];       /* one Byte */
 
 #if defined (supportingMinus)
             *patptr =   (c == '*') ? STAR :

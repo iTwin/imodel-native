@@ -21,7 +21,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-MultiStateMask::MultiStateMask (UInt16 numBitsPerStateIn, UInt16 defaultStateValueIn)
+MultiStateMask::MultiStateMask (uint16_t numBitsPerStateIn, uint16_t defaultStateValueIn)
     {
     this->Initialize (numBitsPerStateIn, 0, NULL, defaultStateValueIn);
     }
@@ -29,7 +29,7 @@ MultiStateMask::MultiStateMask (UInt16 numBitsPerStateIn, UInt16 defaultStateVal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-MultiStateMask::MultiStateMask (UInt16 numBitsPerStateIn, UInt32 numStatesIn, UInt16 const * stateArrayIn, UInt16 defaultStateValueIn)
+MultiStateMask::MultiStateMask (uint16_t numBitsPerStateIn, uint32_t numStatesIn, uint16_t const * stateArrayIn, uint16_t defaultStateValueIn)
     {
     this->Initialize (numBitsPerStateIn, numStatesIn, stateArrayIn, defaultStateValueIn);
     }
@@ -48,7 +48,7 @@ MultiStateMask::MultiStateMask (MultiStateMaskCP copyMaskIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MultiStateMask::Initialize (UInt16 numBitsPerStateIn, UInt32 numStatesIn, UInt16 const * stateArrayIn, UInt16 defaultStateValueIn)
+void    MultiStateMask::Initialize (uint16_t numBitsPerStateIn, uint32_t numStatesIn, uint16_t const * stateArrayIn, uint16_t defaultStateValueIn)
     {
     BeAssert (numBitsPerStateIn <= 8);
 
@@ -79,7 +79,7 @@ void    MultiStateMask::FreeStateArray ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16      MultiStateMask::GetDefaultWord () const
+uint16_t    MultiStateMask::GetDefaultWord () const
     {
     if (0 == m_defaultStateValue)
         return 0;
@@ -87,11 +87,11 @@ UInt16      MultiStateMask::GetDefaultWord () const
     if (m_defaultStateValue == this->GetMaxStateValue ())
         return 0xffff;
 
-    UInt16  defaultWord = 0;
+    uint16_t defaultWord = 0;
 
     for (int index = 0; index < m_numStatesPerWord; index++)
         {
-        UInt16  indexMask = m_defaultStateValue;
+        uint16_t indexMask = m_defaultStateValue;
         indexMask <<= index * m_numBitsPerState;
         defaultWord |= indexMask;
         }
@@ -102,7 +102,7 @@ UInt16      MultiStateMask::GetDefaultWord () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MultiStateMask::EnsureCapacity (UInt32 numStatesIn)
+void    MultiStateMask::EnsureCapacity (uint32_t numStatesIn)
     {
     if (numStatesIn <= 0)
         return;
@@ -111,7 +111,7 @@ void    MultiStateMask::EnsureCapacity (UInt32 numStatesIn)
     size_t currentArraySize  = m_stateArray.size ();
     if (requiredArraySize > currentArraySize)
         {
-        UInt16 defaultWord = GetDefaultWord ();
+        uint16_t defaultWord = GetDefaultWord ();
         // Resize and initialize new items with default words.
         m_stateArray.resize (requiredArraySize, defaultWord);
         m_numStates = numStatesIn;
@@ -126,7 +126,7 @@ void    MultiStateMask::EnsureCapacity (UInt32 numStatesIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MultiStateMask::EnsureExactCapacity (UInt32 numStatesIn)
+void    MultiStateMask::EnsureExactCapacity (uint32_t numStatesIn)
     {
     EnsureCapacity (numStatesIn);
     }
@@ -134,21 +134,21 @@ void    MultiStateMask::EnsureExactCapacity (UInt32 numStatesIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16    MultiStateMask::GetState (UInt32 stateIndexIn) const
+uint16_t  MultiStateMask::GetState (uint32_t stateIndexIn) const
     {
     if (stateIndexIn >= m_numStates)
         return m_defaultStateValue;
 
-    UInt32  arrayIndex = this->GetArrayIndex (stateIndexIn);
+    uint32_t arrayIndex = this->GetArrayIndex (stateIndexIn);
 
-    UInt16  wordIndex = this->GetWordIndex (stateIndexIn);
-    UInt16  bitsOffset = wordIndex * m_numBitsPerState;
+    uint16_t wordIndex = this->GetWordIndex (stateIndexIn);
+    uint16_t bitsOffset = wordIndex * m_numBitsPerState;
 
-    UInt16  maxValue = this->GetMaxStateValue ();
-    UInt16  getMask = maxValue << bitsOffset;
+    uint16_t maxValue = this->GetMaxStateValue ();
+    uint16_t getMask = maxValue << bitsOffset;
 
-    UInt16  offsetState = m_stateArray[arrayIndex] & getMask;
-    UInt16  state = offsetState >> bitsOffset;
+    uint16_t offsetState = m_stateArray[arrayIndex] & getMask;
+    uint16_t state = offsetState >> bitsOffset;
     BeAssert (state <= m_maxStateValue);
 
     return state;
@@ -157,7 +157,7 @@ UInt16    MultiStateMask::GetState (UInt32 stateIndexIn) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MultiStateMask::SetState (UInt32 stateIndexIn, UInt16 stateValueIn)
+void        MultiStateMask::SetState (uint32_t stateIndexIn, uint16_t stateValueIn)
     {
     this->EnsureCapacity (stateIndexIn + 1);
 
@@ -167,17 +167,17 @@ void        MultiStateMask::SetState (UInt32 stateIndexIn, UInt16 stateValueIn)
         stateValueIn = m_maxStateValue;
         }
 
-    UInt32  arrayIndex = this->GetArrayIndex (stateIndexIn);
+    uint32_t arrayIndex = this->GetArrayIndex (stateIndexIn);
 
-    UInt16  wordIndex = this->GetWordIndex (stateIndexIn);
-    UInt16  bitsOffset = wordIndex * m_numBitsPerState;
+    uint16_t wordIndex = this->GetWordIndex (stateIndexIn);
+    uint16_t bitsOffset = wordIndex * m_numBitsPerState;
 
-    UInt16  clearMask = this->GetMaxStateValue();
+    uint16_t clearMask = this->GetMaxStateValue();
     clearMask <<= bitsOffset;
     clearMask = ~clearMask;
     m_stateArray[arrayIndex] &= clearMask;
 
-    UInt16  setMask = stateValueIn << bitsOffset;
+    uint16_t setMask = stateValueIn << bitsOffset;
     m_stateArray[arrayIndex] |= setMask;
     }
 
@@ -211,7 +211,7 @@ bool      MultiStateMask::IsEqual (MultiStateMask * maskIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool        MultiStateMask::IsEquivalent (MultiStateMaskCP other, UInt16 dontCareValue) const
+bool        MultiStateMask::IsEquivalent (MultiStateMaskCP other, uint16_t dontCareValue) const
     {
     if (NULL == other)
         return false;
@@ -224,22 +224,22 @@ bool        MultiStateMask::IsEquivalent (MultiStateMaskCP other, UInt16 dontCar
 
     // if there are more states in one mask than the other, but all of the states in the larger
     // mask beyond those in the smaller mask are the "don't care" state, they're the same.
-    UInt32  maxFullWordsThis    = m_numStates / m_numStatesPerWord;
-    UInt32  maxFullWordsOther   = other->m_numStates / other->m_numStatesPerWord;
+    uint32_t maxFullWordsThis    = m_numStates / m_numStatesPerWord;
+    uint32_t maxFullWordsOther   = other->m_numStates / other->m_numStatesPerWord;
 
-    UInt32  fullWords = (maxFullWordsThis < maxFullWordsOther) ? maxFullWordsThis : maxFullWordsOther;
-    for (UInt32 wordIndex = 0; wordIndex < fullWords; wordIndex++)
+    uint32_t fullWords = (maxFullWordsThis < maxFullWordsOther) ? maxFullWordsThis : maxFullWordsOther;
+    for (uint32_t wordIndex = 0; wordIndex < fullWords; wordIndex++)
         {
         if (m_stateArray[wordIndex] != other->m_stateArray[wordIndex])
             return false;
         }
 
     bool    thisHasLessStates   = m_numStates < other->m_numStates;
-    UInt32  leastNumStates      = thisHasLessStates ? m_numStates : other->m_numStates;
-    UInt32  maxNumStates        = thisHasLessStates ? other->m_numStates : m_numStates;
+    uint32_t leastNumStates      = thisHasLessStates ? m_numStates : other->m_numStates;
+    uint32_t maxNumStates        = thisHasLessStates ? other->m_numStates : m_numStates;
 
     // check the bits above those we were able to check by comparing entire words.
-    for (UInt32 stateIndex = fullWords * m_numStatesPerWord; stateIndex < leastNumStates; stateIndex++)
+    for (uint32_t stateIndex = fullWords * m_numStatesPerWord; stateIndex < leastNumStates; stateIndex++)
         {
         if (GetState (stateIndex) != other->GetState (stateIndex) )
             return false;
@@ -247,7 +247,7 @@ bool        MultiStateMask::IsEquivalent (MultiStateMaskCP other, UInt16 dontCar
 
     // all of the bits in the larger array, beyond those in the smaller array, must be the dontCareValue.
     MultiStateMaskCP    checkForDontCare = thisHasLessStates ? other : this;
-    for (UInt32 stateIndex = leastNumStates; stateIndex < maxNumStates; stateIndex++)
+    for (uint32_t stateIndex = leastNumStates; stateIndex < maxNumStates; stateIndex++)
         {
         if (dontCareValue != checkForDontCare->GetState (stateIndex))
             return false;
@@ -266,10 +266,10 @@ void    MultiStateMask::Dump (FILE * fileIn)
 
     toolSubsystem_fwprintf (fileIn, L" numBitsPerState %d, defaultValue %d, numStates %d ", m_numBitsPerState, m_defaultStateValue, m_numStates);
     // Calculate a quick hash-code
-    Int64   hashCode = 0;
-    for (UInt32 index = 0; index < m_numStates; index++)
+    int64_t hashCode = 0;
+    for (uint32_t index = 0; index < m_numStates; index++)
         {
-        UInt16  state = this->GetState (index);
+        uint16_t state = this->GetState (index);
         hashCode += index * state;
         }
     fwprintf (fileIn, L"hashCode %lld\n", hashCode);
@@ -279,9 +279,9 @@ void    MultiStateMask::Dump (FILE * fileIn)
         toolSubsystem_fwprintf (fileIn, L"\n    ");
         }
 
-    for (UInt32 index = 0; index < m_numStates; index++)
+    for (uint32_t index = 0; index < m_numStates; index++)
         {
-        UInt16  state = this->GetState (index);
+        uint16_t state = this->GetState (index);
         toolSubsystem_fwprintf (fileIn, L"%d", state);
 
         /* put a space every 16 states */
@@ -298,7 +298,7 @@ void    MultiStateMask::Dump (FILE * fileIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Yogesh.Sajanikar 03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MultiStateMask::CopyTo (UInt16 *pArray)
+void MultiStateMask::CopyTo (uint16_t *pArray)
     {
     std::copy (m_stateArray.begin (), m_stateArray.end (), pArray);
     }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_Stress_Schema_Supplemental_DgnDbConversion" nameSpacePrefix="sbp" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.07" prefix="bsca" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.07">
+            <PrimarySchemaName>Bentley_Stress_Schema</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>6</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+            <Precedence>998</Precedence>
+            <Purpose>DgnProjectImporter hints for the AutoPipe schema. Convert specially marked NamedGroups to assemblies.</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+    <ECClass typeName="STRESS_PHYSICAL_MODEL" isStruct="True" isDomainClass="True">
+        <ECCustomAttributes>
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.07">
+                <NamedGroupIsAssembly>True</NamedGroupIsAssembly>
+            </ECDbClassHint>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_BASE" isStruct="True" isDomainClass="True">
+        <ECCustomAttributes>
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.07">
+                <NamedGroupIsAssembly>True</NamedGroupIsAssembly>
+            </ECDbClassHint>
+        </ECCustomAttributes>
+    </ECClass>	
+</ECSchema>
+

@@ -2,18 +2,19 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/DgnECPersistence.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 
 DGNPLATFORM_REF_COUNTED_PTR (DgnECPropertyFormatter);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+#if defined (NEEDS_WORK_DGNITEM)
 /*=================================================================================**//**
 * Utility to work with "standard" ec categories. 
 * @see JsonECSqlSelectAdapter
@@ -107,7 +108,6 @@ public:
     DGNPLATFORM_EXPORT static DgnECPropertyFormatterPtr Create (DgnModelP dgnModel);
 };
 
-#if defined (NEEDS_WORK_DGNITEM)
 /*=================================================================================**//**
 * Used to perform Create, Read, Update and Delete of associations between DgnElements and 
 * ECInstances. 
@@ -117,28 +117,28 @@ public:
 struct DgnECPersistence
 {
 private:
-    DgnProjectR m_project;
+    DgnDbR m_dgndb;
     BeSQLite::EC::ECInstanceFinder* m_ecInstanceFinder;
 
 //__PUBLISH_SECTION_END__
 
-    static bool IsGraphicalElement (const ElementId& elementId, DgnProjectCR project);
+    static bool IsGraphicalElement (const ElementId& elementId, DgnDbCR project);
     BeSQLite::EC::ECInstanceFinder* GetECInstanceFinder();
-    static ECN::ECClassId GetElementClassId (DgnProjectCR project);
-    static bool IsElementIdUsed (ElementId elementId, DgnProjectCR project);
-    static DgnModelId GetModelIdFromElementId (const ElementId& elementId, DgnProjectR project);
+    static ECN::ECClassId GetElementClassId (DgnDbCR project);
+    static bool IsElementIdUsed (ElementId elementId, DgnDbCR project);
+    static DgnModelId GetModelIdFromElementId (const ElementId& elementId, DgnDbR project);
 
 public:
     //! Creates the tables/views necessary to store/query Dgn-EC associations
-    DGNPLATFORM_EXPORT static void CreateTables (DgnProjectR project);
+    DGNPLATFORM_EXPORT static void CreateTables (DgnDbR project);
 
     //! Upgrades the tables/views necessary to store/query Dgn-EC associations. 
-    DGNPLATFORM_EXPORT static StatusInt UpgradeTables (DgnProjectR project);
+    DGNPLATFORM_EXPORT static StatusInt UpgradeTables (DgnDbR project);
 
 //__PUBLISH_SECTION_START__
 
 private:
-    DgnECPersistence (DgnECPersistence const& other) : m_project (other.m_project) {}
+    DgnECPersistence (DgnECPersistence const& other) : m_dgndb (other.m_dgndb) {}
     DgnECPersistence& operator= (DgnECPersistence const&); // Purposefully not defined to prevent calling.
 
 public:
@@ -177,7 +177,7 @@ public:
     //! @remarks Holds some cached state to speed up future queries, including prepared statements to traverse
     //! relationships. 
     //! @see Finalize
-    DGNPLATFORM_EXPORT DgnECPersistence (DgnProjectR project);
+    DGNPLATFORM_EXPORT DgnECPersistence (DgnDbR project);
 
     DGNPLATFORM_EXPORT ~DgnECPersistence();
 
@@ -190,7 +190,7 @@ public:
 /** @name Schemas */
 /** @{ */
     //! Imports the dgn schema into the project, or if there is one already optionally upgrades it.
-    DGNPLATFORM_EXPORT static StatusInt ImportDgnSchema (DgnProjectR project, bool updateExisting);
+    DGNPLATFORM_EXPORT static StatusInt ImportDgnSchema (DgnDbR project, bool updateExisting);
 /** @} */
 
 /** @name Create */
@@ -198,7 +198,7 @@ public:
     //! Sets up a "primary" ECInstance on an Element
     //! @param[in] editElementHandle EditElementHandle
     //! @param[in] instanceKey Key identifying the ECInstance
-    //! @param[in] project DgnProject 
+    //! @param[in] project DgnDb 
     //! @return SUCCESS/ERROR 
     //! @remarks The EditElementHandle needs to be committed before the change is
     //! reflected in the DgnDb. 
@@ -206,20 +206,20 @@ public:
         (
         EditElementHandleR editElementHandle, 
         BeSQLite::EC::ECInstanceKeyCR instanceKey,
-        DgnProjectR project
+        DgnDbR project
         );
 
     //! Adds a "secondary" ECInstance on an Element
     //! @param[in] elementId ElementId
     //! @param[in] instanceKey Key identifying the ECInstance
-    //! @param[in] project DgnProject 
+    //! @param[in] project DgnDb 
     //! @return SUCCESS/ERROR 
     //! @remarks Secondary instances can only be specified on an element that's already been persisted in the DgnDb. 
     DGNPLATFORM_EXPORT static StatusInt AddSecondaryInstanceOnElement 
         (
         const ElementId& elementId, 
         BeSQLite::EC::ECInstanceKeyCR instanceKey,
-        DgnProjectR project
+        DgnDbR project
         );
 /** @} */
 
@@ -232,50 +232,50 @@ public:
 
     //! Determines if the element has a primary ECInstance associated with it. 
     //! @param[in] elementId ElementId
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @param[in] instanceKey Optional key to search for a specific instance. Pass NULL to check for any instance association. 
     DGNPLATFORM_EXPORT static bool ElementHasPrimaryInstance 
         (
         const ElementId& elementId,
-        DgnProjectCR project,
+        DgnDbCR project,
         BeSQLite::EC::ECInstanceKeyCP instanceKey = NULL
         );
 
     //! Determines if the element has a secondary ECInstance associated with it. 
     //! @param[in] elementId ElementId
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @param[in] instanceKey Optional key to search for a specific instance. Pass NULL to check for any associated instance
     //! @remarks Secondary instances can only be associated with elements that have been persisted in the DgnDb. 
     DGNPLATFORM_EXPORT static bool ElementHasSecondaryInstance 
         (
         const ElementId& elementId, 
-        DgnProjectCR project,
+        DgnDbCR project,
         BeSQLite::EC::ECInstanceKeyCP instanceKey = NULL
         );
         
     //! Gets the primary ECInstance associated with an Element
     //! @param[out] instanceKey Key of the primary ECInstance associated with the specified Element
     //! @param[in] elementId ElementId
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @return true if a primary instance was found; false otherwise
     DGNPLATFORM_EXPORT static bool GetPrimaryInstanceOnElement 
         (
         BeSQLite::EC::ECInstanceKeyR instanceKey, 
         const ElementId& elementId, 
-        DgnProjectCR project
+        DgnDbCR project
         );
 
     //! Gets the core ECInstances associated with an Element
     //! @param[out] instanceKey Key of the graphical ECInstance associated with the specified Element
     //! @param[in] elementId ElementId
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @return true if the element exists and therefore has a graphical instance; false otherwise
     //! @remarks To be modified to return multiple instances - level, model, etc. 
     DGNPLATFORM_EXPORT static bool GetCoreInstanceOnElement 
         (
         BeSQLite::EC::ECInstanceKeyR instanceKey, 
         const ElementId& elementId, 
-        DgnProjectCR project
+        DgnDbCR project
         );
 
     //! Gets the primary ECInstance associated with an Element
@@ -291,7 +291,7 @@ public:
     //! Gets the ECInstance-s associated with an Element
     //! @param[out] instanceKeys Keys of all ECInstance-s associated with the specified Element
     //! @param[in] elementId Id of Element
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @param[in] association The association(s) between elements and instances that need to be followed.
     //! @return Number of new instances found
     //! @remarks The set of instanceKeys passed in are first cleared before adding the newly found entries.
@@ -299,7 +299,7 @@ public:
         (
         bvector<BeSQLite::EC::ECInstanceKey>& instanceKeys, 
         const ElementId& elementId, 
-        DgnProjectCR project,
+        DgnDbCR project,
         DgnECPersistence::AssociationType association = DgnECPersistence::AssociationType_All
         );
 /** @} */
@@ -309,19 +309,19 @@ public:
     //! Gets the Element associated to the specified primary ECInstance. 
     //! @param[out] elementId Id of element that's associated with the specified primary ECInstance
     //! @param[in] instanceKey Key of the ECInstance
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @return true if an Element was found; false otherwise
     DGNPLATFORM_EXPORT static bool GetElementWithPrimaryInstance 
         (
         ElementId& elementId, 
         const BeSQLite::EC::ECInstanceKey& instanceKey, 
-        DgnProjectCR project
+        DgnDbCR project
         );
 
     //! Gets the Element-s associated to an ECInstance
     //! @param[out] elementIds Ids of all elements associated with the specified ECInstance
     //! @param[in] instanceKey Key of the ECInstance
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @param[in] association The association(s) between elements and instances that needs to be followed.
     //! @param[in] inludeOnlyGraphicalElements Pass true to only include elements that have graphics directly 
     //!            associated with them. Otherwise defaults to get all associated elements. 
@@ -331,7 +331,7 @@ public:
         (
         bset<ElementId>& elementIds, 
         const BeSQLite::EC::ECInstanceKey& instanceKey, 
-        DgnProjectCR project,
+        DgnDbCR project,
         DgnECPersistence::AssociationType association = DgnECPersistence::AssociationType_All,
         bool inludeOnlyGraphicalElements = false
         );
@@ -361,20 +361,20 @@ public:
     //! primary instance associated with it. 
     //! @param [out] outElementId Id of the element found. 
     //! @param [in] inElementId Id of the element to start the search. 
-    //! @param [in] project DgnProject
+    //! @param [in] project DgnDb
     //! @return true if an element with a primary instance. false otherwise. 
     DGNPLATFORM_EXPORT static bool TryGetAssemblyElementWithPrimaryInstance 
         (
         ElementId& outElementId, 
         const ElementId& inElementId, 
-        DgnProjectR project
+        DgnDbR project
         );
 
     //! Helper utility to get all the EC information associated with an element
     //! @param [out] jsonInstances  Information on the element in the JSON format.
     //! @param [out] jsonDisplayInfo to properly display the element information in the JSON format.
     //! @param [in] elementId Id of Element to get information on. 
-    //! @param [in] project DgnProject
+    //! @param [in] project DgnDb
     //! @remarks Consolidates all the information in the various instances associated with the element.
     //! Use @ref TryGetAssemblyElementWithPrimaryInstance() to walk up the assembly hierarchy to get an element that 
     //! has an associated primary instance. 
@@ -383,7 +383,7 @@ public:
         JsonValueR jsonInstances, 
         JsonValueR jsonDisplayInfo, 
         const ElementId& elementId, 
-        DgnProjectR project
+        DgnDbR project
         );
 /** @} */
 
@@ -404,13 +404,13 @@ public:
     //! Removes the specified secondary ECInstance from an Element. 
     //! @param[in] elementId ElementId
     //! @param[in] instanceKey Key identifying the ECInstance
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @return ERROR if instance is not found, or there are problems removing it. SUCCESS otherwise. 
     DGNPLATFORM_EXPORT static StatusInt RemoveSecondaryInstanceOnElement
         (
         const ElementId& elementId, 
         BeSQLite::EC::ECInstanceKeyCR instanceKey,
-        DgnProjectR project
+        DgnDbR project
         );
 
     //! Clears the primary ECInstance on an Element
@@ -422,9 +422,9 @@ public:
 
     //! Clears all secondary ECInstance-s on an Element
     //! @param[in] elementId ElementId
-    //! @param[in] project DgnProject
+    //! @param[in] project DgnDb
     //! @return SUCCESS/ERROR 
-    DGNPLATFORM_EXPORT static StatusInt ClearSecondaryInstancesOnElement (const ElementId& elementId, DgnProjectR project);
+    DGNPLATFORM_EXPORT static StatusInt ClearSecondaryInstancesOnElement (const ElementId& elementId, DgnDbR project);
 /** @} */
 };
 #endif

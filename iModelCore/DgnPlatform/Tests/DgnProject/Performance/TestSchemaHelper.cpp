@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/TestSchemaHelper.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestSchemaHelper.h"

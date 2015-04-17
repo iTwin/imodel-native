@@ -19,7 +19,7 @@ enum
     ELEMENT_DATABLOCK_SIZE  = (3*DEF_PAGESIZE),
 };
 
-inline void     makeMultipleOf (UInt32& num, int base) {num = ((num+base-1)/base) * base;}
+inline void     makeMultipleOf (uint32_t& num, int base) {num = ((num+base-1)/base) * base;}
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -39,12 +39,12 @@ class CacheDataBlock
 private:
     friend struct DgnElemDataRef;
 
-    static Int32        s_pageSize;             // MT: safely initialized in CacheDataBlock::StaticInitialize
+    static int32_t      s_pageSize;             // MT: safely initialized in CacheDataBlock::StaticInitialize
 
-    byte*       m_data;
+    Byte*       m_data;
     DgnModelR   m_dgnModel;
-    UInt32      m_numBytes;             // total number of bytes in this block
-    UInt32      m_nextAvailable;        // one past valid data
+    uint32_t    m_numBytes;             // total number of bytes in this block
+    uint32_t    m_nextAvailable;        // one past valid data
     bool        m_dirty;
 
 protected:
@@ -55,11 +55,11 @@ public:
     void                SetDirty()    {m_dirty = true;}
     void                CloseBlockForWrites();
     DgnModelR           GetModel()                      {return m_dgnModel;}
-    UInt32              GetNumBytes() const             {return m_numBytes;}
-    byte*               GetDataP()                      {return m_data;} // for debugger
-    byte*               GetDataP(int offset)            {return m_data + offset;}
-    byte const*         GetConstPtr (Int32 offset)      {return GetDataP (offset);}
-    byte*               GetWriteablePtr (Int32 offset)  {SetDirty(); return GetDataP (offset);}
+    uint32_t            GetNumBytes() const             {return m_numBytes;}
+    Byte*               GetDataP()                      {return m_data;} // for debugger
+    Byte*               GetDataP(int offset)            {return m_data + offset;}
+    Byte const*         GetConstPtr (int32_t offset)      {return GetDataP (offset);}
+    Byte*               GetWriteablePtr (int32_t offset)  {SetDirty(); return GetDataP (offset);}
 
     StatusInt ReturnMemory (DgnElemDataRef& elem);
 
@@ -67,14 +67,14 @@ public:
     ~CacheDataBlock ();
 
     static void StaticInitialize();
-    static UInt32 GetPageSize () {return s_pageSize;}
+    static uint32_t GetPageSize () {return s_pageSize;}
     static int numBlocks (int size, int blockSize) {return (size+blockSize-1) / blockSize; }
     static int blockMemSize (int size, int blockSize) {return numBlocks(size,blockSize) * blockSize; }
 
     //! allocate memory for an element.
     //! @return ERROR if there's not enough memory to fit element in this block.
     //! @bsimethod                                                    Keith.Bentley   02/04
-    StatusInt AllocElemMemory (DgnElemDataRef& elem, UInt32 sizeBytes);
+    StatusInt AllocElemMemory (DgnElemDataRef& elem, uint32_t sizeBytes);
  };
 
 //=======================================================================================
@@ -86,13 +86,13 @@ struct DgnElemDataRef
 
 private:
     DgnElementP      m_ptr;
-    UInt32          m_allocSize;
+    uint32_t        m_allocSize;
 
 public:
     DgnElemDataRef () {m_ptr=0; m_allocSize=0;}
 
-    UInt32      GetAllocSize() {return m_allocSize;}
-    void        Allocate (UInt32 size);
+    uint32_t    GetAllocSize() {return m_allocSize;}
+    void        Allocate (uint32_t size);
     void        Deallocate ();
     DgnElementCP GetPtrC () const {return m_ptr;}
     DgnElementP  GetPtr () {return m_ptr;}

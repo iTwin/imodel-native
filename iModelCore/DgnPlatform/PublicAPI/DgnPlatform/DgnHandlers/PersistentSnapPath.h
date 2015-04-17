@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/PersistentSnapPath.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,7 @@ Use methods EvaluatePoint, EvaluateTarget1, and EvaluateTarget2 to get the targe
 <p>
 When you save your XAttribute, call PersistentSnapPath::Store on each PersistentSnapPath that is
 embedded in it. That will cause each PersistentSnapPath
-to stream its state out to an DataExternalizer -- a byte stream. Whenever you need to
+to stream its state out to an DataExternalizer -- a Byte stream. Whenever you need to
 access a PersistentSnapPath in a persistent XAttribute, you must call PersistentSnapPath::Load,
 to allow it to restore its state from the XAttribute's raw data.
 <p>
@@ -81,8 +81,8 @@ struct PersistentSnapPath
         static Member variables
     -----------------------------------------------------------------------------------*/
 private:
-    byte*       m_state;
-    UInt16      m_stateLen;
+    Byte*       m_state;
+    uint16_t    m_stateLen;
     DgnModelP m_homeModel;
     friend struct      PersistentSnapPathData;
     friend struct      PersistentSnapPathDataModifier;
@@ -91,10 +91,8 @@ private:
     void        Init (DgnModelP);
     void        FreeMemory();
     void        Copy(PersistentSnapPath const&);
-    StatusInt   FromAssocPointAndPaths (AssocGeom const&, DisplayPath const*, DisplayPath const*);
     StatusInt   FromBlob (PersistentSnapPathBlobIO const&);
-    StatusInt   FromCustom (DisplayPath const*, byte const*, UInt32);
-    StatusInt   FromCustom (DisplayPath const*, AssocGeom const&);
+    StatusInt   FromCustom (DisplayPath const*, Byte const*, uint32_t);
 /*__PUBLISH_SECTION_END__*/
     void        GrabData (DataExternalizer const&);
 /*__PUBLISH_SECTION_START__*/
@@ -131,8 +129,6 @@ explicit
     //! @see IsStaticDPoint3d
     DGNPLATFORM_EXPORT explicit PersistentSnapPath (DPoint3d const&);
 
-    DGNPLATFORM_EXPORT PersistentSnapPath (DgnModelP home, AssocPoint const&);
-
     DGNPLATFORM_EXPORT PersistentSnapPath& operator= (PersistentSnapPath const&);
 
     //! Query if Constructor worked
@@ -150,9 +146,6 @@ explicit
     //! Capture a SnapPath
     DGNPLATFORM_EXPORT StatusInt FromSnapPath (SnapPathCP);
 
-    //! Capture an AssocPoint
-    DGNPLATFORM_EXPORT StatusInt FromAssocPoint (AssocPoint const&);
-
     //! Capture a PersistentElementPath with no particular point association
     //! @remarks This method makes a copy of the supplied PersistentElementPath. It does not save a reference to the actual object.
     DGNPLATFORM_EXPORT StatusInt FromPersistentElementPath (PersistentElementPath const&);
@@ -166,13 +159,6 @@ explicit
     //! pt[out] the point (transformed into the coordinate system of the home model aka "world cooordinates")
     DGNPLATFORM_EXPORT StatusInt EvaluatePoint (DPoint3d& pt) const;
 
-    //! Compute the location identified by an AssocPoint
-    //! @param[out]   pt        the computed snap location
-    //! @param[in]    assoc     the snap definition to evaluate
-    //! @param[in]    homeModel the model that contains the dependent element
-    //! @remarks Calls the DisplayHandler::EvaluateSnap method.
-    DGNPLATFORM_EXPORT static StatusInt EvaluateAssocPoint (DPoint3d& pt, AssocPoint const& assoc, DgnModelP homeModel);
-
     //! Query if snap has two  targets
     DGNPLATFORM_EXPORT bool HasTwoPaths () const;
 
@@ -185,16 +171,15 @@ explicit
     //!     \em Note: See PersistentElementPath::EvaluateElement for the lifetime of the modelref contained in the returned handle.
     DGNPLATFORM_EXPORT ElementHandle EvaluateElement (bool wantFirst = true) const;
 
-    //! Does the moniker depend on this ElementRefP? If host and target are in same model
+    //! Does the moniker depend on this DgnElementP? If host and target are in same model
     //! and if target is not a shared cell instance,
-    //! then this is the same as EvaluateElementRef() == target.
+    //! then this is the same as EvaluateDgnElement() == target.
     //! For non-simple paths, then this will recognize the moniker's dependence on
     //! parts of the shared cell instance path, etc.
-    DGNPLATFORM_EXPORT bool DependsOnElementRef (ElementRefP target) const;
+    DGNPLATFORM_EXPORT bool DependsOnDgnElement (DgnElementP target) const;
 
     //! Get the target element(s) identified by the snap
-    //! Optionaly, get the assoc point data
-    DGNPLATFORM_EXPORT StatusInt GetPaths (DisplayPathPtr&, DisplayPathPtr&, AssocPoint* assoc = NULL) const;
+    DGNPLATFORM_EXPORT StatusInt GetPaths (DisplayPathPtr&, DisplayPathPtr&) const;
 
     //! Get the custom keypoint data associated with this snap
     //! @return ERROR if there is no custom data
@@ -202,14 +187,14 @@ explicit
     //! @param[out] nbytes number of bytes of custom data
     //! @remarks The caller must \em not free the returned pointer.
     //! @remarks The caller must \em not modify the custom data using the returned pointer.
-    DGNPLATFORM_EXPORT StatusInt GetCustomKeypointData (byte const*& data, UInt32& nbytes) const;
+    DGNPLATFORM_EXPORT StatusInt GetCustomKeypointData (Byte const*& data, uint32_t& nbytes) const;
 
     //! Set or update the custom keyoint data associated with this snap
     //! @param[in] data custom data
     //! @param[in] nbytes number of bytes of custom data
     //! @remarks The function converts the snap to a "custom" snap. See SetPayloadData to
     //!             add additional data to a snap.
-    DGNPLATFORM_EXPORT void SetCustomKeypointData (byte const* data, UInt32 nbytes);
+    DGNPLATFORM_EXPORT void SetCustomKeypointData (Byte const* data, uint32_t nbytes);
 
     //! Query if this PSP contains only static (x,y,z) data. To get the point, call EvaluatePoint
     DGNPLATFORM_EXPORT bool IsStaticDPoint3d () const;
@@ -220,10 +205,10 @@ explicit
     //! @remarks The caller must \em not free the returned pointer.
     //! @remarks The caller must \em not modify the custom data using the returned pointer.
     //! @remarks You can add payload data to any kind of snap, including custom data.
-    DGNPLATFORM_EXPORT StatusInt GetPayloadData (void const*& bytes, UInt32& nbytes) const;
+    DGNPLATFORM_EXPORT StatusInt GetPayloadData (void const*& bytes, uint32_t& nbytes) const;
 
     //! Add, replace, or delete payload data
-    DGNPLATFORM_EXPORT void SetPayloadData (void const* data, UInt32 nbytes);
+    DGNPLATFORM_EXPORT void SetPayloadData (void const* data, uint32_t nbytes);
 
     //! Store a note that captures root deep-copying preference.
     //! @remarks OnPreprocessCopy does \em not check this flag. Instead, the owner of the PSP must check it and decide what to do with it.

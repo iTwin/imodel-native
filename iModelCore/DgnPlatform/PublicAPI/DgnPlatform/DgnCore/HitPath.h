@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/HitPath.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -87,15 +87,15 @@ struct  SelectionPath : DisplayPath
 //__PUBLISH_SECTION_END__
 private:
 
-    ViewportP  m_viewport;
+    DgnViewportP  m_viewport;
 
 public:
 
-    explicit SelectionPath (ViewportP vp) {SetViewport (vp);}
+    explicit SelectionPath (DgnViewportP vp) {SetViewport (vp);}
     DGNPLATFORM_EXPORT explicit SelectionPath (SelectionPath const* from);
 
-    void SetViewport (ViewportP view) {m_viewport = view;}
-    ViewportP GetViewport () const {return m_viewport;}
+    void SetViewport (DgnViewportP view) {m_viewport = view;}
+    DgnViewportP GetViewport () const {return m_viewport;}
     DGNPLATFORM_EXPORT int GetViewNumber () const;
 
     virtual DisplayPathType GetPathType () const override {return DisplayPathType::Selection;}
@@ -128,12 +128,12 @@ enum    BSurfElemArg
 +===============+===============+===============+===============+===============+======*/
 struct MeshSegmentInfo : RefCounted <ICurvePrimitiveInfo>
     {
-    UInt32  m_closeVertex;
-    UInt32  m_segmentVertex;
+    uint32_t m_closeVertex;
+    uint32_t m_segmentVertex;
 
-    MeshSegmentInfo (Int32 closeVertex, UInt32 segmentVertex) {m_closeVertex = closeVertex, m_segmentVertex = segmentVertex;}
+    MeshSegmentInfo (int32_t closeVertex, uint32_t segmentVertex) {m_closeVertex = closeVertex, m_segmentVertex = segmentVertex;}
 
-    DGNPLATFORM_EXPORT static ICurvePrimitiveInfoPtr Create (UInt32 closeVertex, UInt32 segmentVertex);
+    DGNPLATFORM_EXPORT static ICurvePrimitiveInfoPtr Create (uint32_t closeVertex, uint32_t segmentVertex);
 
     }; // MeshSegmentInfo
 
@@ -148,9 +148,9 @@ private:
     DMatrix4d               m_localToWorld;             // local to world transform for hit.
     DPoint3d                m_localPoint;               // the closest point in geometry's local coordinates.
     HitGeomType             m_geomType;                 // category hit geometry falls into.
-    UInt32                  m_detailType;               // mask of HitDetailType values.
+    uint32_t            m_detailType;       // mask of HitDetailType values.
     HitPriority             m_hitPriority;              // Relative priority of hit.
-    UInt32                  m_patternIndex;             // pattern index (needed for mlines).
+    uint32_t            m_patternIndex;     // pattern index (needed for mlines).
     int                     m_elemArg;                  // meaning varies according to element type
     bool                    m_nonSnappable;             // non-snappable detail, ex. pattern or line style.
     double                  m_viewDist;                 // xy distance to hit in view coordinates.
@@ -226,13 +226,11 @@ protected:
     ViewFlags                   m_viewFlags;            // view flags in effect when hit was generated.
     GeomDetail                  m_geomDetail;           // element specific hit details.
     IElemTopologyCP             m_elemTopo;             // details about the topology of the element.
-//    IViewHandlerHitInfoCP       m_viewHandlerHitInfo;   // details about view handlers display of this element. removed in Graphite
     bool                        m_componentMode;        // component hilite/flash mode.
 
     void ClearElemTopology ();
-//    void ClearViewHandlerHitInfo (); removed in graphite
 
-    virtual void _GetInfoString (WStringR pathDescr, WCharCP delimiter) const override;
+    virtual void _GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const override;
 
 public: // WIP_PUBLIC_VIRTUAL - these methods should be protected and start with _
     bool GetComponentMode () const {return m_componentMode; }
@@ -245,7 +243,7 @@ public: // WIP_PUBLIC_VIRTUAL - these methods should be protected and start with
     virtual DisplayPathType GetPathType () const override {return DisplayPathType::Hit;}
 
 public:
-    DGNPLATFORM_EXPORT HitPath (ViewportP, DisplayPathCR, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR, IElemTopologyCP = NULL);
+    DGNPLATFORM_EXPORT HitPath (DgnViewportP, DisplayPathCR, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR, IElemTopologyCP = NULL);
     DGNPLATFORM_EXPORT StatusInt GetHitLocalToContextLocal (TransformR, ViewContextR) const;
     DGNPLATFORM_EXPORT StatusInt GetContextLocalToHitLocal (TransformR, ViewContextR) const;
     DGNPLATFORM_EXPORT explicit HitPath (HitPathCR from);
@@ -294,7 +292,7 @@ public:
     //! @param[out]         partType        Type of selected part of dim, one of ADTYPE_xxx defined in mdldim.h.
     //! @param[out]         partSubType     Sub Type of selected part of dim, one of ADSUB_xxx defined in mdldim.h.
     //! @return       SUCCESS or ERROR
-    DGNPLATFORM_EXPORT StatusInt GetDimensionParameters (UInt32* partName, int* pointNo, UInt32* segment, DimensionPartType* partType, DimensionPartSubType* partSubType) const;
+    DGNPLATFORM_EXPORT StatusInt GetDimensionParameters (uint32_t* partName,int* pointNo, uint32_t* segment, DimensionPartType* partType, DimensionPartSubType* partSubType) const;
 
 }; // HitPath
 
@@ -326,7 +324,7 @@ public:
     DGNPLATFORM_EXPORT SelectionPath* GetCurrentHit () const;
     DGNPLATFORM_EXPORT SelectionPath* GetNextHit ();
     DGNPLATFORM_EXPORT bool RemoveHitsMatchingPath (DisplayPathCP path);
-    DGNPLATFORM_EXPORT bool RemoveHitsContaining (ElementRefP elemRef);
+    DGNPLATFORM_EXPORT bool RemoveHitsContaining (DgnElementP element);
     DGNPLATFORM_EXPORT bool RemoveHitsFrom (DgnModelP modelRef);
     DGNPLATFORM_EXPORT virtual void Dump (WCharCP label) const;
 
@@ -391,7 +389,7 @@ protected:
     DPoint3d            m_snapPoint;        // hitpoint adjusted by snap
     DPoint3d            m_adjustedPt;       // sometimes accusnap adjusts the point after the snap.
     int                 m_customKeypointSize;
-    byte*               m_customKeypointData;
+    Byte*               m_customKeypointData;
     bool                m_allowAssociations;
 
 public: // WIP_PUBLIC_VIRTUAL - these methods should be protected and start with _
@@ -413,8 +411,8 @@ public:
     ISpriteP GetSprite () const {return m_sprite;}
     void SetSprite (ISpriteP sprite) {if (m_sprite) m_sprite->Release (); m_sprite = sprite; if (m_sprite) m_sprite->AddRef ();}
 
-    DGNPLATFORM_EXPORT bool GetCustomKeypoint (int* nBytesP, byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
-    DGNPLATFORM_EXPORT void SetCustomKeypoint (int nBytes, byte* dataP);
+    DGNPLATFORM_EXPORT bool GetCustomKeypoint (int* nBytesP, Byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
+    DGNPLATFORM_EXPORT void SetCustomKeypoint (int nBytes, Byte* dataP);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -449,7 +447,7 @@ struct  IntersectPath : SnapPath
 //__PUBLISH_SECTION_END__
 private:
     HitPath*    m_secondPath;
-    virtual void   _DrawInVp            (ViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
+    virtual void   _DrawInVp            (DgnViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
 
 public: // WIP_PUBLIC_VIRTUAL - these methods should be protected and start with _
     virtual DisplayPathType GetPathType () const override{return DisplayPathType::Intersection;}

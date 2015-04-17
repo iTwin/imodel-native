@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/readdbg.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,7 +48,7 @@ extern "C" {
 /* typedef some things if wintypes.h hasn't yet: */
 #ifndef IMAGE_NT_SIGNATURE
 typedef void *                              HANDLE;
-typedef UInt32                              DWORD;
+typedef uint32_t                            DWORD;
 typedef struct _fpo_data                    FPO_DATA;
 typedef struct _image_nt_headers            IMAGE_NT_HEADERS;
 typedef struct _image_section_header        IMAGE_SECTION_HEADER;
@@ -69,18 +69,18 @@ typedef struct _TypeData
     {
     struct _offset
     {
-    UInt32 bytes;
-    UInt32 bits;
+    uint32_t bytes;
+    uint32_t bits;
     } offset;
     struct _size
     {
-    UInt32 bytes;
-    UInt32 bits;
+    uint32_t bytes;
+    uint32_t bits;
     } size;
-    UInt32 value;
-    UInt32 count;
-    UInt32 leaf;
-    UInt32 typeIndexRef;
+    uint32_t value;
+    uint32_t count;
+    uint32_t leaf;
+    uint32_t typeIndexRef;
     char prefix[1024];                      // WIP_CHAR_OK
     char name[1024];                        // WIP_CHAR_OK
     char suffix[1024];                      // WIP_CHAR_OK
@@ -93,17 +93,17 @@ typedef struct _TypeData
 +----------------------------------------------------------------------*/
 
 // open and close functions:
-void *          readDbg_open(char *filename, Int32 *appStatus, Int32 *sysStatus);       // WIP_CHAR_OK - not worth updating arcane debugging code.
-Int32           readDbg_close(void *hDbg, Int32 *sysStatus);
+void *          readDbg_open(char *filename, int32_t *appStatus, int32_t *sysStatus);       // WIP_CHAR_OK - not worth updating arcane debugging code.
+int32_t         readDbg_close(void *hDbg, int32_t *sysStatus);
 
 // low-level data functions:
-Int32           readDbg_getImageRange(void *hDbg, uintptr_t *pImageBase, uintptr_t *pImageHigh);
+int32_t         readDbg_getImageRange(void *hDbg, uintptr_t *pImageBase, uintptr_t *pImageHigh);
 
 // high-level functions:
-Int32           readDbg_getSrc(void *hDbg, uintptr_t ipAddress, char *szSrc, size_t cbSrc);                                                   // WIP_CHAR_OK - files store narrow chars.
-Int32           readDbg_getSym(void *hDbg, uintptr_t ipAddress, char *szSym, Int32 cbSym);                                                    // WIP_CHAR_OK - files store narrow chars.
-Int32           readDbg_getProcRange(void *hDbg, BitMaskP moduleBitMaskP, uintptr_t procAddr, uintptr_t *procStartP, uintptr_t *procEndP);    // WIP_CHAR_OK - files store narrow chars.
-Int32           readDbg_getProcAddr(void const * const hDbg, uintptr_t * const procAddrP, char const * const procName);                       // WIP_CHAR_OK - files store narrow chars.
+int32_t         readDbg_getSrc(void *hDbg, uintptr_t ipAddress, char *szSrc, size_t cbSrc);                                                   // WIP_CHAR_OK - files store narrow chars.
+int32_t         readDbg_getSym(void *hDbg, uintptr_t ipAddress, char *szSym, int32_t cbSym);                                                    // WIP_CHAR_OK - files store narrow chars.
+int32_t         readDbg_getProcRange(void *hDbg, BitMaskP moduleBitMaskP, uintptr_t procAddr, uintptr_t *procStartP, uintptr_t *procEndP);    // WIP_CHAR_OK - files store narrow chars.
+int32_t         readDbg_getProcAddr(void const * const hDbg, uintptr_t * const procAddrP, char const * const procName);                       // WIP_CHAR_OK - files store narrow chars.
 
 }       // extern "C"
 

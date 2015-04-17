@@ -2,45 +2,31 @@
 |
 |     $Source: DgnCore/DgnDomain.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#include <DgnPlatform/DgnHandlers/DgnECPersistence.h>
-
-static DgnDomains           s_loadedDomains;
-static DgnSystemDomain*     s_systemDomain;
-static DgnDraftingDomain*   s_draftingDomain;
-
-DgnSystemDomain&        DgnSystemDomain::GetInstance() {return *s_systemDomain;}
-DgnDraftingDomain&      DgnDraftingDomain::GetInstance() {return *s_draftingDomain;}
-Utf8CP                  DgnDomain::GetName() const {return m_name.c_str();}
-Utf8CP                  DgnDomain::GetDescription() const {return m_description.c_str();}
-UInt32                  DgnDomain::GetVersion() const {return m_version;}
-XAttributeHandlerId     XAttributeHandler::GetHandlerId() const {return m_handlerId;}
-DgnDomainP              XAttributeHandler::GetDgnDomain() const {return m_domain;}
-DomainList const& DgnDomains::GetDomainList() const {return m_domains;}
-DgnDomain::Handlers const& DgnDomain::GetHandlers() const  {return m_handlers;}
-DgnDomains const& DgnDomainLoader::GetLoadedDomains() {return s_loadedDomains;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
+* @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Handler::SetDgnDomain(DgnDomainR domain, ElementHandlerId id) 
+void DgnDomains::RegisterDomain(DgnDomain& domain)
     {
-    BeAssert (0==m_domain);    // make sure it's not already registered
-    m_handlerId = id;
-    m_domain = &domain;
+    T_HOST.RegisteredDomains().push_back(&domain);
+
+    for (auto* tblHandler : domain.m_tableHandlers)
+        T_HOST.TableHandlers().Insert(tblHandler->GetTableName(), tblHandler);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XAttributeHandler::SetDgnDomain(DgnDomainR domain, XAttributeHandlerId id) 
+DgnDomain::TableHandler* DgnDomains::FindTableHandler(Utf8CP tableName)
     {
-    BeAssert (0==m_domain);    // make sure it's not already registered
-    m_handlerId = id;
-    m_domain = &domain;
+    auto& tableHandlers = T_HOST.TableHandlers();
+
+    auto it=tableHandlers.find(tableName);
+    return it != tableHandlers.end() ? it->second : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -50,201 +36,369 @@ DgnDomainCP DgnDomains::FindDomain (Utf8CP name) const
     {
     for (DgnDomainCP domain : m_domains)
         {
-        if (0 == BeStringUtilities::Stricmp(domain->GetName(), name))
+        if (0 == BeStringUtilities::Stricmp(domain->GetDomainName(), name))
             return  domain;
         }
 
-    return  NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/11
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDomainCP DgnDomainLoader::LoadDomain (Utf8CP name, UInt32 version)
+DgnDomain::Handler* DgnDomain::FindHandler(Utf8CP className) const
     {
-    return s_loadedDomains.FindDomain(name);
-
-    // NEEDS_WORK- load domains from dlls
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDomains::AddLoadedDomain (DgnDomainCR domain)
-    {
-    if (m_domains.end() != std::find (m_domains.begin(), m_domains.end(), &domain))
-        return;
-
-    for (auto it = m_domains.begin(); it != m_domains.end(); ++it)
+    for (Handler* iter : m_handlers)
         {
-        DgnDomainCP d = *it;
-        if (domain._GetPriority() > d->_GetPriority())
+        if (0 == strcmp(iter->GetClassName(), className))
+            return iter;
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* "load" all of the handlers for this DgnDomain.
+* Loading involves ensuring that the handlers in the DGN_TABLE_Handler table (i.e. the "required handlers") are all
+* registered. For any that are registered but not in the table, add them.
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
+    {
+    bmap<Utf8String,Handler*> myHandlers;
+    for (Handler* iter : m_handlers)
+        myHandlers.Insert(iter->GetClassName(), iter);
+
+    Statement stmt;
+    stmt.Prepare(dgndb, "SELECT Name,ClassId FROM " DGN_TABLE_Handler " WHERE Domain=?");
+    stmt.BindText(1, GetDomainName(), Statement::MakeCopy::No);
+
+    // make sure we have all of the handlers for this domain registered.
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8String handlerName(stmt.GetValueText(0));
+        auto thisHandler = myHandlers.find(handlerName);
+        if (thisHandler == myHandlers.end())
             {
-            m_domains.insert (it, &domain);
-            return;
+            BeAssert(false);
+            LOG.errorv("Error Missing Handler [%s]", handlerName.c_str());
+            continue;
             }
+
+        dgndb.Domains().AddHandler(stmt.GetValueId<DgnClassId>(1), thisHandler->second);
+        myHandlers.erase(thisHandler); // so we know we've already found it.
         }
 
-    // lower priority than all existing domains
-    m_domains.push_back(&domain);
+    // any that are left are new and need to be added to the database
+    for (auto iter : myHandlers)
+        dgndb.Domains().InsertHandler(*iter.second);
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/11
+* load a Domain found in the Domain table of a DgnDb into that dgndb's DgnDomains 
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDomains::DropDomain (DgnDomainCR domain)
+void DgnDomains::LoadDomain(DgnDomainR domain)
     {
-    auto it = std::find (m_domains.begin(), m_domains.end(), &domain);
-    if (m_domains.end() != it)
-        m_domains.erase(it);
+    domain.LoadHandlers(m_dgndb);   // load all the handlers from this domain 
+    m_domains.push_back(&domain);   // save the fact that we are using this domain
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
+* @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDomainLoader::RegisterLoadedDomain (DgnDomainR domain)
+BeSQLite::DbResult DgnDomains::SyncWithSchemas()
     {
-    s_loadedDomains.AddLoadedDomain(domain);
-    }
+    m_handlers.clear();
+    m_domains.clear();
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDomainLoader::UnregisterLoadedDomain (DgnDomainR domain)
-    {
-    s_loadedDomains.DropDomain(domain);
-    }
+    auto& hostDomains = T_HOST.RegisteredDomains();
+    bmap<Utf8String,DgnDomain*> registeredDomains;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-HandlerR DgnDomainLoader::GetIllegalHandler()
-    {
-    static HandlerP s_illegal = 0;
+    for (DgnDomain* iter : hostDomains)
+        registeredDomains.Insert(iter->GetDomainName(), iter);
 
-    if (NULL == s_illegal)
-        s_illegal = s_systemDomain->_GenerateMissingHandler(ElementHandlerId (LEGACY_ELEMENT_TypeHandlerMajorId, 0));
-
-    return  *s_illegal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-HandlerP DgnDomains::FindElementHandler (ElementHandlerId id) const
-    {
-    for (DgnDomainCP domain : m_domains)
+    Statement stmt;
+    stmt.Prepare (m_dgndb, "SELECT Name,Version FROM " DGN_TABLE_Domain);
+    while (BE_SQLITE_ROW == stmt.Step())
         {
-        HandlerP handler = domain->FindElementHandler(id);
-        if (handler)
-            return  handler;
+        Utf8String domainName(stmt.GetValueText(0));
+        auto thisDomain = registeredDomains.find(domainName);
+        if (thisDomain == registeredDomains.end())
+            {
+            BeAssert(false);
+            LOG.errorv("Error Missing Domain [%s]", stmt.GetValueText(0));
+            continue;
+            }
+
+        if (thisDomain->second->GetVersion() < stmt.GetValueInt(1))
+            {
+            BeAssert(false);
+            LOG.errorv("Wrong Domain version [%s]", stmt.GetValueText(0));
+            continue;
+            }
+
+        LoadDomain(*thisDomain->second);
+        registeredDomains.erase(thisDomain); // so we know we've already found it.
         }
-    return  NULL;
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-XAttributeHandlerP DgnDomains::FindXAttributeHandler (XAttributeHandlerId id) const
-    {
-    for (DgnDomainCP domain : m_domains)
+    // any that are left are new and need to be added to the database
+    for (auto iter : registeredDomains)
         {
-        XAttributeHandlerP handler = domain->FindXAttributeHandler(id);
-        if (handler)
-            return  handler;
+        if (nullptr == m_dgndb.Schemas().GetECSchema(iter.second->GetDomainName(), false))
+            continue; // this domain's schema doesn't exist (yet?) in this db.
+
+        auto rc = InsertDomain(*iter.second); // add to database so it will be required from here on
+        BeAssert(rc==BE_SQLITE_DONE);
+        UNUSED_VARIABLE(rc);
+        LoadDomain(*iter.second);
         }
-    return  NULL;
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
+* @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::RegisterHandler (ElementHandlerId id, Handler& handler)
+BentleyStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
     {
-    if (NULL != FindElementHandler (id))
+    if (!schemaFile.DoesPathExist())
         {
-        BeAssert (false);
+        BeAssert(false);
+        return BentleyStatus::ERROR;
+        }
+
+    WString schemaBaseNameW;
+    schemaFile.ParseName(NULL, NULL, &schemaBaseNameW, NULL);
+    Utf8String schemaBaseName(schemaBaseNameW);
+
+    if (0 != BeStringUtilities::Strnicmp(schemaBaseName.c_str(), GetDomainName(), strlen(GetDomainName()))) // ECSchema base name and DgnDomain name must match
+        {
+        BeAssert(false);
+        return BentleyStatus::ERROR;
+        }
+
+    BeFileName schemaDir = schemaFile.GetDirectoryName();
+
+    ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
+    contextPtr->AddSchemaLocater(db.GetSchemaLocater());
+    contextPtr->AddSchemaPath(schemaDir.GetName());
+
+    ECSchemaPtr schemaPtr;
+    SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
+    if (SCHEMA_READ_STATUS_Success != readSchemaStatus)
+        return BentleyStatus::ERROR;
+
+    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
+        return BentleyStatus::ERROR;
+
+    if (BE_SQLITE_OK != db.Domains().SyncWithSchemas())
+        return BentleyStatus::ERROR;
+        
+    _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/11
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomains::InsertDomain(DgnDomainCR domain)
+    {
+    Statement stmt;
+    stmt.Prepare(m_dgndb, SqlPrintfString ("INSERT INTO " DGN_TABLE_Domain " (Name,Descr,Version) VALUES(?,?,?)"));
+    stmt.BindText(1, domain.GetDomainName(), Statement::MakeCopy::No);
+    stmt.BindText(2, domain.GetDomainDescription(), Statement::MakeCopy::No);
+    stmt.BindInt(3, domain.GetVersion());
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler* DgnDomains::LookupHandler(DgnClassId handlerId)
+    {
+    auto iter = m_handlers.find(handlerId);
+    return iter == m_handlers.end() ? nullptr : iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::ECClassCP DgnDomains::FindBaseOfType(DgnClassId subClassId, DgnClassId baseClassId)
+    {
+    auto const& schemas = m_dgndb.Schemas();
+    ECN::ECClassCP subClass  = schemas.GetECClass(subClassId.GetValue());
+    ECN::ECClassCP baseClass = schemas.GetECClass(baseClassId.GetValue());
+
+    if (nullptr==subClass || nullptr==baseClass || subClass == baseClass) // can't be baseclass of yourself
+        return nullptr;
+
+    // this loop is due to multiple inheritance. Look for the right baseclass 
+    for (auto* thisClass : subClass->GetBaseClasses())
+        {
+        if (thisClass->Is(baseClass))
+            return thisClass;
+        }
+
+    return nullptr;    // sub is not derived from base
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId baseClassId)
+    {
+    // do we have a registered handler for this class?
+    DgnDomain::Handler* handler = LookupHandler(handlerId);
+    if (nullptr != handler)
+        return handler;
+
+    // Get superclass of type baseClass
+    ECN::ECClassCP superClass = FindBaseOfType(handlerId, baseClassId);
+    if (nullptr == superClass)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    // see if baseclass has a handler, recursively.
+    handler = FindHandler(DgnClassId(superClass->GetId()), baseClassId);
+    if (nullptr != handler)
+        {
+        m_handlers.Insert(handlerId, handler); // cache this result for all baseclasses
+        return handler;
+        }
+
+    // the handlerId supplied must not derive from baseClassId or no registered handlers exist for any baseclasses
+    BeAssert(false);
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
+    {
+    return DgnClassId(m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Insert a handler into the DGN_TABLE_Handler table. This involves finding the local DgnClassId for the handler,
+* and then saving the DgnClassId with the domain/name of the class it handles (which is really redundant, but avoids a
+* join when trying to find all the classes with handlers for a domain.)
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
+    {
+    DgnClassId id = GetClassId(handler);
+    if (!id.IsValid())
+        {
+        BeAssert(false);
+        // handler is registered against a class that doesn't exist
+        return BE_SQLITE_ERROR;
+        }
+
+    Statement stmt;
+    stmt.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE_Handler " (Domain,Name,ClassId) VALUES(?,?,?)");
+    stmt.BindText(1, handler.GetDomain().GetDomainName(), Statement::MakeCopy::No);
+    stmt.BindText(2, handler.GetClassName(), Statement::MakeCopy::No);
+    stmt.BindId(3, id);
+
+    auto status = stmt.Step();
+    if (BE_SQLITE_DONE != status)
+        return status;
+
+    m_handlers.Insert(id, &handler);
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler::ExtensionEntry* DgnDomain::Handler::ExtensionEntry::Find(ExtensionEntry* start, Extension::Token const& id)
+    {
+    while (start && &start->m_token != &id)
+        start = start->m_next;
+    return start;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnDomain::Handler::AddExtension (ElementHandler::Extension::Token& id, ElementHandler::Extension& extension)
+    {
+    ExtensionEntry* prev = ExtensionEntry::Find (m_extensions, id);
+    if (NULL != prev)
         return  ERROR;
-        }
 
-    handler.SetDgnDomain (*this, id);
-
-    m_handlers.Insert (id, &handler);
-    return  SUCCESS;
+    m_extensions = new DgnDomain::Handler::ExtensionEntry(id, extension, m_extensions);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
+* @bsimethod                                    Keith.Bentley                   09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-HandlerP DgnDomain::FindElementHandler (ElementHandlerId id) const
+BentleyStatus DgnDomain::Handler::DropExtension (ElementHandler::Extension::Token& id)
     {
-    auto it = m_handlers.find (id);
-    return  it==m_handlers.end() ? NULL : it->second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::RegisterXAttributeHandler (XAttributeHandlerId id, XAttributeHandlerR handler)
-    {
-    if (NULL != FindXAttributeHandler (id))
-        return  ERROR;
-    handler.SetDgnDomain (*this, id);
-
-    m_xAttHandlers.Insert (id, &handler);
-    return  SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-XAttributeHandlerP DgnDomain::FindXAttributeHandler (XAttributeHandlerId id) const
-    {
-    auto it = m_xAttHandlers.find (id);
-    return  it==m_xAttHandlers.end() ? NULL : it->second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-HandlerR DgnDomains::ResolveHandler (ElementHandlerId handlerId) const
-    {
-    HandlerP handler = FindElementHandler (handlerId);
-
-    if (NULL == handler)
-        handler = s_systemDomain->_GenerateMissingHandler(handlerId);
-
-    return *handler;
-    }
-
-void DgnDomain::_OnProjectCreated (DgnProjectR project) const {project.Domains().AddDomainToProject(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSystemDomain::InitDgnCore(DgnDraftingDomain& draftingDomain)
-    {
-    BeAssert (DgnPlatformLib::InStaticInitialization());
-
-    s_systemDomain = this;
-    s_draftingDomain = &draftingDomain;
-
-    DgnDomainLoader::RegisterLoadedDomain (*this);
-    DgnDomainLoader::RegisterLoadedDomain (draftingDomain);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-HandlerR ElementHandle::GetHandler() const
-    {
-    if (IsValid())  
+    for (ExtensionEntry* prev=0, *entry=m_extensions; NULL != entry; prev=entry, entry=entry->m_next)
         {
-        HandlerP handler = m_dscr.IsValid() ? m_dscr->GetElementHandler() : (m_elmRef.IsValid() ? m_elmRef->GetHandler() : NULL);
-        BeAssert (NULL != handler);
-        if (NULL != handler)
-            return *handler;
+        if (&entry->m_token != &id)
+            continue;
+
+        if (prev)
+            prev->m_next = entry->m_next;
+        else
+            m_extensions = entry->m_next;
+
+        delete entry;
+        return SUCCESS;
         }
 
-    return DgnDomainLoader::GetIllegalHandler();
+    return  ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementHandler::Extension* DgnDomain::Handler::FindExtension (Extension::Token& id)
+    {
+    ExtensionEntry* found = ExtensionEntry::Find (m_extensions, id);
+    if (NULL != found)
+        return  &found->m_extension;
+
+    return  m_superClass ? m_superClass->FindExtension(id) : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler* DgnDomain::Handler::z_CreateInstance() 
+    {
+    DgnDomain::Handler* instance= new DgnDomain::Handler(); 
+    instance->SetSuperClass ((DgnDomain::Handler*) 0); 
+    return instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler*& DgnDomain::Handler::z_PeekInstance() 
+    {
+    static DgnDomain::Handler* s_instance = 0; 
+    return s_instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler& DgnDomain::Handler::z_GetHandlerInstance()
+    {
+    DgnDomain::Handler*& instance = z_PeekInstance(); 
+
+    if (0 == instance) 
+        instance = z_CreateInstance(); 
+    
+    return *instance;
     }

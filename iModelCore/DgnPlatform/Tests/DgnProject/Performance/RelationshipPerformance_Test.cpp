@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/RelationshipPerformance_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,7 @@
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <DgnPlatform/DgnHandlers/DgnECPersistence.h>
 #include <Logging/bentleylogging.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -26,7 +26,7 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 
 #define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"Performance"))
 
-extern int GetSeedInstances (ECInstanceKeyMultiMap& instanceKeyMap, DgnProjectR project, ECClassId ecClassId, Utf8CP ecSqlToGetInstanceIds);
+extern int GetSeedInstances (ECInstanceKeyMultiMap& instanceKeyMap, DgnDbR project, ECClassId ecClassId, Utf8CP ecSqlToGetInstanceIds);
 
 #if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
@@ -37,11 +37,11 @@ TEST(Performance, Relationship_Retrieval_LinkTables)
     ScopedDgnHost host;
 
     DgnDbTestDgnManager tdm (L"BGRSubset.i.idgndb"); // ConstructSim i-model - Note that this version is published as part of a Windows build
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     ECDbStoreCR ecDbStore = project.GetEC();
 
     ECClassP groupingComponentClass = NULL;
-    ecDbStore.GetSchemaManager().GetECClass (groupingComponentClass, "CSimProductData", "GroupingComponent");
+    ecDbStore.Schemas().GetECClass (groupingComponentClass, "CSimProductData", "GroupingComponent");
     ASSERT_TRUE (groupingComponentClass != NULL);
 
     // First run
@@ -95,7 +95,7 @@ TEST(Performance, Relationship_Import_LinkTables)
     {
     // Measure time taken to import
     ScopedDgnHost autoDgnHost;
-    DgnProjectPtr project;
+    DgnDbPtr project;
     StopWatch sw (L"", false);
     sw.Start();
     DgnDbTestDgnManager::CreateProjectFromDgn (project, DgnDbTestDgnManager::GetOutputFilePath (L"BGRSubset.idgndb"), 
@@ -115,7 +115,7 @@ TEST(Performance, Relationship_Import_LinkTables)
 
     // Validate imported dgndb
     ECClassP groupingComponentClass = NULL;
-    project->GetEC().GetSchemaManager().GetECClass (groupingComponentClass, "CSimProductData", "GroupingComponent");
+    project->Schemas().GetECClass (groupingComponentClass, "CSimProductData", "GroupingComponent");
     ECInstanceKeyMultiMap seedInstanceKeyMap;
     GetSeedInstances (seedInstanceKeyMap, project, groupingComponentClass->GetId(), "SELECT ECInstanceId FROM CSimProductData.GroupingComponent WHERE Spool_Fabrication == 'Spool Shipped'");
     DgnECPersistence dgnECPersistence (*project);
@@ -143,12 +143,12 @@ TEST(Performance, Relationship_ConstructSim)
     ScopedDgnHost host;
     DgnDbTestDgnManager tdm (L"d:\\temp\\Graphite\\TestCases\\ByDiscipline\\ConstructSim\\BGRStatus.i.idgndb"); 
 
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     ECDbStoreCR ecDbStore = project.GetEC();
 
     // Prepare query
     ECClassP systemComponentClass = NULL;
-    ecDbStore.GetSchemaManager().GetECClass (systemComponentClass, "CSimProductData", "SystemComponent");
+    ecDbStore.Schemas().GetECClass (systemComponentClass, "CSimProductData", "SystemComponent");
     ASSERT_TRUE (systemComponentClass != NULL);
 
     // First run
@@ -188,12 +188,12 @@ TEST(Performance, Relationship_OpenPlant)
     ScopedDgnHost host;
     DgnDbTestDgnManager tdm (L"d:\\temp\\Graphite\\TestCases\\ByDiscipline\\DeliveredSamples\\Hydrotreater Expansion.i.idgndb"); 
 
-    DgnProjectR project = *tdm.GetDgnProjectP();
+    DgnDbR project = *tdm.GetDgnProjectP();
     ECDbStoreCR ecDbStore = project.GetEC();
 
     // Prepare query
     ECClassP pipeClass = NULL;
-    ecDbStore.GetSchemaManager().GetECClass (pipeClass, "OpenPlant_3D", "PIPE");
+    ecDbStore.Schemas().GetECClass (pipeClass, "OpenPlant_3D", "PIPE");
     ASSERT_TRUE (pipeClass != NULL);
     ECInstanceKeyMultiMap seedInstanceKeyMap;
     GetSeedInstances (seedInstanceKeyMap, project, pipeClass->GetId(), "SELECT ECInstanceId FROM OpenPlant_3D.PIPE WHERE LINENUMBER == '01-HCL-L3106-mEX-OPM'");

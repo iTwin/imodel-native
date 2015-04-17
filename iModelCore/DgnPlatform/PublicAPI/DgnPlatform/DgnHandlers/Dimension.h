@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/Dimension.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 /** @cond BENTLEY_SDK_Internal */
 
 #if defined (NEEDS_WORK_DGNITEM)
-#include <DgnPlatform/DgnCore/DgnElements.h>
+#include <DgnPlatform/DgnCore/ElementGeom.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include "DimensionStyle.h"
 #include "DimensionHandler.h"
@@ -152,7 +152,7 @@ DGNPLATFORM_EXPORT int   mdlDim_insertOptionBlock
 (
 EditElementHandleR      dim,                /* => Dimension element to work on   */
 DimOptionBlockHeaderP   newBlock,        /* => Option block to insert         */
-UInt64* cellId
+uint64_t* cellId
 );
 
 DGNPLATFORM_EXPORT void  adim_insertViewRotBlock
@@ -163,9 +163,9 @@ RotMatrixCR     rMatrix
 
 DGNPLATFORM_EXPORT int   adim_getCellId
 (
-UInt64*      uniqueIdP,             /* <= uniqueId */
+uint64_t*      uniqueIdP,             /* <= uniqueId */
 ElementHandleCR elmP,                  /*  => element to test */
-UShort          type                   /*  => app value to look for **/
+unsigned short  type                   /*  => app value to look for **/
 );
 
 DGNPLATFORM_EXPORT DgnPlatform::AngleFormatVals    adim_getAngleFormat
@@ -209,7 +209,7 @@ DGNPLATFORM_EXPORT void const* mdlDim_getOptionBlock
 (
 ElementHandleCR    dimElement,          /* => Dimension element block is in  */
 int             reqType,             /* => Requested block type           */
-UInt64*      elementID
+uint64_t*      elementID
 );
 
 DGNPLATFORM_EXPORT DimOptionBlockHeaderP mdlDim_getOrCreateOptionBlock
@@ -217,7 +217,7 @@ DGNPLATFORM_EXPORT DimOptionBlockHeaderP mdlDim_getOrCreateOptionBlock
 EditElementHandleR pDim,      /* <=> */
 int             type,       /* => one of ADBLK_ */
 int             size,        /* => */
-UInt64*      elementID
+uint64_t*      elementID
 );
 
 DGNPLATFORM_EXPORT  int   mdlDim_isPointAssociative
@@ -239,122 +239,122 @@ bool        bSuppressFlag
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT bool     mdlDim_getPrimaryToleranceAccuracy
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt    mdlDim_setPrimaryToleranceAccuracy
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool     mdlDim_getSecondaryToleranceAccuracy
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt    mdlDim_setSecondaryToleranceAccuracy
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getMultiJustVertical
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setMultiJustVertical
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoReduceFraction
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt    mdlDim_setNoReduceFraction
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoReduceAltFraction
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt    mdlDim_setNoReduceAltFraction
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool         mdlDim_getNoReduceTolFraction
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoReduceTolFraction
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoReduceSecFraction
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt    mdlDim_setNoReduceSecFraction
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoReduceAltSecFraction
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoReduceAltSecFraction
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoReduceTolSecFraction
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt    mdlDim_setNoReduceTolSecFraction
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoteLeaderType
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoteLeaderType
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoteScaleFrame
@@ -371,74 +371,74 @@ bool         *pValueIn
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoteTerminator
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoteTerminator
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoteTerminatorType
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoteTerminatorType
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoteTextRotation
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoteTextRotation
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoteHorAttachment
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoteHorAttachment
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoteVerLeftAttachment
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoteVerLeftAttachment
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT bool          mdlDim_getNoteVerRightAttachment
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setNoteVerRightAttachment
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 DGNPLATFORM_EXPORT  StatusInt     mdlDim_getNoteHorizontalJustification
@@ -687,7 +687,7 @@ EditElementHandleR pElementIn
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setStyleUniqueId
 (
 EditElementHandleR pElementIn,
-UInt64 styleUniqueIdIn
+uint64_t styleUniqueIdIn
 );
 
 DGNPLATFORM_EXPORT int mdlDim_scale
@@ -708,7 +708,7 @@ void        *dataP,
 int         *dataSizeP,
 ElementHandleCR elmP,
 int         dataType,
-UInt32      dimArg
+uint32_t    dimArg
 );
 
 DGNPLATFORM_EXPORT int     mdlDim_setDimData
@@ -717,27 +717,27 @@ void        *dataP,
 int         *dataSizeP,
 EditElementHandleR elmP,
 int         dataType,
-UInt32      dimArg
+uint32_t    dimArg
 );
 
 DGNPLATFORM_EXPORT bool      mdlDim_partTypeIsAnyDimLine
 (
-UInt32  partType
+uint32_t partType
 );
 
 DGNPLATFORM_EXPORT bool      mdlDim_partTypeIsAnyExtension
 (
-UInt32  partType
+uint32_t partType
 );
 
 DGNPLATFORM_EXPORT bool      mdlDim_partTypeIsAnyText
 (
-UInt32  partType
+uint32_t partType
 );
 
 DGNPLATFORM_EXPORT bool      mdlDim_partTypeIsAnyTerminator
 (
-UInt32  partType
+uint32_t partType
 );
 
 DGNPLATFORM_EXPORT double  mdlDim_getStackHeight
@@ -765,7 +765,7 @@ DGNPLATFORM_EXPORT StatusInt   mdlDim_getPartSymbology
 (
 DgnPlatform::Symbology  *pSymbology,
 ElementHandleCR elementIn,
-UInt32       partName
+uint32_t     partName
 );
 
 DGNPLATFORM_EXPORT bool    mdlDim_synchProxyCheckSum
@@ -1260,7 +1260,7 @@ information from.
 +--------------+--------------+---------------+----------------+-------------*/
 DGNPLATFORM_EXPORT bool          mdlDim_pointGetWitnessColor
 (
-UInt32      *pValue,
+uint32_t    *pValue,
 ElementHandleCR pElm,
 int          pointNo
 );
@@ -1280,7 +1280,7 @@ information from.
 +--------------+--------------+---------------+----------------+-------------*/
 DGNPLATFORM_EXPORT bool          mdlDim_pointGetWitnessWeight
 (
-UInt32      *pValue,
+uint32_t    *pValue,
 ElementHandleCR pElm,
 int         pointNo
 );
@@ -1301,7 +1301,7 @@ information from.
 +--------------+--------------+---------------+----------------+-------------*/
 DGNPLATFORM_EXPORT bool          mdlDim_pointGetWitnessStyle
 (
-Int32      *pValue,
+int32_t    *pValue,
 ElementHandleCR pElm,
 int         pointNo
 );
@@ -1360,7 +1360,7 @@ DGNPLATFORM_EXPORT StatusInt     mdlDim_pointSetWitnessColor
 (
 EditElementHandleR pElm,
 int         pointNo,
-UInt32     *pValueIn
+uint32_t   *pValueIn
 );
 
 /*------------------------------------------------------------------------*//**
@@ -1379,7 +1379,7 @@ DGNPLATFORM_EXPORT StatusInt     mdlDim_pointSetWitnessWeight
 (
 EditElementHandleR pElm,
 int         pointNo,
-UInt32     *pValueIn
+uint32_t   *pValueIn
 );
 
 /*------------------------------------------------------------------------*//**
@@ -1398,7 +1398,7 @@ DGNPLATFORM_EXPORT StatusInt     mdlDim_pointSetWitnessStyle
 (
 EditElementHandleR pElm,
 int         pointNo,
-Int32      *pValueIn
+int32_t    *pValueIn
 );
 
 /*------------------------------------------------------------------------*//**
@@ -1476,7 +1476,7 @@ from.
 +--------------+--------------+---------------+----------------+-------------*/
 DGNPLATFORM_EXPORT bool          mdlDim_segmentGetTextJustification
 (
-UInt16      *pValue,
+uint16_t    *pValue,
 ElementHandleCR pElm,
 int         segmentNo
 );
@@ -1556,7 +1556,7 @@ DGNPLATFORM_EXPORT StatusInt     mdlDim_segmentSetTextJustification
 (
 EditElementHandleR pElm,
 int         segmentNo,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 /*------------------------------------------------------------------------*//**
@@ -1795,7 +1795,7 @@ quadrant property on the given dimension element.
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT bool          mdlDim_overallGetAngleQuadrant
 (
-UInt16      *pValueOut,
+uint16_t    *pValueOut,
 ElementHandleCR pElm
 );
 
@@ -1811,7 +1811,7 @@ quadrant property on the given dimension element.
 DGNPLATFORM_EXPORT StatusInt     mdlDim_overallSetAngleQuadrant
 (
 EditElementHandleR pElm,
-UInt16      *pValueIn
+uint16_t    *pValueIn
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -2434,7 +2434,7 @@ int                 iPoint          /* => */
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT DimDerivedDataP  mdlDimDerivedData_create
 (
-UShort                  flags           //  =>
+unsigned short          flags           //  =>
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -2565,7 +2565,7 @@ ElementHandleCR                     dimElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BentleySystems  03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT UInt64 mdlDim_getDimStyleID
+DGNPLATFORM_EXPORT uint64_t mdlDim_getDimStyleID
 (
 ElementHandleCR pElementIn
 );

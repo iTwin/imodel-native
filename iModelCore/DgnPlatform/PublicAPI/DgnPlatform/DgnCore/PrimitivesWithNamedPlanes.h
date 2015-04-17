@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/PrimitivesWithNamedPlanes.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,7 +46,7 @@ protected:
     double      m_height;
 
     StatusInt SetXyPlaneNormal (bool& changed, DVec3dCR newVec);
-    static void GetVariablesForCenter (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, bool);
+    static void GetVariablesForCenter (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, bool);
 
 public:
     ArcPrimitiveWithNamedPlanes () {}
@@ -59,7 +59,7 @@ public:
     template<typename XAITERTYPE>
     ArcPrimitiveWithNamedPlanes (XAITERTYPE const& xa)
         {
-        DataInternalizer source ((byte*)xa.PeekData(), xa.GetSize());
+        DataInternalizer source ((Byte*)xa.PeekData(), xa.GetSize());
         Load (source);
         }
 
@@ -81,20 +81,20 @@ public:
     //  ------------------------------------------------------------------
     DGNPLATFORM_EXPORT wchar_t const*  FindNamedPlaneFromPoint (DPoint3dCR ptIn) const;
     DGNPLATFORM_EXPORT DPlane3d         GetNamedPlane (wchar_t const*, DPlane3dCP, DPoint3dCP) const;
-    DGNPLATFORM_EXPORT StatusInt        MakeNamedPlaneCoincident (bool& reallyChanged, WCharCP planeName, DPlane3dCR targetPlane,                         DependencyGraph&, ElementRefP);
-    DGNPLATFORM_EXPORT StatusInt        MoveNamedPlaneToContact  (bool& reallyChanged, WCharCP planeName, DPlane3dCR targetPlane, ICurvePrimitiveCR tc,   DependencyGraph&, ElementRefP);
-    DGNPLATFORM_EXPORT StatusInt        MakeTangentAtNamedPlane  (bool& reallyChanged, WCharCP planeName, DPlane3dCR perpPlane, DPlane3dCR tanPlane,      DependencyGraph&, ElementRefP);
-    DGNPLATFORM_EXPORT StatusInt        SetOffsetOfNamedPlane    (bool& reallyChanged, WCharCP planeName, double offset,                                  DependencyGraph& graph, ElementRefP);
+    DGNPLATFORM_EXPORT StatusInt        MakeNamedPlaneCoincident (bool& reallyChanged, WCharCP planeName, DPlane3dCR targetPlane,                         DependencyGraph&, DgnElementP);
+    DGNPLATFORM_EXPORT StatusInt        MoveNamedPlaneToContact  (bool& reallyChanged, WCharCP planeName, DPlane3dCR targetPlane, ICurvePrimitiveCR tc,   DependencyGraph&, DgnElementP);
+    DGNPLATFORM_EXPORT StatusInt        MakeTangentAtNamedPlane  (bool& reallyChanged, WCharCP planeName, DPlane3dCR perpPlane, DPlane3dCR tanPlane,      DependencyGraph&, DgnElementP);
+    DGNPLATFORM_EXPORT StatusInt        SetOffsetOfNamedPlane    (bool& reallyChanged, WCharCP planeName, double offset,                                  DependencyGraph& graph, DgnElementP);
     DGNPLATFORM_EXPORT StatusInt        GetOffsetOfNamedPlane    (double& offset, WCharCP planeName) const;
     DGNPLATFORM_EXPORT ICurvePrimitivePtr GetCurveForMoveNamedPlaneToContact () const;
     DGNPLATFORM_EXPORT StatusInt        ComputeOffsetFromNamedPlaneAlongCurve (double& offset, DPoint3dCR pointAtOffset, WCharCP planeName) const;
     DGNPLATFORM_EXPORT StatusInt        ComputePointAtOffsetFromNamedPlaneAlongCurve (DRay3dR pointAtOffset, double offset, WCharCP planeName) const;
 
-    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMakeNamedPlaneCoincident (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, WCharCP planeName);
-    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMoveNamedPlaneToContact  (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, WCharCP planeName);
-    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMakeTangentAtNamedPlane  (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, WCharCP planeName);
-    DGNPLATFORM_EXPORT static StatusInt GetVariablesForComputePointAtOffsetFromNamedPlaneAlongCurve (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, WCharCP planeName);
-    DGNPLATFORM_EXPORT static StatusInt GetVariablesForSetOffset                (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, WCharCP planeName);
+    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMakeNamedPlaneCoincident (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, WCharCP planeName);
+    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMoveNamedPlaneToContact  (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, WCharCP planeName);
+    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMakeTangentAtNamedPlane  (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, WCharCP planeName);
+    DGNPLATFORM_EXPORT static StatusInt GetVariablesForComputePointAtOffsetFromNamedPlaneAlongCurve (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, WCharCP planeName);
+    DGNPLATFORM_EXPORT static StatusInt GetVariablesForSetOffset                (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, WCharCP planeName);
 
 #if defined (CDOLLAR_EXPERIMENT)
 /*=================================================================================**//**
@@ -107,10 +107,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void    _WriteConstraintFailure (DependencyGraph& g, DGConstraintFailure const&) override;
     DGNPLATFORM_EXPORT virtual void    _DeleteConstraintFailure (DependencyGraph& g) override;
 
-    virtual void    _ProjectCenterToPlane (ElementRefP, DPlane3dCR) = 0;
-    virtual void    _ProjectCenterToLine  (ElementRefP, DRay3dCR) = 0;
+    virtual void    _ProjectCenterToPlane (DgnElementP, DPlane3dCR) = 0;
+    virtual void    _ProjectCenterToLine  (DgnElementP, DRay3dCR) = 0;
 
-    DGNPLATFORM_EXPORT ComputeXYConstraint (DependencyGraph&, ElementRefP arc);
+    DGNPLATFORM_EXPORT ComputeXYConstraint (DependencyGraph&, DgnElementP arc);
     DGNPLATFORM_EXPORT virtual void     _Satisfy (DependencyGraph& graph) override;
 
     }; // ComputeXYConstraint
@@ -164,15 +164,15 @@ public:
     //  Named Planes
     //  ------------------------------------------------------------------
     DGNPLATFORM_EXPORT DPlane3d         GetNamedPlane (wchar_t const*, DPlane3dCP, DPoint3dCP) const;
-    DGNPLATFORM_EXPORT StatusInt        MakeNamedPlaneCoincident (bool& reallyChanged, WCharCP planeName, DPlane3dCR targetPlane, DependencyGraph&, ElementRefP);
-    DGNPLATFORM_EXPORT StatusInt        MoveNamedPlaneToContact  (bool& reallyChanged, WCharCP planeName, DPlane3dCR targetPlane, ICurvePrimitiveCR targetCurve, DependencyGraph&, ElementRefP);
-    DGNPLATFORM_EXPORT StatusInt        MakeTangentAtNamedPlane  (bool& reallyChanged, WCharCP planeName, DPlane3dCR perpPlane, DPlane3dCR tanPlane, DependencyGraph&, ElementRefP);
+    DGNPLATFORM_EXPORT StatusInt        MakeNamedPlaneCoincident (bool& reallyChanged, WCharCP planeName, DPlane3dCR targetPlane, DependencyGraph&, DgnElementP);
+    DGNPLATFORM_EXPORT StatusInt        MoveNamedPlaneToContact  (bool& reallyChanged, WCharCP planeName, DPlane3dCR targetPlane, ICurvePrimitiveCR targetCurve, DependencyGraph&, DgnElementP);
+    DGNPLATFORM_EXPORT StatusInt        MakeTangentAtNamedPlane  (bool& reallyChanged, WCharCP planeName, DPlane3dCR perpPlane, DPlane3dCR tanPlane, DependencyGraph&, DgnElementP);
     DGNPLATFORM_EXPORT ICurvePrimitivePtr GetSourceCurveForMoveNamedPlaneToContact (WCharCP planeName) const;
     DGNPLATFORM_EXPORT ICurvePrimitivePtr GetTargetCurveForMoveNamedPlaneToContact (WCharCP planeName) const;
 
-    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMakeNamedPlaneCoincident (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, WCharCP planeName);
-    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMoveNamedPlaneToContact  (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, WCharCP planeName);
-    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMakeTangentAtNamedPlane  (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, ElementRefP ref, WCharCP planeName);
+    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMakeNamedPlaneCoincident (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, WCharCP planeName);
+    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMoveNamedPlaneToContact  (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, WCharCP planeName);
+    DGNPLATFORM_EXPORT static StatusInt GetVariablesForMakeTangentAtNamedPlane  (bvector<bpair<DGVariable*,bool> >& nodes, DependencyGraph& graph, DgnElementP ref, WCharCP planeName);
 
 }; // LcsPrimitiveWithNamedPlane
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/HypermodelingViewController.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -175,7 +175,7 @@ static RangeDgnModelAppData::Key s_RangeDgnModelAppDataKey;
 //--------------+------------------------------------------------------------------------
 DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR drawing) const
     {
-    auto model = drawing.GetTargetModel();
+    DgnModelP model = drawing.GetTargetModel();
     if (NULL == model)
         return DRange3d::NullRange();
 
@@ -184,8 +184,8 @@ DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR dr
         return appData->m_range;
 
     DRange3d range = DRange3d::NullRange();
-    for (auto el : *model->GetGraphicElementsP())
-        range.Extend(el->GetIndexRange());
+    for (auto* el : *model)
+        range.Extend(el->_ToGeometricElement()->_GetRange3d());
 
     range.ScaleAboutCenter (range, 1.10);
 
@@ -301,14 +301,14 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HypermodelingViewController::_DrawElement(ViewContextR context, ElementHandleCR elIter)
+void HypermodelingViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
 #if defined (NEEDS_WORK_DGNITEM)
     if (m_pass != PASS_None && !ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler (elIter.GetHandler()))
 /*<==*/ return;
 #endif
 
-    T_Super::_DrawElement (context, elIter);
+    T_Super::_DrawElement (context, element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -316,22 +316,16 @@ void HypermodelingViewController::_DrawElement(ViewContextR context, ElementHand
 +---------------+---------------+---------------+---------------+---------------+------*/
 HypermodelingViewController::HypermodelingViewController (DgnViewId vid, PhysicalViewControllerR p, bvector<SectionDrawingViewControllerPtr> const& d)
     :
-    PhysicalViewController (p.GetDgnProject(), vid),
+    PhysicalViewController (p.GetDgnDb(), vid),
     m_drawings (d),
     m_physical (&p),
     m_currentViewController (&p),
     m_pass (PASS_None),
     m_passesToDraw (PASS_All)
     {
-    m_symbology.hatchColor = 0x004f4f4f; // light gray;
-    m_symbology.drawingBackgroundColor = 0xcfff0808; // transparent blue
+    m_symbology.hatchColor = ColorDef::LightGrey();
+    m_symbology.drawingBackgroundColor = ColorDef(0xcfff0808); // transparent blue
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewType HypermodelingViewController::_GetViewType() const {return m_currentViewController->GetViewType();}
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
@@ -399,23 +393,11 @@ ClipVectorPtr HypermodelingViewController::_GetClipVector() const
     return m_physical->GetClipVector();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewFlagsR HypermodelingViewController::_GetViewFlagsR ()
-    {
-    // TRICKY HypermodelingViewController must seem to override the background color 
-    // TRICKY just so that its _GetBackgroundColor will be called by ResolveBGColor, 
-    // TRICKY so that it can forward the call to the slave viewcontroller.
-    m_viewFlags = m_currentViewController->GetViewFlags();
-    m_viewFlags.overrideBackground = true; 
-    return m_viewFlags;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RgbColorDef HypermodelingViewController::_GetBackgroundColor () const
+ColorDef HypermodelingViewController::_GetBackgroundColor () const
     {
     return m_currentViewController->ResolveBGColor(); // TRICKY Must call ResolveBGColor, not GetBackgroundColor. 
     }
@@ -502,14 +484,6 @@ DgnModelP HypermodelingViewController::_GetTargetModel() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BitMaskCR  HypermodelingViewController::_GetLevelDisplayMask () const
-    {
-    return m_currentViewController->GetLevelDisplayMask();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange3d HypermodelingViewController::_GetProjectExtents() const
@@ -525,9 +499,9 @@ void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) cons
     if (m_pass == PASS_Hatch)
         {
         OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
-        overrideMatSymb->SetLineColorTBGR (m_symbology.hatchColor);
-        overrideMatSymb->SetFillColorTBGR (m_symbology.hatchColor);
-        overrideMatSymb->SetTransparentFillColor (m_symbology.hatchColor >> 24);
+        overrideMatSymb->SetLineColor (m_symbology.hatchColor);
+        overrideMatSymb->SetFillColor (m_symbology.hatchColor);
+        overrideMatSymb->SetFillTransparency (m_symbology.hatchColor.GetAlpha());
         overrideMatSymb->SetWidth (0);
         //auto pattern = PatternParams::Create ();
         //pattern->SetColor (0xffffff);
@@ -536,22 +510,22 @@ void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) cons
         //pattern->SetPrimarySpacing (GetDrawingRange(*m_drawings.front()).XLength()/100);
         //pattern->SetPrimaryAngle (msGeomConst_piOver4);
         //overrideMatSymb->SetPatternParams (pattern);
-        context.ActivateOverrideMatSymb ();
+        context.GetIDrawGeom ().ActivateOverrideMatSymb (overrideMatSymb);
         }
     else if (m_pass == PASS_DrawingBackground)
         {
         OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
-        overrideMatSymb->SetLineColorTBGR (m_symbology.drawingBackgroundColor);
-        overrideMatSymb->SetFillColorTBGR (m_symbology.drawingBackgroundColor);
+        overrideMatSymb->SetLineColor (m_symbology.drawingBackgroundColor);
+        overrideMatSymb->SetFillColor (m_symbology.drawingBackgroundColor);
         overrideMatSymb->SetFlags (overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
         overrideMatSymb->SetWidth (0);
-        context.ActivateOverrideMatSymb ();
+        context.GetIDrawGeom ().ActivateOverrideMatSymb (overrideMatSymb);
         }
     else
         {
         OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
         overrideMatSymb->SetFlags (MATSYMB_OVERRIDE_None);
-        context.ActivateOverrideMatSymb ();
+        context.GetIDrawGeom ().ActivateOverrideMatSymb (overrideMatSymb);
         }
     }
 

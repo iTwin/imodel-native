@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DisplayPath.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -18,7 +18,7 @@ DisplayPath::DisplayPath ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayPath::DisplayPath (ElementRefP oDisp, DgnModelP model)
+DisplayPath::DisplayPath (DgnElementCP oDisp, DgnModelP model)
     {
     SetPath (oDisp, model);
     }
@@ -26,14 +26,14 @@ DisplayPath::DisplayPath (ElementRefP oDisp, DgnModelP model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayPath::SetPath (ElementRefP newRef, DgnModelP newModel)
+void DisplayPath::SetPath (DgnElementCP newRef, DgnModelP newModel)
     {
     BeAssert (newRef);
 
     Empty();
 
     // set new root modelref
-    SetRoot (newModel ? newModel : newRef->GetDgnModelP ());
+    SetRoot (newModel ? newModel : &newRef->GetDgnModel());
     PushPathElem (newRef);
     }
 
@@ -61,7 +61,7 @@ int DisplayPath::GetCount () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod    DisplayPath                                     KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayPath::Contains (ElementRefP oObj) const
+bool DisplayPath::Contains (DgnElementP oObj) const
     {
     return  std::find (m_path.begin(), m_path.end(), oObj) != m_path.end();
     }
@@ -69,7 +69,7 @@ bool DisplayPath::Contains (ElementRefP oObj) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod    DisplayPath                                     KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementRefP DisplayPath::GetHitElem () const
+DgnElementP DisplayPath::GetHitElem () const
     {
     return  GetCursorElem ();
     }
@@ -138,12 +138,12 @@ void DisplayPath::SetPath (DisplayPathCP fromPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayPath::PushPathElem (ElementRefP oGeom)
+void DisplayPath::PushPathElem (DgnElementCP oGeom)
     {
     //  set the cursor index to the last pushed entry
     m_cursorIndex = (int) m_path.size();
 
-    m_path.push_back (oGeom);
+    m_path.push_back((DgnElementP)oGeom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -167,7 +167,7 @@ void DisplayPath::PopPathElem()
 * creating a path backwards (from an object towards its parents).
 * @bsimethod                                                    KeithBentley    03/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    DisplayPath::InsertPathElemAtHead (ElementRefP oObj)
+void    DisplayPath::InsertPathElemAtHead (DgnElementP oObj)
     {
     m_path.insert (m_path.begin(), oObj);
     m_cursorIndex++;
@@ -187,7 +187,7 @@ void    DisplayPath::RemovePathElemFromHead ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod    DisplayPath                                     KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementRefP     DisplayPath::GetPathElem (int index) const
+DgnElementP     DisplayPath::GetPathElem (int index) const
     {
     if (index < 0)                              // ***NEEDS WORK: The old ObjectArray used to support -1 => END
         index = (int) m_path.size() - 1;
@@ -201,7 +201,7 @@ ElementRefP     DisplayPath::GetPathElem (int index) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod    DisplayPath                                     KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     DisplayPath::SetPathElem (ElementRefP oObj, int  index)
+void     DisplayPath::SetPathElem (DgnElementP oObj, int  index)
     {
     if (index < 0)
         index = (int) m_path.size() - 1;
@@ -212,7 +212,7 @@ void     DisplayPath::SetPathElem (ElementRefP oObj, int  index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod    DisplayPath                                     KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementRefP     DisplayPath::GetCursorElem () const
+DgnElementP     DisplayPath::GetCursorElem () const
     {
     return  GetPathElem (m_cursorIndex);
     }
@@ -221,7 +221,7 @@ ElementRefP     DisplayPath::GetCursorElem () const
 * Get Element at head (beginning) of the display path
 * @bsimethod                                                    RayBentley      06/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementRefP     DisplayPath::GetHeadElem () const
+DgnElementP     DisplayPath::GetHeadElem () const
     {
     if (m_path.empty ())
         return NULL;
@@ -233,7 +233,7 @@ ElementRefP     DisplayPath::GetHeadElem () const
 * Get Element at tail (end) of the display path
 * @bsimethod                                                    RayBentley      06/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementRefP     DisplayPath::GetTailElem () const
+DgnElementP     DisplayPath::GetTailElem () const
     {
     if (m_path.empty ())
         return NULL;
@@ -246,18 +246,18 @@ ElementRefP     DisplayPath::GetTailElem () const
 * that tools see a shared cell instance rather than a component of its definition.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementRefP     DisplayPath::GetComponentElem () const
+DgnElementP     DisplayPath::GetComponentElem () const
     {
     if (m_path.empty ())
         return NULL;
 
-    ElementRefP innerRef = m_path.front ().get();
+    DgnElementP innerRef = m_path.front ().get();
 
     for (DgnElemRefArray::const_iterator curr = m_path.begin (); curr != m_path.end (); ++curr)
         {
-        ElementRefP elemRef = curr->get();
+        DgnElementP element = curr->get();
 
-        innerRef = elemRef;
+        innerRef = element;
         }
 
     return innerRef;
@@ -291,7 +291,7 @@ ElementHiliteState  DisplayPath::IsHilited () const
 
     for (int i=0; i <= cursor; i++, elem++)
         {
-        ElementHiliteState  hiliteState = (*elem)->IsHilited();
+        ElementHiliteState  hiliteState = (*elem)->_ToGeometricElement()->IsHilited();
 
         switch (hiliteState)
             {
@@ -312,14 +312,14 @@ ElementHiliteState  DisplayPath::IsHilited () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayPath::SetHilited (ElementHiliteState newState) const
     {
-    ElementRefP  cursorElem = GetCursorElem();
+    DgnElementP  cursorElem = GetCursorElem();
 
     // don't turn on/off hilite bit for elements in the selection set.
-    if (cursorElem->IsInSelectionSet())
+    if (cursorElem->_ToGeometricElement()->IsInSelectionSet())
         return;
 
     // KLUDGE: Preserve any alternative hilite state (i.e. HILITED_Bold) already set on this element...
-    if (HILITED_None == newState || HILITED_None == cursorElem->IsHilited())
+    if (HILITED_None == newState || HILITED_None == cursorElem->_ToGeometricElement()->IsHilited())
         {
         cursorElem->SetHilited(newState);
         }
@@ -370,7 +370,7 @@ DgnModelP     DisplayPath::GetEffectiveRoot () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DisplayPath::_DrawInVp (ViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void            DisplayPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
     if (vp->IsActive())
         T_HOST.GetGraphicsAdmin()._DrawPathInVp (this, vp, drawMode, drawPurpose, stopFlag);
@@ -379,7 +379,7 @@ void            DisplayPath::_DrawInVp (ViewportP vp, DgnDrawMode drawMode, Draw
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayPath::_GetInfoString (WStringR pathDescr, WCharCP delimiter) const
+void DisplayPath::_GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const
     {
     T_HOST.GetGraphicsAdmin()._GetInfoString (this, pathDescr, delimiter);
     }
@@ -387,7 +387,7 @@ void DisplayPath::_GetInfoString (WStringR pathDescr, WCharCP delimiter) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08.05
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DisplayPath::GetLocalToWorld (DMatrix4d& localToWorld, ViewportP viewport, int cursorIndex) const
+StatusInt DisplayPath::GetLocalToWorld (DMatrix4d& localToWorld, DgnViewportP viewport, int cursorIndex) const
     {
     // WIP_V10_NO_SHARED_CELLS - Remove with shared cells.
     StatusInt   status = SUCCESS;

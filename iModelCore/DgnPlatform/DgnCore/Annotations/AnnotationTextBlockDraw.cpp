@@ -1,10 +1,11 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationTextBlockDraw.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include <DgnPlatform/DgnCore/TextStyleInterop.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -37,44 +38,25 @@ AnnotationTextBlockLayoutCR AnnotationTextBlockDraw::GetLayout() const { return 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-static TextStringProperties textStringPropertiesFromAnnotationRun(AnnotationRunBaseCR run)
-    {
-    TextStringProperties tsProps;
-    AnnotationTextStylePtr effectiveStyle = run.CreateEffectiveStyle();
-
-    tsProps.SetColor(effectiveStyle->GetColorId());
-    tsProps.SetFont(*DgnFontManager::ResolveFont(effectiveStyle->GetFontId(), run.GetDgnProjectR(), DgnFontVariant::DGNFONTVARIANT_DontCare));
-    tsProps.SetFontSize({effectiveStyle->GetWidthFactor() * effectiveStyle->GetHeight(), effectiveStyle->GetHeight()});
-    tsProps.SetIsBold(effectiveStyle->IsBold());
-    tsProps.SetIsItalic(effectiveStyle->IsItalic());
-    tsProps.SetIsUnderlined(effectiveStyle->IsUnderlined());
-    
-    return tsProps;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-static void adjustForSubOrSuperScript(TextStringR ts, AnnotationTextStyleCR style)
+static void adjustForSubOrSuperScript(TextStringR ts, AnnotationTextRunCR textRun)
     {
     // Completely ignore if neither or both.
-    if (!(style.IsSubScript() ^ style.IsSuperScript()))
+    if (AnnotationTextRunSubSuperScript::Neither == textRun.GetSubSuperScript())
         return;
 
-    double offsetFactor = (style.IsSubScript() ? style.GetSubScriptOffsetFactor() : style.GetSuperScriptOffsetFactor());
-    double scale = (style.IsSubScript() ? style.GetSubScriptScale() : style.GetSuperScriptScale());
+    AnnotationTextStylePtr style = textRun.CreateEffectiveStyle();
+
+    double offsetFactor = (textRun.IsSubScript() ? style->GetSubScriptOffsetFactor() : style->GetSuperScriptOffsetFactor());
+    double scale = (textRun.IsSubScript() ? style->GetSubScriptScale() : style->GetSuperScriptScale());
     
-    DPoint2d seedFontSize = ts.GetProperties().GetFontSize();
-    DPoint3d seedLowerLeft = ts.GetLowerLeft();
+    double seedFontHeight = ts.GetStyle().GetHeight();
+    DPoint3d seedLowerLeft = ts.GetOrigin();
         
     DPoint3d lowerLeft = seedLowerLeft;
-    lowerLeft.y += (offsetFactor * seedFontSize.y);
+    lowerLeft.y += (offsetFactor * seedFontHeight);
 
-    DPoint2d fontSize;
-    fontSize.Scale(seedFontSize, scale);
-        
-    ts.SetFontSize(fontSize);
-    ts.SetLowerLeft(lowerLeft);
+    ts.GetStyleR().SetHeight(seedFontHeight * scale);
+    ts.SetOrigin(lowerLeft);
     }
 
 //---------------------------------------------------------------------------------------
@@ -87,13 +69,15 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
     if (run.GetContent().empty())
         return SUCCESS;
     
-    WString contentW;
-    BeStringUtilities::Utf8ToWChar(contentW, run.GetContent().c_str() + layoutRun.GetCharOffset(), layoutRun.GetNumChars());
-
-    TextStringProperties tsProps = textStringPropertiesFromAnnotationRun(run);
-    TextString ts(contentW.c_str(), NULL, NULL, tsProps);
+    TextString ts;
     
-    adjustForSubOrSuperScript(ts, *run.CreateEffectiveStyle());
+    Utf8String text = run.GetContent().substr(layoutRun.GetCharOffset(), layoutRun.GetNumChars());
+    ts.SetText(text.c_str());
+    
+    AnnotationTextStylePtr effectiveStyle = run.CreateEffectiveStyle();
+    TextStyleInterop::AnnotationToTextString(ts.GetStyleR(), *effectiveStyle);
+    
+    adjustForSubOrSuperScript(ts, run);
     
 #ifdef MERGE_0501_06_JEFF
     ts.Draw(context);
@@ -157,12 +141,13 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
             break;
         }
     
-    TextStringProperties tsProps = textStringPropertiesFromAnnotationRun(run);
-
     if (!run.GetNumeratorContent().empty())
         {
-        TextString tsNumerator(WString(run.GetNumeratorContent().c_str(), BentleyCharEncoding::Utf8).c_str(), &numeratorOffset, NULL, tsProps);
-        tsNumerator.SetFontSize(fontSize);
+        TextString tsNumerator;
+        tsNumerator.SetText(run.GetNumeratorContent().c_str());
+        tsNumerator.SetOrigin(numeratorOffset);
+        TextStyleInterop::AnnotationToTextString(tsNumerator.GetStyleR(), *effectiveStyle);
+        tsNumerator.GetStyleR().SetSize(fontSize);
 
 #ifdef MERGE_0501_06_JEFF
         tsNumerator.Draw(context);
@@ -171,8 +156,11 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
     
     if (!run.GetDenominatorContent().empty())
         {
-        TextString tsDenominator(WString(run.GetDenominatorContent().c_str(), BentleyCharEncoding::Utf8).c_str(), &denominatorOffset, NULL, tsProps);
-        tsDenominator.SetFontSize(fontSize);
+        TextString tsDenominator;
+        tsDenominator.SetText(run.GetDenominatorContent().c_str());
+        tsDenominator.SetOrigin(denominatorOffset);
+        TextStyleInterop::AnnotationToTextString(tsDenominator.GetStyleR(), *effectiveStyle);
+        tsDenominator.GetStyleR().SetSize(fontSize);
 
 #ifdef MERGE_0501_06_JEFF
         tsDenominator.Draw(context);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/IEcPropertyHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,6 @@
 
 #include <Bentley/bvector.h>
 #include <Bentley/WString.h>
-#include <RmgrTools/Tools/HeapzoneAllocator.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -165,7 +164,7 @@ ISNULLRETURN_IsNullCantSet = 2,
     (
     double&         propVal,
     ElementHandleCR    eh,
-    UInt32          propID,
+    uint32_t        propID,
     size_t
     )
         {
@@ -206,7 +205,7 @@ ISNULLRETURN_IsNullCantSet = 2,
     (
     EcValueAccessor::T_IntStringPairs& strlist,
     ElementHandleCR    eh_unused,
-    UInt32          propID_unused
+    uint32_t        propID_unused
     )
         {
         strlist.push_back (make_bpair (0, L"zero"));
@@ -261,7 +260,7 @@ ISNULLRETURN_IsNullCantSet = 2,
     (
     DPoint3d&       pt,
     ElementHandleCR    eh,
-    UInt32          propID,
+    uint32_t        propID,
     size_t          index
     )
         {
@@ -398,7 +397,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be retrieved
-        typedef StatusInt T_StringValueGet (WStringR propVal, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt T_StringValueGet (WStringR propVal, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that updates the value of a string property.
         //! @remarks MicroStation will call eh.ReplaceInModel () after this function call returns.
@@ -407,7 +406,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be updated
-        typedef StatusInt T_StringValueSet (EditElementHandleR eh, UInt32 propId, size_t arrayIndex, WChar const* propVal);
+        typedef StatusInt T_StringValueSet (EditElementHandleR eh, uint32_t propId, size_t arrayIndex, WChar const* propVal);
 
         //! The signature of a callback that gets the value of an integer property
         //! @return non-zero if the property value could not be retrieved
@@ -416,7 +415,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be retrieved
-        typedef StatusInt T_IntValueGet (Int32& propVal, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt T_IntValueGet (int32_t& propVal, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that updates the value of an integer property.
         //! @remarks MicroStation will call eh.ReplaceInModel () after this function call returns.
@@ -425,13 +424,13 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be updated
-        typedef StatusInt T_IntValueSet (EditElementHandleR eh, UInt32 propId, size_t arrayIndex, Int32 propVal);
+        typedef StatusInt T_IntValueSet (EditElementHandleR eh, uint32_t propId, size_t arrayIndex, int32_t propVal);
 
         //! The signature of a callback that converts an integer property value to a string that is displayed in the user interface.
         //! @param[out] displayString  Where to return the formatted property value
         //! @param[in] eh       the element that contains properties
         //! @param[in] propId   identifies the requested property
-        typedef void      T_IntValueToString (WString& displayString, Int32 value, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef void      T_IntValueToString (WString& displayString, int32_t value, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that converts a string to a property value.
         //! @param[out] parsedValue  Where to return the parsed value
@@ -440,7 +439,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the entered string could not be parsed
-        typedef StatusInt  T_IntValueFromString (Int32& parsedValue, WChar const* enteredString, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt  T_IntValueFromString (int32_t& parsedValue, WChar const* enteredString, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that gets the value of a double precision floating value property
         //! @param[out] propVal   Where to return the value of the property
@@ -448,7 +447,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be retrieved
-        typedef StatusInt T_DoubleValueGet (double& propVal, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt T_DoubleValueGet (double& propVal, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that updates the value of a double precision floating value property.
         //! @remarks MicroStation will call eh.ReplaceInModel () after this function call returns.
@@ -457,14 +456,14 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be updated
-        typedef StatusInt T_DoubleValueSet (EditElementHandleR eh, UInt32 propId, size_t arrayIndex, double propVal);
+        typedef StatusInt T_DoubleValueSet (EditElementHandleR eh, uint32_t propId, size_t arrayIndex, double propVal);
 
         //! The signature of a callback that converts a double precision property value to a string that is displayed in the user interface.
         //! @param[out] displayString Where to return the formatted property value
         //! @param[in] eh       the element that contains properties
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
-        typedef void      T_DoubleValueToString (WString& displayString, double value, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef void      T_DoubleValueToString (WString& displayString, double value, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that converts a string to a property value.
         //! @param[out] parsedValue  Where to return the parsed value
@@ -473,7 +472,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the entered string could not be parsed
-        typedef StatusInt T_DoubleValueFromString (double& parsedValue, WChar const* enteredString, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt T_DoubleValueFromString (double& parsedValue, WChar const* enteredString, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that gets the value of a Boolean property
         //! @param[out] propVal  Where to return the value of the property
@@ -481,7 +480,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be retrieved
-        typedef StatusInt T_BooleanValueGet (bool& propVal, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt T_BooleanValueGet (bool& propVal, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that updates the value of a Boolean property.
         //! @remarks MicroStation will call eh.ReplaceInModel () after this function call returns.
@@ -490,14 +489,14 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be updated
-        typedef StatusInt T_BooleanValueSet (EditElementHandleR eh, UInt32 propId, size_t arrayIndex, bool propVal);
+        typedef StatusInt T_BooleanValueSet (EditElementHandleR eh, uint32_t propId, size_t arrayIndex, bool propVal);
 
         //! The signature of a callback that converts a Boolean property value to a string that is displayed in the user interface.
         //! @param[out] displayString  Where to return the formatted property value
         //! @param[in] eh       the element that contains properties
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
-        typedef void      T_BooleanValueToString (WString& displayString, bool value, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef void      T_BooleanValueToString (WString& displayString, bool value, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that converts a string to a property value.
         //! @param[out] parsedValue  Where to return the parsed value
@@ -506,7 +505,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the entered string could not be parsed
-        typedef StatusInt   T_BooleanValueFromString (bool& parsedValue, WChar const* enteredString, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt   T_BooleanValueFromString (bool& parsedValue, WChar const* enteredString, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         typedef bpair<int,WString>      T_IntStringPair;
         typedef bvector<T_IntStringPair> T_IntStringPairs;
@@ -515,7 +514,7 @@ struct  IEcPropertyHandler
         //! @param[out] strlist  Where to return the string list
         //! @param[in] eh       the element that contains properties
         //! @param[in] propId   identifies the requested property
-        typedef void      T_GetIntStringPairs (T_IntStringPairs& strlist, ElementHandleCR eh, UInt32 propId);
+        typedef void      T_GetIntStringPairs (T_IntStringPairs& strlist, ElementHandleCR eh, uint32_t propId);
 
         //! The signature of a callback that gets the value of a DPoint3d property
         //! @param[out] propVal   Where to return the value of the property
@@ -523,7 +522,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be retrieved
-        typedef StatusInt T_DPoint3dValueGet (DPoint3d& propVal, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt T_DPoint3dValueGet (DPoint3d& propVal, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that updates the value of a DPoint3d property.
         //! @remarks MicroStation will call eh.ReplaceInModel () after this function call returns.
@@ -532,7 +531,7 @@ struct  IEcPropertyHandler
         //! @param[in] propId   identifies the requested property
         //! @param[in] arrayIndex 0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be updated
-        typedef StatusInt T_DPoint3dValueSet (EditElementHandleR eh, UInt32 propId, size_t arrayIndex, DPoint3d const& propVal);
+        typedef StatusInt T_DPoint3dValueSet (EditElementHandleR eh, uint32_t propId, size_t arrayIndex, DPoint3d const& propVal);
 
         //! The signature of a callback that gets the value of a Scale property
         //! @param[out] propVal     Where to return the value of the property
@@ -540,7 +539,7 @@ struct  IEcPropertyHandler
         //! @param[in]  propId      identifies the requested property
         //! @param[in]  arrayIndex  0 if this property value is not a member of an array; otherwise, the array index
         //! @return non-zero if the property value could not be retrieved
-        typedef StatusInt T_NamedScaleValueGet (ScaleDefinition& propVal, ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+        typedef StatusInt T_NamedScaleValueGet (ScaleDefinition& propVal, ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
         //! The signature of a callback that updates the value of a Scale property.
         //! @remarks MicroStation will call eh.ReplaceInModel () after this function call returns.
@@ -549,7 +548,7 @@ struct  IEcPropertyHandler
         //! @param[in] arrayIndex   0 if this property value is not a member of an array; otherwise, the array index
         //! @param[in] propVal      The new value of the property
         //! @return non-zero if the property value could not be updated
-        typedef StatusInt T_NamedScaleValueSet (EditElementHandleR eh, UInt32 propId, size_t arrayIndex, ScaleDefinition propVal);
+        typedef StatusInt T_NamedScaleValueSet (EditElementHandleR eh, uint32_t propId, size_t arrayIndex, ScaleDefinition propVal);
 
         //! A string value.
         //! @param[in] g        callback to get the value of the property
@@ -644,7 +643,7 @@ struct  IEcPropertyHandler
     //! @see EcValueAccessor
     struct EcArrayValueAccessor : EcValueAccessor
         {
-        typedef StatusInt T_ArrayCountGet (int& count, ElementHandleCR eh, UInt32 propId);
+        typedef StatusInt T_ArrayCountGet (int& count, ElementHandleCR eh, uint32_t propId);
 
         EcValueAccessor     m_underlying;
         T_ArrayCountGet*    m_getCount;
@@ -666,10 +665,10 @@ struct  IEcPropertyHandler
     struct EcPropertyDescriptor
         {
         //! @cond DONTINCLUDEINDOC
-        UInt32              m_propID;
+        uint32_t            m_propID;
         WString    m_name;
         WString    m_displayName;
-        UInt32              m_priority;
+        uint32_t            m_priority;
         EcValueAccessor     m_value;
         IRefCountedEcPropertyHandler* m_struct;     // member genearator for struct (m_value will be nop)
         EcValueAccessor     m_underlying;           // array item type (m_value will have the EcArrayValueAccessor::T_ArrayCountGet function)
@@ -691,7 +690,7 @@ struct  IEcPropertyHandler
         //! @param[in] displayName the name of the property that is to be displayed to the user. This value should be a translated string and may change between versions.
         //! @param[in] pri    [optional] The sort priority of the property. See PriorityVeryHigh, etc.
         DGNPLATFORM_EXPORT
-        EcPropertyDescriptor (EcValueAccessor const& accessor, UInt32 propId, WString const& name, WString const& displayName, UInt32 pri = PriorityMedium);
+        EcPropertyDescriptor (EcValueAccessor const& accessor, uint32_t propId, WString const& name, WString const& displayName, uint32_t pri = PriorityMedium);
 
         //! Define an array-valued property, including how it is accessed and how it is displayed. An array is a sequence of properties that are accessed by position.
         //! @param[in] accessor how the array is accessed
@@ -701,7 +700,7 @@ struct  IEcPropertyHandler
         //! @param[in] displayName the name of the property that is to be displayed to the user. This value should be a translated string and may change between versions.
         //! @param[in] pri    [optional] The sort priority of the property. See PriorityVeryHigh, etc.
         DGNPLATFORM_EXPORT
-        EcPropertyDescriptor (EcArrayValueAccessor const& accessor, UInt32 propId, WString const& name, WString const& displayName, UInt32 pri = PriorityMedium);
+        EcPropertyDescriptor (EcArrayValueAccessor const& accessor, uint32_t propId, WString const& name, WString const& displayName, uint32_t pri = PriorityMedium);
 
         //! Define an struct-valued property, including how it is accessed and how it is displayed. A struct is a group of properties with a name.
         //! @param[in] s        the group of properties
@@ -710,7 +709,7 @@ struct  IEcPropertyHandler
         //! @param[in] displayName the name of the property that is to be displayed to the user. This value should be a translated string and may change between versions.
         //! @param[in] pri      [optional] The sort priority of the property. See PriorityVeryHigh, etc.
         DGNPLATFORM_EXPORT
-        EcPropertyDescriptor (IRefCountedEcPropertyHandler* s, WString const& name, WString const& displayName, UInt32 pri = PriorityMedium);
+        EcPropertyDescriptor (IRefCountedEcPropertyHandler* s, WString const& name, WString const& displayName, uint32_t pri = PriorityMedium);
 
         }; // EcPropertyDescriptor
 
@@ -738,7 +737,7 @@ struct  IEcPropertyHandler
         StandardId          m_standardId;
         WString    m_name;
         WString    m_description;
-        UInt32              m_priority;
+        uint32_t            m_priority;
         //! @endcond
 
         //! Get a standard category
@@ -750,7 +749,7 @@ struct  IEcPropertyHandler
         //! @param[in] desc the displayed name of the category. This should be a translated string. It may change between versions.
         //! @param[in] pri    [optional] The sort priority of the category. See PriorityVeryHigh, etc.
         DGNPLATFORM_EXPORT
-        EcPropertyCategory (WString const& id, WString const& desc, UInt32 pri = PriorityMedium);
+        EcPropertyCategory (WString const& id, WString const& desc, uint32_t pri = PriorityMedium);
         };
 
     typedef bvector<EcPropertyCategory> T_EcCategories;
@@ -817,7 +816,7 @@ ElementHandleCR                      eh
     //! @param[in] arrayIndex   0 if this property value is not a member of an array; otherwise, the array index
     //! @remarks If the value is NULL, then it will not be shown in the property grid.
     DGNPLATFORM_EXPORT
-    IsNullReturnType    IsNullProperty (ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+    IsNullReturnType    IsNullProperty (ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
     //! Query if the specified property of the specified element should be presented as read-only.
     //! @param[in] eh       the element that contains properties
@@ -826,17 +825,17 @@ ElementHandleCR                      eh
     //! @return \a true if the property is read-only on this element.
     //! @remarks The default implementation is to return true if the element is locked.
     DGNPLATFORM_EXPORT
-    bool      IsPropertyReadOnly (ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+    bool      IsPropertyReadOnly (ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 
 protected:
     virtual WString   _GetEcPropertiesClassName (ElementHandleCR) = 0;
     virtual StatusInt _GetEcProperties (T_EcCategories&, ElementHandleCR) = 0;
     DGNPLATFORM_EXPORT
-    virtual bool      _IsPropertyReadOnly (ElementHandleCR eh, UInt32 propId, size_t arrayIndex); // returns true if element is locked
+    virtual bool      _IsPropertyReadOnly (ElementHandleCR eh, uint32_t propId, size_t arrayIndex); // returns true if element is locked
     DGNPLATFORM_EXPORT
     virtual bool      _IsNullProperty (WCharCP enabler, WCharCP className, WCharCP propName);
     DGNPLATFORM_EXPORT
-    virtual IsNullReturnType    _IsNullProperty (ElementHandleCR eh, UInt32 propId, size_t arrayIndex);
+    virtual IsNullReturnType    _IsNullProperty (ElementHandleCR eh, uint32_t propId, size_t arrayIndex);
 };
 
 struct IRefCountedEcPropertyHandler : IEcPropertyHandler, IRefCounted

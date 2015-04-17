@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="Bentley_MarkupExtension" nameSpacePrefix="mkup2" version="01.01" displayLabel="Bentley Markup Extension Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
+
+    <ECCustomAttributes>
+        <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
+    </ECCustomAttributes>
+
     <ECClass typeName="AuditComment" description="Information about changes made to a markup" displayLabel="Audit Comment" isDomainClass="True">
         <ECProperty propertyName="Comment" typeName="string" description="The change that was made" />
         <ECProperty propertyName="Date" typeName="dateTime" description="When the change was made" />

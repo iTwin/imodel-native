@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsSymbology.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -377,18 +377,18 @@ void    LineStyleSymb::CheckContinuationData ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int             LineStyleSymb::FromResolvedStyle
 (
-Int32               styleNo,
-LineStyleParamsCP   lStyleParams,
+LineStyleInfoCP     styleInfo,
 ViewContextR        context,        // Used to resolve pixel-based line styles
 DPoint3dCP          startTangent,
 DPoint3dCP          endTangent
 )
     {
+#if defined (WIP_LINESTYLES)
     // 0 - 7 use hardware linestyles.
     if (IS_LINECODE (styleNo))
         return styleNo;
 
-    DgnProjectR     dgnProject = context.GetDgnProject ();
+    DgnDbR     dgnProject = context.GetDgnDb ();
     LsDefinitionP   nameRec = NULL; // only look in the system table for positive ids
 
     if ((styleNo < 0) || (NULL == (nameRec = LsSystemMap::GetSystemMapP (true)->Find (styleNo))))
@@ -404,18 +404,10 @@ DPoint3dCP          endTangent
     if (NULL == nameRec)
         return 0;
 
-    // NEEDSWORK_V10: Linestyle api shouldn't require a DgnModel...should just need DgnProject or maybe ViewController...
-    DgnModelP   dgnModel = dgnProject.Models ().GetModelById (dgnProject.Models ().GetFirstModelId ());
-
-    BeAssert (NULL != dgnModel);
-
-    if (NULL == dgnModel)
-        return 0;
-
     // Make this call before IsContinuous() to force the components to load.  Loading the components
     // will make some linestyles into "continuous" because early DWG styles did not set this bit correctly,
     // so there are a lot of unlabeled continuous styles out there.
-    LsComponentCP    lStyle = nameRec->GetComponentCP (dgnModel);
+    LsComponentCP    lStyle = nameRec->GetComponentCP (nullptr);
 
     // If the line style is continuous and has no width, leave now.
     if (nameRec->IsContinuous () && (!lStyleParams || (0 == (lStyleParams->modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH)))))
@@ -494,7 +486,7 @@ DPoint3dCP          endTangent
     // Update unitDef to convert to UORs
     if (nameRec->IsUnitsMaster ())
         {
-        unitDef *= dgnModel->GetMillimetersPerMaster();
+        unitDef *= 1000;
         }
     else if (nameRec->IsUnitsDevice ())
         {
@@ -504,14 +496,16 @@ DPoint3dCP          endTangent
     else if (nameRec->IsUnitsUOR ())
         {
         // Get True Scale factor
-        unitDef *= nameRec->GetTrueScale (dgnModel);
+        unitDef *= nameRec->GetTrueScale (nullptr);
 
         // Historically distance shifts are stored in master units.  This used to match the line styles.  Now
         // with imported styles, we need to convert the shift to UORs.
         if (tmpLSParams.modifiers & STYLEMOD_DISTPHASE)
             {
             double uorPhase;
-            uorPhase = tmpLSParams.distPhase * dgnModel->GetMillimetersPerMaster();
+#if defined (NEEDS_WORK_ELEMENT_REFACTOR)
+#endif
+            uorPhase = tmpLSParams.distPhase * 1000;
             SetPhaseShift (true, uorPhase);
             }
         }
@@ -549,8 +543,9 @@ DPoint3dCP          endTangent
         }
 
     SetScale (scale);
+#endif
 
-    return  0;
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,7 +562,7 @@ DPoint3dCP          endTangent
 )
     {
     BeAssert (NULL == GetILineStyle());
-    return FromResolvedStyle (elParams.GetLineStyle (), elParams.GetLineStyleParams(), context, startTangent, endTangent);
+    return FromResolvedStyle (elParams.GetLineStyle (), context, startTangent, endTangent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -703,7 +698,81 @@ bool            LsInternalComponent::_IsAffectedByWidth (bool currentStatusOnly)
     }
 
 bool            LsInternalComponent::IsHardwareStyle ()  const { return 0 != m_hardwareLineCode ? true : false; }
-UInt32          LsInternalComponent::GetHardwareStyle () const { return m_hardwareLineCode; }
+uint32_t        LsInternalComponent::GetHardwareStyle () const { return m_hardwareLineCode; }
 
 //  The cast is okay here because for internal components the IdentKey is simply a built-in line code.
-UInt32          LsInternalComponent::GetLineCode () const { return (UInt32)GetLocation ()->GetIdentKey (); }
+uint32_t        LsInternalComponent::GetLineCode () const { return (uint32_t)GetLocation ()->GetIdentKey (); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            LineStyleParams::operator==(LineStyleParamsCR rhs) const
+    {
+    if (this == &rhs)
+        return true;
+
+    if (rhs.modifiers != modifiers)
+        return false;
+
+    if (0 == rhs.modifiers && 0 == modifiers)
+        return true; // No need to compare further if both inactive...
+
+    if (rhs.reserved   != reserved   ||
+        rhs.scale      != scale      ||
+        rhs.dashScale  != dashScale  ||
+        rhs.gapScale   != gapScale   ||
+        rhs.startWidth != startWidth ||
+        rhs.endWidth   != endWidth   ||
+        rhs.distPhase  != distPhase  ||
+        rhs.fractPhase != fractPhase ||
+        rhs.lineMask   != lineMask   ||
+        rhs.mlineFlags != mlineFlags)
+        return false;
+
+    if (!rhs.normal.IsEqual (normal))
+        return false;
+
+    if (!rhs.rMatrix.IsEqual (rMatrix))
+        return false;
+
+    return true;
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+LineStyleInfo::LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params) {m_styleId = styleId; if (params) m_styleParams = *params; else m_styleParams.Init();}
+LineStyleInfoPtr LineStyleInfo::Create (DgnStyleId styleId, LineStyleParamsCP params) {return new LineStyleInfo (styleId, params);}
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnStyleId LineStyleInfo::GetStyleId () const {return m_styleId;}
+LineStyleParamsCP LineStyleInfo::GetStyleParams () const {return 0 != m_styleParams.modifiers ? &m_styleParams : nullptr;}
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LineStyleInfo::CopyFrom (LineStyleInfoCR other)
+    {
+    m_styleId = other.m_styleId;
+    m_styleParams = other.m_styleParams;
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LineStyleInfo::operator==(LineStyleInfoCR rhs) const
+    {
+    if (this == &rhs)
+        return true;
+
+    if (rhs.m_styleId != m_styleId)
+        return false;
+
+    if (!(rhs.m_styleParams == m_styleParams))
+        return false;
+
+    return true;
+    }
+

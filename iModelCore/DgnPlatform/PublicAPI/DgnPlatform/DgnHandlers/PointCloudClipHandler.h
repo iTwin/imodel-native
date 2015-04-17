@@ -1,12 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/PointCloudClipHandler.h $
-|    $RCSfile$
-|   $Revision$
-|       $Date$
-|     $Author$
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -252,16 +248,16 @@ struct PointCloudClipReference : public RefCountedBase
 
             union
                 {
-                UInt32 s;
+                uint32_t s;
                 struct 
                     {
-                    UInt32     active:1;
-                    UInt32     reserved:31;
+                    uint32_t   active:1;
+                    uint32_t   reserved:31;
                     } b;
                 };
             };
 
-        UInt32                          m_id;
+        uint32_t                        m_id;
         AttributeFlags                  m_flags;
         WString                         m_name;
         PersistentElementPathCollection m_pep;
@@ -271,12 +267,12 @@ struct PointCloudClipReference : public RefCountedBase
         StatusInt LoadFrom(BentleyApi::DgnPlatform::ElementHandle::XAttributeIter  const& xAttr);
         StatusInt LoadFrom(XAttributeHandleCR xa);
 
-        StatusInt Load(DataInternalizer& dataInternalizer, UInt32 id);
+        StatusInt Load(DataInternalizer& dataInternalizer, uint32_t id);
         StatusInt Store(DataExternalizer& dataExternalizer) const;
         StatusInt ScheduleWriteXAttribute(EditElementHandleR hostElement) const;
 
-        UInt32 GetId() const;
-        void   SetId(UInt32 id);
+        uint32_t GetId() const;
+        void   SetId(uint32_t id);
 
 
     protected:
@@ -418,7 +414,7 @@ struct PointCloudClipElementHandler : BentleyApi::DgnPlatform::Handler
 
     private:
         // handler
-        virtual void                    _GetTypeName (WStringR string, UInt32 desiredLength) override;
+        virtual void                    _GetTypeName (WStringR string, uint32_t desiredLength) override;
 
 //        virtual void                    _OnElementLoaded (ElementHandleCR eh) override; removed in graphite
 //        virtual ITransactionHandlerP    _GetITransactionHandler() override; removed in graphite
@@ -443,7 +439,7 @@ struct PointCloudClipElementHandler : BentleyApi::DgnPlatform::Handler
         DGNPLATFORM_EXPORT ClipBoxPtrCollection       GetActiveClipBoxes(ElementHandleCR hostElement) const;
 
         DGNPLATFORM_EXPORT static StatusInt                              CreateElement(EditElementHandleR eeh, DgnModelP modelRef);
-        DGNPLATFORM_EXPORT static BentleyApi::DgnPlatform::ElementHandlerId  GetHandlerId ();
+        DGNPLATFORM_EXPORT static BentleyApi::DgnPlatform::DgnClassId  GetHandlerId ();
 
         DGNPLATFORM_EXPORT static T_StdElementRefSet GetClips(DgnModelR model);
 
@@ -466,12 +462,12 @@ struct PointCloudClipBase : RefCountedBase
 
             union
                 {
-                UInt32 s;
+                uint32_t s;
                 struct 
                     {
-                    UInt32     active:1;
-                    UInt32     outside:1;
-                    UInt32     reserved:30;
+                    uint32_t   active:1;
+                    uint32_t   outside:1;
+                    uint32_t   reserved:30;
                     } b;
                 };
             };
@@ -511,20 +507,20 @@ struct PointCloudClipBox : public PointCloudClipBase
 #endif
 
     private:
-        UInt32          m_id;
+        uint32_t        m_id;
         AttributeFlags  m_flags;
         WString         m_name;
         OrientedBox     m_box;
 
-        UInt32 GetId() const;
-        void   SetId(UInt32 id);
+        uint32_t GetId() const;
+        void   SetId(uint32_t id);
 
     protected:
         PointCloudClipBox();
         PointCloudClipBox(WStringCR name, OrientedBoxCR box);
         ~PointCloudClipBox();
 
-        StatusInt Load(DataInternalizer& dataInternalizer, UInt32 id);
+        StatusInt Load(DataInternalizer& dataInternalizer, uint32_t id);
         StatusInt Load(BentleyApi::DgnPlatform::ElementHandle::XAttributeIter const& xAttr);
         StatusInt Store(DataExternalizer& dataExternalizer) const;
         StatusInt ScheduleWriteXAttribute(EditElementHandleR hostElement) const;
@@ -560,20 +556,20 @@ struct PointCloudClipPolygon : public PointCloudClipBase
 #endif
 
     private:
-        UInt32              m_id;
+        uint32_t            m_id;
         AttributeFlags      m_flags;
         WString             m_name;
         PointCloudPolygon   m_polygon;
 
-        UInt32 GetId() const;
-        void   SetId(UInt32 id);
+        uint32_t GetId() const;
+        void   SetId(uint32_t id);
 
     protected:
         PointCloudClipPolygon();
         PointCloudClipPolygon(WStringCR name, PointCloudPolygonCR polygon);
         ~PointCloudClipPolygon();
 
-        StatusInt Load(DataInternalizer& dataInternalizer, UInt32 id);
+        StatusInt Load(DataInternalizer& dataInternalizer, uint32_t id);
         StatusInt Load(BentleyApi::DgnPlatform::ElementHandle::XAttributeIter const& xAttr);
         StatusInt Store(DataExternalizer& dataExternalizer) const;
         StatusInt ScheduleWriteXAttribute(EditElementHandleR hostElement) const;

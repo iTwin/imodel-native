@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/CVEHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 //#include    <DgnPlatform/ViewHandler.h>   not in graphite
 #include    <DgnPlatform/DgnCore/DgnViewport.h>
 #include    <DgnPlatform/DgnCore/QvViewport.h>
-//#include    <DgnPlatform/TemporaryElementRef.h>
+//#include    <DgnPlatform/TemporaryDgnElement.h>
 #include    <DgnPlatform/DgnCore/XGraphics.h>
 #include    <DgnPlatform/DgnCore/DisplayStyleHandler.h>
 #include    <DgnPlatform/ProxyDisplayCore.h>
@@ -31,55 +31,55 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 struct CVEHLineSymbology // moved here from tcb.r.h in graphite and renamed
     {
-    UInt32          level;
-    UInt32          color;
-    Int32           style;
-    UInt32          weight;
-    UInt32          levelOverride:1;
-    UInt32          colorOverride:1;
-    UInt32          styleOverride:1;
-    UInt32          weightOverride:1;
-    UInt32          unused:28;
+    uint32_t        level;
+    uint32_t        color;
+    int32_t         style;
+    uint32_t        weight;
+    uint32_t        levelOverride:1;
+    uint32_t        colorOverride:1;
+    uint32_t        styleOverride:1;
+    uint32_t        weightOverride:1;
+    uint32_t        unused:28;
     };
 
 struct  CVEHLineFlags // graphite moved this here from dgnplatform.r.h and renamed it
     {
-    UInt32          includeHidden:1;
-    UInt32          includeRules:1;
-    UInt32          calculateIntersections:1;
-    UInt32          outputToMaster:1;
-    UInt32          threeD:1;
-    UInt32          boundary:3;
-    UInt32          masterHiddenLine:1;
-    UInt32          masterDisplayHidden:1;
-    UInt32          method:3;
-    UInt32          annotations:3;
-    UInt32          smoothEdges:1;
-    UInt32          expandCustomLinestyles:1;
-    UInt32          expandHatch:1;
-    UInt32          autoOpenOutputFile:1;
-    UInt32          facetAllSurfaces:1;
-    UInt32          colorFromMaterial:1;
-    UInt32          ignoreTransparency:1;
-    UInt32          transparencyThreshold:7;
-    UInt32          exactMode:1;
-    UInt32          plotExactMode:1;
+    uint32_t        includeHidden:1;
+    uint32_t        includeRules:1;
+    uint32_t        calculateIntersections:1;
+    uint32_t        outputToMaster:1;
+    uint32_t        threeD:1;
+    uint32_t        boundary:3;
+    uint32_t        masterHiddenLine:1;
+    uint32_t        masterDisplayHidden:1;
+    uint32_t        method:3;
+    uint32_t        annotations:3;
+    uint32_t        smoothEdges:1;
+    uint32_t        expandCustomLinestyles:1;
+    uint32_t        expandHatch:1;
+    uint32_t        autoOpenOutputFile:1;
+    uint32_t        facetAllSurfaces:1;
+    uint32_t        colorFromMaterial:1;
+    uint32_t        ignoreTransparency:1;
+    uint32_t        transparencyThreshold:7;
+    uint32_t        exactMode:1;
+    uint32_t        plotExactMode:1;
     };
 
 struct  CVEHLineFlags2 // graphite moved this here from dgnplatform.r.h and renamed it
     {
-    UInt32          m_edgeLineStyles:1;
-    UInt32          m_cveFastMode:1;
-    UInt32          m_retainCacheWhileValidOnly:1;
-    UInt32          m_unused:29;
+    uint32_t        m_edgeLineStyles:1;
+    uint32_t        m_cveFastMode:1;
+    uint32_t        m_retainCacheWhileValidOnly:1;
+    uint32_t        m_unused:29;
     };
 
 struct CachedVisibleEdgeOptions// moved here from tcb.r.h in graphite
 {
     CVEHLineFlags      m_flags;
-    Int32           m_exactHLineAccuracy;
+    int32_t         m_exactHLineAccuracy;
     CVEHLineFlags2     m_flags2;
-    UInt32          m_futureUse1;
+    uint32_t        m_futureUse1;
     double          m_exactHLineTolerance;
     CVEHLineSymbology  m_visible;
     CVEHLineSymbology  m_hidden;
@@ -150,10 +150,10 @@ enum class VisibleEdgeCacheXAttrIndex
 //struct HLDisplayPath
 //{
 //    DgnModelP            m_root;
-//    bvector<ElementRefP>    m_elements;
+//    bvector<DgnElementP>    m_elements;
 //
 //                    HLDisplayPath () : m_root (NULL) { }
-//                    HLDisplayPath (DgnModelP root, bvector <ElementRefP> elements) : m_root (root), m_elements (elements) { }
+//                    HLDisplayPath (DgnModelP root, bvector <DgnElementP> elements) : m_root (root), m_elements (elements) { }
 //DGNPLATFORM_EXPORT  HLDisplayPath (DisplayPathCR displayPath);   
 //
 //DGNPLATFORM_EXPORT  bool operator < (HLDisplayPath const&) const;
@@ -171,7 +171,7 @@ enum class VisibleEdgeCacheXAttrIndex
 //    mutable T_HLOcclusionPathSet    m_occluders;
 //
 //    HLOcclusionPath ()  { }
-//    HLOcclusionPath (DgnModelP root, bvector <ElementRefP> elements) : m_path (HLDisplayPath (root, elements)) { }
+//    HLOcclusionPath (DgnModelP root, bvector <DgnElementP> elements) : m_path (HLDisplayPath (root, elements)) { }
 //    HLOcclusionPath (DisplayPathCR displayPath) : m_path (displayPath) { };
 //    HLOcclusionPath (HLDisplayPathCR displayPath) : m_path (displayPath) { };
 //
@@ -221,8 +221,8 @@ enum class VisibleEdgeCacheXAttrIndex
 //
 //public:            
 //
-//DGNPLATFORM_EXPORT    static  VisibleEdgeCalculationCacheP Load (VisibleEdgeCacheCR cache, ViewportR viewport);
-//                      static  void Delete (DgnModelP rootDgnModel, ElementRefP elementRef = NULL);
+//DGNPLATFORM_EXPORT    static  VisibleEdgeCalculationCacheP Load (VisibleEdgeCacheCR cache, DgnViewportR viewport);
+//                      static  void Delete (DgnModelP rootDgnModel, DgnElementP elementRef = NULL);
 //
 //DGNPLATFORM_EXPORT   ~VisibleEdgeCalculationCache ();
 //
@@ -236,8 +236,8 @@ enum class VisibleEdgeCacheXAttrIndex
 +===============+===============+===============+===============+===============+======*/
 struct  VisibleEdgeCache : ProxyDisplayCacheBase // graphite: this class is used only by the importer -- never at run time
 {
-    UInt32                                      m_originatingView;
-    UInt64                                      m_originatingViewGroup;
+    uint32_t                                    m_originatingView;
+    uint64_t                                    m_originatingViewGroup;
     CachedVisibleEdgeOptions                    m_options;
     //IVisibleEdgeCacheLoadPreviewer*             m_loadPreviewer;
 
@@ -247,7 +247,7 @@ struct  VisibleEdgeCache : ProxyDisplayCacheBase // graphite: this class is used
 public:
 
 //DGNPLATFORM_EXPORT static VisibleEdgeCacheP         Create (DgnModelP, CachedVisibleEdgeOptionsCR);
-//DGNPLATFORM_EXPORT static StatusInt                 FreezeReference (DgnModelP modelRef, ViewportP viewport, CachedVisibleEdgeOptionsCP hlOptions, bool setAlwaysValid);
+//DGNPLATFORM_EXPORT static StatusInt                 FreezeReference (DgnModelP modelRef, DgnViewportP viewport, CachedVisibleEdgeOptionsCP hlOptions, bool setAlwaysValid);
 //DGNPLATFORM_EXPORT static StatusInt                 ThawReference (DgnModelP modelRef);
 //DGNPLATFORM_EXPORT static StatusInt                 SynchReference (DgnModelP modelRef, CachedVisibleEdgeOptionsCP newOptions);
 //DGNPLATFORM_EXPORT static bool                      IsFrozen (DgnModelP modelRef);
@@ -259,20 +259,20 @@ public:
 //DGNPLATFORM_EXPORT static StatusInt                 ShowOrHideSelections (bool doHide, bool doCopy);
 //                   static void                      RegisterEditActionSource();
 //                   static void                      RegisterHandler();
-//DGNPLATFORM_EXPORT static StatusInt                 Delete (DgnModelP rootModel, ElementRefP elementRef = NULL);
+//DGNPLATFORM_EXPORT static StatusInt                 Delete (DgnModelP rootModel, DgnElementP elementRef = NULL);
 
-//DGNPLATFORM_EXPORT static bool                      IsDisplayedByProxy (DgnModelP modelRef, ViewportR viewport);
+//DGNPLATFORM_EXPORT static bool                      IsDisplayedByProxy (DgnModelP modelRef, DgnViewportR viewport);
 //DGNPLATFORM_EXPORT static bool                      IsLevelUsedInProxyCache (DgnModelP modelRef, LevelId level);
 //DGNPLATFORM_EXPORT static BitMaskCP                 GetLevelUsage (DgnModelP modelRef);
 //                   static DisplayStyleHandlerCP     GetDisplayStyleHandler ();
 //
-//DGNPLATFORM_EXPORT StatusInt                        AddGPA (struct GPArray const& gpa, struct GPArrayIntervals* intervals, DisplayPath const& displayPath, ViewHandlerPassCR viewHandlerPass,  DgnElementCR templateElement, ProxyGraphicsFlags flags, ProxyHLEdgeSegmentIdCR segmentId, CompoundDrawStateCP cds, bool clipped);
-//DGNPLATFORM_EXPORT StatusInt                        AddCutGraphics (XGraphicsContainerCR xGraphics, ViewHandlerPassCR vhPass, DisplayPath const& displayPath, DgnElementCR templateElement, ProxyGraphicsFlags flags, bool filled);
-//DGNPLATFORM_EXPORT StatusInt                        AddPassthrough (XGraphicsContainerCR xGraphics, ProxyGraphicsType, ViewHandlerPassCR vhPass, DisplayPath const& displayPath, DgnElementCR templateElement);
+//DGNPLATFORM_EXPORT StatusInt                        AddGPA (struct GPArray const& gpa, struct GPArrayIntervals* intervals, DisplayPath const& displayPath, ViewHandlerPassCR viewHandlerPass,  ElementGraphicsCR templateElement, ProxyGraphicsFlags flags, ProxyHLEdgeSegmentIdCR segmentId, CompoundDrawStateCP cds, bool clipped);
+//DGNPLATFORM_EXPORT StatusInt                        AddCutGraphics (XGraphicsContainerCR xGraphics, ViewHandlerPassCR vhPass, DisplayPath const& displayPath, ElementGraphicsCR templateElement, ProxyGraphicsFlags flags, bool filled);
+//DGNPLATFORM_EXPORT StatusInt                        AddPassthrough (XGraphicsContainerCR xGraphics, ProxyGraphicsType, ViewHandlerPassCR vhPass, DisplayPath const& displayPath, ElementGraphicsCR templateElement);
 //DGNPLATFORM_EXPORT void                             AddOcclusionPaths (HLOcclusionPathSetCR occlusionPaths);
 
 //void                                                Resolve ()                                                      { _Resolve (); }
-//void                                                ComputeHash (DgnModelP modelRef, ViewportP viewport)         { _ComputeHash (modelRef, viewport); }
+//void                                                ComputeHash (DgnModelP modelRef, DgnViewportP viewport)         { _ComputeHash (modelRef, viewport); }
 //void                                                ClearElementModifiedTimes (bool doClear)                        { _ClearElementModifiedTimes (doClear); }
 //void                                                SetValidForView (UInt32 viewIndex, bool state)                  { _SetValidForView (viewIndex, state); }
 //void                                                Draw (DisplayPath const& displayPath, ViewContextR viewContext, ViewHandlerPassCR viewHandlerPass, ViewHandlerPassR hitInfoPass) { _Draw (displayPath, viewContext, viewHandlerPass, hitInfoPass); }
@@ -298,12 +298,12 @@ protected:
                                                     VisibleEdgeCache ();
 //                                                    VisibleEdgeCache (DgnModelP modelRef, CachedVisibleEdgeOptionsCR options);
 
-//    virtual StatusInt                               _AddGPA (struct GPArray const& gpa, struct GPArrayIntervals* intervals, DisplayPath const& displayPath, ViewHandlerPassCR viewHandlerPass,  DgnElementCR templateElement, ProxyGraphicsFlags flags, ProxyHLEdgeSegmentIdCR segmentId, CompoundDrawStateCP cds, bool clipped) = 0;
-//    virtual StatusInt                               _AddCutGraphics (XGraphicsContainerCR xGraphics, ViewHandlerPassCR vhPass, DisplayPath const& displayPath, DgnElementCR templateElement, ProxyGraphicsFlags flags, bool filled) = 0;
-//    virtual StatusInt                               _AddPassthrough (XGraphicsContainerCR xGraphics, ProxyGraphicsType, ViewHandlerPassCR vhPass, DisplayPath const& displayPath, DgnElementCR templateElement) = 0;
+//    virtual StatusInt                               _AddGPA (struct GPArray const& gpa, struct GPArrayIntervals* intervals, DisplayPath const& displayPath, ViewHandlerPassCR viewHandlerPass,  ElementGraphicsCR templateElement, ProxyGraphicsFlags flags, ProxyHLEdgeSegmentIdCR segmentId, CompoundDrawStateCP cds, bool clipped) = 0;
+//    virtual StatusInt                               _AddCutGraphics (XGraphicsContainerCR xGraphics, ViewHandlerPassCR vhPass, DisplayPath const& displayPath, ElementGraphicsCR templateElement, ProxyGraphicsFlags flags, bool filled) = 0;
+//    virtual StatusInt                               _AddPassthrough (XGraphicsContainerCR xGraphics, ProxyGraphicsType, ViewHandlerPassCR vhPass, DisplayPath const& displayPath, ElementGraphicsCR templateElement) = 0;
 //    virtual void                                    _AddOcclusionPaths (HLOcclusionPathSetCR occlusionPaths) = 0;
 //    virtual void                                    _Resolve () = 0;
-//    virtual void                                    _ComputeHash (DgnModelP modelRef, ViewportP viewport) = 0;
+//    virtual void                                    _ComputeHash (DgnModelP modelRef, DgnViewportP viewport) = 0;
 //    virtual void                                    _ClearElementModifiedTimes (bool doClear) = 0;
 //    virtual void                                    _SetValidForView (UInt32 viewIndex, bool state) = 0;
 //    virtual void                                    _Draw (DisplayPath const& displayPath, ViewContextR viewContext, ViewHandlerPassCR viewHandlerPass, ViewHandlerPassR hitInfoPass) = 0;
@@ -331,17 +331,17 @@ virtual void SetViewingTransform (TransformCR t) = 0;
 
 //! CreateCveElements will call this when it begins to process CVE elements for the specified V8 attachment.
 //! @return a token representing the "toModel" of this attachment
-virtual ForeignModelPtr OnProcessDgnAttachment (bvector<UInt64> const& attachmentPath) = 0;
+virtual ForeignModelPtr OnProcessDgnAttachment (bvector<uint64_t> const& attachmentPath) = 0;
 
-//! Look up the ElementId of the specified element after it was merged into the project.
-//! @param[out] newElementId the ElementId of the specified element after it was merged into the project.
+//! Look up the DgnElementId of the specified element after it was merged into the project.
+//! @param[out] newElementId the DgnElementId of the specified element after it was merged into the project.
 //! @param[in] oldElementId the V8 Id of the element in its original foreign model
 //! @param[in] targetModelPtr the foreign model that contains the target element 
 //! @return SUCCESS if the foreign attachment and its toModel could be found
-virtual BentleyStatus FindElementId (ElementId& newElementId, UInt64 oldElementId, ForeignModelPtr targetModelPtr) const = 0;
+virtual BentleyStatus FindElementId (DgnElementId& newElementId, uint64_t oldElementId, ForeignModelPtr targetModelPtr) const = 0;
 
 //! Look up the level id in the project 
-virtual LevelId FindLevelId (UInt32 oldLevel, ForeignModelPtr targetModelPtr) const = 0;
+virtual LevelId FindLevelId (uint32_t oldLevel, ForeignModelPtr targetModelPtr) const = 0;
 
 };
 
@@ -367,12 +367,12 @@ virtual void _CreateCveElements (DgnModelR, TransformCR unitsTransform, ICreateC
 //{
 //DsigRawHash&                            m_hash;
 //double&                                 m_newestElement;
-//ViewportR                               m_viewport;
+//DgnViewportR                               m_viewport;
 //CachedVisibleEdgeOptionsCR              m_options;
 //double                                  m_stopIfNewer;
 //Cryptographer&                          m_cryptographer;
 //
-//CachedVisibleEdgeHashParams (DsigRawHash& hash, double& newestElement, ViewportR viewport, CachedVisibleEdgeOptionsCR options, double stopIfNewer, Cryptographer& cryptographer) :
+//CachedVisibleEdgeHashParams (DsigRawHash& hash, double& newestElement, DgnViewportR viewport, CachedVisibleEdgeOptionsCR options, double stopIfNewer, Cryptographer& cryptographer) :
 //                                        m_hash (hash), 
 //                                        m_newestElement (newestElement), 
 //                                        m_viewport (viewport), 
@@ -433,7 +433,7 @@ struct ProxyGraphicsElemTopology : IElemTopology // added in graphite
     {
     friend struct ProxyElementDisplayHandler;
     private:
-    ElementId       m_targetElement;
+    DgnElementId    m_targetElement;
     ClipVolumePass  m_pass;
     int             m_clipPlaneIndex;
 
@@ -443,7 +443,7 @@ struct ProxyGraphicsElemTopology : IElemTopology // added in graphite
     
     public:
     //! Get the 3-D element from which the selected proxy graphics were computed.
-    ElementId GetTargetElement() const {return m_targetElement;}
+    DgnElementId GetTargetElement() const {return m_targetElement;}
     //! Get the type of proxy graphics that were selected.
     ClipVolumePass GetPass() const {return m_pass;}
     //! Get the number of the plane used to compute the selected proxy graphics.

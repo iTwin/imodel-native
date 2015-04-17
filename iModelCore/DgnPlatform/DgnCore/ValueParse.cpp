@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ValueParse.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -487,7 +487,7 @@ void            AngleParser::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            AngleParser::InitModelSettings (DgnModelCR model)
     {
-    ModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModelInfoCR modelInfo = model.GetModelInfo();
 
     SetAngleMode (modelInfo.GetAngularMode ());
     }
@@ -602,7 +602,7 @@ BentleyStatus AngleParser::SetAngleModeFromLegacy (AngleFormatVals legacyValue)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          AngleParser::GetLegacyFormat () const
+uint16_t        AngleParser::GetLegacyFormat () const
     {
     /* Used to call old format asyncs */
 
@@ -634,7 +634,7 @@ UInt16          AngleParser::GetLegacyFormat () const
             break;
         }
 
-    return static_cast<UInt16>(angleFormat);
+    return static_cast<uint16_t>(angleFormat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -656,12 +656,12 @@ void            DirectionParser::InitModelSettings (DgnModelCR model)
     {
     m_angleParser->InitModelSettings (model);
 
-    ModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModelInfoCR modelInfo = model.GetModelInfo();
 
     SetDirectionMode (modelInfo.GetDirectionMode ());
     SetClockwise (modelInfo.GetDirectionClockwise ());
     SetBaseDirection (modelInfo.GetDirectionBaseDir ());
-    SetTrueNorthValue (model.GetDgnProject().Units().GetAzimuth ());
+    SetTrueNorthValue (model.GetDgnDb().Units().GetAzimuth ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -856,7 +856,7 @@ void            DistanceParser::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DistanceParser::InitModelSettings (DgnModelCR model)
     {
-    ModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModelInfoCR modelInfo = model.GetModelInfo();
 
     UnitDefinitionCR  subUnit       = modelInfo.GetSubUnit();
     UnitDefinitionCR  masterUnit    = modelInfo.GetMasterUnit();
@@ -904,7 +904,7 @@ DistanceParserPtr       DistanceParser::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceParserPtr       DistanceParser::Create (ViewportR viewport)
+DistanceParserPtr       DistanceParser::Create (DgnViewportR viewport)
     {
     DgnModelP           targetModel = viewport.GetViewController ().GetTargetModel();
     DistanceParserPtr   parser = DistanceParser::Create (*targetModel);
@@ -1023,7 +1023,7 @@ PointParserPtr         PointParser::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointParserPtr          PointParser::Create (ViewportR viewport)
+PointParserPtr          PointParser::Create (DgnViewportR viewport)
     {
     DgnModelP           targetModel = viewport.GetViewController ().GetTargetModel();
     PointParserPtr      parser = PointParser::Create (*targetModel);
@@ -1178,7 +1178,7 @@ void            AreaOrVolumeParser::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            AreaOrVolumeParser::InitModelSettings (DgnModelCR model)
     {
-    ModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModelInfoCR modelInfo = model.GetModelInfo();
 
     UnitDefinition  masterUnit = modelInfo.GetMasterUnit();
     double          uorPerMast = masterUnit.ToMillimeters();
@@ -1232,7 +1232,7 @@ AreaOrVolumeParser::AreaOrVolumeParser (AreaOrVolumeParserCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaOrVolumeParser::AreaOrVolumeParser (UInt8 dimension)
+AreaOrVolumeParser::AreaOrVolumeParser (uint8_t dimension)
     {
     m_dimension = dimension;
     Init();
@@ -1269,7 +1269,7 @@ AreaParserPtr       AreaParser::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaParserPtr       AreaParser::Create (ViewportR viewport)
+AreaParserPtr       AreaParser::Create (DgnViewportR viewport)
     {
     DgnModelP       targetModel = viewport.GetViewController ().GetTargetModel();
     AreaParserPtr   parser = AreaParser::Create (*targetModel);
@@ -1319,7 +1319,7 @@ VolumeParserPtr       VolumeParser::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-VolumeParserPtr       VolumeParser::Create (ViewportR viewport)
+VolumeParserPtr       VolumeParser::Create (DgnViewportR viewport)
     {
     DgnModelP       targetModel = viewport.GetViewController ().GetTargetModel();
     VolumeParserPtr   parser = VolumeParser::Create (*targetModel);

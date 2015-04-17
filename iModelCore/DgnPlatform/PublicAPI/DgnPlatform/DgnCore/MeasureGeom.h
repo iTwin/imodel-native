@@ -170,7 +170,7 @@ DGNPLATFORM_EXPORT void SetCalculationMethod (int selector);
 DGNPLATFORM_EXPORT int GetCalculationMethod () const;
 
 //! Call IGeomProvider::_OutputGraphics instead of visiting an element.
-DGNPLATFORM_EXPORT BentleyStatus Process (IGeomProvider&, DgnProjectR);
+DGNPLATFORM_EXPORT BentleyStatus Process (IGeomProvider&, DgnDbR);
 //__PUBLISH_SECTION_START__
 
 //! Visit the supplied element and accumulate the measure information.

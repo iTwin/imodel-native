@@ -18,6 +18,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! Computes size, geometry, and layout information for AnnotationLeader.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationLeaderLayout : public RefCountedBase

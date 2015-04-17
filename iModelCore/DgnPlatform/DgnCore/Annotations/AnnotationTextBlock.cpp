@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationTextBlock.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -19,12 +19,12 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnProjectR project) { return new AnnotationTextBlock(project); }
-AnnotationTextBlock::AnnotationTextBlock(DgnProjectR project) :
+AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project) { return new AnnotationTextBlock(project); }
+AnnotationTextBlock::AnnotationTextBlock(DgnDbR project) :
     T_Super()
     {
     // Making additions or changes? Please check AnnotationTextBlock::Reset.
-    m_project = &project;
+    m_dgndb = &project;
     m_documentWidth = 0.0;
     m_justification = HorizontalJustification::Left;
     }
@@ -32,7 +32,7 @@ AnnotationTextBlock::AnnotationTextBlock(DgnProjectR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnProjectR project, DgnStyleId styleID)
+AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId styleID)
     {
     auto doc = AnnotationTextBlock::Create(project);
     doc->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -43,7 +43,7 @@ AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnProjectR project, DgnStyle
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnProjectR project, DgnStyleId styleID, AnnotationParagraphR par)
+AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId styleID, AnnotationParagraphR par)
     {
     auto doc = AnnotationTextBlock::Create(project, styleID);
     doc->GetParagraphsR().push_back(&par);
@@ -54,7 +54,7 @@ AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnProjectR project, DgnStyle
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnProjectR project, DgnStyleId styleID, Utf8CP content)
+AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId styleID, Utf8CP content)
     {
     auto run = AnnotationTextRun::Create(project, styleID, content);
     auto par = AnnotationParagraph::Create(project, styleID, *run);
@@ -71,7 +71,7 @@ AnnotationTextBlock::AnnotationTextBlock(AnnotationTextBlockCR rhs) : T_Super(rh
 AnnotationTextBlockR AnnotationTextBlock::operator=(AnnotationTextBlockCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationTextBlock::CopyFrom(AnnotationTextBlockCR rhs)
     {
-    m_project = rhs.m_project;
+    m_dgndb = rhs.m_dgndb;
     m_documentWidth = rhs.m_documentWidth;
     m_justification = rhs.m_justification;
     m_styleID = rhs.m_styleID;
@@ -99,9 +99,9 @@ void AnnotationTextBlock::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-DgnProjectR AnnotationTextBlock::GetDgnProjectR() const { return *m_project; }
+DgnDbR AnnotationTextBlock::GetDgnProjectR() const { return *m_dgndb; }
 DgnStyleId AnnotationTextBlock::GetStyleId() const { return m_styleID; }
-AnnotationTextStylePtr AnnotationTextBlock::CreateEffectiveStyle() const { return m_project->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+AnnotationTextStylePtr AnnotationTextBlock::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
 AnnotationTextStylePropertyBagCR AnnotationTextBlock::GetStyleOverrides() const { return m_styleOverrides; }
 AnnotationTextStylePropertyBagR AnnotationTextBlock::GetStyleOverridesR() { return m_styleOverrides; }
 AnnotationParagraphCollectionCR AnnotationTextBlock::GetParagraphs() const { return m_paragraphs; }
@@ -115,7 +115,7 @@ static const double DEFAULT_DOCUMENTWIDTH_VALUE = 0.0;
 double AnnotationTextBlock::GetDocumentWidth() const { return m_documentWidth; }
 void AnnotationTextBlock::SetDocumentWidth(double value) { m_documentWidth = value; }
 
-static const Int64 DEFAULT_JUSTIFICATION_VALUE = (Int64)AnnotationTextBlock::HorizontalJustification::Left;
+static const int64_t DEFAULT_JUSTIFICATION_VALUE = (int64_t)AnnotationTextBlock::HorizontalJustification::Left;
 AnnotationTextBlock::HorizontalJustification AnnotationTextBlock::GetJustification() const { return m_justification; }
 void AnnotationTextBlock::SetJustification(HorizontalJustification value) { m_justification = value; }
 
@@ -148,13 +148,13 @@ void AnnotationTextBlock::AppendParagraph()
 
     if (m_paragraphs.empty())
         {
-        par = AnnotationParagraph::Create(*m_project, m_styleID);
+        par = AnnotationParagraph::Create(*m_dgndb, m_styleID);
         }
     else
         {
         auto seedPar = m_paragraphs.back();
 
-        par = AnnotationParagraph::Create(*m_project);
+        par = AnnotationParagraph::Create(*m_dgndb);
         par->SetStyleId(seedPar->GetStyleId(), SetAnnotationTextStyleOptions::Direct);
         par->GetStyleOverridesR() = seedPar->GetStyleOverrides();
         }
@@ -171,7 +171,7 @@ void AnnotationTextBlock::AppendRun(AnnotationRunBaseR run)
     // You can get fine-grained control by using other more direct means if necessary.
     
     if (m_paragraphs.empty())
-        m_paragraphs.push_back(AnnotationParagraph::Create(*m_project, m_styleID));
+        m_paragraphs.push_back(AnnotationParagraph::Create(*m_dgndb, m_styleID));
 
     m_paragraphs.back()->GetRunsR().push_back(&run);
     }
@@ -296,6 +296,13 @@ BentleyStatus AnnotationTextBlockPersistence::EncodeAsFlatBuf(FB::AnnotationText
             if (!textRun->m_content.empty())
                 fbRun.add_text_content(textContentOffset);
 
+            switch (textRun->GetSubSuperScript())
+                {
+                case AnnotationTextRunSubSuperScript::SubScript: fbRun.add_text_subsuperscript(FB::AnnotationTextRunSubSuperScript_SubScript); break;
+                case AnnotationTextRunSubSuperScript::SuperScript: fbRun.add_text_subsuperscript(FB::AnnotationTextRunSubSuperScript_SuperScript); break;
+                // Otherwise neither, don't store anything.
+                }
+            
             break;
             }
 
@@ -372,7 +379,7 @@ BentleyStatus AnnotationTextBlockPersistence::EncodeAsFlatBuf(Offset<FB::Annotat
     //.............................................................................................
     FB::AnnotationTextBlockSetters propSetters;
     appendRealSetter(propSetters, FB::AnnotationTextBlockProperty_DocumentWidth, document.m_documentWidth, DEFAULT_DOCUMENTWIDTH_VALUE);
-    appendIntegerSetter(propSetters, FB::AnnotationTextBlockProperty_Justification, (Int64)document.m_justification, DEFAULT_JUSTIFICATION_VALUE);
+    appendIntegerSetter(propSetters, FB::AnnotationTextBlockProperty_Justification, (int64_t)document.m_justification, DEFAULT_JUSTIFICATION_VALUE);
 
     FB::AnnotationTextBlockSetterVectorOffset propSettersOffset;
     if (!propSetters.empty())
@@ -487,7 +494,17 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
                             
                             PRECONDITION(fbRun.has_text_content(), ERROR);
                             textRun->SetContent(fbRun.text_content()->c_str());
-
+                            
+                            if (fbRun.has_text_subsuperscript())
+                                {
+                                switch (fbRun.text_subsuperscript())
+                                    {
+                                    case FB::AnnotationTextRunSubSuperScript_SubScript: textRun->SetIsSubScript(true); break;
+                                    case FB::AnnotationTextRunSubSuperScript_SuperScript: textRun->SetIsSuperScript(true); break;
+                                    // Otherwise neither, didn't store anything.
+                                    }
+                                }
+                            
                             break;
                             }
 

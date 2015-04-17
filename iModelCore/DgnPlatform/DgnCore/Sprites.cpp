@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Sprites.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -19,7 +19,7 @@ SpriteLocation::SpriteLocation ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    SpriteLocation::DecorateViewport (ViewportP viewport)
+void    SpriteLocation::DecorateViewport (DgnViewportP viewport)
     {
     if (viewport == m_viewport)
         viewport->GetIViewDraw()->DrawSprite (m_sprite, &m_location, NULL, m_transparency);
@@ -28,7 +28,7 @@ void    SpriteLocation::DecorateViewport (ViewportP viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    SpriteLocation::Activate (ISpriteP sprite, ViewportP viewport, DPoint3dCR location, int transparency)
+void    SpriteLocation::Activate (ISpriteP sprite, DgnViewportP viewport, DPoint3dCR location, int transparency)
     {
     if (NULL == sprite || NULL == viewport)
         return;
@@ -127,9 +127,40 @@ ISpriteP        SnapContext::GetSnapSprite (SnapMode snapMode)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2014
+//---------------------------------------------------------------------------------------
+void RgbaSprite::LoadSprite()
+    {
+    //  Base RgbaSprite does not support loading on demand, so it better already be loaded
+    //  when this method is called.
+    //
+    //  NamedSprites are loaded on demand, but NamedSprite overrides LoadSprite.
+    BeAssert(m_isLoaded);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2014
+//---------------------------------------------------------------------------------------
+ISpritePtr ISprite::CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes)
+    {
+    RgbaSpritePtr ptr = RgbaSprite::CreateFromPngBuffer(inputBuffer, numberBytes);
+    return ptr.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2014
+//---------------------------------------------------------------------------------------
+RgbaSpritePtr RgbaSprite::CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes)
+    {
+    RgbaSprite* rgbaSprite = new RgbaSprite();
+    rgbaSprite->PopulateRgbaSpriteFromPngBuffer(inputBuffer, numberBytes);
+    return rgbaSprite;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-void NamedSprite::CreateRgbaSpriteFromPngBuffer(byte const*inputBuffer, size_t numberBytes)
+void RgbaSprite::PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t numberBytes)
     {
     ImageUtilities::RgbImageInfo info;
     if (BSISUCCESS != ImageUtilities::ReadImageFromPngBuffer (m_rgbaBuffer, info, inputBuffer, numberBytes) || !info.hasAlpha)
@@ -147,7 +178,7 @@ void NamedSprite::CreateRgbaSpriteFromPngBuffer(byte const*inputBuffer, size_t n
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-NamedSprite::NamedSprite  (Utf8CP namespaceName, Utf8CP spriteName) : m_namespace(namespaceName), m_spriteName(spriteName), m_isLoaded(false)
+NamedSprite::NamedSprite  (Utf8CP namespaceName, Utf8CP spriteName) : m_namespace(namespaceName), m_spriteName(spriteName)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -182,10 +213,10 @@ void NamedSprite::LoadSprite()
         if (BeFileStatus::Success != pngFile.Open(pngPath, BeFileAccess::Read))
             return;
 
-        bvector<byte> pngData;
+        bvector<Byte> pngData;
         pngFile.ReadEntireFile(pngData);
 
-        CreateRgbaSpriteFromPngBuffer(&pngData[0], pngData.size());
+        PopulateRgbaSpriteFromPngBuffer(&pngData[0], pngData.size());
         return;
         }
 
@@ -207,7 +238,7 @@ void NamedSprite::LoadSprite()
 
     int blobSize = (size_t)stmt.GetColumnBytes(0);
     BeAssert(blobSize > 0);
-    byte const* blobBytes = (byte const*)stmt.GetValueBlob(0);
+    Byte const* blobBytes = (Byte const*)stmt.GetValueBlob(0);
     CreateRgbaSpriteFromPngBuffer(blobBytes], (size_t)blobSize);
 #endif
     }
@@ -229,9 +260,10 @@ RgbaSprite::~RgbaSprite ()
 //---------------------------------------------------------------------------------------
 RgbaSprite::RgbaSprite ()
     {
+    m_isLoaded = false;
     m_size.x = m_size.y = 0;
     }
 
-byte const* RgbaSprite::GetRgbaDefinition() { LoadSprite(); return m_rgbaBuffer.size() > 0 ? &m_rgbaBuffer[0] : nullptr; }
+Byte const* RgbaSprite::GetRgbaDefinition() { LoadSprite(); return m_rgbaBuffer.size() > 0 ? &m_rgbaBuffer[0] : nullptr; }
 void RgbaSprite::GetSize (Point2d* size) {  LoadSprite(); *size = m_size;}
 

@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationRuns.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -16,10 +16,10 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationRunBase::AnnotationRunBase(DgnProjectR project) :
+AnnotationRunBase::AnnotationRunBase(DgnDbR project) :
     T_Super()
     {
-    m_project = &project;
+    m_dgndb = &project;
     }
 
 //---------------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ AnnotationRunBase::AnnotationRunBase(AnnotationRunBaseCR rhs) : T_Super(rhs) { C
 AnnotationRunBaseR AnnotationRunBase::operator=(AnnotationRunBaseCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationRunBase::CopyFrom(AnnotationRunBaseCR rhs)
     {
-    m_project = rhs.m_project;
+    m_dgndb = rhs.m_dgndb;
     m_styleID = rhs.m_styleID;
     m_styleOverrides = rhs.m_styleOverrides;
     }
@@ -40,9 +40,9 @@ void AnnotationRunBase::CopyFrom(AnnotationRunBaseCR rhs)
 AnnotationRunBasePtr AnnotationRunBase::Clone() const { return _Clone(); }
 AnnotationRunType AnnotationRunBase::GetType() const { return _GetType(); }
 
-DgnProjectR AnnotationRunBase::GetDgnProjectR() const { return *m_project; }
+DgnDbR AnnotationRunBase::GetDgnProjectR() const { return *m_dgndb; }
 DgnStyleId AnnotationRunBase::GetStyleId() const { return m_styleID; }
-AnnotationTextStylePtr AnnotationRunBase::CreateEffectiveStyle() const { return m_project->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+AnnotationTextStylePtr AnnotationRunBase::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
 AnnotationTextStylePropertyBagCR AnnotationRunBase::GetStyleOverrides() const { return m_styleOverrides; }
 AnnotationTextStylePropertyBagR AnnotationRunBase::GetStyleOverridesR() { return m_styleOverrides; }
 
@@ -63,9 +63,10 @@ void AnnotationRunBase::SetStyleId(DgnStyleId value, SetAnnotationTextStyleOptio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextRunPtr AnnotationTextRun::Create(DgnProjectR project) { return new AnnotationTextRun(project); }
-AnnotationTextRun::AnnotationTextRun(DgnProjectR project) :
-    T_Super(project)
+AnnotationTextRunPtr AnnotationTextRun::Create(DgnDbR project) { return new AnnotationTextRun(project); }
+AnnotationTextRun::AnnotationTextRun(DgnDbR project) :
+    T_Super(project),
+    m_subsuperscript(AnnotationTextRunSubSuperScript::SubScript)
     {
     }
 
@@ -73,7 +74,7 @@ AnnotationTextRun::AnnotationTextRun(DgnProjectR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextRunPtr AnnotationTextRun::Create(DgnProjectR project, DgnStyleId styleID)
+AnnotationTextRunPtr AnnotationTextRun::Create(DgnDbR project, DgnStyleId styleID)
     {
     auto run = AnnotationTextRun::Create(project);
     run->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -84,7 +85,7 @@ AnnotationTextRunPtr AnnotationTextRun::Create(DgnProjectR project, DgnStyleId s
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextRunPtr AnnotationTextRun::Create(DgnProjectR project, DgnStyleId styleID, Utf8CP content)
+AnnotationTextRunPtr AnnotationTextRun::Create(DgnDbR project, DgnStyleId styleID, Utf8CP content)
     {
     auto run = AnnotationTextRun::Create(project, styleID);
     run->SetContent(content);
@@ -102,6 +103,7 @@ AnnotationTextRunR AnnotationTextRun::operator=(AnnotationTextRunCR rhs) { T_Sup
 void AnnotationTextRun::CopyFrom(AnnotationTextRunCR rhs)
     {
     m_content = rhs.m_content;
+    m_subsuperscript = rhs.m_subsuperscript;
     }
 
 //---------------------------------------------------------------------------------------
@@ -110,6 +112,12 @@ void AnnotationTextRun::CopyFrom(AnnotationTextRunCR rhs)
 AnnotationRunType AnnotationTextRun::_GetType() const { return AnnotationRunType::Text; }
 Utf8StringCR AnnotationTextRun::GetContent() const { return m_content; }
 void AnnotationTextRun::SetContent(Utf8CP value) { m_content = value; }
+AnnotationTextRunSubSuperScript AnnotationTextRun::GetSubSuperScript() const { return m_subsuperscript; }
+void AnnotationTextRun::SetSubSuperScript(AnnotationTextRunSubSuperScript value) { m_subsuperscript = value; }
+bool AnnotationTextRun::IsSubScript() const { return AnnotationTextRunSubSuperScript::SubScript == m_subsuperscript; }
+void AnnotationTextRun::SetIsSubScript(bool value) { m_subsuperscript = AnnotationTextRunSubSuperScript::SubScript; }
+bool AnnotationTextRun::IsSuperScript() const { return AnnotationTextRunSubSuperScript::SuperScript == m_subsuperscript; }
+void AnnotationTextRun::SetIsSuperScript(bool value) { m_subsuperscript = AnnotationTextRunSubSuperScript::SuperScript; }
 
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
@@ -117,8 +125,8 @@ void AnnotationTextRun::SetContent(Utf8CP value) { m_content = value; }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnProjectR project) { return new AnnotationFractionRun(project); }
-AnnotationFractionRun::AnnotationFractionRun(DgnProjectR project) :
+AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnDbR project) { return new AnnotationFractionRun(project); }
+AnnotationFractionRun::AnnotationFractionRun(DgnDbR project) :
     T_Super(project)
     {
     }
@@ -127,7 +135,7 @@ AnnotationFractionRun::AnnotationFractionRun(DgnProjectR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnProjectR project, DgnStyleId styleID)
+AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnDbR project, DgnStyleId styleID)
     {
     auto run = AnnotationFractionRun::Create(project);
     run->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -138,7 +146,7 @@ AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnProjectR project, DgnS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnProjectR project, DgnStyleId styleID, Utf8CP numerator, Utf8CP denominator)
+AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnDbR project, DgnStyleId styleID, Utf8CP numerator, Utf8CP denominator)
     {
     auto run = AnnotationFractionRun::Create(project, styleID);
     run->SetDenominatorContent(denominator);
@@ -175,8 +183,8 @@ void AnnotationFractionRun::SetNumeratorContent(Utf8CP value) { m_numeratorConte
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLineBreakRunPtr AnnotationLineBreakRun::Create(DgnProjectR project) { return new AnnotationLineBreakRun(project); }
-AnnotationLineBreakRun::AnnotationLineBreakRun(DgnProjectR project) :
+AnnotationLineBreakRunPtr AnnotationLineBreakRun::Create(DgnDbR project) { return new AnnotationLineBreakRun(project); }
+AnnotationLineBreakRun::AnnotationLineBreakRun(DgnDbR project) :
     T_Super(project)
     {
     }
@@ -184,7 +192,7 @@ AnnotationLineBreakRun::AnnotationLineBreakRun(DgnProjectR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLineBreakRunPtr AnnotationLineBreakRun::Create(DgnProjectR project, DgnStyleId styleID)
+AnnotationLineBreakRunPtr AnnotationLineBreakRun::Create(DgnDbR project, DgnStyleId styleID)
     {
     auto run = AnnotationLineBreakRun::Create(project);
     run->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);

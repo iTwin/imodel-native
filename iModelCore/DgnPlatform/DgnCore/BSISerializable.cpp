@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RichardTrefz    10/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-BsiSerializable::BsiSerializable (UInt32 version)
+BsiSerializable::BsiSerializable (uint32_t version)
     {
     m_blockTypeId = 0;
     m_version =
@@ -34,7 +34,7 @@ BsiSerializable::~BsiSerializable ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       BsiSerializable::SerRead
 (
-byte*           startOfStore,
+Byte*           startOfStore,
 int             sizeOfStore
 )
     {
@@ -47,7 +47,7 @@ int             sizeOfStore
     reader.get (&m_highestVersionWritten);
     reader.get (&m_lastVersionWritten);
 
-    UInt32  zero = 0;
+    uint32_t zero = 0;
     reader.get (&zero);
     reader.get (&zero);
 
@@ -61,11 +61,11 @@ int             sizeOfStore
         m_extraData = 0;
         }
 
-    m_extraDataSize = static_cast<UInt32>(reader.getRemainingSize());
+    m_extraDataSize = static_cast<uint32_t>(reader.getRemainingSize());
 
     if (m_extraDataSize > 0)
         {
-        m_extraData = new byte [m_extraDataSize];
+        m_extraData = new Byte [m_extraDataSize];
         reader.get (m_extraData, m_extraDataSize);
         }
 
@@ -79,8 +79,8 @@ int             sizeOfStore
 StatusInt       BsiSerializable::SerWrite
 (
 int*            id,
-UInt32*         numBytes,
-byte**          block
+uint32_t*         numBytes,
+Byte**          block
 )
     {
     *id = m_blockTypeId;
@@ -97,20 +97,20 @@ byte**          block
     writer.put (m_highestVersionWritten);
     writer.put (m_lastVersionWritten);
 
-    UInt32  zero = 0;
+    uint32_t zero = 0;
     writer.put (zero);
     writer.put (zero);
 
     SerWriteFields (writer);
 
     if (m_extraData  &&  m_extraDataSize)
-        writer.put ((byte*)m_extraData, m_extraDataSize);
+        writer.put ((Byte*)m_extraData, m_extraDataSize);
 
-    *numBytes = static_cast<UInt32>(writer.getBytesWritten());
+    *numBytes = static_cast<uint32_t>(writer.getBytesWritten());
 
     if (*numBytes > 0)
         {
-        *block = new byte [*numBytes];
+        *block = new Byte [*numBytes];
         memcpy (*block, writer.getBufRW(), *numBytes);
         }
 

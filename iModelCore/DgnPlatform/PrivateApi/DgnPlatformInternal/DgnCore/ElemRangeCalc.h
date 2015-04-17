@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/DgnPlatformInternal/DgnCore/ElemRangeCalc.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -122,7 +122,7 @@ public:
     DGNPLATFORM_EXPORT void Union (int numPoints, DPoint2d const* points, ClipStackCP currClip);
     DGNPLATFORM_EXPORT void Union (DRange3d const* in, ClipStackCP currClip);
     DGNPLATFORM_EXPORT void Union (DEllipse3d const* ellipse, ClipStackCP currClip);
-    DGNPLATFORM_EXPORT StatusInt ToScanRange(DRange3dR range, bool is3d);
+    DGNPLATFORM_EXPORT StatusInt ToScanRange(AxisAlignedBox3dR range, bool is3d);
 };
 
 /*=================================================================================**//**
@@ -139,7 +139,7 @@ private:
 public:
     RangeOutput () {}
 
-    void            SetViewFlags (ViewFlagsCR viewFlags) {m_viewFlags = viewFlags; m_viewFlags.SetRenderMode (MSRenderMode::Wireframe);}
+    void            SetViewFlags (ViewFlagsCR viewFlags) {m_viewFlags = viewFlags; m_viewFlags.SetRenderMode (DgnRenderMode::Wireframe);}
     ElemRangeCalc*  GetElemRange () {return &m_elRange;}
     ClipStackCP     GetCurrRangeClip () {return &m_rangeClipStack;}
     void            PushCamera (DPoint3dCR camera, double focalLength) { m_rangeClipStack.Push (camera, focalLength); }
@@ -158,7 +158,7 @@ public:
     void            _DrawShape2d (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override;
     void            _DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range) override;
     void            _DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY,
-                                    int enableAlpha, int format, byte const* texels, double zDepth, DPoint2dCP range) override;
+                                    int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) override;
     void            _DrawTextString (TextStringCR text, double* zDepth) override;
     void            _DrawPolyface (PolyfaceQueryCR meshData, bool filled = false) override;
 };

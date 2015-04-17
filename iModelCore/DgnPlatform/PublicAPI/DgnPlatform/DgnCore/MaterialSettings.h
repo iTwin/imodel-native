@@ -248,8 +248,8 @@ private:
 public:
 // __PUBLISH_SECTION_END__
     //! Internal convenience methods since V8 dgns serialized m_basicFlags as a single UInt32.
-    DGNPLATFORM_EXPORT UInt32 const* GetBasicFlagsCP () const;
-    DGNPLATFORM_EXPORT void SetBasicFlags (UInt32 flags);
+    DGNPLATFORM_EXPORT uint32_t const* GetBasicFlagsCP () const;
+    DGNPLATFORM_EXPORT void SetBasicFlags (uint32_t flags);
 
     DGNPLATFORM_EXPORT LegacyProcedureDataCR GetLegacyProcedureData () const;
     DGNPLATFORM_EXPORT LegacyProcedureDataR GetLegacyProcedureDataR ();
@@ -732,7 +732,7 @@ private:
 
     FurType                         m_type;
     FurGuides                       m_guides;
-    UInt32                          m_segments;
+    uint32_t                        m_segments;
     FurBillboard                    m_billboard;
 
     Utf8String                      m_furMaterialName;
@@ -745,8 +745,8 @@ private:
 public:
 // __PUBLISH_SECTION_END__
     // Internal methods since V8 dgns serialized m_flags as a single UInt32.
-    UInt32 const* GetFlagsCP () const;
-    void SetFlags (UInt32 flags);
+    uint32_t const* GetFlagsCP () const;
+    void SetFlags (uint32_t flags);
 // __PUBLISH_SECTION_START__
 
     DGNPLATFORM_EXPORT void InitDefaults ();
@@ -842,8 +842,8 @@ public:
     DGNPLATFORM_EXPORT FurGuides GetFurGuides () const;
     DGNPLATFORM_EXPORT void SetFurGuides (FurGuides guides);
 
-    DGNPLATFORM_EXPORT UInt32 GetSegmentCount () const;
-    DGNPLATFORM_EXPORT void SetSegmentCount (UInt32 count);
+    DGNPLATFORM_EXPORT uint32_t GetSegmentCount () const;
+    DGNPLATFORM_EXPORT void SetSegmentCount (uint32_t count);
 
     DGNPLATFORM_EXPORT FurBillboard GetFurBillboard () const;
     DGNPLATFORM_EXPORT void SetFurBillboard (FurBillboard billboard);
@@ -961,8 +961,8 @@ private:
 public:
 // __PUBLISH_SECTION_END__
     // Internal methods since V8 dgns serialized m_flags as a single UInt32.
-    UInt32 const* GetFlagsCP () const;
-    void SetFlags (UInt32 flags);
+    uint32_t const* GetFlagsCP () const;
+    void SetFlags (uint32_t flags);
 // __PUBLISH_SECTION_START__
 
     DGNPLATFORM_EXPORT void InitDefaults ();
@@ -1206,9 +1206,9 @@ private:
     double                                              m_thickness;
     double                                              m_glow;
     double                                              m_translucency;
-    Int32                                               m_reflectionRays;
-    Int32                                               m_refractionRays;
-    Int32                                               m_subsurfaceSamples;
+    int32_t                                             m_reflectionRays;
+    int32_t                                             m_refractionRays;
+    int32_t                                             m_subsurfaceSamples;
     double                                              m_displacementDistance;
     double                                              m_dispersion;
     double                                              m_clearcoat;
@@ -1229,7 +1229,7 @@ private:
     MaterialShaderCollection                            m_shaders;
     MaterialFurPtr                                      m_fur;
     MaterialMapCollection                               m_maps;
-    bvector<byte>                                       m_preset;
+    bvector<Byte>                                       m_preset;
 
     WString                                             m_cutSectionMaterialName;
     WString                                             m_cutSectionPalette;
@@ -1253,8 +1253,8 @@ public:
     void SetThickness (double thickness);
 
     // Internal methods since V8 dgns serialized m_flags as a single UInt32.
-    UInt32 const* GetFlagsCP () const;
-    void SetFlags (UInt32 flags);
+    uint32_t const* GetFlagsCP () const;
+    void SetFlags (uint32_t flags);
 
     void UpgradeFromVersion (MaterialVersion version);
 
@@ -1393,14 +1393,14 @@ public:
     DGNPLATFORM_EXPORT bool IsVisible () const;
     DGNPLATFORM_EXPORT void SetIsVisible (bool isVisible);
 
-    DGNPLATFORM_EXPORT Int32 GetReflectionRays () const;
-    DGNPLATFORM_EXPORT void SetReflectionRays (Int32 rays);
+    DGNPLATFORM_EXPORT int32_t GetReflectionRays () const;
+    DGNPLATFORM_EXPORT void SetReflectionRays (int32_t rays);
 
-    DGNPLATFORM_EXPORT Int32 GetRefractionRays () const;
-    DGNPLATFORM_EXPORT void SetRefractionRays (Int32 rays);
+    DGNPLATFORM_EXPORT int32_t GetRefractionRays () const;
+    DGNPLATFORM_EXPORT void SetRefractionRays (int32_t rays);
 
-    DGNPLATFORM_EXPORT Int32 GetSubsurfaceSamples () const;
-    DGNPLATFORM_EXPORT void SetSubsurfaceSamples (Int32 samples);
+    DGNPLATFORM_EXPORT int32_t GetSubsurfaceSamples () const;
+    DGNPLATFORM_EXPORT void SetSubsurfaceSamples (int32_t samples);
 
     DGNPLATFORM_EXPORT double GetDisplacementDistanceInMillimeters () const;
     DGNPLATFORM_EXPORT void SetDisplacementDistanceInMillimeters (double distance);
@@ -1480,10 +1480,10 @@ public:
     DGNPLATFORM_EXPORT void SetUseCutSectionMaterial (bool useCutSectionMaterial);
 
     // __PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT const byte* GetPresetDataCP () const;
+    DGNPLATFORM_EXPORT const Byte* GetPresetDataCP () const;
 
     // If preset data already exists for this material, it will be deleted.
-    DGNPLATFORM_EXPORT void AddPresetData (byte const* data, size_t size);
+    DGNPLATFORM_EXPORT void AddPresetData (Byte const* data, size_t size);
     // __PUBLISH_SECTION_START__
 
     //! This is binary data used internally by MicroStation and its derivatives to work with presets from other material systems.

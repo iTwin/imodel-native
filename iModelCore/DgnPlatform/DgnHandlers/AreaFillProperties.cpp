@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/AreaFillProperties.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -23,8 +23,9 @@ bool            IAreaFillPropertiesQuery::_GetAreaType (ElementHandleCR eh, bool
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAreaFillPropertiesQuery::_GetSolidFill (ElementHandleCR eh, UInt32* fillColorP, bool* alwaysFilledP) const
+bool            IAreaFillPropertiesQuery::_GetSolidFill (ElementHandleCR eh, uint32_t* fillColorP, bool* alwaysFilledP) const
     {
+#if defined (NEEDS_WORK_DGNITEM)
     DgnElementCP elmCP = eh.GetElementCP ();
 
     Display_attribute   attribute;
@@ -39,6 +40,8 @@ bool            IAreaFillPropertiesQuery::_GetSolidFill (ElementHandleCR eh, UIn
         *alwaysFilledP = attribute.attr_data.fill.alwaysFilled;
 
     return true;
+#endif
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -46,6 +49,7 @@ bool            IAreaFillPropertiesQuery::_GetSolidFill (ElementHandleCR eh, UIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            IAreaFillPropertiesQuery::_GetGradientFill (ElementHandleCR eh, GradientSymbPtr& symb) const
     {
+#if defined (NEEDS_WORK_DGNITEM)
     DgnElementCP elmCP = eh.GetElementCP ();
 
     Display_attribute   attribute;
@@ -56,27 +60,24 @@ bool            IAreaFillPropertiesQuery::_GetGradientFill (ElementHandleCR eh, 
     symb = GradientSymb::Create ();    
 
     return (SUCCESS == symb->FromDisplayAttribute (&attribute.attr_data.gradient) ? true : false);
+#endif
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAreaFillPropertiesQuery::_GetPattern (ElementHandleCR eh, PatternParamsPtr& params, bvector<DwgHatchDefLine>* hatchDefLinesP, DPoint3dP originP, int index) const
+bool            IAreaFillPropertiesQuery::_GetPattern (ElementHandleCR eh, PatternParamsPtr& params, DPoint3dP originP, int index) const
     {
+#if defined (NEEDS_WORK_DGNITEM)
     params = PatternParams::Create ();
 
-    if (hatchDefLinesP)
-        {
-        hatchDefLinesP->clear ();
-        hatchDefLinesP->reserve (MAX_DWG_EXPANDEDHATCH_LINES);
-        }
-
-#if defined (NEEDS_WORK_DGNITEM)
     if (SUCCESS != PatternLinkageUtil::ExtractFromElement (NULL, *params, hatchDefLinesP ? &hatchDefLinesP->front () : NULL, hatchDefLinesP ? (int) hatchDefLinesP->capacity () : 0, originP, *eh.GetElementCP (), eh.GetDgnModelP (), index))
         return false;
-#endif
 
     return true;
+#endif
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,11 +87,13 @@ bool            IAreaFillPropertiesEdit::_RemoveAreaFill (EditElementHandleR eeh
     {
     bool        changed = false;
 
+#if defined (NEEDS_WORK_DGNITEM)
     if (mdlElement_displayAttributeRemove (eeh.GetElementP (), FILL_ATTRIBUTE))
         changed = true;
 
     if (mdlElement_displayAttributeRemove (eeh.GetElementP (), GRADIENT_ATTRIBUTE))
         changed = true;
+#endif
 
     return changed;
     }
@@ -109,8 +112,9 @@ bool            IAreaFillPropertiesEdit::_RemovePattern (EditElementHandleR eeh,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAreaFillPropertiesEdit::_AddSolidFill (EditElementHandleR eeh, UInt32* fillColorP, bool* alwaysFilledP)
+bool            IAreaFillPropertiesEdit::_AddSolidFill (EditElementHandleR eeh, ColorDef* fillColorP, bool* alwaysFilledP)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     DgnElementP  elmP = eeh.GetElementP ();
     DgnElementP  tmpElmP = (DgnElementP) alloca (elmP->Size () + (2*sizeof (Display_attribute)));
 
@@ -125,6 +129,9 @@ bool            IAreaFillPropertiesEdit::_AddSolidFill (EditElementHandleR eeh, 
         return false;
 
     return (SUCCESS == eeh.ReplaceElement (tmpElmP) ? true : false);
+#endif
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,6 +139,7 @@ bool            IAreaFillPropertiesEdit::_AddSolidFill (EditElementHandleR eeh, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            IAreaFillPropertiesEdit::_AddGradientFill (EditElementHandleR eeh, GradientSymbCR symb)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     DgnElementP  elmP = eeh.GetElementP ();
     DgnElementP  tmpElmP = (DgnElementP) alloca (elmP->Size () + (2*sizeof (Display_attribute)));
 
@@ -144,12 +152,14 @@ bool            IAreaFillPropertiesEdit::_AddGradientFill (EditElementHandleR ee
         return false;
 
     return (SUCCESS == eeh.ReplaceElement (tmpElmP) ? true : false);
+#endif
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAreaFillPropertiesEdit::_AddPattern (EditElementHandleR eeh, PatternParamsR params, DwgHatchDefLineP hatchDefLinesP, int index)
+bool            IAreaFillPropertiesEdit::_AddPattern (EditElementHandleR eeh, PatternParamsR params, int index)
     {
 #if defined (NEEDS_WORK_DGNITEM)
     if (0 != index && NULL == dynamic_cast <IMultilineQuery*> (&eeh.GetHandler ()))
@@ -157,11 +167,11 @@ bool            IAreaFillPropertiesEdit::_AddPattern (EditElementHandleR eeh, Pa
 
     if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Cell)) // area pattern
         {
-        DgnProjectP        dgnFile = eeh.GetDgnProject ();
+        DgnDbP        dgnFile = eeh.GetDgnDb ();
 
         if (0 == params.cellId && NULL != dgnFile)
             {
-            PersistentElementRefPtr sharedCellDef;
+            PersistentDgnElementPtr sharedCellDef;
 
             // add the shared cell def to file, if its not already there...
             sharedCellDef = ISharedCellQuery::FindDefinitionByName  (params.cellName, *dgnFile);

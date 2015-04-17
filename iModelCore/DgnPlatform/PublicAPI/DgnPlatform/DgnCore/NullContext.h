@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/NullContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,8 +30,8 @@ virtual void        _DrawPointString3d (int numPoints, DPoint3dCP points, DPoint
 virtual void        _DrawPointString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override {}
 virtual void        _DrawShape3d (int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) override {}
 virtual void        _DrawShape2d (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override {}
-virtual void        _DrawTriStrip3d (int numPoints, DPoint3dCP points, Int32 usageFlags, DPoint3dCP range) override {}
-virtual void        _DrawTriStrip2d (int numPoints, DPoint2dCP points, Int32 usageFlags, double zDepth, DPoint2dCP range) override {}
+virtual void        _DrawTriStrip3d (int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) override {}
+virtual void        _DrawTriStrip2d (int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) override {}
 virtual void        _DrawArc3d (DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) override {}
 virtual void        _DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) override {}
 virtual void        _DrawBSplineCurve (MSBsplineCurveCR curve, bool filled) override {}
@@ -43,8 +43,8 @@ virtual void        _DrawBSplineSurface (MSBsplineSurfaceCR surface) override {}
 virtual void        _DrawPolyface (PolyfaceQueryCR meshData, bool filled = false) override {}
 virtual StatusInt   _DrawBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0) override {return ERROR;}
 virtual void        _DrawTextString (TextStringCR text, double* zDepth = NULL) override {}
-virtual void        _DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, byte const* texels, double zDepth, DPoint2d const *range) override {}
-virtual void        _DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, byte const* texels, DPoint3dCP range) override {}
+virtual void        _DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
+virtual void        _DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}
 virtual void        _DrawDgnOle (IDgnOleDraw*) override {}
 virtual void        _DrawPointCloud (IPointCloudDrawParams* drawParams) override {}
 virtual void        _DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
@@ -61,25 +61,15 @@ virtual void        _PopBoundingRange () override {}
 
 // IViewDraw methods
 virtual void        _SetToViewCoords (bool yesNo) override {}
-virtual void        _SetSymbology (UInt32 lineColorTBGR, UInt32 fillColorTBGR, int lineWidth, UInt32 linePattern) override {}
-virtual void        _DrawGrid (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, UInt32 gridsPerRef, Point2dCR repetitions) override {}
+virtual void        _SetSymbology (ColorDef lineColor, ColorDef fillColor, int lineWidth, uint32_t linePattern) override {}
+virtual void        _DrawGrid (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) override {}
 virtual bool        _DrawSprite (ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override {return false;}
 virtual void        _DrawTiledRaster (ITiledRaster* tiledRaster) override {}
-virtual void        _DrawQvElem3d (QvElem* qvElem, int subElemIndex) override {}
-virtual void        _DrawQvElem2d (QvElem* qvElem, double zDepth, int subElemIndex) override {}
-virtual void        _PushRenderOverrides (ViewFlags, CookedDisplayStyleCP displayOverrides = NULL) override {}
-virtual void        _PopRenderOverrides () override {}
-//virtual StatusInt   _BeginViewlet (DPoint3dCR frustum, double fraction, DPoint3dCR center, double width, double height, ClipVectorCP clips, RgbColorDef const* bgColor, DgnAttachmentCP refP) override {return ERROR;} removed in graphite
-//virtual void        _EndViewlet () override {}
+virtual void        _DrawQvElem (QvElem* qvElem, int subElemIndex) override {}
 virtual void        _ClearZ () override {}
 virtual bool        _IsOutputQuickVision () const override {return false;}
-virtual bool        _DeferShadowsToHeal () const override {return false;}
 virtual bool        _ApplyMonochromeOverrides (ViewFlagsCR) const override {return false;}
 virtual StatusInt   _TestOcclusion (int numVolumes, DPoint3dP verts, int* results) override {return ERROR;}
-
-virtual CookedDisplayStyleCP _GetDrawDisplayStyle () const override {return NULL;}
-
-
 }; // NullOutput
 
 /*=================================================================================**//**
@@ -117,19 +107,14 @@ protected:
 bool    m_setupScan;
 
 DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria () override;
-DGNPLATFORM_EXPORT virtual QvElem* _DrawCached (CachedDrawHandleCR, IStrokeForCache&, Int32 qvIndex) override;
+DGNPLATFORM_EXPORT virtual QvElem* _DrawCached (IStrokeForCache&) override;
 
 virtual void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
 virtual void _DeleteSymbol (IDisplaySymbol*) override {}
-virtual bool _FilterRangeIntersection (ElementHandleCR eh) override {if (m_setupScan) return T_Super::_FilterRangeIntersection (eh); return false;}
-//virtual bool _CallElementSubstitutionAsynchs (ElementHandleP* newIter, ElementHandleCR elIter) override {return false;} removed in graphite
+virtual bool _FilterRangeIntersection (GeometricElementCR element) override {if (m_setupScan) return T_Super::_FilterRangeIntersection (element); return false;}
 virtual bool _WantShowDefaultFieldBackground () override {return false;}
-virtual void _DrawQvElem (QvElem* qvElem, bool is3d) override {}
-#ifdef WIP_VANCOUVER_MERGE // SymbolCache
-virtual void _EmptySymbolCache () override {}
-#endif
 virtual void _CookDisplayParams (ElemDisplayParamsR, ElemMatSymbR) override {}
-virtual void _CookDisplayParamsOverrides () override {}
+virtual void _CookDisplayParamsOverrides (ElemDisplayParamsR, OvrMatSymbR) override {}
 virtual void _SetupOutputs () override {BeAssert (NULL != m_IViewDraw); SetIViewDraw (*m_IViewDraw);} // Output CAN NOT be NULL!
 
 public:

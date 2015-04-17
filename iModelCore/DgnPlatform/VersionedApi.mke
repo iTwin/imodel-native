@@ -2,7 +2,7 @@
 #
 #     $Source: VersionedApi.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 PolicyFile = $(InternalSystemPolicy)
@@ -75,6 +75,11 @@ always:
         EXPR_TYPEDEFS
         DEPENDENCY_
         DEPENDENCYAPPID_
+        BEGIN_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
+        END_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
+        BENTLEY_GEOMETRY_INTERNAL_NAMESPACE_NAME
+        USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
+        GEOMAPI_PRINTF
     <
     
 headersOutputBaseDir = $(o)include/

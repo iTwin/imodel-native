@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/QvElemSet.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-template <class _QvKey> struct QvElemSet : ElementRefAppData
+template <class _QvKey> struct QvElemSet : DgnElementAppData
 {
 protected:
     struct  Entry
@@ -40,7 +40,7 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            FreeAll (bool qvCacheDeleted)
+void FreeAll (bool qvCacheDeleted)
     {
     for (Entry* thisEntry=m_entry, *next; thisEntry; thisEntry=next)
         {
@@ -57,7 +57,7 @@ void            FreeAll (bool qvCacheDeleted)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void            _OnCleanup (ElementRefP host, bool unloadingCache, HeapZone& zone) override
+virtual void _OnCleanup (DgnElementCP host, bool unloadingCache, HeapZone& zone) override
     {
     if (unloadingCache)
         return;             // if we're unloading cache, nothing to do - everything is deleted elsewhere
@@ -69,7 +69,7 @@ virtual void            _OnCleanup (ElementRefP host, bool unloadingCache, HeapZ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool            _OnElemChanged (ElementRefP host, bool qvCacheDeleted, ElemRefChangeReason) override
+virtual bool _OnElemChanged (DgnElementP host, bool qvCacheDeleted, DgnElementChangeReason) override
     {
     if (qvCacheDeleted)
         {

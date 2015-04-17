@@ -54,7 +54,7 @@ static void recookDisplayParams(ViewContextR context, ElemDisplayParamsR display
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, UInt32 color, Int32 style, UInt32 weight)
+static void setStrokeSymbology(ViewContextR context, ColorDef color, int32_t style, uint32_t weight)
     {
 #ifdef MERGE_0501_06_JEFF
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
@@ -72,7 +72,7 @@ static void setStrokeSymbology(ViewContextR context, UInt32 color, Int32 style, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, UInt32 color, double transparency)
+static void setFillSymbology(ViewContextR context, ColorDef color, double transparency)
     {
 #ifdef MERGE_0501_06_JEFF
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
@@ -111,14 +111,14 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
     
     if (frameStyle->IsStrokeEnabled())
         {
-        setStrokeSymbology(context, frameStyle->GetStrokeColorId(), frameStyle->GetStrokeStyle(), frameStyle->GetStrokeWeight());
+        setStrokeSymbology(context, frameStyle->GetStrokeColor(), frameStyle->GetStrokeStyle(), frameStyle->GetStrokeWeight());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
         output.DrawCurveVector(*frameGeometry, false);
         }
 
     if (frameStyle->IsFillEnabled())
         {
-        setFillSymbology(context, frameStyle->GetFillColorId(), frameStyle->GetFillTransparency());
+        setFillSymbology(context, frameStyle->GetFillColor(), frameStyle->GetFillTransparency());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
         output.DrawCurveVector(*frameGeometry, true);
         }

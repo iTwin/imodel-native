@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnHandlers/Annotations/TextAnnotationHandler.cpp $ 
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $ 
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
@@ -12,16 +12,23 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace flatbuffers;
 
+#if defined (NEEDSWORK_DGNITEM)
 ELEMENTHANDLER_DEFINE_MEMBERS(TextAnnotationHandler);
+#endif
 
-static const UInt16 TEXT_ANNOTATION_SIGNATURE = 22854; // 0x5946; registered via http://toolsnet.bentley.com/Signature/Default.aspx on 2014-Apr-24.
+#if defined (NEEDSWORK_DGNITEM)
+static const uint16_t TEXT_ANNOTATION_SIGNATURE = 22854; // 0x5946; registered via http://toolsnet.bentley.com/Signature/Default.aspx on 2014-Apr-24.
+#endif
 
 //***************************************************************************************************************************************************
 //***************************************************************************************************************************************************
 
+#if defined (NEEDSWORK_DGNITEM)
 static const uint8_t CURRENT_MAJOR_VERSION = 1;
 static const uint8_t CURRENT_MINOR_VERSION = 0;
+#endif
 
+#if defined (NEEDS_WORK_DGNITEM)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
@@ -84,7 +91,7 @@ static BentleyStatus decodeElementDataFromFlatBuf(TransformP transform, DgnStyle
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-ElementHandlerId const& TextAnnotationHandler::GetHandlerId() { static const ElementHandlerId s_handlerID(TEXT_ANNOTATION_SIGNATURE, 0); return s_handlerID; }
+DgnClassId const& TextAnnotationHandler::GetHandlerId() { static const DgnClassId s_handlerID(TEXT_ANNOTATION_SIGNATURE, 0); return s_handlerID; }
 static XAttributeHandlerId const& getElementDataXAID() { static const XAttributeHandlerId s_xaid(TEXT_ANNOTATION_SIGNATURE, 0); return s_xaid; }
 static XAttributeHandlerId const& getAnnotationDataXAID() { static const XAttributeHandlerId s_xaid(TEXT_ANNOTATION_SIGNATURE, 1); return s_xaid; }
 
@@ -100,9 +107,9 @@ void TextAnnotationHandler::_EditProperties(EditElementHandleR eh, PropertyConte
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-void TextAnnotationHandler::_GetTypeName(WStringR name, UInt32 desiredLength)
+void TextAnnotationHandler::_GetTypeName(Utf8StringR name, uint32_t desiredLength)
     {
-    name = DgnHandlersMessage::GetStringW(DgnHandlersMessage::IDS_TYPENAMES_LINE_ELM);
+    name = DgnHandlersMessage::GetString(DgnHandlersMessage::IDS_TYPENAMES_ANNOTATION_ELM);
     }
 
 //---------------------------------------------------------------------------------------
@@ -113,7 +120,7 @@ StatusInt TextAnnotationHandler::_OnTransform(EditElementHandleR eeh, TransformI
     PRECONDITION(NULL != eeh.GetDgnModelP(), ERROR);
     PRECONDITION(NULL != tinfo.GetTransform(), ERROR);
 
-    auto& project = eeh.GetDgnModelP()->GetDgnProject();
+    auto& project = eeh.GetDgnModelP()->GetDgnDb();
     auto& transform = *tinfo.GetTransform();
 
     //.............................................................................................
@@ -127,10 +134,10 @@ StatusInt TextAnnotationHandler::_OnTransform(EditElementHandleR eeh, TransformI
 
     auto newTransform = Transform::FromProduct(transform, oldTransform);
 
-    // TextString::TransformOrientationAndGetScale will apply the Transform parameter to the Orientation parameter; so pass in the old orientation... it will become the new orientation.
+    // TextString::TransformOrientationAndExtractScale will apply the Transform parameter to the Orientation parameter; so pass in the old orientation... it will become the new orientation.
     DPoint2d newScaleFactor;
     RotMatrix newOrientation; oldTransform.GetMatrix(newOrientation);
-    TextString::TransformOrientationAndGetScale(newScaleFactor, newOrientation, NULL, transform, true);
+    TextString::TransformOrientationAndExtractScale(newScaleFactor, newOrientation, transform);
 
     newTransform.SetMatrix(newOrientation);
 
@@ -252,6 +259,7 @@ void TextAnnotationHandler::_GetTransformOrigin(ElementHandleCR eh, DPoint3dR pt
 //---------------------------------------------------------------------------------------
 BentleyStatus TextAnnotationHandler::UpdateElement(EditElementHandleR eeh, TextAnnotationCR annotation, TransformCR transform, DgnStyleId seedID)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     PRECONDITION(&eeh.GetHandler() == &ELEMENTHANDLER_INSTANCE(TextAnnotationHandler), ERROR);
     PRECONDITION(NULL != eeh.GetDgnModelP(), ERROR);
 
@@ -273,7 +281,7 @@ BentleyStatus TextAnnotationHandler::UpdateElement(EditElementHandleR eeh, TextA
     POSTCONDITION(SUCCESS == draw.Draw(*graphics.GetContext()), ERROR);
     
     POSTCONDITION(SUCCESS == graphics.GetContainer().AddToElement(eeh), ERROR);
-    POSTCONDITION(SUCCESS == eeh.GetDisplayHandler()->ValidateElementRange(eeh.GetElementP(), &model), ERROR);
+    POSTCONDITION(SUCCESS == eeh.GetDisplayHandler()->ValidateElementRange(eeh.GetGraphicsP(), &model), ERROR);
 
     // Write element data to an XAttribute.
     bvector<Byte> elementDataBuffer;
@@ -286,6 +294,9 @@ BentleyStatus TextAnnotationHandler::UpdateElement(EditElementHandleR eeh, TextA
     POSTCONDITION(SUCCESS == eeh.ScheduleWriteXAttribute(getAnnotationDataXAID(), 0, annotationBuffer.size(), &annotationBuffer[0]), ERROR);
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -293,7 +304,7 @@ BentleyStatus TextAnnotationHandler::UpdateElement(EditElementHandleR eeh, TextA
 //---------------------------------------------------------------------------------------
 BentleyStatus TextAnnotationHandler::CreateElement(EditElementHandleR eeh, ElementHandleCP templateEh, TextAnnotationCR annotation, DgnModelR model, TransformCR transform, DgnStyleId seedID)
     {
-    T_Super::InitializeElement(eeh, templateEh, model, model.Is3d());
+    T_Super::InitializeElement(eeh, model, templateEh->GetGraphicsCP()->GetCategory());
     eeh.GetElementDescrP()->SetElementHandler(&ELEMENTHANDLER_INSTANCE(TextAnnotationHandler));
 
     return UpdateElement(eeh, annotation, transform, seedID);
@@ -324,3 +335,5 @@ BentleyStatus TextAnnotationHandler::FromElement(TextAnnotationP annotation, Tra
 
     return SUCCESS;
     }
+#endif
+

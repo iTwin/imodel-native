@@ -2,14 +2,15 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/SheetDef.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
+#if defined (NEEDS_WORK_DGNITEM)
 
-#include "DgnElements.h"
+#include "ElementGeom.h"
 #include "UnitDefinition.h"
 #include <Bentley/WString.h>
 
@@ -74,31 +75,31 @@ private:
 
         void                ExtractLinkageV0 (MSSheetPropertiesLinkageData const *);
         void                ExtractLinkageV1 (MSSheetPropertiesLinkageData const *);
-        StatusInt           ExtractLinkage (DgnElementCR);
-        StatusInt           ExtractLinkageEx (DgnElementCR);
-        StatusInt           SetLinkageEx (DgnElementR) const;
-        StatusInt           AppendLinkageEx (DgnElementR) const;
-        StatusInt           SetLinkage (DgnElementR) const;
-        StatusInt           AppendLinkage (DgnElementR) const;
-        StatusInt           ToElement (DgnElementR element) const;
-        StatusInt           FromElement (DgnElementCR elementIn);
+        StatusInt           ExtractLinkage (ElementGraphicsCR);
+        StatusInt           ExtractLinkageEx (ElementGraphicsCR);
+        StatusInt           SetLinkageEx (ElementGraphicsR) const;
+        StatusInt           AppendLinkageEx (ElementGraphicsR) const;
+        StatusInt           SetLinkage (ElementGraphicsR) const;
+        StatusInt           AppendLinkage (ElementGraphicsR) const;
+        StatusInt           ToElement (ElementGraphicsR element) const;
+        StatusInt           FromElement (ElementGraphicsCR elementIn);
 
-        DGNPLATFORM_EXPORT void GetString (WString&, UInt16) const;
-        WString const*      GetString (UInt16) const;
-        void                SetString (UInt16, WChar const*);
+        DGNPLATFORM_EXPORT void GetString (WString&, uint16_t) const;
+        WString const*      GetString (uint16_t) const;
+        void                SetString (uint16_t, WChar const*);
         bool                AnySet () const;
 
-        UInt16              version;
-        UInt16              isEnabled:1;
-        UInt16              reservedBits:15;
+        uint16_t            version;
+        uint16_t            isEnabled:1;
+        uint16_t            reservedBits:15;
         DPoint2d            origin;
         double              rotation;
         double              width;
         double              height;
-        UInt32              color;
+        uint32_t            color;
         UnitDefinition      unitDef;
-        UInt32              reservedInt;
-        UInt32              reservedInt2;
+        uint32_t            reservedInt;
+        uint32_t            reservedInt2;
         DPoint2d            paperOrigin;
         double              paperRotation;
         double              paperWidth;
@@ -110,25 +111,25 @@ private:
         double              rightPaperMargin;
         double              plotScale;
 
-        std::map<UInt16,WString> m_strings;
+        std::map<uint16_t,WString> m_strings;
 
-        UInt32              sheetNumber;
+        uint32_t            sheetNumber;
 
         ElementId           borderAttachmentId;
 
-        bvector<byte>   m_extraLinkage;
+        bvector<Byte>   m_extraLinkage;
     };
 
     SheetProperties     properties;
 
-    mutable ElementRef* m_borderElementRef;
+    mutable DgnElement* m_borderDgnElement;
 
-    void                SetBorderElementRef (ElementRef* elemRef) const {m_borderElementRef = elemRef;}
-    ElementRef*     GetBorderElementRef () const {return m_borderElementRef;}
+    void                SetBorderDgnElement (DgnElement* element) const {m_borderDgnElement = element;}
+    DgnElement*     GetBorderDgnElement () const {return m_borderDgnElement;}
 
     SheetDef&           CopyFrom (SheetDef const& from);
-    StatusInt           SaveProperties (DgnElementR element) const;
-    StatusInt           FromElement (DgnElementCR elementIn);
+    StatusInt           SaveProperties (ElementGraphicsR element) const;
+    StatusInt           FromElement (ElementGraphicsCR elementIn);
 
     friend struct              ModelInfo;
 
@@ -137,8 +138,8 @@ public:
 DGNPLATFORM_EXPORT void         Draw (ViewContextP) const;
 DGNPLATFORM_EXPORT static void  DisplaySheetBorder (ViewContextP);
 
-DGNPLATFORM_EXPORT UInt32         GetColor () const; // Color no longer used for display...
-DGNPLATFORM_EXPORT void           SetColor (UInt32 sheetColor);
+DGNPLATFORM_EXPORT uint32_t       GetColor () const; // Color no longer used for display...
+DGNPLATFORM_EXPORT void           SetColor (uint32_t sheetColor);
 
 DGNPLATFORM_EXPORT SheetDef ();
 DGNPLATFORM_EXPORT SheetDef (SheetDef const&);
@@ -372,12 +373,12 @@ DGNPLATFORM_EXPORT void SetPrintStyleName (WChar const * printStyleName);
 //! Get the sheet number.
 //! @Returns sheet number
 //! @bsimethod
-DGNPLATFORM_EXPORT UInt32 GetSheetNumber () const;
+DGNPLATFORM_EXPORT uint32_t GetSheetNumber () const;
 
 //! Set sheet number.
 //! @param[in]  sheetNumber  sheet number
 //! @bsimethod
-DGNPLATFORM_EXPORT void SetSheetNumber (UInt32 sheetNumber);
+DGNPLATFORM_EXPORT void SetSheetNumber (uint32_t sheetNumber);
 
 //! Get the ElementId of the reference attachment element associated with this sheet.
 //! @Returns sheet border attachment element ID
@@ -405,14 +406,14 @@ DGNPLATFORM_EXPORT void SetBorderAttachmentId (ElementId borderAttachmentId);
 
 typedef struct msSheetScalesLinkageData
 {
-    UInt16                  version;                        // linkage version number
-    UInt16                  reservedShort;
-    UInt32                  geometryAtDrawingScale:1;
-    UInt32                  reservedBits:31;
+    uint16_t                version;                        // linkage version number
+    uint16_t                reservedShort;
+    uint32_t                geometryAtDrawingScale:1;
+    uint32_t                reservedBits:31;
     double                  drawingScale;
     double                  geometryScale;
     double                  annotationScale;
-    UInt32                  color;
+    uint32_t                color;
 } MSSheetScalesLinkageData;
 
 typedef struct msSheetScalesLinkage
@@ -431,16 +432,16 @@ typedef struct msSheetScalesLinkage
 #if defined (NEEDS_WORK_DGNITEM)
 struct msSheetPropertiesLinkageData
 {
-    UInt16                  version;                // linkage version number
-    UInt16                  isEnabled:1;
-    UInt16                  reservedBits:15;
-    UInt32                  reservedInt;
+    uint16_t                version;                // linkage version number
+    uint16_t                isEnabled:1;
+    uint16_t                reservedBits:15;
+    uint32_t                reservedInt;
     DPoint2d                origin;
     double                  rotation;
     double                  width;
     double                  height;
-    UInt32                  color;
-    UInt32                  reservedInt2;
+    uint32_t                color;
+    uint32_t                reservedInt2;
     UnitInfo                unitInfo;
 
     DPoint2d                paperOrigin;
@@ -464,7 +465,7 @@ typedef struct msSheetPropertiesLinkage
 
 typedef struct msSheetPropertiesLinkageDataEx
 {
-    UInt32                  sheetNumber;
+    uint32_t                sheetNumber;
     ElementId               borderAttachmentId;
 } MSSheetPropertiesLinkageDataEx;
 
@@ -480,12 +481,13 @@ typedef struct msSheetPropertiesLinkageEx
 +===============+===============+===============+===============+===============+======*/
 struct SheetDefTestBackdoor
 {
-    DGNPLATFORM_EXPORT static void                SetBorderElementRef (SheetDefR sheetDef, ElementRef* elemRef) {sheetDef.SetBorderElementRef (elemRef);}
-    DGNPLATFORM_EXPORT static ElementRef*     GetBorderElementRef (SheetDefR sheetDef) {return sheetDef.GetBorderElementRef();}
+    DGNPLATFORM_EXPORT static void                SetBorderDgnElement (SheetDefR sheetDef, DgnElement* element) {sheetDef.SetBorderDgnElement (element);}
+    DGNPLATFORM_EXPORT static DgnElement*     GetBorderDgnElement (SheetDefR sheetDef) {return sheetDef.GetBorderDgnElement();}
 };
 #endif
 
 //__PUBLISH_SECTION_START__
 END_BENTLEY_DGNPLATFORM_NAMESPACE
+#endif
 
 /** @endcond */

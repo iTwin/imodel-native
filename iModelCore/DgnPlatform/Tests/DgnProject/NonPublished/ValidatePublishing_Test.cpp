@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ValidatePublishing_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (DGNPLATFORM_HAVE_DGN_IMPORTER)
@@ -98,7 +98,7 @@ public:
 
     void                    setupPathsNames();
     void                    saveFileName();
-    DgnProjectPtr           openDgnDb();
+    DgnDbPtr           openDgnDb();
     void                    publishToDgnDb(bool NoAsserts = true);
     void                    writeToXml();
 };
@@ -149,11 +149,11 @@ void ValidatePublishing::saveFileName()
 //=======================================================================================
 // @bsimethod                                                    Majd Uddin   01/13
 //=======================================================================================
-DgnProjectPtr ValidatePublishing::openDgnDb()
+DgnDbPtr ValidatePublishing::openDgnDb()
 {
-    DgnProjectPtr      dgnProj;
+    DgnDbPtr      dgnProj;
     DgnFileStatus status;
-    dgnProj = DgnProject::OpenProject(&status, BeFileName(DgnDbFullFileName.c_str()), DgnProject::OpenParams(BeSQLite::Db::OPEN_Readonly));
+    dgnProj = DgnDb::OpenDgnDb(&status, BeFileName(DgnDbFullFileName.c_str()), DgnDb::OpenParams(BeSQLite::Db::OPEN_Readonly));
     EXPECT_EQ(DGNFILE_STATUS_Success, status) << status;
     if (dgnProj != NULL)
         return dgnProj;
@@ -210,21 +210,21 @@ void ValidatePublishing::writeToXml()
     BeFile dgnFile;
     if (dgnFile.Open(DgnFullFileName.c_str(), BeFileAccess::Read) == BeFileStatus::Success)
     {
-        UInt64 fileSize;
+        uint64_t fileSize;
         if (dgnFile.GetSize(fileSize) == BeFileStatus::Success)
             ::testing::Test::RecordProperty("DgnFileSizeInBytes", int(fileSize));
     }
     BeFile dgnDbDFile;
     if (dgnDbDFile.Open(DgnDbFullFileName.c_str(), BeFileAccess::Read) == BeFileStatus::Success)
     {
-        UInt64 dbfileSize;
+        uint64_t dbfileSize;
         if (dgnDbDFile.GetSize(dbfileSize) == BeFileStatus::Success)
             ::testing::Test::RecordProperty("DgnDbSizeInBytes", int(dbfileSize));
     }
-    DgnProjectPtr dgnProject = openDgnDb();
+    DgnDbPtr dgnProject = openDgnDb();
     ASSERT_TRUE(dgnProject != NULL);
     DbECSchemaKeys schemaKeys;
-    auto schemaStaus = dgnProject->GetEC().GetSchemaManager().GetECSchemaKeys(schemaKeys);
+    auto schemaStaus = dgnProject->Schemas().GetECSchemaKeys(schemaKeys);
     ASSERT_EQ(schemaStaus, SUCCESS);
     size_t schemaCount = schemaKeys.size();
 
@@ -233,7 +233,7 @@ void ValidatePublishing::writeToXml()
     auto classCount = 0;
     for (auto& schemaKey : schemaKeys)
     {
-        schemaStaus = dgnProject->GetEC().GetSchemaManager().GetECClassKeys(classKeys, schemaKey);
+        schemaStaus = dgnProject->Schemas().GetECClassKeys(classKeys, schemaKey);
         size_t noOfClass = classKeys.size();
         classCount += int(noOfClass);
     }

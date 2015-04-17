@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/XAttributeHandlerManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -20,7 +20,7 @@ inline bool defaultIsXAttributeDataEqual (VoidCP data1, int size1, VoidCP data2,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool XAttributeHandler::_AreEqual (VoidCP data1, int size1, VoidCP data2, int size2, UInt32, double, double)
+bool XAttributeHandler::_AreEqual (VoidCP data1, int size1, VoidCP data2, int size2, uint32_t, double, double)
     {
     return defaultIsXAttributeDataEqual (data1, size1, data2, size2);
     }
@@ -28,7 +28,7 @@ bool XAttributeHandler::_AreEqual (VoidCP data1, int size1, VoidCP data2, int si
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool XAttributeHandler::AreEqual (VoidCP data1, int size1, VoidCP data2, int size2, UInt32 comparisonFlags, double distanceTolerance, double directionTolerance)
+bool XAttributeHandler::AreEqual (VoidCP data1, int size1, VoidCP data2, int size2, uint32_t comparisonFlags, double distanceTolerance, double directionTolerance)
     {
     return  _AreEqual (data1, size1, data2, size2, comparisonFlags, distanceTolerance, directionTolerance);
     }
@@ -38,7 +38,7 @@ bool XAttributeHandler::AreEqual (VoidCP data1, int size1, VoidCP data2, int siz
 +---------------+---------------+---------------+---------------+---------------+------*/
 XAttributeHandlerP XAttributeHandle::GetHandler () const
     {
-    return m_project->Domains().FindXAttributeHandler(GetHandlerId());
+    return m_dgndb->Domains().FindXAttributeHandler(GetHandlerId());
     }
 
 #if defined ELEMENT_LOADING_REWORK
@@ -52,34 +52,34 @@ XAttributeHandlerP ElementHandle::XAttributeIter::GetHandler () const
 #endif
 
 
-static  ElementRefAppData::Key  s_key;
+static  DgnElementAppData::Key  s_key;
 /*=================================================================================**//**
 * @bsiclass                                                     JoshSchifter    11/07
 +===============+===============+===============+===============+===============+======*/
-struct          HostTxnHandlerFlag : ElementRefAppData
+struct          HostTxnHandlerFlag : DgnElementAppData
 {
-static  ElementRefAppData::Key& GetAppDataKey()
+static  DgnElementAppData::Key& GetAppDataKey()
     {
     return s_key;
     }
 
-static  bool IsElementFlagged (ElementRefP elemRef)
+static  bool IsElementFlagged (DgnElementP element)
     {
-    return (NULL != elemRef->FindAppData (HostTxnHandlerFlag::GetAppDataKey()));
+    return (NULL != element->FindAppData (HostTxnHandlerFlag::GetAppDataKey()));
     }
 
-static  void AddFlagToElement (ElementRefP elemRef)
+static  void AddFlagToElement (DgnElementP element)
     {
-    if (IsElementFlagged (elemRef))
+    if (IsElementFlagged (element))
         return;
 
-    HeapZone&               zone  = elemRef->GetHeapZone();
+    HeapZone&               zone  = element->GetHeapZone();
     HostTxnHandlerFlag*     flag  = new ((HostTxnHandlerFlag*) zone.Alloc (sizeof(HostTxnHandlerFlag))) HostTxnHandlerFlag ();;
 
-    elemRef->AddAppData (HostTxnHandlerFlag::GetAppDataKey(), flag, zone);
+    element->AddAppData (HostTxnHandlerFlag::GetAppDataKey(), flag, zone);
     }
 
-virtual void        _OnCleanup (ElementRefP host, bool unloadingCache, HeapZone& zone) override
+virtual void        _OnCleanup (DgnElementP host, bool unloadingCache, HeapZone& zone) override
     {
     if (!unloadingCache)
         zone.Free (this, sizeof *this);
@@ -90,12 +90,12 @@ virtual void        _OnCleanup (ElementRefP host, bool unloadingCache, HeapZone&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XAttributeHandlerManager::NotifyHostTransactionHandlers (ElementRefP elemRef, ChangeTrackAction action, TransactionType transType, bool isPreChange)
+void XAttributeHandlerManager::NotifyHostTransactionHandlers (DgnElementP element, ChangeTrackAction action, TransactionType transType, bool isPreChange)
     {
-    if (!HostTxnHandlerFlag::IsElementFlagged (elemRef))
+    if (!HostTxnHandlerFlag::IsElementFlagged (element))
         return;
 
-    FOR_EACH (XAttributeCollection::Entry const& xAttr, XAttributeCollection(elemRef))
+    FOR_EACH (XAttributeCollection::Entry const& xAttr, XAttributeCollection(element))
         {
         XAttributeHandlerP                  handler = xAttr.GetHandler();
         IXAttributeHostTransactionHandler*  transHandler = handler ? handler->GetIXAttributeHostTransactionHandler () : NULL;
@@ -146,19 +146,19 @@ void XAttributeHandlerManager::RegisterForHostTransactionNotification (XAttribut
     IXAttributeHostTransactionHandler*  transHandler = handler ? handler->GetIXAttributeHostTransactionHandler () : NULL;
 
     if (NULL != transHandler)
-        HostTxnHandlerFlag::AddFlagToElement (xAttr.GetElementRef());
+        HostTxnHandlerFlag::AddFlagToElement (xAttr.GetDgnElement());
     }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2004
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt XAttributeHandler::WriteXAttributeChangeSet (ElementRefP elRef, XAttributeChangeSetP attrs, bool isAdd)
+StatusInt XAttributeHandler::WriteXAttributeChangeSet (DgnElementP elRef, XAttributeChangeSetP attrs, bool isAdd)
     {
     if (NULL == attrs)
         return SUCCESS;
 
-    ITxn& txn = elRef->GetDgnProject()->GetTxnManager().GetCurrentTxn();
+    ITxn& txn = elRef->GetDgnDb().GetTxnManager().GetCurrentTxn();
     if (attrs->IsPurge())
         {
         while (true)
@@ -218,7 +218,7 @@ StatusInt XAttributeHandler::WriteXAttributeChangeSet (ElementRefP elRef, XAttri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline bool isXAttributeDataEqual (XAttributeChangeCR x, XAttributeChangeCR x2, UInt32 comparisonFlags, double distanceTolerance, double directionTolerance)
+inline bool isXAttributeDataEqual (XAttributeChangeCR x, XAttributeChangeCR x2, uint32_t comparisonFlags, double distanceTolerance, double directionTolerance)
     {
 #if defined ELEMENT_LOADING_REWORK
     XAttributeHandlerP xh = XAttributeHandlerManager::FindHandler (x.GetHandlerId());
@@ -233,7 +233,7 @@ inline bool isXAttributeDataEqual (XAttributeChangeCR x, XAttributeChangeCR x2, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            XAttributeHandler::AreXAttributeChangeSetsEqual (XAttributeChangeSetCP x1, XAttributeChangeSetCP x2, UInt32 comparisonFlags,
+bool            XAttributeHandler::AreXAttributeChangeSetsEqual (XAttributeChangeSetCP x1, XAttributeChangeSetCP x2, uint32_t comparisonFlags,
                                                                  double distanceTolerance, double directionTolerance)
     {
     if (NULL == x1 && NULL == x2)
@@ -248,7 +248,7 @@ bool            XAttributeHandler::AreXAttributeChangeSetsEqual (XAttributeChang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            XAttributeHandler::AreXAttributeChangeSetsEqual (MSElementDescrCP ed1, MSElementDescrCP ed2, UInt32 comparisonFlags,
+bool            XAttributeHandler::AreXAttributeChangeSetsEqual (DgnElementDescrCP ed1, DgnElementDescrCP ed2, uint32_t comparisonFlags,
                                                                  double distanceTolerance, double directionTolerance)
     {
     XAttributeChangeSetCP x1 = ed1->QueryXAttributeChangeSet ();
@@ -263,7 +263,7 @@ inline bool     isEditXAttributeIterDataEqual
 (
 ElementHandle::XAttributeIter const& x,
 ElementHandle::XAttributeIter const& x2,
-UInt32          comparisonFlags,
+uint32_t        comparisonFlags,
 double          distanceTolerance,
 double          directionTolerance
 )
@@ -285,20 +285,20 @@ double          directionTolerance
 //  *****************************   DO NOT CHANGE   *********************************
 struct XAUniqueId
 {
-UInt32  m_handler;
-UInt32  m_id;
+uint32_t m_handler;
+uint32_t m_id;
 
 XAUniqueId () {}
-XAUniqueId (UInt32 h, UInt32 i);
+XAUniqueId (uint32_t h, uint32_t i);
 explicit XAUniqueId (XAttributeHandle const&);
 
 explicit XAUniqueId (XAttributeChange const&);
 
 XAttributeHandlerId GetHandlerId () const;
 
-UInt32 GetId () const;
+uint32_t GetId () const;
 
-UInt64 AsUInt64 () const;
+uint64_t AsUInt64 () const;
 
 bool operator == (XAUniqueId const& cc) const {return m_handler==cc.m_handler && m_id==cc.m_id;}
 bool operator < (XAUniqueId const& cc) const {return AsUInt64() < cc.AsUInt64();}
@@ -312,7 +312,7 @@ void Store (DataExternalizer& sink) const;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-XAUniqueId::XAUniqueId (UInt32 h, UInt32 i)
+XAUniqueId::XAUniqueId (uint32_t h, uint32_t i)
     :
     m_handler(h),
     m_id(i)
@@ -347,7 +347,7 @@ XAttributeHandlerId  XAUniqueId::GetHandlerId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          XAUniqueId::GetId () const
+uint32_t        XAUniqueId::GetId () const
     {
     return m_id;
     }
@@ -355,9 +355,9 @@ UInt32          XAUniqueId::GetId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt64          XAUniqueId::AsUInt64 () const
+uint64_t        XAUniqueId::AsUInt64 () const
     {
-    return ((UInt64)m_handler << 32) | m_id;
+    return ((uint64_t)m_handler << 32) | m_id;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,7 +373,7 @@ StatusInt XAUniqueId::CheckIsValid () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            XAttributeHandler::AreXAttributesEqual (ElementHandleCR eh1, ElementHandleCR eh2, UInt32 comparisonFlags,
+bool            XAttributeHandler::AreXAttributesEqual (ElementHandleCR eh1, ElementHandleCR eh2, uint32_t comparisonFlags,
                                                         double  distanceTolerance, double directionTolerance)
     {
     //  NEEDS WORK: This algorithm is O[n*m]
@@ -406,14 +406,14 @@ bool            XAttributeHandler::AreXAttributesEqual (ElementHandleCR eh1, Ele
 * Utility function to copy XAs from element to element.
 * @bsimethod                                    Sam.Wilson                      12/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt XAttributeHandler::CopyPersistentXAttributes (ElementRefP dst, ElementRefP src)
+StatusInt XAttributeHandler::CopyPersistentXAttributes (DgnElementP dst, DgnElementP src)
     {
     FOR_EACH (XAttributeCollection::Entry const& iXA, XAttributeCollection (src))
         {
-        Int64 rowid;
-        UInt32 id = iXA.GetId();
+        int64_t rowid;
+        uint32_t id = iXA.GetId();
         DgnModels::XAttributeFlags flags;
-        dst->GetDgnProject()->Models().InsertXAttribute (rowid, dst->GetElementId(), iXA.GetHandlerId(), id, iXA.GetSize(), iXA.PeekData(), flags);
+        dst->GetDgnDb().Models().InsertXAttribute (rowid, dst->GetElementId(), iXA.GetHandlerId(), id, iXA.GetSize(), iXA.PeekData(), flags);
         }
 
     return SUCCESS;
@@ -425,5 +425,5 @@ StatusInt XAttributeHandler::CopyPersistentXAttributes (ElementRefP dst, Element
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       XAttributeHandler::CopyPersistentXAttributes (ElementHandleCR dst, ElementHandleCR src)
     {
-    return CopyPersistentXAttributes (dst.GetElementRef(), src.GetElementRef());
+    return CopyPersistentXAttributes (dst.GetDgnElement(), src.GetDgnElement());
     }

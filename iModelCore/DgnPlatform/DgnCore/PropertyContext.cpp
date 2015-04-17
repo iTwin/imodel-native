@@ -2,10 +2,12 @@
 |
 |     $Source: DgnCore/PropertyContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
+
+#define DGN_TABLE_LEVEL_FOR_MODEL(m)  (m)->GetDgnDb().Categories()
 
 /*=================================================================================**//**
 * EachPropertyBaseArg
@@ -20,13 +22,13 @@ PropsCallbackFlags EachPropertyBaseArg::GetPropertyFlags ()
     }
 
 /*=================================================================================**//**
-* EachLevelArg
+* EachCategoryArg
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachLevelArg::EachLevelArg (LevelId stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachCategoryArg::EachCategoryArg (DgnCategoryId stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -36,7 +38,7 @@ EachLevelArg::EachLevelArg (LevelId stored, PropsCallbackFlags flags, PropertyCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-LevelId EachLevelArg::GetStoredValue ()
+DgnCategoryId EachCategoryArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -44,7 +46,7 @@ LevelId EachLevelArg::GetStoredValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachLevelArg::SetStoredValue (LevelId newVal)
+StatusInt       EachCategoryArg::SetStoredValue (DgnCategoryId newVal)
     {
     m_storedValue = newVal;
 
@@ -54,14 +56,9 @@ StatusInt       EachLevelArg::SetStoredValue (LevelId newVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-LevelId         EachLevelArg::GetEffectiveValue ()
+DgnCategoryId         EachCategoryArg::GetEffectiveValue ()
     {
-    LevelId                     effective = m_storedValue;
-    ElemHeaderOverrides const*  overrides = m_processor.GetHeaderOverrides ();
-
-    if (NULL != overrides)
-        effective = overrides->AdjustLevel (effective);
-
+    DgnCategoryId effective = m_storedValue;
     return effective;
     }
 
@@ -72,7 +69,7 @@ LevelId         EachLevelArg::GetEffectiveValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachColorArg::EachColorArg (UInt32 stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachColorArg::EachColorArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -82,7 +79,7 @@ EachColorArg::EachColorArg (UInt32 stored, PropsCallbackFlags flags, PropertyCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          EachColorArg::GetStoredValue ()
+uint32_t        EachColorArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -90,7 +87,7 @@ UInt32          EachColorArg::GetStoredValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachColorArg::SetStoredValue (UInt32 newVal)
+StatusInt       EachColorArg::SetStoredValue (uint32_t newVal)
     {
     m_storedValue = newVal;
 
@@ -100,29 +97,23 @@ StatusInt       EachColorArg::SetStoredValue (UInt32 newVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          EachColorArg::GetEffectiveValue ()
+uint32_t EachColorArg::GetEffectiveValue ()
     {
-    UInt32                      effective = m_storedValue;
-    ElemHeaderOverrides const*  overrides = m_processor.GetHeaderOverrides ();
+    uint32_t                    effective = m_storedValue;
 
-    if (overrides && overrides->GetFlags ().color)
+#if defined (NEEDS_WORK_DGNITEM)
+    if (COLOR_BYCELL == effective)
         {
-        effective = overrides->GetColor ();
-        }
-    else if (COLOR_BYCELL == effective)
-        {
-        if (NULL == overrides)
-            effective = 0; // If BYCELL color and not in a cell...color is ALWAYS color 0 (white w/ACAD color table)
-        else
-            effective = overrides->GetColor ();
+        effective = 0; // If BYCELL color and not in a cell...color is ALWAYS color 0 (white w/ACAD color table)
         }
     else if (COLOR_BYLEVEL == effective)
         {
-        LevelId     currentLevel = (overrides ? overrides->AdjustLevel (m_processor.GetCurrentLevelID()) : m_processor.GetCurrentLevelID ());
-        DgnLevels::SubLevel subLevel = DGN_TABLE_LEVEL_FOR_MODEL(m_processor.GetSourceDgnModel()).QuerySubLevelById (SubLevelId(currentLevel));
-        if (subLevel.IsValid ())
-            effective = subLevel.GetAppearance().GetColor();
+        DgnCategoryId currentCategory = m_processor.GetCurrentCategoryID();
+        DgnCategories::SubCategory subCategory = DGN_TABLE_LEVEL_FOR_MODEL(m_processor.GetSourceDgnModel()).QuerySubCategoryByKey (SubCategoryKey(currentCategory));
+        if (subCategory.IsValid ())
+            effective = subCategory.GetAppearance().GetColor();
         }
+#endif
 
     return effective;
     }
@@ -134,7 +125,7 @@ UInt32          EachColorArg::GetEffectiveValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachLineStyleArg::EachLineStyleArg (Int32 stored, LineStyleParams const* params, PropsCallbackFlags flags, PropertyContext& processor)
+EachLineStyleArg::EachLineStyleArg (int32_t stored, LineStyleParams const* params, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -150,7 +141,7 @@ EachLineStyleArg::EachLineStyleArg (Int32 stored, LineStyleParams const* params,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           EachLineStyleArg::GetStoredValue ()
+int32_t         EachLineStyleArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -158,39 +149,28 @@ Int32           EachLineStyleArg::GetStoredValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           EachLineStyleArg::GetEffectiveValue ()
+int32_t         EachLineStyleArg::GetEffectiveValue ()
     {
-    Int32                       effective = m_storedValue;
-    ElemHeaderOverrides const*  overrides = m_processor.GetHeaderOverrides ();
-
-    if (overrides && overrides->GetFlags ().style)
+    int32_t                     effective = m_storedValue;
+#if defined (NEEDS_WORK_DGNITEM)
+    if (STYLE_BYCELL == effective)
         {
-        effective = overrides->GetLineStyle ();
-        }
-    else if (STYLE_BYCELL == effective)
-        {
-        if (NULL == overrides)
-            {
-            // Use BYLEVEL style from default level (should be continuous for DWG...)
-            DgnLevels::SubLevel subLevel = DGN_TABLE_LEVEL_FOR_MODEL(m_processor.GetSourceDgnModel()).QuerySubLevelById (SubLevelId(LEVEL_DEFAULT_LEVEL_ID));
-            if (subLevel.IsValid ())
-                effective = subLevel.GetAppearance().GetStyle();
-            else
-                effective = 0;
-            }
+        // Use BYLEVEL style from default category (should be continuous for DWG...)
+        DgnCategories::SubCategory subCategory = DGN_TABLE_LEVEL_FOR_MODEL(m_processor.GetSourceDgnModel()).QuerySubCategoryByKey (SubCategoryKey(LEVEL_DEFAULT_LEVEL_ID));
+        if (subCategory.IsValid ())
+            effective = subCategory.GetAppearance().GetStyle();
         else
-            {
-            effective = overrides->GetLineStyle ();
-            }
+            effective = 0;
         }
     else if (STYLE_BYLEVEL == effective)
         {
-        LevelId     currentLevel = (overrides ? (overrides->AdjustLevel (m_processor.GetCurrentLevelID ())) : m_processor.GetCurrentLevelID ());
+        DgnCategoryId currentCategory = m_processor.GetCurrentCategoryID ();
 
-        DgnLevels::SubLevel subLevel = DGN_TABLE_LEVEL_FOR_MODEL(m_processor.GetSourceDgnModel()).QuerySubLevelById (SubLevelId(currentLevel));
-        if (subLevel.IsValid ())
-            effective = subLevel.GetAppearance().GetStyle();
+        DgnCategories::SubCategory subCategory = DGN_TABLE_LEVEL_FOR_MODEL(m_processor.GetSourceDgnModel()).QuerySubCategoryByKey (SubCategoryKey(currentCategory));
+        if (subCategory.IsValid ())
+            effective = subCategory.GetAppearance().GetStyle();
         }
+#endif
 
     return effective;
     }
@@ -225,7 +205,7 @@ bool            EachLineStyleArg::GetParamsChanged ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachLineStyleArg::SetStoredValue (Int32 newVal)
+StatusInt       EachLineStyleArg::SetStoredValue (int32_t newVal)
     {
     m_storedValue = newVal;
 
@@ -279,7 +259,7 @@ StatusInt       EachLineStyleArg::SetParamsChanged ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachFontArg::EachFontArg (UInt32 stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachFontArg::EachFontArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -289,7 +269,7 @@ EachFontArg::EachFontArg (UInt32 stored, PropsCallbackFlags flags, PropertyConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          EachFontArg::GetStoredValue ()
+uint32_t        EachFontArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -297,7 +277,7 @@ UInt32          EachFontArg::GetStoredValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachFontArg::SetStoredValue (UInt32 newVal)
+StatusInt       EachFontArg::SetStoredValue (uint32_t newVal)
     {
     m_storedValue = newVal;
 
@@ -311,7 +291,7 @@ StatusInt       EachFontArg::SetStoredValue (UInt32 newVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachTextStyleArg::EachTextStyleArg (UInt32 stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachTextStyleArg::EachTextStyleArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -322,7 +302,7 @@ EachTextStyleArg::EachTextStyleArg (UInt32 stored, PropsCallbackFlags flags, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          EachTextStyleArg::GetStoredValue ()
+uint32_t        EachTextStyleArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -338,7 +318,7 @@ StyleParamsRemapping    EachTextStyleArg::GetRemappingAction ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachTextStyleArg::SetStoredValue (UInt32 newVal)
+StatusInt       EachTextStyleArg::SetStoredValue (uint32_t newVal)
     {
     m_storedValue = newVal;
 
@@ -362,7 +342,7 @@ StatusInt       EachTextStyleArg::SetRemappingAction (StyleParamsRemapping actio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachDimStyleArg::EachDimStyleArg (UInt64 stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachDimStyleArg::EachDimStyleArg (uint64_t stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -373,7 +353,7 @@ EachDimStyleArg::EachDimStyleArg (UInt64 stored, PropsCallbackFlags flags, Prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt64       EachDimStyleArg::GetStoredValue ()
+uint64_t     EachDimStyleArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -389,7 +369,7 @@ StyleParamsRemapping    EachDimStyleArg::GetRemappingAction ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachDimStyleArg::SetStoredValue (UInt64 newVal)
+StatusInt       EachDimStyleArg::SetStoredValue (uint64_t newVal)
     {
     m_storedValue = newVal;
 
@@ -413,7 +393,7 @@ StatusInt       EachDimStyleArg::SetRemappingAction (StyleParamsRemapping action
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachMLineStyleArg::EachMLineStyleArg (UInt64 stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachMLineStyleArg::EachMLineStyleArg (uint64_t stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -424,7 +404,7 @@ EachMLineStyleArg::EachMLineStyleArg (UInt64 stored, PropsCallbackFlags flags, P
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt64 EachMLineStyleArg::GetStoredValue ()
+uint64_t EachMLineStyleArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -440,7 +420,7 @@ StyleParamsRemapping    EachMLineStyleArg::GetRemappingAction ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachMLineStyleArg::SetStoredValue (UInt64 newVal)
+StatusInt       EachMLineStyleArg::SetStoredValue (uint64_t newVal)
     {
     m_storedValue = newVal;
 
@@ -515,7 +495,7 @@ StatusInt EachMaterialArg::SetStoredValue (DgnMaterialId newVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachWeightArg::EachWeightArg (UInt32 stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachWeightArg::EachWeightArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -525,7 +505,7 @@ EachWeightArg::EachWeightArg (UInt32 stored, PropsCallbackFlags flags, PropertyC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          EachWeightArg::GetStoredValue ()
+uint32_t        EachWeightArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -533,7 +513,7 @@ UInt32          EachWeightArg::GetStoredValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachWeightArg::SetStoredValue (UInt32 newVal)
+StatusInt       EachWeightArg::SetStoredValue (uint32_t newVal)
     {
     m_storedValue = newVal;
 
@@ -543,78 +523,25 @@ StatusInt       EachWeightArg::SetStoredValue (UInt32 newVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          EachWeightArg::GetEffectiveValue ()
+uint32_t        EachWeightArg::GetEffectiveValue ()
     {
-    UInt32                      effective = m_storedValue;
-    ElemHeaderOverrides const*  overrides = m_processor.GetHeaderOverrides ();
-
-    if (overrides && overrides->GetFlags ().weight)
+    uint32_t                    effective = m_storedValue;
+#if defined (NEEDS_WORK_DGNITEM)
+    if (WEIGHT_BYCELL == effective)
         {
-        effective = overrides->GetWeight ();
-        }
-    else if (WEIGHT_BYCELL == effective)
-        {
-        if (NULL == overrides)
-            effective = 0; // If BYCELL weight and not in a cell...weigbt is ALWAYS weight 0...
-        else
-            effective = overrides->GetWeight ();
+        effective = 0; // If BYCELL weight and not in a cell...weigbt is ALWAYS weight 0...
         }
     else if (WEIGHT_BYLEVEL == effective)
         {
-        LevelId     currentLevel = (overrides ? (overrides->AdjustLevel (m_processor.GetCurrentLevelID ())) : m_processor.GetCurrentLevelID ());
+        DgnCategoryId currentCategory = m_processor.GetCurrentCategoryID ();
 
-        DgnLevels::SubLevel subLevel = DGN_TABLE_LEVEL_FOR_MODEL(m_processor.GetSourceDgnModel()).QuerySubLevelById (SubLevelId(currentLevel));
-        if (subLevel.IsValid ())
-            effective = subLevel.GetAppearance().GetWeight ();
+        DgnCategories::SubCategory subCategory = DGN_TABLE_LEVEL_FOR_MODEL(m_processor.GetSourceDgnModel()).QuerySubCategoryByKey (SubCategoryKey(currentCategory));
+        if (subCategory.IsValid ())
+            effective = subCategory.GetAppearance().GetWeight ();
         }
+#endif
 
     return effective;
-    }
-
-/*=================================================================================**//**
-* EachElementClassArg
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-/*------------------------------------------------------dev---------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-EachElementClassArg::EachElementClassArg (DgnElementClass stored, PropsCallbackFlags flags, PropertyContext& processor)
-    :
-    EachPropertyBaseArg (flags, processor)
-    {
-    m_storedValue = stored;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementClass    EachElementClassArg::GetStoredValue ()
-    {
-    return m_storedValue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementClass    EachElementClassArg::GetEffectiveValue ()
-    {
-    DgnElementClass            effective = m_storedValue;
-    ElemHeaderOverrides const*  overrides = m_processor.GetHeaderOverrides ();
-
-    if (NULL != overrides && overrides->GetFlags().classValue)
-        effective = (DgnElementClass) overrides->GetElementClass();
-
-    return effective;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachElementClassArg::SetStoredValue (DgnElementClass newVal)
-    {
-    m_storedValue = newVal;
-
-    return SUCCESS;
     }
 
 /*=================================================================================**//**
@@ -757,7 +684,7 @@ StatusInt       EachThicknessArg::SetDirection (DVec3dCP direction)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachDisplayPriorityArg::EachDisplayPriorityArg (Int32 stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachDisplayPriorityArg::EachDisplayPriorityArg (int32_t stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -767,7 +694,7 @@ EachDisplayPriorityArg::EachDisplayPriorityArg (Int32 stored, PropsCallbackFlags
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           EachDisplayPriorityArg::GetStoredValue ()
+int32_t         EachDisplayPriorityArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -775,19 +702,9 @@ Int32           EachDisplayPriorityArg::GetStoredValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           EachDisplayPriorityArg::GetEffectiveValue ()
+int32_t         EachDisplayPriorityArg::GetEffectiveValue ()
     {
-    Int32       effective = m_storedValue;
-
-    if (DISPLAYPRIORITY_BYCELL == effective)
-        {
-        ElemHeaderOverrides const*  overrides = m_processor.GetHeaderOverrides ();
-
-        if (NULL == overrides)
-            effective = 0; // Don't leave this with BYCELL value...
-        else
-            effective = overrides->GetDisplayPriority();
-        }
+    int32_t     effective = m_storedValue;
 
     return effective;
     }
@@ -795,7 +712,7 @@ Int32           EachDisplayPriorityArg::GetEffectiveValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachDisplayPriorityArg::SetStoredValue (Int32 newVal)
+StatusInt       EachDisplayPriorityArg::SetStoredValue (int32_t newVal)
     {
     m_storedValue = newVal;
 
@@ -809,7 +726,7 @@ StatusInt       EachDisplayPriorityArg::SetStoredValue (Int32 newVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachElementTemplateArg::EachElementTemplateArg (ElementId stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachElementTemplateArg::EachElementTemplateArg (DgnElementId stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -820,7 +737,7 @@ EachElementTemplateArg::EachElementTemplateArg (ElementId stored, PropsCallbackF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementId       EachElementTemplateArg::GetStoredValue ()
+DgnElementId    EachElementTemplateArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -836,7 +753,7 @@ bool            EachElementTemplateArg::GetApplyDefaultSymbology ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachElementTemplateArg::SetStoredValue (ElementId newVal)
+StatusInt       EachElementTemplateArg::SetStoredValue (DgnElementId newVal)
     {
     m_storedValue = newVal;
 
@@ -902,12 +819,11 @@ void            PropertyContext::SetCurrentElemHandleP (ElementHandleCP eh)
     {
     m_elmHandle = eh;
 
-    /* NOTE: Level needed for effective value. Should always be true that
-             GetLevel is base level id. Mlines will need to account for
-             profile levels; multi-level elements are an aberration. */
-    DgnElementCP elmCP = (eh ? eh->GetElementCP () : NULL);
+    /* NOTE: Category needed for effective value. Should always be true that
+             GetCategory is base category id. Mlines will need to account for
+             profile categories; multi-category elements are an aberration. */
 
-    SetCurrentLevelID (elmCP ? elmCP->GetLevel() : LevelId());
+    SetCurrentCategoryID (eh ? eh->GetCategoryId() : DgnCategoryId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -936,47 +852,11 @@ DgnModelP    PropertyContext::GetDestinationDgnModel ()
     return GetSourceDgnModel ();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PropertyContext::PushOverrides (ElemHeaderOverrides* in)
-    {
-    size_t numEntries = m_headerOvr.size ();
-
-    m_headerOvr.resize (numEntries+1); // NOTE: May realloc, can't save pointer from GetHeaderOvr!
-    ElemHeaderOverrides* newEntry = &m_headerOvr.at (numEntries);
-
-    newEntry->MergeFrom (in, numEntries > 0 ? &m_headerOvr.at (numEntries-1) : NULL);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PropertyContext::PopOverrides ()
-    {
-    m_headerOvr.pop_back ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-int             PropertyContext::GetOverridesStackDepth ()
-    {
-    return (int) m_headerOvr.size ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemHeaderOverrides const*    PropertyContext::GetHeaderOverrides ()
-    {
-    return m_headerOvr.empty() ? NULL : &m_headerOvr.back ();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoColorCallback (UInt32* pNewColor, EachColorArg& arg)
+bool            PropertyContext::DoColorCallback (uint32_t* pNewColor, EachColorArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_Color & GetElementPropertiesMask ()))
         return false;
@@ -989,11 +869,11 @@ bool            PropertyContext::DoColorCallback (UInt32* pNewColor, EachColorAr
 
     if (NULL != m_editObj)
         {
-        UInt32  color = arg.GetStoredValue();
+        uint32_t color = arg.GetStoredValue();
 
         m_editObj->_EachColorCallback (arg);
 
-        UInt32  newColor = arg.GetStoredValue();
+        uint32_t newColor = arg.GetStoredValue();
 
         if (NULL != pNewColor && newColor != color)
             {
@@ -1010,28 +890,28 @@ bool            PropertyContext::DoColorCallback (UInt32* pNewColor, EachColorAr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoLevelCallback (LevelId* pNewLevelID, EachLevelArg& arg)
+bool            PropertyContext::DoCategoryCallback (DgnCategoryId* pNewCategoryID, EachCategoryArg& arg)
     {
-    if (0 == (ELEMENT_PROPERTY_Level & GetElementPropertiesMask ()))
+    if (0 == (ELEMENT_PROPERTY_Category & GetElementPropertiesMask ()))
         return false;
 
     if (NULL != m_queryObj)
         {
-        m_queryObj->_EachLevelCallback (arg);
+        m_queryObj->_EachCategoryCallback (arg);
         return false;
         }
 
     if (NULL != m_editObj)
         {
-        LevelId     levelID = arg.GetStoredValue();
+        DgnCategoryId categoryID = arg.GetStoredValue();
 
-        m_editObj->_EachLevelCallback (arg);
+        m_editObj->_EachCategoryCallback (arg);
 
-        LevelId     newLevelID = arg.GetStoredValue();
+        DgnCategoryId newCategoryID = arg.GetStoredValue();
 
-        if (NULL != pNewLevelID && newLevelID != levelID)
+        if (NULL != pNewCategoryID && newCategoryID != categoryID)
             {
-            *pNewLevelID = newLevelID;
+            *pNewCategoryID = newCategoryID;
 
             SetElementChanged();
             return true;
@@ -1044,7 +924,7 @@ bool            PropertyContext::DoLevelCallback (LevelId* pNewLevelID, EachLeve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoLineStyleCallback (Int32* pNewStyleID, EachLineStyleArg& arg)
+bool            PropertyContext::DoLineStyleCallback (int32_t* pNewStyleID, EachLineStyleArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_Linestyle & GetElementPropertiesMask ()))
         return false;
@@ -1059,7 +939,7 @@ bool            PropertyContext::DoLineStyleCallback (Int32* pNewStyleID, EachLi
 
     if (NULL != m_editObj)
         {
-        Int32           styleID = arg.GetStoredValue();
+        int32_t         styleID = arg.GetStoredValue();
         LineStyleParams inParams = *(arg.GetParams());
 
         m_editObj->_EachLineStyleCallback (arg);
@@ -1074,7 +954,7 @@ bool            PropertyContext::DoLineStyleCallback (Int32* pNewStyleID, EachLi
             changed = true;
             }
 
-        Int32   newStyleID = arg.GetStoredValue();
+        int32_t newStyleID = arg.GetStoredValue();
 
         if (NULL != pNewStyleID && newStyleID != styleID)
             {
@@ -1091,7 +971,7 @@ bool            PropertyContext::DoLineStyleCallback (Int32* pNewStyleID, EachLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoFontCallback (UInt32* pNewFontNo, EachFontArg& arg)
+bool            PropertyContext::DoFontCallback (uint32_t* pNewFontNo, EachFontArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_Font & GetElementPropertiesMask ()))
         return false;
@@ -1104,11 +984,11 @@ bool            PropertyContext::DoFontCallback (UInt32* pNewFontNo, EachFontArg
 
     if (NULL != m_editObj)
         {
-        UInt32  fontNo = arg.GetStoredValue();
+        uint32_t fontNo = arg.GetStoredValue();
 
         m_editObj->_EachFontCallback (arg);
 
-        UInt32  newFontNo = arg.GetStoredValue();
+        uint32_t newFontNo = arg.GetStoredValue();
 
         if (NULL != pNewFontNo && newFontNo != fontNo)
             {
@@ -1125,41 +1005,7 @@ bool            PropertyContext::DoFontCallback (UInt32* pNewFontNo, EachFontArg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoTextStyleCallback (UInt32* pNewStyleID, EachTextStyleArg& arg)
-    {
-    if (0 == (ELEMENT_PROPERTY_TextStyle & GetElementPropertiesMask ()))
-        return false;
-
-    if (NULL != m_queryObj)
-        {
-        m_queryObj->_EachTextStyleCallback (arg);
-        return false;
-        }
-
-    if (NULL != m_editObj)
-        {
-        UInt32  styleID = arg.GetStoredValue();
-
-        m_editObj->_EachTextStyleCallback (arg);
-
-        UInt32  newStyleID = arg.GetStoredValue();
-
-        if (NULL != pNewStyleID && newStyleID != styleID)
-            {
-            *pNewStyleID = newStyleID;
-
-            SetElementChanged();
-            return true;
-            }
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoDimStyleCallback (UInt64* pNewStyleID, EachDimStyleArg& arg)
+bool            PropertyContext::DoDimStyleCallback (uint64_t* pNewStyleID, EachDimStyleArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_DimStyle & GetElementPropertiesMask ()))
         return false;
@@ -1172,11 +1018,11 @@ bool            PropertyContext::DoDimStyleCallback (UInt64* pNewStyleID, EachDi
 
     if (NULL != m_editObj)
         {
-        UInt64   styleID = arg.GetStoredValue();
+        uint64_t styleID = arg.GetStoredValue();
 
         m_editObj->_EachDimStyleCallback (arg);
 
-        UInt64   newStyleID = arg.GetStoredValue();
+        uint64_t newStyleID = arg.GetStoredValue();
 
         if (NULL != pNewStyleID && newStyleID != styleID)
             {
@@ -1193,7 +1039,7 @@ bool            PropertyContext::DoDimStyleCallback (UInt64* pNewStyleID, EachDi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoMLineStyleCallback (ElementId* pNewStyleID, EachMLineStyleArg& arg)
+bool            PropertyContext::DoMLineStyleCallback (DgnElementId* pNewStyleID, EachMLineStyleArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_MLineStyle & GetElementPropertiesMask ()))
         return false;
@@ -1206,15 +1052,15 @@ bool            PropertyContext::DoMLineStyleCallback (ElementId* pNewStyleID, E
 
     if (NULL != m_editObj)
         {
-        UInt64 styleID = arg.GetStoredValue();
+        uint64_t styleID = arg.GetStoredValue();
 
         m_editObj->_EachMLineStyleCallback (arg);
 
-        UInt64   newStyleID = arg.GetStoredValue();
+        uint64_t newStyleID = arg.GetStoredValue();
 
         if (NULL != pNewStyleID && newStyleID != styleID)
             {
-            *pNewStyleID = ElementId(newStyleID);
+            *pNewStyleID = DgnElementId ((int64_t) newStyleID);
 
             SetElementChanged();
             return true;
@@ -1261,7 +1107,7 @@ bool            PropertyContext::DoMaterialCallback (DgnMaterialId* pNewID, Each
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoWeightCallback (UInt32* pNewVal, EachWeightArg& arg)
+bool            PropertyContext::DoWeightCallback (uint32_t* pNewVal, EachWeightArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_Weight & GetElementPropertiesMask ()))
         return false;
@@ -1274,45 +1120,11 @@ bool            PropertyContext::DoWeightCallback (UInt32* pNewVal, EachWeightAr
 
     if (NULL != m_editObj)
         {
-        UInt32      oldVal = arg.GetStoredValue();
+        uint32_t    oldVal = arg.GetStoredValue();
 
         m_editObj->_EachWeightCallback (arg);
 
-        UInt32      newVal = arg.GetStoredValue();
-
-        if (NULL != pNewVal && newVal != oldVal)
-            {
-            *pNewVal = newVal;
-
-            SetElementChanged();
-            return true;
-            }
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoElementClassCallback (DgnElementClass* pNewVal, EachElementClassArg& arg)
-    {
-    if (0 == (ELEMENT_PROPERTY_ElementClass & GetElementPropertiesMask ()))
-        return false;
-
-    if (NULL != m_queryObj)
-        {
-        m_queryObj->_EachElementClassCallback (arg);
-        return false;
-        }
-
-    if (NULL != m_editObj)
-        {
-        DgnElementClass    oldVal = arg.GetStoredValue();
-
-        m_editObj->_EachElementClassCallback (arg);
-
-        DgnElementClass    newVal = arg.GetStoredValue();
+        uint32_t    newVal = arg.GetStoredValue();
 
         if (NULL != pNewVal && newVal != oldVal)
             {
@@ -1424,7 +1236,7 @@ bool            PropertyContext::DoThicknessCallback (double* pNewVal, EachThick
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoDisplayPriorityCallback (Int32* pNewVal, EachDisplayPriorityArg& arg)
+bool            PropertyContext::DoDisplayPriorityCallback (int32_t* pNewVal, EachDisplayPriorityArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_DisplayPriority & GetElementPropertiesMask ()))
         return false;
@@ -1437,11 +1249,11 @@ bool            PropertyContext::DoDisplayPriorityCallback (Int32* pNewVal, Each
 
     if (NULL != m_editObj)
         {
-        Int32       oldVal = arg.GetStoredValue();
+        int32_t     oldVal = arg.GetStoredValue();
 
         m_editObj->_EachDisplayPriorityCallback (arg);
 
-        Int32       newVal = arg.GetStoredValue();
+        int32_t     newVal = arg.GetStoredValue();
 
         if (NULL != pNewVal && newVal != oldVal)
             {
@@ -1458,7 +1270,7 @@ bool            PropertyContext::DoDisplayPriorityCallback (Int32* pNewVal, Each
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoElementTemplateCallback (ElementId* pNewVal, EachElementTemplateArg& arg)
+bool            PropertyContext::DoElementTemplateCallback (DgnElementId* pNewVal, EachElementTemplateArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_ElementTemplate & GetElementPropertiesMask ()))
         return false;
@@ -1471,11 +1283,11 @@ bool            PropertyContext::DoElementTemplateCallback (ElementId* pNewVal, 
 
     if (NULL != m_editObj)
         {
-        ElementId   oldVal = arg.GetStoredValue();
+        DgnElementId   oldVal = arg.GetStoredValue();
 
         m_editObj->_EachElementTemplateCallback (arg);
 
-        ElementId   newVal = arg.GetStoredValue();
+        DgnElementId   newVal = arg.GetStoredValue();
 
         // if apply symbology set then force element change flag to true so template properties are reapplied.
         if (NULL != pNewVal && (newVal != oldVal || arg.GetApplyDefaultSymbology()) )
@@ -1500,7 +1312,7 @@ void            PropertyContext::QueryChildElementProperties (ElementHandleCR eh
     ISharedCellQuery* scQuery;
 
     if (m_queryObj->_WantSharedChildren () && NULL != (scQuery = dynamic_cast <ISharedCellQuery*> (&eh.GetHandler ())) && scQuery->IsSharedCell (eh))
-        childElm = ChildElemIter (ElementHandle (scQuery->GetDefinition(eh, *eh.GetDgnProject())), ExposeChildrenReason::Query);
+        childElm = ChildElemIter (ElementHandle (scQuery->GetDefinition(eh, *eh.GetDgnDb())), ExposeChildrenReason::Query);
     else
         childElm = ChildElemIter (eh, ExposeChildrenReason::Query);
 
@@ -1544,8 +1356,10 @@ void            PropertyContext::QueryChildElementProperties (ElementHandleCR eh
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            PropertyContext::QueryElementProperties (ElementHandleCR eh, IQueryProperties* obj)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     PropertyContext context (obj);
-    eh.GetHandler().QueryProperties (eh, context);
+    eh.GetElementHandler().QueryProperties (eh, context);
+#endif
     }
 
 #if defined (NEEDS_WORK_DGNITEM)
@@ -1596,11 +1410,15 @@ void            PropertyContext::EditChildElementProperties (EditElementHandleR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PropertyContext::EditElementProperties (EditElementHandleR eeh, IEditProperties* obj)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     PropertyContext context (obj);
 
-    eeh.GetHandler().EditProperties (eeh, context);
+    eeh.GetElementHandler().EditProperties (eeh, context);
 
     return context.GetElementChanged ();
+#else
+    return false;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1608,6 +1426,7 @@ bool            PropertyContext::EditElementProperties (EditElementHandleR eeh, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            PropertyContext::QueryPathProperties (HitPathCP path, IQueryProperties* obj)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     if (!path)
         return;
 
@@ -1622,7 +1441,6 @@ void            PropertyContext::QueryPathProperties (HitPathCP path, IQueryProp
         if (!eh.IsValid ())
             break;
 
-#if defined (NEEDS_WORK_DGNITEM)
         // Keep looking down path as long as we're allowed to query child properties...
         if (!eh.GetHandler().ExposeChildren (eh, ExposeChildrenReason::Query))
             {
@@ -1636,11 +1454,11 @@ void            PropertyContext::QueryPathProperties (HitPathCP path, IQueryProp
                 break;
                 }
             }
-#endif
 
         ElemHeaderOverrides         ovr;
         context.PushOverrides (&ovr);
         }
+#endif
     }
 
 /*=================================================================================**//**
@@ -1652,11 +1470,6 @@ void            PropertyContext::QueryPathProperties (HitPathCP path, IQueryProp
 +---------------+---------------+---------------+---------------+---------------+------*/
 void     PropertyContext::ContextMark::Pop ()
     {
-    if (NULL == m_context)
-        return;
-
-    while (m_context->GetOverridesStackDepth () > m_hdrOvrMark)
-        m_context->PopOverrides ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1664,7 +1477,6 @@ void     PropertyContext::ContextMark::Pop ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void     PropertyContext::ContextMark::SetNow ()
     {
-    m_hdrOvrMark = m_context->GetOverridesStackDepth ();
     }
 
 /*---------------------------------------------------------------------------------**//**

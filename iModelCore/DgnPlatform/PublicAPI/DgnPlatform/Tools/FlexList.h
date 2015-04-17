@@ -2,13 +2,13 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Tools/FlexList.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include <RmgrTools/Tools/HeapZone.h>
+#include <Bentley/HeapZone.h>
 #include <Bentley/bvector.h>
 
 BEGIN_BENTLEY_API_NAMESPACE

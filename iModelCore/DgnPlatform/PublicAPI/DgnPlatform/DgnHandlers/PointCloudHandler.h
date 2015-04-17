@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/PointCloudHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 *\code
     DgnModelR model = ...
 
-    for each (ElementRefP pointCloudElmRefP in PointCloudCollection (model))
+    for each (DgnElementP pointCloudElmRefP in PointCloudCollection (model))
         {
         ...
         }
@@ -52,18 +52,18 @@ public:
     {
     friend struct PointCloudCollection;
     private:
-        PersistentElementRefListIterator    m_it;
-        ElementRefP                         m_elmRef;
+        PersistentDgnElementListIterator    m_it;
+        DgnElementP                         m_element;
 
         DGNPLATFORM_EXPORT void ToNext ();
-        PointCloudIterator (PersistentElementRefList* l){m_elmRef = NULL; m_it = l->begin(); ToNext();}
-        PointCloudIterator () {m_elmRef = NULL;}
+        PointCloudIterator (PersistentDgnElementList* l){m_element = NULL; m_it = l->begin(); ToNext();}
+        PointCloudIterator () {m_element = NULL;}
 
     public:
         PointCloudIterator& operator++(){++m_it; ToNext(); return *this;}
-        bool                operator==(PointCloudIterator const& rhs) const {return m_elmRef == rhs.m_elmRef;}
+        bool                operator==(PointCloudIterator const& rhs) const {return m_element == rhs.m_element;}
         bool                operator!=(PointCloudIterator const& rhs) const {return !(*this == rhs);}
-        ElementRefP         operator* () const {return m_elmRef;}
+        DgnElementP         operator* () const {return m_element;}
     };
 
     typedef PointCloudIterator    iterator;
@@ -103,8 +103,8 @@ protected:
 
     // Handler
     DGNPLATFORM_EXPORT virtual bool            _IsSupportedOperation (ElementHandleCP eh, SupportOperation stype) override;
-    DGNPLATFORM_EXPORT virtual void            _GetTypeName (WStringR string, UInt32 desiredLength) override;
-    DGNPLATFORM_EXPORT virtual void            _GetDescription (ElementHandleCR el, WStringR string, UInt32 desiredLength) override;
+    DGNPLATFORM_EXPORT virtual void            _GetTypeName (WStringR string, uint32_t desiredLength) override;
+    DGNPLATFORM_EXPORT virtual void            _GetDescription (ElementHandleCR el, WStringR string, uint32_t desiredLength) override;
     DGNPLATFORM_EXPORT virtual StatusInt       _OnTransform (EditElementHandleR, TransformInfoCR) override;
 //    DGNPLATFORM_EXPORT virtual void            _OnElementLoaded (ElementHandleCR eh) override; removed in graphite
     DGNPLATFORM_EXPORT virtual ReprojectStatus _OnGeoCoordinateReprojection (EditElementHandleR source, IGeoCoordinateReprojectionHelper& reprojectionHelper, bool inChain) override;
@@ -131,7 +131,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _SetClipReference(EditElementHandleR eeh, PointCloudClipReferenceCR clipRef) override;
 
 public:
-    DGNPLATFORM_EXPORT static ElementHandlerId GetElemHandlerId ();
+    DGNPLATFORM_EXPORT static DgnClassId GetElemHandlerId ();
     DGNPLATFORM_EXPORT static StatusInt        RegisterHandlers ();
     
     //!Return the base path used for relative searches. A search path may contain one or more configuration variables, directory paths, and/or file paths. Paths are separated by ';'.
@@ -158,10 +158,10 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * Get the set of point cloud elements in the model. 
     * @param[in]  modelR                  Model for which the point clouds set is requested.
-    * @return A set of point cloud elementRef.
+    * @return A set of point cloud element.
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    DGNPLATFORM_EXPORT static T_StdElementRefSet    GetPointCloudElementRefsInModel(DgnModelR modelR);
+    DGNPLATFORM_EXPORT static T_StdDgnElementSet    GetPointCloudDgnElementsInModel(DgnModelR modelR);
 
 };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/IManipulator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,8 +38,8 @@ virtual bool        _OnSelectControl (ElementHandleCR elHandle, HitPathCP path) 
 virtual bool        _OnMultiSelectControls (ElementHandleCR elHandle, DgnButtonEventCR ev, SelectionMode mode) = 0;
 virtual bool        _OnMultiSelectControls (ElementHandleCR elHandle, FenceParamsP fp, SelectionMode mode) = 0;
 virtual bool        _HasSelectedControls (ElementHandleCR elHandle) = 0;
-virtual void        _OnDraw (ElementHandleCR elHandle, ViewportP vp) = 0;
-virtual WString     _OnGetDescription (ElementHandleCR elHandle) = 0;
+virtual void        _OnDraw (ElementHandleCR elHandle, DgnViewportP vp) = 0;
+virtual Utf8String  _OnGetDescription (ElementHandleCR elHandle) = 0;
 virtual bool        _OnSetupDrag (DgnButtonEventR ev, EditElementHandleR elHandle) = 0;
 virtual void        _OnStartDrag (ElementHandleCR elHandle, DgnButtonEventCR ev) = 0;
 virtual void        _OnCancelDrag (ElementHandleCR elHandle, DgnButtonEventCR ev) = 0;
@@ -50,7 +50,7 @@ virtual bool        _OnRightClick (ElementHandleCR elHandle, DgnButtonEventCR ev
 virtual void        _OnNewPath (ElementHandleCR elHandle, DisplayPathCP path) {}
 virtual bool        _OnDoubleClick (ElementHandleCR elHandle, DisplayPathCP path) {return false;}
 virtual void        _OnDragModifierKeyTransition (ElementHandleCR elHandle, bool wentDown, int key) {}
-virtual bool        _IsViewDynamicsControl (ElementHandleCR elHandle, ViewportP vp) {return false;}
+virtual bool        _IsViewDynamicsControl (ElementHandleCR elHandle, DgnViewportP vp) {return false;}
 virtual StatusInt   _OnViewMotion (EditElementHandleR elHandle, DgnButtonEventCR ev) {return ERROR;}
 virtual bool        _OnClick(DgnButtonEventCR, EditElementHandleR) { return false; }
 
@@ -174,14 +174,14 @@ DGNPLATFORM_EXPORT bool HasSelectedControls (ElementHandleCR elHandle);
 *<p>
 * ICONID_HANDLE_INDIRECT_UNFOCUSED - unselected sprite for control that does not perform point-to-point modification.
 * @param[in] elHandle           The element being manipulated.
-* @param[in] vp                 Viewport to display the controls in.
+* @param[in] vp                 DgnViewport to display the controls in.
 * @see
 *   ManipulatorUtils::DoDrawControls
-*   IViewManager::LoadSpriteFromRsrc
+*   ViewManager::LoadSpriteFromRsrc
 *   IViewDraw::DrawSprite
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT void OnDraw (ElementHandleCR elHandle, ViewportP vp);
+DGNPLATFORM_EXPORT void OnDraw (ElementHandleCR elHandle, DgnViewportP vp);
 
 /*---------------------------------------------------------------------------------**//**
 * Return a string suitable for display in a tool tip to describe the currently
@@ -192,7 +192,7 @@ DGNPLATFORM_EXPORT void OnDraw (ElementHandleCR elHandle, ViewportP vp);
 *   ManipulatorUtils::GetDefaultDescription
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT WString OnGetDescription (ElementHandleCR elHandle);
+DGNPLATFORM_EXPORT Utf8String OnGetDescription (ElementHandleCR elHandle);
 
 /*---------------------------------------------------------------------------------**//**
 * Called on right-click while over a control, one use of this event would be to
@@ -311,7 +311,7 @@ DGNPLATFORM_EXPORT void OnDragModifierKeyTransition (ElementHandleCR elHandle, b
 * called instead of OnDrag and complex dynamics will not be setup.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool IsViewDynamicsControl (ElementHandleCR elHandle, ViewportP vp);
+DGNPLATFORM_EXPORT bool IsViewDynamicsControl (ElementHandleCR elHandle, DgnViewportP vp);
 
 /*---------------------------------------------------------------------------------**//**
 * Called to allow manipulator that returned true for IsViewDynamicsControl to implement
@@ -337,22 +337,15 @@ typedef RefCountedPtr<IDragManipulator> IDragManipulatorPtr;
 * Extension to provide DragManipulators for an element handler.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IDragManipulatorExtension : Handler::Extension
+struct IDragManipulatorExtension : DgnDomain::Handler::Extension
 {
-private:
-    DECLARE_KEY_METHOD
-
-//__PUBLISH_SECTION_END__
 protected:
 
 virtual IDragManipulatorPtr _GetIDragManipulator (ElementHandleCR elHandle, DisplayPathCP path) = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-
 public:
 
-ELEMENTHANDLER_EXTENSION_DECLARE_MEMBERS(IDragManipulatorExtension, DGNPLATFORM_EXPORT)
+HANDLER_EXTENSION_DECLARE_MEMBERS(IDragManipulatorExtension, DGNPLATFORM_EXPORT)
 DGNPLATFORM_EXPORT IDragManipulatorPtr GetIDragManipulator (ElementHandleCR elHandle, DisplayPathCP path);
 
 }; // IDragManipulatorExtension
@@ -369,7 +362,7 @@ protected:
 virtual bool        _IsTransformGraphics (ElementHandleCR elHandle, TransformInfoCR tInfo) const = 0;
 virtual StatusInt   _OnTransform (EditElementHandleR elHandle, TransformInfoCR tInfo, ViewContextP context) = 0;
 
-virtual bool        _AcceptElement (ElementHandleCR elHandle, WStringP cantAcceptReason, ElementAgendaP agenda) {return true;}
+virtual bool        _AcceptElement (ElementHandleCR elHandle, Utf8StringP cantAcceptReason, ElementAgendaP agenda) {return true;}
 virtual bool        _OnModifyChanged (ElementHandleCR elHandle, ElementAgendaP agenda, AgendaOperation opType, AgendaModify modify) {return true;}
 //virtual StatusInt   _OnPreTransform (EditElementHandleR elHandle, CopyContextP ccP) {return ERROR;} removed in graphite
 virtual StatusInt   _OnFenceClip (EditElementHandleR elHandle, FenceParamsP fp, FenceClipFlags flags) {return ERROR;}
@@ -392,7 +385,7 @@ public:
 * @return true if this element wants to be part of transform agenda.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool AcceptElement (ElementHandleCR elHandle, WStringP cantAcceptReason, ElementAgendaP agenda);
+DGNPLATFORM_EXPORT bool AcceptElement (ElementHandleCR elHandle, Utf8StringP cantAcceptReason, ElementAgendaP agenda);
 
 /*---------------------------------------------------------------------------------**//**
 * Called to allow manipulator to reject this element for a given transform operation.
@@ -470,22 +463,15 @@ typedef RefCountedPtr<ITransformManipulator> ITransformManipulatorPtr;
 * Extension to provide transform manipulator for an element handler.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct ITransformManipulatorExtension : Handler::Extension
+struct ITransformManipulatorExtension : DgnDomain::Handler::Extension
 {
-private:
-    DECLARE_KEY_METHOD
-
-//__PUBLISH_SECTION_END__
 protected:
 
-virtual ITransformManipulatorPtr _GetITransformManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) = 0;
+    virtual ITransformManipulatorPtr _GetITransformManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
-
-ELEMENTHANDLER_EXTENSION_DECLARE_MEMBERS(ITransformManipulatorExtension, DGNPLATFORM_EXPORT)
-DGNPLATFORM_EXPORT ITransformManipulatorPtr GetITransformManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path);
+    HANDLER_EXTENSION_DECLARE_MEMBERS(ITransformManipulatorExtension, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT ITransformManipulatorPtr GetITransformManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path);
 
 }; // ITransformManipulatorExtension
 
@@ -503,7 +489,7 @@ protected:
 
 virtual StatusInt   _OnDelete (EditElementHandleR elHandle) = 0;
 
-virtual bool        _AcceptElement (ElementHandleCR elHandle, WStringP cantAcceptReason, ElementAgendaP agenda) {return true;}
+virtual bool        _AcceptElement (ElementHandleCR elHandle, Utf8StringP cantAcceptReason, ElementAgendaP agenda) {return true;}
 virtual StatusInt   _OnPreDelete (EditElementHandleR elHandle) {return ERROR;}
 virtual StatusInt   _OnFenceClip (EditElementHandleR elHandle, FenceParamsP fp, FenceClipFlags flags) {return ERROR;}
 
@@ -523,7 +509,7 @@ public:
 * @return true if this element wants to be part of transform agenda.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool AcceptElement (ElementHandleCR elHandle, WStringP cantAcceptReason, ElementAgendaP agenda);
+DGNPLATFORM_EXPORT bool AcceptElement (ElementHandleCR elHandle, Utf8StringP cantAcceptReason, ElementAgendaP agenda);
 
 /*---------------------------------------------------------------------------------**//**
 * Called to allow manipulator participate in pre-delete logic.
@@ -559,22 +545,14 @@ typedef RefCountedPtr<IDeleteManipulator> IDeleteManipulatorPtr;
 * Extension to provide delete manipulator for an element handler.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IDeleteManipulatorExtension : Handler::Extension
+struct IDeleteManipulatorExtension : DgnDomain::Handler::Extension
 {
-private:
-    DECLARE_KEY_METHOD
-
-//__PUBLISH_SECTION_END__
 protected:
+    virtual IDeleteManipulatorPtr _GetIDeleteManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) = 0;
 
-virtual IDeleteManipulatorPtr _GetIDeleteManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) = 0;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
-
-ELEMENTHANDLER_EXTENSION_DECLARE_MEMBERS(IDeleteManipulatorExtension, DGNPLATFORM_EXPORT)
-DGNPLATFORM_EXPORT IDeleteManipulatorPtr GetIDeleteManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path);
+    HANDLER_EXTENSION_DECLARE_MEMBERS(IDeleteManipulatorExtension, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT IDeleteManipulatorPtr GetIDeleteManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path);
 
 }; // IDeleteManipulatorExtension
 
@@ -592,7 +570,7 @@ protected:
 
 virtual StatusInt   _OnPropertyChange (EditElementHandleR elHandle, PropertyContextR context) = 0;
 
-virtual bool        _AcceptElement (ElementHandleCR elHandle, WStringP cantAcceptReason, ElementAgendaP agenda) {return true;}
+virtual bool        _AcceptElement (ElementHandleCR elHandle, Utf8StringP cantAcceptReason, ElementAgendaP agenda) {return true;}
 virtual bool        _OnModifyChanged (ElementHandleCR elHandle, ElementAgendaP agenda, AgendaOperation opType, AgendaModify modify) {return true;}
 #ifdef DGN_IMPORTER_REORG_WIP
 virtual StatusInt   _OnPrePropertyChange (EditElementHandleR elHandle, CopyContextP ccP) {return ERROR;}
@@ -615,7 +593,7 @@ public:
 * @return true if this element wants to be part of property-change agenda.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool AcceptElement (ElementHandleCR elHandle, WStringP cantAcceptReason, ElementAgendaP agenda);
+DGNPLATFORM_EXPORT bool AcceptElement (ElementHandleCR elHandle, Utf8StringP cantAcceptReason, ElementAgendaP agenda);
 
 /*---------------------------------------------------------------------------------**//**
 * Called to allow manipulator to reject this element for a given property-change operation.
@@ -666,22 +644,14 @@ typedef RefCountedPtr<IPropertyManipulator> IPropertyManipulatorPtr;
 * Extension to provide change attribute tools for an element handler.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IPropertyManipulatorExtension : Handler::Extension
+struct IPropertyManipulatorExtension : DgnDomain::Handler::Extension
 {
-private:
-    DECLARE_KEY_METHOD
-
-//__PUBLISH_SECTION_END__
 protected:
+    virtual IPropertyManipulatorPtr _GetIPropertyManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) = 0;
 
-virtual IPropertyManipulatorPtr _GetIPropertyManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) = 0;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
-
-ELEMENTHANDLER_EXTENSION_DECLARE_MEMBERS(IPropertyManipulatorExtension, DGNPLATFORM_EXPORT)
-DGNPLATFORM_EXPORT IPropertyManipulatorPtr GetIPropertyManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path);
+    HANDLER_EXTENSION_DECLARE_MEMBERS(IPropertyManipulatorExtension, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT IPropertyManipulatorPtr GetIPropertyManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path);
 
 }; // IPropertyManipulatorExtension
 
@@ -699,7 +669,7 @@ protected:
 
 virtual StatusInt   _OnModifyElement (EditElementHandleR eeh, DgnButtonEventCP ev, DPoint3dCR locatePoint, ViewContextP context) = 0;
 
-virtual bool        _AcceptElement (ElementHandleCR eh, WStringP cantAcceptReason) {return true;}
+virtual bool        _AcceptElement (ElementHandleCR eh, Utf8StringP cantAcceptReason) {return true;}
 
 public:
 
@@ -716,7 +686,7 @@ public:
 * @return true if this element wants to be part of transform agenda.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT bool AcceptElement (ElementHandleCR eh, WStringP cantAcceptReason);
+DGNPLATFORM_EXPORT bool AcceptElement (ElementHandleCR eh, Utf8StringP cantAcceptReason);
 
 /*---------------------------------------------------------------------------------**//**
 * Called to allow manipulator to override insert/delete vertex operation on handler.
@@ -737,23 +707,14 @@ typedef RefCountedPtr<IVertexManipulator> IVertexManipulatorPtr;
 *  Extension to provide insert/delete vertex manipulator for an element handler.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IVertexManipulatorExtension : Handler::Extension
+struct IVertexManipulatorExtension : DgnDomain::Handler::Extension
 {
-private:
-    DECLARE_KEY_METHOD
-
-//__PUBLISH_SECTION_END__
 protected:
+    virtual IVertexManipulatorPtr _GetIVertexManipulator (ElementHandleCR eh, bool insert, HitPathCR path) = 0;
 
-virtual IVertexManipulatorPtr _GetIVertexManipulator (ElementHandleCR eh, bool insert, HitPathCR path) = 0;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
-
-ELEMENTHANDLER_EXTENSION_DECLARE_MEMBERS(IVertexManipulatorExtension, DGNPLATFORM_EXPORT)
-DGNPLATFORM_EXPORT IVertexManipulatorPtr GetIVertexManipulator (ElementHandleCR eh, bool insert, HitPathCR path);
-
+    HANDLER_EXTENSION_DECLARE_MEMBERS(IVertexManipulatorExtension, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT IVertexManipulatorPtr GetIVertexManipulator (ElementHandleCR eh, bool insert, HitPathCR path);
 }; // IVertexManipulatorExtension
 
 /*=================================================================================**//**
@@ -766,7 +727,7 @@ struct     IPopupDialogManipulator : public IElementState
 protected:
 
 virtual bool        _DoPopup (ElementHandleCR el) = 0;
-virtual void        _ShowPopupDialog (ElementHandleCR el, ViewportP viewport, Point2dCR point) = 0;
+virtual void        _ShowPopupDialog (ElementHandleCR el, DgnViewportP viewport, Point2dCR point) = 0;
 
 public:
 
@@ -779,11 +740,11 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * Called to allow manipulator to popup a mini toolbar when user hover cursor on element.
 * @param[in] elHandle           The element manipulator is for.
-* @param[in] viewport           Viewport to display mini toolbar in.
+* @param[in] viewport           DgnViewport to display mini toolbar in.
 * @param[in] point              Location of cursor in view coordinates.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT void ShowPopupDialog (ElementHandleCR elHandle, ViewportP viewport, Point2dCR point);
+DGNPLATFORM_EXPORT void ShowPopupDialog (ElementHandleCR elHandle, DgnViewportP viewport, Point2dCR point);
 
 /*---------------------------------------------------------------------------------**//**
 * Called to allow manipulator to popup a mini toolbar.
@@ -801,22 +762,13 @@ typedef RefCountedPtr<IPopupDialogManipulator> IPopupDialogManipulatorPtr;
 * Extension to provide popup dialog manipulator for an element handler.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IPopupDialogManipulatorExtension : Handler::Extension
+struct IPopupDialogManipulatorExtension : DgnDomain::Handler::Extension
 {
-private:
-    DECLARE_KEY_METHOD
-
-//__PUBLISH_SECTION_END__
 protected:
-
-virtual IPopupDialogManipulatorPtr _GetIPopupDialogManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) = 0;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
+    virtual IPopupDialogManipulatorPtr _GetIPopupDialogManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) = 0;
 public:
-
-ELEMENTHANDLER_EXTENSION_DECLARE_MEMBERS(IPopupDialogManipulatorExtension, DGNPLATFORM_EXPORT)
-DGNPLATFORM_EXPORT IPopupDialogManipulatorPtr GetIPopupDialogManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path);
+    HANDLER_EXTENSION_DECLARE_MEMBERS(IPopupDialogManipulatorExtension, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT IPopupDialogManipulatorPtr GetIPopupDialogManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path);
 
 }; // IPopupDialogManipulatorExtension
 

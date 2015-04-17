@@ -2,11 +2,11 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnCoreEvent.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__BENTLEY_INTERNAL_ONLY__
+//__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -78,15 +78,6 @@ void DropHandler (ITYPE* handler)
             curr->Clear();      // doesn't get removed until next traversal
             return;
             }
-        }
-    }
-
-void DropHandlersFrom (MdlDescP mdlDesc)
-    {
-    for (EntryIter curr = m_entries.begin(); curr!=m_entries.end(); ++curr)
-        {
-        if (mdlDesc == curr->GetMdlDesc())
-            curr->Clear();          // doesn't get removed until next traversal
         }
     }
 

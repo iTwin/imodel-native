@@ -2,769 +2,16 @@
 |
 |     $Source: DgnCore/ElementUtil.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/Linkage1.h>
-
-#if defined (NEEDS_WORK_DGNITEM)
-typedef struct
-    {
-    LinkageHeader   hdr;
-    UInt32          scaleDimensions:1;      // true = when scInst is scaled, unscale the dim value (value should remain constant) AND scale dim text size [this is the opposite of regular dimension scaling]
-    UInt32          scaleMultilines:1;      // true = when scInst is scaled, scale the multiline offset
-    UInt32          isAnnotation:1;         // true = scDef is an annotation cell
-    UInt32          rotateDimensions:1;     // true = when scInst is rotated, rotate the dim view matrix (so that text orientation remains constant)
-    UInt32          reserved:28;
-
-    } SharedCellFlagsLinkage;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool    isCellElement (DgnElementCR elm)
-    {
-    return (CELL_HEADER_ELM == elm.GetLegacyType() || SHAREDCELL_DEF_ELM == elm.GetLegacyType() || SHARED_CELL_ELM == elm.GetLegacyType());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::GetCellName (WCharP cellNameP, int bufferSize, DgnElementCR elm)
-    {
-    cellNameP[0] = '\0';
-
-    if (!isCellElement (elm))
-        return ERROR;
-
-    if (SUCCESS != LinkageUtil::ExtractNamedStringLinkageByIndex (cellNameP, bufferSize, STRING_LINKAGE_KEY_Name, 0, &elm))
-        return ERROR;
-
-    strutil_wstrpwspc (cellNameP);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::GetCellDescription (WCharP descrP, int bufferSize, DgnElementCR elm)
-    {
-    descrP[0] = '\0';
-
-    if (!isCellElement (elm))
-        return ERROR;
-
-    if (SUCCESS != LinkageUtil::ExtractNamedStringLinkageByIndex (descrP, bufferSize, STRING_LINKAGE_KEY_Description, 0, &elm))
-        return ERROR;
-
-    strutil_wstrpwspc (descrP);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::ExtractName (WCharP cellName, int bufferSize, ElementHandleCR eh)
-    {
-    return CellUtil::GetCellName (cellName, bufferSize, *eh.GetElementCP ());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::ExtractDescription (WCharP descr, int bufferSize, ElementHandleCR eh)
-    {
-    return CellUtil::GetCellDescription (descr, bufferSize, *eh.GetElementCP ());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::SetCellName (DgnElementR elm, WCharCP cellNameP)
-    {
-    if (!isCellElement (elm))
-        return ERROR;
-
-    WChar     nameBuf[MAX_CELLNAME_LENGTH];
-
-    wcsncpy (nameBuf, cellNameP, MAX_CELLNAME_LENGTH);
-    nameBuf[MAX_CELLNAME_LENGTH-1] = 0;
-    strutil_wstrpwspc (nameBuf);
-
-    if (wcslen (nameBuf))
-        return (BentleyStatus) LinkageUtil::SetStringLinkage (&elm, STRING_LINKAGE_KEY_Name, nameBuf);
-
-    return (BentleyStatus) LinkageUtil::DeleteStringLinkage (&elm, STRING_LINKAGE_KEY_Name, 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::SetCellDescription (DgnElementR elm, WCharCP descrP)
-    {
-    if (!isCellElement (elm))
-        return ERROR;
-
-    WChar     nameBuf[MAX_CELLDSCR_LENGTH];
-
-    wcsncpy (nameBuf, descrP, MAX_CELLDSCR_LENGTH);
-    nameBuf[MAX_CELLDSCR_LENGTH-1] = 0;
-    strutil_wstrpwspc (nameBuf);
-
-    if (wcslen (nameBuf))
-        return (BentleyStatus) LinkageUtil::SetStringLinkage (&elm, STRING_LINKAGE_KEY_Description, nameBuf);
-
-    return (BentleyStatus) LinkageUtil::DeleteStringLinkage (&elm, STRING_LINKAGE_KEY_Description, 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            CellUtil::IsPointCell (ElementHandleCR eh)
-    {
-    if (!eh.IsValid ())
-        return false;
-
-    switch (eh.GetLegacyType())
-        {
-        case CELL_HEADER_ELM:
-        case SHARED_CELL_ELM:
-        case SHAREDCELL_DEF_ELM:
-            {
-            DgnElementCR el = *eh.GetElementCP();
-            return (!el.IsSnappable() && el.IsViewIndependent());
-            }
-
-        default:
-            return false;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            CellUtil::IsAnnotation (ElementHandleCR eh)
-    {
-    if (!eh.IsValid ())
-        return false;
-
-    switch (eh.GetLegacyType())
-        {
-        case CELL_HEADER_ELM:
-            return ((Cell_2d const*)eh.GetElementCP())->flags.isAnnotation;
-
-        case SHARED_CELL_ELM:
-            return CellUtil::IsAnnotation (ElementHandle (eh.GetDgnProject()->Models().FindSharedCellDefForInstance(*eh.GetElementCP()).get()));
-
-        case SHAREDCELL_DEF_ELM:
-            {
-            bool    isAnnotation;
-
-            CellUtil::GetSharedCellDefFlags (NULL, NULL, NULL, &isAnnotation, eh);
-
-            return isAnnotation;
-            }
-
-        default:
-            return false;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            CellUtil::IsAnonymous (ElementHandleCR eh)
-    {
-    if (!eh.IsValid ())
-        return false;
-
-    switch (eh.GetLegacyType())
-        {
-        case CELL_HEADER_ELM:
-            return eh.GetElementCP()->IsHole();
-
-        case SHARED_CELL_ELM:
-            return CellUtil::IsAnonymous (ElementHandle (eh.GetDgnProject()->Models().FindSharedCellDefForInstance(*eh.GetElementCP()).get()));
-
-        case SHAREDCELL_DEF_ELM:
-            return TO_BOOL(((SharedCellDef const*)eh.GetElementCP())->anonymous);
-
-        default:
-            return false;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::ExtractOrigin (DPoint3dR origin, ElementHandleCR eh)
-    {
-    if (!eh.IsValid ())
-        return ERROR;
-
-    switch (eh.GetLegacyType())
-        {
-        case CELL_HEADER_ELM:
-            {
-            DgnElementCR el = *eh.GetElementCP ();
-
-            if (el.Is3d())
-                origin = ((Cell_3d const&)el).origin;
-            else
-                origin.init (&((Cell_2d const&)el).origin);
-
-            return SUCCESS;
-            }
-
-        case SHARED_CELL_ELM:
-            {
-            origin = ((SharedCell const*)eh.GetElementCP())->origin;
-
-            return SUCCESS;
-            }
-
-        case SHAREDCELL_DEF_ELM:
-            {
-            origin = ((SharedCellDef const*)eh.GetElementCP())->origin;
-
-            return SUCCESS;
-            }
-
-        default:
-            return ERROR;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                      RayBentley    09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::ExtractRangeDiagonal (DRange3dR rDiag, ElementHandleCR eh)
-    {
-    DgnElementCP         el;
-
-    if (CELL_HEADER_ELM != eh.GetLegacyType() ||
-        NULL == (el = eh.GetElementCP()))
-        return ERROR;
-    
-    if (el->Is3d())
-        {
-        Cell_3d const& cell_3d = (Cell_3d const&)*el;
-        rDiag.low    = cell_3d.rnglow;
-        rDiag.high   = cell_3d.rnghigh;
-        }
-    else
-        {
-        Cell_2d const& cell_2d = (Cell_2d const&)*el;
-        rDiag.low.x  = cell_2d.rnglow.x;
-        rDiag.low.y  = cell_2d.rnglow.y;
-        rDiag.high.x = cell_2d.rnghigh.x;
-        rDiag.high.y = cell_2d.rnghigh.y;
-        rDiag.low.z  = rDiag.high.z = 0.0;
-        }
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::ExtractRotation (RotMatrixR rMatrix, ElementHandleCR eh)
-    {
-    if (!eh.IsValid ())
-        return ERROR;
-
-    switch (eh.GetLegacyType())
-        {
-        case CELL_HEADER_ELM:
-            {
-            DgnElementCR el = *eh.GetElementCP ();
-
-            if (el.Is3d())
-                memcpy (rMatrix.form3d, el.ToCell_3d().transform, 9 * sizeof (double));
-            else
-                rMatrix.InitFromRowValuesXY ( &el.ToCell_2d().transform[0][0]);
-
-            return SUCCESS;
-            }
-
-        case SHARED_CELL_ELM:
-            {
-            memcpy (&rMatrix, &eh.GetElementCP ()->ToSharedCell().rotScale, sizeof (RotMatrix));
-
-            return SUCCESS;
-            }
-
-        case SHAREDCELL_DEF_ELM:
-            {
-            memcpy (&rMatrix, &eh.GetElementCP ()->ToSharedCellDef().rotScale, sizeof (RotMatrix));
-
-            return SUCCESS;
-            }
-
-        default:
-            return ERROR;
-        }
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  12/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::GetSharedCellDefID (ElementHandleCR eh, ElementId& elemID)
-    {
-    DependencyLinkageAccessor depLinkP;
-
-    if (SUCCESS != DependencyManagerLinkage::GetLinkage (&depLinkP, eh, DEPENDENCYAPPID_SharedCellDef, 0))
-        return ERROR;
-
-    if (depLinkP->u.f.invalid)
-        return ERROR;
-
-    elemID = ElementId(depLinkP->root.elemid[0]);
-
-    return (0 != elemID.GetValue()) ? SUCCESS : ERROR;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  12/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::GetSharedCellDefFlags
-(
-bool*           pNondefaultScaleForDims,    // true = when scInst is scaled, unscale the dim value (value should remain constant) AND scale dim text size
-bool*           pScaleMultilines,           // true = when scInst is scaled, scale the multiline offset
-bool*           pRotateDimView,             // true = when scInst is rotated, rotate the dim view matrix (so that text orientation remains constant)
-bool*           pIsAnnotation,              // true = scDef is an annotation cell
-ElementHandleCR    eh
-)
-    {
-    DgnElementCR el = *eh.GetElementCP ();
-
-    if (NULL != pNondefaultScaleForDims)
-        *pNondefaultScaleForDims = false;
-
-    if (NULL != pScaleMultilines)
-        *pScaleMultilines = false;
-
-    if (NULL != pIsAnnotation)
-        *pIsAnnotation = false;
-
-    if (NULL != pRotateDimView)
-        *pRotateDimView = false;
-
-    if (SHAREDCELL_DEF_ELM != el.GetLegacyType())
-        return ERROR;
-
-    SharedCellFlagsLinkage  sharedCellFlagsLinkage;
-
-    if (NULL == elemUtil_extractLinkage (&sharedCellFlagsLinkage, NULL, &el, LINKAGEID_SharedCellFlags))
-        return ERROR;
-
-    if (NULL != pNondefaultScaleForDims)
-        *pNondefaultScaleForDims = sharedCellFlagsLinkage.scaleDimensions;
-
-    if (NULL != pScaleMultilines)
-        *pScaleMultilines  = sharedCellFlagsLinkage.scaleMultilines;
-
-    if (NULL != pIsAnnotation)
-        *pIsAnnotation  = sharedCellFlagsLinkage.isAnnotation;
-
-    if (NULL != pRotateDimView)
-        *pRotateDimView  = sharedCellFlagsLinkage.rotateDimensions;
-
-    return SUCCESS;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  03/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::SetSharedCellDefFlags
-(
-EditElementHandleR eeh,
-bool            nondefaultScaleForDims, // true = when scInst is scaled, unscale the dim value (value should remain constant) AND scale dim text size [this is the opposite of regular dimension scaling]
-bool            scaleMultilines,        // true = when scInst is scaled, scale the multiline offset
-bool            rotateDimView,          // true = when scInst is rotated, rotate the dim view matrix (so that text orientation remains constant)
-bool            isAnnotation            // true = scDef is an annotation cell
-)
-    {
-    DgnV8ElementBlank elm(*eeh.GetElementCP());
-
-    if (nondefaultScaleForDims || scaleMultilines || isAnnotation || rotateDimView)
-        {
-        int     linkBytes;
-
-        SharedCellFlagsLinkage    sharedCellFlagsLinkage;
-
-        memset (&sharedCellFlagsLinkage, 0, sizeof (sharedCellFlagsLinkage));
-
-        sharedCellFlagsLinkage.hdr.user       = 1;
-        sharedCellFlagsLinkage.hdr.primaryID  = LINKAGEID_SharedCellFlags;
-
-        linkBytes = (sizeof (sharedCellFlagsLinkage) + 7) & ~7;
-        LinkageUtil::SetWords (&sharedCellFlagsLinkage.hdr, linkBytes/sizeof (short));
-
-        // NOTE : sharedCellFlagsLinkage.scaleDimensions is a misnomer. It actually means
-        // that the desired scaling behavior is opposite to the regular dim scaling behavior.
-
-        sharedCellFlagsLinkage.scaleDimensions  = nondefaultScaleForDims;
-        sharedCellFlagsLinkage.scaleMultilines  = scaleMultilines;
-        sharedCellFlagsLinkage.rotateDimensions = rotateDimView;
-        sharedCellFlagsLinkage.isAnnotation     = isAnnotation;
-
-        elemUtil_deleteLinkage (&elm, LINKAGEID_SharedCellFlags);
-
-        if (SUCCESS != elemUtil_appendLinkage (&elm, &sharedCellFlagsLinkage.hdr))
-            return ERROR;
-        }
-    else
-        {
-        if (SUCCESS != elemUtil_deleteLinkage (&elm, LINKAGEID_SharedCellFlags))
-            return SUCCESS;
-        }
-
-    eeh.ReplaceElement (&elm);
-
-    return SUCCESS;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::ClipFromLinkage (ClipVectorPtr& clip, ElementHandleCR eh, TransformCP outputTransform, bool applyElementTransform)
-    {
-    // NOTE: For clip linkage on cells/shared cells from DWG...
-    if (!mdlElement_attributePresent (eh.GetElementCP (), LINKAGEID_ClipBoundary, NULL))
-        return ERROR;
-
-    DPoint3d    originElem;
-    RotMatrix   rMatrixElem;
-
-    // NOTE: Still need to verify that it is a cell when not applying element transform...
-    if (SUCCESS != CellUtil::ExtractOrigin (originElem, eh) || SUCCESS != CellUtil::ExtractRotation (rMatrixElem, eh))
-        return ERROR;
-
-    for (ConstElementLinkageIterator li = eh.BeginElementLinkages(); li != eh.EndElementLinkages(); ++li)
-        {
-        if (!li->user || LINKAGEID_ClipBoundary != li->primaryID)
-            continue;
-
-        DPoint3d    clipOrigin;
-        RotMatrix   clipRMatrix;
-        double      zLow, zHigh;
-        bool        zLowValid = false, zHighValid = false;
-        UInt32      flags;
-        UInt32      nPoints;
-
-        DataInternalizer reader ((const byte*) li.GetData (), MAX_V8_ELEMENT_SIZE);
-
-        reader.get (&clipRMatrix.form3d[0][0], 9);
-        reader.get (&clipOrigin.x, 3);
-        reader.get (&zHigh);
-        reader.get (&zLow);
-        reader.get (&flags);
-        reader.get (&nPoints);
-
-        if (!nPoints)
-            return ERROR;
-
-        DPoint2dP   points = (DPoint2dP) alloca (nPoints * sizeof (DPoint2d));
-
-        reader.get (&points[0].x, 2 * nPoints);
-
-        zHighValid =  (0 != (flags & 0x0001));
-        zLowValid  =  (0 != (flags & 0x0002));
-
-        Transform   clipTransform;
-
-        clipTransform.InitFrom (clipRMatrix, clipOrigin);
-
-        if (applyElementTransform)
-            {
-            Transform   transform;
-
-            transform.InitFrom (rMatrixElem, originElem);
-            clipTransform.InitProduct (transform, clipTransform);
-            }
-
-        if (outputTransform)
-            clipTransform.InitProduct (*outputTransform, clipTransform);
-
-        clip = ClipVector::CreateFromPrimitive (ClipPrimitive::CreateFromShape (points, nPoints, false, zLowValid ? &zLow : NULL, zHighValid ? &zHigh : NULL, &clipTransform));
-
-        return clip.IsValid () ? SUCCESS : ERROR;
-        }
-
-    return ERROR;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::AddClipLinkage
-(
-EditElementHandleR eeh,
-RotMatrixCR     rMatrixIn, 
-DPoint3dCR      originIn, 
-double          zFront, 
-double          zBack, 
-bool            frontClipOn, 
-bool            backClipOn, 
-size_t          nPoints, 
-DPoint2dCP      points,
-bool            applyElementTransform
-)
-    {
-    /*
-    typedef struct  msClipBoundaryLinkageData
-        {
-        double      rotation[3][3];
-        DPoint3d    origin;
-        double      zFront;
-        double      zBack;
-        UInt32      flags;
-        UInt32      nPoints;
-        DPoint2d    points[0];
-
-        } MSClipBoundaryLinkageData;
-    */
-
-    DPoint3d    originElem;
-    RotMatrix   rMatrixElem;
-
-    // NOTE: Still need to verify that it is a cell when not applying element transform...
-    if (SUCCESS != CellUtil::ExtractOrigin (originElem, eeh) || SUCCESS != CellUtil::ExtractRotation (rMatrixElem, eeh))
-        return ERROR;
-
-    DPoint3d    origin = originIn;
-    RotMatrix   rMatrix = rMatrixIn;
-
-    if (applyElementTransform)
-        {
-        Transform   transformElem;
-
-        transformElem.InitFrom (rMatrixElem, originElem);
-        transformElem.InverseOf (transformElem);
-
-        transformElem.Multiply (origin);
-        rMatrix.InitProduct (rMatrix, transformElem);
-        }
-
-    CellUtil::DeleteClipLinkage (eeh);
-
-    UInt32      flags = 0;
-
-    if (frontClipOn)
-        flags |= 0x0001;
-
-    if (backClipOn)
-        flags |= 0x0002;
-
-    DataExternalizer   writer;
-
-    writer.put (&rMatrix.form3d[0][0], 9);
-    writer.put (&origin.x, 3);
-    writer.put (zFront);
-    writer.put (zBack);
-    writer.put (flags);
-    writer.put ((UInt32) nPoints);
-    writer.put (&points[0].x, 2 * nPoints);
-
-    return ElementLinkageUtil::AddLinkage (eeh, LINKAGEID_ClipBoundary, writer);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CellUtil::DeleteClipLinkage (EditElementHandleR eeh)
-    {
-    return (1 == linkage_deleteLinkageByIndex (eeh.GetElementP (), LINKAGEID_ClipBoundary, 0) ? SUCCESS : ERROR);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ICellQuery::_IsNormalCell (ElementHandleCR eh)
-    {
-    return (CELL_HEADER_ELM == eh.GetLegacyType());
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ICellQuery::_IsSharedCell (ElementHandleCR eh)
-    {
-    return (SHARED_CELL_ELM == eh.GetLegacyType());
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ICellQuery::_IsSharedCellDefinition (ElementHandleCR eh)
-    {
-    return (SHAREDCELL_DEF_ELM == eh.GetLegacyType());
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ICellQuery::_IsPointCell (ElementHandleCR eh)
-    {
-    return CellUtil::IsPointCell (eh);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ICellQuery::_IsAnnotation (ElementHandleCR eh)
-    {
-    return CellUtil::IsAnnotation (eh);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ICellQuery::_IsAnonymous (ElementHandleCR eh)
-    {
-    return CellUtil::IsAnonymous (eh);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ICellQuery::_ExtractScale (DVec3dR scale, ElementHandleCR eh)
-    {
-    RotMatrix   rMatrix;
-
-    if (SUCCESS != CellUtil::ExtractRotation (rMatrix, eh))
-        return ERROR;
-
-    rMatrix.normalizeColumnsOf (&rMatrix, &scale);
-
-    return SUCCESS;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ICellQuery::_ExtractName (WCharP cellName, int bufferSize, ElementHandleCR eh)
-    {
-    return CellUtil::ExtractName (cellName, bufferSize, eh);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ICellQuery::_ExtractDescription (WCharP descr, int bufferSize, ElementHandleCR eh)
-    {
-    return CellUtil::ExtractDescription (descr, bufferSize, eh);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ISharedCellQuery::_GetMlineScaleOption (ElementHandleCR eh)
-    {
-    bool        option;
-
-    // When supplied a shared cell instance get scDef...
-    if (SHARED_CELL_ELM == eh.GetLegacyType())
-        CellUtil::GetSharedCellDefFlags (NULL, &option, NULL, NULL, ElementHandle (eh.GetDgnProject()->Models().FindSharedCellDefForInstance(*eh.GetElementCP()).get()));
-    else
-        CellUtil::GetSharedCellDefFlags (NULL, &option, NULL, NULL, eh);
-
-    return option;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ISharedCellQuery::_GetDimScaleOption (ElementHandleCR eh)
-    {
-    bool        option;
-
-    // When supplied a shared cell instance get scDef...NOTE: Instance has an override for this...
-    if (SHARED_CELL_ELM == eh.GetLegacyType())
-        CellUtil::GetSharedCellDefFlags (&option, NULL, NULL, NULL, ElementHandle (eh.GetDgnProject()->Models().FindSharedCellDefForInstance(*eh.GetElementCP()).get()));
-    else
-        CellUtil::GetSharedCellDefFlags (&option, NULL, NULL, NULL, eh);
-
-    return option;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ISharedCellQuery::_GetDimRotationOption (ElementHandleCR eh)
-    {
-    bool        option;
-
-    // When supplied a shared cell instance get scDef...
-    if (SHARED_CELL_ELM == eh.GetLegacyType())
-        CellUtil::GetSharedCellDefFlags (NULL, NULL, &option, NULL, ElementHandle (eh.GetDgnProject()->Models().FindSharedCellDefForInstance(*eh.GetElementCP()).get()));
-    else
-        CellUtil::GetSharedCellDefFlags (NULL, NULL, &option, NULL, eh);
-
-    return option;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementRefP      ISharedCellQuery::_GetDefinition (ElementHandleCR eh, DgnProjectR project)
-    {
-    return project.Models().FindSharedCellDefForInstance(*eh.GetElementCP()).get();
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ISharedCellQuery::_GetDefinitionID (ElementHandleCR eh, ElementId& elemID)
-    {
-    if (SHARED_CELL_ELM != eh.GetLegacyType())
-        return ERROR;
-
-    return CellUtil::GetSharedCellDefID (eh, elemID);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-SCOverride const*   ISharedCellQuery::_GetSharedCellOverrides (ElementHandleCR eh)
-    {
-    if (SHARED_CELL_ELM != eh.GetLegacyType())
-        return NULL;
-
-    return &eh.GetElementCP ()->ToSharedCell().m_override;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-PersistentElementRefPtr ISharedCellQuery::FindDefinitionByName (WCharCP name, DgnProjectR project)
-    {
-    if (NULL == name)
-        { BeAssert (false); return NULL; }
-
-    Utf8String defName (name);
-    return project.Models().GetElementById (project.Models().GetSharedCellDefByName (defName.c_str()));
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-double  IBRepQuery::GetSolidKernelToUORScale (DgnModelP dgnCache)
-    {
-    return 1000.;
-#if defined (NEEDS_WORK_DGNITEM)
-    return dgnCache->GetDgnProject().Units().GetSolidExtent() / 1000.;
-#endif
-    }
-#endif
+#include <DgnPlatform/Tools/MdlCnv.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jim.Bartlett    06/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ByteStreamHelper::AppendRotMatrix (byte*& buffer, RotMatrixCR value, bool is3d)
+void ByteStreamHelper::AppendRotMatrix (Byte*& buffer, RotMatrixCR value, bool is3d)
     {
     double quat[4];
 
@@ -780,7 +27,7 @@ void ByteStreamHelper::AppendRotMatrix (byte*& buffer, RotMatrixCR value, bool i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jim.Bartlett    06/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ByteStreamHelper::ExtractRotMatrix (RotMatrixR value, byte const *& buffer, bool is3d)
+void ByteStreamHelper::ExtractRotMatrix (RotMatrixR value, Byte const *& buffer, bool is3d)
     {
     double quat[4];
 
@@ -796,7 +43,7 @@ void ByteStreamHelper::ExtractRotMatrix (RotMatrixR value, byte const *& buffer,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jim.Bartlett    12/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ByteStreamHelper::AppendDPoint3d (byte*& buffer, DPoint3dCR value)
+void ByteStreamHelper::AppendDPoint3d (Byte*& buffer, DPoint3dCR value)
     {
     double rBuf[3];
 
@@ -811,7 +58,7 @@ void ByteStreamHelper::AppendDPoint3d (byte*& buffer, DPoint3dCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jim.Bartlett    12/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ByteStreamHelper::ExtractDPoint3d (DPoint3dR value, byte const *& buffer)
+void ByteStreamHelper::ExtractDPoint3d (DPoint3dR value, Byte const *& buffer)
     {
     double rBuf[3];
 
@@ -826,724 +73,35 @@ void ByteStreamHelper::ExtractDPoint3d (DPoint3dR value, byte const *& buffer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JVB             08/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ByteStreamHelper::AppendDouble (byte*& buffer, double const & value)   { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractDouble (double& value, byte const *& buffer)  { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendDouble (Byte*& buffer, double const & value)   { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractDouble (double& value, Byte const *& buffer)  { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendLong (byte*& buffer, long const & value)       { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractLong (long& value, byte const *& buffer)      { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendLong (Byte*& buffer, long const & value)       { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractLong (long& value, Byte const *& buffer)      { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendShort (byte*& buffer, short const & value)     { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractShort (short& value, byte const *& buffer)    { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendShort (Byte*& buffer, short const & value)     { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractShort (short& value, Byte const *& buffer)    { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendInt64 (byte*& buffer, Int64 const & value)     { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractInt64 (Int64& value, byte const *& buffer)    { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendInt64 (Byte*& buffer, int64_t const & value)     { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractInt64 (int64_t& value, Byte const *& buffer)    { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendUInt32 (byte*& buffer, UInt32 const & value)   { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractUInt32 (UInt32& value, byte const *& buffer)  { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendUInt32 (Byte*& buffer, uint32_t const & value)   { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractUInt32 (uint32_t& value, Byte const *& buffer)  { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendInt (byte*& buffer, int const & value)         { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractInt (int& value, byte const *& buffer)        { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendInt (Byte*& buffer, int const & value)         { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractInt (int& value, Byte const *& buffer)        { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendUInt16 (byte*& buffer, UInt16 const & value)   { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractUInt16 (UInt16& value, byte const *& buffer)  { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendUInt16 (Byte*& buffer, uint16_t const & value)   { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractUInt16 (uint16_t& value, Byte const *& buffer)  { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendInt32 (byte*& buffer, Int32 const & value)     { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractInt32 (Int32& value, byte const *& buffer)    { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendInt32 (Byte*& buffer, int32_t const & value)     { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractInt32 (int32_t& value, Byte const *& buffer)    { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendUShort (byte*& buffer, UShort const & value)   { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractUShort (UShort& value, byte const *& buffer)  { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::AppendUShort (Byte*& buffer, unsigned short const & value)   { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractUShort (unsigned short& value, Byte const *& buffer)  { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
-void ByteStreamHelper::AppendULong (byte*& buffer, ULong const & value)     { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
-void ByteStreamHelper::ExtractULong (ULong& value, byte const *& buffer)    { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
-
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    extractConvertDwgHatchDef
-(
-DwgHatchDef&        pDwgHatchDef,   /* <= DWG hatch definition  */
-DwgHatchDefLine*    pHatchLines,
-int                 nMaxLines,
-byte const *&       buffer          /* => buffer        */
-)
-    {
-    int         i, j;
-    double      *pDash;
-
-    memset (&pDwgHatchDef, 0, sizeof (pDwgHatchDef));
-
-    ByteStreamHelper::ExtractShort (pDwgHatchDef.nDefLines, buffer);
-
-    if (pDwgHatchDef.nDefLines < 0)
-        pDwgHatchDef.nDefLines = 0;
-
-    for (i=0; i<pDwgHatchDef.nDefLines; i++)
-        {
-        DwgHatchDefLine line;
-
-        ByteStreamHelper::ExtractDouble (line.angle,        buffer);
-        ByteStreamHelper::ExtractDouble (line.through.x,    buffer);
-        ByteStreamHelper::ExtractDouble (line.through.y,    buffer);
-        ByteStreamHelper::ExtractDouble (line.offset.x,     buffer);
-        ByteStreamHelper::ExtractDouble (line.offset.y,     buffer);
-        ByteStreamHelper::ExtractShort  (line.nDashes,      buffer);
-
-        for (j = 0, pDash = line.dashes; j < line.nDashes; j++, pDash++)
-            ByteStreamHelper::ExtractDouble (*pDash, buffer);
-
-        if (i < nMaxLines)
-            pHatchLines[i] = line;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    appendUnconvertDwgHatchDef
-(
-byte                **pBuf,             /* <= Append DWG Hatch Definition to buffer     */
-DwgHatchDef         *pDwgHatchDef,      /* => DWG hatch definition to unconvert */
-DwgHatchDefLine     *pHatchLines
-)
-    {
-    int                 i, j;
-    double              *pDash;
-    DwgHatchDefLine     *pLine;
-
-    ByteStreamHelper::AppendShort (*pBuf, pDwgHatchDef->nDefLines);
-
-    for (i=0, pLine = pHatchLines; i<pDwgHatchDef->nDefLines; i++, pLine++)
-        {
-        ByteStreamHelper::AppendDouble  (*pBuf, pLine->angle);
-        ByteStreamHelper::AppendDouble  (*pBuf, pLine->through.x);
-        ByteStreamHelper::AppendDouble  (*pBuf, pLine->through.y);
-        ByteStreamHelper::AppendDouble  (*pBuf, pLine->offset.x);
-        ByteStreamHelper::AppendDouble  (*pBuf, pLine->offset.y);
-        ByteStreamHelper::AppendShort   (*pBuf, pLine->nDashes);
-        
-        for (j=0, pDash = pLine->dashes; j<pLine->nDashes; j++)
-            ByteStreamHelper::AppendDouble (*pBuf, *pDash++);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JimBartlett   5/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    aspat_extractHatchData
-(
-PatternParams&      params,
-DwgHatchDefLine*    pHatchLines,
-int                 nMaxLines,
-byte const *&       buffer,
-bool                is3d
-)
-    {
-    UInt32  modifiers;
-    ByteStreamHelper::ExtractUInt32 (modifiers, buffer);
-    params.modifiers = static_cast <PatternParamsModifierFlags>(modifiers);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Space1))
-        ByteStreamHelper::ExtractDouble (params.space1, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Angle1))
-        {
-        ByteStreamHelper::ExtractDouble (params.angle1, buffer);
-//        mdlCnv_validateDoubleAndClampToRange ( & params.angle1, msGeomConst_2pi, -msGeomConst_2pi, fc_zero, fc_zero);
-        LIMIT_RANGE (-msGeomConst_2pi, msGeomConst_2pi, params.angle1);
-        }
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Space2))
-        ByteStreamHelper::ExtractDouble (params.space2, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Angle2))
-        {
-        ByteStreamHelper::ExtractDouble (params.angle2, buffer);
-//        mdlCnv_validateDoubleAndClampToRange ( &(params.angle2), msGeomConst_2pi, -msGeomConst_2pi, fc_zero, fc_zero);
-        LIMIT_RANGE (-msGeomConst_2pi, msGeomConst_2pi, params.angle2);
-        }
-    else
-        {
-        params.angle2 = params.angle1 + msGeomConst_piOver2;
-        }
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Scale))
-        ByteStreamHelper::ExtractDouble (params.scale, buffer);
-    else
-        params.scale = 1.0;
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Tolerance))
-        ByteStreamHelper::ExtractDouble (params.tolerance, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Style))
-        ByteStreamHelper::ExtractUInt32 (params.style, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Weight))
-        ByteStreamHelper::ExtractUInt32 (params.weight, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Color))
-        ByteStreamHelper::ExtractUInt32 (params.color, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::RotMatrix))
-        ByteStreamHelper::ExtractRotMatrix (params.rMatrix, buffer, TO_BOOL (is3d));
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Offset))
-        ByteStreamHelper::ExtractDPoint3d (params.offset, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Multiline))
-        {
-        ByteStreamHelper::ExtractInt (params.minLine, buffer);
-        ByteStreamHelper::ExtractInt (params.maxLine, buffer);
-        }
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::HoleStyle))
-        ByteStreamHelper::ExtractShort (params.holeStyle, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::DwgHatchDef))
-        extractConvertDwgHatchDef (params.dwgHatchDef, pHatchLines, nMaxLines, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::PixelSize))
-        ByteStreamHelper::ExtractDouble (params.dwgHatchDef.pixelSize, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::IslandStyle))
-        ByteStreamHelper::ExtractShort (params.dwgHatchDef.islandStyle, buffer);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::AnnotationScale))
-        ByteStreamHelper::ExtractDouble (params.annotationscale, buffer);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JimBartlett   5/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-static byte*   aspat_appendHatchData
-(
-byte*               pBuf,
-PatternParams*      pParams,
-DwgHatchDefLine*    pHatchLines,
-bool                is3d
-)
-    {
-    byte        *pMod = NULL;
-
-    /*-------------------------------------------------------------------
-    Skip over modifiers - we will write them out last.
-    -------------------------------------------------------------------*/
-    pMod = pBuf;
-    pBuf += sizeof (long); // ***NEEDS WORK sizeof(long) varies. 
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Space1))
-        ByteStreamHelper::AppendDouble (pBuf, pParams->space1);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Angle1))
-        {
-//        mdlCnv_validateDoubleAndClampToRange (&(pParams->angle1), msGeomConst_2pi, -msGeomConst_2pi, fc_zero, fc_zero);
-        LIMIT_RANGE (-msGeomConst_2pi, msGeomConst_2pi, pParams->angle1);
-        ByteStreamHelper::AppendDouble (pBuf, pParams->angle1);
-        }
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Space2))
-        ByteStreamHelper::AppendDouble (pBuf, pParams->space2);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Angle2))
-        {
-//        mdlCnv_validateDoubleAndClampToRange (&(pParams->angle2), msGeomConst_2pi, -msGeomConst_2pi, fc_zero, fc_zero);
-        LIMIT_RANGE (-msGeomConst_2pi, msGeomConst_2pi, pParams->angle2);
-        ByteStreamHelper::AppendDouble (pBuf, pParams->angle2);
-        }
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Scale))
-        ByteStreamHelper::AppendDouble (pBuf, 0.0 == pParams->scale ? 1.0 : pParams->scale);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Tolerance))
-        ByteStreamHelper::AppendDouble (pBuf, pParams->tolerance);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Style))
-        ByteStreamHelper::AppendUInt32 (pBuf, pParams->style);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Weight))
-        ByteStreamHelper::AppendUInt32 (pBuf, pParams->weight);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Color))
-        ByteStreamHelper::AppendUInt32 (pBuf, pParams->color);
-
-    /* store rotation matrix as quaternions */
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::RotMatrix))
-        ByteStreamHelper::AppendRotMatrix (pBuf, pParams->rMatrix, TO_BOOL (is3d));
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Offset))
-        ByteStreamHelper::AppendDPoint3d (pBuf, pParams->offset);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::Multiline))
-        {
-        ByteStreamHelper::AppendInt (pBuf, pParams->minLine);
-        ByteStreamHelper::AppendInt (pBuf, pParams->maxLine);
-        }
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::HoleStyle))
-        ByteStreamHelper::AppendShort (pBuf, pParams->holeStyle);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::DwgHatchDef))
-        appendUnconvertDwgHatchDef (&pBuf, &pParams->dwgHatchDef, pHatchLines);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::PixelSize))
-        ByteStreamHelper::AppendDouble (pBuf, pParams->dwgHatchDef.pixelSize);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::IslandStyle))
-        ByteStreamHelper::AppendShort (pBuf, pParams->dwgHatchDef.islandStyle);
-
-    if (PatternParamsModifierFlags::None != (pParams->modifiers & PatternParamsModifierFlags::AnnotationScale))
-        ByteStreamHelper::AppendDouble (pBuf, pParams->annotationscale);
-
-    ByteStreamHelper::AppendUInt32 (pMod, static_cast<UInt32>(pParams->modifiers));
-
-    return pBuf;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JimBartlett     02/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    transformPatternSpace
-(
-double*         pNewSpace,
-double          oldSpace,
-RotMatrixP      pPatRot,
-double          angle,
-TransformCP     pTrans
-)
-    {
-    RotMatrix   tmpRot, angRot;
-    DVec3d      yDir;
-
-    if (angle != 0.0)
-        {
-        angRot.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity (), 0.0, 0.0, angle);
-        tmpRot.InitProduct(*pPatRot, angRot);
-        }
-    else
-        {
-        tmpRot = *pPatRot;
-        }
-
-    tmpRot.GetColumn(yDir, 1);
-    yDir.Scale(yDir, oldSpace);
-    pTrans->multiplyMatrixOnly (&yDir, &yDir);
-
-    *pNewSpace = yDir.Magnitude();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    transformPatternAngle
-(
-double*         pNewAngle,
-double          oldAngle,
-RotMatrixP      pPatRot,
-TransformCP     pTrans
-)
-    {
-    RotMatrix   tmpRot, angRot;
-    DVec3d      xDir;
-
-    if (oldAngle != 0.0)
-        {
-        angRot.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity (), 0.0, 0.0, oldAngle);
-        tmpRot.InitProduct(*pPatRot, angRot);
-        }
-    else
-        {
-        tmpRot = *pPatRot;
-        }
-
-    tmpRot.GetColumn(xDir, 0);
-    pTrans->multiplyMatrixOnly (&xDir, &xDir);
-
-    *pNewAngle = atan2 (xDir.y, xDir.x);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PatternLinkageUtil::Transform (PatternParamsR params, DwgHatchDefLineP pHatchLines, TransformCR transform, bool flatten, bool allowSizeChange)
-    {
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Space1))
-        transformPatternSpace (&params.space1, params.space1, &params.rMatrix, params.angle1, &transform);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Space2))
-        transformPatternSpace (&params.space2, params.space2, &params.rMatrix, params.angle2, &transform);
-
-    if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Scale) || (allowSizeChange && (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Cell)) || (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::DwgHatchDef))) )
-        {
-        DVec3d      xDir;
-        double      mag;
-
-        transform.GetMatrixColumn (xDir,  0);
-        mag = xDir.Magnitude ();
-
-        if (mag > mgds_fc_epsilon)
-            {
-            params.scale *= mag;
-
-            if (PatternParamsModifierFlags::None == (params.modifiers & PatternParamsModifierFlags::Scale) && (0.0 != params.scale && 1.0 != params.scale))
-                params.modifiers = params.modifiers | PatternParamsModifierFlags::Scale;
-            }
-        }
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Offset))
-        transform.multiplyMatrixOnly ((DVec3dP) &params.offset, (DVec3dP) &params.offset);
-
-    // if we are flattening and have angles, correct the angles and set the rotmatrix to identity.
-    if (flatten && (PatternParamsModifierFlags::None == (params.modifiers & PatternParamsModifierFlags::DwgHatchDef)))
-        {
-        // correct pattern angles to be the "apparent" angles as viewed from this orientation
-        if (allowSizeChange)
-            params.modifiers = params.modifiers | PatternParamsModifierFlags::Angle1; // Set modifier to adjust angle1 when not explicitly stored (0.0)...
-
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Angle1))
-            transformPatternAngle (&params.angle1, params.angle1, &params.rMatrix, &transform);
-
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Angle2))
-            transformPatternAngle (&params.angle2, params.angle2, &params.rMatrix, &transform);
-
-        // reset rotation...accounted for in new angles
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::RotMatrix))
-            (params.rMatrix).InitIdentity ();
-        }
-    else
-        {
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::RotMatrix))
-            {
-            (params.rMatrix).InitProduct(transform, *( &params.rMatrix));
-            (params.rMatrix).SquareAndNormalizeColumns (*( &params.rMatrix), 0, 1);
-            }
-        }
-
-    if (pHatchLines && (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::DwgHatchDef)))
-        {
-        int         iDefLine;
-        double      scale = 0.0;
-        DVec3d      xDir;
-
-        transform.GetMatrixColumn (xDir, 0);
-        scale = xDir.Magnitude();
-
-        if (scale > mgds_fc_epsilon)
-            {
-            for (iDefLine = 0; iDefLine < params.dwgHatchDef.nDefLines; iDefLine++)
-                {
-                int     iDash;
-
-                pHatchLines[iDefLine].through.x *= scale;
-                pHatchLines[iDefLine].through.y *= scale;
-
-                pHatchLines[iDefLine].offset.x *= scale;
-                pHatchLines[iDefLine].offset.y *= scale;
-
-                for (iDash = 0; iDash < pHatchLines[iDefLine].nDashes; iDash++)
-                    pHatchLines[iDefLine].dashes[iDash] *= scale;
-                }
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt   doTransformPattern
-(
-EditElementHandleR  eeh,
-TransformCR         transform,
-bool                allowSizeChange
-)
-    {
-    DVec3d      zDir;
-    DgnV8ElementBlank   tElm(*eeh.GetElementCP()); // full DgnElement on stack!!
-    transform.GetMatrixRow (zDir,  2);
-
-    bool            flatten = (0.0 == zDir.Magnitude());
-    int             patIndex = 0;
-    UShort*         pLinkage = NULL;
-    PatternParams   params;
-    DwgHatchDefLine hatchLines[MAX_DWG_EXPANDEDHATCH_LINES]; // huge local!
-
-    while (NULL != (pLinkage = (UShort*) linkage_extractLinkageByIndex (NULL, &tElm, PATTERN_ID, NULL, patIndex)))
-        {
-        PatternLinkageUtil::Extract (params, hatchLines, MAX_DWG_EXPANDEDHATCH_LINES, (HatchLinkage*) pLinkage, tElm.Is3d());
-        PatternLinkageUtil::Transform (params, hatchLines, transform, flatten, allowSizeChange);
-
-        HatchLinkage    hLink;
-
-        if (0 != PatternLinkageUtil::Create (hLink, params, hatchLines, tElm.Is3d()))
-            elemUtil_replaceLinkage (&tElm, pLinkage, (UShort *) &hLink, allowSizeChange);
-
-        patIndex++;
-        }
-
-    return eeh.ReplaceElement (&tElm);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       PatternLinkageUtil::OnElementTransform (EditElementHandleR eeh, TransformCR transform, bool allowSizeChange)
-    {
-    if (0 == mdlLinkage_numLinkages (eeh.GetElementP (), PATTERN_ID))
-        return SUCCESS;
-
-    return doTransformPattern (eeh, transform, allowSizeChange);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JimBartlett   5/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PatternLinkageUtil::GetHatchOrigin (DPoint3dR origin, DgnElementCR elm)
-    {
-    // NEEDSWORK: This should use the handler but we don't want to change old patterns... :(
-    switch (elm.GetLegacyType())
-        {
-        case ELLIPSE_ELM:
-            {
-            if (elm.Is3d())
-                origin = elm.ToEllipse_3d().origin;
-            else
-                origin.init (&elm.ToEllipse_2d().origin);
-            break;
-            }
-
-        case SHAPE_ELM:
-            {
-            origin.x = elm.ToLine_String_3d().vertice->x;
-            origin.y = elm.ToLine_String_3d().vertice->y;
-            origin.z = elm.Is3d() ? elm.ToLine_String_3d().vertice->z : 0.0;
-            break;
-            }
-
-        case MULTILINE_ELM:
-            {
-            origin = ((MlinePoint const*) (elm.ToMlineElm().profile + elm.ToMlineElm().nLines))->point;
-            break;
-            }
-
-        default:
-            {
-            DRange3d     rangeVec = elm.GetRange();
-            origin.x = rangeVec.low.x;
-            origin.y = rangeVec.low.y;
-            origin.z = elm.Is3d() ? rangeVec.low.z : 0.0;
-            break;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JimBartlett     3/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       PatternLinkageUtil::Extract
-(
-PatternParamsR      params,
-DwgHatchDefLineP    pHatchLines,
-int                 nMaxLines,
-HatchLinkageP       pLink,
-bool                is3d
-)
-    {
-    if (!pLink)
-        return ERROR;
-
-    return PatternLinkageUtil::Extract (params, pHatchLines, nMaxLines, (byte const*) &pLink->modifiers, is3d);
-    }
-    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       PatternLinkageUtil::Extract
-(
-PatternParamsR      params,
-DwgHatchDefLineP    pHatchLines,
-int                 nMaxLines,
-byte const*         buffer,
-bool                is3d
-)
-    {
-    params.Init ();
-    
-    aspat_extractHatchData (params, pHatchLines, nMaxLines, buffer, is3d);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-int             PatternLinkageUtil::Create
-(
-HatchLinkageR       linkage,
-PatternParamsR      params,
-DwgHatchDefLineP    pHatchLines,
-bool                is3d
-)
-    {
-    linkage.linkHeader.user       = 1;
-    linkage.linkHeader.primaryID  = PATTERN_ID;
-
-    byte*       pEnd = aspat_appendHatchData ((byte *) &linkage.modifiers, &params, pHatchLines, is3d);
-    int         linkBytes = ((pEnd - ((byte *) &linkage)) + 7) & ~7;
-
-    LinkageUtil::SetWords (&linkage.linkHeader, linkBytes/2);
-
-    return linkBytes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       PatternLinkageUtil::AddToElement
-(
-DgnElementR          elm,
-PatternParamsR      params,
-DwgHatchDefLineP    pHatchLines,
-int                 index
-)
-    {
-    // If area pattern and we don't have cellId at this point, just return error, name lookup should have happened earlier!
-    if ( (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Cell)) && !params.cellId)
-        return ERROR;
-
-    // -1 means to append new linkage to end
-    if (index >= 0)
-        PatternLinkageUtil::DeleteFromElement (elm, index); // returns num deleted
-    else if (index < 0)
-        index = mdlLinkage_numLinkages (&elm, PATTERN_ID);
-
-    HatchLinkage    hatchLink;
-
-    PatternLinkageUtil::Create (hatchLink, params, pHatchLines, elm.Is3d());
-
-    if (SUCCESS != elemUtil_appendLinkage (&elm, &hatchLink.linkHeader))
-        return ERROR;
-    
-    if (PatternParamsModifierFlags::None == (params.modifiers & PatternParamsModifierFlags::Cell))
-        return SUCCESS;
-
-    DependencyLinkage   depLinkage;
-
-    DependencyManagerLinkage::InitLinkage (depLinkage, DEPENDENCYAPPID_PatternCell, DEPENDENCY_DATA_TYPE_ELEM_ID, DEPENDENCY_ON_COPY_DeepCopyRootsAcrossFiles);
-
-    depLinkage.appValue         = (Int16)index;
-    depLinkage.nRoots           = 1;
-    depLinkage.root.elemid[0]   = params.cellId;
-
-    return DependencyManagerLinkage::AppendLinkageToMSElement (&elm, depLinkage, 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JimBartlett     8/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       PatternLinkageUtil::ExtractFromElement
-(
-HatchLinkageP*      ppHatchLinkage,
-PatternParamsR      params,
-DwgHatchDefLineP    pHatchDefLines,
-int                 maxHatchDefLines,
-DPoint3dP           pOrigin,
-DgnElementCR        elm,
-DgnModelP           dgnCache,   // if NULL pParams->cellName just won't be set by looking up cellId...
-int                 index
-)
-    {
-    HatchLinkageP   hLink = (HatchLinkageP) linkage_extractLinkageByIndex (NULL, &elm, PATTERN_ID, NULL, index);
-
-    if (NULL == hLink)
-        return ERROR;
-
-    PatternLinkageUtil::Extract (params, pHatchDefLines, maxHatchDefLines, hLink, elm.Is3d());
-
-    if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Cell))
-        {
-        DependencyLinkageAccessor  depLinkageP;
-
-        if (SUCCESS == DependencyManagerLinkage::GetLinkageFromMSElement (&depLinkageP, &elm, DEPENDENCYAPPID_PatternCell, (UShort) index))
-            {
-            params.cellId = depLinkageP->root.elemid[0];
-
-            HighPriorityOperationBlock highPriorityOperationBlock;
-            ElementRefP  elemRef;
-            if (NULL != (elemRef = dgnCache->FindElementById(ElementId(params.cellId))))
-                {
-                ElementHandle  eh (elemRef);
-
-                CellUtil::GetCellName (params.cellName, MAX_CELLNAME_LENGTH, *eh.GetElementCP ());
-                }
-            }
-
-        if (!params.cellId)
-            params.modifiers = params.modifiers& ~PatternParamsModifierFlags::Cell;
-        }
-
-    if (NULL != pOrigin)
-        {
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Origin))
-            *pOrigin = params.origin;
-        else
-            PatternLinkageUtil::GetHatchOrigin (*pOrigin, elm);
-
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Offset))
-            bsiDPoint3d_addDPoint3dDPoint3d (pOrigin, pOrigin, (DVec3d *) &params.offset);
-        }
-
-    if (NULL != ppHatchLinkage)
-        *ppHatchLinkage = hLink;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-int             PatternLinkageUtil::DeleteFromElement (DgnElementR elm, int patIndex)
-    {
-    int         numPattern, numDeleted;
-    
-    // Get current linkage count and remove requested "normal" pattern linkage (-1 removes all)...
-    if (0 == (numPattern = mdlLinkage_numLinkages (&elm, PATTERN_ID)) ||
-        0 == (numDeleted = linkage_deleteLinkageByIndex (&elm, PATTERN_ID, patIndex)))
-        return 0;
-
-    // Remove all optional pattern linkages in reverse so string linkage loop index remains valid...
-    if (patIndex < 0)
-        {
-        for (int index = numPattern-1; index >= 0; index--)
-            {
-            LinkageUtil::DeleteStringLinkage (&elm, STRING_LINKAGE_KEY_DWGPatternName, (UShort) index);
-            DependencyManagerLinkage::DeleteLinkageFromMSElement (&elm, DEPENDENCYAPPID_PatternCell, (UShort) index);
-            }
-
-        return numDeleted;
-        }
-
-    // Remove the optional pattern linkages for the specified index...
-    LinkageUtil::DeleteStringLinkage (&elm, STRING_LINKAGE_KEY_DWGPatternName, (UShort) patIndex);
-    DependencyManagerLinkage::DeleteLinkageFromMSElement (&elm, DEPENDENCYAPPID_PatternCell, (UShort) patIndex);
-
-    // NOTE: Must decrement dependency appValue indices greater than the deleted index...
-    for (int index = patIndex+1; index < numPattern; index++)
-        {
-        DependencyLinkageAccessor depLink;
-
-        if (SUCCESS == DependencyManagerLinkage::GetLinkageFromMSElement (&depLink, &elm, DEPENDENCYAPPID_PatternCell, (UShort) index))
-            {
-#if defined (WIP_NONPORT)
-            ((DependencyLinkageP) depLink)->appValue--;
-#else
-            BeAssert (false && "You cannot write through a DependencyLinkageAccessor");
-#endif
-            }
-        }
-
-    return numDeleted;
-    }
-#endif
+void ByteStreamHelper::AppendULong (Byte*& buffer, unsigned long const & value)     { memcpy (buffer, &value, sizeof (value)); buffer += sizeof (value); }
+void ByteStreamHelper::ExtractULong (unsigned long& value, Byte const *& buffer)    { memcpy (&value, buffer, sizeof (value)); buffer += sizeof (value); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
@@ -1564,11 +122,12 @@ void PatternParams::Init ()
     modifiers = PatternParamsModifierFlags::None;
     minLine = -1;
     maxLine = -1;
-    color = 0;
+    color = ColorDef::Black();
     weight = 0;
     style = 0;
-    holeStyle = static_cast<Int16>(PatternParamsHoleStyleType::Normal);
-    memset (&dwgHatchDef, 0, sizeof (dwgHatchDef));
+    holeStyle = static_cast<int16_t>(PatternParamsHoleStyleType::Normal);
+    dwgHatchDef.pixelSize = 0.0;
+    dwgHatchDef.islandStyle = 0;
     origin.Zero ();
     }
 
@@ -1615,7 +174,9 @@ void PatternParams::Copy (PatternParamsCR params)
     weight = params.weight;
     style = params.style;
     holeStyle = params.holeStyle;
-    memcpy (&dwgHatchDef, &params.dwgHatchDef, sizeof (dwgHatchDef));
+    dwgHatchDef.pixelSize = params.dwgHatchDef.pixelSize;
+    dwgHatchDef.islandStyle = params.dwgHatchDef.islandStyle;
+    dwgHatchDef.hatchLines = params.dwgHatchDef.hatchLines;
     origin = params.origin;
     }
 
@@ -1783,8 +344,25 @@ bool PatternParams::IsEqual (PatternParamsCR params, PatternParamsCompareFlags c
 
         if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::DwgHatchDef))
             {
-            if (0 != memcmp (&dwgHatchDef, &params.dwgHatchDef, sizeof (dwgHatchDef)))
+            if (dwgHatchDef.pixelSize != params.dwgHatchDef.pixelSize)
                 return false;
+
+            if (dwgHatchDef.islandStyle != params.dwgHatchDef.islandStyle)
+                return false;
+
+            if (dwgHatchDef.hatchLines.size() != params.dwgHatchDef.hatchLines.size())
+                return false;
+
+            size_t  nHatchLines = dwgHatchDef.hatchLines.size();
+
+            for (size_t i=0; i<nHatchLines; ++i)
+                {
+                DwgHatchDefLine const* h1 = &dwgHatchDef.hatchLines.at(i);
+                DwgHatchDefLine const* h2 = &params.dwgHatchDef.hatchLines.at(i);
+
+                if (0 != memcmp (h1, h2, sizeof (*h1)))
+                    return false;
+                }
             }
         }
 
@@ -1808,22 +386,12 @@ bool PatternParams::IsEqual (PatternParamsCR params, PatternParamsCompareFlags c
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementPropertiesGetter::ElementPropertiesGetter (ElementHandleCR eh)
     {
-    DisplayHandlerP dHandler = eh.GetDisplayHandler ();
+#if defined (V10_WIP_ELEMENTHANDLER)
+    // NEEDSWORK: Is there still a need to get "element" symbology. What tools/operation might need this?
+    ElementHandlerR handler = eh.GetHandler ();
 
-    if (NULL == dHandler)
-        m_displayParams.Init ();
-    else
-        dHandler->GetElemDisplayParams (eh, m_displayParams);
-
-    // NOTE: Callers are expecting a normal element color id. In the off chance that a handler chooses
-    //       to set it's default display params by RGB (not an extended color id), attempt to resolve
-    //       to an existing extended color id. If current element color id isn't invalid, assume it's ok.
-    if (INVALID_COLOR != m_displayParams.GetLineColor ())
-        return;
-
-    // Get existing element color for true color if it exists...returns INVALID_COLOR if not found...
-    m_displayParams.SetLineColor (eh.GetDgnProject()->Colors().FindElementColor (IntColorDef (m_displayParams.GetLineColorTBGR ())));
-
+    handler.GetElemDisplayParams (eh, m_displayParams);
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -1837,8 +405,9 @@ ElementPropertiesGetterPtr ElementPropertiesGetter::Create (ElementHandleCR eh)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32 ElementPropertiesGetter::GetLineStyle (LineStyleParamsP lsParams) const
+int32_t ElementPropertiesGetter::GetLineStyle (LineStyleParamsP lsParams) const
     {
+#if defined (WIP_LINESTYLE)
     if (lsParams)
         {
         LineStyleParamsCP  params = m_displayParams.GetLineStyleParams ();
@@ -1850,18 +419,19 @@ Int32 ElementPropertiesGetter::GetLineStyle (LineStyleParamsP lsParams) const
         }
     
     return m_displayParams.GetLineStyle ();
+#else
+    return 0;
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ElementPropertiesGetter::GetColor () const {return m_displayParams.GetLineColor ();}
-UInt32 ElementPropertiesGetter::GetWeight () const {return m_displayParams.GetWeight ();}
-LevelId ElementPropertiesGetter::GetLevel () const {return m_displayParams.GetSubLevelId().GetLevel();}
-DgnElementClass ElementPropertiesGetter::GetElementClass () const {return m_displayParams.GetElementClass ();}
-Int32 ElementPropertiesGetter::GetDisplayPriority () const {return m_displayParams.GetElementDisplayPriority ();}
+ColorDef ElementPropertiesGetter::GetColor () const {return m_displayParams.GetLineColor();}
+uint32_t ElementPropertiesGetter::GetWeight () const {return m_displayParams.GetWeight ();}
+DgnCategoryId ElementPropertiesGetter::GetCategory () const {return m_displayParams.GetCategoryId ();}
+int32_t ElementPropertiesGetter::GetDisplayPriority () const {return m_displayParams.GetDisplayPriority ();}
 double ElementPropertiesGetter::GetTransparency () const {return m_displayParams.GetTransparency ();}
-DVec3dCP ElementPropertiesGetter::GetThickness (bool& isCapped) const {return m_displayParams.GetThickness (isCapped);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
@@ -1874,26 +444,20 @@ ElementPropertiesSetter::ElementPropertiesSetter ()
     m_setElemColor      = false;
     m_setFillColor      = false;
 
-    m_color             = 0;
-    m_fillColor         = 0;
-    m_style             = 0;
+    m_color             = ColorDef::Black();
+    m_fillColor         = ColorDef::Black();
     m_weight            = 0;
-    m_elmClass          = DgnElementClass::Primary;
     m_priority          = 0;
     m_transparency      = 0.0;
 
+    m_style             = 0;
     m_lsParams          = NULL;
-
-    m_thickness         = 0.0;
-    m_direction         = NULL;
-    m_isCapped          = false;
-    m_alwaysUseDir      = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::SetColor (UInt32 color)
+void            ElementPropertiesSetter::SetColor (ColorDef color)
     {
     m_propMask      = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_Color);
     m_color         = color;
@@ -1903,7 +467,7 @@ void            ElementPropertiesSetter::SetColor (UInt32 color)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::SetFillColor (UInt32 fillColor)
+void            ElementPropertiesSetter::SetFillColor (ColorDef fillColor)
     {
     m_propMask      = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_Color);
     m_fillColor     = fillColor;
@@ -1913,7 +477,7 @@ void            ElementPropertiesSetter::SetFillColor (UInt32 fillColor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::SetLinestyle (Int32 style, LineStyleParamsCP lsParams)
+void            ElementPropertiesSetter::SetLinestyle (int32_t style, LineStyleParamsCP lsParams)
     {
     m_propMask = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_Linestyle);
     m_style    = style;
@@ -1923,7 +487,7 @@ void            ElementPropertiesSetter::SetLinestyle (Int32 style, LineStylePar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::SetWeight (UInt32 weight)
+void            ElementPropertiesSetter::SetWeight (uint32_t weight)
     {
     m_propMask = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_Weight);
     m_weight = weight;
@@ -1932,25 +496,16 @@ void            ElementPropertiesSetter::SetWeight (UInt32 weight)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::SetLevel (LevelId level)
+void            ElementPropertiesSetter::SetCategory (DgnCategoryId category)
     {
-    m_propMask = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_Level);
-    m_level = level;
+    m_propMask = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_Category);
+    m_category = category;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::SetElementClass (DgnElementClass elmClass)
-    {
-    m_propMask = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_ElementClass);
-    m_elmClass = elmClass;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::SetDisplayPriority (Int32 priority)
+void            ElementPropertiesSetter::SetDisplayPriority (int32_t priority)
     {
     m_propMask = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_DisplayPriority);
     m_priority = priority;
@@ -1963,18 +518,6 @@ void            ElementPropertiesSetter::SetTransparency (double transparency)
     {
     m_propMask = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_Transparency);
     m_transparency = transparency;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::SetThickness (double thickness, DVec3dCP direction, bool isCapped, bool alwaysUseDirection)
-    {
-    m_propMask      = (ElementProperties) (m_propMask | ELEMENT_PROPERTY_Thickness);
-    m_thickness     = thickness;
-    m_direction     = direction;
-    m_isCapped      = isCapped;
-    m_alwaysUseDir  = alwaysUseDirection;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2018,7 +561,7 @@ void ElementPropertiesSetter::_EachColorCallback (EachColorArg& arg)
 
     if (m_setElemColor && (m_changeAll || 0 != (arg.GetPropertyFlags () & PROPSCALLBACK_FLAGS_IsBaseID)))
         {
-        arg.SetStoredValue (m_color);
+        arg.SetStoredValue (m_color.GetValue());
 
         if (!m_setFillColor)
             arg.SetPropertyCallerFlags ((PropsCallerFlags) (PROPSCALLER_FLAGS_PreserveOpaqueFill | PROPSCALLER_FLAGS_PreserveMatchingDecorationColor));
@@ -2027,7 +570,7 @@ void ElementPropertiesSetter::_EachColorCallback (EachColorArg& arg)
         }
 
     if (m_setFillColor && (m_changeAll || 0 != (arg.GetPropertyFlags () & PROPSCALLBACK_FLAGS_IsBackgroundID)))
-        arg.SetStoredValue (m_fillColor);
+        arg.SetStoredValue (m_fillColor.GetValue());
     if (m_changeAll) // Seems reasonable/desirable to add shared cell instance overrides when change all is set...
         arg.SetPropertyCallerFlags ((PropsCallerFlags) (arg.GetPropertyCallerFlags () | PROPSCALLER_FLAGS_SharedChildOvrSet));
     }
@@ -2064,25 +607,14 @@ void ElementPropertiesSetter::_EachWeightCallback (EachWeightArg& arg)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::_EachLevelCallback (EachLevelArg& arg)
+void            ElementPropertiesSetter::_EachCategoryCallback (EachCategoryArg& arg)
     {
     if (!IsValidBaseID (arg))
         return;
 
-    arg.SetStoredValue (m_level);
+    arg.SetStoredValue (m_category);
     if (m_changeAll) // Seems reasonable/desirable to add shared cell instance overrides when change all is set...
         arg.SetPropertyCallerFlags ((PropsCallerFlags) (arg.GetPropertyCallerFlags () | PROPSCALLER_FLAGS_SharedChildOvrSet));
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  04/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::_EachElementClassCallback (EachElementClassArg& arg)
-    {
-    if (!IsValidBaseID (arg))
-        return;
-
-    arg.SetStoredValue (m_elmClass);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -2107,20 +639,6 @@ void            ElementPropertiesSetter::_EachTransparencyCallback (EachTranspar
     arg.SetStoredValue (m_transparency);
     }
 
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  04/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ElementPropertiesSetter::_EachThicknessCallback (EachThicknessArg& arg)
-    {
-    if (!IsValidBaseID (arg))
-        return;
-
-    arg.SetStoredValue (m_thickness);
-    arg.SetDirection (m_direction);
-    arg.SetCapped (m_isCapped);
-    arg.SetAlwaysUseDirection (m_alwaysUseDir);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2011
 //---------------------------------------------------------------------------------------
@@ -2129,8 +647,8 @@ void ElementPropertiesSetter::_EachFontCallback (EachFontArg& arg)
     if (!IsValidBaseID (arg))
         return;
     
-    UInt32 fontNumber;
-    if (SUCCESS != arg.GetPropertyContext().GetDestinationDgnModel()->GetDgnProject().Fonts().AcquireFontNumber (fontNumber, *m_font))
+    uint32_t fontNumber;
+    if (SUCCESS != arg.GetPropertyContext().GetDestinationDgnModel()->GetDgnDb().Fonts().AcquireFontNumber (fontNumber, *m_font))
         { BeAssert (false); return; }
     
     arg.SetStoredValue (fontNumber);
@@ -2154,78 +672,10 @@ ElementPropertiesSetterPtr ElementPropertiesSetter::Create ()
     return new ElementPropertiesSetter ();
     }
 
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RBB             09/89
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DataConvert::DPointToUPoint (Upoint3d& uPnt, DPoint3dCR dPnt)
-    {
-    uPnt.x = DataConvert::RoundDoubleToULong (dPnt.x);
-    uPnt.y = DataConvert::RoundDoubleToULong (dPnt.y);
-    uPnt.z = DataConvert::RoundDoubleToULong (dPnt.z);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RBB             09/89
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DataConvert::UPointToDPoint (DPoint3dR dPnt, Upoint3d const& uPnt)
-    {
-    dPnt.x = unslong_to_double (uPnt.x);
-    dPnt.y = unslong_to_double (uPnt.y);
-    dPnt.z = unslong_to_double (uPnt.z);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RBB             06/86
-+---------------+---------------+---------------+---------------+---------------+------*/
-void     DataConvert::IPointToDPoint (DPoint3dR rpnt, Point3dCR ipnt)
-    {
-    rpnt.x = (double) ipnt.x;
-    rpnt.y = (double) ipnt.y;
-    rpnt.z = (double) ipnt.z;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* number to the nearest unsigned long integer.
-* author RBB
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-unsigned long DataConvert::RoundDoubleToULong (double double_num)
-    {
-    if (double_num < 0.0)
-        double_num = 0.0;
-
-    double_num += 0.5;
-    if (double_num > RMAXUI4 - 1.0)
-        double_num = RMAXUI4 - 1.0;
-
-    return (double_to_unslong (double_num));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-long DataConvert::RoundDoubleToLong (double double_num)
-    {
-    if (double_num > 0.0)
-        {
-        if ((double_num += 0.5) > RMAXI4)
-            return LMAXI4;
-        }
-    else
-        {
-        if ((double_num -= 0.5) < RMINI4)
-            return LMINI4;
-        }
-
-    return (long)double_num;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    DML             10/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     DataConvert::Points3dTo2d (DPoint2dP outP, DPoint3dCP inP, int numPts)
+void     DataConvert::Points3dTo2d (DPoint2dP outP, DPoint3dCP inP, int numPts)
     {
     for (;numPts > 0; numPts--, inP++, outP++)
         {
@@ -2237,7 +687,7 @@ Public void     DataConvert::Points3dTo2d (DPoint2dP outP, DPoint3dCP inP, int n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RBB             09/86
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     DataConvert::Points2dTo3d (DPoint3dP outP, DPoint2dCP inP, int numPts, double zElev)
+void     DataConvert::Points2dTo3d (DPoint3dP outP, DPoint2dCP inP, int numPts, double zElev)
     {
     for (;numPts > 0; numPts--, inP++, outP++)
         {
@@ -2248,150 +698,6 @@ Public void     DataConvert::Points2dTo3d (DPoint3dP outP, DPoint2dCP inP, int n
     }
 
 
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Barry.Bentley   01/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public void     DataConvert::RotationToQuaternion (double* quaternion, double rotationAngle)
-    {
-    double      cosine, sine, rtemp;
-
-    sine   = sin (-rotationAngle);
-    cosine = cos (-rotationAngle);
-
-    *quaternion = sqrt ((1.0 + cosine) / 2.0);
-
-    *(quaternion+1) = 0.0;
-    *(quaternion+2) = 0.0;
-
-    rtemp = sqrt ((1.0 - cosine) / 2.0);
-    if (sine < 0.0)
-        rtemp = -1.0 * rtemp;
-
-    *(quaternion+3) = rtemp;
-    }
-
-typedef union slbUnion
-    {
-    unsigned long ul;
-    long          l;
-    short         s[2];
-    byte          b[4];
-    } SLBUnion;
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name         DataConvert::swapWord                                    |
-|                                                                       |
-|                   Convert from PDP format longs to native longs.      |
-|                   PDP:        3 4 1 2                                 |
-|                   INTEL ORDER 1 2 3 4                                 |
-|                   BIG_ENDIAN: 4 3 2 1                                 |
-|                                                                       |
-| author        BJB                                     11/89           |
-|                                                                       |
-+----------------------------------------------------------------------*/
-void    DataConvert::SwapWord
-(
-UInt32         *input
-)
-    {
-    SLBUnion    u;
-    short       temp;
-
-    u.l     = *input;
-    temp    = u.s[0];
-    u.s[0]  = u.s[1];
-    u.s[1]  = temp;
-    *input  = u.l;
-    }
-
-#if !defined (__APPLE__)
-void     DataConvert::SwapWord (ULong32 *input) {return DataConvert::SwapWord((UInt32*)input);}
-#endif
-void     DataConvert::SwapWord ( Long32 *input) {return DataConvert::SwapWord((UInt32*)input);}
-void     DataConvert::SwapWord (  Int32 *input) {return DataConvert::SwapWord((UInt32*)input);}
-
-/*----------------------------------------------------------------------+
-;
-;  name         _mdlCnv_toScanFormat - changes input signed long into scan format
-;               (i.e. unsigned long with words swapped)
-;
-+----------------------------------------------------------------------*/
-unsigned long DataConvert::ToScanFormat(long sinput)
-    {
-    SLBUnion retVal;
-    retVal.l = sinput ^ 0x80000000; // convert to unsigned
-    
-    short lowHalf = retVal.s[0];
-    retVal.s[0]   = retVal.s[1];
-    retVal.s[1]   = lowHalf;
-
-    return retVal.ul;
-    }
-
-/*----------------------------------------------------------------------+
-;
-;  name         _mdlCnv_fromScanFormat - reverses action of _mdlCnv_toScanFmt
-;
-;  synopsis     output = _mdlCnv_fromScanFormat (input)
-;               unsigned long input;
-;               long output;
-;
-+----------------------------------------------------------------------*/
-long DataConvert::FromScanFormat(unsigned long usInput)
-    {
-    SLBUnion retVal;
-    retVal.ul = usInput;
-
-    short lowHalf = retVal.s[0];
-    retVal.s[0]   = retVal.s[1];
-    retVal.s[1]   = lowHalf;
-    
-    retVal.l = retVal.l ^ 0x80000000; // convert to signed
-
-    return retVal.l;
-    }
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name          mdlCnv_doubleFromFileFormatArray                        |
-|                                                                       |
-| author        kab                                     6/86            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public void DataConvert::DoubleFromFileFormatArray
-(
-double  *pntr,
-size_t   numpoints
-)
-    {
-    size_t i;
-    for (i=0; i<numpoints; i++, pntr++)
-        RscDataConvert::DoubleFromFileFormat (pntr);
-    }
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name          mdlCnv_doubleToFileFormatArray                          |
-|                                                                       |
-| author        RBB                                     2/88            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public void     DataConvert::DoubleToFileFormatArray
-(
-double          *pntr,
-size_t           numpoints
-)
-    {
-    size_t  i;
-
-    for (i=0; i<numpoints; i++, pntr++)
-        RscDataConvert::DoubleToFileFormat (pntr);
-    }
-
-#endif
-
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          DataConvert::ReverseUInt64                                    |
@@ -2401,12 +707,12 @@ size_t           numpoints
 +----------------------------------------------------------------------*/
 Public void     DataConvert::ReverseUInt64
 (
-UInt64&        output,
-UInt64         input
+uint64_t&        output,
+uint64_t       input
 )
     {
-    UInt64      tmp = input;
-    byte        *pTmpBytes = (byte *) &tmp, *pOutputBytes = (byte *) &output;
+    uint64_t    tmp = input;
+    Byte *pTmpBytes = (Byte *) &tmp, *pOutputBytes = (Byte *) &output;
 
     pOutputBytes[0] = pTmpBytes[7];
     pOutputBytes[1] = pTmpBytes[6];
@@ -2418,116 +724,324 @@ UInt64         input
     pOutputBytes[7] = pTmpBytes[0];
     }
 
-#if defined (NEEDS_WORK_DGNITEM)
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name          mdlCnv_swapWordArray - swap an array of 4 byte integers |
-|                                                                       |
-| author        kab                                     7/86            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public void     DataConvert::SwapWordArray
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   CurveVectorUtil::PartialDeleteElement
 (
-void           *vpntr,
-size_t          numpoints
+EditElementHandleR  outEeh1,
+EditElementHandleR  outEeh2,
+ElementHandleCR     eh,
+DPoint3dCP          pointF,
+DPoint3dCP          pointL,
+DPoint3dCP          pointD,
+DgnViewportP        vp
 )
     {
-    size_t  i;
-    UInt16  temp;
-    UInt16* pntr = static_cast<UInt16*>(vpntr);
+#if defined (NEEDS_WORK_DGNITEM)
+    return partialDeleteElement (outEeh1, outEeh2, eh, pointF, pointL, pointD, NULL, false, vp);
+#else
+    return ERROR;
+#endif
+    }
 
-    for (i=0; i<numpoints; i++, pntr+=2)
-        {
-        temp = *pntr;
-        *pntr = *(pntr+1);
-        *(pntr+1) = temp;
-        }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   CurveVectorUtil::PartialDeleteElement
+(
+EditElementHandleR  outEeh1,
+EditElementHandleR  outEeh2,
+ElementHandleCR     eh,
+DPoint3dCP          pointF,
+DPoint3dCP          pointL,
+DVec3dP             dirVec,             // <=> Output when computeDirection
+bool                computeDirection,
+DgnViewportP        vp
+)
+    {
+#if defined (NEEDS_WORK_DGNITEM)
+    return partialDeleteElement (outEeh1, outEeh2, eh, pointF, pointL, NULL, dirVec, computeDirection, vp);
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RBB             07/86
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     in_span (double theta, double start, double sweep)
+bool BentleyApi::in_span (double theta, double start, double sweep)
     {
     theta -= start;
 
-    if (fabs (theta) > 62.8) 
-        return 0;
+    if (fabs (theta) > 62.8) return (0);
 
-    while (theta < 0.0) 
-        theta += msGeomConst_2pi;
-    while (theta > msGeomConst_2pi) 
-        theta -= msGeomConst_2pi;
-
+    while (theta < 0.0) theta += msGeomConst_2pi;
+    while (theta > msGeomConst_2pi) theta -= msGeomConst_2pi;
     if (sweep > 0.0)
         {
         if (sweep >= theta)
-            return true;
+            return (true);
+        return (false);
+        }
+    else
+        {
+        if (theta >= (msGeomConst_2pi + sweep))
+            return (true);
+        return (false);
+        }
+    }
 
-        return false;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementUtil::InitScanRangeForUnion (DRange3dR range, bool is3d)
+    {
+    range.Init();
+    if (!is3d)
+        {
+        range.low.z = range.high.z = 0.0;
+        }
+    }
+#if defined (NEEDS_WORK_CONVERTER)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/09
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ElementUtil::GetIntersectionPointByIndex
+(
+DPoint3dR       isPnt,
+ElementHandleCR eh1,
+ElementHandleCR eh2,
+TransformCP     pathTrans1,
+TransformCP     pathTrans2,
+int             index
+)
+    {
+    if (index < 0)
+        {
+        BeAssert (false);
+
+        return ERROR;
         }
 
-    if (theta >= (msGeomConst_2pi + sweep))
-        return true;
+    bvector<DPoint3d> isPnts1, isPnts2;
 
-    return false;
-    }
-
-
-#define XATTRIBUTEID_ElementBasis       22843       // Assigned by Mark Andersen   9/20.
-
-enum  ElementBasis_XAttributeMinorId  
-    {
-    ElementBasis_XAttributeMinorId_Transform        = 0,
-    ElementBasis_XAttributeMinorId_Range            = 1,
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                      RayBentley    09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  BasisXAttributesUtil::GetRange (DRange3dP range, ElementHandleCR eh)
-    {
-    ElementHandle::XAttributeIter   iter (eh, XAttributeHandlerId (XATTRIBUTEID_ElementBasis, ElementBasis_XAttributeMinorId_Range));
-
-    if (!iter.IsValid() || sizeof (DRange3d) != iter.GetSize())
+    if (SUCCESS != ElementUtil::GetIntersections (&isPnts1, &isPnts2, eh1, eh2, pathTrans1, pathTrans2, true))
         return ERROR;
-    
-    if (NULL != range)
-        memcpy (range, iter.PeekData(), sizeof (*range));
+
+    int     nIntersect = (int) isPnts1.size ();
+
+    if (index > nIntersect-1)
+        return ERROR;
+
+    // Make sure this is a real intersection (not apparent one)
+    if (!LegacyMath::RpntEqual (&isPnts1[index], &isPnts2[index]))
+        return ERROR;
+
+    isPnt = isPnts1[index];
 
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                      RayBentley    09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  BasisXAttributesUtil::GetTransform (TransformP transform, ElementHandleCR eh)
-    {
-    ElementHandle::XAttributeIter   iter (eh, XAttributeHandlerId (XATTRIBUTEID_ElementBasis, ElementBasis_XAttributeMinorId_Transform));
-
-    if (!iter.IsValid() || sizeof (Transform) != iter.GetSize())
-        return ERROR;
-    
-    if (NULL != transform)
-        memcpy (transform, iter.PeekData(), sizeof (*transform));
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                      RayBentley    09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  BasisXAttributesUtil::SetRange (DRange3dCR range, EditElementHandleR eeh)
-    {
-    return SUCCESS == eeh.ScheduleWriteXAttribute (XAttributeHandlerId (XATTRIBUTEID_ElementBasis, ElementBasis_XAttributeMinorId_Range), 0, sizeof (range), &range) ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                      RayBentley    09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  BasisXAttributesUtil::SetTransform (TransformCR transform, EditElementHandleR eeh)
-    {
-    return SUCCESS == eeh.ScheduleWriteXAttribute (XAttributeHandlerId (XATTRIBUTEID_ElementBasis, ElementBasis_XAttributeMinorId_Transform), 0, sizeof (transform), &transform) ? SUCCESS : ERROR;
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/05
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ElementUtil::GetIgnoreScaleDisplayTransforms
+(
+TransformP      newTopTransP,
+TransformP      newScTransP,
+ViewContextR    context
+)
+    {
+    Transform   fwdTopLocalToFrustum, invTopLocalToFrustum, fwdRefLocalToFrustum, invRefLocalToFrustum;
+
+    context.GetCurrLocalToFrustumTrans (fwdTopLocalToFrustum);
+    context.GetLocalToFrustumTrans (fwdRefLocalToFrustum, context.GetRefTransClipDepth ());
+    bsiTransform_invertTransform (&invTopLocalToFrustum, &fwdTopLocalToFrustum);
+    bsiTransform_invertTransform (&invRefLocalToFrustum, &fwdRefLocalToFrustum);
+
+    bsiTransform_multiplyTransformTransform (newTopTransP, &fwdRefLocalToFrustum, &invTopLocalToFrustum);
+    bsiTransform_multiplyTransformTransform (newScTransP, &fwdTopLocalToFrustum, &invRefLocalToFrustum);
+
+    return SUCCESS;
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+enum TEXTSTYLE_PROP
+    {
+    TEXTSTYLE_PROP_FontNo               = 0,
+    TEXTSTYLE_PROP_ShxBigFont           = 1,
+    TEXTSTYLE_PROP_Width                = 2,
+    TEXTSTYLE_PROP_Height               = 3,
+    TEXTSTYLE_PROP_Slant                = 4,
+    TEXTSTYLE_PROP_LineSpacing          = 5,
+    TEXTSTYLE_PROP_InterCharSpacing     = 6,
+    TEXTSTYLE_PROP_UnderlineOffset      = 7,
+    TEXTSTYLE_PROP_OverlineOffset       = 8,
+    TEXTSTYLE_PROP_WidthFactor          = 9,
+    TEXTSTYLE_PROP_LineOffset           = 10,
+    TEXTSTYLE_PROP_Just                 = 11,
+    TEXTSTYLE_PROP_NodeJust             = 12,
+    TEXTSTYLE_PROP_LineLength           = 13,
+    TEXTSTYLE_PROP_TextDirection        = 14,
+    TEXTSTYLE_PROP_BackgroundStyle      = 15,
+    TEXTSTYLE_PROP_BackgroundWeight     = 16,
+    TEXTSTYLE_PROP_BackgroundColor      = 17,
+    TEXTSTYLE_PROP_BackgroundFillColor  = 18,
+    TEXTSTYLE_PROP_BackgroundBorder     = 19,
+    TEXTSTYLE_PROP_UnderlineStyle       = 20,
+    TEXTSTYLE_PROP_UnderlineWeight      = 21,
+    TEXTSTYLE_PROP_UnderlineColor       = 22,
+    TEXTSTYLE_PROP_OverlineStyle        = 23,
+    TEXTSTYLE_PROP_OverlineWeight       = 24,
+    TEXTSTYLE_PROP_OverlineColor        = 25,
+    TEXTSTYLE_PROP_ParentId             = 26,
+    TEXTSTYLE_PROP_Flags                = 27,
+    TEXTSTYLE_PROP_OverrideFlags        = 28,
+    TEXTSTYLE_PROP_Color                = 29
+    
+    }; // TEXTSTYLE_PROP
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/09
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setAreaFillFromDisplayParams (EditElementHandleR eeh, ElemDisplayParamsCR params)
+    {
+#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
+    IAreaFillPropertiesEdit* areaObj = dynamic_cast <IAreaFillPropertiesEdit*> (&eeh.GetElementHandler());
+
+    if (areaObj)
+        {
+        areaObj->RemoveAreaFill (eeh);
+
+        if (NULL != params.GetGradient ())
+            {
+            areaObj->AddGradientFill (eeh, *params.GetGradient ());
+            }
+        else if (FillDisplay::Never != params.GetFillDisplay ())
+            {
+            bool    alwaysFill = (FillDisplay::Always == params.GetFillDisplay ());
+            ColorDef fillColor = params.GetFillColor();
+            areaObj->AddSolidFill (eeh, &fillColor, &alwaysFill);
+            }
+
+        return;
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setMaterialFromDisplayParams (EditElementHandleR eeh, ElemDisplayParamsCR params)
+    {
+#ifdef WIP_VANCOUVER_MERGE // material
+    IMaterialPropertiesExtension* materialExt = IMaterialPropertiesExtension::Cast (eeh.GetHandler ());
+
+    if (materialExt)
+        {
+        materialExt->DeleteMaterialAttachment (eeh);
+
+        if (params.IsAttachedMaterial () && params.GetMaterial ())
+            {
+            MaterialCP  material = params.GetMaterial ();
+            MaterialId  materialId (material->GetElementId (), material->GetName ().c_str ());
+
+            materialExt->AddMaterialAttachment (eeh, materialId);
+            }
+
+        return;
+        }
+
+    // Apply to public children...
+    ChildEditElemIter childElm (eeh, ExposeChildrenReason::Edit);
+
+    if (!childElm.IsValid ())
+        return;
+
+    for (; childElm.IsValid (); childElm = childElm.ToNext ())
+        setMaterialFromDisplayParams (childElm, params);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementPropertiesSetter::ApplyElemDisplayParamsRestricted (EditElementHandleR eeh, ElemDisplayParamsCR params, TemplateIgnores options)
+    {
+    ElementPropertiesSetter remapper;
+
+    if (0 == (options & TEMPLATE_IGNORE_Category))
+        remapper.SetCategory (params.GetCategoryId ());
+
+    if (0 == (options & TEMPLATE_IGNORE_Color))
+        remapper.SetColor (params.GetLineColor());
+
+#if defined (WIP_LINESTYLE)
+    if (0 == (options & TEMPLATE_IGNORE_Style))
+        {
+        int32_t             style = params.GetLineStyle ();
+        LineStyleParamsCP   styleParams = params.GetLineStyleParams ();
+
+        remapper.SetLinestyle (style, IS_LINECODE (style) || 0 != (options & TEMPLATE_IGNORE_StyleModifiers) ? NULL : styleParams);
+        }
+#endif
+
+    if (0 == (options & TEMPLATE_IGNORE_Weight))
+        remapper.SetWeight (params.GetWeight ());
+
+    if (0 == (options & TEMPLATE_IGNORE_Transparency))
+        remapper.SetTransparency (params.GetTransparency ());
+
+    if (0 == (options & TEMPLATE_IGNORE_Priority))
+        remapper.SetDisplayPriority (params.GetDisplayPriority ());
+
+    remapper.Apply (eeh);
+
+    if (0 == (options & TEMPLATE_IGNORE_Fill))
+        setAreaFillFromDisplayParams (eeh, params);
+
+    if (0 == (options & TEMPLATE_IGNORE_Material))
+        setMaterialFromDisplayParams (eeh, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementPropertiesSetter::ApplyElemDisplayParams (EditElementHandleR eeh, ElemDisplayParamsCR params)
+    {
+    ApplyElemDisplayParamsRestricted (eeh, params, TEMPLATE_IGNORE_None);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/07
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementPropertiesSetter::ApplyTemplateRestricted (EditElementHandleR eeh, ElementHandleCR templateEh, TemplateIgnores options)
+    {
+#if defined (V10_WIP_ELEMENTHANDLER)
+    ElementHandlerR handler = templateEh.GetHandler ();
+
+    ElemDisplayParams params;
+
+    handler.GetElemDisplayParams (templateEh, params, true); // Get material for apply...
+
+    ApplyElemDisplayParamsRestricted (eeh, params, options);
+
+    if (0 == (options & TEMPLATE_IGNORE_Pattern))
+        applyPatternFromTemplate (eeh, templateEh); // Pattern isn't part of ElemDisplayParams...
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/07
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementPropertiesSetter::ApplyTemplate (EditElementHandleR eeh, ElementHandleCR templateEh)
+    {
+    ApplyTemplateRestricted (eeh, templateEh, TEMPLATE_IGNORE_None);
+    }

@@ -24,7 +24,7 @@ struct RenderCellHandler :  public NormalCellHeaderHandler
     ELEMENTHANDLER_DECLARE_MEMBERS (RenderCellHandler, DGNPLATFORM_EXPORT)
 
 private:
-    virtual void _GetTypeName (WStringR descr, UInt32 desiredLength) override;
+    virtual void _GetTypeName (WStringR descr, uint32_t desiredLength) override;
     virtual bool _IsSupportedOperation (ElementHandleCP eh, SupportOperation stype) override;
 
 public:
@@ -41,13 +41,13 @@ struct SolarTimeHandler :  public NormalCellHeaderHandler, ISubTypeHandlerQuery
     ELEMENTHANDLER_DECLARE_MEMBERS (SolarTimeHandler,)
 
 private:
-    virtual void _GetTypeName (WStringR descr, UInt32 length) override;
+    virtual void _GetTypeName (WStringR descr, uint32_t length) override;
     virtual void _Draw (ElementHandleCR eh, ViewContextR context) override;
     virtual bool _ClaimElement (ElementHandleCR) override;
 
 public:
     static bool MatchesCellNameKey (WCharCP cellName) { return 0 == wcscmp (cellName, L"SLRTIM"); }
-    static void InvalidParamHandler (WCharCP expression, WCharCP function, WCharCP file, UInt32 line, uintptr_t reserved);
+    static void InvalidParamHandler (WCharCP expression, WCharCP function, WCharCP file, uint32_t line, uintptr_t reserved);
 };
 
 //=======================================================================================
@@ -59,14 +59,14 @@ struct RPCHandler :  public NormalCellHeaderHandler, ISubTypeHandlerQuery
     ELEMENTHANDLER_DECLARE_MEMBERS (RPCHandler,)
 
 private:
-    virtual void _GetTypeName (WStringR descr, UInt32 length) override;
+    virtual void _GetTypeName (WStringR descr, uint32_t length) override;
     virtual void _Draw (ElementHandleCR eh, ViewContextR context) override;
     virtual void                            _GetElemDisplayParams (ElementHandleCR elHandle, ElemDisplayParams& params, bool wantMaterials) override;
     virtual bool _ClaimElement (ElementHandleCR) override;
 
 public:
     static bool MatchesCellNameKey (WCharCP cellName) { return 0 == wcscmp (cellName, L"RPC") || 0 == wcsncmp (cellName, L"RPCPROXY", 8); }
-    static void InvalidParamHandler (WCharCP expression, WCharCP function, WCharCP file, UInt32 line, uintptr_t reserved);
+    static void InvalidParamHandler (WCharCP expression, WCharCP function, WCharCP file, uint32_t line, uintptr_t reserved);
 };
 #endif
 

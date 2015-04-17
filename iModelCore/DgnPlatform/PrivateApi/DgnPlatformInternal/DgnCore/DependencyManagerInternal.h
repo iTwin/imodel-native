@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/DgnPlatformInternal/DgnCore/DependencyManagerInternal.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,5 +10,5 @@
 
 BEGIN_BENTLEY_API_NAMESPACE
 DGNPLATFORM_EXPORT bool     dependency_setPlaceholderFieldParentDependencies (EditElementHandleR eh);
-DGNPLATFORM_EXPORT DgnModelP dependency_getNonDgnModelIfNecessary (ElementRefP oldRootRef, DgnModelP oldRootModel);
+DGNPLATFORM_EXPORT DgnModelP dependency_getNonDgnModelIfNecessary (DgnElementP oldRootRef, DgnModelP oldRootModel);
 END_BENTLEY_API_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/MSElementDescr_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     Evan.Williams  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-class MSElementDescrTest : public testing::Test
+class GeomStreamTest : public testing::Test
 {
 protected:
 ScopedDgnHost       m_host;
@@ -22,7 +22,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Evan.Williams  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSElementDescrTest() : m_testDataManager (L"2dMetricGeneral.idgndb")
+GeomStreamTest() : m_testDataManager (L"2dMetricGeneral.idgndb")
     {
     BeAssert( NULL != GetDgnModelP() );
     }
@@ -30,82 +30,63 @@ MSElementDescrTest() : m_testDataManager (L"2dMetricGeneral.idgndb")
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Evan.Williams  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ~MSElementDescrTest () { }
+virtual ~GeomStreamTest () { }
 
 DgnModelP GetDgnModelP() {return m_testDataManager.GetDgnModelP();}
 };
 
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void compareDescr(MSElementDescrCR one, MSElementDescrCR two)
-    {
-    ASSERT_TRUE(&one != &two);
-    ASSERT_TRUE(&one.GetDgnModel() == &two.GetDgnModel());
-    ASSERT_TRUE(one.GetElementRef() == two.GetElementRef());
-    ASSERT_TRUE(one.GetItemId() ==  two.GetItemId());
-    ASSERT_TRUE(one.GetElementHandler() == two.GetElementHandler());
-    ASSERT_TRUE(one.Element().Size() == two.Element().Size());
-    ASSERT_TRUE(0 == memcmp(&one.Element(), &two.Element(), one.Element().Size()));
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MSElementDescrTest, Allocation)
-    {
-#if defined (NEEDS_WORK_DGNITEM)
-    DgnModelR model = *GetDgnModelP();
-    DSegment3d segment;
-    segment.Init (-1000.0, 0.0, 0.0, 1000.0, 0.0, 0.0);
-
-    EditElementHandle lineHandle;
-    ASSERT_EQ (SUCCESS, LineHandler::CreateLineElement (lineHandle, NULL, segment, false, model));
     
-    ASSERT_EQ (1, MSElementDescr::DebugGetExtantCount());
-    MSElementDescrP line = lineHandle.GetElementDescrP();
+static bool hasGeom(GeomStreamCR el) {return (NULL != el.GetData()) && 3 == el.GetSize();}
+static bool sameGeomPtr(GeomStreamCR el1, GeomStreamCR el2) {return hasGeom(el1) && (el1.GetData() == el2.GetData());}
 
-    EditElementHandle    parentEeh;
-    NormalCellHeaderHandler::CreateOrphanCellElement (parentEeh, L"parent", false, model);
-    MSElementDescrP parent = parentEeh.GetElementDescrP();
-    ASSERT_EQ (2, MSElementDescr::DebugGetExtantCount());
-    ASSERT_EQ (SUCCESS, parent->AddComponent(*line));
-    ASSERT_TRUE(parent == line->GetParent());
+TEST_F(GeomStreamTest, DgnElement)
+    {
+    // allocate a ElementGeom and put some data in its graphics
+    GeomStream eg1;         
+    ASSERT_TRUE(!hasGeom(eg1));
+    eg1.ReserveMemory(3);
+    memset (eg1.GetDataR(), 5, 3);
+    ASSERT_TRUE(hasGeom(eg1)); 
 
-    BeTest::SetFailOnAssert(false);
-    ASSERT_NE (SUCCESS, parent->AddComponent(*line)); // it is already parented, it shouldn't work twice
-    BeTest::SetFailOnAssert(true);
+    // a move constructor should steal the data from the other
+    GeomStream eg2 = std::move(eg1);
+    ASSERT_TRUE(hasGeom(eg2)); 
+    ASSERT_TRUE(!hasGeom(eg1));
 
-    for (int i=0; i<10; ++i)
-        {
-        EditElementHandle line2;
-        ASSERT_EQ (SUCCESS, LineHandler::CreateLineElement (line2, NULL, segment, false, model));
-        ASSERT_EQ (SUCCESS, parent->AddComponent(*line2.GetElementDescrP()));
-        }
+    // a copy constructor should not steal the data from the other
+    GeomStream eg3 = eg2;
+    ASSERT_TRUE(hasGeom(eg2)); 
+    ASSERT_TRUE(hasGeom(eg3)); 
+    ASSERT_TRUE(!sameGeomPtr(eg2,eg3));
 
-    MSElementDescrPtr clone = parent->Duplicate();
-    ASSERT_EQ (24, MSElementDescr::DebugGetExtantCount());
-    compareDescr (*parent, *clone);
+    // a move operator should steal
+    eg1 = std::move(eg2);
+    ASSERT_TRUE(!hasGeom(eg2)); 
+    ASSERT_TRUE(hasGeom(eg1)); 
 
-    int count = 0;
-    for (ChildElemIter child (parentEeh, ExposeChildrenReason::Query); child.IsValid(); child = child.ToNext())
-        ++count;
-    ASSERT_EQ (11, count);
+    // make sure a move operator with valid data should point to the other side's data and original should be freed.
+    void const* g3 = eg3.GetData(); 
+    ASSERT_TRUE(eg1.GetData() != g3);
+    eg1 = std::move(eg3);
+    ASSERT_TRUE(!hasGeom(eg3)); 
+    ASSERT_TRUE(hasGeom(eg1)); 
+    ASSERT_TRUE(g3 == eg1.GetData()); 
 
-    count = 0;
-    for (ChildEditElemIter child (parentEeh, ExposeChildrenReason::Query); child.IsValid(); child = child.ToNext())
-        ++count;
-    ASSERT_EQ (11, count);
+    // copy operator should make a new copy of the graphics
+    eg2 = eg1;
+    ASSERT_TRUE(hasGeom(eg2)); 
+    ASSERT_TRUE(hasGeom(eg1)); 
+    ASSERT_TRUE(!sameGeomPtr(eg2,eg1));
 
-    clone = NULL;
+    GeomStream eg4;
+    eg4.ReserveMemory(10);
+    memset (eg4.GetDataR(), 4, 10);
 
-    ASSERT_EQ (12, MSElementDescr::DebugGetExtantCount());
-    parentEeh.Invalidate();
-    ASSERT_EQ (1, MSElementDescr::DebugGetExtantCount());
-    lineHandle.Invalidate();
-    ASSERT_EQ (0, MSElementDescr::DebugGetExtantCount());
-#endif
+    // an element with a graphics buffer that is large enough to hold the data from a copy operator should not need to realloc.
+    void const* g4 = eg4.GetData(); 
+    eg4 = eg1;
+    ASSERT_TRUE(hasGeom(eg4)); 
+    ASSERT_TRUE(hasGeom(eg1)); 
+    ASSERT_TRUE(g4 == eg4.GetData()); // pointer should be the same, but buffer should still be allocated to old size
+    ASSERT_TRUE(10 == eg4.GetAllocSize());
     }
-    

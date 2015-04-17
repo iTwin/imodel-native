@@ -2,64 +2,16 @@
 |
 |     $Source: DgnCore/DgnScan.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-union ConstPtrUnionV8
-{
-    UShort const*   wd;
-    DgnElementCP     elem;
-} ;
-
-/*======================================================================================*/
-// Turn off runtime ESP check so we can call __stdcall native functions.
-// Also turn off Frame Pointer Omission so we can access saveEsp even if the SP is messed up
-// (like when calling a __stdcall function)
-/*======================================================================================*/
-#if defined (_MSC_VER)
-    #pragma runtime_checks( "", off )
-    #pragma optimize("t",off)
-#endif // defined (_MSC_VER)
-
-    StatusInt ScanCriteria::CallElemRefFunc (PersistentElementRefP el)
-        {
-        PFScanElemRefCallback   cbFunc = (PFScanElemRefCallback) m_callbackFunc;
-        StatusInt status;
-#if defined (_M_IX86)
-        UInt32      saveEsp;
-        _asm mov saveEsp, esp;
-#endif
-        status = cbFunc (el, m_callbackArg, this);
-#if defined (_M_IX86)
-        _asm mov esp, dword ptr saveEsp;
-#endif
-        return  status;
-        }
-
-    StatusInt ScanCriteria::CallElemDscrFunc (MSElementDescrP elDscr)
-        {
-        StatusInt status;
-#if defined (_M_IX86)
-        UInt32      saveEsp;
-        _asm mov saveEsp, esp;
-#endif
-        status = m_callbackFunc (elDscr, m_callbackArg, this);
-#if defined (_M_IX86)
-        _asm mov esp, dword ptr saveEsp;
-#endif
-        return  status;
-        }
-
-#if defined (_MSC_VER)
-    #pragma optimize("",on)
-    #pragma runtime_checks( "", restore )
-#endif // defined (_MSC_VER)
-
-/*======================================================================================*/
-// Turn optimization and frame pointer checks back on
-/*======================================================================================*/
+StatusInt ScanCriteria::CallElementFunc (DgnElementCP el)
+    {
+    PFScanElementCallback cbFunc = (PFScanElementCallback) m_callbackFunc;
+    return cbFunc (*el, m_callbackArg, *this);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/07
@@ -86,22 +38,7 @@ ScanCriteria::ScanCriteria(ScanCriteriaCR from)
 
     //    Pointer fields in the ScanCriteria structure must be reallocated so that the
     //    source and destination are not pointing at the same memory.
-    m_cellName     = NULL;
-    m_levelBitMask = NULL;
-    m_extAttrBuf   = NULL;
     m_rangeHits    = NULL;
-
-    if (NULL != from.m_cellName)
-        SetCellNameTest (from.m_cellName);
-
-    if (NULL != from.m_levelBitMask)
-        {
-        bool owned = from.m_type.freeLevelBitMaskWhenDone; // don't clone if the original doesn't own the bitmask
-        SetLevelTest (owned ? BitMask::Clone (*from.m_levelBitMask) : from.m_levelBitMask, owned);
-        }
-
-    if (NULL != from.m_extAttrBuf)
-        SetAttributeTest (from.m_entity, from.m_occurrence, from.m_extAttrBuf);
 
     // Context fields are not preserved in clone
     ResetState();
@@ -112,7 +49,6 @@ ScanCriteria::ScanCriteria(ScanCriteriaCR from)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void        ScanCriteria::ResetState()
     {
-    m_inComplex            = 0;
     m_elemOk               = 0;
 
     DELETE_AND_CLEAR (m_rangeHits);
@@ -126,17 +62,7 @@ void        ScanCriteria::ResetState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void        ScanCriteria::Empty()
     {
-    if ((NULL != m_levelBitMask) && m_type.freeLevelBitMaskWhenDone)
-        BitMask::FreeAndClear (&m_levelBitMask);
-
-    if (NULL != m_cellName)
-        memutil_free (m_cellName);
-
-    if (NULL != m_extAttrBuf)
-        memutil_free (m_extAttrBuf);
-
     ResetState();
-
     SCElemFilter_RELEASE_AND_CLEAR (m_elemfilter);
     }
 
@@ -206,9 +132,6 @@ static void intersectRanges (DRange3dR intsct, DRange3dCR range1, DRange3dCR ran
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ScanCriteria::UseRangeTree (ElemRangeIndexP rangeTree)
     {
-    if (m_type.testMultiRange)
-        return  false;
-
     if (NULL != m_appRangeNodeCheck)
         return  true;
 
@@ -230,20 +153,10 @@ bool ScanCriteria::UseRangeTree (ElemRangeIndexP rangeTree)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    08/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ScanCriteria::DoElemRefCallback ()
+StatusInt ScanCriteria::DoElementCallback ()
     {
-    PersistentElementRefP cacheElm = m_iterator.GetCurrentElementRef();
-    return CallElemRefFunc (cacheElm);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    01/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ScanCriteria::DoElemDscrCallback ()
-    {
-    ElementRefP      cacheElm = m_iterator.GetCurrentElementRef();
-    MSElementDescrPtr pDscr = cacheElm->GetElementDescr();
-    return CallElemDscrFunc (pDscr.get());
+    DgnElementCP cacheElm = m_iterator.GetCurrentDgnElement();
+    return CallElementFunc (cacheElm);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -251,139 +164,15 @@ StatusInt ScanCriteria::DoElemDscrCallback ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ScanCriteria::TransferElement (int* scanStatus)
     {
-    if (1 == m_type.iteration)
-        {
-        if (SUCCESS != DoElemDscrCallback ())
-            *scanStatus = BUFF_FULL;
-
-        return true;
-        }
-
     if (2 == m_type.iteration)
         {
-        if (SUCCESS != DoElemRefCallback ())
+        if (SUCCESS != DoElementCallback ())
             *scanStatus = BUFF_FULL;
 
         return true;
         }
 
-    return  true;
-    }
-
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    BJB                             12/89
-+---------------+---------------+---------------+---------------+---------------+------*/
-ScanTestResult ScanCriteria::CheckCellName (DgnElementCP elem) const
-    {
-    WChar cellName[MAX_CELLNAME_LENGTH];
-
-    if (elem && SUCCESS == CellUtil::GetCellName (cellName, sizeof(cellName)/sizeof(cellName[0]), *elem))
-        return (0 == BeStringUtilities::Wcsicmp (m_cellName, cellName)) ? ScanTestResult::Pass : ScanTestResult::Fail;
-
-    return ScanTestResult::Fail;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    BJB                             11/89
-+---------------+---------------+---------------+---------------+---------------+------*/
-ScanTestResult ScanCriteria::CheckEntityandOccurence (DgnElementCP el) const
-    {
-    ConstPtrUnionV8    p;
-    ConstPtrUnionV8    endattr;
-    long                        occurence;
-
-    if (el->GetSizeWords() <= el->GetAttributeOffset())
-        return  ScanTestResult::Fail;
-
-    p.elem = el;
-
-    /* get end of attributes */
-    endattr.wd = p.wd + p.elem->GetSizeWords();
-
-    /* get start of attributes */
-    p.wd += p.elem->GetAttributeOffset();
-    for ( ; p.wd < endattr.wd; p.wd +=4)
-        {
-        if (m_type.testAttributeEntity)
-            if (*(p.wd + 1) != m_entity)
-                continue;
-        if (m_type.testAttributeOccurrence)
-            {
-            occurence  = *(p.wd + 3);
-            occurence  =   occurence << 16;
-            occurence |= *(p.wd + 2);
-            if (occurence != m_occurrence)
-                continue;
-            }
-        return  ScanTestResult::Pass;
-        }
-
-    return  ScanTestResult::Fail;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    BJB                             11/89
-+---------------+---------------+---------------+---------------+---------------+------*/
-ScanTestResult ScanCriteria::CheckExtendedAttributes (DgnElementCP el) const
-    {
-    ConstPtrUnionV8 p;
-    ConstPtrUnionV8 endattr;
-    const UShort    *elemAttrP, *checkEndP, *maskP, *valP;
-    unsigned int     length;
-
-    if (el->GetSizeWords() <= el->GetAttributeOffset())
-        return  ScanTestResult::Fail;
-
-    p.elem = el;
-
-    /* get end of attributes */
-    endattr.wd = p.wd + p.elem->GetSizeWords();
-
-    /* get start of attributes - make sure attrindx is positive */
-    if ((int)p.elem->GetAttributeOffset() < 0)
-        return ScanTestResult::Fail;
-
-    p.wd += p.elem->GetAttributeOffset();
-
-    for ( ; p.wd < endattr.wd; p.wd += length)
-        {
-        LinkageHeader *linkHdrP = (LinkageHeader *)p.wd;
-
-        /* get attribute linkage length */
-        if (linkHdrP->user)
-            {
-            if (linkHdrP->remote)
-                length = linkHdrP->wdMantissa * (1 << linkHdrP->wdExponent);
-            else
-                length = linkHdrP->wdMantissa + 1;
-            }
-        else
-            length = 4;
-
-        if (0 == length)            // Avoid infinite loop.
-            return ScanTestResult::Fail;
-
-        if (length >= (unsigned int) m_extAttrBuf->numWords)
-            {
-            for (elemAttrP = p.wd,
-                 checkEndP = p.wd + m_extAttrBuf->numWords,
-                    maskP = m_extAttrBuf->extAttData,
-                        valP = maskP + m_extAttrBuf->numWords;
-                            elemAttrP < checkEndP;
-                                elemAttrP++, maskP++, valP++)
-                {
-                if ((*elemAttrP & *maskP) != *valP)
-                    /* doesn't match - jump out and go to next attrib */
-                    break;
-                }
-            /* got to end of checked data without a mismatch - it matches */
-            if (elemAttrP >= checkEndP)
-                return ScanTestResult::Pass;
-            }
-        }
-    return ScanTestResult::Fail;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -538,46 +327,16 @@ ScanTestResult  ScanCriteria::CheckRange (DRange3dCR elemRange, bool isElem3d) c
     if (m_type.testRange)
         return checkSubRange (m_range[0], elemRange, isElem3d);
 
-    /* is this a multirange check? */
-    if (m_type.testMultiRange)
-        {
-        int iRange;
-        DRange3dCP srP;
-
-        for (iRange=0, srP = m_range; iRange < m_numRanges; srP++, iRange++)
-            {
-            if (srP->low.x > srP->high.x)
-                continue;
-
-            if (checkSubRange (*srP, elemRange, isElem3d) == ScanTestResult::Pass)
-                return ScanTestResult::Pass;
-            }
-        return ScanTestResult::Fail;
-        }
-
     return ScanTestResult::Pass;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::CheckElementRange (ElementHandleCR el) const
+bool ScanCriteria::CheckElementRange (DgnElementCR element) const
     {
-    DgnElementCP elData = el.GetElementCP();
-    if (NULL == elData)
-        return false;
-
-    PersistentElementRefP elRef = (PersistentElementRefP) el.GetElementRef();
-    DRange3dCP range = elRef ? elRef->CheckIndexRangeOfElement (*elData) : &elData->GetRange();
-    if (NULL == range)
-        return true;
-
-    // This used to call CheckRange rather than _CheckRangeIndexNode - this would skip
-    // the m_appNodeRangeCheck->_CheckNodeRange call. Now with the call to _CheckRangeIndexNode
-    // the extra range test is done on each individual element as well as the range tree nodes.
-    // This makes wireframe work consistently with occlusion culling (TR# 368008and allows us to remove
-    // the redundant and kludgey test in ViewContest::DrawElementCut   - RayBentley 7/2012
-    return _CheckRangeIndexNode (*range, elData->Is3d(), true);
+    GeometricElementCP geom = element._ToGeometricElement();
+    return geom ? _CheckRangeIndexNode(geom->_GetRange3d(), element.GetDgnModel().Is3d(), true) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,97 +354,23 @@ bool ScanCriteria::_CheckRangeIndexNode (DRange3dCR nodeRange, bool is3d, bool i
 * @return false if the element is OK, true if it is rejected
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanTestResult ScanCriteria::CheckElement (ElementHandleCR elHandle, bool doRangeTest, bool doAttrTest) const
+ScanTestResult ScanCriteria::CheckElement (DgnElementCR element, bool doRangeTest) const
     {
-    ElementRefP  elemRef = elHandle.GetElementRef();
-
-    //  Don't get pElem until we are certain it is needed. Getting it might cause the CacheManager to swap in the
-    //  element.
-    DgnElementCP pElem = elHandle.GetElementCP();
-
-#if defined (NEEDS_WORK_DGNITEM)
-    /* check type if necessary */
-    if (m_type.testElementType)
+    if (m_type.testCategory)
         {
-        /* check the scanlist type mask */
-        if (!(m_typeMask[(elType-1) >> 4] & 1 << ((elType-1) & 0xf)))
+        if (!m_categories->Contains(element.GetCategoryId()))
             return  ScanTestResult::Fail;
-        }
-#endif
-
-    /* do we need to check properties ? */
-    if (m_type.testProperties)
-        {
-        if (((m_propertiesMask & pElem->GetProperties()) ^ m_propertiesVal) & M_NOCLASS)
-            return  ScanTestResult::Fail;
-        }
-
-#if defined (NEEDS_WORK_DGNITEM)
-    /* do we need to check locked ? */
-    if (m_type.testLocked)
-        {
-        if (m_lockedValue != pElem->IsLocked())
-            return  ScanTestResult::Fail;
-        }
-
-    if (m_type.testCellName)
-        {
-        switch (elType)
-            {
-            case CELL_HEADER_ELM:
-            case SHARED_CELL_ELM:
-                if (CheckCellName (pElem) == ScanTestResult::Fail)
-                    return  ScanTestResult::Fail;
-            }
-        }
-#endif
-
-    if (m_type.testLevel || m_type.testClass)
-        {
-        Handler* handler = elemRef ? elemRef->GetHandler() : NULL;
-        if (NULL == handler)
-            handler= &elHandle.GetHandler();
-
-        if (ScanTestResult::Pass != handler->DoScannerTests (elHandle, m_type.testLevel ? m_levelBitMask: NULL, m_type.testClass ? &m_classMask : NULL, m_viewContext))
-            return  ScanTestResult::Fail;
-        }
-
-    /* ----------------------------------------------------------------
-       Back to all element checks
-       ---------------------------------------------------------------- */
-    /* Do the XAttribute test.  It's above the range test because we think it's a bit cheaper */
-    if (m_type.testXAttributes)
-        {
-        XAttributeHandle curr (elemRef, m_xAttrHandlerId, m_xAttrId);
-        if (!curr.IsValid())
-            return ScanTestResult::Fail;
         }
 
     /* check the range */
     if (doRangeTest)
         {
-        if (!CheckElementRange (elHandle))
+        if (!CheckElementRange (element))
             return  ScanTestResult::Fail;
         }
 
-    if (doAttrTest)
-        {
-        /* see if we need to check entity or occurence numbers */
-        if (m_type.testAttributeEntity || m_type.testAttributeOccurrence)
-            if (ScanTestResult::Fail == CheckEntityandOccurence (pElem))
-                return  ScanTestResult::Fail;
-
-        /* see if we need to do extended attribute scanning */
-        if (m_type.testAttributeExtended)
-            if (ScanTestResult::Fail == CheckExtendedAttributes (pElem))
-                return  ScanTestResult::Fail;
-        }
-
     // if user has set up a scanFilter callback function, call it.
-    if (NULL != m_elemfilter)
-        return  m_elemfilter->_FilterElement (this, pElem);
-
-    return  ScanTestResult::Pass;
+    return m_elemfilter ? m_elemfilter->_FilterElement(this, &element) : ScanTestResult::Pass;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -695,7 +380,7 @@ StatusInt       ScanCriteria::ProcessElemRefRangeList()
     {
     for (T_RangeHits::iterator curr = m_rangeHits->begin(); curr < m_rangeHits->end(); curr++)
         {
-        if (SUCCESS != CallElemRefFunc (*curr))
+        if (SUCCESS != CallElementFunc (*curr))
             break;
         }
 
@@ -712,7 +397,6 @@ StatusInt ScanCriteria::ProcessRangeIndexResults ()
         return  ProcessElemRefRangeList ();
 
     int             scanStatus = 0;
-    bool            complexHeader = false;
 
     for (T_RangeHits::iterator curr = m_rangeHits->begin() + m_currRangeHit; curr < m_rangeHits->end(); curr++, m_currRangeHit++)
         {
@@ -721,9 +405,9 @@ StatusInt ScanCriteria::ProcessRangeIndexResults ()
            already set up our pointers and we just continue from where we
            left off.  If we don't, we go to the next element in the list.
            --------------------------------------------------------------- */
-        if (!m_elemOk && !m_inComplex)
+        if (!m_elemOk)
             {
-            PersistentElementRefP   tstElem = *curr;
+            GeometricElementCP  tstElem = *curr;
 
             /* ------------------------------------------------------------
                The first step is to get a pointer to the element we are
@@ -734,18 +418,17 @@ StatusInt ScanCriteria::ProcessRangeIndexResults ()
                ------------------------------------------------------------ */
             if (tstElem)
                 {
-                m_iterator.SetCurrentElm (tstElem);
+                m_iterator.SetCurrentElm(tstElem);
                 }
             }
 
         for (;;)
             {
-            ElementRefP      currElRef = m_iterator.GetCurrentElementRef();
+            DgnElementCP  currElRef = m_iterator.GetCurrentDgnElement();
 
             /* if we encounter EOF marker, stop scan */
             if (NULL == currElRef)
                 {
-                m_inComplex = 0;
                 scanStatus = END_OF_DGN;
                 break;
                 }
@@ -753,63 +436,10 @@ StatusInt ScanCriteria::ProcessRangeIndexResults ()
             bool            goToNextElement = true;
             ElementHandle   currElm (currElRef);   // to lock element data in memory
 
-            /* was element previously accepted but would not fit? */
-            if (m_elemOk)
-                {
-                complexHeader = (m_inComplex == ACC_CMPLX_HDR);
-                goto Accept;
-                }
-
-            /* see if the element is a complex or header or not */
-#if defined (NEEDS_WORK_DGNITEM)
-            complexHeader = currEl->IsComplexHeaderType();
-            if (m_inComplex)
-                {
-                if (currEl->IsComplexHeaderElement())
-                    {
-                    if (m_inComplex == ACCEPTING_CMPLX)
-                        goto Accept;
-                    else if (m_inComplex == REJECTING_CMPLX)
-                        goto Reject;
-                    }
-                else
-                    {
-                    /* no longer in complex element */
-                    m_inComplex = 0;
-                    /* out of this loop and on to the next candidate */
-                    break;
-                    }
-                }
-#endif
-
-Accept:
             if (!scanStatus)
                 {
                 /* indicate element OK in case it will not fit */
                 m_elemOk = true;
-
-#if defined (NEEDS_WORK_DGNITEM)
-                if (complexHeader)
-                    {
-                    /* bit mask 0 represents element type 1 */
-                    /* we do not use elemType any more, we can corrupt it */
-                    elemType--;
-                    forceAll = (m_overrideNest[elemType >> 4] & 1 << (elemType & 0xf));
-
-                    /* if nest bit off and not force all components,
-                        treat complex header just like any other element */
-                    if (m_type.nestCells || forceAll)
-                        {
-                        m_inComplex = ACCEPTING_CMPLX;
-                        }
-
-                    /* For cmplx hdrs without NEST mode, check components */
-                    else
-                        {
-                        m_inComplex = CHECKING_CMPLX;
-                        }
-                    }
-#endif
 
                 /* --------------------------------------------------------
                    Saving an element that is not a complex header or a complex
@@ -821,7 +451,7 @@ Accept:
                 if (!scanStatus)
                     {
                     if (goToNextElement)
-                        m_iterator.GetNextElementRef(true);
+                        m_iterator.GetNextDgnElement(true);
 
                     /* we have stored the element we checked */
                     m_elemOk = false;
@@ -835,80 +465,13 @@ Accept:
                            If we are in a complex, adjust the current test
                            element pointer to get us back into the complex.
                            ------------------------------------------------ */
-                        if (!m_inComplex)
-                            m_currRangeHit++;
+                        m_currRangeHit++;
 
                         scanStatus = BUFF_FULL;
                         break;
                         }
-
-                    /* ---------------------------------------------------
-                       Break out for an element that is not a complex
-                       component element and not a complex header.  Also
-                       break out for a complex header in nest mode, since
-                       all we want is the outermost header.
-                       --------------------------------------------------- */
-                    if (!complexHeader && !m_inComplex)
-                        break;
-
-                    if (complexHeader && (m_inComplex == REJECTING_CMPLX))
-                        {
-                        m_inComplex = 0;
-                        break;
-                        }
-                    else
-                        continue;
                     }
                 }
-            /* ------------------------------------------------------------
-               Gets here if we can't get the whole element, or buffer full.
-               ------------------------------------------------------------ */
-            break;
-
-#if defined (NEEDS_WORK_DGNITEM)
-    Reject:
-            /* ------------------------------------------------------------
-               Element Rejection Code
-
-               For complex elements in nest mode, we set inComplex to indicate
-               that we are in the middle of rejecting a complex element.
-               ------------------------------------------------------------ */
-            if (complexHeader)
-                {
-                /* bit maps start with bit 0 representing element type 1 */
-                /* since we do not use elemType any more, we can corrupt it */
-                elemType--;
-                forceAll = (m_overrideNest[elemType >> 4] & 1 << (elemType & 0xf));
-
-                /* if nest bit is off, treat cmplx hdr same as any element */
-                if (m_type.nestCells)
-                    m_inComplex = REJECTING_CMPLX;
-                else
-                    m_inComplex = CHECKING_CMPLX;
-                }
-
-            /* element not OK */
-            m_elemOk = false;
-
-            /* on to next element */
-            m_iterator.GetNextElementRef(true);
-
-            /* ------------------------------------------------------------
-               If we have just rejected an element that is not a complex
-               component, and not a complex header, break out of the testing
-               loop to go back to the range tree list.
-               ------------------------------------------------------------ */
-            if (!complexHeader && !m_inComplex)
-                break;
-
-            if (complexHeader && (m_inComplex == REJECTING_CMPLX))
-                {
-                m_inComplex = 0;
-                break;
-                }
-            else
-                continue;
-#endif
             }
 
         /* ----------------------------------------------------------------
@@ -929,29 +492,28 @@ Accept:
     return scanStatus;
     }
 
-typedef int  (*PFScanElemRefNodeCallback) (ElementRefP, void* callbackArg, ScanCriteriaP);
+typedef int  (*PFScanElementNodeCallback) (GeometricElementCP, void* callbackArg, ScanCriteriaP);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatchStatus ScanCriteria::_VisitRangeIndexElem (PersistentElementRefP elemRef)
+RangeMatchStatus ScanCriteria::_VisitRangeIndexElem (GeometricElementCP element)
     {
-    ElementHandle currElm (elemRef);   // to lock element data in memory
-    if (!CheckElementRange (currElm))
+    if (!CheckElementRange (*element))
         return RANGEMATCH_Ok;
 
-    if (ScanTestResult::Fail == CheckElement (currElm, false, true))
+    if (ScanTestResult::Fail == CheckElement (*element, false))
         return RANGEMATCH_Ok;
 
     if (UseRangeTreeOrdering())
         {
-        PFScanElemRefNodeCallback   cbFunc = (PFScanElemRefNodeCallback) m_callbackFunc;
-        return (SUCCESS == cbFunc (elemRef, m_callbackArg, this)) ? RANGEMATCH_Ok : RANGEMATCH_Aborted;
+        PFScanElementNodeCallback   cbFunc = (PFScanElementNodeCallback) m_callbackFunc;
+        return (SUCCESS == cbFunc (element, m_callbackArg, this)) ? RANGEMATCH_Ok : RANGEMATCH_Aborted;
         }
 
     if (m_rangeHits->size() > MAX_ORDERED_HITS)
         return  RANGEMATCH_TooManyHits;
 
-    m_rangeHits->push_back(elemRef);
+    m_rangeHits->push_back(element);
     return  RANGEMATCH_Ok;
     }
 
@@ -973,9 +535,6 @@ RangeMatchStatus ScanCriteria::FindRangeHits(ElemRangeIndexP rangeIndex)
         return stat;
         }
 
-#ifdef DGNV10FORMAT_CHANGES_WIP
-    std::sort (m_rangeHits->begin(), m_rangeHits->end(), AscendingFilepos());
-#endif
     return RANGEMATCH_Ok;
     }
 
@@ -992,25 +551,24 @@ StatusInt ScanCriteria::Scan ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ScanCriteria::Scan (ViewContextP context)
     {
-    int             scanStatus;            /* scan status */
+    int scanStatus;            /* scan status */
 
     if (NULL == m_model)
-        return BAD_FILE;
+        return ERROR;
 
     bool wasNewCriteria = TO_BOOL (m_newCriteria);
     if (wasNewCriteria)
         {
         // clear a bunch of context stuff
-        m_inComplex = m_elemOk = 0;
         m_iterator.SetModel (m_model);
-        m_iterator.GetFirstElementRef(); 
+        m_iterator.GetFirstDgnElement(); 
         }
 
     m_viewContext = context;
     m_newCriteria = false;  // not a new scan anymore
 
     /* init input and output pointers, output buffer end, words returned */
-    scanStatus         = 0;
+    scanStatus = 0;
 
     ElemRangeIndexP  rangeIndex;
     if (m_type.testRange && (NULL != (rangeIndex = m_model->GetRangeIndexP(true))))
@@ -1043,7 +601,7 @@ linearScan:
     /* start the scan */
     for (;;)
         {
-        ElementRefP  currElRef = m_iterator.GetCurrentElementRef();
+        DgnElementCP  currElRef = m_iterator.GetCurrentDgnElement();
 
         /* -----------------------------------------------------------
            We now have enough of the element to accept or reject it.
@@ -1056,19 +614,11 @@ linearScan:
             break;
             }
 
-        bool            goToNextElement = true;
-        ElementHandle   currElm (currElRef); // to lock element data in memory for remainder of tests
-        DgnElementCP    currEl = currElm.GetElementCP();
+        bool goToNextElement = true;
 
         /* was element previously accepted but would not fit? */
         if (m_elemOk)
             {
-#if defined (NEEDS_WORK_DGNITEM)
-            complexHeader = (m_inComplex == ACC_CMPLX_HDR);
-            /* we will be checking the override mask */
-            if (complexHeader)
-                elemType = 1;
-#endif
             goto Accept;
             }
 
@@ -1078,36 +628,7 @@ linearScan:
             goto Reject;
             }
 
-        /* see if this looks like an acceptable element */
-        if ((currEl->GetSizeWords() < MIN_EXPANDED_ELEM))
-            {
-            BeAssert (false);
-            scanStatus = BAD_ELEMENT;
-            break;
-            }
-
-        // see if the element is a complex or header or not
-
-#if defined (NEEDS_WORK_DGNITEM)
-        complexHeader = currEl->IsComplexHeaderType();
-        if (m_inComplex)
-            {
-            if (currEl->IsComplexHeaderElement())
-                {
-                /* still in the complex element */
-                if (m_inComplex == ACCEPTING_CMPLX)
-                    goto Accept;
-                else if (m_inComplex == REJECTING_CMPLX)
-                    goto Reject;
-                }
-            else
-                /* no longer in complex element */
-                m_inComplex = 0;
-            }
-#endif
-
-        /* only check attr if scanStatus is OK */
-        if (ScanTestResult::Fail == CheckElement (currElm, true, !scanStatus))
+        if (ScanTestResult::Fail == CheckElement (*currElRef, true))
             goto Reject;
 
 Accept:
@@ -1118,21 +639,6 @@ Accept:
 
             /* if it's a complex header, see if we are forcing return of
                all its component elements */
-#if defined (NEEDS_WORK_DGNITEM)
-            if (complexHeader)
-                {
-                /* bit maps start with bit 0 representing element type 1 */
-                /* since we do not use elemType any more, we can corrupt it */
-                elemType--;
-                forceAll = (m_overrideNest[elemType >> 4] & 1 << (elemType & 0xf));
-
-                /* if nest bit is off, treat cmplx hdr same as any element */
-                if (m_type.nestCells || forceAll)
-                    {
-                    m_inComplex = ACCEPTING_CMPLX;
-                    }
-                }
-#endif
 
             /* ------------------------------------------------------------
                Saving an element that is not a complex header or a complex
@@ -1143,7 +649,7 @@ Accept:
             if (!scanStatus)
                 {
                 if (goToNextElement)
-                    m_iterator.GetNextElementRef(true);
+                    m_iterator.GetNextDgnElement(true);
 
                 /* we have stored the element we checked */
                 m_elemOk = false;
@@ -1159,40 +665,144 @@ Accept:
                 continue;
                 }
             }
-        /* ---------------------------------------------------------------
-           Gets here if we can't get the whole element, or buffer full.
-           --------------------------------------------------------------- */
+
         break;
 
-
 Reject:
-        /* --------------------------------------------------------------
-           Element Rejection Code
-
-           For complex elements in nest mode, we set inComplex to indicate
-           that we are in the middle of rejecting a complex element.
-           -------------------------------------------------------------- */
-#if defined (NEEDS_WORK_DGNITEM)
-        if (complexHeader)
-            {
-            /* bit maps start with bit 0 representing element type 1 */
-            /* since we do not use elemType any more, we can corrupt it */
-            elemType--;
-            forceAll = (m_overrideNest[elemType >> 4] & 1 << (elemType & 0xf));
-
-            /* if nest bit is off, treat complex header same as any element */
-            if (m_type.nestCells)
-                m_inComplex = REJECTING_CMPLX;
-            else
-                m_inComplex = CHECKING_CMPLX;
-            }
-#endif
-
         /* element not OK */
         m_elemOk = false;
-        m_iterator.GetNextElementRef(true);
+        m_iterator.GetNextDgnElement(true);
         }
 
     return scanStatus;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Set up iterator to walk the elements in this model only.
+* @bsimethod                                                    SamWilson       10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+ScanCriteria::ElemIterator::ElemIterator (DgnModelP dgnModel)
+    {
+    m_model = dgnModel;
+    m_state = ITERATING_GraphicElms;
+    m_iter.Invalidate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BarryBentley    01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+ScanCriteria::ElemIterator::ElemIterator (ScanCriteria::ElemIterator* source) : m_iter (source->m_iter)
+    {
+    m_model    = source->m_model;
+    m_state    = source->m_state;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCP ScanCriteria::ElemIterator::GetFirstDgnElement (DgnModelP dgnModel, bool wantDeleted)
+    {
+    m_model = dgnModel;
+
+    DgnElementCP  thisElm;
+    m_state = ITERATING_GraphicElms;
+    if (NULL != (thisElm = m_iter.GetFirstDgnElement (*m_model, wantDeleted)))
+        return thisElm;
+
+    m_state = ITERATING_HitEOF;
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCP ScanCriteria::ElemIterator::GetNextDgnElement (bool wantDeleted)
+    {
+    DgnElementCP el;
+
+    if (HitEOF ())          // this happens if caller keeps calling iterator after EOF has been reached
+        return NULL;
+
+    if (NULL != (el = m_iter.GetNextDgnElement (wantDeleted)))
+        return  el;
+
+    m_state = ITERATING_HitEOF;
+    return  NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnModel* getMyModel(DgnElementCP el) 
+    {
+    if (NULL == el)
+        return  NULL;
+
+    return &el->GetDgnModel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* set the current element for the iterator
+* @bsimethod                                                    KeithBentley    10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ScanCriteria::ElemIterator::SetCurrentElm(DgnElementCP toElm)
+    {
+    DgnModel* toList = getMyModel(toElm);
+    if (NULL == toList)
+        return  false;
+
+    // quick case where list doesn't change
+    DgnElementCP curr=m_iter.GetCurrentDgnElement();
+    if ((NULL != curr) && (m_state != ITERATING_HitEOF) && (toList == getMyModel(curr)))
+        {
+        m_iter.SetCurrentDgnElement(toElm);
+        return  true;
+        }
+
+    m_state = ITERATING_GraphicElms;
+    m_model = toList;
+
+    m_iter.SetCurrentDgnElement (toElm);
+    return  true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    05/01
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScanCriteria::ElemIterator::SetAtEOF ()
+    {
+    m_iter.Invalidate();
+    m_state = ITERATING_HitEOF;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+ScanCriteria::ElemIterator& ScanCriteria::ElemIterator::operator++ ()
+    {
+    GetNextDgnElement ();
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCP ScanCriteria::ElemIterator::operator* () const
+    {
+    return *m_iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ScanCriteria::ElemIterator::operator!= (ScanCriteria::ElemIterator const& rhs) const
+    {
+    if (m_model != rhs.m_model)
+        return true;
+
+    if (HitEOF() && rhs.HitEOF())   // at EOF == at EOF, regardless of how each iterator got there
+        return false;
+
+    return m_iter != rhs.m_iter;
     }
 

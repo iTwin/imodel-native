@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/Material.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,26 +50,26 @@ private:
 // __PUBLISH_SECTION_END__
     Utf8String                                  m_name;
     Utf8String                                  m_palette;
-    DgnProjectP                                 m_dgnProject;
+    DgnDbP                                 m_dgnProject;
     mutable bool                                m_sentToQV;
     mutable MaterialQvGeometryMapPtr            m_qvGeometryMap;
     DgnMaterialId                               m_id;
 
     MaterialSettings                            m_settings;
 
-    explicit Material (DgnProjectR dgnProject);
+    explicit Material (DgnDbR dgnProject);
     ~Material ();
 
 // __PUBLISH_SECTION_START__
 // __PUBLISH_CLASS_VIRTUAL__
 public:
-    static DGNPLATFORM_EXPORT MaterialPtr Create (DgnProjectR dgnProject);
-    static DGNPLATFORM_EXPORT MaterialPtr Create (MaterialCR initFrom, DgnProjectR dgnProject);
+    static DGNPLATFORM_EXPORT MaterialPtr Create (DgnDbR dgnProject);
+    static DGNPLATFORM_EXPORT MaterialPtr Create (MaterialCR initFrom, DgnDbR dgnProject);
     static DGNPLATFORM_EXPORT MaterialCP  FromRendMatId (uintptr_t rendMatId);
 
     DGNPLATFORM_EXPORT void Copy (MaterialCR copyFrom);
     DGNPLATFORM_EXPORT bool Equals (MaterialCR rhs, bool testDgnProject) const;
-    DGNPLATFORM_EXPORT void InitDefaults (DgnProjectR dgnProject);
+    DGNPLATFORM_EXPORT void InitDefaults (DgnDbR dgnProject);
 
     DGNPLATFORM_EXPORT Utf8StringCR GetName () const;
     DGNPLATFORM_EXPORT Utf8StringR GetNameR ();
@@ -80,8 +80,8 @@ public:
     DGNPLATFORM_EXPORT Utf8StringCR GetPalette() const;
     DGNPLATFORM_EXPORT Utf8StringR GetPaletteR ();
 
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProjectR () const;
-    DGNPLATFORM_EXPORT void SetDgnProject (DgnProjectR dgnProject);
+    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR () const;
+    DGNPLATFORM_EXPORT void SetDgnProject (DgnDbR dgnProject);
 
     DGNPLATFORM_EXPORT MaterialSettingsCR GetSettings () const;
     DGNPLATFORM_EXPORT MaterialSettingsR GetSettingsR ();
@@ -126,26 +126,25 @@ private:
 public:
 // __PUBLISH_SECTION_END__
 
-    void DefineQVTexture (MaterialCR material, uintptr_t materialId, ViewportP viewport, RgbFactorCP elementColor = NULL);
+    void DefineQVTexture (MaterialCR material, uintptr_t materialId, DgnViewportP viewport, RgbFactorCP elementColor = NULL);
     void DefineQVTextureMapping (MaterialCR material, MaterialMapCR map, MaterialMapLayerCR layer, uintptr_t textureId, uintptr_t materialId);
     //! Send material information to qv.
     //! @param[in] material         material to send
     //! @param[in] elementColor     element color if material uses by element color settings
     //! @param[in] viewport         optional viewport view port associated with the material update
-    BentleyStatus SendMaterialToQV (MaterialCR material, UInt32 elementColor, ViewportP viewport);
+    BentleyStatus SendMaterialToQV (MaterialCR material, ColorDef elementColor, DgnViewportP viewport);
 
     DGNVIEW_EXPORT void DefineDefaultQVMaterial ();
 
-    MaterialPtr CreateFromXml (Utf8CP xmlString, DgnProjectR source);
+    MaterialPtr CreateFromXml (Utf8CP xmlString, DgnDbR source);
 
     DGNPLATFORM_EXPORT BentleyStatus SetMaterialAttachmentId (EditElementHandleR eeh, DgnMaterialId id);
 
 // __PUBLISH_SECTION_START__
-    DGNPLATFORM_EXPORT MaterialCP FindMaterial (DgnMaterialId id, DgnProjectR source);
-    DGNPLATFORM_EXPORT BentleyStatus FindMaterial (MaterialList& materials, Utf8CP name, DgnProjectR source);
+    DGNPLATFORM_EXPORT MaterialCP FindMaterial (DgnMaterialId id, DgnDbR source);
+    DGNPLATFORM_EXPORT BentleyStatus FindMaterial (MaterialList& materials, Utf8CP name, DgnDbR source);
     DGNPLATFORM_EXPORT MaterialCP FindMaterialAttachment (ElementHandleCR eh);
 
-    static DGNPLATFORM_EXPORT MaterialManagerR GetManagerR();
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

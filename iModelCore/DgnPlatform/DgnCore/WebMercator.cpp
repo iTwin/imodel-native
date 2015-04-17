@@ -2,19 +2,19 @@
 |
 |     $Source: DgnCore/WebMercator.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/ImageUtilities.h>
 
+#define TABLE_NAME_TiledRaster  "TiledRaster"
 #define QV_RGBA_FORMAT   0
 #define QV_BGRA_FORMAT   1
 #define QV_RGB_FORMAT    2
 #define QV_BGR_FORMAT    3
 
 DPILOG_DEFINE(WebMercator)
-#define LOG(sev,...) {if (WebMercator_getLogger().isSeverityEnabled(sev)) { WebMercator_getLogger().messagev (sev, __VA_ARGS__); }}
 
 static bool s_drawSubstitutes = true;
 
@@ -56,6 +56,13 @@ static bool s_drawSubstitutes = true;
 namespace {
 static int const TILE_SIZE = 256;
 
+struct Upoint2d
+    {
+    uint32_t    x;
+    uint32_t    y;
+    };
+
+
 static Upoint2d s_pixelOrigin = {TILE_SIZE / 2, TILE_SIZE / 2};
 static double s_pixelsPerLonDegree = TILE_SIZE / 360.0;
 static double s_pixelsPerLonRadian = TILE_SIZE / msGeomConst_2pi;
@@ -82,7 +89,7 @@ static double bound(double value, double opt_min, double opt_max)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DMS
     {
-    Int32 degrees, minutes;
+    int32_t degrees, minutes;
     double seconds;
     };
 
@@ -91,7 +98,7 @@ struct DMS
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DMS decToSexagesimal (double degrees)
     {
-    Int32 sign = 1;
+    int32_t sign = 1;
     if (degrees < 0)
         {
         sign = -1;
@@ -99,9 +106,9 @@ static DMS decToSexagesimal (double degrees)
         }
 
     DMS dms;
-    dms.degrees = (Int32) floor(degrees);      // the whole part is degrees
+    dms.degrees = (int32_t) floor(degrees);      // the whole part is degrees
     auto mins = (degrees-dms.degrees)*60.0;    // the remainder is minutes
-    dms.minutes = (Int32) floor(mins);         // the whole part of that is minutes
+    dms.minutes = (int32_t) floor(mins);         // the whole part of that is minutes
     dms.seconds = (mins - dms.minutes)*60.0;   // the remainder is seconds
     dms.degrees *= sign;
     return dms;
@@ -128,12 +135,12 @@ Utf8String fmtSexagesimal (GeoPointCR gp)
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WEBMERCATOR_DEBUG_TILES
-static void setSymbology (ViewContextR context, RgbColorDefCR color, UInt32 trans, UInt32 width)
+static void setSymbology (ViewContextR context, RgbColorDefCR color, uint32_t trans, uint32_t width)
     {
     ElemMatSymb elemMatSymb;
 
-    auto colorIdx = context.GetViewport()->MakeTrgbColor(color.red, color.green, color.blue, trans);
-    elemMatSymb.SetLineColorTBGR (colorIdx);
+    auto colorIdx = ColorDef(color.red, color.green, color.blue, trans);
+    elemMatSymb.SetLineColor (colorIdx);
     elemMatSymb.SetWidth (width);
 
     context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
@@ -145,7 +152,7 @@ static void setSymbology (ViewContextR context, RgbColorDefCR color, UInt32 tran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool isZoomLevelInRange (UInt8 zoomLevel)
+static bool isZoomLevelInRange (uint8_t zoomLevel)
     {
     return zoomLevel <= WebMercatorTilingSystem::MAX_ZOOM_LEVEL;
     }
@@ -242,12 +249,12 @@ GeoPoint fromWpixelToGeoPoint (DPoint2dCR point)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d fromWpixelToPixelPoint (DPoint2dCR wpixels, UInt8 zoomLevel)
+DPoint2d fromWpixelToPixelPoint (DPoint2dCR wpixels, uint8_t zoomLevel)
     {
     BeAssert (isZoomLevelInRange (zoomLevel));
     BeAssert (isWpixelPointInRange (wpixels));
     
-    UInt32 numTiles = 1 << zoomLevel;
+    uint32_t numTiles = 1 << zoomLevel;
     return DPoint2d::From (wpixels.x * numTiles, wpixels.y * numTiles);
     }
 
@@ -265,7 +272,7 @@ Upoint2d fromPixelPointToTileCoordinates (DPoint2dCR pixelPoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorTilingSystem::TileId fromWpixelPointToTileId (DPoint2dCR wpixelPoint, UInt8 zoomLevel)
+WebMercatorTilingSystem::TileId fromWpixelPointToTileId (DPoint2dCR wpixelPoint, uint8_t zoomLevel)
     {
     BeAssert (isZoomLevelInRange (zoomLevel));
     Upoint2d xy = fromPixelPointToTileCoordinates (fromWpixelToPixelPoint (wpixelPoint, zoomLevel));
@@ -285,7 +292,7 @@ DPoint2d fromTileIdToWpixelPoint (WebMercatorTilingSystem::TileId const& tileid)
     auto piy = tileid.row    * TILE_SIZE;
 
     DPoint2d wpixelPoint;
-    UInt32 numTiles = 1 << tileid.zoomLevel;
+    uint32_t numTiles = 1 << tileid.zoomLevel;
     wpixelPoint.x = pix / (double)numTiles;
     wpixelPoint.y = piy / (double)numTiles;
     
@@ -316,7 +323,7 @@ static void demo (UInt32 zoomLevel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double computeGroundResolutionInMeters (UInt8 zoomLevel, double latitude)
+static double computeGroundResolutionInMeters (uint8_t zoomLevel, double latitude)
     {
     // "Exact length of the equator (according to wikipedia) is 40075.016686 km in WGS-84. A horizontal tile size at zoom 0 would be 156543.034 meters" (http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Resolution_and_Scale)
     return 156543.034 * cos(latitude) / (1<<zoomLevel);
@@ -330,14 +337,14 @@ static double computeGroundResolutionInMeters (UInt8 zoomLevel, double latitude)
 #ifdef GRAPHITE0502
 #define GET_METERS_PER_UOR(units) units.GetPhysicalUnits().ConvertFromUorsToMeters();
 #else
-// In Graphite06, data is stored in mm. Therefore there is 1/1000 of a meter per mm.
-#define GET_METERS_PER_UOR(units) 0.001
+// In Graphite06, data is stored in meters. 
+#define GET_METERS_PER_UOR(units) 1.0
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-double WebMercatorUorConverter::ComputeViewResolutionInMetersPerPixel (ViewportR vp)
+double WebMercatorUorConverter::ComputeViewResolutionInMetersPerPixel (DgnViewportR vp)
     {
     DRange3d    range;
     vp.GetViewCorners (range.low, range.high); // lower left back, upper right front    -- View coordinates aka "pixels"
@@ -372,7 +379,7 @@ BentleyStatus projectPointToPlaneInDirection (DPoint3d& pointOnPlane, DPlane3dCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorUorConverter::WebMercatorUorConverter (ViewportR vp) : m_units(vp.GetViewController().GetDgnProject().Units())
+WebMercatorUorConverter::WebMercatorUorConverter (DgnViewportR vp) : m_units(vp.GetViewController().GetDgnDb().Units())
     {
     GeoPoint centerLatLng = ConvertUorsToLatLng (DPoint3d::FromSumOf (*vp.GetViewOrigin(), *vp.GetViewDelta(), 0.5));
     m_originLatitudeInRadians = Angle::DegreesToRadians (centerLatLng.latitude);
@@ -386,7 +393,7 @@ WebMercatorUorConverter::WebMercatorUorConverter (ViewportR vp) : m_units(vp.Get
 * Compute meters/pixel at the Project's geo origin the specified zoomLevel.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-double WebMercatorUorConverter::ComputeGroundResolutionInMeters (UInt8 zoomLevel)
+double WebMercatorUorConverter::ComputeGroundResolutionInMeters (uint8_t zoomLevel)
     {
     return computeGroundResolutionInMeters (zoomLevel, m_originLatitudeInRadians); // meters/pixel
     }
@@ -444,7 +451,7 @@ DPoint2d WebMercatorUorConverter::ConvertUorsToWpixels (DPoint2dCR pt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorTileDisplayHelper::WebMercatorTileDisplayHelper (ViewportR vp)
+WebMercatorTileDisplayHelper::WebMercatorTileDisplayHelper (DgnViewportR vp)
     :
     m_converter (vp),
     m_drawingSubstituteTiles (false)
@@ -491,7 +498,7 @@ struct TextureCache
         {
         uintptr_t   m_textureId;
         ImageUtilities::RgbImageInfo m_imageInfo;
-        UInt64      m_insertTime;
+        uint64_t    m_insertTime;
         };
 
     bmap<Utf8String, Entry> m_map;
@@ -539,7 +546,7 @@ struct TextureCache
 
     void Trim ()
         {
-        bmap<UInt64, bvector<Utf8String>> lru;
+        bmap<uint64_t, bvector<Utf8String>> lru;
         for (auto const& mapentry: m_map)
             {
             lru[mapentry.second.m_insertTime].push_back (mapentry.first);
@@ -577,7 +584,7 @@ BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture (uintptr_t& cachedT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
+uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
     {
     BeAssert (!imageInfo.isBGR);
     int format      = imageInfo.hasAlpha? QV_BGRA_FORMAT: QV_BGR_FORMAT;
@@ -621,10 +628,19 @@ void WebMercatorTileDisplayHelper::DrawTile (ViewContextR context, WebMercatorTi
         std::swap (uvPts[1], uvPts[3]);
         }
 
+    // Make sure the map displays beneath element graphics. Note that this policy is appropriate for the background map, which is always
+    // "on the ground". It is not appropriate for other kinds of reality data, even some images display. It is up to the individual reality
+    // data handler to use the "surface" that is appprpriate to the reality data.
     if (!context.GetViewport()->GetViewController().GetTargetModel()->Is3d())
         {
         for (auto& pt : uvPts)
-            pt.z = -Viewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
+            pt.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
+        }
+    else
+        {
+        auto extents = context.GetViewport()->GetViewController().GetProjectExtents();
+        for (auto& pt : uvPts)
+            pt.z = extents.low.z - 1;
         }
 
     #ifdef WEBMERCATOR_DEBUG_TILES
@@ -633,7 +649,7 @@ void WebMercatorTileDisplayHelper::DrawTile (ViewContextR context, WebMercatorTi
         if (m_drawingSubstituteTiles)
             {
             color.green = color.red = 200;
-            z = -Viewport::GetDisplayPriorityFrontPlane();
+            z = -DgnViewport::GetDisplayPriorityFrontPlane();
             }
         setSymbology (context, color, 128, 1);
         DrawTileAsBox (context, tileid, z, false);
@@ -645,16 +661,13 @@ void WebMercatorTileDisplayHelper::DrawTile (ViewContextR context, WebMercatorTi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplayHelper::DrawAndCacheTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, IRealityData& realityData)
+void WebMercatorTileDisplayHelper::DrawAndCacheTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
     {
-    // [Grigas] it would be better if TiledRastRealityData had a function "Draw" which could handle tiled raster drawing - we wouldn't need a cast then 
-    auto tiledRasterRealityData = dynamic_cast<TiledRaster*> (&realityData);
-
-    auto const& data = tiledRasterRealityData->GetData();
-    auto const& expectedImageInfo = tiledRasterRealityData->GetImageInfo();
-    ImageUtilities::RgbImageInfo actualImageInfo = tiledRasterRealityData->GetImageInfo();
-
-    Utf8String contentType = tiledRasterRealityData->GetContentType();
+    auto const& data = realityData.GetData();
+    auto const& expectedImageInfo = realityData.GetImageInfo();
+    ImageUtilities::RgbImageInfo actualImageInfo = realityData.GetImageInfo();
+    Utf8String contentType = realityData.GetContentType();
+    
     BentleyStatus status;
 
     m_rgbBuffer.clear(); // reuse the same buffer, in order to minimize mallocs
@@ -663,18 +676,18 @@ void WebMercatorTileDisplayHelper::DrawAndCacheTile (ViewContextR context, WebMe
         {
         status = ImageUtilities::ReadImageFromPngBuffer (m_rgbBuffer, actualImageInfo, data.data(), data.size());
         if (SUCCESS != status)
-            LOG (LOG_WARNING, "Invalid png image data: %s", url.c_str());
+            LOG.warningv("Invalid png image data: %s", url.c_str());
         }
     else if (contentType.Equals ("image/jpeg"))
         {
         status = ImageUtilities::ReadImageFromJpgBuffer (m_rgbBuffer, actualImageInfo, data.data(), data.size(), expectedImageInfo);
         if (SUCCESS != status)
-            LOG (LOG_WARNING, "Invalid jpeg image data: %s", url.c_str());
+            LOG.warningv("Invalid jpeg image data: %s", url.c_str());
         }
     else
         {
         BeAssert (false && "Unsupported image type");
-        LOG (LOG_WARNING, "Unsupported image type: %s -> %s", url.c_str(), contentType.c_str());
+        LOG.warningv("Unsupported image type: %s -> %s", url.c_str(), contentType.c_str());
         status = BSIERROR;
         }
 
@@ -725,7 +738,7 @@ void WebMercatorTileDisplayHelper::DrawMissingTile (ViewContextR context, WebMer
 #ifdef WEBMERCATOR_DEBUG_TILES
     RgbColorDef color = {100,100,100};
     setSymbology (context, color, 215, 0);
-    DrawTileAsBox (context, tileid, -Viewport::GetDisplayPriorityFrontPlane(), false);
+    DrawTileAsBox (context, tileid, -DgnViewport::GetDisplayPriorityFrontPlane(), false);
 #endif
     }
 
@@ -789,13 +802,13 @@ static void drawText (ViewContextR context, DPoint3dCR ptUl, Utf8StringCR string
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorTilingSystem::GetOptimalZoomLevelForView (UInt8& zoomLevel, ViewportR vp, WebMercatorUorConverter& converter, bool preferFinerResolution)
+BentleyStatus WebMercatorTilingSystem::GetOptimalZoomLevelForView (uint8_t& zoomLevel, DgnViewportR vp, WebMercatorUorConverter& converter, bool preferFinerResolution)
     {
     // Get the number of meters / screen pixel that we are showing in the view
     double viewResolution = converter.ComputeViewResolutionInMetersPerPixel (vp); 
 
     // Return the zoom level that has about the same "ground resolution", which is defined as meters / pixel.
-    for (UInt8 i=0; i<=MAX_ZOOM_LEVEL; ++i)
+    for (uint8_t i=0; i<=MAX_ZOOM_LEVEL; ++i)
         {
         double gr = converter.ComputeGroundResolutionInMeters (i);
         if (BeNumerical::Compare (gr, viewResolution) <= 0)
@@ -815,7 +828,7 @@ BentleyStatus WebMercatorTilingSystem::GetOptimalZoomLevelForView (UInt8& zoomLe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorTilingSystem::GetTileIdsForView (bvector<TileId>& tileids, UInt8 zoomLevel, ViewportR vp, WebMercatorUorConverter& converter)
+BentleyStatus WebMercatorTilingSystem::GetTileIdsForView (bvector<TileId>& tileids, uint8_t zoomLevel, DgnViewportR vp, WebMercatorUorConverter& converter)
     {
     auto const& vc = vp.GetViewController();
 
@@ -839,7 +852,7 @@ BentleyStatus WebMercatorTilingSystem::GetTileIdsForView (bvector<TileId>& tilei
         if (projectPointToPlaneInDirection (llptxy, xyplane, range.low, viewDir) != BSISUCCESS
          || projectPointToPlaneInDirection (urptxy, xyplane, range.high, viewDir) != BSISUCCESS)
             {
-            LOG (LOG_INFO, "The view is not looking at any part of the x-y plane");
+            LOG.info("The view is not looking at any part of the x-y plane");
             return BSIERROR;
             }
 
@@ -888,7 +901,6 @@ static bool shouldDraw (ViewContextR context)
         case DrawPurpose::Unhilite:
         case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
         case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
-        case DrawPurpose::RangeCalculation:
         case DrawPurpose::Pick:
         case DrawPurpose::Flash:
         case DrawPurpose::CaptureGeometry:
@@ -904,9 +916,24 @@ static bool shouldDraw (ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WebMercatorDisplay::CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid)
+    {
+    ModelHandlerP modelHandler = ModelHandler::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
+    WebMercatorModelHandler* webMercatorModelHandler = dynamic_cast<WebMercatorModelHandler*>(modelHandler);
+    if (nullptr == webMercatorModelHandler)
+        {
+        BeAssert(false);
+        return BSIERROR;
+        }
+    return webMercatorModelHandler->_CreateUrl(url, imageInfo, m_model.m_properties, tileid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorRealityDataHandler::DrawSubstituteTilesFinerFromTextureCache (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, UInt32 maxLevelsToTry)
+BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, uint32_t maxLevelsToTry)
     {
     if (tileid.zoomLevel >= WebMercatorTilingSystem::MAX_ZOOM_LEVEL)
         return BSIERROR;
@@ -918,9 +945,9 @@ BentleyStatus WebMercatorRealityDataHandler::DrawSubstituteTilesFinerFromTexture
     finerUlTileid.row <<= 1;
     finerUlTileid.column <<= 1;
 
-    for (UInt32 row=0; row < 2; ++row)
+    for (uint32_t row=0; row < 2; ++row)
         {
-        for (UInt32 col=0; col < 2; ++col)
+        for (uint32_t col=0; col < 2; ++col)
             {
             WebMercatorTilingSystem::TileId finerTileid (finerUlTileid);
             finerTileid.column += col;
@@ -928,7 +955,7 @@ BentleyStatus WebMercatorRealityDataHandler::DrawSubstituteTilesFinerFromTexture
 
             Utf8String finerUrl;
             ImageUtilities::RgbImageInfo finerImageInfo;
-            if (_CreateUrl (finerUrl, finerImageInfo, finerTileid) != BSISUCCESS)
+            if (CreateUrl (finerUrl, finerImageInfo, finerTileid) != BSISUCCESS)
                 continue;
 
             // *** NB: Do not try to read from the RealityDataCache. This method is called from _DrawView, and it must be fast!
@@ -951,7 +978,7 @@ BentleyStatus WebMercatorRealityDataHandler::DrawSubstituteTilesFinerFromTexture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorRealityDataHandler::DrawCoarserTilesForViewFromTextureCache (ViewContextR context, UInt8 zoomLevel, UInt32 maxLevelsToTry)
+BentleyStatus WebMercatorDisplay::DrawCoarserTilesForViewFromTextureCache (ViewContextR context, uint8_t zoomLevel, uint32_t maxLevelsToTry)
     {
     bvector<TileDisplayImageData> coarserTileDisplayImageData;
     bool allCoarserTilesInTextureCache;
@@ -997,7 +1024,7 @@ void WebMercatorTileDisplayHelper::DrawTileDebugInfo (ViewContextR context, WebM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorRealityDataHandler::GetCachedTiles (bvector<TileDisplayImageData>& tileDisplayImageData, bool& allFoundInTextureCache, UInt8 zoomLevel, ViewContextR context)
+BentleyStatus WebMercatorDisplay::GetCachedTiles (bvector<TileDisplayImageData>& tileDisplayImageData, bool& allFoundInTextureCache, uint8_t zoomLevel, ViewContextR context)
     {
     allFoundInTextureCache = true;
     bvector<WebMercatorTilingSystem::TileId> tileIds;
@@ -1011,7 +1038,7 @@ BentleyStatus WebMercatorRealityDataHandler::GetCachedTiles (bvector<TileDisplay
         data.tileid = tileid;
 
         Utf8String url;
-        if (_CreateUrl (url, data.imageInfo, data.tileid) != BSISUCCESS)
+        if (CreateUrl (url, data.imageInfo, data.tileid) != BSISUCCESS)
             return BSIERROR; // ?? when would this ever happen??
 
         if (m_helper.GetCachedTexture (data.textureId, data.imageInfo, url) != BSISUCCESS)
@@ -1029,7 +1056,26 @@ BentleyStatus WebMercatorRealityDataHandler::GetCachedTiles (bvector<TileDisplay
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorRealityDataHandler::_DrawView (ViewContextR context)
+void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
+    {
+    RefCountedPtr<WebMercatorDisplay> display = new WebMercatorDisplay(*this, *context.GetViewport());
+    display->DrawView(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult WebMercatorModel::_QueryModelRange (DRange3dR range)
+    {
+    // *** WIP_WEBMERCATORMODEL - range
+    range = m_properties.m_range;
+    return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorDisplay::DrawView (ViewContextR context)
     {
     // **********************************
     // *** NB: This method must be fast. 
@@ -1037,21 +1083,16 @@ void WebMercatorRealityDataHandler::_DrawView (ViewContextR context)
     // Do not try to read from SQLite or allocate huge amounts of memory in here. 
     // Defer time-consuming tasks to progressive display
 
-
-    // Preconditions
-    BeAssert (m_missingTilesToBeRequested.empty() && "_DrawView should only be called on a freshly created handler instance");
-    BeAssert (m_missingTilesPending.empty() && "_DrawView should only be called on a freshly created handler instance");
-
     //
     //  First, determine if we can draw map tiles at all.
     //
     if (!shouldDraw (context) || NULL == context.GetViewport())
         return;
 
-    m_hadError = true;
-
     if (context.GetViewport()->IsCameraOn())    // *** TBD: Not sure if we can support tiled raster in a perspective view or not. 
         return;                                 // ***      I would at least have to figure out how to compute what portions of the earth are in the view.
+
+    m_hadError = true;
 
     if (!m_helper.m_converter.IsValid())
         return;
@@ -1092,6 +1133,10 @@ void WebMercatorRealityDataHandler::_DrawView (ViewContextR context)
     //
     for (auto const& tileddata : allTilesToBeDisplayed)
         {
+        #ifdef WEBMERCATOR_DEBUG_TILES
+            m_helper.DrawTileDebugInfo (context, tileddata.tileid);
+        #endif
+
         auto tileid = tileddata.tileid;
         if (tileddata.textureId != 0)
             {
@@ -1125,11 +1170,11 @@ void WebMercatorRealityDataHandler::_DrawView (ViewContextR context)
 * This callback is invoked on a timer during progressive display.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-IProgressiveDisplay::Completion WebMercatorRealityDataHandler::_Process (ViewContextR context)
+IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
-        LOG (LOG_TRACE, "Wait %lld until next retry", m_nextRetryTime - BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        LOG.tracev("Wait %lld until next retry", m_nextRetryTime - BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         return Completion::Aborted;
         }
 
@@ -1145,8 +1190,8 @@ IProgressiveDisplay::Completion WebMercatorRealityDataHandler::_Process (ViewCon
         
         Utf8String url;
         ImageUtilities::RgbImageInfo expectedImageInfo;
-        _CreateUrl (url, expectedImageInfo, tileid);
-        auto realityData = T_HOST.GetRealityDataAdmin ().GetCache ().Get<TiledRaster> (url.c_str (), *TiledRaster::RequestOptions::Create (expectedImageInfo), RealityDataGetCachedOption(true));
+        CreateUrl (url, expectedImageInfo, tileid);
+        auto realityData = T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo, true));
         if (realityData.IsValid())
             {
             //  The image is available from the cache. Great! Draw it.
@@ -1173,7 +1218,7 @@ IProgressiveDisplay::Completion WebMercatorRealityDataHandler::_Process (ViewCon
         auto const& tileid = iMissing->second;
 
         // See if the image has arrived in the cache.
-        auto realityData = T_HOST.GetRealityDataAdmin ().GetCache ().GetCached<TiledRaster> (url.c_str(), RealityDataGetCachedOption(true));
+        auto realityData = T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(url.c_str(), *TiledRaster::RequestOptions::Create(true));
 
         if (context.CheckStop())
             return Completion::Aborted;
@@ -1193,10 +1238,10 @@ IProgressiveDisplay::Completion WebMercatorRealityDataHandler::_Process (ViewCon
     if (!m_missingTilesPending.empty())
         {
         ++m_failedAttempts;
-        m_waitTime = (UInt64)(m_waitTime * 1.33);
+        m_waitTime = (uint64_t)(m_waitTime * 1.33);
         if (m_failedAttempts > 5 && (m_failedAttempts&1)==0)
             {
-            LOG (LOG_INFO, "%d failures. Wait %lld millis\n", m_failedAttempts, m_waitTime);
+            LOG.infov("%d failures. Wait %lld millis\n", m_failedAttempts, m_waitTime);
             }
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
         }
@@ -1208,8 +1253,9 @@ IProgressiveDisplay::Completion WebMercatorRealityDataHandler::_Process (ViewCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorRealityDataHandler::WebMercatorRealityDataHandler (ViewportR vp) 
-    : 
+WebMercatorDisplay::WebMercatorDisplay (WebMercatorModel& model, DgnViewportR vp) 
+    :
+    m_model(model),
     m_optimalZoomLevel(0), 
     m_hadError(false),
     m_preferFinerResolution(false),
@@ -1219,8 +1265,17 @@ WebMercatorRealityDataHandler::WebMercatorRealityDataHandler (ViewportR vp)
     m_nextRetryTime(0),
     m_failedAttempts(0)
     {
+    DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WebMercatorDisplay::~WebMercatorDisplay() 
+    {
+    }
+
+#ifdef WIP_MAP_SERVICE
 /*---------------------------------------------------------------------------------**//**
 // <summary>
 // Converts tile XY coordinates into a QuadKey at a specified level of detail.
@@ -1275,7 +1330,7 @@ static Utf8String getBingToken ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapRealityDataHandler::CreateBingUrl (WebMercatorTilingSystem::TileId const& tileid)
+Utf8String StreetMapModelHandler::CreateBingUrl (WebMercatorTilingSystem::TileId const& tileid)
     {
     Utf8String bingURL = "http://";
 
@@ -1301,21 +1356,22 @@ Utf8String StreetMapRealityDataHandler::CreateBingUrl (WebMercatorTilingSystem::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapRealityDataHandler::CreateGoogleMapsUrl (WebMercatorTilingSystem::TileId const& tileid)
+Utf8String StreetMapModelHandler::CreateGoogleMapsUrl (WebMercatorTilingSystem::TileId const& tileid)
     {
     // *** WIP_WEBMERCATOR We must append an API key -- need to get one.
     // *** WIP_WEBMERCATOR m_mapType
     // *** WIP_WEBMERCATOR m_features
     return Utf8PrintfString ("http://mts0.googleapis.com/vt?lyrs=m&x=%d&y=%d&z=%d", tileid.column, tileid.row, tileid.zoomLevel);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapRealityDataHandler::CreateMapquestUrl (WebMercatorTilingSystem::TileId const& tileid)
+Utf8String StreetMapModelHandler::CreateMapquestUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Properties const& props)
     {
     Utf8String url = "http://otile1.mqcdn.com/tiles/1.0.0/";
-    if (m_mapType == MapType::Map)
+    if (!props.m_mapType.empty() && props.m_mapType[0] == '0')
         url += "map/";
     else
         url += "sat/";  // "Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency"
@@ -1332,7 +1388,7 @@ Utf8String StreetMapRealityDataHandler::CreateMapquestUrl (WebMercatorTilingSyst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StreetMapRealityDataHandler::_CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorTilingSystem::TileId const& tileid)
+BentleyStatus StreetMapModelHandler::_CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorModel::Properties const& props, WebMercatorTilingSystem::TileId const& tileid)
     {
     // The usual image format info
     expectedImageInfo.height = expectedImageInfo.width = 256;
@@ -1340,23 +1396,30 @@ BentleyStatus StreetMapRealityDataHandler::_CreateUrl (Utf8StringR url, ImageUti
     expectedImageInfo.isBGR = false;
     expectedImageInfo.isTopDown = true;
 
-#ifndef NDEBUG
-    if (m_mapService == MapService::TEST_OpenStreetMaps)
+    if (props.m_mapService.empty())
+        {
+        BeAssert (false && "missing map service");
+        LOG.error("missing map service");
+        return BSIERROR;
+        }
+
+    if (props.m_mapService[0] == '0') // "(c) OpenStreetMap contributors"
+        url = CreateMapquestUrl (tileid, props);
+#ifdef WIP_MAP_SERVICE
+    else
+    if (OpenStreetMaps)
         url = Utf8PrintfString ("http://tile.openstreetmap.org/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
-    else 
-#endif
-    if (m_mapService == MapService::MapQuest) // "(c) OpenStreetMap contributors"
-        url = CreateMapquestUrl (tileid);
-    else if (m_mapService == MapService::GoogleMaps)
+    else if (GoogleMaps)
         url = CreateGoogleMapsUrl (tileid);
-    else if (m_mapService == MapService::BlackAndWhite)
+    else if (BlackAndWhite)
         url = Utf8PrintfString ("http://a.tile.stamen.com/toner/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
-    else if (m_mapService == MapService::Bing)
+    else if (Bing)
         url = CreateBingUrl (tileid);
+#endif
     else
         {
         BeAssert (false && "unrecognized map service");
-        LOG (LOG_ERROR, "%d is an unrecognized map service", m_mapService);
+        LOG.errorv("[%s] is an unrecognized map service", props.m_mapService.c_str());
         return BSIERROR;
         }
 
@@ -1366,53 +1429,134 @@ BentleyStatus StreetMapRealityDataHandler::_CreateUrl (Utf8StringR url, ImageUti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StreetMapRealityDataHandler::StreetMapRealityDataHandler (ViewportR vp, MapService mapService) 
-    : 
-    WebMercatorRealityDataHandler (vp),
-    m_mapService (mapService),
-    m_mapType (MapType::Map)
+void WebMercatorModelHandler::FinishCreation (DgnDbR db, DgnModels::Model const& modelData, WebMercatorModel::Properties const& props)
+    {
+    WebMercatorModel* model = dynamic_cast<WebMercatorModel*>(db.Models().GetModelById(modelData.GetId()));
+    model->SetProperties(props);
+    model->SaveProperties();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String getStreetMapServerDescription(StreetMapModelHandler::MapService mapService, StreetMapModelHandler::MapType mapType)
+    {
+    Utf8String descr;
+    switch (mapService)
+        {
+        case StreetMapModelHandler::MapService::MapQuest:
+            {
+            descr = ("MapQuest");   // *** WIP translate
+            if (StreetMapModelHandler::MapType::Map == mapType)
+                descr.append(" Map");   // *** WIP translate
+            else
+                descr.append(" Satellite Images"); // *** WIP translate
+            break;
+            }
+        }
+    return descr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId StreetMapModelHandler::CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution)
+    {
+    //Utf8PrintfString modelName("com.bentley.dgn.StreetMap_%d_%d", mapService, mapType); // *** WIP_STREET_MAP how to make sure name is unique?
+    Utf8String modelName = getStreetMapServerDescription(mapService,mapType).c_str();
+    ECN::ECClassId classId = db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel");
+    BeAssert(classId != -1);
+    DgnModels::Model modelData(modelName.c_str(), DgnModelType::Physical, DgnModels::Model::CoordinateSpace::World, DgnClassId(classId));
+    db.Models().CreateNewModel(modelData);
+
+    WebMercatorModel::Properties props;
+    props.m_mapService = Utf8PrintfString("%d", mapService);
+    props.m_mapType = Utf8PrintfString("%d", mapType);
+    props.m_finerResolution = finerResolution;
+    props.m_range = db.Units().GetProjectExtents(); // The "range" of a map could be the whole world. We'll fall back on the project's full extents.
+
+    GetHandler().FinishCreation(db, modelData, props);
+
+    return modelData.GetId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr WebMercatorModelHandler::_SupplyDgnModel(DgnDbR db, DgnModels::Model const& model)
+    {
+    return new WebMercatorModel(db, model.GetId(), model.GetClassId(), model.GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WebMercatorModel::WebMercatorModel(DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : T_Super (project, modelId, classId, name)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StreetMapRealityDataHandler::SetMapType (MapType i)
+WebMercatorModel::~WebMercatorModel()
     {
-    m_mapType = i;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StreetMapRealityDataHandler::SetFeature (Feature f, Utf8StringCR params)
+void WebMercatorModel::SetProperties (WebMercatorModel::Properties const& props)
     {
-    m_features[f] = params;
+    m_properties = props;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorModel::Properties::ToJson(Json::Value& v) const
+    {
+    v["mapService"] = m_mapService.c_str();
+    v["mapType"] = m_mapType.c_str();
+    v["finerResolution"] = m_finerResolution;
+    JsonUtils::DPoint3dToJson(v["RangeLow"], m_range.low);
+    JsonUtils::DPoint3dToJson(v["RangeHigh"], m_range.high);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StreetMapRealityDataHandler::RemoveFeature (Feature f)
+void WebMercatorModel::Properties::FromJson(Json::Value const& v)
     {
-    m_features.erase (f);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void StreetMapRealityDataHandler::SetPreferFinerResolution (bool v)
-    {
-    m_preferFinerResolution = v;
+    m_mapService = v["mapService"].asString();
+    m_mapType = v["mapType"].asString();
+    m_finerResolution = v["finerResolution"].asBool();
+    JsonUtils::DPoint3dFromJson(m_range.low, v["RangeLow"]);
+    JsonUtils::DPoint3dFromJson(m_range.high, v["RangeHigh"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LatLongGridRealityDataHandler::_DrawView (ViewContextR context)
+void WebMercatorModel::_ToPropertiesJson(Json::Value& v) const
     {
-    /*
+    T_Super::_ToPropertiesJson(v);
+    m_properties.ToJson(v);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorModel::_FromPropertiesJson(Json::Value const& v)
+    {
+    T_Super::_FromPropertiesJson(v);
+    m_properties.FromJson(v);
+    }
+
+#ifdef TBD_LATLNG_GRID
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void LatLongGridRealityDataHandler::_AddGraphicsToScene (ViewContextR context)
+    {
     auto vp = *context.GetViewport();
 
     DRange3d    range;
@@ -1431,6 +1575,258 @@ void LatLongGridRealityDataHandler::_DrawView (ViewContextR context)
     auto viewDiagInMeters = viewDiagInUors * m_meters_per_uor;    // meters
     
     return viewDiagInMeters / viewDiagInPixels;                 // meters/pixel
-    */
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP TiledRaster::_GetId() const {return m_url.c_str();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TiledRaster::_IsExpired() const {return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Byte> const& TiledRaster::GetData() const {return m_data;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime TiledRaster::GetCreationDate() const {return m_creationDate;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageUtilities::RgbImageInfo const& TiledRaster::GetImageInfo() const {return m_rasterInfo;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String TiledRaster::GetContentType() const {return m_contentType;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<TiledRaster> TiledRaster::Create() {return new TiledRaster();}
+
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            03/2015
+//=======================================================================================
+struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
+    {
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                     Grigas.Petraitis           03/2015
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override
+        {
+        if (db.TableExists(TABLE_NAME_TiledRaster))
+            return SUCCESS;
+    
+        Utf8CP ddl = "Url CHAR PRIMARY KEY, \
+                        Raster BLOB,          \
+                        RasterSize INT,       \
+                        RasterInfo CHAR,      \
+                        ContentType CHAR,     \
+                        Created BIGINT,       \
+                        Expires BIGINT,       \
+                        ETag CHAR";
+        return BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl) ? SUCCESS : ERROR;
+        }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                     Grigas.Petraitis           03/2015
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db, double percentage) const override
+        {
+        CachedStatementPtr sumStatement;
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(sumStatement, "select sum(RasterSize) from " TABLE_NAME_TiledRaster))
+            return ERROR;
+
+        if (BeSQLite::BE_SQLITE_ROW != sumStatement->Step()) 
+            return ERROR;
+            
+        auto rasterSize = sumStatement->GetValueInt(0);         
+        uint64_t overHead = (uint64_t)(rasterSize * percentage) / 100;
+    
+        CachedStatementPtr selectStatement;
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "select RasterSize, Created from " TABLE_NAME_TiledRaster " ORDER BY Created ASC"))
+            return ERROR;
+    
+        uint64_t runningSum = 0;
+        while ((runningSum < overHead) &&(BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
+            runningSum += selectStatement->GetValueInt(0);
+            
+        CachedStatementPtr deleteStatement;
+        uint64_t creationDate = selectStatement->GetValueInt64(1);
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created  <= ? "))
+            return ERROR;
+
+        deleteStatement->BindInt64(1, creationDate);
+        if (BeSQLite::BE_SQLITE_DONE != deleteStatement->Step())
+            return ERROR;
+            
+        return SUCCESS;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr TiledRaster::_GetDatabasePrepareAndCleanupHandler() const
+    {
+    return new TiledRasterPrepareAndCleanupHandler();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
+    {
+    BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
+    RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
+    
+    m_url.AssignOrClear(url);
+    m_creationDate = DateTime::GetCurrentTime();
+
+    auto contentTypeIter = header.find("Content-Type");
+    if (contentTypeIter == header.end())
+        return ERROR;
+
+    m_contentType = contentTypeIter->second.c_str();
+    BeAssert(nullptr != options.GetExpectedImageInfo());
+    m_rasterInfo = *options.GetExpectedImageInfo();
+    m_data = body;
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
+    {
+    HighPriorityOperationBlock highPriority;
+
+    CachedStatementPtr stmt;
+    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Raster, RasterSize, RasterInfo, Created, Expires, ETag, ContentType from " TABLE_NAME_TiledRaster " WHERE Url=?"))
+        return ERROR;
+
+    stmt->ClearBindings();
+    stmt->BindText(1, key, BeSQLite::Statement::MakeCopy::Yes);
+    if (BeSQLite::BE_SQLITE_ROW == stmt->Step())
+        {
+        m_url = key;
+
+        auto raster     = stmt->GetValueBlob(0);
+        auto rasterSize = stmt->GetValueInt(1);
+        m_data.assign((Byte*) raster,(Byte*) raster + rasterSize);
+
+        m_rasterInfo = DeserializeRasterInfo(stmt->GetValueText(2));
+        DateTime::FromUnixMilliseconds(m_creationDate,(uint64_t) stmt->GetValueInt64(3));
+        m_contentType = stmt->GetValueText(6);
+
+        DateTime expirationDate;
+        DateTime::FromUnixMilliseconds(expirationDate,(uint64_t) stmt->GetValueInt64(4));
+        SetExpirationDate(expirationDate);
+        SetEntityTag(stmt->GetValueText(5));
+
+        return SUCCESS;
+        }
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db) const
+    {
+    int bufferSize = (int) GetData().size();
+
+    int64_t creationTime = 0;
+    if (SUCCESS != GetCreationDate().ToUnixMilliseconds(creationTime))
+        return ERROR;
+
+    int64_t expirationDate = 0;
+    if (SUCCESS != GetExpirationDate().ToUnixMilliseconds(expirationDate))
+        return ERROR;
+
+    HighPriorityOperationBlock highPriority;
+
+    CachedStatementPtr selectStatement;
+    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Url from " TABLE_NAME_TiledRaster " WHERE Url=?"))
+        return ERROR;
+
+    selectStatement->ClearBindings();
+    selectStatement->BindText(1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
+    if (BeSQLite::BE_SQLITE_ROW == selectStatement->Step())
+        {
+        // update
+        CachedStatementPtr stmt;
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TiledRaster " SET Expires=?, ETag=? WHERE Url=?"))
+            return ERROR;
+
+        stmt->ClearBindings();
+        stmt->BindInt64(1, expirationDate);
+        stmt->BindText (2, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText (3, GetId(), BeSQLite::Statement::MakeCopy::Yes);
+        if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
+            return ERROR;
+        }
+    else
+        {
+        // insert
+        CachedStatementPtr stmt;
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Url, Raster, RasterSize, RasterInfo, Created, Expires, ETag, ContentType) VALUES(?,?,?,?,?,?,?,?)"))
+            return ERROR;
+
+        stmt->ClearBindings();
+        stmt->BindText (1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindBlob (2, GetData().data(), bufferSize, BeSQLite::Statement::MakeCopy::No);
+        stmt->BindInt  (3, bufferSize);
+        stmt->BindText (4, SerializeRasterInfo(m_rasterInfo).c_str(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindInt64(5, creationTime);
+        stmt->BindInt64(6, expirationDate);
+        stmt->BindText (7, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText (8, GetContentType(), BeSQLite::Statement::MakeCopy::Yes);
+        if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String TiledRaster::SerializeRasterInfo(ImageUtilities::RgbImageInfo const& info)
+    {
+    Json::Value json;
+    json["hasAlpha"] = info.hasAlpha;
+    json["height"] = info.height;
+    json["width"] = info.width;
+    json["isBGR"] = info.isBGR;
+    json["isTopDown"] = info.isTopDown;
+    return Json::FastWriter::ToString(json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageUtilities::RgbImageInfo TiledRaster::DeserializeRasterInfo(Utf8CP serializedJson)
+    {
+    Json::Value json;
+    Json::Reader reader;
+    reader.parse(serializedJson, json);
+
+    ImageUtilities::RgbImageInfo info;
+    info.hasAlpha = json["hasAlpha"].asBool();
+    info.height = json["height"].asInt();
+    info.width = json["width"].asInt();
+    info.isBGR = json["isBGR"].asBool();
+    info.isTopDown = json["isTopDown"].asBool();
+    return info;
+    }

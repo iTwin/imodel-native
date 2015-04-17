@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/gdileak.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
@@ -858,8 +858,8 @@ void     pagalloc_symbolizeHeaderAddresses (const PageMallocEntry * const header
 
 static CGdiMonitor* s_gdiMonitor = NULL;
 
-static UInt32 s_recordNumber = 0;
-static UInt32 s_initialNumberOfHandles = 0;
+static uint32_t s_recordNumber = 0;
+static uint32_t s_initialNumberOfHandles = 0;
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Chuck.Kirschman   02/2012
@@ -905,7 +905,7 @@ void GdiMonitor_Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Chuck.Kirschman   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 GdiMonitor_GetCurrentEntryID ()
+uint32_t GdiMonitor_GetCurrentEntryID ()
     {
     return s_recordNumber;
     }
@@ -913,13 +913,13 @@ UInt32 GdiMonitor_GetCurrentEntryID ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Chuck.Kirschman   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GdiMonitor_Dump (UInt32 start, void (*callbackFunc) (PageMallocEntry const * const entry, uintptr_t handleId, UInt32 leakNumber, UInt32 count) )
+void GdiMonitor_Dump (uint32_t start, void (*callbackFunc) (PageMallocEntry const * const entry, uintptr_t handleId, uint32_t leakNumber, uint32_t count) )
     {
-    UInt32 leakNumber = 0;
+    uint32_t leakNumber = 0;
     std::map<uintptr_t, PageMallocEntry const*>::iterator it;
 
     // Get counts
-    std::map<uintptr_t, UInt32> callStackCounts;
+    std::map<uintptr_t, uint32_t> callStackCounts;
     for(it = g_HandleInfo.begin(); it != g_HandleInfo.end(); ++it)
         {
         if (it->second->mallocSerialNumber < start)

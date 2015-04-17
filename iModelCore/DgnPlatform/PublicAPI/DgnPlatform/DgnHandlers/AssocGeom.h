@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/AssocGeom.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,157 +37,157 @@ enum AssocPointType
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      vertex;
-    UShort      numerator;
-    UShort      divisor;
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short vertex;
+    unsigned short numerator;
+    unsigned short divisor;
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
-    UShort      nVertex;            // number of vertices on linear element
-    UShort      reserved[7];        // padding
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
+    unsigned short nVertex;            // number of vertices on linear element
+    unsigned short reserved[7];        // padding
     } LinearAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      vertex;
-    UShort      nVertex;            // number of vertices on linear element
-    UShort      reserved;           // padding
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short vertex;
+    unsigned short nVertex;            // number of vertices on linear element
+    unsigned short reserved;           // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
     double      ratioVal;
-    UShort      reserved2[4];       // padding
+    unsigned short reserved2[4];       // padding
     } ProjectionAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      keyPoint;
-    UShort      reserved[2];        // padding
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short keyPoint;
+    unsigned short reserved[2];        // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
     double      angle;
-    UShort      reserved2[4];       // padding
+    unsigned short reserved2[4];       // padding
     } ArcAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      option;             // Used for text/text node to override user origin
-    UShort      reserved[2];        // padding
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short option;             // Used for text/text node to override user origin
+    unsigned short reserved[2];        // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
-    UShort      reserved2[8];       // padding
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
+    unsigned short reserved2[8];       // padding
     } OriginAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      reserved[3];        // padding
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short reserved[3];        // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
     double      uParam;
-    UShort      reserved2[4];       // padding
+    unsigned short reserved2[4];       // padding
     } BCurveAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      reserved[3];        // padding
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short reserved[3];        // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
     double      uParam;
     double      vParam;
     } BSurfAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      pointNo;
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short pointNo;
     struct
         {
-        UShort  lineNo:8;
-        UShort  joint:1;
-        UShort  project:1;
-        UShort  reserved:6;
+        unsigned short lineNo:8;
+        unsigned short joint:1;
+        unsigned short project:1;
+        unsigned short reserved:6;
         } b;
-    UShort      reserved;           // padding
+    unsigned short reserved;           // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
     double      offsetVal;
-    UShort      nVertex;            // number of vertices on linear element
-    UShort      reserved2[3];       // padding
+    unsigned short nVertex;            // number of vertices on linear element
+    unsigned short reserved2[3];       // padding
     } MlineAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      reserved;           // padding
-    UInt32      vertexIndex;
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short reserved;           // padding
+    uint32_t    vertexIndex;
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
     double      reservedValue;
-    UInt32      nVertex;
-    UShort      reserved2[2];       // padding
+    uint32_t    nVertex;
+    unsigned short reserved2[2];       // padding
     } MeshVertexAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      reserved;           // padding
-    UInt32      edgeIndex;
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short reserved;           // padding
+    uint32_t    edgeIndex;
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
     double      uParam;
-    UInt32      nEdge;
-    UShort      reserved2[2];       // padding
+    uint32_t    nEdge;
+    unsigned short reserved2[2];       // padding
     } MeshEdgeAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    byte        index;
-    byte        padByte2;
-    UShort      reserved[2];        // padding
+    Byte type;               // Must be first
+    Byte padByte;
+    Byte index;
+    Byte padByte2;
+    unsigned short reserved[2];        // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId1;          // id of first element to compute assoc point from
-    UInt64   uniqueId2;          // id of second element to compute assoc point from
-    UInt64   ___legacyref1;
-    UInt64   ___legacyref2;
+    uint64_t uniqueId1;          // id of first element to compute assoc point from
+    uint64_t uniqueId2;          // id of second element to compute assoc point from
+    uint64_t ___legacyref1;
+    uint64_t ___legacyref2;
     } IntersectAssoc;
 
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        nSeg1;              // number of segments in first element
-    byte        index;
-    byte        nSeg2;              // number of segments in second element
-    UShort      seg1;               // segment on first element
-    UShort      seg2;               // segment on second element
+    Byte type;               // Must be first
+    Byte nSeg1;              // number of segments in first element
+    Byte index;
+    Byte nSeg2;              // number of segments in second element
+    unsigned short seg1;               // segment on first element
+    unsigned short seg2;               // segment on second element
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId1;          // id of first element to compute assoc point from
-    UInt64   uniqueId2;          // id of second element to compute assoc point from
-    UInt64   ___legacyref1;
-    UInt64   ___legacyref2;
+    uint64_t uniqueId1;          // id of first element to compute assoc point from
+    uint64_t uniqueId2;          // id of second element to compute assoc point from
+    uint64_t ___legacyref1;
+    uint64_t ___legacyref2;
     } Intersect2Assoc;
 
 /*  Refers to an ICustomKeypoint, which is stored on a far path element.
@@ -200,43 +200,43 @@ typedef struct
 */
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        subType;            // 0: call the handler, 1:
-    UShort      reserved[3];        // padding
+    Byte type;               // Must be first
+    Byte subType;            // 0: call the handler, 1:
+    unsigned short reserved[3];        // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   targetElementId;    // id of target element in target model
-    UInt64   pathElementId;
-    UShort      reserved2[8];       // padding
+    uint64_t targetElementId;    // id of target element in target model
+    uint64_t pathElementId;
+    unsigned short reserved2[8];       // padding
     } CustomKeypointAssoc;
 
 /* Just a common structure for accessing uniqueIds of single element association types */
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      reserved[3];        // padding
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short reserved[3];        // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId;           // id of element to compute assoc point from
-    UInt64   ___legacyref;
-    UShort      reserved2[8];       // padding
+    uint64_t uniqueId;           // id of element to compute assoc point from
+    uint64_t ___legacyref;
+    unsigned short reserved2[8];       // padding
     } SingleElmAssoc;
 
 /* Just a common structure for accessing uniqueIds of two element association types */
 typedef struct
     {
-    byte        type;               // Must be first
-    byte        padByte;
-    UShort      reserved[3];        // padding
+    Byte type;               // Must be first
+    Byte padByte;
+    unsigned short reserved[3];        // padding
     // *** WIP_V10_ASSOC_POINT - switch to ECRelationship?
-    UInt64   uniqueId1;          // id of first element to compute assoc point from
-    UInt64   uniqueId2;          // id of second element to compute assoc point from
-    UInt64   ___legacyref1;
-    UInt64   ___legacyref2;
+    uint64_t uniqueId1;          // id of first element to compute assoc point from
+    uint64_t uniqueId2;          // id of second element to compute assoc point from
+    uint64_t ___legacyref1;
+    uint64_t ___legacyref2;
     } TwoElmAssoc;
 
 union AssocGeom
     {
-    byte                type;       // Must be first
+    Byte type;       // Must be first
     SingleElmAssoc      singleElm;
     TwoElmAssoc         twoElm;
     LinearAssoc         line;

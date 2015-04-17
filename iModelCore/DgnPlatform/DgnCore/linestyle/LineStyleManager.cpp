@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LineStyleManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -65,7 +65,7 @@ LineStyleManagerR LineStyleManager::GetManager() {return T_HOST.GetLineStyleMana
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinitionP   LineStyleManager::ResolveLineStyle (Int32 styleNumber, DgnProjectP dgnFile)
+LsDefinitionP   LineStyleManager::ResolveLineStyle (int32_t styleNumber, DgnDbP dgnFile)
     {
     if (NULL == dgnFile)
         return NULL;
@@ -90,7 +90,7 @@ LsDefinitionP   LineStyleManager::FindSystemLineStyle (Utf8CP lineStyleName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         LineStyleManager::GetNameFromNumber (Int32 styleNumber, DgnProjectP dgnFile)
+WString         LineStyleManager::GetNameFromNumber (int32_t styleNumber, DgnDbP dgnFile)
     {
 #ifdef DGNV10FORMAT_CHANGES_WIP_LINESTYLES
     if (styleNumber < 0L)
@@ -134,7 +134,7 @@ WString         LineStyleManager::GetNameFromNumber (Int32 styleNumber, DgnProje
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         LineStyleManager::GetStringFromNumber (Int32 styleNumber, DgnProjectP dgnFile)
+WString         LineStyleManager::GetStringFromNumber (int32_t styleNumber, DgnDbP dgnFile)
     {
     if (IS_LINECODE (styleNumber))
         {
@@ -158,7 +158,7 @@ WString         LineStyleManager::GetStringFromNumber (Int32 styleNumber, DgnPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           LineStyleManager::GetNumberFromName (Utf8CP name, DgnProjectP dgnFile)
+int64_t           LineStyleManager::GetNumberFromName (Utf8CP name, DgnDbP dgnFile)
     {
     Utf8CP specials [] = 
         {
@@ -180,7 +180,7 @@ Int32           LineStyleManager::GetNumberFromName (Utf8CP name, DgnProjectP dg
         {
         if (0 == strcmp (*curr, name))
             {
-            Int32 specialsIndex [] = 
+            int32_t specialsIndex [] = 
                 {
                 STYLE_ByLevel,
                 STYLE_ByCell,
@@ -214,95 +214,58 @@ Int32           LineStyleManager::GetNumberFromName (Utf8CP name, DgnProjectP dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32           LineStyleManager::GetNumberFromName (WCharCP name, DgnProjectP dgnFile)
+int64_t           LineStyleManager::GetNumberFromName (WCharCP name, DgnDbP dgnFile)
     {
     Utf8String utf8;
     BeStringUtilities::WCharToUtf8 (utf8, name);
     return GetNumberFromName(utf8.c_str(), dgnFile);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    12/2012
-//---------------------------------------------------------------------------------------
-DbResult DgnLineStyles::InsertWithId (DgnStyleId newStyleId, Utf8CP name, UInt32 componentId, UInt16 componentType, UInt32 flags, double unitDefinition)
-    {
-    Json::Value jsonObj (Json::objectValue);
-
-    LsDefinition::InitializeJsonObject (jsonObj, componentId, componentType, flags, unitDefinition);
-    Utf8String  blob = Json::FastWriter::ToString (jsonObj);
-
-    DgnStyles::Style styleRow (newStyleId, DgnStyleType::Line, name, NULL, blob.c_str(), blob.size() + 1);
-    DbResult result = m_project.Styles().InsertStyleWithId (styleRow);
-    //  We use this method when copying all of the line styles from a file.  If the file has 2 line styles with the
-    //  same name we get BE_SQLITE_CONSTRAINT.  Assume the caller can deal with it.
-    BeAssert(BE_SQLITE_DONE == result || IsConstraintDbResult(result));
-
-    return result;
-    }
-
 //-------------------------------------------------------------------------------   --------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-DbResult DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, UInt32 componentId, UInt16 componentType, UInt32 flags, double unitDefinition)
+BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, uint32_t componentId, uint16_t componentType, uint32_t flags, double unitDefinition)
     {
-    Json::Value jsonObj (Json::objectValue);
+    // Don't assert to ensure an invalid ID.
+    // Consider the case of cloning a style object, modifying, and then inserting it as a new style. The Clone keeps the ID, and I don't think it's worth having an overload of Clone to expose this detail.
 
-    LsDefinition::InitializeJsonObject (jsonObj, componentId, componentType, flags, unitDefinition);
-    Utf8String  blob = Json::FastWriter::ToString (jsonObj);
+    Json::Value jsonObj(Json::objectValue);
+    LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, flags, unitDefinition);
+    Utf8String data = Json::FastWriter::ToString(jsonObj);
 
-    DgnStyles::Style styleRow (newStyleId, DgnStyleType::Line, name, NULL, blob.c_str(), blob.size() + 1);
-    DbResult result = m_project.Styles().InsertStyle (styleRow, STYLE_MaxLineCode + 1);  //  This also should protect against STYLE_ByLevel, STYLE_ByCell, and STYLE_Invalid
+    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetNextRepositoryBasedId(newStyleId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
 
-    BeAssert(BE_SQLITE_DONE == result);
+    Statement insert;
+    insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Style) " (Id,Type,Name,Data) VALUES (?," DGN_STYLE_TYPE_Line ",?,?)");
+    insert.BindId(1, newStyleId);
+    insert.BindText(2, name, Statement::MakeCopy::No);
+    insert.BindBlob(3, (void const*)&data[0], (int)data.size() + 1, Statement::MakeCopy::No);
 
-    if (BE_SQLITE_DONE == result)
-        newStyleId = styleRow.GetId();
-
-    return result;
+    POSTCONDITION(BE_SQLITE_DONE == insert.Step(), ERROR);
+    
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus DgnLineStyles::Update (DgnStyleId newStyleId, Utf8CP name, UInt32 componentId, UInt16 componentType, UInt32 flags, double unitDefinition)
+BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, uint32_t componentId, uint16_t componentType, uint32_t flags, double unitDefinition)
     {
-    Json::Value jsonObj (Json::objectValue);
+    PRECONDITION(styleId.IsValid(), ERROR);
 
-    LsDefinition::InitializeJsonObject (jsonObj, componentId, componentType, flags, unitDefinition);
-    Utf8String  blob = Json::FastWriter::ToString (jsonObj);
+    Json::Value jsonObj(Json::objectValue);
+    LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, flags, unitDefinition);
+    Utf8String data = Json::FastWriter::ToString(jsonObj);
 
-    DgnStyles::Style styleRow (newStyleId, DgnStyleType::Line, name, NULL, blob.c_str(), blob.size() + 1);
-    if (BE_SQLITE_DONE != m_project.Styles().UpdateStyle (styleRow))
-        {
-        BeAssert (false);
-        return BSIERROR;
-        }
+    Statement update;
+    update.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Style) " SET Name=?,Data=? WHERE Type=" DGN_STYLE_TYPE_Line " AND Id=?");
+    update.BindText(1, name, Statement::MakeCopy::No);
+    update.BindBlob(2, (void const*)&data[0], (int)data.size() + 1, Statement::MakeCopy::No);
+    update.BindId(3, styleId);
 
-    return BSISUCCESS;
-    }
+    POSTCONDITION(BE_SQLITE_DONE == update.Step(), ERROR);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//---------------------------------------------------------------------------------------
-DgnStyles::Iterator DgnLineStyles::MakeIterator (DgnStyleSort sortOrder) const
-    {
-    Utf8String queryModifierClauses;
-    queryModifierClauses.Sprintf ("WHERE Type=%d", DgnStyleType::Line);
-
-    switch (sortOrder)
-        {
-        case DgnStyleSort::None:       break;
-        case DgnStyleSort::NameAsc:    queryModifierClauses += " ORDER BY Name ASC";   break;
-        case DgnStyleSort::NameDsc:    queryModifierClauses += " ORDER BY Name DESC";   break;
-
-        default:
-            BeAssert (false);// && L"Unknown DgnStyleSort");
-            break;
-        }
-
-    DgnStyles::Iterator it (m_project);
-    it.Params().SetWhere(queryModifierClauses.c_str());
-    return it;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,7 +292,7 @@ LsDgnProjectMapP DgnLineStyles::GetMapP (bool loadIfNull)
     {
     if (NULL == m_lineStyleMap)
         {
-        LsDgnProjectMapPtr lsmap = LsDgnProjectMap::Create (m_project);
+        LsDgnProjectMapPtr lsmap = LsDgnProjectMap::Create (m_dgndb);
         m_lineStyleMap = lsmap.get();
         m_lineStyleMap->AddRef();
         }
@@ -339,4 +302,3 @@ LsDgnProjectMapP DgnLineStyles::GetMapP (bool loadIfNull)
 
     return m_lineStyleMap;
     }
-

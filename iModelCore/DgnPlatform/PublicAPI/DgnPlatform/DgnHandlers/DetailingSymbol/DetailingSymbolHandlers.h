@@ -87,8 +87,8 @@ private:
     void                                        EditDetailingSymbolChildProperties (EditElementHandleR eeh, PropertyContextR context, EditElementHandleR detElemHdl) const;
 #endif
 protected:
-    virtual void                                _GetTypeName (WStringR string, UInt32 desiredLength) override;
-    virtual void                                _GetDescription (ElementHandleCR el, WStringR descr, UInt32 desiredLength) override {_GetTypeName (descr, desiredLength);}
+    virtual void                                _GetTypeName (WStringR string, uint32_t desiredLength) override;
+    virtual void                                _GetDescription (ElementHandleCR el, WStringR descr, uint32_t desiredLength) override {_GetTypeName (descr, desiredLength);}
     virtual void                                _GetPathDescription (ElementHandleCR, WStringR, DisplayPathCP, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiter) override;
 #ifdef WIP_DETAILINGSYMBOLS
     virtual StatusInt                           _OnTransform (EditElementHandleR elHandle, TransformInfoCR tInfo) override;
@@ -119,7 +119,7 @@ protected:
     virtual void                                _UndoRedoRootsChanged (ElementHandleR, bvector<RootChange> const&, bvector<XAttributeHandle> const&) const {}
     virtual void                                _OnRootsChanged (ElementHandleR dependent, bvector<RootChange> const& rootsChanged, bvector<XAttributeHandle> const&  xAttrsAffected) override = 0;
     virtual void                                _OnUndoRedoRootsChanged (ElementHandleR dependent, bvector<RootChange> const& rootsChanged, bvector<XAttributeHandle> const&  xAttrsAffected) const {}
-    bool                                        IsRootChanged (IDependencyHandler::ChangeStatus&, PersistentElementPath* rootPepOut, ElementHandleR dependent, bvector<RootChange> const& rootsChanged, bvector<XAttributeHandle> const&  xAttrsAffected, UInt32 pepID);
+    bool                                        IsRootChanged (IDependencyHandler::ChangeStatus&, PersistentElementPath* rootPepOut, ElementHandleR dependent, bvector<RootChange> const& rootsChanged, bvector<XAttributeHandle> const&  xAttrsAffected, uint32_t pepID);
     bool                                        IsSelfChanged (IDependencyHandler::ChangeStatus&, ElementHandleR dependent, bvector<RootChange> const& rootsChanged);
 
     virtual StatusInt                           _OnPreprocessCopy (EditElementHandleR symbolEH, CopyContextP ccP) override;
@@ -193,7 +193,7 @@ public:
 struct          DetailingSymbolBaseXAttributeHandler  : XAttributeHandler, IXAttributePointerContainerHandler
     {
 private:
-    virtual UInt16                              GetMinorID () = 0;
+    virtual uint16_t                            GetMinorID () = 0;
 
 protected:
     virtual void                                _DisclosePointers (T_StdElementRefSet*, XAttributeHandleCR, DgnModelP) override;
@@ -236,8 +236,8 @@ private:
 
 protected:
 
-    virtual void                                    _GetTypeName (WStringR string, UInt32 desiredLength) override;
-    virtual void                                    _GetDescription (ElementHandleCR el, WStringR descr, UInt32 desiredLength) override;
+    virtual void                                    _GetTypeName (WStringR string, uint32_t desiredLength) override;
+    virtual void                                    _GetDescription (ElementHandleCR el, WStringR descr, uint32_t desiredLength) override;
 
 #ifdef WIP_DETAILINGSYMBOLS
 
@@ -290,7 +290,7 @@ public:
 struct          SectionCalloutXAttributeHandler  : DetailingSymbolBaseXAttributeHandler
     {
 private:
-    virtual UInt16                              GetMinorID () {return SYMBOLSETTINGS_MINORID_SectionCallout_IDENTIFIER;}
+    virtual uint16_t                            GetMinorID () {return SYMBOLSETTINGS_MINORID_SectionCallout_IDENTIFIER;}
 
     }; // SectionCalloutXAttributeHandler
 #endif
@@ -325,8 +325,8 @@ private:
 
 protected:
 
-    virtual void                            _GetTypeName (WStringR string, UInt32 desiredLength) override;
-    virtual void                            _GetDescription (ElementHandleCR el, WStringR descr, UInt32 desiredLength) override;
+    virtual void                            _GetTypeName (WStringR string, uint32_t desiredLength) override;
+    virtual void                            _GetDescription (ElementHandleCR el, WStringR descr, uint32_t desiredLength) override;
 
 #ifdef WIP_DETAILINGSYMBOLS
     virtual IDependencyHandler*             _GetIDependencyHandler ()  override {return this;}
@@ -377,7 +377,7 @@ public:
 struct          ElevationCalloutXAttributeHandler  : DetailingSymbolBaseXAttributeHandler
     {
 private:
-    virtual UInt16                              GetMinorID () {return SYMBOLSETTINGS_MINORID_ElevationCallout_IDENTIFIER;}
+    virtual uint16_t                            GetMinorID () {return SYMBOLSETTINGS_MINORID_ElevationCallout_IDENTIFIER;}
 
     }; // ElevationCalloutXAttributeHandler
 #endif
@@ -412,8 +412,8 @@ private:
 
 protected:
 
-    virtual void                            _GetTypeName (WStringR string, UInt32 desiredLength) override;
-    virtual void                            _GetDescription (ElementHandleCR el, WStringR descr, UInt32 desiredLength) override;
+    virtual void                            _GetTypeName (WStringR string, uint32_t desiredLength) override;
+    virtual void                            _GetDescription (ElementHandleCR el, WStringR descr, uint32_t desiredLength) override;
 
 #ifdef WIP_DETAILINGSYMBOLS
     virtual IDependencyHandler*             _GetIDependencyHandler ()  override {return this;}
@@ -462,7 +462,7 @@ public:
 struct    PlanCalloutXAttributeHandler  : DetailingSymbolBaseXAttributeHandler
     {
 private:
-    virtual UInt16                              GetMinorID () {return SYMBOLSETTINGS_MINORID_PlanCallout_IDENTIFIER;}
+    virtual uint16_t                            GetMinorID () {return SYMBOLSETTINGS_MINORID_PlanCallout_IDENTIFIER;}
 
     }; // PlanCalloutXAttributeHandler
 #endif
@@ -488,8 +488,8 @@ private:
 
 protected:
 
-    virtual void                            _GetTypeName (WStringR string, UInt32 desiredLength) override;
-    virtual void                            _GetDescription (ElementHandleCR el, WStringR descr, UInt32 desiredLength) override;
+    virtual void                            _GetTypeName (WStringR string, uint32_t desiredLength) override;
+    virtual void                            _GetDescription (ElementHandleCR el, WStringR descr, uint32_t desiredLength) override;
 
 #ifdef WIP_DETAILINGSYMBOLS
     /* NEEDSWORK MOVE_TO_MSTN_CLRAPPS_PROPERTIES_PROPERTYMANAGER_BASEPROPERTYENABLER
@@ -526,7 +526,7 @@ public:
 struct          DetailCalloutXAttributeHandler  : DetailingSymbolBaseXAttributeHandler
     {
 private:
-    virtual UInt16                              GetMinorID () {return SYMBOLSETTINGS_MINORID_DetailCallout_IDENTIFIER;}
+    virtual uint16_t                            GetMinorID () {return SYMBOLSETTINGS_MINORID_DetailCallout_IDENTIFIER;}
 
     }; // DetailCalloutXAttributeHandler
 #endif
@@ -558,8 +558,8 @@ private:
 #endif
 
 protected:
-    virtual void                                    _GetTypeName (WStringR string, UInt32 desiredLength) override;
-    virtual void                                    _GetDescription (ElementHandleCR el, WStringR descr, UInt32 desiredLength) override;
+    virtual void                                    _GetTypeName (WStringR string, uint32_t desiredLength) override;
+    virtual void                                    _GetDescription (ElementHandleCR el, WStringR descr, uint32_t desiredLength) override;
 
     /* NEEDSWORK MOVE_TO_MSTN_CLRAPPS_PROPERTIES_PROPERTYMANAGER_BASEPROPERTYENABLER
     virtual WString                                 _GetEcPropertiesClassName (ElementHandleCR) override;
@@ -606,7 +606,7 @@ public:
 struct          DrawingTitleXAttributeHandler  : DetailingSymbolBaseXAttributeHandler
     {
 private:
-    virtual UInt16                              GetMinorID () {return SYMBOLSETTINGS_MINORID_DrawingTitle_IDENTIFIER;}
+    virtual uint16_t                            GetMinorID () {return SYMBOLSETTINGS_MINORID_DrawingTitle_IDENTIFIER;}
 
     }; // DrawingTitleXAttributeHandler
 #endif
@@ -631,7 +631,7 @@ protected:
     virtual WString                                 _GetEcPropertiesClassName (ElementHandleCR) override;
     virtual StatusInt                               _GetEcProperties (IEcPropertyHandler::T_EcCategories&, ElementHandleCR) override;
     */
-    virtual void                                    _GetTypeName (WStringR string, UInt32 desiredLength) override;
+    virtual void                                    _GetTypeName (WStringR string, uint32_t desiredLength) override;
     virtual IDependencyHandler*                     _GetIDependencyHandler ()  override {return this;}
     virtual void                                    _OnRootsChanged (ElementHandleR dependent, bvector<RootChange> const& rootsChanged, bvector<XAttributeHandle> const&  xAttrsAffected) override {}
 #endif
@@ -647,7 +647,7 @@ protected:
 struct          TitleTextXAttributeHandler  : DetailingSymbolBaseXAttributeHandler
     {
 private:
-    virtual UInt16                              GetMinorID () {return SYMBOLSETTINGS_MINORID_TitleText_IDENTIFIER;}
+    virtual uint16_t                            GetMinorID () {return SYMBOLSETTINGS_MINORID_TitleText_IDENTIFIER;}
 
     }; // TitleTextXAttributeHandler
 #endif
@@ -667,14 +667,14 @@ namespace       BUICWF  = UI::Controls::WinForms;
 struct ViewProxyDataSchemaHolder
     {
 private:
-    static const UInt32         s_AppID             = XATTRIBUTEID_SymbolSettings;
-    static const UInt32         s_SubID             = SYMBOLSETTINGS_MINORID_VIEWPEPID;
+    static const uint32_t       s_AppID             = XATTRIBUTEID_SymbolSettings;
+    static const uint32_t       s_SubID             = SYMBOLSETTINGS_MINORID_VIEWPEPID;
     static ECN::ECSchemaPtr      s_schema;
     static WString              s_viewProxyTagClass;
 
 public:
-    static UInt32           AppID ()                {return s_AppID;}
-    static UInt32           SubID ()                {return s_SubID;}
+    static uint32_t         AppID ()                {return s_AppID;}
+    static uint32_t         SubID ()                {return s_SubID;}
     static WStringCR        XML_ECUserProxyTag ()   {return s_viewProxyTagClass;}
     static ECN::ECSchemaP    GetSchema ();
 
@@ -688,8 +688,8 @@ struct ViewProxyData : public DgnLinkUserData
     {
 protected:
     virtual DgnLinkUserDataPtr  _Copy () const          { return new ViewProxyData (); }
-    virtual UInt32              _GetAppID () const      { return ViewProxyDataSchemaHolder::AppID (); }
-    virtual UInt32              _GetSubID () const      { return ViewProxyDataSchemaHolder::SubID (); }
+    virtual uint32_t            _GetAppID () const      { return ViewProxyDataSchemaHolder::AppID (); }
+    virtual uint32_t            _GetSubID () const      { return ViewProxyDataSchemaHolder::SubID (); }
     virtual bool                _IsPersistent () const  { return true; }
 
     virtual ECN::IECInstancePtr  _ToECInstance ();
@@ -711,8 +711,8 @@ public:
     static ViewProxyDataHandler*            Get ();
 
     // DgnLinkUserData methods
-    virtual bool                            _CanHandle (UInt32 appID, UInt32 subID);
-    virtual DgnLinkUserDataPtr              _CreateUserData (UInt32 appID, UInt32 subID);
+    virtual bool                            _CanHandle (uint32_t appID, uint32_t subID);
+    virtual DgnLinkUserDataPtr              _CreateUserData (uint32_t appID, uint32_t subID);
     virtual ECN::ECSchemaP                   _GetSchema ();
     virtual ECN::StandaloneECInstancePtr     _CreateECInstance (WCharCP ecClassName);
     };
@@ -759,10 +759,10 @@ struct DetailingSymbolFileAccess
     {
     private: static void                        ShowFileOpenStatusBalloon (WString const& shortMsg, WString const& longMsg, bool isError);
     private: static WString                     InsertString (WChar const*  fmt, WChar const*  str);
-    public:  static StatusInt                   CheckAllowWriteToFile (WString* errMsg, DgnProjectP file);
+    public:  static StatusInt                   CheckAllowWriteToFile (WString* errMsg, DgnDbP file);
     public:  static StatusInt                   CheckAllowWriteToModel (WString* errMsg, DgnModelP model);
     public:  static StatusInt                   CheckAllowWriteToModelForLocate (WStringP cantAcceptReason, DgnModelP model);
-    public:  static StatusInt                   GetReadWriteFile (DgnProjectP& file, bool displayError);
+    public:  static StatusInt                   GetReadWriteFile (DgnDbP& file, bool displayError);
     public:  DGNPLATFORM_EXPORT static StatusInt GetReadWriteFileByDgnModel (DgnModelP modelRef, bool displayError);
 
     }; // DetailingSymbolFileAccess

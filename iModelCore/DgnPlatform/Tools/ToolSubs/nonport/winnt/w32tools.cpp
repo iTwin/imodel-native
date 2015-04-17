@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/w32tools.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define NOMINMAX
@@ -77,7 +77,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 typedef struct delayloadhookfailure
     {
     bool          isValid;
-    UInt32        dliNotify;
+    uint32_t      dliNotify;
     DelayLoadInfo   dli;
     } DelayLoadHookFailure;
 
@@ -94,7 +94,7 @@ typedef struct threadnamehistory
     {
     SYSTEMTIME  windowsTime;
     void      * pStartedFrom;
-    UInt32       dwThreadId;
+    uint32_t     dwThreadId;
     char        szThreadName[10];
     } ThreadNameHistory;
 
@@ -108,7 +108,7 @@ static BeThreadLocalStorage     s_fpuMask;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    GeorgeDulchinos 1/95
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public Int32 win32Util_getCRuntimeMemFuncs
+Public int32_t win32Util_getCRuntimeMemFuncs
 (
 CRuntimeMemFuncs *memFuncsP
 )
@@ -148,10 +148,10 @@ char const * const  sz9CharacterThreadName      // => Thread name, 9 characters 
 #pragma pack(push,8)
     typedef struct tagTHREADNAME_INFO
         {
-        UInt32 dwType; // Must be 0x1000.
+        uint32_t dwType; // Must be 0x1000.
         LPCSTR szName; // Pointer to name (in user addr space).
-        UInt32 dwThreadID; // Thread ID (-1=caller thread).
-        UInt32 dwFlags; // Reserved for future use, must be zero.
+        uint32_t dwThreadID; // Thread ID (-1=caller thread).
+        uint32_t dwFlags; // Reserved for future use, must be zero.
         } THREADNAME_INFO;
 #pragma pack(pop)
     THREADNAME_INFO stn;
@@ -177,12 +177,12 @@ char const * const  sz9CharacterThreadName      // => Thread name, 9 characters 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MichaelStratoti 12/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public WCharCP    win32Tools_exceptionToString (UInt32 exceptionCode)
+Public WCharCP    win32Tools_exceptionToString (uint32_t exceptionCode)
     {
     static struct
         {
-        Int32     cErrno;
-        UInt32    excptNumber;
+        int32_t   cErrno;
+        uint32_t  excptNumber;
         WCharCP   excptString;
         }
     exceptionTable[]=
@@ -236,7 +236,7 @@ Public WCharCP    win32Tools_exceptionToString (UInt32 exceptionCode)
             {EACCES, 0xe0434f4d,                       L"Exception from Managed Code"    }
         };
 
-    for (Int32 i=0; i < (sizeof(exceptionTable)/sizeof(*exceptionTable)); i++)
+    for (int32_t i=0; i < (sizeof(exceptionTable)/sizeof(*exceptionTable)); i++)
         {
         if (exceptionCode == exceptionTable[i].excptNumber)
             {
@@ -254,7 +254,7 @@ Public WCharCP    win32Tools_exceptionToString (UInt32 exceptionCode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public void     win32tools_recordDelayLoadHookFailure
 (
-UInt32        dliNotify,
+uint32_t      dliNotify,
 PDelayLoadInfo  pdli
 )
     {
@@ -273,7 +273,7 @@ FILE            * const stream
 )
     {
     char           const *msg;
-    UInt32   const  notify = g_DelayLoadHookFailure.dliNotify;
+    uint32_t const  notify = g_DelayLoadHookFailure.dliNotify;
     DelayLoadInfo  const  dli    = g_DelayLoadHookFailure.dli;
 
     if      (dliStartProcessing       == notify) msg = "StartProcessing";
@@ -419,7 +419,7 @@ WCharCP                        dmpFileName
     
     typedef struct _MINIDUMP_EXCEPTION_INFORMATION
         {
-        UInt32               ThreadId;
+        uint32_t             ThreadId;
         PEXCEPTION_POINTERS ExceptionPointers;
         BOOL                ClientPointers;
         } MINIDUMP_EXCEPTION_INFORMATION, *PMINIDUMP_EXCEPTION_INFORMATION;
@@ -434,10 +434,10 @@ WCharCP                        dmpFileName
         return;
         }
     
-    UInt32       dumpOpts = MiniDumpNormal | MiniDumpWithHandleData;
+    uint32_t     dumpOpts = MiniDumpNormal | MiniDumpWithHandleData;
         {
         WString     miniDumpType;
-        UInt32      val = 0;
+        uint32_t    val = 0;
 
         if (SUCCESS == ConfigurationManager::GetVariable (miniDumpType, L"MS_MiniDumpType")
             &&       1 == swscanf (miniDumpType.c_str(), L"%x", &val))
@@ -472,7 +472,7 @@ WCharCP                        dmpFileName
         {
         MINIDUMP_EXCEPTION_INFORMATION xinfo = {GetCurrentThreadId(), (PEXCEPTION_POINTERS)exceptionInfoP, false};
 
-        BOOL stat = fpMiniDumpWriteDump (GetCurrentProcess(), (ULong32)GetCurrentProcessId(), hDumpFile, (MINIDUMP_TYPE)dumpOpts, &xinfo, ___, ___);
+        BOOL stat = fpMiniDumpWriteDump (GetCurrentProcess(), (uint32_t)GetCurrentProcessId(), hDumpFile, (MINIDUMP_TYPE)dumpOpts, &xinfo, ___, ___);
         if (NULL != stream)
             {
             if (stat)
@@ -489,19 +489,19 @@ WCharCP                        dmpFileName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void setFpuMask (UInt32 v) {s_fpuMask.SetValueAsInteger(v);}
+static void setFpuMask (uint32_t v) {s_fpuMask.SetValueAsInteger(v);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 getFpuMask () {return (UInt32)s_fpuMask.GetValueAsInteger();}
+static uint32_t getFpuMask () {return (uint32_t)s_fpuMask.GetValueAsInteger();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    GeorgeDulchinos                 7/95
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public UInt32 win32Tools_resetFloatingPointExceptions
+Public uint32_t win32Tools_resetFloatingPointExceptions
 (
-UInt32 newFpuMask     /* => new excp. mask or 0 to use default or previously saved mask */
+uint32_t newFpuMask     /* => new excp. mask or 0 to use default or previously saved mask */
 )
     {
     if (newFpuMask)
@@ -512,7 +512,7 @@ UInt32 newFpuMask     /* => new excp. mask or 0 to use default or previously sav
         {
         /* one time initialization */
         WString temp;
-        UInt32 defaultMask;
+        uint32_t defaultMask;
 
         if (SUCCESS == ConfigurationManager::GetVariable (temp, L"MS_FPUMASK") &&
             swscanf (temp.c_str(), L"%x", &defaultMask) && defaultMask)
@@ -560,11 +560,11 @@ UInt32 newFpuMask     /* => new excp. mask or 0 to use default or previously sav
 #endif
 
     typedef struct _OSVERSIONINFOEXA_bsi {
-        UInt32 dwOSVersionInfoSize;
-        UInt32 dwMajorVersion;
-        UInt32 dwMinorVersion;
-        UInt32 dwBuildNumber;
-        UInt32 dwPlatformId;
+        uint32_t dwOSVersionInfoSize;
+        uint32_t dwMajorVersion;
+        uint32_t dwMinorVersion;
+        uint32_t dwBuildNumber;
+        uint32_t dwPlatformId;
         CHAR  szCSDVersion[ 128 ];      // Maintenance string for PSS usage
         WORD  wServicePackMajor;
         WORD  wServicePackMinor;
@@ -578,9 +578,9 @@ Public bool win32Tools_isRunningWindowsTerminalServer
 void
 )
     {
-    UInt32   fVersionFlags = GetVersion();
+    uint32_t fVersionFlags = GetVersion();
 //    UInt32   fOsVersion = fVersionFlags & 0x0000FFFF;
-    UInt32   wOSMajorVersion = LOBYTE(LOWORD(fVersionFlags));
+    uint32_t wOSMajorVersion = LOBYTE(LOWORD(fVersionFlags));
 //    UInt32   wOSMinorVersion = HIBYTE(LOWORD(fVersionFlags));
 //    UInt32   wOSBuild        = HIWORD(fVersionFlags) & ~0x8000;
     bool isRunningWinNT  = !(fVersionFlags & 0x80000000);
@@ -595,11 +595,11 @@ void
     if (wOSMajorVersion == 4)
         {
         HKEY    hKey = NULL;
-        Int32    rtn;
+        int32_t  rtn;
 
         if (ERROR_SUCCESS == RegOpenKey (HKEY_LOCAL_MACHINE, "System\\CurrentControlSet\\Control\\ProductOptions", &hKey))
             {
-            ULong32   type = 0, size = 0;
+            uint32_t type = 0, size = 0;
             if (ERROR_SUCCESS == RegQueryValueEx (hKey, "ProductSuite", ___, &type, ___, &size)    &&  size)
                 {
                 char*  productSuite;
@@ -635,7 +635,7 @@ void
             HMODULE const hmodNtDll = GetModuleHandle("ntdll.dll");
             if (hmodNtDll)
                 {
-                UInt64               dwlConditionMask = 0;
+                uint64_t             dwlConditionMask = 0;
                 typedef LONGLONG     (WINAPI *PFnVerSetConditionMask)(ULONGLONG, DWORD, BYTE);
                 typedef BOOL         (WINAPI *PFnVerifyVersionInfoA) (POSVERSIONINFOEXA_bsi, DWORD, DWORDLONG);
                 PFnVerSetConditionMask  pfnVerSetConditionMask;

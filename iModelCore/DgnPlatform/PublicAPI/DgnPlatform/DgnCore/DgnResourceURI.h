@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnResourceURI.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,10 +39,10 @@ source: http://developer.android.com/guide/topics/providers/content-provider-bas
  A DgnResourceURI is a URI that identifies one or more elements, ECInstances, or other resources within a DgnFile.
 
  The documentation below is intended for developers who must implement an element Handler or who need custom URIs.
- Normally, an application will call PersistentElementRef::CreateDgnResourceURI to create a DgnResourceURI on an element
- and DgnFile::GetElementByURI to resolve a URI into a ElementRef.
+ Normally, an application will call DgnElement::CreateDgnResourceURI to create a DgnResourceURI on an element
+ and DgnFile::GetElementByURI to resolve a URI into a DgnElement.
  
- @see PersistentElementRef::CreateDgnResourceURI for an example. 
+ @see DgnElement::CreateDgnResourceURI for an example. 
 
  <h4>API Overview</h4>
 
@@ -160,7 +160,7 @@ public:
     //! @remarks By default, a DgnResourceURI will have no scheme or file identifier. Often these qualifiers are not needed. 
     //! The scheme and target file identifer are added only if you call SetTargetFile. You only need to add these items if you must create
     //! a URI can be distinguished from URIs of other types.
-    DGNPLATFORM_EXPORT void SetTargetFile (DgnProjectR targetFile);
+    DGNPLATFORM_EXPORT void SetTargetFile (DgnDbR targetFile);
 
     //! Get the target file identifier, if present.
     DGNPLATFORM_EXPORT BentleyStatus GetTargetFile (Utf8StringR filename, BeGuid& guid) const;
@@ -168,7 +168,7 @@ public:
     //! If this URI contains a target file identifier, then this function checks that the GUID in that identifier matches the GUID in file.
     //! @return non-zero error status if this URI has a target file GUID and it does not match the GUID of \a file. If this URI does not have
     //! a target file identifier, then this function returns SUCCESS.
-    DGNPLATFORM_EXPORT BentleyStatus CheckTargetFileMatches (DgnProjectR file) const;
+    DGNPLATFORM_EXPORT BentleyStatus CheckTargetFileMatches (DgnDbR file) const;
 
     //! Get the encoded path portion of this URI. See DgnResourceURI::PathParser.
     DGNPLATFORM_EXPORT Utf8String GetPath() const;
@@ -217,7 +217,7 @@ public:
     //! The target file is part of the path. It is identified by name, qualified by GUID.
     //! Scheme and target file are optional in a DgnResourceURI. A DgnResourceURI can be left as a URI reference with no scheme or file identifier, 
     //! if the holder knows that they it is a DgnResourceURI and not a URI following some other scheme and if the holder knows the target file.
-    DGNPLATFORM_EXPORT void SetTargetFile (DgnProjectR targetFile);
+    DGNPLATFORM_EXPORT void SetTargetFile (DgnDbR targetFile);
 /** @} */
 
 /** @name Path */
@@ -296,7 +296,7 @@ private:
     union
         {
         Utf8SubString   m_substr;
-        UInt64          m_uint64;
+        uint64_t        m_uint64;
         };
 
 public:
@@ -314,7 +314,7 @@ public:
 
     //! Defines this token as a UInt64.
     //! @private
-    void SetUInt64 (UInt64 v) {m_type=TYPE_UInt64; m_uint64=v;}
+    void SetUInt64 (uint64_t v) {m_type=TYPE_UInt64; m_uint64=v;}
 
     //! Defines this token as a string. @remarks The UriToken will hold the two pointers supplied. Caller must guarantee that the referenced string is not destroyed while this UriToken exists.
     //! @private
@@ -326,7 +326,7 @@ public:
     //! Gets the value of this token as a UInt64. 
     //! @return the value of this token. 
     //! @remarks Returns 0 if the type of this token is not TYPE_UInt64. This function does not attempt to parse an integer from a string.
-    UInt64 GetUInt64() const {BeAssert(m_type==TYPE_UInt64); return (m_type==TYPE_UInt64)? m_uint64: 0;}
+    uint64_t GetUInt64() const {BeAssert(m_type==TYPE_UInt64); return (m_type==TYPE_UInt64)? m_uint64: 0;}
 
     //! Gets the value of this token as a non-encoded string.
     //! @remarks If the type of this token is TYPE_String, then this function will return it in decoded form.

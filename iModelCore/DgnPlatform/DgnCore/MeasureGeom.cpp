@@ -524,7 +524,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surfac
         MeasureEdgeGeomProvider provider (surface);
 
         collector.SetResultOptions (NULL, &outputTransform);
-        collector.Process (provider, m_context->GetDgnProject ());
+        collector.Process (provider, m_context->GetDgnDb ());
 
 		AccumulateAreaSums (area, collector.GetLength (), centroid, momentB, iXY, iXZ, iYZ);
 
@@ -1185,7 +1185,7 @@ BentleyStatus MeasureGeomCollector::GetOperationStatus ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnProjectR project)
+BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnDbR project)
     {
     AutoRestore <IGeomProvider*> saveProvider (&m_geomProvider, &provider);
 

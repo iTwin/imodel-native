@@ -110,7 +110,7 @@ void HandleMeshOutput (PolyfaceHeaderR mesh, bool applyPlacementTransform, bool 
                     area);
     size_t numPoint0 = mesh.GetPointCount ();
     size_t numFacet0 = mesh.GetNumFacet ();
-    printf ("    (PointCount %d) (Facets %d)\n", (Int32)numPoint0, (Int32)numFacet0);
+    printf ("    (PointCount %d) (Facets %d)\n", (int32_t)numPoint0, (int32_t)numFacet0);
 
     if (closed)
         {

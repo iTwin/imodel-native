@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.r.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,66 +11,27 @@
 #include "DgnPlatformBaseType.r.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
 
-//--------------------------------------------------------------------
-// This file is included by both .cpp/h and .r files
-//--------------------------------------------------------------------
-
-// The following constants are in the Bentley namespace because they are referenced by MicroStation.r.h.
-//  That file cannot use a namespace qualifier such as "DgnPlatform::", because the resource compiler doesn't
-//  support that. We could use ifdef's if we don't want to put these symbols into Bentley. In any case,
-//  These symbols all begin with "DGNPLATFORM_" so they shouldn't conflict with other symbols in the Bentley ns.
-BEGIN_BENTLEY_API_NAMESPACE
-
-/** @cond BENTLEY_SDK_Internal */
-
-struct SPoint2d
-    {
-    Int16       x;
-    Int16       y;
-    };
-
-/** @endcond */
-
-//! Color definition
-struct RgbaColorDef
-    {
-    Byte    red;
-    Byte    green;
-    Byte    blue;
-    Byte    alpha;
-    };
-
-//! Color definition
-struct RgbColorDef
-    {
-    Byte    red;
-    Byte    green;
-    Byte    blue;
-    };
-
-END_BENTLEY_API_NAMESPACE
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /** @cond BENTLEY_SDK_Internal */
-
 //! Identifies the type or purpose of a model
-enum class DgnModelType : UInt16
+enum class DgnModelType : uint16_t
     {
     Physical                 = 0,   //!< a physical model.
     Sheet                    = 1,   //!< a sheet model.
     Redline                  = 2,   //!< a redline model.
     Drawing                  = 3,   //!< a 2d drawing model.
-    Component                = 4,   //!< a 3d compnent model.
-    TEMP_V8IMPORT_ONLY_3dSheet = 9, //!< @private
-    Dictionary               = 10,  //!< @private
-    Query                    = 11,  //!< a query model
-    PhysicalRedline          = 12,  //!< a physical redline model.
+    Component                = 4,   //!< a 3d component model.
+    Query                    = 5,   //!< a query model
+    PhysicalRedline          = 6,   //!< a physical redline model.
     Illegal                  = 999, //!< @private
     };
 
 /** @endcond */
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
 enum class StandardView
     {
     NotStandard = -1,
@@ -84,9 +45,11 @@ enum class StandardView
     RightIso    = 8,
     };
 
-enum class MSRenderMode
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
+enum class DgnRenderMode : uint8_t
     {
-    Invalid             = -1,
     Wireframe           = 0,
     CrossSection        = 1,
     Wiremesh            = 2,
@@ -100,10 +63,8 @@ enum class MSRenderMode
     Radiosity           = 10,
     ParticleTrace       = 11,
     RenderLuxology      = 12,
+    Invalid             = 15,
     };
-
-inline bool operator== (MSRenderMode lhs, UInt32 rhs) {return static_cast<UInt32>(lhs) == rhs;}
-inline bool operator!= (MSRenderMode lhs, UInt32 rhs) {return static_cast<UInt32>(lhs) != rhs;}
 
 /*=================================================================================**//**
 *  The flags that control view information.
@@ -111,47 +72,40 @@ inline bool operator!= (MSRenderMode lhs, UInt32 rhs) {return static_cast<UInt32
 +===============+===============+===============+===============+===============+======*/
 struct ViewFlags
     {
-    UInt32      fast_text:1;                //!< Shows or hides text elements. Note the inversion (e.g. "fast" text means don't show text elements).
-    UInt32      line_wghts:1;               //!< Controls whether line weights are used (e.g. control whether elements with non-zero line weights draw normally, or as weight 0).
-    UInt32      patterns:1;                 //!< Shows or hides pattern elements.
-    UInt32      text_nodes:1;               //!< Shows or hides text node numbers and origins. These are decorations that can be shown to identify all text node elements.
-    UInt32      ed_fields:1;                //!< Shows or hides the underlines that denote a text enter data field.
-    UInt32      grid:1;                     //!< Shows or hides the grid. The grid settings are a design file setting.
-    UInt32      lev_symb:1;                 //!< Controls whether level overrides are used (e.g. use the element level's symbology vs. the element's symbology).
-    UInt32      constructs:1;               //!< Shows or hides elements that are in the construction class (controlled on a per-element basis).
-    UInt32      dimens:1;                   //!< Shows or hides dimension elements.
-    UInt32      fast_cell:1;                //!< Controls whether cells display as a bounding box instead of showing their actual content.
-    UInt32      fill:1;                     //!< Controls whether the fills on filled elements are displayed.
-    UInt32      auxDisplay:1;               //!< Shows or hides the ACS triad.
-    UInt32      camera:1;                   //!< Controls whether camera settings are applied to the view's frustum.
-    UInt32      renderMode:6;               //!< Controls the render mode of the view; see the MSRenderMode enumeration. This is typically controlled through a display style.
-    UInt32      background:1;               //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
-    UInt32      textureMaps:1;              //!< Controls whether to display texture maps for material assignments.
-    UInt32      transparency:1;             //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
-    UInt32      inhibitLineStyles:1;        //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines). Note the inversion.
-    UInt32      patternDynamics:1;          //!< Controls whether associative patthern display in dynamics (performance optimization)
-    UInt32      renderDisplayEdges:1;       //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
-    UInt32      renderDisplayHidden:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
-    UInt32      overrideBackground:1;       //!< Controls whether the view's custom background color is used. This is typically controlled through a display style.
-    UInt32      noFrontClip:1;              //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    UInt32      noBackClip:1;               //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    UInt32      noClipVolume:1;             //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
-    UInt32      associativeClip:1;          //!< Controls whether the clip volume, if associated to an element should automatically update if/when the clip element is modified.
-    UInt32      minimized:1;                //!< Current minimized state of view.
-    UInt32      maximized:1;                //!< Current maximized state of view.
-    UInt32      renderDisplayShadows:1;     //!< Shows or hides shadows. This is typically controlled through a display style.
-    UInt32      hiddenLineStyle:3;          //!< Controls the line style (only line codes 0-7 are allowed) of hidden lines in the shaded render mode. This is typically controlled through a display style.
-    UInt32      inhibitRenderMaterials:1;   //!< Controls whether element materials are used (e.g. control whether elements with materials draw normally, or as if they have no material).
-    UInt32      ignoreSceneLights:1;        //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
+private:
+    DgnRenderMode m_renderMode;
+public:
+    uint32_t    fast_text:1;
+    uint32_t    line_wghts:1;               //!< Controls whether line weights are used (e.g. control whether elements with non-zero line weights draw normally, or as weight 0).
+    uint32_t    patterns:1;                 //!< Shows or hides pattern elements.
+    uint32_t    grid:1;                     //!< Shows or hides the grid. The grid settings are a design file setting.
+    uint32_t    fill:1;                     //!< Controls whether the fills on filled elements are displayed.
+    uint32_t    auxDisplay:1;               //!< Shows or hides the ACS triad.
+    uint32_t    camera:1;                   //!< Controls whether camera settings are applied to the view's frustum.
+    uint32_t    background:1;               //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
+    uint32_t    textureMaps:1;              //!< Controls whether to display texture maps for material assignments.
+    uint32_t    transparency:1;             //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
+    uint32_t    inhibitLineStyles:1;        //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines). Note the inversion.
+    uint32_t    patternDynamics:1;          //!< Controls whether associative pattern display in dynamics (performance optimization)
+    uint32_t    renderDisplayEdges:1;       //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
+    uint32_t    renderDisplayHidden:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
+    uint32_t    overrideBackground:1;       //!< Controls whether the view's custom background color is used. This is typically controlled through a display style.
+    uint32_t    noFrontClip:1;              //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    noBackClip:1;               //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    noClipVolume:1;             //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    renderDisplayShadows:1;     //!< Shows or hides shadows. This is typically controlled through a display style.
+    uint32_t    hiddenLineStyle:3;          //!< Controls the line style (only line codes 0-7 are allowed) of hidden lines in the shaded render mode. This is typically controlled through a display style.
+    uint32_t    inhibitRenderMaterials:1;   //!< Controls whether element materials are used (e.g. control whether elements with materials draw normally, or as if they have no material).
+    uint32_t    ignoreSceneLights:1;        //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
 
-    inline void SetRenderMode (MSRenderMode value) {renderMode = static_cast<UInt32>(value);}
-    inline MSRenderMode GetRenderMode() {return static_cast<MSRenderMode>(renderMode);}
+    void SetRenderMode (DgnRenderMode value) {m_renderMode = value;}
+    DgnRenderMode GetRenderMode() const {return m_renderMode;}
 
-    DGNPLATFORM_EXPORT void InitDefaults(); 
-    DGNPLATFORM_EXPORT void ToBaseJson(JsonValueR) const;   
-    DGNPLATFORM_EXPORT void FromBaseJson(JsonValueCR); 
-    DGNPLATFORM_EXPORT void To3dJson(JsonValueR) const;   
-    DGNPLATFORM_EXPORT void From3dJson(JsonValueCR); 
+    DGNPLATFORM_EXPORT void InitDefaults();
+    DGNPLATFORM_EXPORT void ToBaseJson(JsonValueR) const;
+    DGNPLATFORM_EXPORT void FromBaseJson(JsonValueCR);
+    DGNPLATFORM_EXPORT void To3dJson(JsonValueR) const;
+    DGNPLATFORM_EXPORT void From3dJson(JsonValueCR);
     };
 
 enum class GradientMode
@@ -178,12 +132,12 @@ enum class AngleFormatVals
 
 struct DirFormat
     {
-    UInt16          mode;
-    UInt16          unused[2];
+    uint16_t        mode;
+    uint16_t        unused[2];
     struct
         {
-        UInt16  clockwise:1;
-        UInt16  unused:15;
+        uint16_t clockwise:1;
+        uint16_t unused:15;
         } flags;
     double          baseDir;
     };
@@ -192,166 +146,20 @@ struct Autodim1
     {
     struct
         {
-        UInt16    adres2:8;
-        UInt16    ref_mastersub:2;
-        UInt16    ref_decfract:1;
-        UInt16    accuracyFlags:2;  /* 0- use ref_decfract; 1- scientific accuracy; 2- fractional zero */
-        UInt16    reserved:3;
+        uint16_t  adres2:8;
+        uint16_t  ref_mastersub:2;
+        uint16_t  ref_decfract:1;
+        uint16_t  accuracyFlags:2;  /* 0- use ref_decfract; 1- scientific accuracy; 2- fractional zero */
+        uint16_t  reserved:3;
         } format;
-    };
-
-/*=================================================================================**//**
-* Color, weight, and style.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct Symbology
-    {
-    Int32           style;
-    UInt32          weight;
-    UInt32          color;
     };
 
 /** @cond BENTLEY_SDK_Internal */
 struct DegreeOfFreedom
     {
-    Int32               locked;
+    int32_t             locked;
     T_Adouble           value;
     };
-
-/*=================================================================================**//**
-* This structure is not intended to be used directly, and supports file storage.
-* These flags identify every property that an element can override from its text style.
-* \group    TextStyles
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct LegacyTextStyleOverrideFlags
-{
-    UInt16  fontNo                  :1;
-    UInt16  shxBigFont              :1;
-    UInt16  width                   :1;
-    UInt16  height                  :1;
-    UInt16  slant                   :1;
-    UInt16  linespacing             :1;
-    UInt16  interCharSpacing        :1;
-    UInt16  underlineOffset         :1;
-    UInt16  overlineOffset          :1;
-    UInt16  just                    :1;
-    UInt16  nodeJust                :1;
-    UInt16  lineLength              :1;
-    UInt16  direction               :1;
-    UInt16  underline               :1;
-    UInt16  overline                :1;
-    UInt16  italics                 :1;
-    UInt16  bold                    :1;
-    UInt16  superscript             :1;
-    UInt16  subscript               :1;
-    UInt16  fixedSpacing            :1;
-    UInt16  background              :1;
-    UInt16  backgroundstyle         :1;
-    UInt16  backgroundweight        :1;
-    UInt16  backgroundcolor         :1;
-    UInt16  backgroundfillcolor     :1;
-    UInt16  backgroundborder        :1;
-    UInt16  underlinestyle          :1;
-    UInt16  underlineweight         :1;
-    UInt16  underlinecolor          :1;
-    UInt16  overlinestyle           :1;
-    UInt16  overlineweight          :1;
-    UInt16  overlinecolor           :1;
-    UInt16  lineOffset              :1;
-    UInt16  fractions               :1;
-    UInt16  overlinestyleflag       :1;
-    UInt16  underlinestyleflag      :1;
-    UInt16  color                   :1;
-    UInt16  widthFactor             :1;
-    UInt16  colorFlag               :1;
-    UInt16  fullJustification       :1;
-    UInt16  acadLineSpacingType     :1;
-    UInt16  backwards               :1;
-    UInt16  upsidedown              :1;
-    UInt16  acadInterCharSpacing    :1;
-    UInt16  reserved                :4;
-    UInt16  reserved2               :16;
-
-    //! Computes the logical or of two sets of flags.
-    //! The result (also the left-hand-side argument) contains true for every flag on in either instance. Reserved bits are included in the operation.
-    public: DGNPLATFORM_EXPORT void ComputeLogicalOr (LegacyTextStyleOverrideFlags& result, LegacyTextStyleOverrideFlags const& rhs) const;
-
-    //! True if any flags are set.
-    //! Reserved bits are included in the operation.
-    public: DGNPLATFORM_EXPORT bool AreAnyFlagsSet () const;
-};
-
-/*=================================================================================**//**
-* This structure is not intended to be used directly.
-* These flags identify whether specific attributes from a text style can be utilized.
-* \group    TextStyles
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct LegacyTextStyleFlags
-{
-    UInt32  underline              :1;
-    UInt32  overline               :1;
-    UInt32  italics                :1;
-    UInt32  bold                   :1;
-    UInt32  superscript            :1;
-    UInt32  subscript              :1;
-    UInt32  background             :1;
-    UInt32  overlineStyle          :1;
-    UInt32  underlineStyle         :1;
-    UInt32  fixedSpacing           :1;
-    UInt32  fractions              :1;
-    UInt32  color                  :1;
-    UInt32  acadInterCharSpacing   :1;
-    UInt32  fullJustification      :1;
-    UInt32  acadLineSpacingType    :2;
-    UInt32  acadShapeFile          :1;
-    UInt32  reserved               :15;
-}; // LegacyTextStyleFlags
-
-/*=================================================================================**//**
-* This structure is not intended to be used directly, and supports file storage.
-* Contains the property data of a text style. Use DgnTextStyle instead.
-* \group    TextStyles
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct LegacyTextStyle
-{
-    UInt32 fontNo; //!< Font number
-    UInt32 shxBigFont; //!< SHX big font number
-    double width; //!< Character width (uors)
-    double height; //!< Character height (uors)
-    double slant; //!< Slant in degrees
-    double lineSpacing; //!< Vert uors between chars in text node (nodespace in old tcb)
-    double interCharSpacing; //!< Space between characters (textAboveSpacing in old tcb)
-    double underlineOffset; //!< Offset from baseline to underline
-    double overlineOffset; //!< Offset from ascender height to overline
-    double widthFactor; //!< Width factor multiplier
-    DPoint2d lineOffset; //!< Offset of text from baseline (ie superscript)
-    UInt16 just; //!< Text justification value (0-14)
-    UInt16 nodeJust; //!< Text node justification
-    UInt16 lineLength; //!< Maximum line length in node ((nodelen in old tcb)
-    UInt16 textDirection; //!< Text direction
-    Symbology backgroundStyle; //!< Style for text background border lines
-    UInt32 backgroundFillColor; //!< Fill color for text background
-    DPoint2d backgroundBorder; //!< Offset added background rectangle
-    Symbology underlineStyle; //!< Underline style
-    Symbology overlineStyle; //!< Overline style
-    UInt32 parentId; //!< Parent style id
-    LegacyTextStyleFlags flags; //!< Flags for what is on and what is off
-    LegacyTextStyleOverrideFlags overrideFlags; //!< What is overriden from the parent in this style
-    UInt32 color; //!< Color for the text element
-    UInt32 reserved1;
-    UInt32 reserved2;
-    UInt32 reserved3;
-    double reserved4;
-
-    //! Scales all distance properties of this instance.
-    DGNPLATFORM_EXPORT void Scale(double scale);
-    
-    //! Scales the distance properties of this instance according to the mask.
-    DGNPLATFORM_EXPORT void Scale(double scale, LegacyTextStyleOverrideFlags const&);
-}; // LegacyTextStyle
 
 /** @endcond */
 
@@ -362,26 +170,12 @@ struct LegacyTextStyle
 struct UnitFlags
     {
     /** Flags for the unit base. */
-    UInt32 base:3;                     /* UNIT_BASE_xxx */
+    uint32_t        base:3;                     /* UNIT_BASE_xxx */
     /** Flags for the unit system. */
-    UInt32 system:3;                   /* UNIT_SYSTEM_xxx */
+    uint32_t        system:3;                   /* UNIT_SYSTEM_xxx */
     /** Flags for future use. */
-    UInt32 reserved:26;
+    uint32_t        reserved:26;
     };
-
-#if defined (NEEDS_WORK_DGNITEM)
-/*=================================================================================**//**
-*  Stores unit information.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct StoredUnitInfo
-    {
-    UnitFlags       flags;                          /* Unit flags */
-    double          numerator;                      /* Units per meter fraction numerator */
-    double          denominator;                    /* Units per meter fraction denominator */
-    Utf16Char       label[DGNPLATFORM_RESOURCE_MAX_UNIT_LABEL_LENGTH];   /* Units Label */
-    };
-#endif
 
 /** @cond BENTLEY_SDK_Internal */
 
@@ -394,97 +188,6 @@ enum class SelectionMode
     Clear       = 4,
     All         = 5,
     };
-
-//__PUBLISH_SECTION_END__
-enum XAttributeHandlerMajorIDs : UInt16
-    {
-    XATTRIBUTEID_CellIndexTool              = 100,
-    XATTRIBUTEID_TabBasedViewGroup          = 101,
-    XATTRIBUTEID_FilletChamferTool          = 102,
-    XATTRIBUTEID_CameraNavigationSpeed      = 103,
-    XATTRIBUTEID_ObjectStateID              = 104,
-    XATTRIBUTEID_NamedViewDisplayElement    = 105,
-    XATTRIBUTEID_RelationDictionary         = 106,
-    XATTRIBUTEID_LevelMaskSubtree           = 107,
-    XATTRIBUTEID_DynamicView                = 108,
-    XATTRIBUTEID_ViewClipper                = 109,
-    XATTRIBUTEID_PlacemarkHandler           = 110,
-    XATTRIBUTEID_DisplayStyleListElement    = 111,
-    XATTRIBUTEID_PolygonDwgExample          = 112,
-    XATTRIBUTEID_RELATIONID_Reserved_1003   = 1003,
-    XATTRIBUTEID_RELATIONID_GlobalVariable  = 1002,
-    XATTRIBUTEID_RightsToken                = 1003,
-    XATTRIBUTEID_String                     = 22226,    // LINKAGEID_String
-    XATTRIBUTEID_MPTOOLSApplication         = 22239,    // MPTOOLS_APPLICATION_SIGNATURE
-    XATTRIBUTEID_XML                        = 22243,    // LINKAGEID_XML
-    XATTRIBUTEID_ElementHandler             = 22252,
-    XATTRIBUTEID_StdsCheckIgnoredError      = 22258,    // LINKAGEID_StdsCheckIgnoredError
-    XATTRIBUTEID_Relationship               = 22260,
-    XATTRIBUTEID_DesignLinks                = 22261,
-    XATTRIBUTEID_ECXAttributes              = 22271,    // LINKAGEID_ECXAttributes
-    XATTRIBUTEID_SymbolSettings             = 22272,
-    XATTRIBUTEID_AnnotationScale            = 22274,
-    XATTRIBUTEID_Generic                    = 22275,
-    XATTRIBUTEID_ColorBook                  = 22276,
-    XATTRIBUTEID_ECField                    = 22277,
-    XATTRIBUTEID_IcoData                    = 22278,
-    XATTRIBUTEID_MstnSettings               = 22279,
-    XATTRIBUTEID_MaterialProperties         = 22280,
-    XATTRIBUTEID_MaterialTable              = 22282,
-    XATTRIBUTEID_RasterFrame                = 22283,
-    XATTRIBUTEID_GoogleEarthData            = 22286,
-    XATTRIBUTEID_ConflictRevisions          = 22287,    // LINKAGEID_ConflictRevisions */
-    XATTRIBUTEID_BSurfTrimCurve             = 22290,
-    XATTRIBUTEID_MstnViewHandler            = 22293,
-    XATTRIBUTEID_DGNECPlugin                = 22294,    // LINKAGEID_DGNECPlugin
-    XATTRIBUTEID_ViewInfo                   = 22295,
-    XATTRIBUTEID_XGraphics                  = 22296,
-    XATTRIBUTEID_PlacemarkData              = 22297,
-    XATTRIBUTEID_PrintStyle                 = 22298,    // LINKAGEID_PrintStyle
-    XATTRIBUTEID_TemplateData               = 22587,    // LINKAGEID_TemplateData
-    XATTRIBUTEID_ECXDataTreeData            = 22587,    // more generic name then XATTRIBUTEID_TemplateData
-    XATTRIBUTEID_REFERENCE_PROVIDERID       = 22624,    // LINKAGEID_REFERENCE_PROVIDERID
-    XATTRIBUTEID_NamedExpressionData        = 22625,
-    XATTRIBUTEID_DynamicViewSettings        = 22626,
-    XATTRIBUTEID_NamedExpressionKeywordData = 22627,
-    XATTRIBUTEID_SectionGeometryGenerator   = 22628,
-    XATTRIBUTEID_ViewDisplayOverrides       = 22629,
-    XATTRIBUTEID_DisplayStyle               = 22630,
-    XATTRIBUTEID_StandardSurface            = 22631,
-    XATTRIBUTEID_SectionGeometryCached      = 22632,
-    XATTRIBUTEID_DisplayStyleMap            = 22633,
-    XATTRIBUTEID_DisplayStyleIndex          = 22634,
-    XATTRIBUTEID_ActiveTextStyle            = 22635,
-    XATTRIBUTEID_RefDynamicViewSettings     = 22636,
-    XATTRIBUTEID_DynamicViewHandler         = 22637,
-    XATTRIBUTEID_ComponentSetQuery          = 22638,
-    XATTRIBUTEID_DesignReviewData           = 22639,
-    XATTRIBUTEID_SmartModeling              = 22640,
-    XATTRIBUTEID_RebisElementHandler        = 22641,
-    XATTRIBUTEID_Markup                     = 22642,
-    XATTRIBUTEID_LxoViewSettings            = 22643,
-    XATTRIBUTEID_LxoSetupListElement        = 22644,
-    XATTRIBUTEID_LxoSetup                   = 22645,
-    XATTRIBUTEID_LxoMaterialPreset          = 22646,
-    XATTRIBUTEID_MaterialPreview            = 22647,
-    XATTRIBUTEID_SpiralHandlerXAtrID        = 22648,
-    XATTRIBUTEID_LightProperties            = 22649,
-    XATTRIBUTEID_XGraphicsName              = 22650,
-    XATTRIBUTEID_InterferenceJob            = 22652,
-    XATTRIBUTEID_MarkupViewElementHandler   = 22653,
-    XATTRIBUTEID_IModelProxy                = 22654,
-    XATTRIBUTEID_CivilPlatform              = 22739,
-    XATTRIBUTEID_NamedViewCalloutProfile    = 22741,
-    XATTRIBUTEID_InsolationMesh             = 22744,
-    XATTRIBUTEID_HUDMarker                  = 22745,
-    XATTRIBUTEID_PointCloudHandler          = 22746,
-    XATTRIBUTEID_ScheduleLinker             = 22750,     // This is also an Element Handler ID for ScheduleLinker Settings Element Handler
-    // ***  STOP!!!  ***
-    // This is NOT a comprehensive list of XATTRIBUTE IDs and should not be used to obtain new ids!!!
-    // Ideally, all of these values should be moved to private header files.
-    // You must get new XAttribute IDs from http://toolsnet.bentley.com/Signature/Default.aspx
-    };
-//__PUBLISH_SECTION_START__
 
 enum class LocateSurfacesPref
     {
@@ -613,7 +316,6 @@ enum class DgnUnitFormat
     {
     MUSU                            = 0,    //!< Master Units / SubUnits
     MU                              = 1,    //!< Master Units
-    MUSUPU                          = 2,    //!< Master Units / SubUnits / Positional Units
     SU                              = 3,    //!< SubUnits
     };
 
@@ -625,7 +327,7 @@ enum class DgnUnitFormat
 //!                        North or South and oriented to either East or West.
 //! @bsiclass
 //=======================================================================================
-enum class DirectionMode : UInt16
+enum class DirectionMode : uint16_t
     {
     Invalid                         = 0,    //!< Uninitialized value. Do not use.
     Azimuth                         = 1,    //!< Ex: 30^
@@ -727,56 +429,6 @@ enum DateTimeFormatPart
     };
 
 /** @cond BENTLEY_SDK_Internal */
-/*---------------------------------------------------------------------------------**//**
-*  Known file formats supported by DgnPlatform. Some formats are supported only with the help of host-supplied plugins.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-enum class DgnFileFormatType
-    {
-    Invalid         = -1,       //!< this means "can't recognize file format"
-    Current         = 0,        //!< this means "match the current format"
-
-    V7              = 1,        //!< V7 DGN file
-    V8              = 2,        //!< V8 DGN file
-    DWG             = 3,        //!< DWG file
-    DXF             = 4,        //!< DXF file
-    DgnDb           = 5,        //!< DgnDb file
-    Native          = 5,        //!< The "native" format for Dgn data
-//__PUBLISH_SECTION_END__
-    PDF             = 6,        //!< PDF file
-    ThreeDS         = 7,
-    OBJ             = 8,
-    Image           = 9,
-    SKP             = 10,
-    OpenNurbs       = 11,
-    PDS             = 12,
-    RVM             = 13,
-    FBX             = 14,
-    SHP             = 100,
-    PersonalGeoDB   = 101,      //!< currently not supported.
-    MIFMID          = 102,      //!< MapInfo MIF/MID
-    MITAB           = 103,
-    IFC             = 104,
-    JT              = 105,
-    //  RESERVED    = 106,
-    IMPX            = 107,
-
-    // These are imported and/or exported by MicroStation through keyins, cannote be opened as master file or attached as referenced
-    IGESFile        = 200,
-    STEP            = 201,
-    CGM             = 202,
-    XMT             = 203,
-    SAT             = 204,
-    STL             = 205,
-    V7CELL          = 206,
-
-    // special use. Not for general use.
-    Copy            = 300,
-    Unknown         = 301,
-
-//__PUBLISH_SECTION_START__
-    };
-
 enum class DwgUnitFormat
     {
     Scientific                   = 1,
@@ -786,85 +438,6 @@ enum class DwgUnitFormat
     Fractional                   = 5,
     };
 
-// __PUBLISH_SECTION_END__
-struct MSStringLinkageData
-    {
-    UInt16                  linkageKey;                     /* id identifying type of string linkage */
-    UInt16                  mustBeZero;                     /* must be zero! Do not reuse! 3rd party programs (incorrectly) read linkageKey as a 32-bit value and so pick up this value as the high word. It must be zero! */
-    UInt32                  linkageStringLength;            /* Size of string linkage data */
-#if defined (type_resource_generator)
-    char                    linkageString[0];               /* String Buffer */ // WIP_CHAR_OK - Persistence
-#else
-    char                    linkageString[1];               // WIP_CHAR_OK - Persistence
-#endif
-    };
-
-struct MSBitMaskLinkageData
-    {
-    UInt16  linkageKey;             // ID identifying type of bitmask linkage
-    UInt16  defaultBitValue :1;     // Default value for bits */
-    UInt16  reserved        :15;
-    UInt32  numValidBits;           // Number of valid bits in the bitMaskArray
-    UInt32  numShorts;              // Number of shorts to follow in the linkage
-
-#if defined (type_resource_generator)
-    UInt16  bitMaskArray[0];        // Bit Mask Array
-#else
-    UInt16  bitMaskArray[2];        // Bit Mask Array (2 to make sizeof(make) sense)
-#endif
-
-    };
-
-struct MSMultiStateMaskLinkageData
-    {
-    UInt16                  linkageKey;                         /* id identifying type of multi state mask linkage */
-    UInt16                  numBitsPerState;                    /* number of bits stored per state value */
-    UInt16                  defaultValue;                       /* default multi state value*/
-    UInt16                  reserved;
-    UInt32                  numStates;                          /* Number of states stored in stateArray */
-    UInt32                  numShorts;                          /* Number of shorts to follow in the linkage */
-#if defined (type_resource_generator)
-    UInt16                  stateArray[0];                      /* Multi state mask Array */
-#else
-    UInt16                  stateArray[2];                      /* Multi state mask Array (2 to make sizeof(make) sense */
-#endif
-    };
-
-struct MSSymbologyLinkageData
-    {
-    UInt16                  linkageKey;                     /* id identifying type of symbology linkage */
-    UInt16                  overrideStyle:1;
-    UInt16                  overrideWeight:1;
-    UInt16                  overrideColor:1;
-    UInt16                  overrideLevel:1;
-    UInt16                  reserved:12;
-    Int32                   style;
-    UInt32                  weight;
-    UInt32                  color;
-    UInt32                  level;
-    };
-
-struct MSXMLLinkageData
-    {
-    UInt16                  linkageType;        /* id identifying type of XML linkage */
-    UInt16                  appID;              /* Application user id number */
-    UInt16                  appType;            /* Application type of data stored */
-    UInt16                  reserved;
-    UInt32                  numBytes;
-#if defined (type_resource_generator)
-    UInt8                   byteBuffer[0];
-#else
-    UInt8                   byteBuffer[1];
-#endif
-    };
-
-struct MSNoteData
-    {
-    unsigned long   size;
-    char            name [20]; //Note name identifier // WIP_CHAR_OK - Persistence
-    };
-
-// __PUBLISH_SECTION_START__
 enum ResourceTextStyleProperty
 {
     DGNPLATFORM_RESOURCE_TextStyle_LineSpacing           = 30,
@@ -901,45 +474,6 @@ enum class DimensionType
 
     MaxThatHasTemplate      = 19,
     Max                     = 53,   // Update if more DimensionTypes are added.
-    };
-
-/*---------------------------------------------------------------------------------**//**
-@ingroup MultilineElements
-*  The Offset Mode (or justification) of a multi-line defines the location of the line that the user
-*   has drawn relative to the offset of the style.  The Work Line is the 0-offset line,
-*   which may not be the center of a multi-line.  This value was not stored for pre-V8 files.
-+---------------+---------------+---------------+---------------+---------------+------*/
-enum class MlineOffsetMode
-    {
-    //! The Offset Mode is not stored on all multi-lines.  This will be returned for elements that do not have it set.
-    Unknown         = -1,
-    //! The user-defined line traces the 0 profile offset of the style
-    ByWork          = 0,
-    //! The user-defined line traces the center ((max-min)/2) of the style
-    ByCenter        = 1,
-    //! The user-defined line traces the maximum offset of the style
-    ByMax           = 2,
-    //! The user-defined line traces the minimum offset of the style
-    ByMin           = 3,
-    //! The user-defined line traces a custom offset of the style
-    Custom          = 4
-    };
-
-/*---------------------------------------------------------------------------------**//**
-@ingroup MultilineElements
-*  The break flags are used to specify that a particular break should extend to or from
-*    a joint.  Use MLBREAK_STD to specify the exact length of a break.
-+---------------+---------------+---------------+---------------+---------------+------*/
-enum MlineBreakLengthType
-    {
-    //! Use both offset and length.
-    MLBREAK_STD             = 0,
-    //! The break starts at the joint line at the specified segment's origin, and the value of offset is ignored.
-    MLBREAK_FROM_JOINT      = 0x8000,
-    //! The break ends at the joint line at the specified segment's end, and the value of length is ignored.
-    MLBREAK_TO_JOINT        = 0x4000,
-    //! Break from the specified break location to the second point on the segment.  This is MLBREAK_FROM_JOINT & MLBREAK_TO_JOINT.
-    MLBREAK_BETWEEN_JOINTS  = 0xC000,
     };
 
 enum LineStyleProp
@@ -1024,8 +558,8 @@ enum LineCodeStrokeFlags
     LCSTROKE_GAP       = 0x00,
     LCSTROKE_RAY       = 0x02,
     LCSTROKE_SCALE     = 0x04,    /* Stroke can be scaled        */
-    LCSTROKE_SDASH     = 0x05,    /* Short for dash and scale    */
-    LCSTROKE_SGAP      = 0x04,    /* Short for gap and scale     */
+    LCSTROKE_SDASH     = 0x05,    /* short for dash and scale    */
+    LCSTROKE_SGAP      = 0x04,    /* short for gap and scale     */
     LCSTROKE_SINVERT   = 0x08,    /* Invert stroke in first code */
     LCSTROKE_EINVERT   = 0x10,    /* Invert stroke in last code  */
     };
@@ -1112,119 +646,6 @@ enum class SnapMode
     };
 
 ENUM_IS_FLAGS (SnapMode)
-
-#define     LAST_SNAP_MODE 16
-
-enum class  DgnElementClass
-    {
-    Primary                 = 0,
-    PatternComponent        = 1,
-    Construction            = 2,
-    Dimension               = 3,
-    PrimaryRule             = 4, //!< Never used directly, internal to Type 18/19 implmentation only!
-    LinearPatterned         = 5,
-    ConstructionRule        = 6, //!< Never used directly, internal to Type 18/19 implmentation only!
-    };
-
-#if defined (NEEDS_WORK_DGNITEM)
-enum MSElementTypes : UShort
-    {
-    CELL_HEADER_ELM                 = 2,
-    LINE_ELM                        = 3,
-    LINE_STRING_ELM                 = 4,
-    GROUP_DATA_ELM                  = 5,
-    SHAPE_ELM                       = 6,
-    TEXT_NODE_ELM                   = 7,
-    DIG_SETDATA_ELM                 = 8,
-    DGNFIL_HEADER_ELM               = 9,
-    LEV_SYM_ELM                     = 10,
-    CURVE_ELM                       = 11,
-    CMPLX_STRING_ELM                = 12,
-    CMPLX_SHAPE_ELM                 = 14,
-    ELLIPSE_ELM                     = 15,
-    ARC_ELM                         = 16,
-    TEXT_ELM                        = 17,
-    SURFACE_ELM                     = 18,
-    SOLID_ELM                       = 19,
-    BSPLINE_POLE_ELM                = 21,
-    POINT_STRING_ELM                = 22,
-    CONE_ELM                        = 23,
-    BSPLINE_SURFACE_ELM             = 24,
-    BSURF_BOUNDARY_ELM              = 25,
-    BSPLINE_KNOT_ELM                = 26,
-    BSPLINE_CURVE_ELM               = 27,
-    BSPLINE_WEIGHT_ELM              = 28,
-    DIMENSION_ELM                   = 33,
-    SHAREDCELL_DEF_ELM              = 34,
-    SHARED_CELL_ELM                 = 35,
-    MULTILINE_ELM                   = 36,
-    DGNSTORE_COMP                   = 38,
-    DGNSTORE_HDR                    = 39,
-    MICROSTATION_ELM                = 66,
-    RASTER_HDR                      = 87,
-    RASTER_COMP                     = 88,
-    RASTER_REFERENCE_ELM            = 90,
-    RASTER_REFERENCE_COMP           = 91,
-    RASTER_HIERARCHY_ELM            = 92,
-    RASTER_HIERARCHY_COMP           = 93,
-    RASTER_FRAME_ELM                = 94,
-    TABLE_ENTRY_ELM                 = 95,
-    TABLE_ELM                       = 96,
-//__PUBLISH_SECTION_END__
-    CELL_LIB_ELM                    = 1,
-    CONIC_ELM                       = 13,
-    MATRIX_HEADER_ELM               = 101,
-    MATRIX_INT_DATA_ELM             = 102,
-    MATRIX_DOUBLE_DATA_ELM          = 103,
-    MESH_HEADER_ELM                 = 105,
-    EXTENDED_NONGRAPHIC_ELM         = 107,
-    EXTENDED_ELM                    = 106,
-
-//__PUBLISH_SECTION_START__
-    MSELEMENTTYPES_MaxElements      = 113,
-    };
-#endif
-
-//__PUBLISH_SECTION_END__
-#if !defined (mdl_resource_compiler) && !defined (mdl_resource_compiler)
-    struct DgnFont;
-#endif
-//__PUBLISH_SECTION_START__
-
-/*----------------------------------------------------------------------+
-|   Color Modes
-+----------------------------------------------------------------------*/
-enum  class ImageColorMode
-    {
-    Unknown         = 65535,
-    Any             = 0,
-    RGB             = 1,
-    Palette16       = 2,
-    Palette256      = 3,
-    GreyScale       = 4,
-    Monochrome      = 5,
-    RGBA            = 6,
-    Palette256Alpha = 7,
-    GreyScale16     = 8,
-    Palette2        = 9
-    };
-
-//__PUBLISH_SECTION_END__
-
-enum
-    {
-    DOUBLEQUOTE = 0x22,
-    QUOTE       = 0x27,
-    TAB         = 0x09,
-    LF          = 0x0A,
-    CR          = 0x0D,
-    CNTRL_Z     = 0x1a,
-    BACKSLASH   = 0x5c,
-    BS          = 0x08,
-    FF          = 0x0c,
-    };
-
-//__PUBLISH_SECTION_START__
 
 /** @endcond */
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/ElementECProvider.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -118,7 +118,7 @@ public:
 struct ElementECInstance : DgnElementECInstance
     {
 protected:
-    DGNPLATFORM_EXPORT ElementECInstance (DgnModelR modelRef, ElementRefP elementRef, UInt32 localId);
+    DGNPLATFORM_EXPORT ElementECInstance (DgnModelR modelRef, DgnElementP elementRef, uint32_t localId);
 
     DGNPLATFORM_EXPORT virtual bool         _IsReadOnly() const override;
     //! If you override this method you must invoke this base implementation and append any extra data to the returned string.
@@ -134,7 +134,7 @@ public:
 struct ElementECProvider : IDgnElementECProvider, ECN::IStandaloneEnablerLocater, DgnHost::HostObjectBase
 {
     typedef bvector <IElementECInstanceGeneratorP>          GeneratorList;
-    typedef bpair <IElementECInstanceGeneratorP, UInt8>     GeneratorAndId;
+    typedef bpair <IElementECInstanceGeneratorP, uint8_t>     GeneratorAndId;
     typedef bvector <GeneratorAndId>                        GeneratorAndIdList;
     typedef bvector <void const*>                           DelegateIdList;
 private:
@@ -155,7 +155,7 @@ private:
     mutable ECGeneratorListsAndEnablersByClass  m_ecGeneratorListsAndEnablersByClass;             // used by FilteredFinders
     mutable GeneratorAndIdList                  m_auxGenerators;                                  // non-extension-based instance generators
     DelegateIdList                              m_delegateIds;
-    UInt8                                       m_maxAuxGeneratorId;                              // incremented each time a new instance generator is registered; serves as ID
+    uint8_t                                     m_maxAuxGeneratorId;                              // incremented each time a new instance generator is registered; serves as ID
 
     ElementECProvider() : m_maxAuxGeneratorId (0) { }
     static ElementECProviderP               CreateProvider()  { return new ElementECProvider(); }
@@ -163,26 +163,26 @@ private:
     // IDgnECProvider methods
     virtual ECN::ECSchemaPtr                 _LocateSchemaInDgnFile (SchemaInfoR schemaInfo, ECN::SchemaMatchType matchType) override;
     virtual BentleyStatus                   _LocateSchemaXmlInDgnFile (WStringR schemaXml, SchemaInfoR schemaInfo, ECN::SchemaMatchType matchType) override;
-    virtual void                            _GetSchemaInfos (bvector<SchemaInfo>& infos, DgnProjectR dgnFile, ECSchemaPersistence persistence) override;
-    virtual UInt16                          _GetProviderId () const { return PROVIDERID_Element; }
+    virtual void                            _GetSchemaInfos (bvector<SchemaInfo>& infos, DgnDbR dgnFile, ECSchemaPersistence persistence) override;
+    virtual uint16_t                        _GetProviderId () const { return PROVIDERID_Element; }
     virtual WCharCP                         _GetProviderName () const { return L"ElementECProvider"; }
-    virtual DgnECInstanceEnablerP           _ObtainInstanceEnablerByName (WCharCP schemaName, WCharCP className, DgnProjectR dgnFile, void* perFileCache) override;
+    virtual DgnECInstanceEnablerP           _ObtainInstanceEnablerByName (WCharCP schemaName, WCharCP className, DgnDbR dgnFile, void* perFileCache) override;
 #if WIP_DEAD_DGNEC_CODE
     virtual void                            _FindRelatedInstances (IDgnECRelationshipInstanceVector* relationships, DgnElementECInstanceVector* relatedInstances, DgnElementECInstanceCR sourceInstance, QueryRelatedClassSpecifier const& relationshipClassSpecifier, bool useRecursion) override;
-    virtual IDgnECInstanceFinderPtr         _CreateFinder (DgnProjectR dgnFile, ECQueryCR query, void* perFileCache) const override;
+    virtual IDgnECInstanceFinderPtr         _CreateFinder (DgnDbR dgnFile, ECQueryCR query, void* perFileCache) const override;
     virtual IDgnECInstanceFinderPtr         _CreateRelatedFinder (DgnECInstanceCR source, QueryRelatedClassSpecifier const& relationshipClassSpecifier) const override;
     virtual IDgnECRelationshipFinderPtr     _CreateRelationshipFinder (DgnECInstanceCR source, QueryRelatedClassSpecifier const& relationshipClassSpecifier) const override;
 #endif
-    virtual DgnECRelationshipEnablerP       _ObtainDgnECRelationshipEnabler (WCharCP schemaName, WCharCP className, DgnProjectR dgnFile) override;
-    virtual DgnElementECInstancePtr         _LoadInstance (DgnModelR modelRef, ElementRefP elementRef, UInt32 localId, bool loadProperties) const override;
+    virtual DgnECRelationshipEnablerP       _ObtainDgnECRelationshipEnabler (WCharCP schemaName, WCharCP className, DgnDbR dgnFile) override;
+    virtual DgnElementECInstancePtr         _LoadInstance (DgnModelR modelRef, DgnElementP elementRef, uint32_t localId, bool loadProperties) const override;
 #if WIP_DEAD_DGNEC_CODE
     virtual DgnECInstancePtr                _LocateInstance (IDgnECInstanceLocatorCR locator, bool loadProperties) const override;
 
 #endif
   // IStandaloneEnablerLocater
     virtual    ECN::StandaloneECEnablerPtr   _LocateStandaloneEnabler (ECN::SchemaKeyCR schemaKey, const wchar_t* className) override;
-    virtual void *                          _OnInitializeForFile (DgnProjectR dgnFile) override;
-    virtual void                            _OnDisconnectFromFile (DgnProjectR dgnFile, void* providerPerFileCache) override;
+    virtual void *                          _OnInitializeForFile (DgnDbR dgnFile) override;
+    virtual void                            _OnDisconnectFromFile (DgnDbR dgnFile, void* providerPerFileCache) override;
 
     void                                    AddInstanceEnabler (ElementECEnablerR instanceEnabler);
     void                                    RegisterSchema (IElementECInstanceGenerator& extension, T_ECClassCPVector& ecClasses);
@@ -200,7 +200,7 @@ public:
     void                                    GetInstanceGeneratorsForElement (GeneratorList& generators, ElementHandleCR eh) const;
 
 #if WIP_DEAD_DGNEC_CODE
-    DGNPLATFORM_EXPORT void                 FindRelatedInstancesOnElement (DgnElementECInstanceVector& relatedInstances, QueryRelatedClassSpecifier const& classSpec, ElementRefP elemRef, DgnModelR modelRef, WCharCP sourceInstanceId) const;
+    DGNPLATFORM_EXPORT void                 FindRelatedInstancesOnElement (DgnElementECInstanceVector& relatedInstances, QueryRelatedClassSpecifier const& classSpec, DgnElementP element, DgnModelR modelRef, WCharCP sourceInstanceId) const;
 #endif
     DGNPLATFORM_EXPORT ElementECEnablerP    ObtainElementECEnabler (ECN::ECClassCR ecClass, IElementECInstanceGeneratorR extension);
 
@@ -208,13 +208,13 @@ public:
     void                                    RegisterInstanceGenerator (IElementECInstanceGeneratorR generator);
     void                                    UnRegisterInstanceGenerator (IElementECInstanceGeneratorR generator);
     void                                    GetInstanceIdExtension (WStringR idExtension, ElementECInstanceCR instance) const;
-    UInt16                                  GetDelegateId (ElementECDelegate const& del);
+    uint16_t                                GetDelegateId (ElementECDelegate const& del);
 
     // Creates a 'standalone' DgnECInstance for an instance obtained from an external DgnFile. e.g., the target of a link pointing to a model or view in another file; in which case 'hostFile' is the file containing the link, not the link target.
-    DgnECInstancePtr                        CreateExternalInstance (DgnECInstanceCR source, DgnProjectR hostFile) const;
+    DgnECInstancePtr                        CreateExternalInstance (DgnECInstanceCR source, DgnDbR hostFile) const;
 
     DGNPLATFORM_EXPORT static void          BackDoor_UnregisterProviderForUnitTest();
-    DGNPLATFORM_EXPORT static UInt32        BackDoor_GetDimstylePropertyType (UInt32& dimProp, UInt32 propertyIndex);
+    DGNPLATFORM_EXPORT static uint32_t      BackDoor_GetDimstylePropertyType (uint32_t& dimProp, uint32_t propertyIndex);
 };
 #endif
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/IAnnotationHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,8 +40,8 @@ typedef struct ChangeAnnotationScale
 {
     DgnModelP                    modelRef;
     CASTraverseElementContext       traverseContext;
-    int                             numElementRef;
-    ElementRefP*                    elementRefArray;
+    int                             numDgnElement;
+    DgnElementP*                    elementRefArray;
     CASFilter                       filter;
     double                          filterAnnotationScale;
     AnnotationScaleAction           action;
@@ -211,16 +211,16 @@ private:
     ViewContextR                m_context;
     IAnnotationStrokeForCache*  m_elementStroker;
     AnnotationDisplayParameters m_parms;
-    UInt32                      m_qvIndexBase;
+    uint32_t                    m_qvIndexBase;
 
 public:
     // Constructor
-    DGNPLATFORM_EXPORT               StrokeAnnotationElm    (IAnnotationHandler* handlerIn, ElementHandleCR elementIn, ViewContextR contextIn, IAnnotationStrokeForCache* elementStrokerIn, UInt32 qvIndexBase=0);
+    DGNPLATFORM_EXPORT               StrokeAnnotationElm    (IAnnotationHandler* handlerIn, ElementHandleCR elementIn, ViewContextR contextIn, IAnnotationStrokeForCache* elementStrokerIn, uint32_t qvIndexBase=0);
 
     DGNPLATFORM_EXPORT void          DrawUsingContext       ();
 
     // IStrokeForCache Interface Methods
-    DGNPLATFORM_EXPORT virtual void  _StrokeForCache        (CachedDrawHandleCR dh, ViewContextR context, double pixelSize) override;
+    DGNPLATFORM_EXPORT virtual void  _StrokeForCache        (ViewContextR context, double pixelSize) override;
 
 };
 

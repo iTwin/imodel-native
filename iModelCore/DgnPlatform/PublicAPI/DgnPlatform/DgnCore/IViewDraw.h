@@ -2,13 +2,12 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/IViewDraw.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include    "DgnElements.h"
 #include    "ColorUtil.h"
 #include    "LineStyleResource.r.h"
 #include    "AreaPattern.h"
@@ -25,6 +24,9 @@ DGNPLATFORM_TYPEDEFS (DgnGraphicsProcessor)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+//=======================================================================================
+//! Line style parameters
+//=======================================================================================
 //! @private
 struct LineStyleParams : LineStyleParamsResource
 {
@@ -40,18 +42,48 @@ struct LineStyleParams : LineStyleParamsResource
     DGNPLATFORM_EXPORT bool operator==(LineStyleParamsCR rhs) const;
 
     DGNPLATFORM_EXPORT void SetScale (double scale);
+#if defined (WIP_LINESTYLE)
     DGNPLATFORM_EXPORT bool ApplyTransform (TransformCR transform, bool allowSizeChange = true);
-
-    // NOTE: GetActiveParams is ONLY for use with IEditProperties!!!
-    //MSCORE_EXPORT bool GetActiveParams (ViewportP vp /* 3d only */, UInt32 mlineProfileIndex = 0); removed in graphite
+#endif
 //__PUBLISH_SECTION_START__
 };
 
-typedef struct LineStyleParams LineStyleParams;
+typedef RefCountedPtr<LineStyleInfo> LineStyleInfoPtr;
+
+//=======================================================================================
+//! Line style id and parameters
+//=======================================================================================
+struct LineStyleInfo : RefCountedBase
+{
+//__PUBLISH_SECTION_END__
+protected:
+
+DgnStyleId          m_styleId;
+LineStyleParams     m_styleParams; //!< modifiers for user defined linestyle (if applicable)
+
+DGNPLATFORM_EXPORT LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params);
+
+public:
+
+DGNPLATFORM_EXPORT void CopyFrom (LineStyleInfoCR);
+
+//__PUBLISH_SECTION_START__
+//__PUBLISH_CLASS_VIRTUAL__
+public:
+
+//! Create an instance of a LineStyleInfo.
+DGNPLATFORM_EXPORT static LineStyleInfoPtr Create (DgnStyleId styleId, LineStyleParamsCP params);
+
+//! Compare two LineStyleInfo.
+DGNPLATFORM_EXPORT bool operator==(LineStyleInfoCR rhs) const;
+
+DGNPLATFORM_EXPORT DgnStyleId GetStyleId () const;
+DGNPLATFORM_EXPORT LineStyleParamsCP GetStyleParams () const;
+
+}; // LineStyleInfo
 
 struct  ISprite;
 struct  IDisplaySymbol;
-struct  IDgnGlyphLayoutListener;
 struct  IDgnOleDraw;
 
 enum class DrawExpense
@@ -118,13 +150,13 @@ struct GradientSymb : RefCountedBase
 //__PUBLISH_SECTION_END__
 protected:
     GradientMode    m_mode;
-    UInt16          m_flags;
-    UInt16          m_nKeys;
+    uint16_t        m_flags;
+    uint16_t        m_nKeys;
 
     double          m_angle;
     double          m_tint;
     double          m_shift;
-    RgbColorDef     m_colors[MAX_GRADIENT_KEYS];
+    ColorDef        m_colors[MAX_GRADIENT_KEYS];
     double          m_values[MAX_GRADIENT_KEYS];
 
     DGNPLATFORM_EXPORT GradientSymb();
@@ -133,9 +165,6 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 DGNPLATFORM_EXPORT void CopyFrom (GradientSymbCR);
-
-DGNPLATFORM_EXPORT StatusInt FromDisplayAttribute (Display_attribute_gradientCP);
-DGNPLATFORM_EXPORT StatusInt ToDisplayAttribute (Display_attribute_gradientR) const;
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
@@ -149,18 +178,18 @@ DGNPLATFORM_EXPORT bool operator==(GradientSymbCR rhs) const;
 
 DGNPLATFORM_EXPORT int GetNKeys () const;
 DGNPLATFORM_EXPORT GradientMode GetMode () const;
-DGNPLATFORM_EXPORT UInt16 GetFlags () const;
+DGNPLATFORM_EXPORT uint16_t GetFlags () const;
 DGNPLATFORM_EXPORT double GetShift () const;
 DGNPLATFORM_EXPORT double GetTint () const;
 DGNPLATFORM_EXPORT double GetAngle () const;
-DGNPLATFORM_EXPORT void GetKey (RgbColorDef& color, double& value, int index) const;
+DGNPLATFORM_EXPORT void GetKey (ColorDef& color, double& value, int index) const;
 
 DGNPLATFORM_EXPORT void SetMode (GradientMode mode);
-DGNPLATFORM_EXPORT void SetFlags (UInt16 flags);
+DGNPLATFORM_EXPORT void SetFlags (uint16_t flags);
 DGNPLATFORM_EXPORT void SetAngle (double angle);
 DGNPLATFORM_EXPORT void SetTint (double tint);
 DGNPLATFORM_EXPORT void SetShift (double shift);
-DGNPLATFORM_EXPORT void SetKeys (UInt16 nKeys, RgbColorDef const* colors, double const* values);
+DGNPLATFORM_EXPORT void SetKeys (uint16_t nKeys, ColorDef const* colors, double const* values);
 
 }; // GradientSymb
 
@@ -263,139 +292,63 @@ DGNPLATFORM_EXPORT static MaterialUVDetailPtr Create ();
 #endif
 
 //__PUBLISH_SECTION_END__
+typedef RefCountedPtr<PlotInfo> PlotInfoPtr;
 
 //=======================================================================================
-//! This structure holds the display parameters that a header element can override 
-//! onto all of its children as they are drawn.
-//! See BentleyApi::DgnPlatform::ViewContext::PushOverrides.
+//! Plot specific resymbolization
 //=======================================================================================
-struct ElemHeaderOverrides
+struct PlotInfo : RefCountedBase
 {
-private:
+protected:
 
-SCOverride          m_flags;
-Symbology           m_symb;
-LevelId             m_level;
-int                 m_levelCodeDiff;
-UInt32              m_dispPriority;
-DgnElementClass     m_elementClass;
-LineStyleParams     m_styleParams;
-
-public:
-
-DGNPLATFORM_EXPORT ElemHeaderOverrides ();
-DGNPLATFORM_EXPORT void Init (SCOverride const* ovr, LevelId baseLevel, int levelDiff, UInt32 dispPriority, DgnElementClass elementClass, Symbology const* symb, LineStyleParams const* styleParams);
-
-void MergeFrom (ElemHeaderOverrides const* o1, ElemHeaderOverrides const* o2);
-
-DGNPLATFORM_EXPORT SCOverride GetFlags () const;
-DGNPLATFORM_EXPORT LevelId AdjustLevel (LevelId inLevel) const; // Apply overrides and return adjusted level.
-DGNPLATFORM_EXPORT LevelId GetLevel () const;
-DGNPLATFORM_EXPORT UInt32 GetColor () const;
-DGNPLATFORM_EXPORT UInt32 GetWeight () const;
-DGNPLATFORM_EXPORT Int32 GetLineStyle () const;
-DGNPLATFORM_EXPORT LineStyleParamsCP GetLineStyleParams () const;
-DGNPLATFORM_EXPORT UInt32 GetDisplayPriority () const;
-DGNPLATFORM_EXPORT DgnElementClass GetElementClass () const;
-
-}; // ElemHeaderOverrides
-
-//__PUBLISH_SECTION_START__
-//=======================================================================================
-//! This structure holds all of the information about an element specifying the "displayable parameters" of the element.
-//! It is typically extracted from the "dhdr" section of the element header and from user data.
-// @bsiclass 
-//=======================================================================================
-struct ElemDisplayParams
-{
-//__PUBLISH_SECTION_END__
-    friend struct ElemDisplayParamsStateSaver;
-    friend struct ElemDisplayParamsIgnores;
-    friend struct DgnGraphics;
-    friend struct DgnGraphicsProcessor;
-
-private:
-
-// NOTE: Constructor uses memset (this, 0, offsetof (ElemDisplayParams, m_styleParams));
-bool                m_isRenderable:1;               //!< if true, element is renderable (subject to lighting), so don't do black/white reversal
-bool                m_hasThickness:1;               //!< if true, draw with an implied thickness specified by #m_thicknessVector
-bool                m_isCapped:1;                   //!< if #m_hasThickness is true, whether or the thickening results in solid or surface
-bool                m_hasScreening:1;               //!< if true, output should be screened by value in #m_screening
-bool                m_hasLineJoin:1;                //!< if true, use #m_lineJoin to determine line join type.
 bool                m_hasLineCap:1;                 //!< if true, use #m_lineCap to determine line cap type.
+bool                m_hasLineJoin:1;                //!< if true, use #m_lineJoin to determine line join type.
+bool                m_hasScreening:1;               //!< if true, output should be screened by value in #m_screening
 bool                m_hasLineWeightMM:1;            //!< if true, line weight is specified in millimeters by #m_widthMM
-bool                m_ignoreLevelSymb:1;            //!< if true, symbology overrides are not applied (DIMENSIONS only)
-bool                m_materialIsAttached:1;         //!< if true, material is from attachment not color/level assignment.
-bool                m_isValidLineColorTBGR:1;       //!< Used to assert whether Post-Cook TBGR has been set when ElemMatSymb is being created...
-bool                m_isValidFillColorTBGR:1;       //!< Used to assert whether Post-Cook TBGR has been set when ElemMatSymb is being created...
 
-SubLevelId     m_subLevel;                     //!< the SubLevel on which the element is drawn
-DgnElementClass     m_elementClass;                 //!< element class
-Int32               m_elmPriority;                  //!< display priority (applies to 2d only)
-Int32               m_netPriority;                  //!< net display priority for element/level/model (applies to 2d only)
-Symbology           m_symbology;                    //!< color, weight, style
-UInt32              m_lineColorIndex;               //!< pre-resolved line color index, used to setup ElemMatSymb line color index.
-UInt32              m_lineColorTBGR;                //!< In form TBGR
-UInt32              m_fillColor;                    //!< fill color (applicable only if filled)
-UInt32              m_fillColorIndex;               //!< pre-resolved fill color index, used to setup ElemMatSymb fill color index.
-UInt32              m_fillColorTBGR;                //!< In form TBGR
-FillDisplay         m_fillDisplay;                  //!< whether or not the element should be displayed filled
-double              m_transparency;                 //!< transparency, 1.0 == completely transparent.
-DVec3d              m_thicknessVector;              //!< scaled vector that determines thickness size and direction
 LineCap             m_lineCap;                      //!< line cap type when m_hasLineCap is set.
 LineJoin            m_lineJoin;                     //!< line join type when m_hasLineJoin is set.
 double              m_screening;                    //!< screening value when m_hasScreening is set.
 double              m_widthMM;                      //!< line width in mm when m_hasLineWeightMM is set.
-MaterialCP          m_material;                     //!< render material
 
-LineStyleParams     m_styleParams;                  //!< modifiers for user defined linestyle (if applicable)
-GradientSymbPtr     m_gradient;                     //!< gradient fill settings.
+PlotInfo() {m_hasLineCap = m_hasLineJoin = m_hasScreening = m_hasLineWeightMM = false; m_lineCap = LineCap::None; m_lineJoin = LineJoin::None; m_screening = 0.0; m_widthMM = 0.0;}
 
 public:
 
-DGNPLATFORM_EXPORT ElemDisplayParams ();
-DGNPLATFORM_EXPORT explicit ElemDisplayParams (ElemDisplayParamsCR rhs);
+static PlotInfoPtr Create () {return new PlotInfo();}
 
-DGNPLATFORM_EXPORT void Init ();
-DGNPLATFORM_EXPORT bool ResolveByLevel (DgnLevels::SubLevel::Appearance const&); // Set effective values for BYLEVEL properties.
-DGNPLATFORM_EXPORT bool ResolveByCell (ElemHeaderOverridesCP, DgnLevels::SubLevel::Appearance const&); // Set effective values for BYCELL properties and relative levels.
-DGNPLATFORM_EXPORT void ResolveColorTBGR (ViewContextR); // Resolve effective display TBGR for override matSymb.
-DGNPLATFORM_EXPORT bool ApplyParentOverrides (ElemHeaderOverridesCP ovr); // Set header override values.
+void CopyFrom (PlotInfoCR other)
+    {
+    m_hasLineCap        = other.m_hasLineCap;
+    m_hasLineJoin       = other.m_hasLineJoin;
+    m_hasScreening      = other.m_hasScreening;
+    m_hasLineWeightMM   = other.m_hasLineWeightMM;
 
-DGNPLATFORM_EXPORT void SetSubLevelId (SubLevelId);
-DGNPLATFORM_EXPORT void SetLineStyle (Int32 style, LineStyleParamsCP params = NULL);
-DGNPLATFORM_EXPORT void SetWeight (UInt32 weight);
-DGNPLATFORM_EXPORT void SetElementClass (DgnElementClass elmClass);
-DGNPLATFORM_EXPORT void SetTransparency (double transparency);
-DGNPLATFORM_EXPORT void SetThickness (DVec3dCP direction, bool isCapped);
+    m_lineCap           = other.m_lineCap;
+    m_lineJoin          = other.m_lineJoin;
+    m_screening         = other.m_screening;
+    m_widthMM           = other.m_widthMM;
+    }
 
-DGNPLATFORM_EXPORT void SetLineColor (UInt32 elementColor);
-DGNPLATFORM_EXPORT void SetLineColorTBGR (UInt32 colorTBGR);
+bool operator==(PlotInfoCR rhs) const
+    {
+    if (this == &rhs)
+        return true;
 
-DGNPLATFORM_EXPORT void SetFillColor (UInt32 elementColor);
-DGNPLATFORM_EXPORT void SetFillColorTBGR (UInt32 colorTBGR);
-DGNPLATFORM_EXPORT void SetFillDisplay (FillDisplay display);
-DGNPLATFORM_EXPORT void SetGradient (GradientSymbP gradient);
+    if (rhs.m_hasLineCap      != m_hasLineCap   ||
+        rhs.m_hasLineJoin     != m_hasLineJoin  ||
+        rhs.m_hasScreening    != m_hasScreening ||
+        rhs.m_hasLineWeightMM != m_hasLineWeightMM)
+        return false;
 
-DGNPLATFORM_EXPORT UInt32 GetLineColorIndex () const;       // INTERNAL USE ONLY! Used to setup ElemMatSymb line color index.
-DGNPLATFORM_EXPORT void   SetLineColorIndex (UInt32 index); // INTERNAL USE ONLY! Used to setup ElemMatSymb line color index.
-DGNPLATFORM_EXPORT UInt32 GetFillColorIndex () const;       // INTERNAL USE ONLY! Used to setup ElemMatSymb fill color index.
-DGNPLATFORM_EXPORT void   SetFillColorIndex (UInt32 index); // INTERNAL USE ONLY! Used to setup ElemMatSymb fill color index.
+    if (rhs.m_lineCap   != m_lineCap   ||
+        rhs.m_lineJoin  != m_lineJoin  ||
+        rhs.m_screening != m_screening ||
+        rhs.m_widthMM   != m_widthMM )
+        return false;
 
-DGNPLATFORM_EXPORT bool IsAttachedMaterial () const;
-DGNPLATFORM_EXPORT void SetMaterial (MaterialCP material, bool isAttached = false);
-DGNPLATFORM_EXPORT void SetPatternParams (PatternParamsPtr& patternParams);
-
-DGNPLATFORM_EXPORT bool IsRenderable () const;
-DGNPLATFORM_EXPORT void SetIsRenderable (bool isRenderable);
-
-DGNPLATFORM_EXPORT bool IsLevelSymbIgnored () const;
-DGNPLATFORM_EXPORT void SetLevelSymbIgnored (bool isIgnored);
-
-DGNPLATFORM_EXPORT void   SetElementDisplayPriority (Int32 priority, bool is3d, DgnLevels::SubLevel::Appearance const* appearance); // Set display priority and net priority for direct draws of 2d geometry not extracted from elements using CalcDefaultNetDisplayPriority and level from ElemDisplayParams.
-DGNPLATFORM_EXPORT void   SetNetDisplayPriority (Int32 priority); // RASTER USE ONLY!!!
-DGNPLATFORM_EXPORT Int32  GetNetDisplayPriority () const; // Get net display priority (2d only).
-DGNPLATFORM_EXPORT static Int32 CalcDefaultNetDisplayPriority (Int32 priority, DgnLevels::SubLevel::Appearance const* appearance);
+    return true;
+    }
 
 DGNPLATFORM_EXPORT bool     IsScreeningSet () const;
 DGNPLATFORM_EXPORT double   GetScreening () const;
@@ -413,9 +366,81 @@ DGNPLATFORM_EXPORT bool     IsLineWeightMMSet () const;
 DGNPLATFORM_EXPORT double   GetLineWeightMM () const;
 DGNPLATFORM_EXPORT void     SetLineWeightMM (double weight, bool set = true);
 
-DGNPLATFORM_EXPORT void Resolve (ViewContextR); // Resolve effective values and set TBGR for indexed colors.
+}; // PlotInfoPtr
 
-SubLevelId GetSubLevelId() const {return m_subLevel;}
+//__PUBLISH_SECTION_START__
+
+//=======================================================================================
+//! This structure holds all of the information about an element specifying the "displayable parameters" of the element.
+//! It is typically extracted from the "dhdr" section of the element header and from user data.
+// @bsiclass 
+//=======================================================================================
+struct ElemDisplayParams
+{
+//__PUBLISH_SECTION_END__
+private:
+
+struct AppearanceOverrides
+    {
+    bool m_color:1;
+    bool m_weight:1;
+    bool m_style:1;
+    bool m_material:1;
+    };
+
+// NOTE: Constructor uses memset (this, 0, offsetof (ElemDisplayParams, m_material));
+AppearanceOverrides m_appearanceOverrides;          //!< flags for parameters that override SubCategory::Appearance.
+bool                m_resolved:1;                   //!< whether Resolve has established SubCategory::Appearance/effective values.
+
+DgnCategoryId       m_categoryId;                   //!< the Category Id on which the geometry is drawn.
+DgnSubCategoryId    m_subCategoryId;                //!< the SubCategory Id that controls the appearence of subsequent geometry.
+int32_t             m_elmPriority;                  //!< display priority (applies to 2d only)
+int32_t             m_netPriority;                  //!< net display priority for element/category (applies to 2d only)
+uint32_t            m_weight;
+ColorDef            m_lineColor;
+ColorDef            m_fillColor;                    //!< fill color (applicable only if filled)
+FillDisplay         m_fillDisplay;                  //!< whether or not the element should be displayed filled
+double              m_elmTransparency;              //!< transparency, 1.0 == completely transparent.
+double              m_netTransparency;              //!< net transparency for element/category.
+MaterialCP          m_material;                     //!< render material
+
+LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
+GradientSymbPtr     m_gradient;                     //!< gradient fill settings.
+PatternParamsPtr    m_pattern;                      //!< area pattern settings.
+PlotInfoPtr         m_plotInfo;
+
+public:
+
+DGNPLATFORM_EXPORT ElemDisplayParams ();
+DGNPLATFORM_EXPORT explicit ElemDisplayParams (ElemDisplayParamsCR rhs);
+
+DGNPLATFORM_EXPORT void     Init ();
+DGNPLATFORM_EXPORT void     SetCategoryId (DgnCategoryId); // Setting the Category Id also sets the SubCategory to the default.
+DGNPLATFORM_EXPORT void     SetSubCategoryId (DgnSubCategoryId);
+DGNPLATFORM_EXPORT void     SetWeight (uint32_t weight);
+DGNPLATFORM_EXPORT void     SetLineStyle (LineStyleInfoP styleInfo);
+DGNPLATFORM_EXPORT void     SetLineColor (ColorDef color);
+DGNPLATFORM_EXPORT void     SetFillDisplay (FillDisplay display);
+DGNPLATFORM_EXPORT void     SetFillColor (ColorDef color);
+DGNPLATFORM_EXPORT void     SetGradient (GradientSymbP gradient);
+DGNPLATFORM_EXPORT void     SetMaterial (MaterialCP material);
+DGNPLATFORM_EXPORT void     SetPatternParams (PatternParamsP patternParams);
+
+DGNPLATFORM_EXPORT void     SetTransparency (double transparency);
+DGNPLATFORM_EXPORT double   GetNetTransparency () const;
+DGNPLATFORM_EXPORT void     SetDisplayPriority (int32_t priority); // Set display priority (2d only).
+DGNPLATFORM_EXPORT int32_t  GetNetDisplayPriority () const; // Get net display priority (2d only).
+DGNPLATFORM_EXPORT void     SetNetDisplayPriority (int32_t priority); // RASTER USE ONLY!!!
+
+DGNPLATFORM_EXPORT DgnCategoryId    GetCategoryId () const;
+DGNPLATFORM_EXPORT DgnSubCategoryId GetSubCategoryId () const;
+
+DGNPLATFORM_EXPORT bool IsLineColorFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool IsWeightFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool IsLineStyleFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool IsMaterialFromSubCategoryAppearance () const;
+
+DGNPLATFORM_EXPORT void     Resolve (ViewContextR); // Resolve effective values
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
@@ -426,41 +451,26 @@ DGNPLATFORM_EXPORT bool operator==(ElemDisplayParamsCR rhs) const;
 //! copy operator
 DGNPLATFORM_EXPORT ElemDisplayParamsR operator=(ElemDisplayParamsCR rhs);
 
-//! Get element color id. NOTE: Will be INVALID_COLOR when color has been defined by TBGR value.
-DGNPLATFORM_EXPORT UInt32 GetLineColor () const;
+//! Get element color
+DGNPLATFORM_EXPORT ColorDef GetLineColor() const;
 
-//! Get element color that has been defined by TBGR value. Valid when INVALID_COLOR == GetLineColor ().
-DGNPLATFORM_EXPORT UInt32 GetLineColorTBGR () const;
-
-//! Helper method, checks INVALID_COLOR == GetLineColor ().
-DGNPLATFORM_EXPORT bool IsLineColorTBGR () const;
-
-//! Get element fill color id. Valid when INVALID_COLOR != GetFillColor () && FillDisplay::Never != GetFillDisplay () && NULL == GetGradient ().
-DGNPLATFORM_EXPORT UInt32 GetFillColor () const;
-
-//! Get element fill color that has been defined by TBGR value. Valid when INVALID_COLOR == GetFillColor () && FillDisplay::Never != GetFillDisplay () && NULL == GetGradient ().
-DGNPLATFORM_EXPORT UInt32 GetFillColorTBGR () const;
-
-//! Helper method, checks INVALID_COLOR == GetFillColor () && FillDisplay::Never != GetFillDisplay () && NULL == GetGradient ().
-DGNPLATFORM_EXPORT bool IsFillColorTBGR () const;
+//! Get element fill color 
+DGNPLATFORM_EXPORT ColorDef GetFillColor() const;
 
 //! Get fill display setting.
-DGNPLATFORM_EXPORT FillDisplay GetFillDisplay () const;
+DGNPLATFORM_EXPORT FillDisplay GetFillDisplay() const;
 
-//! Get gradient fill information. Valid when NULL != GetGradient () && FillDisplay::Never != GetFillDisplay ().
+//! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptr.
 DGNPLATFORM_EXPORT GradientSymbCP GetGradient () const;
 
-//! Get element linestyle.
-DGNPLATFORM_EXPORT Int32 GetLineStyle () const;
+//! Get the area pattern params.
+DGNPLATFORM_EXPORT PatternParamsCP GetPatternParams () const;
 
-//! Get element linestyle modifiers.
-DGNPLATFORM_EXPORT LineStyleParamsCP GetLineStyleParams () const;
+//! Get line style information.
+DGNPLATFORM_EXPORT LineStyleInfoCP GetLineStyle () const;
 
 //! Get element weight.
-DGNPLATFORM_EXPORT UInt32 GetWeight () const;
-
-//! Get element class.
-DGNPLATFORM_EXPORT DgnElementClass GetElementClass () const;
+DGNPLATFORM_EXPORT uint32_t GetWeight () const;
 
 //! Get element transparency.
 DGNPLATFORM_EXPORT double GetTransparency () const;
@@ -469,68 +479,10 @@ DGNPLATFORM_EXPORT double GetTransparency () const;
 DGNPLATFORM_EXPORT MaterialCP GetMaterial () const;
 
 //! Get element display priority (2d only).
-DGNPLATFORM_EXPORT Int32 GetElementDisplayPriority () const;
-
-//! Get element extrude thickness.
-DGNPLATFORM_EXPORT DVec3dCP GetThickness (bool& isCapped) const;
+DGNPLATFORM_EXPORT int32_t GetDisplayPriority () const;
 
 }; // ElemDisplayParams
 
-//__PUBLISH_SECTION_END__
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ElemDisplayParamsStateSaver
-{
-private:
-
-ElemDisplayParamsR  m_elParams;
-ElemDisplayParams   m_elParamsSaved;
-
-bool                m_restoreLevel;
-bool                m_restoreLineColor;
-bool                m_restoreFillColor;
-bool                m_restoreLineStyle;
-bool                m_restoreWeight;
-
-public:
-
-//! Class to help in cases where part of the ElemDisplayParams shouldn't be allowed to change.
-DGNPLATFORM_EXPORT ElemDisplayParamsStateSaver (ElemDisplayParamsR elParams, bool restoreLevel, bool restoreLineColor, bool restoreFillColor, bool restoreLineStyle, bool restoreWeight);
-DGNPLATFORM_EXPORT ~ElemDisplayParamsStateSaver ();
-
-}; // ElemDisplayParamsStateSaver
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ElemDisplayParamsIgnores
-{
-private:
-
-bool                m_ignoreSubLevel;
-bool                m_ignoreColor;
-bool                m_ignoreWeight;
-SubLevelId     m_subLevel;
-UInt32              m_lineColor;
-UInt32              m_lineColorIndex;
-UInt32              m_lineColorTBGR;
-bool                m_isValidLineColorTBGR;
-
-UInt32              m_weight;
-
-public:
-
-//! Class to help with DrawSymbol where symbol element properties are ignored and are inherited from the base element.
-DGNPLATFORM_EXPORT ElemDisplayParamsIgnores ();
-
-DGNPLATFORM_EXPORT void Set (ElemDisplayParamsCR elParams, bool ignoreSubLevel, bool ignoreColor, bool ignoreWeight);
-DGNPLATFORM_EXPORT void Apply (ElemDisplayParamsR elParams);
-DGNPLATFORM_EXPORT void Clear ();
-
-}; // ElemDisplayParamsIgnores
-
-//__PUBLISH_SECTION_START__
 //=======================================================================================
 //! This structure contains options (modifications) that can be applied
 //! to existing line styles to change their appearance without changing the line style
@@ -549,25 +501,25 @@ private:
     ILineStyleCP    m_lStyle;       // if NULL, no linestyle active
     struct
         {
-        UInt32         scale:1;
-        UInt32         dashScale:1;
-        UInt32         gapScale:1;
-        UInt32         orgWidth:1;
-        UInt32         endWidth:1;
-        UInt32         phaseShift:1;
-        UInt32         autoPhase:1;
-        UInt32         maxCompress:1;
-        UInt32         iterationLimit:1;
-        UInt32         treatAsSingleSegment:1;
-        UInt32         plane:1;
-        UInt32         cosmetic:1;
-        UInt32         centerPhase:1;
-        UInt32         xElemPhaseSet:1;
-        UInt32         startTangentSet:1;
-        UInt32         endTangentSet:1;
-        UInt32         elementIsClosed:1;
-        UInt32         continuationXElems:1;
-        UInt32         isCurve:1;
+        uint32_t       scale:1;
+        uint32_t       dashScale:1;
+        uint32_t       gapScale:1;
+        uint32_t       orgWidth:1;
+        uint32_t       endWidth:1;
+        uint32_t       phaseShift:1;
+        uint32_t       autoPhase:1;
+        uint32_t       maxCompress:1;
+        uint32_t       iterationLimit:1;
+        uint32_t       treatAsSingleSegment:1;
+        uint32_t       plane:1;
+        uint32_t       cosmetic:1;
+        uint32_t       centerPhase:1;
+        uint32_t       xElemPhaseSet:1;
+        uint32_t       startTangentSet:1;
+        uint32_t       endTangentSet:1;
+        uint32_t       elementIsClosed:1;
+        uint32_t       continuationXElems:1;
+        uint32_t       isCurve:1;
         } m_options;
 
     int             m_nIterate;
@@ -590,7 +542,7 @@ public:
 
     DGNPLATFORM_EXPORT int FromResolvedElemDisplayParams (ElemDisplayParamsCR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromNaturalElemDisplayParams (ElemDisplayParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
-    DGNPLATFORM_EXPORT int FromResolvedStyle (Int32 styleNo, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
+    DGNPLATFORM_EXPORT int FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
     void               Clear () {m_lStyle = NULL; m_options.orgWidth = m_options.endWidth = false;}
     void               Init (ILineStyleCP);
@@ -653,7 +605,6 @@ DGNPLATFORM_EXPORT void SetTotalLength (double);
 DGNPLATFORM_EXPORT void SetCosmetic (bool cosmetic);
 DGNPLATFORM_EXPORT void ClearContinuationData ();
 DGNPLATFORM_EXPORT void CheckContinuationData ();
-
 }; // LineStyleSymb
 
 //=======================================================================================
@@ -670,20 +621,17 @@ DGNPLATFORM_EXPORT void CheckContinuationData ();
 //=======================================================================================
 struct  ElemMatSymb
 {
-//__PUBLISH_SECTION_END__
 private:
    
-    UInt32              m_lineColorTBGR;
-    UInt32              m_fillColorTBGR;
-    int                 m_lineColorIndex;
-    int                 m_fillColorIndex;
+    ColorDef            m_lineColor;
+    ColorDef            m_fillColor;
     int                 m_elementStyle;
     bool                m_isFilled;
     bool                m_isBlankingRegion;
     uintptr_t           m_extSymbID;
     MaterialCP          m_material;
-    UInt32              m_rasterWidth;
-    UInt32              m_rasterPat;
+    uint32_t            m_rasterWidth;
+    uint32_t            m_rasterPat;
     LineStyleSymb       m_lStyleSymb;
     GradientSymbPtr     m_gradient;
     PatternParamsPtr    m_patternParams;
@@ -694,7 +642,6 @@ DGNPLATFORM_EXPORT ElemMatSymb ();
 DGNPLATFORM_EXPORT explicit ElemMatSymb (ElemMatSymbCR rhs);
 
 DGNPLATFORM_EXPORT void Init ();
-DGNPLATFORM_EXPORT void Init (ViewContextR, UInt32 lineColorIndex, UInt32 fillColorIndex, UInt32 lineWeight, Int32 lineStyle);
 
 //! INTERNAL USE ONLY: Should only ever be called by sub-classes of ViewContext, use CookDisplayParams instead!
 DGNPLATFORM_EXPORT void FromResolvedElemDisplayParams (ElemDisplayParamsCR, ViewContextR, DPoint3dCP startTan, DPoint3dCP endTan);
@@ -704,16 +651,14 @@ DGNPLATFORM_EXPORT void FromNaturalElemDisplayParams (ElemDisplayParamsR, ViewCo
 int GetElementStyle () {return m_elementStyle;}
 
 //! Get the extended material ID from this ElemMatSymb
-DGNPLATFORM_EXPORT uintptr_t GetExtSymbId () const;
+uintptr_t GetExtSymbId () const {return m_extSymbID;}
 
 //! Set the extended material ID for this ElemMatSymb
-DGNPLATFORM_EXPORT void SetExtSymbId (uintptr_t extSymbID);
+void SetExtSymbId (uintptr_t extSymbID) {m_extSymbID = extSymbID;}
 
 //! Set the gradient symbology
-DGNPLATFORM_EXPORT void SetGradient (GradientSymbP gradient);
+void SetGradient (GradientSymbP gradient) {m_gradient = gradient;}
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
 //! @name Query Methods
 //@{
@@ -725,48 +670,41 @@ DGNPLATFORM_EXPORT bool operator==(ElemMatSymbCR rhs) const;
 DGNPLATFORM_EXPORT ElemMatSymbR operator=(ElemMatSymbCR rhs);
 
 //! Get the TBGR line color from this ElemMatSymb
-DGNPLATFORM_EXPORT UInt32 GetLineColorTBGR () const;
-
-//! Get the line color index from this ElemMatSymb (DgnColorMap::INDEX_Invalid returned for TBGR color)
-DGNPLATFORM_EXPORT int GetLineColorIndex () const;
+ColorDef GetLineColor () const {return m_lineColor;}
 
 //! Get the TBGR fill color from this ElemMatSymb.
-DGNPLATFORM_EXPORT UInt32 GetFillColorTBGR () const;
-
-//! Get the fill color index from this ElemMatSymb (DgnColorMap::INDEX_Invalid returned for TBGR color)
-DGNPLATFORM_EXPORT int GetFillColorIndex () const;
+ColorDef GetFillColor () const {return m_fillColor;}
 
 //! Get the width in pixels from this ElemMatSymb.
-DGNPLATFORM_EXPORT UInt32 GetWidth () const;
+uint32_t GetWidth () const {return m_rasterWidth;}
 
 //! Determine whether TrueWidth is on for this ElemMatSymb
 DGNPLATFORM_EXPORT bool HasTrueWidth () const;
 
 //! Get the raster pattern from this ElemMatSymb. The raster pattern is a 32 bit mask that is
 //! repeated along geometry. For each bit that is on in the pattern, a pixel is set to the line color.
-DGNPLATFORM_EXPORT UInt32 GetRasterPattern () const;
+uint32_t GetRasterPattern () const {return m_rasterPat;}
 
 //! Get the style index from this ElemMatSymb (INVALID_STYLE returned for raster patterns not derived from line codes)
-DGNPLATFORM_EXPORT Int32 GetRasterPatternIndex () const;
+int32_t GetRasterPatternIndex () const {return m_elementStyle;}
 
 //! Determine whether the fill flag is on for this ElemMatSymb.
-DGNPLATFORM_EXPORT bool IsFilled () const;
+bool IsFilled () const {return m_isFilled;}
 
 //! Determine whether the fill represents blanking region.
-DGNPLATFORM_EXPORT bool IsBlankingRegion () const;
+bool IsBlankingRegion () const {return m_isBlankingRegion;}
 
 //! Get the LineStyleSymb from this ElemMatSymb.
-DGNPLATFORM_EXPORT LineStyleSymbCR GetLineStyleSymb () const;
+LineStyleSymbCR GetLineStyleSymb () const {return m_lStyleSymb;}
 
 //! Get the GradientSymb from this ElemMatSymb.
-DGNPLATFORM_EXPORT GradientSymbCP GetGradientSymb () const;
+GradientSymbCP GetGradientSymb () const {return m_gradient.get();}
 
 //! Get the render material.
-DGNPLATFORM_EXPORT MaterialCP GetMaterial () const;
+MaterialCP GetMaterial () const {return m_material;}
 
 //! Get the area pattern params.
-DGNPLATFORM_EXPORT PatternParamsCP GetPatternParams () const;
-
+PatternParamsCP GetPatternParams () const {return m_patternParams.get();}
 
 //@}
 
@@ -775,53 +713,45 @@ DGNPLATFORM_EXPORT PatternParamsCP GetPatternParams () const;
 
 //! Set the current line color for this ElemMatSymb.
 //! @param[in] lineColor   the new TBGR line color for this ElemMatSymb.
-DGNPLATFORM_EXPORT void SetLineColorTBGR (UInt32 lineColor);
-
-//! Set the current line color by color map index for this ElemMatSymb.
-//! @param[in] index       the new color map index.
-//! @param[in] lineColor   the TBGR color for this color index.
-DGNPLATFORM_EXPORT void SetIndexedLineColorTBGR (int index, UInt32 lineColor);
+void SetLineColor (ColorDef lineColor) { m_lineColor = lineColor; }
+void SetLineTransparency (Byte transparency) {m_lineColor.SetAlpha(transparency);}
 
 //! Set the current fill color for this ElemMatSymb.
 //! @param[in] fillColor   the new TBGR fill color for this ElemMatSymb.
-DGNPLATFORM_EXPORT void SetFillColorTBGR (UInt32 fillColor);
-
-//! Set the current fill color by color map index for this ElemMatSymb.
-//! @param[in] index       the new color map index.
-//! @param[in] fillColor   the TBGR color for this color index.
-DGNPLATFORM_EXPORT void SetIndexedFillColorTBGR (int index, UInt32 fillColor);
+void SetFillColor (ColorDef fillColor) {m_fillColor = fillColor; }
+void SetFillTransparency (Byte transparency) {m_fillColor.SetAlpha(transparency);}
 
 //! Turn on or off the fill flag for this ElemMatSymb.
 //! @param[in] filled      if true, the interior of elements drawn using this ElemMatSymb will be filled using the fill color.
-DGNPLATFORM_EXPORT void SetIsFilled (bool filled);
+void SetIsFilled (bool filled) {m_isFilled = filled;}
 
 //! Set that fill is always behind other geometry.
-DGNPLATFORM_EXPORT void SetIsBlankingRegion (bool blanking);
+void SetIsBlankingRegion (bool blanking) {m_isBlankingRegion = blanking;}
 
 //! Set the width in pixels for this ElemMatSymb.
 //! @param[in] rasterWidth the width in pixels of lines drawn using this ElemMatSymb.
 //! @note         If either TrueWidthStart or TrueWidthEnd are non-zero, this value is ignored.
-DGNPLATFORM_EXPORT void SetWidth (UInt32 rasterWidth);
+void SetWidth (uint32_t rasterWidth) {m_rasterWidth = rasterWidth;}
 
 //! Set the raster pattern for this ElemMatSymb.
 //! @param[in] rasterPat   the 32 bit on-off pattern to be repeated along lines drawn using this ElemMatSymb.
 //! @see          #GetRasterPattern
-DGNPLATFORM_EXPORT void SetRasterPattern (UInt32 rasterPat);
+void SetRasterPattern (uint32_t rasterPat) {m_rasterPat = rasterPat; m_elementStyle = 0; m_extSymbID = 0;}
 
 //! Set a raster pattern derived from a line code for this ElemMatSymb. Used to support plotting of cosmetic line styles mapped to line codes.
 //! @param[in] index       the new line style code.
 //! @param[in] rasterPat   the 32 bit on-off pattern to be repeated along lines drawn using this ElemMatSymb.
 //! @see          #GetRasterPattern #GetRasterPatternIndex
-DGNPLATFORM_EXPORT void SetIndexedRasterPattern (Int32 index, UInt32 rasterPat);
+DGNPLATFORM_EXPORT void SetIndexedRasterPattern (int32_t index, uint32_t rasterPat);
 
 //! Get the LineStyleSymb from this ElemMatSymb for setting line style parameters.
-DGNPLATFORM_EXPORT LineStyleSymbR GetLineStyleSymbR ();
+LineStyleSymbR GetLineStyleSymbR () {return m_lStyleSymb;}
 
 //! Set the render material. NOTE: You must supply a seed context to support geometry maps!
 DGNPLATFORM_EXPORT void SetMaterial (MaterialCP, ViewContextP seedContext = NULL);
 
 //! Set area patterning parameters.
-DGNPLATFORM_EXPORT void         SetPatternParams (PatternParamsPtr& patternParams);
+void SetPatternParams (PatternParamsP patternParams) {m_patternParams = patternParams;}
 
 //@}
 }; // ElemMatSymb
@@ -855,55 +785,47 @@ enum OvrMatSymbFlags //! flags to indicate the parts of a MatSymb that are to be
 //=======================================================================================
 struct OvrMatSymb
 {
-//__PUBLISH_SECTION_END__
 private:
-    UInt32          m_flags;
+    uint32_t        m_flags;
     ElemMatSymb     m_matSymb;
 
 public:
     DGNPLATFORM_EXPORT OvrMatSymb () : m_flags (MATSYMB_OVERRIDE_None) {}
 
-    ElemMatSymbCR   GetMatSymb () const {return m_matSymb;}
-    ElemMatSymbR    GetMatSymbR () {return m_matSymb;}
+    ElemMatSymbCR GetMatSymb () const {return m_matSymb;}
+    ElemMatSymbR GetMatSymbR () {return m_matSymb;}
 
-    DGNPLATFORM_EXPORT uintptr_t GetExtSymbId () const;
-    DGNPLATFORM_EXPORT void SetExtSymbId (uintptr_t extSymbID);
+    uintptr_t GetExtSymbId () const {return m_matSymb.GetExtSymbId();}
+    void SetExtSymbId (uintptr_t extSymbID) {m_matSymb.SetExtSymbId (extSymbID); m_flags |= MATSYMB_OVERRIDE_ExtSymb;}
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
-
     //! Compare two OvrMatSymb.
-    DGNPLATFORM_EXPORT bool operator==(OvrMatSymbCR rhs) const;
+    bool operator==(OvrMatSymbCR rhs) const {if (this == &rhs) return true; if (rhs.m_flags != m_flags) return false; return rhs.m_matSymb == m_matSymb;}
 
-    DGNPLATFORM_EXPORT UInt32       GetFlags () const;
-    DGNPLATFORM_EXPORT UInt32       GetLineColorTBGR () const;
-    DGNPLATFORM_EXPORT UInt32       GetFillColorTBGR () const;
-    DGNPLATFORM_EXPORT int          GetLineColorIndex () const;
-    DGNPLATFORM_EXPORT int          GetFillColorIndex () const;
-    DGNPLATFORM_EXPORT UInt32       GetWidth () const;
-    DGNPLATFORM_EXPORT UInt32       GetRasterPattern () const;
-    DGNPLATFORM_EXPORT Int32        GetRasterPatternIndex () const;
-    DGNPLATFORM_EXPORT MaterialCP   GetMaterial () const;
-    DGNPLATFORM_EXPORT PatternParamsCP GetPatternParams () const;
+    uint32_t GetFlags () const{return m_flags;}
+    ColorDef GetLineColor () const {return m_matSymb.GetLineColor();}
+    ColorDef GetFillColor () const {return m_matSymb.GetFillColor();}
+    uint32_t GetWidth () const {return m_matSymb.GetWidth();}
+    uint32_t GetRasterPattern () const {return m_matSymb.GetRasterPattern();}
+    int32_t GetRasterPatternIndex () const {return m_matSymb.GetRasterPatternIndex ();}
+    MaterialCP GetMaterial () const {return m_matSymb.GetMaterial();}
+    PatternParamsCP GetPatternParams () const {return m_matSymb.GetPatternParams ();}
 
-    DGNPLATFORM_EXPORT void         Clear ();
-    DGNPLATFORM_EXPORT void         SetFlags (UInt32 flags);
-    DGNPLATFORM_EXPORT void         SetLineColorTBGR (UInt32 lineColor);
-    DGNPLATFORM_EXPORT void         SetFillColorTBGR (UInt32 fillColor);
-    DGNPLATFORM_EXPORT void         SetIndexedLineColorTBGR (int index, UInt32 lineColor);
-    DGNPLATFORM_EXPORT void         SetIndexedFillColorTBGR (int index, UInt32 fillColor);
-    DGNPLATFORM_EXPORT void         SetTransparentLineColor (UInt32 transparency);
-    DGNPLATFORM_EXPORT void         SetTransparentFillColor (UInt32 transparency);
-    DGNPLATFORM_EXPORT void         SetWidth (UInt32 rasterWidth);
-    DGNPLATFORM_EXPORT void         SetRasterPattern (UInt32 rasterPat);
-    DGNPLATFORM_EXPORT void         SetIndexedRasterPattern (Int32 index, UInt32 rasterPat);
-    DGNPLATFORM_EXPORT void         SetMaterial (MaterialCP, ViewContextP = NULL);    
-    DGNPLATFORM_EXPORT void         SetPatternParams (PatternParamsPtr& patternParams);
-    DGNPLATFORM_EXPORT void         SetProxy (bool isEdge, bool isHidden);
-    DGNPLATFORM_EXPORT bool         GetProxy (bool& edge, bool& hidden);
-    DGNPLATFORM_EXPORT void         SetUnderlay ();
-    DGNPLATFORM_EXPORT void         SetLineStyle (Int32 styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
+    DGNPLATFORM_EXPORT void Clear ();
+    void SetFlags (uint32_t flags) {m_flags = flags;}
+    void SetLineColor (ColorDef color) {m_matSymb.SetLineColor (color); m_flags |= MATSYMB_OVERRIDE_Color;}
+    void SetFillColor (ColorDef color) {m_matSymb.SetFillColor (color); m_flags |= MATSYMB_OVERRIDE_FillColor;}
+    void SetLineTransparency (Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= MATSYMB_OVERRIDE_ColorTransparency;}
+    void SetFillTransparency (Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= MATSYMB_OVERRIDE_FillColorTransparency;}
+    void SetWidth (uint32_t width) {m_matSymb.SetWidth (width); m_flags |= MATSYMB_OVERRIDE_RastWidth;}
+    void SetRasterPattern (uint32_t rasterPat) {m_matSymb.SetRasterPattern (rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(NULL);}
+    void SetIndexedRasterPattern (int32_t index, uint32_t rasterPat) {m_matSymb.SetIndexedRasterPattern (index, rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle (NULL);}
+    void SetMaterial (MaterialCP material, ViewContextP seedContext=NULL) {m_matSymb.SetMaterial (material, seedContext); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
+    void SetPatternParams (PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams); m_flags |= MATSYMB_OVERRIDE_PatternParams;}
+    void SetProxy (bool edge, bool hidden) {m_flags |= (MATSYMB_OVERRIDE_IsProxy | (edge ? MATSYMB_OVERRIDE_IsProxyEdge : 0) | (hidden ? MATSYMB_OVERRIDE_IsProxyHidden: 0)); }
+    bool GetProxy (bool& edge, bool& hidden) {edge = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyEdge); hidden = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyHidden); return 0 != (m_flags & MATSYMB_OVERRIDE_IsProxy); }
+    void SetUnderlay () { m_flags |= MATSYMB_OVERRIDE_IsProxyUnderlay; }
+    DGNPLATFORM_EXPORT void SetLineStyle (int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
 }; // OvrMatSymb
 
@@ -918,8 +840,8 @@ struct IPointCloudDrawParams
     };
 
     //  If IsThreadBound returns false, implement AddRef and Release using InterlockedIncrement
-    virtual UInt32 AddRef () = 0;
-    virtual UInt32 Release () = 0;
+    virtual uint32_t AddRef () = 0;
+    virtual uint32_t Release () = 0;
     virtual bool IsThreadBound () = 0; // If true, always executed in calling thread instead of QV thread
     virtual VersionNumber GetVersion () { return IPointCloudDrawParams_InitialVersion; }
     virtual bool GetRange (DPoint3dP range) = 0; // returns false if it does not have range
@@ -927,54 +849,126 @@ struct IPointCloudDrawParams
     //  Added to points returned by GetPoints or GetFPoints
     virtual bool GetOrigin (DPoint3dP origin) = 0; // returns false if no origin
 
-    virtual RgbColorDef const* GetRgbColors () = 0; // Returns NULL if not using colors
+    virtual ColorDef const* GetRgbColors () = 0; // Returns NULL if not using colors
 
-    virtual UInt32 GetNumPoints () = 0;
+    virtual uint32_t GetNumPoints () = 0;
     virtual DPoint3dCP GetDPoints () = 0; // Returns NULL if using floats
     virtual FPoint3dCP GetFPoints () = 0; // Returns NULL if using doubles
 };
 
 //=======================================================================================
-//! This interface
-// defines the method used by ViewContext::DrawCached.
+//! This interface defines the method used by ViewContext::DrawCached.
 // @bsiclass 
 //=======================================================================================
 struct IStrokeForCache
 {
-//! Stroke this object to create a cached representation. This method is the callback for ViewContext::DrawCached and can be used
-//! to create a cached presentation for all or part of an element. It will only be called the \b first time ViewContext::DrawCached
-//! is called for a given Element. After that, the cached representation is used and this method is not needed for display.
-//! @param[in]      drawHandle  data from which to draw.
-//! @param[in]      context     context to use to create the cached representation.
-//! @param[in]      pixelSize   size (in local coordinates) of a screen pixel.
-virtual void _StrokeForCache (CachedDrawHandleCR drawHandle, ViewContextR context, double pixelSize = 0.0) = 0;
+    //! Stroke this object to create a cached representation. This method is the callback for ViewContext::DrawCached and can be used
+    //! to create a cached presentation for geometry that is expensive to create. The cached presentation created when this is called
+    //! will then be used for subsequent draws.
+    //! @param[in] context context to use to create the cached representation.
+    //! @param[in] pixelSize size (in local coordinates) of a screen pixel.
+    virtual void _StrokeForCache (ViewContextR context, double pixelSize = 0.0) = 0;
 
-//! Return true only if it's possible for screen size dependent geometry to be stroked. This is typically 
-//! not the case as methods for displaying exact geometry are available.  If, however, a screen size dependent approximation 
-//! (such as a facetted representation of curved geometry) may be displayed then return true. Note that after stroking the
-//! _GetSizeDependentGeometryStroked  method is called to determine if any size dependent geometry was actually displayed.
-//! This method is called before stroking.
-virtual bool _GetSizeDependentGeometryPossible () {return false;}
+    //! Query if it's possible for screen size dependent geometry to be stroked. This is typically
+    //! not the case when methods for displaying exact geometry are available. If however, a screen size dependent 
+    //! approximation (such as a facetted representation of curved geometry) may be displayed, then return true.
+    //! @note This method is called before _StrokeForCache.
+    virtual bool _GetSizeDependentGeometryPossible () const {return false;}
 
-//! Return true only if the stroked geometry was dependent on the screen size.  This method is called after stroking and is only
-//! applicable when _GetSizeDepdentGeometryPossible returns true.
-virtual bool _GetSizeDependentGeometryStroked () {return false;}
+    //! Return true only if the stroked geometry was dependent on the screen size. This method is called after stroking and is only
+    //! applicable when _GetSizeDepdentGeometryPossible returns true.
+    //! @note This method is called after _StrokeForCache to determine if a size dependent cache presentation was actually created.
+    virtual bool _GetSizeDependentGeometryStroked () const {return false;}
 
-//! Return DrawExpense::High only if the representation is very expensive to reproduce, otherwise leave as DrawExpense::Medium.  This will cause 
-//! the cached geometry to be preserved in low memory conditions.  
-virtual DrawExpense _GetDrawExpense () { return DrawExpense::Medium; }
+    //! Return DrawExpense::High only if the representation is very expensive to reproduce, otherwise leave as DrawExpense::Medium.  This will cause
+    //! the cached geometry to be preserved in low memory conditions.
+    virtual DrawExpense _GetDrawExpense () const {return DrawExpense::Medium;}
 
-//! Return true if _StrokeForCache should be called for locate. The geometry output by the stroker will be used to generate the curve/edge hits
-//! required for snapping as well as for locating the interiors of filled/rendered geometry.
-//! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true, see _WantLocateByQvElem.
-virtual bool _WantLocateByStroker () {return true;}
+    //! Return true if _StrokeForCache should be called for locate. The geometry output by the stroker will be used to generate the curve/edge hits
+    //! required for snapping as well as for locating the interiors of filled/rendered geometry.
+    //! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true, see _WantLocateByQvElem.
+    virtual bool _WantLocateByStroker () const {return true;}
 
-//! Return true to locate interiors using the cached result (QvElem). To be used for very expensive cached representations (ex. breps).
-//! As a QvElem hit is only sufficient for locates and not snapping, a stroker that returns true is expected to also maintain it's own
-//! wireframe geometry cache and output it when their _Draw method is called for the purpose of picking.
-virtual bool _WantLocateByQvElem () {return !_WantLocateByStroker ();}
+    //! Return true to locate interiors using the cached result (QvElem). To be used for very expensive cached representations (ex. breps).
+    //! As a QvElem hit is only sufficient for locates and not snapping, a stroker that returns true is expected to also maintain it's own
+    //! wireframe geometry cache and output it when their _Draw method is called for the purpose of picking.
+    virtual bool _WantLocateByQvElem () const {return !_WantLocateByStroker ();}
+
+    //! (2D ONLY) The stroker is required to supply the "net" display priority for the QvElem when it is initially created.
+    //! A QvElem has a single display priority for all it's geometry. It is expected that this method returns the same value that will be supplied to 
+    //! every 2d ICachedDraw call used in creating the QvElem. Even though the priority value supplied to the 2d ICachedDraw methods is not what is 
+    //! used for display, it is still important to callers of _StrokeForCache that it's set consistently.
+    //! @note The net display priority is a combination of the geometry and sub-category display priority.
+    //! @see ViewContext::ResolveNetDisplayPriority
+    virtual double _GetDisplayPriority (ViewContextR context) const {return 0.0;}
+
+    //! Return geometry range for the purpose of calculating pixelSize for creating a size dependent cache representation.
+    //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
+    virtual DRange3d _GetRange () const {return DRange3d::NullRange();}
+
+    //! Return QvCache to use. To use temporary QvCache, override to return nullptr.
+    virtual QvCacheP _GetQVCache () const {return _GetDgnDb().Models().GetQvCache();}
+
+    //! Return key value that may be used to identify/lookup QvElem in QvCache.
+    virtual int32_t _GetQvIndex () const = 0;
+
+    //! Return QvElem created by a prior call to _StrokeForCache. When nullptr is returned, _StrokeForCache will be called to create a new QvElem.
+    virtual QvElemP _GetQvElem (double pixelSize = 0.0) const = 0;
+
+    //! Save the QvElem created by calling _StrokeForCache for use in subsequent draws.
+    virtual void _SaveQvElem (QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const = 0;
+
+    //! Return dgnDb for default QvCache.
+    virtual DgnDbR _GetDgnDb () const = 0;
 
 }; // IStrokeForCache
+
+//=======================================================================================
+//! IStrokeForCache sub-class specific to GeometricElement.
+// @bsiclass 
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE StrokeElementForCache : IStrokeForCache
+{
+protected:
+
+GeometricElementCR  m_element;
+
+public:
+
+explicit StrokeElementForCache (GeometricElementCR element) : m_element (element) {}
+
+virtual DgnDbR _GetDgnDb () const override {return m_element.GetDgnDb();}
+virtual DRange3d _GetRange() const override {return m_element._GetRange3d();}
+virtual QvCacheP _GetQVCache() const override {return m_element.GetMyQvCache();}
+
+DGNPLATFORM_EXPORT virtual QvElemP _GetQvElem (double pixelSize) const;
+DGNPLATFORM_EXPORT virtual void _SaveQvElem (QvElemP, double pixelSize, double sizeDependentRatio) const;
+
+}; // StrokeElementForCache
+
+//=======================================================================================
+//! IStrokeForCache sub-class specific to tools/transient cached graphics.
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TransientCachedGraphics : IStrokeForCache
+{
+protected:
+
+DgnDbR          m_dgnDb;
+mutable QvElemP m_qvElem;
+
+public:
+
+explicit TransientCachedGraphics (DgnDbR dgnDb) : m_dgnDb (dgnDb) {m_qvElem = nullptr;}
+DGNPLATFORM_EXPORT virtual ~TransientCachedGraphics ();
+
+virtual DgnDbR _GetDgnDb () const override {return m_dgnDb;}
+virtual int32_t _GetQvIndex () const override {return 0;} // Not used by Get/Save...
+
+virtual QvElemP _GetQvElem (double pixelSize) const override {return m_qvElem;}
+virtual void _SaveQvElem (QvElemP qvElem, double pixelSize, double sizeDependentRatio) const override {m_qvElem = qvElem;}
+
+}; // TransientCachedGraphics
 
 //=======================================================================================
 //! DgnCore implements this interface to provide methods that draw geometry in either cached or non-cached contexts. However,
@@ -990,7 +984,7 @@ virtual bool _WantLocateByQvElem () {return !_WantLocateByStroker ();}
 //! 
 //! There are typically both 2D and 3D versions of the geometry methods. The choice of whether to use the 2D or 3D version
 //! depends only on whether you have 2D or 3D coordinate information, not on any inherent property of the IDrawGeom. In other words,
-//! there is no such thing as a "2D" or "3D" Viewport, all viewports are always 3D - if you use the 2D methods, they are intrinsically
+//! there is no such thing as a "2D" or "3D" DgnViewport, all viewports are always 3D - if you use the 2D methods, they are intrinsically
 //! planar and oriented on the X,Y plane at the specified Z depth.
 // @bsiclass 
 //=======================================================================================
@@ -1005,15 +999,14 @@ virtual ViewFlagsCP         _GetDrawViewFlags () = 0;
 virtual void                _SetDrawViewFlags (ViewFlagsCP) = 0;
 virtual void                _ActivateMatSymb (ElemMatSymbCP matSymb) = 0;
 virtual void                _ActivateOverrideMatSymb (OvrMatSymbCP ovrMatSymb) = 0;
-
 virtual void                _DrawLineString3d (int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
 virtual void                _DrawLineString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
 virtual void                _DrawPointString3d (int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
 virtual void                _DrawPointString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
 virtual void                _DrawShape3d (int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) = 0;
 virtual void                _DrawShape2d (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) = 0;
-virtual void                _DrawTriStrip3d (int numPoints, DPoint3dCP points, Int32 usageFlags, DPoint3dCP range) = 0;
-virtual void                _DrawTriStrip2d (int numPoints, DPoint2dCP points, Int32 usageFlags, double zDepth, DPoint2dCP range) = 0;
+virtual void                _DrawTriStrip3d (int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) = 0;
+virtual void                _DrawTriStrip2d (int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) = 0;
 virtual void                _DrawArc3d (DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) = 0;
 virtual void                _DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) = 0;
 virtual void                _DrawBSplineCurve (MSBsplineCurveCR curve, bool filled) = 0;
@@ -1026,186 +1019,177 @@ virtual void                _DrawPolyface (PolyfaceQueryCR meshData, bool filled
 virtual StatusInt           _DrawBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0) = 0;
 virtual void                _DrawTextString (TextStringCR text, double* zDepth = NULL) = 0;
 virtual void                _DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
-
 virtual void                _PushTransClip (TransformCP trans, ClipPlaneSetCP clip = NULL) = 0;
 virtual void                _PopTransClip () = 0;
-
 virtual RangeResult         _PushBoundingRange3d (DPoint3dCP range) = 0;
 virtual RangeResult         _PushBoundingRange2d (DPoint2dCP range, double zDepth) = 0;
 virtual void                _PopBoundingRange () = 0;
-
 virtual size_t              _GetMethodIndex() { return 0; }
 virtual void                _PushMethodState () { }
 virtual void                _PopMethodState () { }
 virtual                     ~IDrawGeom () { }
 
-// NOTE: VTable place holders for future IDrawGeom methods
-virtual bool _Dummy1 (void*) {return false;}
-virtual bool _Dummy2 (void*) {return false;}
-virtual bool _Dummy3 (void*) {return false;}
-
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
 
-DGNPLATFORM_EXPORT IDrawGeom ();
+    DGNPLATFORM_EXPORT IDrawGeom ();
 
-//! Get the current View Flags for this object. The view flags are initialized from the view flags
-//! of its controlling Viewport at the beginning of every display operation. However, during display operations,
-//! the view flags are sometimes temporarily modified for specific purposes, so they are not
-//! always the same.
-//! @return the current view flags for this IViewDraw
-DGNPLATFORM_EXPORT ViewFlagsCP GetDrawViewFlags ();
+    //! Get the current View Flags for this object. The view flags are initialized from the view flags
+    //! of its controlling DgnViewport at the beginning of every display operation. However, during display operations,
+    //! the view flags are sometimes temporarily modified for specific purposes, so they are not
+    //! always the same.
+    //! @return the current view flags for this IViewDraw
+    DGNPLATFORM_EXPORT ViewFlagsCP GetDrawViewFlags ();
 
-//! Sets the current state of the ViewFlags for this context's output.
-DGNPLATFORM_EXPORT void SetDrawViewFlags (ViewFlagsCP);
+    //! Sets the current state of the ViewFlags for this context's output.
+    DGNPLATFORM_EXPORT void SetDrawViewFlags (ViewFlagsCP);
 
-//! Set an ElemMatSymb to be the "active" ElemMatSymb for this IDrawGeom.
-//! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will
-//!                                     be displayed using the values in this ElemMatSymb.
-//! @note     See discussion of the symbology "overrides" in #ActivateOverrideMatSymb
-DGNPLATFORM_EXPORT void ActivateMatSymb (ElemMatSymbCP matSymb);
+    //! Set an ElemMatSymb to be the "active" ElemMatSymb for this IDrawGeom.
+    //! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will
+    //!                                     be displayed using the values in this ElemMatSymb.
+    //! @note     See discussion of the symbology "overrides" in #ActivateOverrideMatSymb
+    DGNPLATFORM_EXPORT void ActivateMatSymb (ElemMatSymbCP matSymb);
 
-//! Set an ElemMatSymb to be the "active override" ElemMatSymb for this IDrawGeom.
-//! @param[in]          ovrMatSymb  The new active override ElemMatSymb.
-//!                                     value in ovrMatSymb will be used instead of the value set by #ActivateMatSymb.
-DGNPLATFORM_EXPORT void ActivateOverrideMatSymb (OvrMatSymbCP ovrMatSymb);
+    //! Set an ElemMatSymb to be the "active override" ElemMatSymb for this IDrawGeom.
+    //! @param[in]          ovrMatSymb  The new active override ElemMatSymb.
+    //!                                     value in ovrMatSymb will be used instead of the value set by #ActivateMatSymb.
+    DGNPLATFORM_EXPORT void ActivateOverrideMatSymb (OvrMatSymbCP ovrMatSymb);
 
-//! Draw a 3D line string.
-//! @param[in]          numPoints   Number of vertices in points array.
-//! @param[in]          points      Array of vertices in the line string.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-DGNPLATFORM_EXPORT void DrawLineString3d (int numPoints, DPoint3dCP points, DPoint3dCP range);
+    //! Draw a 3D line string.
+    //! @param[in]          numPoints   Number of vertices in points array.
+    //! @param[in]          points      Array of vertices in the line string.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    DGNPLATFORM_EXPORT void DrawLineString3d (int numPoints, DPoint3dCP points, DPoint3dCP range);
 
-//! Draw a 2D line string.
-//! @param[in]          numPoints   Number of vertices in points array.
-//! @param[in]          points      Array of vertices in the line string.
-//! @param[in]          zDepth      Z depth value in local coordinates.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-DGNPLATFORM_EXPORT void DrawLineString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range);
+    //! Draw a 2D line string.
+    //! @param[in]          numPoints   Number of vertices in points array.
+    //! @param[in]          points      Array of vertices in the line string.
+    //! @param[in]          zDepth      Z depth value in local coordinates.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    DGNPLATFORM_EXPORT void DrawLineString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range);
 
-//! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
-//! @param[in]          numPoints   Number of vertices in points array.
-//! @param[in]          points      Array of vertices in the point string.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-DGNPLATFORM_EXPORT void DrawPointString3d (int numPoints, DPoint3dCP points, DPoint3dCP range);
+    //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
+    //! @param[in]          numPoints   Number of vertices in points array.
+    //! @param[in]          points      Array of vertices in the point string.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    DGNPLATFORM_EXPORT void DrawPointString3d (int numPoints, DPoint3dCP points, DPoint3dCP range);
 
-//! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
-//! @param[in]          numPoints   Number of vertices in points array.
-//! @param[in]          points      Array of vertices in the point string.
-//! @param[in]          zDepth      Z depth value.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-DGNPLATFORM_EXPORT void DrawPointString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range);
+    //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
+    //! @param[in]          numPoints   Number of vertices in points array.
+    //! @param[in]          points      Array of vertices in the point string.
+    //! @param[in]          zDepth      Z depth value.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    DGNPLATFORM_EXPORT void DrawPointString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range);
 
-//! Draw a closed 3D shape.
-//! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
-//!                                     additional vertex will be added to close the shape.
-//! @param[in]          points      Array of vertices of the shape.
-//! @param[in]          filled      If true, the shape will be drawn filled.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-DGNPLATFORM_EXPORT void DrawShape3d (int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range);
+    //! Draw a closed 3D shape.
+    //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
+    //!                                     additional vertex will be added to close the shape.
+    //! @param[in]          points      Array of vertices of the shape.
+    //! @param[in]          filled      If true, the shape will be drawn filled.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    DGNPLATFORM_EXPORT void DrawShape3d (int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range);
 
-//! Draw a 2D shape.
-//! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
-//!                                     additional vertex will be added to close the shape.
-//! @param[in]          points      Array of vertices of the shape.
-//! @param[in]          zDepth      Z depth value.
-//! @param[in]          filled      If true, the shape will be drawn filled.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-DGNPLATFORM_EXPORT void DrawShape2d (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range);
+    //! Draw a 2D shape.
+    //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
+    //!                                     additional vertex will be added to close the shape.
+    //! @param[in]          points      Array of vertices of the shape.
+    //! @param[in]          zDepth      Z depth value.
+    //! @param[in]          filled      If true, the shape will be drawn filled.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    DGNPLATFORM_EXPORT void DrawShape2d (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range);
 
-//! Draw a 3D elliptical arc or ellipse.
-//! @param[in]          ellipse     arc data.
-//! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
-//! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
-//!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass NULL.
-DGNPLATFORM_EXPORT void DrawArc3d (DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range);
+    //! Draw a 3D elliptical arc or ellipse.
+    //! @param[in]          ellipse     arc data.
+    //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
+    //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
+    //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass NULL.
+    DGNPLATFORM_EXPORT void DrawArc3d (DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range);
 
-//! Draw a 2D elliptical arc or ellipse.
-//! @param[in]          ellipse     arc data.
-//! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
-//! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
-//! @param[in]          zDepth      Z depth value
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
-//!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass NULL.
-DGNPLATFORM_EXPORT void DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range);
+    //! Draw a 2D elliptical arc or ellipse.
+    //! @param[in]          ellipse     arc data.
+    //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
+    //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
+    //! @param[in]          zDepth      Z depth value
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
+    //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass NULL.
+    DGNPLATFORM_EXPORT void DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range);
 
-//! Draw a BSpline curve.
-DGNPLATFORM_EXPORT void DrawBSplineCurve (MSBsplineCurveCR curve, bool filled);
+    //! Draw a BSpline curve.
+    DGNPLATFORM_EXPORT void DrawBSplineCurve (MSBsplineCurveCR curve, bool filled);
 
-//! Draw a BSpline curve as 2d geometry with display priority.
-//! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-DGNPLATFORM_EXPORT void DrawBSplineCurve2d (MSBsplineCurveCR curve, bool filled, double zDepth);
+    //! Draw a BSpline curve as 2d geometry with display priority.
+    //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
+    DGNPLATFORM_EXPORT void DrawBSplineCurve2d (MSBsplineCurveCR curve, bool filled, double zDepth);
 
-//! Draw a curve vector.
-DGNPLATFORM_EXPORT void DrawCurveVector (CurveVectorCR curves, bool isFilled);
+    //! Draw a curve vector.
+    DGNPLATFORM_EXPORT void DrawCurveVector (CurveVectorCR curves, bool isFilled);
 
-//! Draw a curve vector as 2d geometry with display priority.
-//! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-DGNPLATFORM_EXPORT void DrawCurveVector2d (CurveVectorCR curves, bool isFilled, double zDepth);
+    //! Draw a curve vector as 2d geometry with display priority.
+    //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
+    DGNPLATFORM_EXPORT void DrawCurveVector2d (CurveVectorCR curves, bool isFilled, double zDepth);
 
-//! Draw a light-weight surface or solid primitive.
-//! @remarks Solid primitives can be capped or uncapped, they include cones, torus, box, spheres, and sweeps.
-DGNPLATFORM_EXPORT void DrawSolidPrimitive (ISolidPrimitiveCR primitive);
+    //! Draw a light-weight surface or solid primitive.
+    //! @remarks Solid primitives can be capped or uncapped, they include cones, torus, box, spheres, and sweeps.
+    DGNPLATFORM_EXPORT void DrawSolidPrimitive (ISolidPrimitiveCR primitive);
 
-//! Draw a BSpline surface.
-DGNPLATFORM_EXPORT void DrawBSplineSurface (MSBsplineSurfaceCR);
+    //! Draw a BSpline surface.
+    DGNPLATFORM_EXPORT void DrawBSplineSurface (MSBsplineSurfaceCR);
 
-//! @note Caller is expected to define texture id for illuminated meshed, SetTextureId.
-//! @remarks Wireframe fill display supported for non-illuminated meshes.
-DGNPLATFORM_EXPORT void DrawPolyface (PolyfaceQueryCR meshData, bool filled = false);
+    //! @note Caller is expected to define texture id for illuminated meshed, SetTextureId.
+    //! @remarks Wireframe fill display supported for non-illuminated meshes.
+    DGNPLATFORM_EXPORT void DrawPolyface (PolyfaceQueryCR meshData, bool filled = false);
 
-//! Draw a BRep surface/solid entity from the solids kernel.
-//! @note Only implemented for ICachedDraw due to potentially expensive/time consuming solids kernel calls.
-DGNPLATFORM_EXPORT StatusInt DrawBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0);
+    //! Draw a BRep surface/solid entity from the solids kernel.
+    //! @note Only implemented for ICachedDraw due to potentially expensive/time consuming solids kernel calls.
+    DGNPLATFORM_EXPORT StatusInt DrawBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0);
 
-//! Draw a series of Glyphs
-//! @param[in]          text        Text drawing parameters
-//! @param[in]          zDepth      Priority value in 2d or NULL
-DGNPLATFORM_EXPORT void DrawTextString (TextStringCR text, double* zDepth = NULL);
+    //! Draw a series of Glyphs
+    //! @param[in]          text        Text drawing parameters
+    //! @param[in]          zDepth      Priority value in 2d or NULL
+    DGNPLATFORM_EXPORT void DrawTextString (TextStringCR text, double* zDepth = NULL);
 
-//__PUBLISH_SECTION_END__
-//! Draw a filled triangle strip from 3D points.
-//! @param[in]          numPoints   Number of vertices in \c points array.
-//! @param[in]          points      Array of vertices.
-//! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-DGNPLATFORM_EXPORT void DrawTriStrip3d (int numPoints, DPoint3dCP points, Int32 usageFlags, DPoint3dCP range);
+    //__PUBLISH_SECTION_END__
+    //! Draw a filled triangle strip from 3D points.
+    //! @param[in]          numPoints   Number of vertices in \c points array.
+    //! @param[in]          points      Array of vertices.
+    //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    DGNPLATFORM_EXPORT void DrawTriStrip3d (int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range);
 
-//! Draw a filled triangle strip from 2D points.
-//! @param[in]          numPoints   Number of vertices in \c points array.
-//! @param[in]          points      Array of vertices.
-//! @param[in]          zDepth      Z depth value.
-//! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
-//! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-DGNPLATFORM_EXPORT void DrawTriStrip2d (int numPoints, DPoint2dCP points, Int32 usageFlags, double zDepth, DPoint2dCP range);
+    //! Draw a filled triangle strip from 2D points.
+    //! @param[in]          numPoints   Number of vertices in \c points array.
+    //! @param[in]          points      Array of vertices.
+    //! @param[in]          zDepth      Z depth value.
+    //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
+    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    DGNPLATFORM_EXPORT void DrawTriStrip2d (int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range);
 
-DGNPLATFORM_EXPORT void DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts);
+    DGNPLATFORM_EXPORT void DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts);
 
-DGNPLATFORM_EXPORT RangeResult  PushBoundingRange3d (DPoint3dCP range);
-DGNPLATFORM_EXPORT RangeResult  PushBoundingRange2d (DPoint2dCP range, double zDepth);
-DGNPLATFORM_EXPORT void         PopBoundingRange ();
+    DGNPLATFORM_EXPORT RangeResult  PushBoundingRange3d (DPoint3dCP range);
+    DGNPLATFORM_EXPORT RangeResult  PushBoundingRange2d (DPoint2dCP range, double zDepth);
+    DGNPLATFORM_EXPORT void         PopBoundingRange ();
 
-size_t  GetMethodIndex ();
-void    PushMethodState ();
-void    PopMethodState ();
+    size_t  GetMethodIndex ();
+    void    PushMethodState ();
+    void    PopMethodState ();
 
-//__PUBLISH_SECTION_START__
-// Helper Methods to draw simple SolidPrimitives.
-DGNPLATFORM_EXPORT void DrawTorus (DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped);
-DGNPLATFORM_EXPORT void DrawCone (DPoint3dCR centerA, DPoint3dCR centerB, double radiusA, double radiusB, bool capped);
-DGNPLATFORM_EXPORT void DrawSphere (DPoint3dCR center, RotMatrixCR axes, double radius);
-DGNPLATFORM_EXPORT void DrawBox (DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped);
-
+    //__PUBLISH_SECTION_START__
+    // Helper Methods to draw simple SolidPrimitives.
+    DGNPLATFORM_EXPORT void DrawTorus (DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped);
+    DGNPLATFORM_EXPORT void DrawCone (DPoint3dCR centerA, DPoint3dCR centerB, double radiusA, double radiusB, bool capped);
+    DGNPLATFORM_EXPORT void DrawSphere (DPoint3dCR center, RotMatrixCR axes, double radius);
+    DGNPLATFORM_EXPORT void DrawBox (DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped);
 }; // IDrawGeom
 
 //=======================================================================================
@@ -1217,26 +1201,21 @@ struct IViewDraw : IDrawGeom
 //__PUBLISH_SECTION_END__
 protected:
 virtual void        _SetToViewCoords (bool yesNo) = 0;
-virtual void        _SetSymbology (UInt32 lineColorTBGR, UInt32 fillColorTBGR, int lineWidth, UInt32 linePattern) = 0;
-virtual void        _DrawGrid (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, UInt32 gridsPerRef, Point2dCR repetitions) = 0;
+virtual void        _SetSymbology (ColorDef lineColor, ColorDef fillColor, int lineWidth, uint32_t linePattern) = 0;
+virtual void        _DrawGrid (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) = 0;
 virtual bool        _DrawSprite (ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) = 0;
 virtual void        _DrawTiledRaster (ITiledRaster* tiledRaster) = 0;
-virtual void        _DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, byte const* texels, double zDepth, DPoint2d const *range) = 0;
-virtual void        _DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, byte const* texels, DPoint3dCP range) = 0;
+virtual void        _DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
+virtual void        _DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
 virtual void        _DrawDgnOle (IDgnOleDraw*) = 0;
 virtual void        _DrawPointCloud (IPointCloudDrawParams* drawParams) = 0;
-virtual void        _DrawQvElem3d (QvElem* qvElem, int subElemIndex) = 0;
-virtual void        _DrawQvElem2d (QvElem* qvElem, double zDepth, int subElemIndex) = 0;
-virtual void        _PushRenderOverrides(ViewFlags, CookedDisplayStyleCP displayOverrides = NULL) = 0;
-virtual void        _PopRenderOverrides () = 0;
+virtual void        _DrawQvElem (QvElem* qvElem, int subElemIndex) = 0;
 virtual void        _ClearZ () = 0;
 
-virtual CookedDisplayStyleCP _GetDrawDisplayStyle () const = 0;
-virtual uintptr_t   _DefineQVTexture (WCharCP textureName, DgnProjectP) {return 0;}
+virtual uintptr_t   _DefineQVTexture (WCharCP textureName, DgnDbP) {return 0;}
 virtual void        _DefineQVGeometryMap (MaterialCR material, ElementHandleCR eh, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
 
 virtual bool        _IsOutputQuickVision () const = 0;
-virtual bool        _DeferShadowsToHeal () const = 0;
 virtual bool        _ApplyMonochromeOverrides (ViewFlagsCR) const = 0;
 virtual StatusInt   _TestOcclusion (int numVolumes, DPoint3dP  verts, int* results) = 0;
 
@@ -1259,7 +1238,7 @@ DGNPLATFORM_EXPORT void SetToViewCoords (bool yesNo);
 //! @param[in]      fillColorTBGR   TBGR color for filled regions.
 //! @param[in]      lineWidth       The line width in pixels.
 //! @param[in]      linePattern     The 32 bit on/off pattern for lines.
-DGNPLATFORM_EXPORT void SetSymbology (UInt32 lineColorTBGR, UInt32 fillColorTBGR, int lineWidth, UInt32 linePattern);
+DGNPLATFORM_EXPORT void SetSymbology (ColorDef lineColorTBGR, ColorDef fillColorTBGR, int lineWidth, uint32_t linePattern);
 
 //! Draw the grid matrix.
 //! @param[in]      doIsoGrid       Draw the isometric grid points (if applicable).
@@ -1269,7 +1248,7 @@ DGNPLATFORM_EXPORT void SetSymbology (UInt32 lineColorTBGR, UInt32 fillColorTBGR
 //! @param[in]      yVector         Direction of grid y.
 //! @param[in]      gridsPerRef     Draw reference lines.
 //! @param[in]      repetitions     X,y values for number or repetitions.
-DGNPLATFORM_EXPORT void DrawGrid (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, UInt32 gridsPerRef, Point2dCR repetitions);
+DGNPLATFORM_EXPORT void DrawGrid (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions);
 
 //! Draw a sprite at a specific location.
 //! @param[in]      sprite          The sprite definition.
@@ -1285,23 +1264,15 @@ DGNPLATFORM_EXPORT bool DrawSprite (ISprite* sprite, DPoint3dCP location, DPoint
 //! @param[in]      tiledRaster     The Tiled Raster to draw.
 DGNPLATFORM_EXPORT void DrawTiledRaster (ITiledRaster* tiledRaster);
 
-DGNPLATFORM_EXPORT void DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, byte const* texels, double zDepth, DPoint2dCP range);
-DGNPLATFORM_EXPORT void DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, byte const* texels, DPoint3dCP range);
+DGNPLATFORM_EXPORT void DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range);
+DGNPLATFORM_EXPORT void DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range);
 
 //! Draw a 3D point cloud.
 //! @param[in]      drawParams      Object containing draw parameters.
 DGNPLATFORM_EXPORT void DrawPointCloud (IPointCloudDrawParams* drawParams);
 
-DGNPLATFORM_EXPORT void DrawQvElem3d (QvElem* qvElem, int subElemIndex = 0);
-
 //! Draw a QvElem
-DGNPLATFORM_EXPORT void DrawQvElem2d (QvElem* qvElem, double zDepth, int subElemIndex = 0);
-
-//! Push render overrides
-DGNPLATFORM_EXPORT void PushRenderOverrides (ViewFlags, CookedDisplayStyleCP = NULL);
-
-//! Pop render overrides. See #PushRenderOverrides.
-DGNPLATFORM_EXPORT void PopRenderOverrides();
+DGNPLATFORM_EXPORT void DrawQvElem (QvElem* qvElem, int subElemIndex = 0);
 
 //__PUBLISH_SECTION_END__
 //! Draw OLE object.
@@ -1317,12 +1288,10 @@ DGNPLATFORM_EXPORT void PopClipStencil ();
 
 DGNPLATFORM_EXPORT StatusInt TestOcclusion (int numVolumes, DPoint3dP verts, int* results);
 
-DGNPLATFORM_EXPORT CookedDisplayStyleCP GetDrawDisplayStyle ();
 DGNPLATFORM_EXPORT void ClearZ ();
-DGNPLATFORM_EXPORT uintptr_t DefineQVTexture (WCharCP textureName, DgnProjectP dgnFile);
+DGNPLATFORM_EXPORT uintptr_t DefineQVTexture (WCharCP textureName, DgnDbP dgnFile);
 DGNPLATFORM_EXPORT void DefineQVGeometryMap (MaterialCR material, ElementHandleCR eh, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
 DGNPLATFORM_EXPORT bool IsOutputQuickVision () const;
-DGNPLATFORM_EXPORT bool DeferShadowsToHeal () const;
 bool ApplyMonochromeOverrides (ViewFlagsCR) const;
 
 //__PUBLISH_SECTION_START__
@@ -1343,14 +1312,14 @@ virtual void    _SetCacheElement (QvElem*) = 0;
 
 protected:
                                                                                                            
-virtual void    _BeginCacheElement (bool is3d, QvCache*, ViewFlagsCP, uintptr_t elementId) = 0;
+virtual void    _BeginCacheElement (QvCache*, bool is3d, double zDepth, uintptr_t elementId) = 0;
 virtual QvElem* _EndCacheElement () = 0;
 virtual void    _AssignElementToView (QvView*, QvElem*, int viewMode) = 0;
 
 //__PUBLISH_SECTION_START__
 public:
 
-DGNPLATFORM_EXPORT void    BeginCacheElement (bool is3d, QvCache*, ViewFlagsCP, uintptr_t elementId = 0);
+DGNPLATFORM_EXPORT void    BeginCacheElement (QvCache*, bool is3d = true, double zDepth = 0.0, uintptr_t elementId = 0);
 DGNPLATFORM_EXPORT QvElem* EndCacheElement ();
 DGNPLATFORM_EXPORT void    AssignElementToView (QvView*, QvElem*, int viewMode = 0);
 

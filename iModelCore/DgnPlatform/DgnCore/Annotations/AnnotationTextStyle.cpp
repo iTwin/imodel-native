@@ -1,14 +1,14 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationTextStyle.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
- 
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextStylePersistence.h>
 
 template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
 
+USING_NAMESPACE_EC
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace flatbuffers;
 
@@ -26,8 +26,6 @@ bool AnnotationTextStylePropertyBag::_IsIntegerProperty(T_Key key) const
         case AnnotationTextStyleProperty::FontId:
         case AnnotationTextStyleProperty::IsBold:
         case AnnotationTextStyleProperty::IsItalic:
-        case AnnotationTextStyleProperty::IsSubScript:
-        case AnnotationTextStyleProperty::IsSuperScript:
         case AnnotationTextStyleProperty::IsUnderlined:
         case AnnotationTextStyleProperty::StackedFractionType:
             return true;
@@ -91,11 +89,11 @@ void AnnotationTextStylePropertyBag::SetRealProperty(AnnotationTextStyleProperty
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextStylePtr AnnotationTextStyle::Create(DgnProjectR project) { return new AnnotationTextStyle(project); }
-AnnotationTextStyle::AnnotationTextStyle(DgnProjectR project) :
+AnnotationTextStylePtr AnnotationTextStyle::Create(DgnDbR project) { return new AnnotationTextStyle(project); }
+AnnotationTextStyle::AnnotationTextStyle(DgnDbR project) :
     T_Super()
     {
-    m_project = &project;
+    m_dgndb = &project;
     }
 
 //---------------------------------------------------------------------------------------
@@ -106,7 +104,7 @@ AnnotationTextStyle::AnnotationTextStyle(AnnotationTextStyleCR rhs) : T_Super(rh
 AnnotationTextStyleR AnnotationTextStyle::operator=(AnnotationTextStyleCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationTextStyle::CopyFrom(AnnotationTextStyleCR rhs)
     {
-    m_project = rhs.m_project;
+    m_dgndb = rhs.m_dgndb;
     m_id = rhs.m_id;
     m_name = rhs.m_name;
     m_description = rhs.m_description;
@@ -127,7 +125,7 @@ void AnnotationTextStyle::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-DgnProjectR AnnotationTextStyle::GetDgnProjectR() const { return *m_project; }
+DgnDbR AnnotationTextStyle::GetDgnProjectR() const { return *m_dgndb; }
 DgnStyleId AnnotationTextStyle::GetId() const { return m_id; }
 void AnnotationTextStyle::SetId(DgnStyleId value) { m_id = value; }
 Utf8StringCR AnnotationTextStyle::GetName() const { return m_name; }
@@ -175,12 +173,12 @@ static void setRealValue(AnnotationTextStylePropertyBagR data, AnnotationTextSty
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
 static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_COLORID_VALUE = 0;
-UInt32 AnnotationTextStyle::GetColorId() const { return (UInt32)getIntegerValue(m_data, AnnotationTextStyleProperty::ColorId, DEFAULT_COLORID_VALUE); }
-void AnnotationTextStyle::SetColorId(UInt32 value) { setIntegerValue(m_data, AnnotationTextStyleProperty::ColorId, DEFAULT_COLORID_VALUE, value); }
+ColorDef AnnotationTextStyle::GetColor() const { return ColorDef((uint32_t)getIntegerValue(m_data, AnnotationTextStyleProperty::ColorId, DEFAULT_COLORID_VALUE)); }
+void AnnotationTextStyle::SetColor(ColorDef value) { setIntegerValue(m_data, AnnotationTextStyleProperty::ColorId, DEFAULT_COLORID_VALUE, value.GetValue()); }
 
 static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_FONTID_VALUE = 0;
-UInt32 AnnotationTextStyle::GetFontId() const { return (UInt32)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE); }
-void AnnotationTextStyle::SetFontId(UInt32 value) { setIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE, value); }
+uint32_t AnnotationTextStyle::GetFontId() const { return (uint32_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE); }
+void AnnotationTextStyle::SetFontId(uint32_t value) { setIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE, value); }
 
 static const AnnotationTextStylePropertyBag::T_Real DEFAULT_HEIGHT_VALUE = 1.0;
 double AnnotationTextStyle::GetHeight() const { return getRealValue(m_data, AnnotationTextStyleProperty::Height, DEFAULT_HEIGHT_VALUE); }
@@ -198,14 +196,6 @@ static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_ISITALIC_VALUE = 
 bool AnnotationTextStyle::IsItalic() const { return (0 != getIntegerValue(m_data, AnnotationTextStyleProperty::IsItalic, DEFAULT_ISITALIC_VALUE)); }
 void AnnotationTextStyle::SetIsItalic(bool value) { setIntegerValue(m_data, AnnotationTextStyleProperty::IsItalic, DEFAULT_ISITALIC_VALUE, (value ? 1 : 0)); }
 
-static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_ISSUBSCRIPT_VALUE = 0;
-bool AnnotationTextStyle::IsSubScript() const { return (0 != getIntegerValue(m_data, AnnotationTextStyleProperty::IsSubScript, DEFAULT_ISSUBSCRIPT_VALUE)); }
-void AnnotationTextStyle::SetIsSubScript(bool value) { setIntegerValue(m_data, AnnotationTextStyleProperty::IsSubScript, DEFAULT_ISSUBSCRIPT_VALUE, (value ? 1 : 0)); }
-
-static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_ISSUPERSCRIPT_VALUE = 0;
-bool AnnotationTextStyle::IsSuperScript() const { return (0 != getIntegerValue(m_data, AnnotationTextStyleProperty::IsSuperScript, DEFAULT_ISSUPERSCRIPT_VALUE)); }
-void AnnotationTextStyle::SetIsSuperScript(bool value) { setIntegerValue(m_data, AnnotationTextStyleProperty::IsSuperScript, DEFAULT_ISSUPERSCRIPT_VALUE, (value ? 1 : 0)); }
-
 static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_ISUNDERLINED_VALUE = 0;
 bool AnnotationTextStyle::IsUnderlined() const { return (0 != getIntegerValue(m_data, AnnotationTextStyleProperty::IsUnderlined, DEFAULT_ISUNDERLINED_VALUE)); }
 void AnnotationTextStyle::SetIsUnderlined(bool value) { setIntegerValue(m_data, AnnotationTextStyleProperty::IsUnderlined, DEFAULT_ISUNDERLINED_VALUE, (value ? 1 : 0)); }
@@ -216,7 +206,7 @@ void AnnotationTextStyle::SetStackedFractionScale(double value) { setRealValue(m
 
 static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_STACKEDFRACTIONTYPE_VALUE = (AnnotationTextStylePropertyBag::T_Integer)AnnotationStackedFractionType::HorizontalBar;
 AnnotationStackedFractionType AnnotationTextStyle::GetStackedFractionType() const { return (AnnotationStackedFractionType)getIntegerValue(m_data, AnnotationTextStyleProperty::StackedFractionType, DEFAULT_STACKEDFRACTIONTYPE_VALUE); }
-void AnnotationTextStyle::SetStackedFractionType(AnnotationStackedFractionType value) { setIntegerValue(m_data, AnnotationTextStyleProperty::StackedFractionType, DEFAULT_STACKEDFRACTIONTYPE_VALUE, (UInt32)value); }
+void AnnotationTextStyle::SetStackedFractionType(AnnotationStackedFractionType value) { setIntegerValue(m_data, AnnotationTextStyleProperty::StackedFractionType, DEFAULT_STACKEDFRACTIONTYPE_VALUE, (uint32_t)value); }
 
 static const AnnotationTextStylePropertyBag::T_Real DEFAULT_SUBSCRIPTOFFSETFACTOR_VALUE = -0.15;
 double AnnotationTextStyle::GetSubScriptOffsetFactor() const { return getRealValue(m_data, AnnotationTextStyleProperty::SubScriptOffsetFactor, DEFAULT_SUBSCRIPTOFFSETFACTOR_VALUE); }
@@ -239,6 +229,14 @@ double AnnotationTextStyle::GetWidthFactor() const { return getRealValue(m_data,
 void AnnotationTextStyle::SetWidthFactor(double value) { setRealValue(m_data, AnnotationTextStyleProperty::WidthFactor, DEFAULT_WIDTHFACTOR_VALUE, value); }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     01/2015
+//---------------------------------------------------------------------------------------
+DgnFontCR AnnotationTextStyle::ResolveFont() const
+    {
+    return DgnFontManager::ResolveFont(GetFontId(), *m_dgndb, DGNFONTVARIANT_DontCare);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
 AnnotationTextStylePtr AnnotationTextStyle::CreateEffectiveStyle(AnnotationTextStylePropertyBagCR overrides) const
@@ -256,8 +254,8 @@ AnnotationTextStylePtr AnnotationTextStyle::CreateEffectiveStyle(AnnotationTextS
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
-static const UInt32 CURRENT_MAJOR_VERSION = 1;
-static const UInt32 CURRENT_MINOR_VERSION = 0;
+static const uint32_t CURRENT_MAJOR_VERSION = 1;
+static const uint32_t CURRENT_MINOR_VERSION = 0;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -314,8 +312,6 @@ BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationText
     appendRealSetter(setters, data, AnnotationTextStyleProperty::LineSpacingFactor, FB::AnnotationTextStyleProperty_LineSpacingFactor, DEFAULT_LINESPACINGFACTOR_VALUE);
     appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsBold, FB::AnnotationTextStyleProperty_IsBold, DEFAULT_ISBOLD_VALUE);
     appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsItalic, FB::AnnotationTextStyleProperty_IsItalic, DEFAULT_ISITALIC_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsSubScript, FB::AnnotationTextStyleProperty_IsSubScript, DEFAULT_ISSUBSCRIPT_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsSuperScript, FB::AnnotationTextStyleProperty_IsSuperScript, DEFAULT_ISSUPERSCRIPT_VALUE);
     appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsUnderlined, FB::AnnotationTextStyleProperty_IsUnderlined, DEFAULT_ISUNDERLINED_VALUE);
     appendRealSetter(setters, data, AnnotationTextStyleProperty::StackedFractionScale, FB::AnnotationTextStyleProperty_StackedFractionScale, DEFAULT_STACKEDFRACTIONSCALE_VALUE);
     appendIntegerSetter(setters, data, AnnotationTextStyleProperty::StackedFractionType, FB::AnnotationTextStyleProperty_StackedFractionType, DEFAULT_STACKEDFRACTIONTYPE_VALUE);
@@ -399,8 +395,6 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
             case FB::AnnotationTextStyleProperty_LineSpacingFactor: data.SetRealProperty(AnnotationTextStyleProperty::LineSpacingFactor, setter.realValue()); break;
             case FB::AnnotationTextStyleProperty_IsBold: data.SetIntegerProperty(AnnotationTextStyleProperty::IsBold, setter.integerValue()); break;
             case FB::AnnotationTextStyleProperty_IsItalic: data.SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_IsSubScript: data.SetIntegerProperty(AnnotationTextStyleProperty::IsSubScript, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_IsSuperScript: data.SetIntegerProperty(AnnotationTextStyleProperty::IsSuperScript, setter.integerValue()); break;
             case FB::AnnotationTextStyleProperty_IsUnderlined: data.SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, setter.integerValue()); break;
             case FB::AnnotationTextStyleProperty_StackedFractionScale: data.SetRealProperty(AnnotationTextStyleProperty::StackedFractionScale, setter.realValue()); break;
             case FB::AnnotationTextStyleProperty_StackedFractionType: data.SetIntegerProperty(AnnotationTextStyleProperty::StackedFractionType, setter.integerValue()); break;
@@ -447,136 +441,197 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
 //*****************************************************************************************************************************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
+// @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
 AnnotationTextStylePtr DgnAnnotationTextStyles::QueryById(DgnStyleId id) const
     {
-    PRECONDITION(id.IsValid(), NULL);
+    PRECONDITION(id.IsValid(), nullptr);
 
-    DgnStyles::Style styleRow = m_project.Styles().QueryStyleById(DgnStyleType::AnnotationText, id);
-    if (!styleRow.GetId().IsValid())
-        return NULL;
+    Statement query;
+    query.Prepare(m_dgndb, "SELECT Name,Descr,Data FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_AnnotationText " AND Id=?");
+    query.BindId(1, id);
 
-    AnnotationTextStylePtr style = AnnotationTextStyle::Create(m_project);
-    
+    if (BE_SQLITE_ROW != query.Step())
+        return nullptr;
+
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(m_dgndb);
+
     // IMPORTANT: Decoding "resets" the style object to ensure defaults for non-persisted values.
-    // Therefore, do this before setting the fields from the table.
-    POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(*style, (ByteCP)styleRow.GetData(), styleRow.GetDataSize()), NULL);
-    
-    style->SetDescription(styleRow.GetDescription());
+    // Since we store name and description independently, we must decode first, otherwise they'll be reset.
+    POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(*style, (ByteCP)query.GetValueBlob(2), (size_t)query.GetColumnBytes(2)), nullptr);
+
+    style->SetDescription(query.GetValueText(1));
     style->SetId(id);
-    style->SetName(styleRow.GetName());
+    style->SetName(query.GetValueText(0));
 
     return style;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
+// @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
 AnnotationTextStylePtr DgnAnnotationTextStyles::QueryByName(Utf8CP name) const
     {
-    PRECONDITION(!Utf8String::IsNullOrEmpty(name), NULL);
+    PRECONDITION(!Utf8String::IsNullOrEmpty(name), nullptr);
 
-    DgnStyleId id = m_project.Styles().QueryStyleId(DgnStyleType::AnnotationText, name);
-    if (!id.IsValid())
-        return NULL;
+    Statement query;
+    query.Prepare(m_dgndb, "SELECT Id,Descr,Data FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_AnnotationText " AND Name=?");
+    query.BindText(1, name, Statement::MakeCopy::No);
 
-    return QueryById(id);
+    if (BE_SQLITE_ROW != query.Step())
+        return nullptr;
+
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(m_dgndb);
+
+    // IMPORTANT: Decoding "resets" the style object to ensure defaults for non-persisted values.
+    // Since we store name and description independently, we must decode first, otherwise they'll be reset.
+    POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(*style, (ByteCP)query.GetValueBlob(2), (size_t)query.GetColumnBytes(2)), nullptr);
+    
+    style->SetDescription(query.GetValueText(1));
+    style->SetId(query.GetValueId<DgnStyleId>(0));
+    style->SetName(name);
+
+    return style;
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2014
+//---------------------------------------------------------------------------------------
+DgnStyleId DgnAnnotationTextStyles::Iterator::Entry::GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
+Utf8CP DgnAnnotationTextStyles::Iterator::Entry::GetName() const { Verify(); return m_sql->GetValueText(1); }
+Utf8CP DgnAnnotationTextStyles::Iterator::Entry::GetDescription() const { Verify(); return m_sql->GetValueText(2); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2014
+//---------------------------------------------------------------------------------------
+DgnAnnotationTextStyles::Iterator::const_iterator DgnAnnotationTextStyles::Iterator::begin() const
+    {
+    if (!m_stmt.IsValid())
+        {
+        Utf8String sql = MakeSqlString("SELECT Id,Name,Descr FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_AnnotationText, true);
+        m_db->GetCachedStatement(m_stmt, sql.c_str());
+        m_params.Bind(*m_stmt);
+        }
+    else
+        {
+        m_stmt->Reset();
+        }
+
+    return Entry(m_stmt.get(), (BE_SQLITE_ROW == m_stmt->Step()));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2014
+//---------------------------------------------------------------------------------------
+size_t DgnAnnotationTextStyles::Iterator::QueryCount() const
+    {
+    Utf8String sql = MakeSqlString("SELECT COUNT(*) FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_AnnotationText, true);
+
+    Statement query;
+    query.Prepare(*m_db, sql.c_str());
+    m_params.Bind(query);
+
+    POSTCONDITION(BE_SQLITE_ROW == query.Step(), 0);
+
+    return (size_t)query.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
 bool DgnAnnotationTextStyles::ExistsById(DgnStyleId id) const
     {
     PRECONDITION(id.IsValid(), false);
 
-    DgnStyles::Style styleRow = m_project.Styles().QueryStyleById(DgnStyleType::AnnotationText, id);
-    
-    return styleRow.GetId().IsValid();
+    Statement query;
+    query.Prepare(m_dgndb, "SELECT COUNT(*) FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_AnnotationText " AND Id=?");
+    query.BindId(1, id);
+
+    if (BE_SQLITE_ROW != query.Step())
+        return false;
+
+    return (query.GetValueInt(0) > 0);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
+// @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
 bool DgnAnnotationTextStyles::ExistsByName(Utf8CP name) const
     {
     PRECONDITION(!Utf8String::IsNullOrEmpty(name), false);
 
-    DgnStyleId id = m_project.Styles().QueryStyleId(DgnStyleType::AnnotationText, name);
-    
-    return id.IsValid();
+    Statement query;
+    query.Prepare(m_dgndb, "SELECT COUNT(*) FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_AnnotationText " AND Name=?");
+    query.BindText(1, name, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != query.Step())
+        return nullptr;
+
+    return (query.GetValueInt(0) > 0);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
+// @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
-AnnotationTextStylePtr DgnAnnotationTextStyles::Insert(AnnotationTextStyleCR style)
+BentleyStatus DgnAnnotationTextStyles::Insert(AnnotationTextStyleR style)
     {
-    PRECONDITION(!style.GetName().empty(), NULL);
-    PRECONDITION(&style.GetDgnProjectR() == &m_project, NULL);
+    // Don't assert to ensure an invalid ID.
+    // Consider the case of cloning a style object, modifying, and then inserting it as a new style. The Clone keeps the ID, and I don't think it's worth having an overload of Clone to expose this detail.
+
+    bvector<Byte> data;
+    PRECONDITION(SUCCESS == AnnotationTextStylePersistence::EncodeAsFlatBuf(data, style, AnnotationTextStylePersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), ERROR);
+
+    DgnStyleId nextId;
+    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetNextRepositoryBasedId(nextId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
     
-    bvector<Byte> styleData;
-    POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::EncodeAsFlatBuf(styleData, style, AnnotationTextStylePersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), NULL);
+    Statement insert;
+    insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Style) " (Id,Type,Name,Descr,Data) VALUES (?," DGN_STYLE_TYPE_AnnotationText ",?,?,?)");
+    insert.BindId(1, nextId);
+    insert.BindText(2, style.GetName().c_str(), Statement::MakeCopy::No);
+    insert.BindText(3, style.GetDescription().c_str(), Statement::MakeCopy::No);
+    insert.BindBlob(4, (void const*)&data[0], (int)data.size(), Statement::MakeCopy::No);
 
-    DgnStyles::Style styleRow(DgnStyleId(), DgnStyleType::AnnotationText, style.GetName().c_str(), style.GetDescription().c_str(), &styleData[0], styleData.size());
-    if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != m_project.Styles().InsertStyle(styleRow)))
-        return NULL;
+    POSTCONDITION(BE_SQLITE_DONE == insert.Step(), ERROR);
 
-    return QueryById(styleRow.GetId());
+    style.SetId(nextId);
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
+// @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnAnnotationTextStyles::Update(AnnotationTextStyleCR style)
     {
     PRECONDITION(style.GetId().IsValid(), ERROR);
-    PRECONDITION(!style.GetName().empty(), ERROR);
-    PRECONDITION(&style.GetDgnProjectR() == &m_project, ERROR);
     
-    bvector<Byte> styleData;
-    POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::EncodeAsFlatBuf(styleData, style, AnnotationTextStylePersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), ERROR);
+    bvector<Byte> data;
+    PRECONDITION(SUCCESS == AnnotationTextStylePersistence::EncodeAsFlatBuf(data, style, AnnotationTextStylePersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), ERROR);
 
-    DgnStyles::Style styleRow(style.GetId(), DgnStyleType::AnnotationText, style.GetName().c_str(), style.GetDescription().c_str(), &styleData[0], styleData.size());
-    if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != m_project.Styles().UpdateStyle(styleRow)))
-        return ERROR;
+    Statement update;
+    update.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Style) " SET Name=?,Descr=?,Data=? WHERE Type=" DGN_STYLE_TYPE_AnnotationText " AND Id=?");
+    update.BindText(1, style.GetName().c_str(), Statement::MakeCopy::No);
+    update.BindText(2, style.GetDescription().c_str(), Statement::MakeCopy::No);
+    update.BindBlob(3, (void const*)&data[0], (int)data.size(), Statement::MakeCopy::No);
+    update.BindId(4, style.GetId());
+
+    POSTCONDITION(BE_SQLITE_DONE == update.Step(), ERROR);
 
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
+// @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnAnnotationTextStyles::Delete(DgnStyleId id)
     {
     PRECONDITION(id.IsValid(), ERROR);
-    
-    POSTCONDITION(BE_SQLITE_DONE == m_project.Styles().DeleteStyle(DgnStyleType::AnnotationText, id), ERROR);
+
+    Statement del;
+    del.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_AnnotationText " AND Id=?");
+    del.BindId(1, id);
+
+    POSTCONDITION(BE_SQLITE_DONE == del.Step(), ERROR);
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
-//---------------------------------------------------------------------------------------
-DgnStyles::Iterator DgnAnnotationTextStyles::MakeIterator(DgnStyleSort sortOrder) const
-    {
-    Utf8String queryModifierClauses;
-    queryModifierClauses.Sprintf("WHERE Type=%d", DgnStyleType::AnnotationText);
-
-    switch (sortOrder)
-        {
-        case DgnStyleSort::None:       break;
-        case DgnStyleSort::NameAsc:    queryModifierClauses += " ORDER BY Name ASC";   break;
-        case DgnStyleSort::NameDsc:    queryModifierClauses += " ORDER BY Name DESC";  break;
-
-        default:
-            BeAssert(false); // Unknown/unexpected DgnStyleSort
-            break;
-        }
-
-    DgnStyles::Iterator it(m_project);
-    it.Params().SetWhere(queryModifierClauses.c_str());
-    return it;
     }

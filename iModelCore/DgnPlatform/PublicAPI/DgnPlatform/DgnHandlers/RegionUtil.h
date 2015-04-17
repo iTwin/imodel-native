@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/RegionUtil.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,7 +73,7 @@ struct RegionParams
     bool            m_forcePlanar;
     bool            m_dirty;
 
-    UInt32          m_reservedFlags;
+    uint32_t        m_reservedFlags;
 
     double          m_gapTolerance;
     double          m_textMarginFactor;
@@ -116,7 +116,7 @@ MTG_MarkSet         m_activeFaces;
 int                 m_currentGeomMarkerId;
 double              m_textMarginFactor;
 bool                m_interiorText;
-bool                m_isAssociative;
+// clang says not used - bool m_isAssociative;
 bool                m_isFlood;
 
 bool                m_forcePlanar;
@@ -226,7 +226,7 @@ FloodSeed               m_dynamicFaceSeed;
 virtual void            _SetupOutputs () override;
 virtual DgnModelP       _GetViewTarget () override {return (GetViewport () ? T_Super::_GetViewTarget () : m_targetModel);}
 
-virtual void            _DrawAreaPattern (ElementHandleCR thisElm, ClipStencil& boundary, PatternParamSource& source) override {}
+virtual void            _DrawAreaPattern (ClipStencil& boundary) override {}
 virtual void            _DrawTextString (TextStringCR text) override;
 virtual ILineStyleCP    _GetCurrLineStyle (LineStyleSymbP* symb) override {return NULL;}
 
@@ -248,7 +248,7 @@ DGNPLATFORM_EXPORT void          SetAbortFunction (RGC_AbortFunction abort);
                    void          SetAssociativeRegionUpdate () {m_updateAssocRegion = true;}
                    void          SetCullRedundantLoops () {m_cullRedundantLoop = true;}
 
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (ViewportP vp, ElementAgendaCP in);
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnViewportP vp, ElementAgendaCP in);
 DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnModelR targetModel, ElementAgendaCR in, TransformCP inTrans);
 DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints (DPoint3dCP seedPoints, size_t numSeed);
 DGNPLATFORM_EXPORT void          AddFaceLoopsByInwardParitySearch (bool parityWithinComponent, bool vertexContactSufficient) {m_output.CollectByInwardParitySearch (parityWithinComponent, vertexContactSufficient);}

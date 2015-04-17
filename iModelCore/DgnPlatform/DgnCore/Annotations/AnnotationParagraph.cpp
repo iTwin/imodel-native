@@ -13,17 +13,17 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Create(DgnProjectR project) { return new AnnotationParagraph(project); }
-AnnotationParagraph::AnnotationParagraph(DgnProjectR project) :
+AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project) { return new AnnotationParagraph(project); }
+AnnotationParagraph::AnnotationParagraph(DgnDbR project) :
     T_Super()
     {
-    m_project = &project;
+    m_dgndb = &project;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Create(DgnProjectR project, DgnStyleId styleID)
+AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, DgnStyleId styleID)
     {
     auto par = AnnotationParagraph::Create(project);
     par->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -34,7 +34,7 @@ AnnotationParagraphPtr AnnotationParagraph::Create(DgnProjectR project, DgnStyle
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Create(DgnProjectR project, DgnStyleId styleID, AnnotationRunBaseR run)
+AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, DgnStyleId styleID, AnnotationRunBaseR run)
     {
     auto par = AnnotationParagraph::Create(project, styleID);
     par->GetRunsR().push_back(&run);
@@ -50,7 +50,7 @@ AnnotationParagraph::AnnotationParagraph(AnnotationParagraphCR rhs) : T_Super(rh
 AnnotationParagraphR AnnotationParagraph::operator=(AnnotationParagraphCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationParagraph::CopyFrom(AnnotationParagraphCR rhs)
     {
-    m_project = rhs.m_project;
+    m_dgndb = rhs.m_dgndb;
     m_styleID = rhs.m_styleID;
     m_styleOverrides = rhs.m_styleOverrides;
 
@@ -63,9 +63,9 @@ void AnnotationParagraph::CopyFrom(AnnotationParagraphCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-DgnProjectR AnnotationParagraph::GetDgnProjectR() const { return *m_project; }
+DgnDbR AnnotationParagraph::GetDgnProjectR() const { return *m_dgndb; }
 DgnStyleId AnnotationParagraph::GetStyleId() const { return m_styleID; }
-AnnotationTextStylePtr AnnotationParagraph::CreateEffectiveStyle() const { return m_project->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+AnnotationTextStylePtr AnnotationParagraph::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
 AnnotationTextStylePropertyBagCR AnnotationParagraph::GetStyleOverrides() const { return m_styleOverrides; }
 AnnotationTextStylePropertyBagR AnnotationParagraph::GetStyleOverridesR() { return m_styleOverrides; }
 AnnotationRunCollectionCR AnnotationParagraph::GetRuns() const { return m_runs; }

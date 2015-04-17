@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/w32tools.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,11 +27,11 @@ BEGIN_EXTERN_C
 |   Functions                                                           |
 |                                                                       |
 +======================================================================*/
-Int32  win32Util_getCRuntimeMemFuncs (struct CRuntimeMemFuncs* memFuncsP);
+int32_t win32Util_getCRuntimeMemFuncs (struct CRuntimeMemFuncs* memFuncsP);
 
 DESKTOP_TOOLS_EXPORT WCharCP win32Tools_exceptionToString
 (
-UInt32  exceptionCode
+uint32_t exceptionCode
 );
 
 #if defined(_WINBASE_)
@@ -39,10 +39,10 @@ void    win32Tools_dumpExceptionCallStack           // WIP - Must implement
 (
 BeTextFilePtr                    stream,
 EXCEPTION_POINTERS const * const exceptionInfoP,
-Int32                      const debugLevel
+int32_t                    const debugLevel
 );
 
-Int32     win32Tools_executeExternalProbe
+int32_t   win32Tools_executeExternalProbe
 (
 FILE              * const fpStream,
 WCharCP                   szProbeExeName,
@@ -52,7 +52,7 @@ STARTUPINFO const * const psiOption                 // => Optional STARTUPINFO f
 
 #endif  // defined(_WINBASE_)
 
-DESKTOP_TOOLS_EXPORT Int32      win32tools_processBSIExceptionLog        // WIP - Must implement
+DESKTOP_TOOLS_EXPORT int32_t    win32tools_processBSIExceptionLog        // WIP - Must implement
 (
 BeTextFilePtr           stream,                                 // => Optional
 WChar   const * const   szDumpFile                              // => Optional
@@ -65,9 +65,9 @@ EXCEPTION_POINTERS const * const exceptionInfoP,
 WCharCP                  dmpFilePath
 );
 
-DESKTOP_TOOLS_EXPORT UInt32 win32Tools_resetFloatingPointExceptions
+DESKTOP_TOOLS_EXPORT uint32_t win32Tools_resetFloatingPointExceptions
 (
-UInt32 newFpuMask
+uint32_t newFpuMask
 );
 
 DESKTOP_TOOLS_EXPORT Public bool    win32Tools_isRunningWindowsTerminalServer
@@ -82,7 +82,7 @@ char const * const  sz9CharacterThreadName      // => Thread name, 9 characters 
 
 #if defined (INCLUDE_win32tools_recordDelayLoadHookFailure)
 #  include    <delayimp.h>
-DESKTOP_TOOLS_EXPORT    void win32tools_recordDelayLoadHookFailure (UInt32 dliNotify,  PDelayLoadInfo pdli);
+DESKTOP_TOOLS_EXPORT    void win32tools_recordDelayLoadHookFailure (uint32_t dliNotify,  PDelayLoadInfo pdli);
 #endif
 
 END_EXTERN_C

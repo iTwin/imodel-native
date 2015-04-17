@@ -2,113 +2,101 @@
 |
 |     $Source: DgnCore/DgnCore.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnProgressMeter.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <RmgrTools/RscMgr/rmgrsubs.h>
-#include <BeSQLite/ECDb/ECDb.h>
+#include <ECDb/ECDb.h>
 
-USING_NAMESPACE_BENTLEY_SQLITE
+BeThreadLocalStorage g_hostForThread;
+double const fc_hugeVal = 1e37;
 
-BeThreadLocalStorage    g_hostForThread;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void IdSet::FromJson (Json::Value const& in)
+    {
+    Utf8String str = in.asString();
+    if (str.empty())
+        return;
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-|  Element Type Masks - Can be used to set up type masks for scanner    |
-|                       or element modification commands                |
-|                                                                       |
-+----------------------------------------------------------------------*/
-// The following masks must be 'OR'ed with typemask[0]
-#define ELMBITMSK(elmNum)       (1<<((elmNum-1)%16))
-#define TMSK0_CELL_HEADER       ELMBITMSK (CELL_HEADER_ELM)
-#define TMSK0_LINE              ELMBITMSK (LINE_ELM)
-#define TMSK0_LINE_STRING       ELMBITMSK (LINE_STRING_ELM)
-#define TMSK0_GROUP_DATA        ELMBITMSK (GROUP_DATA_ELM)
-#define TMSK0_SHAPE             ELMBITMSK (SHAPE_ELM)
-#define TMSK0_TEXT_NODE         ELMBITMSK (TEXT_NODE_ELM)
-#define TMSK0_DIG_SETDATA       ELMBITMSK (DIG_SETDATA_ELM)
-#define TMSK0_DGNFIL_HEADER     ELMBITMSK (DGNFIL_HEADER_ELM)
-#define TMSK0_LEV_SYM           ELMBITMSK (LEV_SYM_ELM)
-#define TMSK0_CURVE             ELMBITMSK (CURVE_ELM)
-#define TMSK0_CMPLX_STRING      ELMBITMSK (CMPLX_STRING_ELM)
-#define TMSK0_CONIC             ELMBITMSK (CONIC_ELM)
-#define TMSK0_CMPLX_SHAPE       ELMBITMSK (CMPLX_SHAPE_ELM)
-#define TMSK0_ELLIPSE           ELMBITMSK (ELLIPSE_ELM)
-#define TMSK0_ARC               ELMBITMSK (ARC_ELM)
+    Utf8CP curr = str.c_str();
+    while (true)
+        {
+        int64_t startRange, endRange;
+        int converted = BE_STRING_UTILITIES_UTF8_SSCANF (curr, "%" SCNd64 "-%" SCNd64, &startRange, &endRange);
+        if (0 == converted)
+            return;
 
-// These following masks must be 'OR'ed with typemask[1]
-#define TMSK1_TEXT              ELMBITMSK (TEXT_ELM)
-#define TMSK1_SURFACE           ELMBITMSK (SURFACE_ELM)
-#define TMSK1_SOLID             ELMBITMSK (SOLID_ELM)
-#define TMSK1_BSPLINE_POLE      ELMBITMSK (BSPLINE_POLE_ELM)
-#define TMSK1_POINT_STRING      ELMBITMSK (POINT_STRING_ELM)
-#define TMSK1_CONE              ELMBITMSK (CONE_ELM)
-#define TMSK1_BSPLINE_SURFACE   ELMBITMSK (BSPLINE_SURFACE_ELM)
-#define TMSK1_BSURF_BOUNDARY    ELMBITMSK (BSURF_BOUNDARY_ELM)
-#define TMSK1_BSPLINE_KNOT      ELMBITMSK (BSPLINE_KNOT_ELM)
-#define TMSK1_BSPLINE_CURVE     ELMBITMSK (BSPLINE_CURVE_ELM)
-#define TMSK1_BSPLINE_WEIGHT    ELMBITMSK (BSPLINE_WEIGHT_ELM)
+        if (converted < 2)
+            endRange = startRange;
+        else if (endRange < startRange)
+            std::swap(startRange, endRange);
+        
+        for (; startRange<=endRange; ++startRange)
+            insert((BeRepositoryBasedId) startRange);
 
-// These following masks must be 'OR'ed with typemask[2]
-#define TMSK2_DIMENSION         ELMBITMSK (DIMENSION_ELM)
-#define TMSK2_SHAREDCELL_DEF    ELMBITMSK (SHAREDCELL_DEF_ELM)
-#define TMSK2_SHARED_CELL       ELMBITMSK (SHARED_CELL_ELM)
-#define TMSK2_MULTILINE         ELMBITMSK (MULTILINE_ELM)
-#define TMSK2_ATTRIBUTE         ELMBITMSK (ATTRIBUTE_ELM)
-#define TMSK2_DGNSTORE_HDR      ELMBITMSK (DGNSTORE_HDR)
+        curr = strchr(curr, ',');
+        if (curr == nullptr)
+            return;
 
-// These following masks must be 'OR'ed with typemask[4]
-#define TMSK4_MICROSTATION_ELM  ELMBITMSK (MICROSTATION_ELM)
+        ++curr;
+        }
+    }
 
-// These following masks must be 'OR'ed with typemask[5]
-#define TMSK5_RASTER_HDR            ELMBITMSK (RASTER_HDR)
-#define TMSK5_RASTER_COMP           ELMBITMSK (RASTER_COMP)
-#define TMSK5_RASTER_LINK           ELMBITMSK (RASTER_REFERENCE_ELM)
-#define TMSK5_RASTER_REFCMPN        ELMBITMSK (RASTER_REFERENCE_COMP)
-#define TMSK5_RASTER_HIERARCHY      ELMBITMSK (RASTER_HIERARCHY_ELM)
-#define TMSK5_RASTER_HIERARCHYCMPN  ELMBITMSK (RASTER_HIERARCHY_COMP)
-#define TMSK5_RASTER_FRAME          ELMBITMSK (RASTER_FRAME_ELM)
-#define TMSK5_TABLE_ENTRY           ELMBITMSK (TABLE_ENTRY_ELM)
-#define TMSK5_TABLE                 ELMBITMSK (TABLE_ELM)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static void saveRange (bool& valid, Utf8StringR str, int64_t start, int64_t end)
+    {
+    if (!valid)
+        return;
 
-// These following masks must be 'OR'ed with typemask[6]
-#define TMSK6_MATRIX_HEADER             ELMBITMSK (MATRIX_HEADER_ELM)
-#define TMSK6_MATRIX_INT_DATA           ELMBITMSK (MATRIX_INT_DATA_ELM)
-#define TMSK6_MATRIX_DOUBLE_DATA        ELMBITMSK (MATRIX_DOUBLE_DATA_ELM)
-#define TMSK6_MESH_HEADER               ELMBITMSK (MESH_HEADER_ELM)
-#define TMSK6_EXTENDED                  ELMBITMSK (EXTENDED_ELM)
-#define TMSK6_EXTENDED_NONGRAPHIC_ELM   ELMBITMSK (EXTENDED_NONGRAPHIC_ELM)
-#define TMSK6_VIEW_GROUP                ELMBITMSK (VIEW_GROUP_ELM)
-#define TMSK6_VIEW                      ELMBITMSK (VIEW_ELM)
+    valid = false;
+    if (!str.empty())
+        str.append(",");
 
-#if defined (NEEDS_WORK_DGNITEM)
-UShort element_drawn[8] =
-                                {
-                                TMSK0_CELL_HEADER | TMSK0_LINE | TMSK0_LINE_STRING |
-                                TMSK0_SHAPE | TMSK0_TEXT_NODE | TMSK0_CURVE |
-                                TMSK0_CMPLX_STRING | TMSK0_CONIC | TMSK0_CMPLX_SHAPE |
-                                TMSK0_ELLIPSE | TMSK0_ARC,
+    char tmp[100];
+    if (start < end)
+        BeStringUtilities::Snprintf(tmp, _countof(tmp), "%lld-%lld", start, end);
+    else
+        BeStringUtilities::Snprintf(tmp, _countof(tmp), "%lld", start);
 
-                                TMSK1_TEXT | TMSK1_SURFACE | TMSK1_SOLID |
-                                TMSK1_BSPLINE_POLE | TMSK1_POINT_STRING | TMSK1_CONE |
-                                TMSK1_BSPLINE_SURFACE | TMSK1_BSURF_BOUNDARY |
-                                TMSK1_BSPLINE_KNOT | TMSK1_BSPLINE_CURVE |
-                                TMSK1_BSPLINE_WEIGHT,
+    str.append(tmp);
+    }
 
-                                TMSK2_DIMENSION | TMSK2_SHARED_CELL |
-                                TMSK2_MULTILINE,
-                                0x0000,
-                                0x0000,
-                                TMSK5_RASTER_HDR | TMSK5_RASTER_COMP | TMSK5_RASTER_FRAME,
-                                TMSK6_MESH_HEADER | TMSK6_EXTENDED ,
-                                0x0000
-                                };
-#endif
+/*---------------------------------------------------------------------------------**//**
+* convert an IdSet to a Json string. This looks for ranges of contiguous values and uses "n-m" syntax.
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void IdSet::ToJson (Json::Value& out) const
+    {
+    Utf8String str;
+    int64_t start=0, end=0;
+    bool valid=false;
+    for (auto val : *this)
+        {
+        if (!val.IsValid())
+            continue;
 
-double const fc_hugeVal      = 1e37;
+        int64_t curr = val.GetValue();
+        if (valid && (curr == end+1))
+            {
+            end = curr;
+            continue;
+            }
+
+        saveRange(valid, str, start, end);
+        valid = true;
+        start = end = curr;
+        }
+
+    saveRange(valid, str, start, end);
+    out = str;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/14
@@ -170,7 +158,7 @@ BeFileNameCR DgnPlatformLib::Host::IKnownLocationsAdmin::GetDgnPlatformAssetsDir
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 DgnPlatformLib::Host::ExceptionHandler::_ResetFloatingPointExceptions (UInt32 newFpuMask)
+uint32_t DgnPlatformLib::Host::ExceptionHandler::_ResetFloatingPointExceptions (uint32_t newFpuMask)
     {
     return BeNumerical::ResetFloatingPointExceptions (newFpuMask);
     }
@@ -279,7 +267,7 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox (Messag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-ITxn&           ITxnManager::SetCurrentTxn (ITxn& newTxn)
+ITxn& ITxnManager::SetCurrentTxn (ITxn& newTxn)
     {
     ITxn* old = m_currTxn;
     m_currTxn = &newTxn;
@@ -297,7 +285,7 @@ void DgnPlatformLib::InteractiveHost::StartupInteractive()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DgnPlatformLib::AdoptHost (DgnPlatformLib::Host& host)
+void DgnPlatformLib::AdoptHost (DgnPlatformLib::Host& host)
     {
     g_hostForThread.SetValueAsPointer (&host);
     }
@@ -347,6 +335,8 @@ void DgnPlatformLib::Host::InitializeDgnCore ()
     AdoptHost (*this);
     BeAssert (NULL != DgnPlatformLib::QueryHost());
 
+    DgnDomains::RegisterDomain(DgnSchemaDomain::GetDomain()); 
+
     _SupplyProductName(m_productName);
 
     m_acsManager = new IACSManager ();
@@ -366,9 +356,6 @@ void DgnPlatformLib::Host::InitializeDgnCore ()
     m_fontManager = new DgnFontManager ();
     m_lineStyleManager = new LineStyleManager ();
 
-    ElementHandlerManager::OnHostInitialize ();
-    DgnProject::InitializeTableHandlers();
-    
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
     ECN::ECSchemaReadContext::Initialize (T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     }
@@ -408,7 +395,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert (NULL == m_rasterAttachmentAdmin);
     BeAssert (NULL == m_pointCloudAdmin);
     BeAssert (NULL == m_notificationAdmin);
-    BeAssert (NULL == m_elementHandlerLoader);
     BeAssert (NULL == m_graphicsAdmin);
     BeAssert (NULL == m_materialAdmin);
     BeAssert (NULL == m_solidsKernelAdmin);
@@ -489,17 +475,8 @@ void DgnPlatformLib::ForwardAssertionFailures (BeAssertFunctions::T_BeAssertHand
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2012
 //---------------------------------------------------------------------------------------
-DgnProgressMeter::~DgnProgressMeter()
-    {
-    if (T_HOST.GetProgressMeter() == this)
-        T_HOST.SetProgressMeter(NULL);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     11/2012
-//---------------------------------------------------------------------------------------
-void DgnProgressMeter::AddTasks(UInt32 numTasksToAdd) {_AddTasks(numTasksToAdd);}
-void DgnProgressMeter::AddSteps(UInt32 numSteps) {_AddSteps(numSteps);}
+void DgnProgressMeter::AddTasks(uint32_t numTasksToAdd) {_AddTasks(numTasksToAdd);}
+void DgnProgressMeter::AddSteps(uint32_t numSteps) {_AddSteps(numSteps);}
 void DgnProgressMeter::SetCurrentStepName(Utf8CP newName) {_SetCurrentStepName(newName);}
 void DgnProgressMeter::SetCurrentTaskName(Utf8CP newName) {_SetCurrentTaskName(newName);}
 DgnProgressMeter::Abort DgnProgressMeter::ShowProgress() {return _ShowProgress();}

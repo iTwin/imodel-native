@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/basefileio.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,7 +22,7 @@ struct BaseFileType : DgnFileType
 
     virtual void GetCapabilities (DgnFileCapabilities *cap) override;
     virtual bool                ValidateFile    (int *pFormat, int *pMajorVersion, int *pMinorVersion, bool *pDefaultModelIs3D, IThumbnailPropertyValuePtr*, const WChar *pName) = 0;
-    virtual DgnFileIOP Factory (DgnProjectP pFile) = 0;
+    virtual DgnFileIOP Factory (DgnDbP pFile) = 0;
     virtual int _GetFormat () = 0;
     virtual IThumbnailPropertyValuePtr ReadThumbnail (WCharCP pName);
 
@@ -82,12 +82,12 @@ class BaseModelReader : public DgnModelReader
 public:
     BaseModelReader         (DgnModel* pCache, BaseFileIO* pBaseFileIO);
     ~BaseModelReader        ();
-    virtual StatusInt _ReadSectionsIntoCache (UInt32* majorVersion, UInt32* minorVersion, DgnModelSections sections) override;
+    virtual StatusInt _ReadSectionsIntoCache (uint32_t* majorVersion, uint32_t* minorVersion, DgnModelSections sections) override;
 
 protected:
 
     virtual StatusInt LoadSeedFileElements ();
-    StatusInt LoadElementsIntoCache (MSElementDescrP pDescrChain);
+    StatusInt LoadElementsIntoCache (DgnElementDescrP pDescrChain);
     virtual StatusInt LoadGeometry (Transform const* pTranformToDGN) = 0;
     virtual StatusInt LoadNonModelElements (const Transform* pTransformToDGN, double scaleToDGN) { return SUCCESS; }
     virtual StatusInt LoadSavedViews (const Transform* pTransformToDGN, double scaleToDGN, const DRange3d * pRange) { return SUCCESS; }

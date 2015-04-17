@@ -3,7 +3,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/AnnotationScale.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -77,31 +77,31 @@ ChangeAnnotationScaleCP     changeContextIn
 //! To change the annotation scale of elements in a model, set the element which will be traversed.
 //! @Param[in]      changeContextIn         Change annotation scale context specifier.
 //! @Param[in]      traverseContextIn       Element traverse context.
-//! @Param[in]      numElementRefIn         Number of element refs to traverse (when traverseContextIn = CAS_TRAVERSE_ELEMENT_SPECIFIED).
-//! @Param[in]      elementRefArrayIn       Array of element refs to traverse (when traverseContextIn = CAS_TRAVERSE_ELEMENT_SPECIFIED).
+//! @Param[in]      numDgnElementIn         Number of element refs to traverse (when traverseContextIn = CAS_TRAVERSE_ELEMENT_SPECIFIED).
+//! @Param[in]      elementArrayIn       Array of element refs to traverse (when traverseContextIn = CAS_TRAVERSE_ELEMENT_SPECIFIED).
 //! @Return SUCCESS if the traverse element context is successfully set
 //! @Group          "Model Properties"
 DGNPLATFORM_EXPORT StatusInt   mdlChangeAnnotationScale_setTraverseElementContext
 (
 ChangeAnnotationScaleP      changeContextIn,
 CASTraverseElementContext   traverseContextIn,
-int                         numElementRefIn,
-ElementRefP const *         elementRefArrayIn
+int                         numDgnElementIn,
+DgnElementP const *         elementArrayIn
 );
 
 //! To change the annotation scale of elements in a model, get the elements which will be traversed.
 //! @Param[in]      changeContextIn         Change annotation scale context specifier.
 //! @Param[out]     traverseContextOut      Element traverse context.
-//! @Param[out]     numElementRefOut        Number of element refs to traverse (when traverseContextIn = CAS_TRAVERSE_ELEMENT_SPECIFIED).
-//! @Param[out]     elementRefArrayOut      Array of element refs to traverse (when traverseContextIn = CAS_TRAVERSE_ELEMENT_SPECIFIED).
+//! @Param[out]     numDgnElementOut        Number of element refs to traverse (when traverseContextIn = CAS_TRAVERSE_ELEMENT_SPECIFIED).
+//! @Param[out]     elementArrayOut      Array of element refs to traverse (when traverseContextIn = CAS_TRAVERSE_ELEMENT_SPECIFIED).
 //! @Return SUCCESS if the traverse element context is successfully set
 //! @Group          "Model Properties"
 DGNPLATFORM_EXPORT StatusInt   mdlChangeAnnotationScale_getTraverseElementContext
 (
 ChangeAnnotationScaleCP     changeContextIn,
 CASTraverseElementContext * traverseContextOut,
-int *                       numElementRefOut,
-ElementRefP **              elementRefArrayOut
+int *                       numDgnElementOut,
+DgnElementP **              elementArrayOut
 );
 
 //! To change the annotation scale of elements in a model, set a filter which controls which of the traversed elements are filtered out

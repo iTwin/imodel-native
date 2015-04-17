@@ -1,6 +1,6 @@
 //--------------------------------------------------------------------------------------
 //     $Source: DgnCore/Annotations/Annotations.fbs $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //--------------------------------------------------------------------------------------
 
 namespace BentleyG06.DgnPlatform.FB;
@@ -21,8 +21,8 @@ enum AnnotationTextStyleProperty : int {
     LineSpacingFactor = 4,          //  real    document    Factor of height
     IsBold = 5,                     //  integer run         0 or 1 boolean
     IsItalic = 6,                   //  integer run         0 or 1 boolean
-    IsSubScript = 7,                //  integer run         0 or 1 boolean
-    IsSuperScript = 8,              //  integer run         0 or 1 boolean
+    // IsSubScript = 7 -- deprecated in 06 in favor of a run property
+    // IsSuperScript = 8 -- deprecated in 06 in favor of a run property
     IsUnderlined = 9,               //  integer run         0 or 1 boolean
     StackedFractionScale = 10,      //  real    run         Factor of height
     StackedFractionType = 11,       //  integer run         Must exist in the AnnotationStackedFractionType enumeration
@@ -50,7 +50,7 @@ struct AnnotationTextStyleSetter (emitVectorTypedefs) {
 table AnnotationTextStyle {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    id:uint;
+    id:long;
     name:string;
     description:string;
     setters:[AnnotationTextStyleSetter];
@@ -95,10 +95,20 @@ enum AnnotationTextBlockRunType : int {
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
+enum AnnotationTextRunSubSuperScript : int {
+    Neither = 0,
+    SubScript = 1,
+    SuperScript = 2
+
+} // AnnotationTextRunSubSuperScript
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
 table AnnotationTextBlockRun (emitVectorTypedefs) {
     type:AnnotationTextBlockRunType;
     properties:[AnnotationTextBlockSetter];
-    styleId:uint;
+    styleId:long;
     styleOverrides:[AnnotationTextStyleSetter];
 
     // RUN_TYPE_Text
@@ -108,6 +118,9 @@ table AnnotationTextBlockRun (emitVectorTypedefs) {
     fraction_numeratorContent:string;
     fraction_denominatorContent:string;
 
+    // RUN_TYPE_Text -- added in 06
+    text_subsuperscript:AnnotationTextRunSubSuperScript;
+
 } // AnnotationTextBlockRun
 
 //=======================================================================================
@@ -115,7 +128,7 @@ table AnnotationTextBlockRun (emitVectorTypedefs) {
 //=======================================================================================
 table AnnotationTextBlockParagraph (emitVectorTypedefs) {
     properties:[AnnotationTextBlockSetter];
-    styleId:uint;
+    styleId:long;
     styleOverrides:[AnnotationTextStyleSetter];
     runs:[AnnotationTextBlockRun];
 
@@ -128,7 +141,7 @@ table AnnotationTextBlock {
     majorVersion:ubyte;
     minorVersion:ubyte;
     properties:[AnnotationTextBlockSetter];
-    styleId:uint;
+    styleId:long;
     styleOverrides:[AnnotationTextStyleSetter];
     paragraphs:[AnnotationTextBlockParagraph];
 
@@ -176,7 +189,7 @@ struct AnnotationFrameStyleSetter (emitVectorTypedefs) {
 table AnnotationFrameStyle {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    id:uint;
+    id:long;
     name:string;
     description:string;
     setters:[AnnotationFrameStyleSetter];
@@ -193,7 +206,7 @@ table AnnotationFrameStyle {
 table AnnotationFrame {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    styleId:uint;
+    styleId:long;
     styleOverrides:[AnnotationFrameStyleSetter];
 
 } // AnnotationFrame
@@ -236,7 +249,7 @@ struct AnnotationLeaderStyleSetter (emitVectorTypedefs) {
 table AnnotationLeaderStyle {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    id:uint;
+    id:long;
     name:string;
     description:string;
     setters:[AnnotationLeaderStyleSetter];
@@ -279,7 +292,7 @@ struct AnnotationLeaderDPoint3d {
 table AnnotationLeader (emitVectorTypedefs) {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    styleId:uint;
+    styleId:long;
     styleOverrides:[AnnotationLeaderStyleSetter];
 
     sourceAttachmentType:AnnotationLeaderSourceAttachmentType;
@@ -321,7 +334,7 @@ struct TextAnnotationSeedSetter (emitVectorTypedefs) {
 table TextAnnotationSeed {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    id:uint;
+    id:long;
     name:string;
     description:string;
     setters:[TextAnnotationSeedSetter];
@@ -375,7 +388,7 @@ table TextAnnotationElement {
     majorVersion:ubyte;
     minorVersion:ubyte;
 
-    seedId:uint;
+    seedId:long;
     transform:TextAnnotationElementTransform;
 
 } // TextAnnotationElement

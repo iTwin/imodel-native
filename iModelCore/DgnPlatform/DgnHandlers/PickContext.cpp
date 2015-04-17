@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/PickContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -79,8 +79,8 @@ void PickOutput::_SetDrawViewFlags (ViewFlagsCP flags)
     T_Super::_SetDrawViewFlags (flags);
 
     // NOTE: Treat LocateSurfacesPref::Never as LocateSurfacesPref::ByView, still want to hide edge hits that aren't visible, will truncate returned list to remove surfaces...
-    if ((LocateSurfacesPref::Always == m_options.GetLocateSurfaces ()) && (MSRenderMode::Wireframe == m_viewFlags.renderMode))
-        m_viewFlags.SetRenderMode (MSRenderMode::SmoothShade);
+    if ((LocateSurfacesPref::Always == m_options.GetLocateSurfaces ()) && (DgnRenderMode::Wireframe == m_viewFlags.GetRenderMode()))
+        m_viewFlags.SetRenderMode (DgnRenderMode::SmoothShade);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,13 +117,13 @@ static bool edgesVisible (HitPathCP hit)
     {
     ViewFlagsCR viewFlags = hit->GetViewFlags();
 
-    switch (static_cast<MSRenderMode>(viewFlags.renderMode))
+    switch (viewFlags.GetRenderMode())
         {
-        case MSRenderMode::SolidFill:
-        case MSRenderMode::HiddenLine:
+        case DgnRenderMode::SolidFill:
+        case DgnRenderMode::HiddenLine:
             return viewFlags.renderDisplayHidden;
 
-        case MSRenderMode::SmoothShade:
+        case DgnRenderMode::SmoothShade:
             return viewFlags.renderDisplayEdges && viewFlags.renderDisplayHidden;
 
         default:
@@ -220,7 +220,7 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     m_currGeomDetail.SetClosestPointLocal (localPt);
     m_currGeomDetail.SetLocatePriority (priority);
     m_currGeomDetail.SetScreenDist (sqrt (distSquaredXY (hitPtScreen, m_pickPointView)));
-    m_currGeomDetail.SetZValue (getAdjustedViewZ (*m_context, hitPtScreen) + m_context->GetDisplayPriority ());
+    m_currGeomDetail.SetZValue (getAdjustedViewZ (*m_context, hitPtScreen) + m_context->GetCurrentDisplayParams()->GetNetDisplayPriority());
 
     IElemTopologyP  newElemTopo = (NULL != m_context->GetElemTopology() ? m_context->GetElemTopology()->_Clone() : NULL);
     RefCountedPtr<HitPath> thisHit = new HitPath (m_context->GetViewport(), path, pickPtWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail, newElemTopo);
@@ -309,10 +309,10 @@ void PickOutput::AddSurfaceHit (DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
         CookedDisplayStyleCP  displayStyle = m_context->GetCurrentCookedDisplayStyle ();
 #endif
 
-        switch (static_cast<MSRenderMode>(viewFlags.renderMode))
+        switch (viewFlags.GetRenderMode())
             {
-            case MSRenderMode::SolidFill:
-            case MSRenderMode::HiddenLine:
+            case DgnRenderMode::SolidFill:
+            case DgnRenderMode::HiddenLine:
                 {
                 if (!viewFlags.renderDisplayHidden)
                     break; // Accept, hidden edges are never displayed...
@@ -325,7 +325,7 @@ void PickOutput::AddSurfaceHit (DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
                 break;
                 }
 
-            case MSRenderMode::SmoothShade:
+            case DgnRenderMode::SmoothShade:
                 {
 #if defined (NEEDS_WORK_DGNITEM)
                 if (displayStyle && displayStyle->m_flags.m_transparency && 0 != displayStyle->m_transparency)
@@ -364,18 +364,11 @@ bool PickOutput::TestQvElem (QvElem* qvElem, HitPriority priority)
     {
     DPoint3d    hitPt, pickPtView;
     DVec3d      hitNormal;
-    bool        changeRenderMode = (m_viewFlags.renderMode != m_viewOutput->GetDrawViewFlags ()->renderMode);
 
     GetProjectedPickPointView (pickPtView);
 
-    if (changeRenderMode)
-        m_viewOutput->PushRenderOverrides (m_viewFlags);
-
     // NOTE: Use smaller than normal pick radius to avoid hitting surface before edge (QV locate is square not a circle!)... 
     bool    haveQvLocate = m_viewOutput->LocateQvElem (qvElem, *((DPoint2dCP) &pickPtView), m_pickAperture * 0.4, hitPt, &hitNormal, LocateQvElemCheckStop, m_context);
-
-    if (changeRenderMode)
-        m_viewOutput->PopRenderOverrides ();
 
     if (!haveQvLocate)
         return false;
@@ -507,7 +500,7 @@ bool PickOutput::TestIndexedPolyEdge (DPoint3dCP vertsP, DPoint4dCP hVertsP, int
         // The CurvePrimitiveInfo is used by the legacy Mesh Element associations.   The ID will be used by polyfaces emitted by element handlers (without implementing IMeshQuery).
         curve->GetCurvePrimitiveInfoW () = MeshSegmentInfo::Create (closeVertexId, segmentVertexId); // Segment defined by storing 2nd vertex id.
 
-        CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create (CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId (CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), m_context->GetCompoundDrawState().get());
+        CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create (CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId (CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
         curve->SetId (newId.get());
         m_currGeomDetail.SetCurvePrimitive (curve.get ());
 
@@ -922,15 +915,13 @@ bool PickOutput::_DrawSprite (ISpriteP sprite, DPoint3dCP location, DPoint3dCP x
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PickOutput::_DrawTextString (TextStringCR text, double* zDepth)
     {
+    if (text.GetText().empty())
+        return;
+    
     DPoint3d    points[5];
 
-    text.ComputeUserOrigin (points[0]);
-
-    if (TestPoint (points[0], HitPriority::Origin))
-        return;
-
-    if (SUCCESS != text.GenerateBoundingShape (points))
-        return;
+    text.ComputeBoundingShape(points);
+    text.ComputeTransform().Multiply(points, _countof(points));
 
     CurveVectorPtr  curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
 
@@ -964,7 +955,7 @@ void            PickOutput::_DrawPointCloud (IPointCloudDrawParams* drawParams)
     m_currGeomDetail.SetGeomType (HitGeomType::Point);
     m_currGeomDetail.SetDetailType (HIT_DETAIL_PointCloud | m_currGeomDetail.GetDetailType ());
 
-    UInt32      nPoints = drawParams->GetNumPoints ();
+    uint32_t    nPoints = drawParams->GetNumPoints ();
     DPoint3dCP  dPoints = drawParams->GetDPoints ();
     FPoint3dCP  fPoints = drawParams->GetFPoints ();
     DPoint3d    offset;
@@ -972,7 +963,7 @@ void            PickOutput::_DrawPointCloud (IPointCloudDrawParams* drawParams)
     offset.init (0, 0, 0);
     drawParams->GetOrigin (&offset);
         
-    for (UInt32 iPoint = 0; iPoint < nPoints; iPoint++)
+    for (uint32_t iPoint = 0; iPoint < nPoints; iPoint++)
         {
         DPoint3d    localPt;
         DPoint4d    viewPt;
@@ -999,17 +990,9 @@ void            PickOutput::_DrawPointCloud (IPointCloudDrawParams* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PickOutput::_DrawQvElem3d (QvElem* qvElem, int subElemIndex)
+void            PickOutput::_DrawQvElem (QvElem* qvElem, int subElemIndex)
     {
     TestQvElem (qvElem, HitPriority::Interior);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PickOutput::_DrawQvElem2d (QvElem* qvElem, double zDepth, int subElemIndex)
-    {
-    DrawQvElem3d (qvElem, subElemIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1028,20 +1011,11 @@ void            PickContext::_SetupOutputs ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PickContext::_OnFrustumChange (bool is2d)
-    {
-    ViewToFrustum (const_cast<DPoint3d*>(&m_output.GetPickPointWorld()), &m_output.GetPickPointView(), 1);
-    T_Super::_OnFrustumChange(is2d);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          PickContext::_GetDisplayInfo (bool isRenderable)
+uint32_t        PickContext::_GetDisplayInfo (bool isRenderable)
     {
-    UInt32  info = T_Super::_GetDisplayInfo (isRenderable);
+    uint32_t info = T_Super::_GetDisplayInfo (isRenderable);
 
     return (info | DISPLAY_INFO_Edge); // Always include edge for pick...
     }
@@ -1049,20 +1023,10 @@ UInt32          PickContext::_GetDisplayInfo (bool isRenderable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PickContext::_DrawWithThickness (ElementHandleCR thisElm, IStrokeForCache& stroker, Int32 qvIndex)
-    {
-    m_output.GetGeomDetail().SetDetailType (HIT_DETAIL_Thickness | m_output.GetGeomDetail().GetDetailType ());
-    T_Super::_DrawWithThickness (thisElm, stroker, qvIndex);
-    m_output.GetGeomDetail().SetDetailType (HIT_DETAIL_Thickness & ~m_output.GetGeomDetail().GetDetailType ());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PickContext::_DrawAreaPattern (ElementHandleCR thisElm, ClipStencil& boundary, PatternParamSource& pattern)
+void            PickContext::_DrawAreaPattern (ClipStencil& boundary)
     {
     m_output.GetGeomDetail().SetDetailType (HIT_DETAIL_Pattern | m_output.GetGeomDetail().GetDetailType ());
-    T_Super::_DrawAreaPattern (thisElm, boundary, pattern);
+    T_Super::_DrawAreaPattern (boundary);
     m_output.GetGeomDetail().SetDetailType (HIT_DETAIL_Pattern & ~m_output.GetGeomDetail().GetDetailType ());
     }
 
@@ -1092,32 +1056,6 @@ ILineStyleCP    PickContext::_GetCurrLineStyle (LineStyleSymbP* symb)
         }
 
     return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PickContext::_DrawCurveVector (ElementHandleCR eh, ICurvePathQueryR query, GeomRepresentations info, bool allowCachedOutline)
-    {
-    // Test edge first to short-circuit PickOutput::_ProcessCurveVector adding edge hit from draw of fill/surface where complex chain/shape components won't be pushed...
-    if (0 != (info & DISPLAY_INFO_Edge))
-        {
-        // NOTE: Never test interiors when drawing outline...don't want individual loops of parity regions treated as surfaces...
-        AutoRestore<bool> saveInteriorLocate (m_output.GetLocateInteriors (), false);
-        int               oldCount = m_output.GetHitList ()->GetCount ();
-
-        T_Super::_DrawCurveVector (eh, query, DISPLAY_INFO_Edge, allowCachedOutline);
-
-        if (oldCount < m_output.GetHitList ()->GetCount ())
-            return; // Edge hit was added, skip surface test...
-        }
-
-    GeomRepresentations noEdgeInfo = (GeomRepresentations) (info & ~DISPLAY_INFO_Edge);
-
-    if (DISPLAY_INFO_None == noEdgeInfo)
-        return;
-
-    T_Super::_DrawCurveVector (eh, query, noEdgeInfo, allowCachedOutline);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1311,14 +1249,14 @@ bool            PickContext::_CheckStop ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PickContext::_OutputElement (ElementHandleCR elIter)
+void            PickContext::_OutputElement (GeometricElementCR element)
     {
     // Setup hit detail defaults...unless this is a symbol, don't want hit detail (pattern/linestyle) cleared...
     if (!m_output.GetInSymbolDraw ())
         m_output.GetGeomDetail().Init();
 
     // do per-element test
-    T_Super::_OutputElement (elIter);
+    T_Super::_OutputElement (element);
 
     // Reset hit priority override in case it's been set...
     if (!m_output.GetInSymbolDraw ())
@@ -1328,7 +1266,7 @@ void            PickContext::_OutputElement (ElementHandleCR elIter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem*         PickContext::_DrawCached (CachedDrawHandleCR dh, IStrokeForCache& stroker, Int32 qvIndex)
+QvElem*         PickContext::_DrawCached (IStrokeForCache& stroker)
     {
     bool    testStroke = stroker._WantLocateByStroker ();
     bool    testCached = stroker._WantLocateByQvElem ();
@@ -1336,21 +1274,21 @@ QvElem*         PickContext::_DrawCached (CachedDrawHandleCR dh, IStrokeForCache
     m_output.InitStrokeForCache ();
 
     if (testStroke)
-        stroker._StrokeForCache (dh, *this);
+        stroker._StrokeForCache (*this);
 
     if (CheckStop ())
-        return NULL;
+        return nullptr;
 
     if (testCached || m_output.GetLocateSilhouettes ())
-        T_Super::_DrawCached (dh, stroker, qvIndex);
+        return T_Super::_DrawCached (stroker);
 
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    PickContext::InitNpcSubRect (DPoint3dCR pickPointWorldIn, double pickAperture, ViewportR viewport)
+void    PickContext::InitNpcSubRect (DPoint3dCR pickPointWorldIn, double pickAperture, DgnViewportR viewport)
     {
     DPoint3d    pickPointView, pickPointWorld = pickPointWorldIn;
 
@@ -1381,7 +1319,7 @@ void    PickContext::InitNpcSubRect (DPoint3dCR pickPointWorldIn, double pickApe
 StatusInt PickContext::_VisitDgnModel (DgnModelP inDgnModel)
     {
     // Ignore elements that are not from view controller's target project unless tool specifically requests otherwise...
-    if (&inDgnModel->GetDgnProject () != &GetDgnProject () && !m_options.GetDisableDgnProjectFilter ())
+    if (&inDgnModel->GetDgnDb () != &GetDgnDb () && !m_options.GetDisableDgnProjectFilter ())
         return ERROR;
 
     // Make sure the test point is within the clipping region of this file.
@@ -1405,7 +1343,7 @@ void PickContext::InitBoresite (DRay3dR boresite, DPoint3dCR spacePoint, DMatrix
 
     double      aa;
 
-    if (bsiTrig_safeDivide (&aa, 1.0, eyePoint.w, 1.0))
+    if (DoubleOps::SafeDivide (aa, 1.0, eyePoint.w, 1.0))
         {
         DPoint3d  xyzEye;
 
@@ -1432,7 +1370,7 @@ void PickContext::InitSearch (DPoint3dCR pickPointWorld, double pickApertureScre
 * criteria.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PickContext::PickElements (ViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
+bool PickContext::PickElements (DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
     {
     if (!vp.IsActive ())
         return SetAborted ();
@@ -1485,7 +1423,7 @@ bool PickContext::PickElements (ViewportR vp, DPoint3dCR pickPointWorld, double 
 * @return   true if the point is on the path
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestPathStatus PickContext::TestPath (DisplayPathCR path, ViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
+TestPathStatus PickContext::TestPath (DisplayPathCR path, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
     {
     InitNpcSubRect (pickPointWorld, pickApertureScreen, vp); // Initialize prior to attach so frustum planes are set correctly.
 

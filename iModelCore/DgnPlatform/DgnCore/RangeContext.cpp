@@ -2,14 +2,12 @@
 |
 |     $Source: DgnCore/RangeContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <Bentley/ScopedArray.h>
 #include    <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
-
-//static double   MAX_CameraScaleLimit  = 300.0; unused var removed in graphite
 
 struct SafeDPoint3dArray : ScopedArray<DPoint3d,500> {SafeDPoint3dArray(size_t n) : ScopedArray<DPoint3d,500>(n){}};
 
@@ -65,7 +63,6 @@ void RangeClip::ApplyTransform (DPoint3dP transformedPoints, DPoint3dCP points, 
         m_transform.multiply (transformedPoints, points, numPoints);
         }
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   09/06
@@ -196,14 +193,12 @@ void RangeClip::ClipEllipse (ElemRangeCalc* rangeCalculator, ClipStackCP clipSta
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RangeClip::ClipRange (ElemRangeCalc* rangeCalculator, ClipStackCP clipStack, DPoint3dCP corners, size_t clipIndex, bool fastClip) const
     {
-
-    DPoint3d            transformedCorners[8];
+    DPoint3d    transformedCorners[8];
 
     ApplyTransform (transformedCorners, corners, 8);
     if (m_planeSets.empty())
@@ -339,7 +334,7 @@ void            ElemRangeCalc::Union (DEllipse3dCP ellipse, ClipStackCP currClip
 * @return ERROR if the range is not valid.
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ElemRangeCalc::ToScanRange (DRange3dR range, bool is3d)
+StatusInt ElemRangeCalc::ToScanRange (AxisAlignedBox3dR range, bool is3d)
     {
     if (!IsValid())
         {
@@ -347,9 +342,35 @@ StatusInt ElemRangeCalc::ToScanRange (DRange3dR range, bool is3d)
         return ERROR;
         }
 
-    range = m_range;
-    if (!is3d)
+    range = AxisAlignedBox3d(m_range);
+
+    static const double s_smallVal = .0005;
+
+    // low and high are no longer allowed to be equal...
+    if (range.low.x == range.high.x)
+        {
+        range.low.x -= s_smallVal;
+        range.high.x += s_smallVal;
+        }
+
+    if (range.low.y == range.high.y)
+        {
+        range.low.y -= s_smallVal;
+        range.high.y += s_smallVal;
+        }
+
+    if (is3d)
+        {
+        if (range.low.z == range.high.z)
+            {
+            range.low.z -= s_smallVal;
+            range.high.z += s_smallVal;
+            }
+        }
+    else
+        {
         range.low.z = range.high.z = 0.0;
+        }
 
     return SUCCESS;
     }
@@ -538,6 +559,7 @@ void RangeClipPlanes::ClipPoints (ElemRangeCalc* rangeCalculator, ClipStackCP cl
                     outputPoint = outputPoints;
                     }
                 }
+
             if (thisInside)
                 *outputPoint++ = *pThisPoint;
 
@@ -545,9 +567,9 @@ void RangeClipPlanes::ClipPoints (ElemRangeCalc* rangeCalculator, ClipStackCP cl
             lastDistance = thisDistance;
             lastInside   = thisInside;
             }
+
         if ((nOutputPoints = static_cast<int>((outputPoint - outputPoints))) > 0)
             ClipPoints (rangeCalculator, clipStack, nOutputPoints, outputPoints, clipIndex, planeIndex+1);
-
         }
     }
 
@@ -568,7 +590,6 @@ void RangeOutput::_PushTransClip (TransformCP trans, ClipPlaneSetCP clip)
 
     m_rangeClipStack.Push (clip, trans);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
@@ -654,6 +675,12 @@ StatusInt RangeOutput::_ProcessCurvePrimitive (ICurvePrimitiveCR primitive, bool
             break;
             }
 
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+            {
+            // Do nothing, SimplifyViewDrawGeom will recurse...
+            break;
+            }
+
         default:
             {
             BeAssert (false && "Unexpected entry in CurveVector.");
@@ -733,7 +760,7 @@ void RangeOutput::_DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool fill, d
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RangeOutput::_DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY,
-                              int enableAlpha, int format, byte const* texels, double zDepth, DPoint2dCP range)
+                              int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
     {
     UpdateRange (4, points);
     }
@@ -743,12 +770,14 @@ void RangeOutput::_DrawRaster2d (DPoint2d const points[4], int pitch, int numTex
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RangeOutput::_DrawTextString (TextStringCR text, double* zDepth)
     {
-    DPoint2d    size        = text.GetProperties().GetDisplaySize ();
-    DPoint2d    expansion = {0, fabs(size.y) / 2};
+    if (text.GetText().empty())
+        return;
+
+    double      height      = text.GetStyle().GetHeight();
     DPoint3d    pts[5];
 
-    if (SUCCESS != text.GenerateBoundingShape (pts, &expansion))
-        return;
+    text.ComputeBoundingShape(pts, 0.0, (fabs(height) / 2.0));
+    text.ComputeTransform().Multiply(pts, _countof(pts));
 
     UpdateRange (5, pts);
     }
@@ -764,171 +793,6 @@ void RangeOutput::_DrawPolyface (PolyfaceQueryCR meshData, bool filled)
         UpdateRange (static_cast<int>(numPoint), meshData.GetPointCP ());
     }
 
-/*=================================================================================**//**
-* Context to caclulate the range of an element.
-* @bsiclass                                                     KeithBentley    01/02
-+===============+===============+===============+===============+===============+======*/
-struct RangeContext : NullContext
-{
-    DEFINE_T_SUPER(NullContext)
-private:
-    RangeOutput     m_output;
-    bool            m_ignoreViewInd;
-    DPoint3d        m_viewIndOrigin;
-    RotMatrix       m_viewIndRotation;
-
-public:
-    RangeContext (bool ignoreViewInd = false, RotMatrixCP viewIndRotation = NULL)
-        {
-        m_purpose = DrawPurpose::RangeCalculation;
-        m_is3dView = true;
-        m_ignoreViewInd = ignoreViewInd;
-
-        if (viewIndRotation)
-            m_viewIndRotation.inverseOf (viewIndRotation);
-        else
-            m_viewIndRotation.initIdentity ();
-
-        SetBlockAsynchs (true);
-
-        m_output.Init (this);
-        _SetupOutputs ();
-        }
-
-    virtual void    _SetupOutputs () override {SetIViewDraw (m_output);}
-    virtual bool    _WantUndisplayed () override {return true;}
-
-    virtual bool    _IfConditionalDraw (DisplayFilterHandlerId, ElementHandleCP, void const*, size_t)     override { return true; }
-    virtual bool    _ElseIfConditionalDraw (DisplayFilterHandlerId, ElementHandleCP, void const*, size_t) override { return true; }
-    virtual bool    _ElseConditionalDraw ()                                                               override { return true; }
-    virtual void    _EndConditionalDraw ()                                                                override { }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemRangeCalc*  GetElemRange ()
-    {
-    return m_output.GetElemRange ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            _PushViewIndependentOrigin (DPoint3dCP origin) override
-    {
-    RotMatrix   viRotation;
-
-    m_viewIndOrigin = *origin;
-
-    if (GetTransformClipStack().IsViewIndependent())
-        viRotation.initIdentity ();
-    else
-        viRotation = m_viewIndRotation;
-
-    Transform   viTrans;
-
-    viTrans.initFromMatrixAndFixedPoint (&viRotation, origin);
-    _PushTransform (viTrans);
-
-    GetTransformClipStack().SetViewIndependent ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ExpandViewIndependentRange ()
-    {
-    if (m_ignoreViewInd || !IsViewIndependent ())
-        return;
-
-    DRange3d    range;
-
-    if (SUCCESS != GetElemRange ()->GetRange (range))
-        return;
-
-    range.low.differenceOf (&range.low, &m_viewIndOrigin);
-    range.high.differenceOf (&range.high, &m_viewIndOrigin);
-
-    double      rmax = range.largestCoordinate ();
-
-    range.low.init (-rmax, -rmax, -rmax);
-    range.high.init (rmax, rmax, rmax);
-
-    range.low.add (&m_viewIndOrigin);
-    range.high.add (&m_viewIndOrigin);
-
-    // NOTE: GetCurrTrans was already applied to un-expanded range...
-    m_output.GetElemRange ()->Union (2, (DPoint3dP) &range,  m_output.GetCurrRangeClip());
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    _DrawAligned (DVec3dCR axis, DPoint3dCR origin, AlignmentMode type, IStrokeAligned& stroker) override
-    {
-    if (m_ignoreViewInd)
-        {
-        T_Super::_DrawAligned (axis, origin, type, stroker);
-        return;
-        }
-
-    RangeOutput         tempOutput;
-    DRange3d            alignedRange;
-
-    tempOutput.Init (this);
-    SetIViewDraw (tempOutput);
-    stroker._StrokeAligned (*this);
-    SetIViewDraw (m_output);
-
-    if (SUCCESS == tempOutput.GetElemRange()->GetRange (alignedRange))
-        {
-        double          max = alignedRange.largestCoordinate ();
-        DRange3d        expandRange = DRange3d::FromMinMax (-max, max);
-
-        expandRange.low.Add (origin);
-        expandRange.high.Add (origin);
-
-        m_output.GetElemRange ()->Union (2, (DPoint3dP) &expandRange,  m_output.GetCurrRangeClip());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* calculate the range of an element, given an element iterator
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       CalculateRange (ElementHandleCR elIter)
-    {
-    m_output.GetElemRange ()->Invalidate ();
-
-    SetDgnProject (*elIter.GetDgnProject ());
-
-    return _VisitElemHandle (elIter, false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    03/2014
-//---------------------------------------------------------------------------------------
-StatusInt       CalculateRange (XGraphicsContainerR xGraphics, DgnModelCR dgnModel)
-    {
-    m_output.GetElemRange ()->Invalidate ();
-
-    SetDgnProject (dgnModel.GetDgnProject ());
-
-    return xGraphics.Draw (*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/2007
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            _WantAreaPatterns () override
-    {
-    // Patterns do contribute to an elements range...
-    return false;
-    }
-
-}; // RangeContext
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -936,186 +800,7 @@ void    RangeOutput::_PopTransClip ()
     {
     T_Super::_PopTransClip ();
     m_rangeClipStack.Pop ();
-    RangeContext*   rangeContext;
-    if (NULL != (rangeContext = dynamic_cast <RangeContext*> (m_context)))
-        rangeContext-> ExpandViewIndependentRange ();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DisplayHandler::ValidateElementRange (EditElementHandleR elHandle)
-    {
-    return _ValidateElementRange (elHandle);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DisplayHandler::ValidateElementRange (MSElementDescrP elDscr)
-    {
-    EditElementHandle  elHandle (elDscr, false);
-
-    DisplayHandlerP handler = elHandle.GetDisplayHandler();
-    return (NULL == handler) ? ERROR : handler->_ValidateElementRange (elHandle);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DisplayHandler::ValidateElementRange (DgnElementP el, DgnModelP model)
-    {
-    if (NULL == el || NULL == model)
-        return SUCCESS;
-
-    MSElementDescrPtr tDscr = new MSElementDescr(*el, *model);
-    if (SUCCESS != ValidateElementRange (tDscr.get()))
-        return  ERROR;
-
-    // can't copy just the range, some validators (e.g. shared cells) set other members
-    tDscr->Element().CopyTo(*el);
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DisplayHandler::ValidateViewIndependentElementRange(EditElementHandleR elHandle)
-    {
-    DgnElementP el = elHandle.GetElementP ();
-
-    RangeContext    context;
-    context.GetElemRange()->Invalidate ();
-
-    DRange3d range = el->GetRange();
-
-    context.GetElemRange()->Union (&range, NULL);
-    context.PopTransformClip();
-
-    if (!context.GetElemRange()->IsValid())
-        return ERROR;
-
-    context.GetElemRange()->ToScanRange (el->GetRangeR(), el->Is3d());
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DisplayHandler::CalcElementRange (ElementHandleCR elHandle, DRange3dR range, TransformCP transform)
-    {
-    RotMatrix   viewRotation;
-
-    if (transform)
-        transform->getMatrix (&viewRotation);
-    else
-        viewRotation.initIdentity ();
-
-    RangeContext    context (true, &viewRotation);
-
-    if (transform)
-        context.PushTransform (*transform);
-
-    return (SUCCESS != context.CalculateRange (elHandle)) ? ERROR : (BentleyStatus) context.GetElemRange()->GetRange (range);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    03/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus   XGraphicsContainer::CalculateRange (DRange3dR range, DgnModelCR dgnModel, TransformCP transform)
-    {
-    RotMatrix   viewRotation;
-
-    if (transform)
-        transform->getMatrix (&viewRotation);
-    else
-        viewRotation.initIdentity ();
-
-    RangeContext    context (true, &viewRotation);
-
-    if (transform)
-        context.PushTransform (*transform);
-
-    return (SUCCESS != context.CalculateRange (*this, dgnModel)) ? ERROR : (BentleyStatus) context.GetElemRange()->GetRange (range);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Default implementation of CalulateRange for DisplayHandler.
-* Calculates the range by calling the Draw method into a "RangeContext"
-* @bsimethod                                    Keith.Bentley                   03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DisplayHandler::CalculateDefaultRange (EditElementHandleR elHandle)
-    {
-    // Persistent elements have valid ranges...
-    if (NULL == elHandle.PeekElementDescrCP())
-        return SUCCESS;
-
-    RangeContext context;
-    if (SUCCESS != context.CalculateRange (elHandle))
-        return ERROR;
-
-    DgnElementP  el = elHandle.GetElementP();
-    context.GetElemRange()->ToScanRange(el->GetRangeR(), Is3dElem(el));
-
-    LineStyleUtil::AddLsRange (elHandle);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   08/99
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Viewport::ComputeTransientRange (DRange3dP range, RotMatrixP rMatrix, bool checkLevelClass) const
-    {
-    range->init (); // Set to invalid range
-
-    RotMatrix   viewRotation = (rMatrix ? *rMatrix : GetRotMatrix ());
-    Transform   transform;
-
-    transform.initFrom (&viewRotation);
-
-    RangeContext    context (true, &viewRotation);
-
-    context.PushTransform (transform);
-    context.VisitTransientElements (true);
-    context.VisitTransientElements (false);
-
-    return context.GetElemRange()->GetRange (*range);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct FitOutput: public RangeOutput
-{
-    DEFINE_T_SUPER (RangeOutput)
-    
-public:
-    virtual bool    _DoTextGeometry ()   const override {return NeedsBlankSpaceFit () ? T_Super::_DoTextGeometry(): true;}
-    virtual void    _DrawTextString (TextStringCR text, double* zDepth) override
-        {
-        if (NeedsBlankSpaceFit() || !text.IsEmptyString ())
-            {
-            T_Super::_DrawTextString(text, zDepth);
-            return;
-            }
-
-        SimplifyViewDrawGeom::_DrawTextString(text, zDepth);
-        }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-private: bool   NeedsBlankSpaceFit () const
-    {
-#ifdef WIP_CFGVAR
-    static int s_checked = -1;
-    return ConfigurationManager::CheckVariableIsDefined (s_checked, L"MS_FIT_BLANKTEXT_INCLUDE");
-#endif
-    return false; // false the default in MicroStation
-    }
-
-};  // FitOutput
 
 /*=================================================================================**//**
 * Context to caclulate the range of all elements within a view.
@@ -1125,12 +810,12 @@ struct FitContext : public NullContext
 {
     DEFINE_T_SUPER(NullContext)
 private:
-    FitOutput           m_output;
+    RangeOutput         m_output;
     FitViewParams&      m_params;
 
 protected:
     virtual DgnModelP    _GetViewTarget () override {return NULL == m_viewport ? m_params.m_modelIfNoViewport : m_viewport->GetViewController ().GetTargetModel(); }
-    virtual QvElem*      _DrawCached (CachedDrawHandleCR dh, IStrokeForCache& stroker, Int32) override { stroker._StrokeForCache (dh, *this); return NULL;}
+    virtual QvElem*      _DrawCached (IStrokeForCache& stroker) override { stroker._StrokeForCache (*this); return nullptr;}
     virtual void         _SetupOutputs () override {SetIViewDraw (m_output);}
 
 public:
@@ -1145,7 +830,7 @@ public:
         }
 
     ElemRangeCalc*          GetElemRange ()                          { return m_output.GetElemRange (); }
-    void                    SetViewport (ViewportP viewport)         { m_viewport = viewport; }
+    void                    SetViewport (DgnViewportP viewport)         { m_viewport = viewport; }
     void                    SetDrawPurpose (DrawPurpose drawPurpose) { m_purpose = drawPurpose; }   
     void                    SetIs3dView (bool is3dView)              { m_is3dView  = is3dView; }
 
@@ -1202,7 +887,7 @@ void InitFitContext ()
 
     DgnModelP rootModel = _GetViewTarget();
 
-    SetDgnProject (rootModel->GetDgnProject ());
+    SetDgnDb (rootModel->GetDgnDb ());
     m_is3dView = rootModel->Is3d();
     }
 
@@ -1270,86 +955,85 @@ bool _ScanRangeFromPolyhedron()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            _InitScanCriteria () override
-    {
-    T_Super::_InitScanCriteria ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            _SetupScanCriteria () override
-    {
-    T_Super::_SetupScanCriteria ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            _SetScanReturn () override
     {
     T_Super::_SetScanReturn ();
-    m_scanCriteria->SetReturnType (MSSCANCRIT_ITERATE_ELMREF_UNORDERED, false, true);
+    m_scanCriteria->SetReturnType (MSSCANCRIT_ITERATE_ELEMENT_UNORDERED, false, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       _VisitElemHandle (ElementHandleCR inEl, bool checkRange, bool checkScanCriteria) override
+StatusInt _VisitElement (GeometricElementCR element) override
     {
-    DgnElementCP el = inEl.GetElementCP();
-
-    DRange3dCP range = ElemRangeIndex::CheckIndexRange (inEl);
-    if (NULL != range && IsRangeContainedInCurrentRange (*range, el->Is3d()))
+    if (IsRangeContainedInCurrentRange(element._GetRange3d(), element.Is3d()))
         return SUCCESS;
 
-    return T_Super::_VisitElemHandle (inEl, checkRange, checkScanCriteria);
+    // NOTE: Can just draw bounding box instead of drawing element geometry...
+    DPoint3d  corners[8];
+    DRange3d  range = element._GetElementBox3d();
+    Transform placementTrans = element._GetPlacementTrans();
+
+    range.Get8Corners(corners);
+    placementTrans.Multiply(corners, 8);
+    GetIDrawGeom().DrawPointString3d(8, corners, nullptr);
+
+    return SUCCESS;
     }
 };
-
-/*=================================================================================**//**
-* Context to calculate the range of all elements within a view, excluding callouts.
-* @bsiclass                                                     SunandSandurkar 06/10
-+===============+===============+===============+===============+===============+======*/
-struct FitContextIgnoreCallouts : public FitContext, IViewContextIgnoreCallouts
-    {
-    FitContextIgnoreCallouts (FitViewParams& params): FitContext (params){}
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Viewport::ComputeViewRange (DRange3dR range, FitViewParams& params) 
+StatusInt DgnViewport::ComputeViewRange (DRange3dR range, FitViewParams& params) 
     {
     Json::Value oldState;
     m_viewController->SaveToSettings(oldState);
 
-    // first give the viewController a chance to decide the range and/or load elements
+    // first give the viewController a chance to decide the range and/or load elements.
+    // the default implementation of _OnComputeFitRange will simply return the range of the range tree.
     if (m_viewController->_OnComputeFitRange(range, *this, params))
         return  SUCCESS;
 
+    // now do a normal query to find the elements that are within this range.
+    // the purpose of this query is to make the returned range include only the elements that are
+    // actually displayed in the view. That might be smaller than 'range'.
     FitContext  context (params);
     context.AllocateScanCriteria ();
 
     if (SUCCESS != SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
-        return  ERROR;
+        return ERROR;
 
-    context.SetViewport (this); // Don't want to attach...but transients have view display mask!
-    context.InitFitContext ();
-    context.VisitAllViewElements (params.m_includeTransients, NULL);
+    context.SetViewport(this); // Don't want to attach...but transients have view display mask!
+    context.InitFitContext();
+    context.VisitAllViewElements(params.m_includeTransients, NULL);
 
     m_viewController->RestoreFromSettings(oldState);
     _SynchWithViewController(false);
 
-    return context.GetElemRange()->GetRange (range);
+#if defined (NEED_NEW_APPROACH)
+
+    // This approach doesn't work correctly with QueryViews, because sometimes the database can be so large that nearly all of the elements 
+    // are filtered on size criteria. But if at least one isn't filtered, we take them to be the entire universe. We need a better approach.
+    // For now, every fit will always go to the extent of all elements in the project, regardless of whether they're displayed in this view or not. KAB 3/2015
+
+    // get the fitted range from the FitContext and return that in 'range'. 
+    // however, if the fit found no elements bigger than 1 pixel (because 'range' is very, very large), then 
+    // don't return an invalid range -- return the full range. we know it's a good range, even if it's not as tight as it could be.
+    DRange3d fullRange;
+    if (SUCCESS == context.GetElemRange()->GetRange(fullRange))
+        range = fullRange;
+#endif
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Marc.Bedard  01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       Viewport::ComputeFittedElementRange (DRange3dR rangeUnion, IElementSetR elements, RotMatrixCP rMatrix)
+StatusInt       DgnViewport::ComputeFittedElementRange (DRange3dR rangeUnion, IElementSetR elements, RotMatrixCP rMatrix)
     {
     FitViewParams params;
     params.m_rMatrix = rMatrix;//Old function had this feature. So retaining it
@@ -1365,9 +1049,14 @@ StatusInt       Viewport::ComputeFittedElementRange (DRange3dR rangeUnion, IElem
         if (!curr.IsValid())
             continue;
 
+        GeometricElementCP geom = curr.GetGeometricElement();
+
+        if (nullptr == geom)
+            continue;
+
         ViewContext::ContextMark mark (&context);
 
-        context.VisitElemHandle (curr, false, false);
+        context.VisitElement (*geom);
         }
     
     return context.GetElemRange()->GetRange (rangeUnion);
@@ -1387,10 +1076,13 @@ struct DepthFitContext : public FitContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitElemHandle (ElementHandleCR inEl, bool checkRange, bool checkScanCriteria) override
+virtual StatusInt _VisitElement (GeometricElementCR element)
     {
-    // Force "CheckRange" on to do view clipping - this is much less expensive than clipping and accumulating ranges for geometry outside the view.
-    return T_Super::_VisitElemHandle (inEl, true, checkScanCriteria);
+    // Check range - this is much less expensive than clipping and accumulating ranges for geometry outside the view.
+    if (_FilterRangeIntersection (element))
+        return SUCCESS;
+
+    return T_Super::_VisitElement (element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1423,7 +1115,7 @@ void InitDepthFitContext ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Viewport::DetermineVisibleDepthNpc (double& lowNpc, double& highNpc, DRange3dCP subRectNpc)
+StatusInt DgnViewport::DetermineVisibleDepthNpc (double& lowNpc, double& highNpc, DRange3dCP subRectNpc)
     {
     FitViewParams params;
     params.m_useScanRange = true;
@@ -1458,8 +1150,11 @@ StatusInt Viewport::DetermineVisibleDepthNpc (double& lowNpc, double& highNpc, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IViewTransients::ComputeRange (DRange3dR range, ViewportP vp)
+StatusInt       IViewTransients::ComputeRange (DRange3dR range, DgnViewportP vp)
     {
+    // NEEDSWORK_WIP_RANGE - Do we need to keep this method if fit starts using project extents???
+    //                       Can maybe just have a virtual _GetRange method on IViewTransient and
+    //                       require implemention to keep "geometry" range if needed...
     if (SUCCESS != vp->SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
         return  ERROR;
 
@@ -1474,4 +1169,13 @@ StatusInt       IViewTransients::ComputeRange (DRange3dR range, ViewportP vp)
     _DrawTransients (context, false);
 
     return context.GetElemRange()->GetRange (range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   08/99
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt DgnViewport::ComputeTransientRange (DRange3dP range, RotMatrixP rMatrix, bool checkLevelClass) const
+    {
+    // NEEDSWORK_WIP_RANGE - Called by QvViewport::_AdjustZPlanesToModel, goes aways when we have project "extents".
+    return ERROR;
     }

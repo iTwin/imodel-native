@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ACSManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -32,8 +32,8 @@ struct ACSGrid
 {
 Point2d         m_repetitions;  // grid size for fixed number of repetitions (0,0 for infinite grid plane)...
 Point2d         m_originOffset; // grid position relative to acs origin (0,0 for lower left)...
-UInt32          m_gridPerRef;   // grid dot per reference grid line...
-UInt32          m_unused;       // Unused pad bytes...
+uint32_t        m_gridPerRef;   // grid dot per reference grid line...
+uint32_t        m_unused;       // Unused pad bytes...
 double          m_uorPerGrid;   // grid x size spacing in uors...
 double          m_ratio;        // grid x/y spacing ratio...
 
@@ -103,7 +103,7 @@ ACSFlags        m_flags;        // option flags
 DPoint3d        m_origin;       // origin of acs
 double          m_scale;        // scale of acs
 RotMatrix       m_rotation;     // rotation of acs
-ElementId       m_elementId;    // id of named acs element, 0 for unnamed
+DgnElementId    m_elementId;    // id of named acs element, 0 for unnamed
 ACSGrid         m_grid;         // New for Vancouver - ACS grid settings...
 
 ACSData () {Init ();}
@@ -165,63 +165,8 @@ virtual ACSType     /*AuxCoordSys::*/_GetType () const override {return m_acsDat
 virtual WString     /*AuxCoordSys::*/_GetName () const override {return m_name;}
 virtual WString     /*AuxCoordSys::*/_GetDescription () const override {return m_description;}
 virtual bool        /*AuxCoordSys::*/_GetIsReadOnly () const override {return false;}
-virtual ElementId   /*AuxCoordSys::*/_GetElementId() const override {return m_acsData.m_elementId ;}
-virtual UInt32      /*AuxCoordSys::*/_GetExtenderId() const override {return 0;}
-virtual UInt32      /*AuxCoordSys::*/_GetSerializedSize() const override {return sizeof (m_acsData);}
-
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_SetElementId (ElementId elementId, DgnModelP modelRef) override
-    {
-    if (m_attachedToView)
-        {
-        // If active ACS from named, these will be updated from named ACS element...
-        m_name.clear ();
-        m_description.clear ();
-        }
-
-    if (elementId.IsValid() && NULL != modelRef)
-        {
-        ElementRefP    elemRef = modelRef->FindElementById(elementId);
-        ElementHandle  elHandle (elemRef);
-
-        // Verify that new element id is valid...
-        if (IACSManager::ElementIsACS (elHandle))
-            {
-            if (m_attachedToView)
-                {
-                // Update current ACS from named...
-                if (SUCCESS != SetDataFromElement (elHandle))
-                    elementId.Invalidate();
-                }
-            }
-        else
-            {
-            elementId.Invalidate();
-            }
-        }
-
-    m_acsData.m_elementId = elementId;
-
-    return SUCCESS;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    /*AuxCoordSys::*/_OnDataModified ()
-    {
-#if defined (NEEDS_WORK_DGNITEM)
-    // Break active ACS connection to named ACS when data changed...
-    if (!m_attachedToView)
-        return;
-
-    _SetElementId (ElementId(), NULL);
-#endif
-    }
+virtual uint32_t    /*AuxCoordSys::*/_GetExtenderId() const override {return 0;}
+virtual uint32_t    /*AuxCoordSys::*/_GetSerializedSize() const override {return sizeof (m_acsData);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/07
@@ -229,8 +174,6 @@ virtual void    /*AuxCoordSys::*/_OnDataModified ()
 virtual StatusInt   /*AuxCoordSys::*/_SetType (ACSType type) override
     {
     m_acsData.m_type = type;
-
-    _OnDataModified ();
 
     return SUCCESS;
     }
@@ -243,8 +186,6 @@ virtual StatusInt   /*AuxCoordSys::*/_SetName (WCharCP name) override
     m_name.assign (name);
     TrimWhiteSpace (m_name); // Don't store leading/trailing spaces...
 
-    _OnDataModified ();
-
     return SUCCESS;
     }
 
@@ -256,8 +197,6 @@ virtual StatusInt   /*AuxCoordSys::*/_SetDescription (WCharCP descr) override
     m_description.assign (descr);
     TrimWhiteSpace (m_description); // Don't store leading/trailing spaces...
 
-    _OnDataModified ();
-
     return SUCCESS;
     }
 
@@ -268,8 +207,6 @@ virtual StatusInt    /*AuxCoordSys::*/_SetScale (double scale) override
     {
     m_acsData.m_scale = scale;
 
-    _OnDataModified ();
-
     return SUCCESS;
     }
 
@@ -279,8 +216,6 @@ virtual StatusInt    /*AuxCoordSys::*/_SetScale (double scale) override
 virtual StatusInt    /*AuxCoordSys::*/_SetOrigin (DPoint3dCR pOrigin) override
     {
     m_acsData.m_origin = pOrigin;
-
-    _OnDataModified ();
 
     return SUCCESS;
     }
@@ -298,8 +233,6 @@ virtual StatusInt   /*AuxCoordSys::*/_SetRotation (RotMatrixCR pRot) override
 
     m_acsData.m_rotation = pRot;
 
-    _OnDataModified ();
-
     return SUCCESS;
     }
 
@@ -309,8 +242,6 @@ virtual StatusInt   /*AuxCoordSys::*/_SetRotation (RotMatrixCR pRot) override
 virtual StatusInt    /*AuxCoordSys::*/_SetFlags (ACSFlags flags) override
     {
     m_acsData.m_flags = flags;
-
-    _OnDataModified ();
 
     return SUCCESS;
     }
@@ -326,17 +257,6 @@ virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController (PhysicalV
     if (ACSFlags::None != (ACSFlags::ViewIndependent & m_acsData.m_flags))
         {
         m_acsData.m_rotation = info->GetRotation ();
-        }
-
-    // Finish moderately expensive setup now that we have both acs data and view...
-    if (!m_viewInfoValidated)
-        {
-#ifdef DGNV10FORMAT_CHANGES_WIP
-        SetElementId (m_acsData.m_elementId, info->GetRootModelP());
-        ValidateData (m_acsData.m_origin, m_acsData.m_rotation, (NULL != info->GetTargetDgnModelP ()) ? info->GetTargetDgnModelP()->Is3d () : info->TreatViewAs3D ());
-
-        m_viewInfoValidated = true;
-#endif
         }
 
     return SUCCESS;
@@ -424,7 +344,7 @@ virtual ACSFlags    /*AuxCoordSys::*/_GetFlags () const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams (Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, UInt32 gridPerRef) override
+virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams (Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) override
     {
     m_acsData.m_grid.Init ();
 
@@ -437,15 +357,13 @@ virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams (Point2dCR gridReps, P
     m_acsData.m_grid.m_gridPerRef   = gridPerRef;
     m_acsData.m_grid.m_ratio        = gridRatio;
 
-    _OnDataModified ();
-
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams (Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, UInt32& gridPerRef) const override
+virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams (Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const override
     {
     gridReps   = m_acsData.m_grid.m_repetitions;
     gridOffset = m_acsData.m_grid.m_originOffset;
@@ -459,7 +377,7 @@ virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams (Point2dR gridReps, Po
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_Serialize (void *buffer, UInt32 maxSize) const override
+virtual StatusInt   /*AuxCoordSys::*/_Serialize (void *buffer, uint32_t maxSize) const override
     {
     if (maxSize < sizeof(m_acsData))
         return ERROR;
@@ -550,7 +468,7 @@ DgnModelR    modelRef
             if (SUCCESS != (status = directionParser->ToValue (theta, subStrings[1].c_str())))
                 return status;
 
-            theta = bsiTrig_degreesToRadians (theta);
+            theta = Angle::DegreesToRadians (theta);
 
             if ( relative && ( (lastPoint.x != 0.0) || (lastPoint.y != 0.0)) )
                 {
@@ -603,8 +521,8 @@ DgnModelR    modelRef
             if (SUCCESS != (status = directionParser->ToValue (phi, subStrings[2].c_str())))
                 return status;
 
-            theta = bsiTrig_degreesToRadians (theta);
-            phi   = bsiTrig_degreesToRadians (phi);
+            theta = Angle::DegreesToRadians (theta);
+            phi   = Angle::DegreesToRadians (phi);
 
             if (relative)
                 {
@@ -729,88 +647,10 @@ DirectionFormatterR directionFormatter
     return SUCCESS;
     }
 
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Barry.Bentley   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt    /*AuxCoordSys::*/_DeleteFromFile (DgnModelP modelRef) override
-    {
-    if (modelRef->IsReadOnly ())
-        return DGNHANDLERS_STATUS_FileReadonly;
-
-    ElementRefP  elemRef;
-
-    if (!_GetElementId().IsValid() || NULL == (elemRef = modelRef->FindElementById (_GetElementId ())) || elemRef->IsDeleted ())
-        return ERROR;
-
-    EditElementHandle  elemHandle (elemRef);
-
-    // make sure it's a named ACS element that we're going to replace...
-    if (!IACSManager::ElementIsACS (elemHandle))
-        return ERROR;
-
-    return elemHandle.DeleteFromModel ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Barry.Bentley   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_SaveToFile (DgnModelP modelRef, ACSSaveOptions option) override
-    {
-    if (modelRef->IsReadOnly ())
-        return DGNHANDLERS_STATUS_FileReadonly;
-
-    ElementRefP  elemRef;
-
-    if (!_GetElementId().IsValid() || NULL == (elemRef = modelRef->FindElementById (_GetElementId ())) || elemRef->IsDeleted ())
-        {
-        // if we don't have a valid ElementId, we can't save unless ACSSaveOption is ACSSaveOptions::AllowNew.
-        if (ACSSaveOptions::AllowNew != option)
-            return DGNHANDLERS_STATUS_WriteInhibit;
-
-        // if we already have an ACS with our name, can't save it.
-        if (IACSManager::GetManager().GetByName (_GetName().data(), modelRef, 0).IsValid())
-            return DGNHANDLERS_STATUS_AlreadyExists;
-
-        StatusInt          status;
-        EditElementHandle  eeh;
-
-        if (SUCCESS != (status = ElementCreate (eeh, *modelRef)))
-            return status;
-
-        status = eeh.AddToModel ();
-
-        // Update elementId in ACS object...
-        if (SUCCESS == status)
-            SetElementId (eeh.GetElementRef ()->GetElementId (), modelRef);
-
-        return status;
-        }
-
-    // make sure it's a named ACS element that we're going to replace...
-    if (!IACSManager::ElementIsACS (ElementHandle (elemRef)))
-        return ERROR;
-
-    StatusInt       status;
-    EditElementHandle  eeh;
-
-    if (SUCCESS != (status = ElementCreate (eeh, *modelRef)))
-        return status;
-
-    status = eeh.ReplaceInModel (elemRef);
-
-    // Update elementId in ACS object...
-    if (SUCCESS == status)
-        SetElementId (eeh.GetElementRef ()->GetElementId (), modelRef);
-
-    return status;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    /*AuxCoordSys::*/_DrawGrid (ViewportP viewport) const override
+virtual void    /*AuxCoordSys::*/_DrawGrid (DgnViewportP viewport) const override
     {
     // Called for active ACS when tcb->gridOrientation is GridOrientationType::ACS.
     DPoint3d    origin;
@@ -842,7 +682,7 @@ virtual void    /*AuxCoordSys::*/_DrawGrid (ViewportP viewport) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    /*AuxCoordSys::*/_PointToGrid (ViewportP viewport, DPoint3dR point) const override
+virtual void    /*AuxCoordSys::*/_PointToGrid (DgnViewportP viewport, DPoint3dR point) const override
     {
     DPoint3d    origin;
     RotMatrix   rMatrix;
@@ -945,206 +785,6 @@ private:
 
 public:
 
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt  SetDataFromElement (ElementHandleCR elHandle)
-    {
-    if (!IACSManager::ElementIsACS (elHandle))
-        return DGNHANDLERS_STATUS_BadArg;
-
-    DgnElementCP elmP = elHandle.GetElementCP ();
-
-    m_acsData.m_origin      = elmP->ToAuxCoordinate().origin;
-    m_acsData.m_rotation    = elmP->ToAuxCoordinate().rotation;
-    m_acsData.m_type        = (ACSType) elmP->ToAuxCoordinate().flags.type;
-    m_acsData.m_scale       = 1.0;
-    if (elmP->GetElementId().GetValueUnchecked() == 0)
-        m_acsData.m_elementId.Invalidate();
-    else
-        m_acsData.m_elementId = elmP->GetElementId();
-
-    m_acsData.m_grid.Init (); // Set defaults for no grid settings...
-
-    ElementGetName (elHandle, &m_name);
-    ElementGetDescription (elHandle, &m_description);
-
-    for (ConstElementLinkageIterator li = elHandle.BeginElementLinkages(); li != elHandle.EndElementLinkages(); ++li)
-        {
-        UInt16        linkageKey;
-        UInt32        numEntries;
-        double const* doubleData;
-        byte const*   byteData;
-
-        if (NULL != (doubleData = ElementLinkageUtil::GetDoubleArrayDataCP (li, linkageKey, numEntries)))
-            {
-            if (DOUBLEARRAY_LINKAGE_KEY_AuxCoordScale == linkageKey && 1 == numEntries)
-                m_acsData.m_scale = *doubleData;
-            }
-        else if (NULL != (byteData = ElementLinkageUtil::GetByteArrayDataCP (li, linkageKey, numEntries)))
-            {
-            if (BYTEARRAY_LINKAGE_KEY_AuxCoordGrid == linkageKey && sizeof (ACSGrid) >= numEntries)
-                memcpy (&m_acsData.m_grid, byteData, numEntries);
-            }
-        }
-
-    return SUCCESS;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt    /*AuxCoordSys::*/ElementGetName (ElementHandleCR eh, WStringP pName)
-    {
-    WChar       acsName[MAX_ACS_NAME_LENGTH];
-    StatusInt   status = DGNHANDLERS_STATUS_BadArg;
-
-    if (!IACSManager::ElementIsACS (eh))
-        return DGNHANDLERS_STATUS_BadArg;
-
-    if (SUCCESS != (status = LinkageUtil::ExtractNamedStringLinkageByIndex (acsName, MAX_ACS_NAME_LENGTH, STRING_LINKAGE_KEY_Name, 0, eh.GetElementCP ())))
-        acsName[0] = '\0';
-
-    if (pName)
-        {
-        pName->assign (acsName);
-        TrimWhiteSpace (*pName); // Don't return with leading/trailing spaces...
-        }
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt    /*AuxCoordSys::*/ElementGetDescription (ElementHandleCR eh, WStringP pDesc)
-    {
-    WChar       acsDescr[MAX_ACS_NAME_LENGTH];
-    StatusInt   status = DGNHANDLERS_STATUS_BadArg;
-
-    if (!IACSManager::ElementIsACS (eh))
-        return DGNHANDLERS_STATUS_BadArg;
-
-    if (SUCCESS != (status = LinkageUtil::ExtractNamedStringLinkageByIndex (acsDescr, MAX_ACS_NAME_LENGTH, STRING_LINKAGE_KEY_Description, 0, eh.GetElementCP ())))
-        {
-        acsDescr[0] = '\0';
-
-        // No description is not an error
-        if (DGNHANDLERS_STATUS_LinkageNotFound == status)
-            status = SUCCESS;
-        }
-
-    if (pDesc)
-        {
-        pDesc->assign (acsDescr);
-        TrimWhiteSpace (*pDesc); // Don't return with leading/trailing spaces...
-        }
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt   /*AuxCoordSys::*/ElementSetName (EditElementHandleR eeh, WStringCR name)
-    {
-    if (!IACSManager::ElementIsACS (eeh))
-        return DGNHANDLERS_STATUS_BadArg;
-
-    WString     wName = name;
-
-    // Don't store leading/trailing spaces...
-    TrimWhiteSpace (wName);
-
-    DgnV8ElementBlank elm(*eeh.GetElementCP());
-
-    if (SUCCESS != LinkageUtil::SetStringLinkage (&elm, STRING_LINKAGE_KEY_Name, wName.data ()))
-        return ERROR;
-
-    eeh.ReplaceElement (&elm);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt   /*AuxCoordSys::*/ElementSetDescription (EditElementHandleR eeh, WStringCR name)
-    {
-    if (!IACSManager::ElementIsACS (eeh))
-        return DGNHANDLERS_STATUS_BadArg;
-
-    WString     wName = name;
-
-    // Don't store leading/trailing spaces...
-    TrimWhiteSpace (wName);
-
-    DgnV8ElementBlank elm(*eeh.GetElementCP());
-
-    if (0 == wName.length ())
-        LinkageUtil::DeleteStringLinkage (&elm, STRING_LINKAGE_KEY_Description, 0);
-    else if (SUCCESS != LinkageUtil::SetStringLinkage (&elm, STRING_LINKAGE_KEY_Description, wName.data ()))
-        return ERROR;
-
-    eeh.ReplaceElement (&elm);
-
-    return SUCCESS;
-    }
-
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt /*AuxCoordSys::*/ElementCreate (EditElementHandleR eeh, DgnModelR model)
-    {
-    DgnV8ElementBlank elemBuf(DgnV8ElementBlank::Zeros::Full);
-
-    elemBuf.SetLegacyType(GROUP_DATA_ELM);
-    elemBuf.SetLevel(3);
-    elemBuf.SetSizeWordsNoAttributes(sizeof (AuxCoordinate) / 2);
-    elemBuf.SetElementId(m_acsData.m_elementId);
-
-    eeh.SetElementDescr(new MSElementDescr(elemBuf, model), false);
-
-    eeh.GetElementP ()->ToAuxCoordinateR().flags.type = static_cast <UInt16> (m_acsData.m_type);
-    eeh.GetElementP ()->ToAuxCoordinateR().origin     = m_acsData.m_origin;
-    eeh.GetElementP ()->ToAuxCoordinateR().rotation   = m_acsData.m_rotation;
-
-    // Remove existing scale and grid linkages, will add new ones if needed...
-    for (ElementLinkageIterator li = eeh.BeginElementLinkages(); li != eeh.EndElementLinkages(); ++li)
-        {
-        UInt16        linkageKey;
-        UInt32        numEntries;
-        double const* doubleData;
-        byte const*   byteData;
-
-        if (NULL != (doubleData = ElementLinkageUtil::GetDoubleArrayDataCP (li, linkageKey, numEntries)))
-            {
-            if (DOUBLEARRAY_LINKAGE_KEY_AuxCoordScale == linkageKey)
-                eeh.RemoveElementLinkage (li);
-            }
-        else if (NULL != (byteData = ElementLinkageUtil::GetByteArrayDataCP (li, linkageKey, numEntries)))
-            {
-            if (BYTEARRAY_LINKAGE_KEY_AuxCoordGrid == linkageKey)
-                eeh.RemoveElementLinkage (li);
-            }
-        }
-
-    if (0.0 < m_acsData.m_scale && !LegacyMath::DEqual (m_acsData.m_scale, 1.0))
-        ElementLinkageUtil::AppendDoubleArrayData (eeh, DOUBLEARRAY_LINKAGE_KEY_AuxCoordScale, 1, &m_acsData.m_scale);
-
-    if (!m_acsData.m_grid.IsDefaultSettings ())
-        ElementLinkageUtil::AppendByteArrayData (eeh, BYTEARRAY_LINKAGE_KEY_AuxCoordGrid, sizeof (m_acsData.m_grid), (byte *) &m_acsData.m_grid);
-
-    if (SUCCESS != ElementSetName (eeh, _GetName ()))
-        return ERROR;
-
-    return ElementSetDescription (eeh, _GetDescription ());
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1161,31 +801,13 @@ static AuxCoordSys* /*AuxCoordSys::*/CreateNew (ACSData& acsData)
     return new AuxCoordSys (acsData);
     }
 
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-static AuxCoordSys* /*AuxCoordSys::*/CreateNew (ElementHandleCR eh)
-    {
-    AuxCoordSys* acs = new AuxCoordSys ();
-
-    if (SUCCESS != acs->SetDataFromElement (eh))
-        {
-        DELETE_AND_CLEAR (acs);
-
-        return NULL;
-        }
-
-    return acs;
-    }
-#endif
 
 }; // AuxCoordSys
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double          IAuxCoordSys::GetGridScaleFactor (ViewportR vp) const
+double          IAuxCoordSys::GetGridScaleFactor (DgnViewportR vp) const
     {
     double      scaleFactor = 1.0;
 
@@ -1201,10 +823,10 @@ double          IAuxCoordSys::GetGridScaleFactor (ViewportR vp) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IAuxCoordSys::GetGridSpacing (DPoint2dR spacing, Point2dR gridReps, Point2dR gridOffset, ViewportR vp) const
+StatusInt       IAuxCoordSys::GetGridSpacing (DPoint2dR spacing, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const
     {
     double      uorPerGrid, gridRatio;
-    UInt32      gridPerRef;
+    uint32_t    gridPerRef;
 
     if (SUCCESS != _GetStandardGridParams (gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef))
         return ERROR;
@@ -1222,7 +844,7 @@ StatusInt       IAuxCoordSys::GetGridSpacing (DPoint2dR spacing, Point2dR gridRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAuxCoordSys::Locate (DPoint3dR hitPt, ViewportR vp, DPoint3dCR borePt, double radius)
+bool            IAuxCoordSys::Locate (DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius)
     {
     IViewOutputP  output = vp.GetIViewOutput ();
 
@@ -1255,22 +877,16 @@ bool            IAuxCoordSys::Locate (DPoint3dR hitPt, ViewportR vp, DPoint3dCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          IAuxCoordSys::_GetColor
-(
-ViewportP           viewport,
-UInt32              menuColor,
-UInt32              transparency,
-ACSDisplayOptions   options
-) const
+ColorDef IAuxCoordSys::_GetColor (DgnViewportP viewport, ColorDef menuColor, uint32_t transparency, ACSDisplayOptions options) const
     {
-    UInt32      color;
+    ColorDef      color;
 
     if (ACSDisplayOptions::None != (options & ACSDisplayOptions::Hilite))
         color = viewport->GetHiliteColor ();
     else if (ACSDisplayOptions::None != (options & ACSDisplayOptions::Active))
-        color = WHITE_MENU_COLOR_INDEX == menuColor ? viewport->GetContrastToBackgroundColor () : viewport->GetMenuColor (menuColor);
+        color = ColorDef::White() == menuColor ? viewport->GetContrastToBackgroundColor () : menuColor;
     else
-        color = viewport->MakeTrgbColor (150, 150, 150, 0);
+        color = ColorDef(150, 150, 150, 0);
 
     color = viewport->AdjustColorForContrast (color, viewport->GetBackgroundColor ());
     color = viewport->MakeColorTransparency (color, transparency);
@@ -1283,7 +899,7 @@ ACSDisplayOptions   options
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            IAuxCoordSys::_DrawAxisText
 (
-ViewportP           viewport,
+DgnViewportP           viewport,
 ICachedDrawP        cached,
 WCharCP             labelStr,
 bool                isAxisLabel,
@@ -1294,44 +910,37 @@ double              angle,
 ACSDisplayOptions   options
 ) const
     {
-    TextStringProperties tsProps;
-
-    tsProps.SetJustification (TextElementJustification::CenterMiddle);
-
-    DPoint2d    textScale;
-    DPoint3d    textPt;
-    RotMatrix   textMatrix;
-
+    DPoint3d textPt;
     textPt.x = userOrgX; textPt.y = userOrgY; textPt.z = 0.0;
-    textScale.x = textScale.y = scale;
-    textMatrix.InitFromAxisAndRotationAngle(2,  angle);
 
-    tsProps.SetFontSize (textScale);
-    tsProps.SetIs3d (viewport->Is3dView ());
+    RotMatrix textMatrix;
+    textMatrix.InitFromAxisAndRotationAngle(2, angle);
 
-    TextString  textStr (labelStr, &textPt, &textMatrix, tsProps);
-    textStr.SetOriginFromUserOrigin (textPt);
+    TextString textStr;
+    textStr.SetText(Utf8String(labelStr).c_str());
+    textStr.SetOrientation(textMatrix);
+    textStr.GetStyleR().SetFont(DgnFontManager::GetDecoratorFont());
+    textStr.GetStyleR().SetSize(scale);
+    textStr.SetOriginFromJustificationOrigin(textPt, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
 
     ElemMatSymb elemMatSymb;
 
     // Draw background fill for hilited ACS for select ACS tool, in case multiple ACS share common origin...
     if (!isAxisLabel && ACSDisplayOptions::None != (options & ACSDisplayOptions::Hilite))
         {
-        double          border = scale/10.0;
-        DPoint3d        pts[5];
-        DPoint2d        expand = {border, border};
+        DPoint3d pts[5];
+        textStr.ComputeBoundingShape(pts, (scale / 10.0));
+        textStr.ComputeTransform().Multiply(pts, _countof(pts));
 
-        textStr.GenerateBoundingShape (pts, &expand);
-
-        elemMatSymb.SetFillColorTBGR (viewport->GetBackgroundColor ());
+        elemMatSymb.SetFillColor (viewport->GetBackgroundColor ());
         elemMatSymb.SetIsBlankingRegion (true);
 
         cached->ActivateMatSymb (&elemMatSymb);
         cached->DrawShape3d (5, pts, true, NULL);
         }
 
-    elemMatSymb.SetLineColorTBGR (_GetColor (viewport, WHITE_MENU_COLOR_INDEX, _GetTransparency (false, options), options));
-    elemMatSymb.SetFillColorTBGR (_GetColor (viewport, WHITE_MENU_COLOR_INDEX, _GetTransparency (false, options), options));
+    elemMatSymb.SetLineColor (_GetColor (viewport, ColorDef::White(), _GetTransparency (false, options), options));
+    elemMatSymb.SetFillColor (_GetColor (viewport, ColorDef::White(), _GetTransparency (false, options), options));
     elemMatSymb.SetWidth (isAxisLabel ? 2 : 1);
     elemMatSymb.SetIsBlankingRegion (false);
 
@@ -1344,7 +953,7 @@ ACSDisplayOptions   options
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            IAuxCoordSys::_DrawZAxis
 (
-ViewportP           viewport,
+DgnViewportP           viewport,
 ICachedDrawP        cached,
 Transform*          transformP,
 ACSDisplayOptions   options
@@ -1357,8 +966,8 @@ ACSDisplayOptions   options
 
     ElemMatSymb elemMatSymb;
 
-    elemMatSymb.SetLineColorTBGR (_GetColor (viewport, BLUE_MENU_COLOR_INDEX, _GetTransparency (false, options), options));
-    elemMatSymb.SetFillColorTBGR (_GetColor (viewport, BLUE_MENU_COLOR_INDEX, _GetTransparency (true, options), options));
+    elemMatSymb.SetLineColor (_GetColor (viewport, ColorDef::Blue(), _GetTransparency (false, options), options));
+    elemMatSymb.SetFillColor (_GetColor (viewport, ColorDef::Blue(), _GetTransparency (true, options), options));
     elemMatSymb.SetWidth (2);
     cached->ActivateMatSymb (&elemMatSymb);
 
@@ -1401,10 +1010,10 @@ ACSDisplayOptions   options
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            IAuxCoordSys::_DrawAxisArrow
 (
-ViewportP           viewport,
+DgnViewportP           viewport,
 ICachedDrawP        cached,
 Transform*          transformP,
-UInt32              menuColor,
+ColorDef            menuColor,
 WCharCP             labelStrP,
 bool                swapAxis,
 ACSDisplayOptions   options,
@@ -1438,8 +1047,8 @@ ACSFlags            flags
 
     ElemMatSymb elemMatSymb;
 
-    elemMatSymb.SetLineColorTBGR (_GetColor (viewport, menuColor, _GetTransparency (false, options), options));
-    elemMatSymb.SetFillColorTBGR (_GetColor (viewport, menuColor, _GetTransparency (true, options), options));
+    elemMatSymb.SetLineColor (_GetColor (viewport, menuColor, _GetTransparency (false, options), options));
+    elemMatSymb.SetFillColor (_GetColor (viewport, menuColor, _GetTransparency (true, options), options));
     elemMatSymb.SetWidth (1);
 
     if (ACSFlags::None != (flags & ACSFlags::ViewIndependent))
@@ -1467,7 +1076,7 @@ ACSFlags            flags
 +---------------+---------------+---------------+---------------+---------------+------*/
 QvElem*         IAuxCoordSys::_CreateQvElems
 (
-ViewportP           viewport,
+DgnViewportP        viewport,
 DPoint3dCP          drawOrigin,
 double              acsSizePixels,
 ACSDisplayOptions   options,
@@ -1489,7 +1098,7 @@ bool                drawName
 
     ICachedDrawP    cached = viewport->GetICachedDraw ();
 
-    cached->BeginCacheElement (true, viewport->GetIViewOutput()->GetTempElementCache (), viewport->GetViewFlags ());
+    cached->BeginCacheElement (viewport->GetIViewOutput()->GetTempElementCache (), true);
 
     cached->PushTransform (transform);
 
@@ -1497,10 +1106,10 @@ bool                drawName
     WChar     axisLabel[128];
 
     _DrawZAxis (viewport, cached, &transform, options);
-    _DrawAxisArrow (viewport, cached, &transform, RED_MENU_COLOR_INDEX, NULL, false, options, flags);
-    _DrawAxisArrow (viewport, cached, &transform, GREEN_MENU_COLOR_INDEX, NULL, true, options, flags);
-    _DrawAxisArrow (viewport, cached, &transform, RED_MENU_COLOR_INDEX, _GetAxisLabel(0, axisLabel, 128), false, options, flags);
-    _DrawAxisArrow (viewport, cached, &transform, GREEN_MENU_COLOR_INDEX, _GetAxisLabel(1, axisLabel, 128), true, options, flags);
+    _DrawAxisArrow (viewport, cached, &transform, ColorDef::Red(), NULL, false, options, flags);
+    _DrawAxisArrow (viewport, cached, &transform, ColorDef::Green(), NULL, true, options, flags);
+    _DrawAxisArrow (viewport, cached, &transform, ColorDef::Red(), _GetAxisLabel(0, axisLabel, 128), false, options, flags);
+    _DrawAxisArrow (viewport, cached, &transform, ColorDef::Green(), _GetAxisLabel(1, axisLabel, 128), true, options, flags);
 
     cached->PopTransform ();
 
@@ -1524,7 +1133,7 @@ bool                drawName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAuxCoordSys::_IsOriginInView (DPoint3dR drawOrigin, ViewportP viewport, bool adjustOrigin) const
+bool            IAuxCoordSys::_IsOriginInView (DPoint3dR drawOrigin, DgnViewportP viewport, bool adjustOrigin) const
     {
     DPoint3d    testPtView, screenRange;
     viewport->WorldToView (&testPtView, &drawOrigin, 1);
@@ -1565,7 +1174,7 @@ bool            IAuxCoordSys::_IsOriginInView (DPoint3dR drawOrigin, ViewportP v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IAuxCoordSys::_DisplayInView (ViewportP viewport, ACSDisplayOptions options, bool drawName) const
+void            IAuxCoordSys::_DisplayInView (DgnViewportP viewport, ACSDisplayOptions options, bool drawName) const
     {
     DPoint3d    drawOrigin;
     bool        checkOutOfView = (ACSDisplayOptions::None != (options & ACSDisplayOptions::CheckVisible));
@@ -1591,75 +1200,9 @@ void            IAuxCoordSys::_DisplayInView (ViewportP viewport, ACSDisplayOpti
 
     IViewOutputP    output = viewport->GetIViewOutput ();
 
-    output->DrawQvElem3d (qvElem, 0);
+    output->DrawQvElem (qvElem, 0);
     output->DeleteCacheElement (qvElem);
     }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  11/09
-+===============+===============+===============+===============+===============+======*/
-struct          SavedACSIterator : std::iterator<std::forward_iterator_tag, const ElementRefP>
-{
-private:
-
-PersistentElementRefListIterator    m_it;
-ElementRefP                          m_elmRef;
-
-SavedACSIterator (PersistentElementRefList* l) {m_elmRef = NULL; m_it = l->begin(); ToSavedACS();}
-SavedACSIterator () {m_elmRef = NULL;}
-
-void            ToSavedACS ()
-    {
-    for (ElementRefP ref = m_it.GetCurrentElementRef(); NULL != ref; ref = m_it.GetNextElementRef())
-        {
-        ElementHandle  eh (ref);
-
-        if (IACSManager::ElementIsACS (eh))
-            {
-            m_elmRef = ref;
-
-            return;
-            }
-        }
-
-    m_elmRef = NULL;
-    }
-
-friend struct SavedACSCollection;
-
-public:
-
-SavedACSIterator&   operator++() {++m_it; ToSavedACS(); return *this;}
-bool                operator==(SavedACSIterator const& rhs) const {return m_elmRef == rhs.m_elmRef;}
-bool                operator!=(SavedACSIterator const& rhs) const {return !(*this == rhs);}
-
-//! Access the saved acs element
-ElementRefP const&  operator* () const {return m_elmRef;}
-
-}; // SavedACSIterator
-
-#if defined (NEEDS_WORK_DGNITEM)
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  11/09
-+===============+===============+===============+===============+===============+======*/
-struct          SavedACSCollection
-{
-private:
-
-DgnModelR       m_model;
-
-public:
-
-typedef SavedACSIterator const_iterator;
-typedef const_iterator iterator;    //!< only const iteration is possible
-
-SavedACSCollection (DgnModelR dgnModel) : m_model (dgnModel) {;}
-
-SavedACSIterator begin () const {return SavedACSIterator (m_model.GetControlElementsP ());}
-SavedACSIterator end   () const {return SavedACSIterator ();}
-
-}; // SavedACSCollection
-#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     Barry.Bentley   01/07
@@ -1690,7 +1233,7 @@ GetByNameTraverser (WCharCP name)
     m_name = name;
     }
 
-virtual UInt32  _GetACSTraversalOptions () override {return 0;}
+virtual uint32_t _GetACSTraversalOptions () override {return 0;}
 
 virtual bool    _HandleACSTraversal (IAuxCoordSysR acs) override
     {
@@ -1714,42 +1257,10 @@ IACSManager::IACSManager ()
     m_listeners                 = NULL;
     }
 
-#ifdef DGNV10FORMAT_CHANGES_WIP_VIEW
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   01/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IAuxCoordSysP setACSFromRefSavedView (DgnAttachmentP refFile, ViewControllerP viewController)
-    {
-    if (!refFile)
-        return NULL;
-
-    EditElementHandle  eeh;
-
-    if (!refFile->GetNamedViewElement (eeh))
-        return NULL;
-
-    ViewControllerPtr savedViewInfo = ViewController::Create (eeh);
-
-    if (NULL != savedViewInfo.get())
-        return NULL;
-
-    IAuxCoordSysCP  savedACS = savedViewInfo->GetAuxCoordinateSystem ();
-
-    if (!savedACS)
-        return NULL;
-
-    IAuxCoordSysPtr copiedAcs = savedACS->Clone ();
-
-    viewController->SetAuxCoordinateSystem (copiedAcs.get());
-
-    return copiedAcs.get();
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP   IACSManager::GetActive (ViewportR vp)
+IAuxCoordSysP   IACSManager::GetActive (DgnViewportR vp)
     {
     PhysicalViewControllerCP viewController = vp.GetPhysicalViewControllerCP ();
     if (NULL == viewController)
@@ -1789,7 +1300,7 @@ IAuxCoordSysP   IACSManager::GetActive (ViewportR vp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IACSManager::SetActive (IAuxCoordSysP auxCoordSys, ViewportR vp)
+StatusInt       IACSManager::SetActive (IAuxCoordSysP auxCoordSys, DgnViewportR vp)
     {
     PhysicalViewControllerP viewController = vp.GetPhysicalViewControllerP();
     if (NULL == viewController)
@@ -1801,12 +1312,6 @@ StatusInt       IACSManager::SetActive (IAuxCoordSysP auxCoordSys, ViewportR vp)
     IAuxCoordSysPtr copiedAcs = auxCoordSys->Clone ();
 
     viewController->SetAuxCoordinateSystem (copiedAcs.get());
-
-    // send the acs asynch event.
-#ifdef DGNV10FORMAT_CHANGES_WIP
-    SendEvent (copiedAcs.get(), ACSEventType::GeometryChanged, vp.GetTargetModel ());
-#endif
-
     return SUCCESS;
     }
 
@@ -1816,7 +1321,7 @@ StatusInt       IACSManager::SetActive (IAuxCoordSysP auxCoordSys, ViewportR vp)
 bool            IACSManager::Traverse (IACSTraversalHandler& handler, DgnModelP modelRef)
     {
 #if defined (NEEDS_WORK_DGNITEM)
-    for (ElementRefP elRef: SavedACSCollection (*modelRef))
+    for (DgnElementP elRef: SavedACSCollection (*modelRef))
         {
         IAuxCoordSysPtr auxCoordPtr = AuxCoordSys::CreateNew (ElementHandle (elRef));
 
@@ -1840,7 +1345,7 @@ bool            IACSManager::Traverse (IACSTraversalHandler& handler, DgnModelP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysPtr IACSManager::GetByName (WCharCP name, DgnModelP modelRef, UInt32 options)
+IAuxCoordSysPtr IACSManager::GetByName (WCharCP name, DgnModelP modelRef, uint32_t options)
     {
     if (NULL == name)
         { BeAssert (false); return NULL; }
@@ -1857,20 +1362,7 @@ IAuxCoordSysPtr IACSManager::GetByName (WCharCP name, DgnModelP modelRef, UInt32
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       IACSManager::Save (IAuxCoordSysP acs, DgnModelP modelRef, ACSSaveOptions saveOption, ACSEventType eventType)
     {
-
 #if defined (NEEDS_WORK_DGNITEM)
-    StatusInt   status;
-    // Want Add, not replace...
-    if (ACSEventType::None != (ACSEventType::NewACS & eventType))
-        acs->SetElementId (ElementId(), NULL);
-
-    // if we don't succeed in writing it to the file, send the event indicating a change, but an in-memory change only.
-    if (SUCCESS == (status = acs->SaveToFile (modelRef, saveOption)))
-        SendEvent (acs, (ACSEventType) (eventType | ACSEventType::ChangeWritten), modelRef);
-    else
-        SendEvent (acs, (ACSEventType) (eventType & ~ACSEventType::ChangeWritten), modelRef);
-
-    return status;
 #endif
     return ERROR;
     }
@@ -1881,19 +1373,6 @@ StatusInt       IACSManager::Save (IAuxCoordSysP acs, DgnModelP modelRef, ACSSav
 StatusInt       IACSManager::Delete (WCharCP name, DgnModelP modelRef)
     {
 #if defined (NEEDS_WORK_DGNITEM)
-    if (NULL == name)
-        { BeAssert (false); return ERROR; }
-
-    StatusInt       status = ERROR;
-    IAuxCoordSysPtr deleteAcs;
-
-    if ((deleteAcs = GetByName (name, modelRef, 0)) != NULL)
-        {
-        if (SUCCESS == (status = deleteAcs.get ()->DeleteFromFile (modelRef)))
-            SendEvent (deleteAcs.get (), ACSEventType::Delete, modelRef);
-        }
-
-    return status;
 #endif
     return ERROR;
     }
@@ -1901,7 +1380,7 @@ StatusInt       IACSManager::Delete (WCharCP name, DgnModelP modelRef)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IACSManager::DisplayCurrent (ViewportP viewport, bool isCursorView)
+void            IACSManager::DisplayCurrent (DgnViewportP viewport, bool isCursorView)
     {
     if (GetInhibitCurrentACSDisplay () || !viewport || !viewport->GetViewFlags()->auxDisplay)
         return;
@@ -1923,7 +1402,7 @@ void            IACSManager::DisplayTransients (ViewContextR context, bool isPre
     if (isPreUpdate)
         return;
 
-    ViewportP   viewport = context.GetViewport ();
+    DgnViewportP   viewport = context.GetViewport ();
 
     if (NULL == viewport)
         return;
@@ -1933,7 +1412,7 @@ void            IACSManager::DisplayTransients (ViewContextR context, bool isPre
     if (NULL == viewFlags || !viewFlags->auxDisplay)
         return;
 
-    FOR_EACH (ElementRefP elRef, SavedACSCollection (*context.GetCurrentModel ()->GetDgnModelP ()))
+    FOR_EACH (DgnElementP elRef, SavedACSCollection (*context.GetCurrentModel ()->GetDgnModelP ()))
         {
         IAuxCoordSysPtr auxCoordPtr = AuxCoordSys::CreateNew (ElementHandle (elRef));
 
@@ -1969,9 +1448,9 @@ void            IACSManager::DisplayTransients (ViewContextR context, bool isPre
         planePts[2].SumOf (planePts[0], xVec, gridReps.x, yVec, gridReps.y);
         planePts[3].SumOf (planePts[0], yVec, gridReps.y);
 
-        UInt32  color      = viewport->GetContrastToBackgroundColor ();
-        UInt32  lineColor  = viewport->MakeColorTransparency (color, 190);
-        UInt32  planeColor = viewport->MakeColorTransparency (color, 225);
+        uint32_t color      = viewport->GetContrastToBackgroundColor ();
+        uint32_t lineColor  = viewport->MakeColorTransparency (color, 190);
+        uint32_t planeColor = viewport->MakeColorTransparency (color, 225);
 
         viewport->SetSymbologyRgb (lineColor, planeColor, 2, 0);
 
@@ -2014,46 +1493,6 @@ WCharCP       descr
     auxSys->SetDescription (descr);
 
     return auxSys;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IACSManager::ElementFindByName
-(
-EditElementHandleR eeh,        // <=
-WCharCP       inName,     //  =>
-DgnModelP    modelRef    //  =>
-)
-    {
-    WChar     nameBuf[MAX_ACS_NAME_LENGTH]; // Allow for some spaces around name
-
-    wcsncpy (nameBuf, inName, MAX_ACS_NAME_LENGTH);
-    nameBuf[MAX_ACS_NAME_LENGTH-1] = '\0';
-    strutil_wstrpwspc (nameBuf);
-
-    if (0 == wcslen (nameBuf))
-        return ERROR;
-
-#if defined (NEEDS_WORK_DGNITEM)
-    for (ElementRefP elRef : SavedACSCollection (*modelRef))
-        {
-        ElementHandle  eh (elRef);
-        WString     wName;
-
-        if (SUCCESS != AuxCoordSys::ElementGetName (eh, &wName))
-            continue;
-
-        if ( ! wName.EqualsI (nameBuf))
-            continue;
-
-        eeh.SetElementRef (elRef);
-
-        return SUCCESS;
-        }
-#endif
-
-    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2134,7 +1573,7 @@ void            IACSManager::SendEvent (IAuxCoordSysP acsP, ACSEventType eventTy
 +===============+===============+===============+===============+===============+======*/
 struct          ACSPersistentData
 {
-UInt32          extenderId;
+uint32_t        extenderId;
 int             extenderData[1];
 };
 
@@ -2182,9 +1621,9 @@ void IACSManager::SaveSettings (PhysicalViewControllerCP viewController, Element
 struct          FindExtenderCaller
     {
     IAuxCoordSystemExtender*    m_foundExtender;
-    UInt32                      m_extenderId;
+    uint32_t                    m_extenderId;
 
-    FindExtenderCaller (UInt32 extenderId)  {m_extenderId = extenderId; m_foundExtender = NULL;}
+    FindExtenderCaller (uint32_t extenderId)  {m_extenderId = extenderId; m_foundExtender = NULL;}
 
     bool CallHandler (IAuxCoordSystemExtender& extender)
         {
@@ -2202,7 +1641,7 @@ struct          FindExtenderCaller
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSystemExtender* IACSManager::FindExtender (UInt32 extenderId)
+IAuxCoordSystemExtender* IACSManager::FindExtender (uint32_t extenderId)
     {
     FindExtenderCaller caller (extenderId);
 
@@ -2211,56 +1650,4 @@ IAuxCoordSystemExtender* IACSManager::FindExtender (UInt32 extenderId)
 
     return caller.m_foundExtender;
     }
-
-#ifdef DGN_IMPORTER_REORG_WIP
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysPtr IACSManager::ExtractACS (ElementRefP viewElementRef, DgnModelP modelRef)
-    {
-    XAttributeHandlerId handlerId (XATTRIBUTEID_ViewInfo, VIEWINFO_XATTR_SUBID_Acs);
-    XAttributeHandle    xAttributeIter (viewElementRef, handlerId, ACS_XATTRIBUTE_ID);
-
-    if (xAttributeIter.IsValid())
-        {
-        ACSPersistentData  *persistentData   = (ACSPersistentData*) xAttributeIter.PeekData();
-        UInt32              dataSize         = xAttributeIter.GetSize();
-        UInt32              extenderDataSize = dataSize - (sizeof(ACSPersistentData) - sizeof(int));
-        UInt32              extenderId       = persistentData->extenderId;
-
-        // if 0 is the extenderId, this is handled internally.
-        if (0 == extenderId)
-            {
-            // NOTE: Additions to end of structure are allowed...
-            UInt32      currSize = sizeof (ACSData);
-            UInt32      copySize = (extenderDataSize <= currSize ? extenderDataSize : currSize);
-            ACSData     acsData;
-
-            memcpy (&acsData, persistentData->extenderData, copySize);
-
-            return AuxCoordSys::CreateNew (acsData);
-            }
-        else
-            {
-            IAuxCoordSystemExtender* extender;
-
-            if (NULL != (extender = FindExtender (extenderId)))
-                return extender->_Deserialize ((void*)persistentData->extenderData, extenderDataSize, modelRef);
-            }
-        }
-
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IACSManager::ReadSettings (PhysicalViewControllerP viewController, ElementRefP viewElementRef, DgnModelP modelRef)
-    {
-    IAuxCoordSysPtr acs = ExtractACS (viewElementRef, modelRef);
-
-    if (acs.IsValid ())
-        viewController->SetAuxCoordinateSystem (acs.get ());
-    }
-#endif
 

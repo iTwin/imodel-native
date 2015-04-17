@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/IFacetTopologyTable.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -14,11 +14,11 @@
 +===============+===============+===============+===============+===============+======*/
 struct EdgeIndices 
 {
-    Int32      m_index0;
-    Int32      m_index1;
+    int32_t    m_index0;
+    int32_t    m_index1;
 
     EdgeIndices () { }
-    EdgeIndices (Int32 index0, Int32 index1) : m_index0 (index0), m_index1 (index1)  { }
+    EdgeIndices (int32_t index0, int32_t index1) : m_index0 (index0), m_index1 (index1)  { }
 
     bool operator < (EdgeIndices const& rhs) const { return m_index0 == rhs.m_index0 ? m_index1 < rhs.m_index1 : m_index0 < rhs.m_index0; }
 };
@@ -26,9 +26,9 @@ struct EdgeIndices
 
 struct CompareParams { bool operator() (DPoint2dCR param1, DPoint2dCR param2) { return param1.x == param2.x ? (param1.y < param2.y) : (param1.x < param2.x); } };
 
-typedef     bmap <DPoint2d, Int32, CompareParams>           T_ParamIndexMap;        // Untoleranced parameter to index map used to reindex parameters within a single face.
-typedef     bmap <Int32, Int32>                             T_IndexRemap;
-typedef     bmap <Int32, Int32>                             T_FinToEdgeMap;
+typedef     bmap <DPoint2d, int32_t, CompareParams>         T_ParamIndexMap;        // Untoleranced parameter to index map used to reindex parameters within a single face.
+typedef     bmap <int32_t, int32_t>                             T_IndexRemap;
+typedef     bmap <int32_t, int32_t>                             T_FinToEdgeMap;
 typedef     std::multimap <CurveTopologyId, EdgeIndices>    T_EdgeIdToIndicesMap;
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,7 +72,7 @@ static void     initFinToEdgeMap (T_FinToEdgeMap& finToEdgeMap, IFacetTopologyTa
 
     for (int i=0, count = ftt._GetFinEdgeCount(); i<count; i++)
         if (!doEdgeHiding || !ftt._IsHiddenEdge (finEdge[i].y))
-            finToEdgeMap.insert (bpair <Int32, Int32> (finEdge[i].x, finEdge[i].y));
+            finToEdgeMap.insert (bpair <int32_t, int32_t> (finEdge[i].x, finEdge[i].y));
     }
 
 
@@ -93,7 +93,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
     {
     bool                        edgeChainsRequired = facetOptions.GetEdgeChainsRequired();
     T_FinToEdgeMap              finToEdgeMap;
-    bset<Int32>                 edgeSet;
+    bset<int32_t>                 edgeSet;
     T_EdgeIdToIndicesMap        edgeIdToIndicesMap;
         
     initPolyface (polyface, ftt);
@@ -145,9 +145,9 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
 
         for (int ffIndex = ffIndex0; ffIndex < ffIndex1; )
             {
-            Int32     vertexIndex = ftt_finToVertex[ffIndex];
-            Int32     xyzIndex    = ftt_vertexToPoint[vertexIndex];
-            Int32     nextFinIndex;
+            int32_t   vertexIndex = ftt_finToVertex[ffIndex];
+            int32_t   xyzIndex    = ftt_vertexToPoint[vertexIndex];
+            int32_t   nextFinIndex;
 
             if ((nextFinIndex = ++ffIndex) == ffIndex1)
                 nextFinIndex = ffIndex0;
@@ -194,13 +194,13 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32   remapPointIndex (Int32 pointIndex, T_IndexRemap& pointIndexMap, BlockedVectorDPoint3dR polyfacePoints, DPoint3dCP fttPoints)
+int32_t remapPointIndex (int32_t pointIndex, T_IndexRemap& pointIndexMap, BlockedVectorDPoint3dR polyfacePoints, DPoint3dCP fttPoints)
     {
     T_IndexRemap::iterator  found = pointIndexMap.find (pointIndex);
                 
     if (found == pointIndexMap.end())
         {
-        Int32       pointIndexRemapped = (Int32) polyfacePoints.size();
+        int32_t pointIndexRemapped = (int32_t) polyfacePoints.size();
 
         polyfacePoints.push_back (fttPoints [pointIndex]);
         pointIndexMap[pointIndex] = pointIndexRemapped;
@@ -231,9 +231,9 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
 
     T_IndexRemap            pointIndexMap, normalIndexMap, paramIndexMap;
     T_EdgeIdToIndicesMap    edgeIdToIndicesMap;
-    bset<Int32>             edgeSet;
+    bset<int32_t>             edgeSet;
 
-    Int32   thisFace, currentFace  = -1;
+    int32_t thisFace, currentFace = -1;
 
     for (int facetIndex = 0, ffIndex0 = 0, ffIndex1; ffIndex0 < numFacetFin; facetIndex++, ffIndex0 = ffIndex1)
         {
@@ -259,7 +259,7 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
             int     vertexIndex = ftt_finToVertex[ffIndex];
 
             // POINT INDICES
-            Int32                   pointIndex = ftt_vertexToPoint[vertexIndex], pointIndexRemapped;
+            int32_t                 pointIndex = ftt_vertexToPoint[vertexIndex], pointIndexRemapped;
 
             pointIndexRemapped = remapPointIndex (pointIndex, pointIndexMap, polyface.Point(), ftt_points);
 
@@ -268,7 +268,7 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
             if ((nextFinIndex = ++ffIndex) == ffIndex1)
                 nextFinIndex = ffIndex0;
 
-            Int32                   nextPointIndex = ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]], nextPointIndexRemapped;
+            int32_t                 nextPointIndex = ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]], nextPointIndexRemapped;
 
             nextPointIndexRemapped = remapPointIndex (nextPointIndex, pointIndexMap, polyface.Point(), ftt_points);
 
@@ -297,12 +297,12 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
             // NORMAL INDICES
             if (NULL != ftt_vertexToNormal)
                 {
-                Int32                   normalIndex = ftt_vertexToNormal[vertexIndex], normalIndexRemapped;
+                int32_t                 normalIndex = ftt_vertexToNormal[vertexIndex], normalIndexRemapped;
                 T_IndexRemap::iterator  found = normalIndexMap.find (normalIndex);
 
                 if (found == normalIndexMap.end())
                     {
-                    normalIndexRemapped = (Int32) polyface.Normal().size();
+                    normalIndexRemapped = (int32_t) polyface.Normal().size();
                     polyface.Normal().push_back (ftt_normals[normalIndex]);
                     normalIndexMap[normalIndex] = normalIndexRemapped;
                     }
@@ -315,12 +315,12 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
 
             if (NULL != ftt_vertexToParam)
                 {
-                Int32                   paramIndex = ftt_vertexToParam[vertexIndex], paramIndexRemapped;
+                int32_t                 paramIndex = ftt_vertexToParam[vertexIndex], paramIndexRemapped;
                 T_IndexRemap::iterator  found = paramIndexMap.find (paramIndex);
 
                 if (found == paramIndexMap.end())
                     {
-                    paramIndexRemapped = (Int32) polyface.Param().size();
+                    paramIndexRemapped = (int32_t) polyface.Param().size();
                     polyface.Param().push_back (ftt_paramUV[paramIndex]);
                     paramIndexMap[paramIndex] = paramIndexRemapped;
                     }
@@ -352,7 +352,7 @@ IFacetOptionsCR                                 facetOptions
 )
     {
     T_FinToEdgeMap      finToEdgeMap;
-    bset <UInt32>       idsWithSymbology;
+    bset <uint32_t>     idsWithSymbology;
     StatusInt           status;
 
     initFinToEdgeMap (finToEdgeMap, ftt, facetOptions.GetEdgeHiding());
@@ -367,23 +367,14 @@ IFacetOptionsCR                                 facetOptions
     return SUCCESS;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 FaceAttachment::FaceAttachment ()
     {
-    m_elmColorIndex  = INVALID_COLOR;
-    m_elmColorTBGR   = 0;
-    m_weight         = 0;
-    m_style          = 0;
-    m_level          = LEVEL_DEFAULT_LEVEL_ID;
-    m_transparency   = 0.0;
-    m_material       = NULL;
-    m_lineColorTBGR  = 0;
-    m_lineColorIndex = DgnColorMap::INDEX_Invalid;
-    m_rasterWidth    = 1;
-    m_rasterPat      = 0;
+    m_color         = ColorDef::Black();
+    m_transparency  = 0.0;
+    m_material      = NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,27 +382,11 @@ FaceAttachment::FaceAttachment ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams, ViewContextR context)
     {
-    ElemDisplayParams elParams;
-
-    elParams = sourceParams;
-    // Save "natural" element color index, transparency, and level to resolve effective values...
-    m_elmColorIndex  = elParams.GetLineColorIndex ();
-    m_elmColorTBGR   = (INVALID_COLOR == m_elmColorIndex ? elParams.GetLineColorTBGR () : 0);
-    m_weight         = elParams.GetWeight ();
-    m_style          = elParams.GetLineStyle ();
-    m_level          = elParams.GetSubLevelId().GetLevel ();
-    m_transparency   = elParams.GetTransparency ();
-
-    ElemMatSymb elMatSymb;
-
-    context.CookDisplayParams (elParams, elMatSymb); // Resolve effective values and cook...
-
-    // Store effective color information for use in QvOutput...
-    m_lineColorTBGR  = elMatSymb.GetLineColorTBGR ();
-    m_lineColorIndex = elMatSymb.GetLineColorIndex ();
-    m_rasterWidth    = elMatSymb.GetWidth ();
-    m_rasterPat      = elMatSymb.GetRasterPattern ();
-    m_material       = elMatSymb.GetMaterial (); // NOTE: Attachments aren't overriden by level material, etc. don't need to store a separate effective value...
+    // WIP_FACEATTACHMENTS - Make sure that "Resolve" has been called...should save SubCategory/color is from SubCategory appearance...
+    m_category      = sourceParams.GetCategoryId ();
+    m_color         = sourceParams.GetLineColor();
+    m_transparency  = sourceParams.GetTransparency ();
+    m_material      = sourceParams.GetMaterial ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -419,16 +394,10 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams, ViewContextR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
     {
-    if (INVALID_COLOR != m_elmColorIndex)
-        elParams.SetLineColor (m_elmColorIndex);
-    else
-        elParams.SetLineColorTBGR (m_elmColorTBGR);
-
-    elParams.SetWeight (m_weight);
-    elParams.SetLineStyle (m_style);
-    elParams.SetSubLevelId (SubLevelId(m_level));
+    elParams.SetCategoryId (m_category);
+    elParams.SetLineColor (m_color);
     elParams.SetTransparency (m_transparency);
-    elParams.SetMaterial (m_material, true);
+    elParams.SetMaterial (m_material);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -437,10 +406,8 @@ void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
 void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb) const
     {
     elMatSymb.Init ();
-    elMatSymb.SetIndexedLineColorTBGR (m_lineColorIndex, m_lineColorTBGR);
-    elMatSymb.SetIndexedFillColorTBGR (m_lineColorIndex, m_lineColorTBGR);
-    elMatSymb.SetWidth (m_rasterWidth);
-    elMatSymb.SetRasterPattern (m_rasterPat);
+    elMatSymb.SetLineColor (m_color);
+    elMatSymb.SetFillColor (m_color);
     elMatSymb.SetMaterial (m_material); // NOTE: Geometry map should have already been created if needed by CookDisplayParams...
     }
 
@@ -449,17 +416,10 @@ void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
     {
-    if (m_elmColorIndex  != rhs.m_elmColorIndex ||
-        m_elmColorTBGR   != rhs.m_elmColorTBGR ||
-        m_weight         != rhs.m_weight ||
-        m_style          != rhs.m_style ||
-        m_level          != rhs.m_level ||
-        m_transparency   != rhs.m_transparency ||
-        m_lineColorTBGR  != rhs.m_lineColorTBGR ||
-        m_lineColorIndex != rhs.m_lineColorIndex ||
-        m_rasterWidth    != rhs.m_rasterWidth ||
-        m_rasterPat      != rhs.m_rasterPat ||
-        m_material       != rhs.m_material)
+    if (m_category      != rhs.m_category ||
+        m_color         != rhs.m_color ||
+        m_transparency  != rhs.m_transparency ||
+        m_material      != rhs.m_material)
         return false;
 
 #if defined (NEEDS_WORK_MATERIAL)
@@ -480,15 +440,8 @@ bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
     {
-    return m_elmColorIndex  < rhs.m_elmColorIndex ||
-           m_elmColorTBGR   < rhs.m_elmColorTBGR ||
-           m_weight         < rhs.m_weight ||
-           m_style          < rhs.m_style ||
-           m_level          < rhs.m_level ||
-           m_transparency   < rhs.m_transparency ||
-           m_lineColorTBGR  < rhs.m_lineColorTBGR ||
-           m_lineColorIndex < rhs.m_lineColorIndex ||
-           m_rasterWidth    < rhs.m_rasterWidth ||
-           m_rasterPat      < rhs.m_rasterPat ||
-           m_material       < rhs.m_material;
+    return (m_category         < rhs.m_category ||
+            m_color.GetValue() < rhs.m_color.GetValue() ||
+            m_transparency     < rhs.m_transparency ||
+            m_material         < rhs.m_material);
 }

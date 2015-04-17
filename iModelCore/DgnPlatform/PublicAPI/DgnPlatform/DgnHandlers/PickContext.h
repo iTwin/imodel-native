@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/PickContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,7 +34,7 @@ private:
     bool                        m_doLocateSilhouettes;
     bool                        m_doLocateInteriors;
     TestLStylePhase             m_testingLStyle;
-    int                         m_maxHits;
+    // clang says not used - int m_maxHits;
 
     IViewOutputP                m_viewOutput;
     DgnPlatform::GeomDetail     m_currGeomDetail;
@@ -77,8 +77,7 @@ protected:
     virtual void        _DrawTextString (TextStringCR, double* zDepth) override;
     virtual bool        _DrawSprite (ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
     virtual void        _DrawPointCloud (IPointCloudDrawParams* drawParams) override;
-    virtual void        _DrawQvElem3d (QvElem* qvElem, int subElemIndex) override;
-    virtual void        _DrawQvElem2d (QvElem* qvElem, double zDepth, int subElemIndex) override;
+    virtual void        _DrawQvElem (QvElem* qvElem, int subElemIndex) override;
 
     virtual GeomDetailR _GetGeomDetail () override {return m_currGeomDetail;}
     virtual DPoint4dCR  _GetPickPointView () const override {return m_pickPointView;}
@@ -122,33 +121,30 @@ private:
     virtual void            _SetupOutputs () override;
     virtual bool            _CheckStop() override;
     virtual StatusInt       _VisitDgnModel (DgnModelP inDgnModel) override;
-    virtual void            _OnFrustumChange (bool is2d) override;
-    virtual void            _OutputElement (ElementHandleCR) override;
-    virtual void            _DrawWithThickness (ElementHandleCR thisElm, IStrokeForCache& stroker, Int32 qvIndex) override;
-    virtual void            _DrawAreaPattern (ElementHandleCR, DgnPlatform::ViewContext::ClipStencil& boundary, PatternParamSource& pattern) override;
+    virtual void            _OutputElement (GeometricElementCR) override;
+    virtual void            _DrawAreaPattern (DgnPlatform::ViewContext::ClipStencil& boundary) override;
     virtual void            _DrawSymbol (IDisplaySymbolP, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight) override;
     virtual void            _DeleteSymbol (IDisplaySymbolP) override {}
     virtual ILineStyleCP    _GetCurrLineStyle (LineStyleSymbP*) override;
-    virtual void            _DrawCurveVector (ElementHandleCR eh, ICurvePathQueryR query, GeomRepresentations info, bool allowCachedOutline) override;
     virtual void            _DrawStyledLineString2d (int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;
     virtual void            _DrawStyledLineString3d (int nPts, DPoint3dCP pts,  DPoint3dCP range, bool closed = false) override;
     virtual void            _DrawStyledArc2d (DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) override;
     virtual void            _DrawStyledArc3d (DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) override;
     virtual void            _DrawStyledBSplineCurve3d (MSBsplineCurveCR) override;
     virtual void            _DrawStyledBSplineCurve2d (MSBsplineCurveCR, double zDepth) override;
-    virtual QvElemP         _DrawCached (CachedDrawHandleCR, DgnPlatform::IStrokeForCache&, Int32 qvIndex) override;
-    virtual int             _GetScanReturnType () override  {return MSSCANCRIT_ITERATE_ELMREF_UNORDERED;}
+    virtual QvElemP         _DrawCached (DgnPlatform::IStrokeForCache&) override;
+    virtual int             _GetScanReturnType () override  {return MSSCANCRIT_ITERATE_ELEMENT_UNORDERED;}
     virtual IPickGeomP      _GetIPickGeom () override {return &m_output;}
-    virtual UInt32          _GetDisplayInfo (bool isRenderable) override;
+    virtual uint32_t        _GetDisplayInfo (bool isRenderable) override;
 
-    void                    InitNpcSubRect (DPoint3dCR pickPointWorld, double pickAperture, ViewportR viewport);
+    void                    InitNpcSubRect (DPoint3dCR pickPointWorld, double pickAperture, DgnViewportR viewport);
     void                    InitSearch (DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP);
 
 public:
     DGNPLATFORM_EXPORT PickContext (LocateOptions const& options, StopLocateTest* stopTester=NULL);
 
-    DGNPLATFORM_EXPORT bool PickElements (ViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
-    DGNPLATFORM_EXPORT TestPathStatus TestPath (DisplayPathCR, ViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
+    DGNPLATFORM_EXPORT bool PickElements (DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
+    DGNPLATFORM_EXPORT TestPathStatus TestPath (DisplayPathCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
 
     DGNPLATFORM_EXPORT static void InitBoresite (DRay3dR boresite, DPoint3dCR spacePoint, DMatrix4dCR worldToLocal);
 };

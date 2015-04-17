@@ -21,16 +21,19 @@ struct RgbaSprite : public RefCounted<ISprite>
 {
 protected:
     Point2d         m_size;
+    bool            m_isLoaded;
 
-    bvector<byte>   m_rgbaBuffer;  //  Expanded PNG
-    DGNPLATFORM_EXPORT virtual void LoadSprite () = 0;
+    bvector<Byte>   m_rgbaBuffer;  //  Expanded PNG
+    DGNPLATFORM_EXPORT virtual void LoadSprite ();
+    void PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
 
 public:
     DGNPLATFORM_EXPORT RgbaSprite ();
     DGNPLATFORM_EXPORT ~RgbaSprite ();
 
     DGNPLATFORM_EXPORT void GetSize (Point2d* size) override;
-    virtual byte const* GetRgbaDefinition() override ;
+    virtual Byte const* GetRgbaDefinition() override ;
+    DGNPLATFORM_EXPORT static RgbaSpritePtr CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
 
 };
 
@@ -42,12 +45,8 @@ struct NamedSprite : public RgbaSprite
 private:
     Utf8String      m_namespace;
     Utf8String      m_spriteName;
-    bool            m_isLoaded;
 
     NamedSprite  (Utf8CP nameSpace, Utf8CP spriteName);
-
-protected:
-    void CreateRgbaSpriteFromPngBuffer(byte const*inputBuffer, size_t numberBytes);
 
 public:
 

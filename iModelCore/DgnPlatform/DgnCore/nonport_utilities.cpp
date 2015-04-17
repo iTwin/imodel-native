@@ -62,7 +62,7 @@ EXPORT_ATTRIBUTE StatusInt checkCanAccessUrl (char const* url)
     {
     //  Get host, filename, scheme, port, etc. from input URL
     //
-    UInt32      serviceType = INTERNET_SERVICE_HTTP;
+    uint32_t    serviceType = INTERNET_SERVICE_HTTP;
     bool        usingSSL = false;
     INTERNET_PORT port = INTERNET_DEFAULT_HTTP_PORT;
     char        hostname[256], filename[256];

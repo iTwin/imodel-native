@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/ValueParse.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,7 +74,7 @@ private:  void                  Init ();
 
 public:   void                  InitModelSettings (DgnModelCR);
 public: DGNPLATFORM_EXPORT  BentleyStatus   SetAngleModeFromLegacy (AngleFormatVals value);
-public: DGNPLATFORM_EXPORT  UInt16          GetLegacyFormat () const;
+public: DGNPLATFORM_EXPORT  uint16_t        GetLegacyFormat () const;
 
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
@@ -222,7 +222,7 @@ public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create (DgnModelCR model
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the scale from the viewport's ACS.
 //! @param[in] vp                       Initialize the parser from the settings in this viewport.
-public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create (ViewportR vp);
+public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create (DgnViewportR vp);
 
 //! Construct a parser with settings from a DgnModel and an Auxiliary Coordinate System.  
 //! The ACS provides the scale for the parser.
@@ -292,7 +292,7 @@ public: static DGNPLATFORM_EXPORT  PointParserPtr     Create (DgnModelCR model);
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the ACS from the viewport.
 //! @param[in] vp                       Initialize the parser from the settings in this viewport.
-public: static DGNPLATFORM_EXPORT  PointParserPtr     Create (ViewportR vp);
+public: static DGNPLATFORM_EXPORT  PointParserPtr     Create (DgnViewportR vp);
 
 //! Construct a parser with settings from a DgnModel and an Auxiliary Coordinate System.  
 //! The ACS provides the scale for the parser.
@@ -333,9 +333,9 @@ struct AreaOrVolumeParser : RefCountedBase
 #endif
 private: double                 m_masterUnitScale;
 private: double                 m_scale;
-private: UInt8                  m_dimension;
+private: uint8_t                m_dimension;
 
-protected: /* ctor */           AreaOrVolumeParser (UInt8 dimension);
+protected: /* ctor */           AreaOrVolumeParser (uint8_t dimension);
 protected: /* ctor */           AreaOrVolumeParser (AreaOrVolumeParserCR other);
 
 private: void                   Init ();
@@ -392,7 +392,7 @@ public: static DGNPLATFORM_EXPORT  AreaParserPtr    Create (DgnModelCR model);
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the scale from the viewport's ACS.
 //! @param[in] vp                       Initialize the parser from the settings in this viewport.
-public: static DGNPLATFORM_EXPORT  AreaParserPtr    Create (ViewportR vp);
+public: static DGNPLATFORM_EXPORT  AreaParserPtr    Create (DgnViewportR vp);
 
 //! Construct a parser which is a duplicate of an existing parser.
 public: DGNPLATFORM_EXPORT  AreaParserPtr    Clone () const;
@@ -421,7 +421,7 @@ public: static DGNPLATFORM_EXPORT  VolumeParserPtr    Create (DgnModelCR model);
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the scale from the viewport's ACS.
 //! @param[in] vp                       Initialize the parser from the settings in this viewport.
-public: static DGNPLATFORM_EXPORT  VolumeParserPtr    Create (ViewportR vp);
+public: static DGNPLATFORM_EXPORT  VolumeParserPtr    Create (DgnViewportR vp);
 
 //! Construct a parser which is a duplicate of an existing parser.
 public: DGNPLATFORM_EXPORT  VolumeParserPtr    Clone () const;

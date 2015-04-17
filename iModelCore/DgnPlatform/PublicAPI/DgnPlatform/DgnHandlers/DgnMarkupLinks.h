@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/DgnMarkupLinks.h $
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 
 //__PUBLISH_SECTION_START__
@@ -8,7 +8,6 @@
 #pragma once
 
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
-#include <DgnPlatform/DgnHandlers/DgnLinkTable.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -26,7 +25,7 @@ struct DgnMarkupLinkIterator : std::iterator<std::input_iterator_tag, DgnMarkupL
     friend struct DgnMarkupLinksCollection;
     friend struct DgnMarkupLinksForRedlineModelCollection;
     DgnMarkupProjectR   m_markupProject;
-    DgnProjectR         m_targetProject;
+    DgnDbR         m_targetProject;
     DgnLinkTable::EntryFactory m_dgnLinkTableIteratorEnd;
     DgnLinkTable::EntryFactory m_dgnLinkTableIterator;
     DgnModelId          m_redlineModel;
@@ -38,7 +37,7 @@ struct DgnMarkupLinkIterator : std::iterator<std::input_iterator_tag, DgnMarkupL
     void                ToFirst();
     void                ToNext();
 
-    DgnMarkupLinkIterator (DgnMarkupProjectR, DgnProjectR, DgnLinkTable::EntryFactory const& begin, DgnLinkTable::EntryFactory const& end);
+    DgnMarkupLinkIterator (DgnMarkupProjectR, DgnDbR, DgnLinkTable::EntryFactory const& begin, DgnLinkTable::EntryFactory const& end);
 
   public:
     //! Advance to the next entry in the collection, if any.
@@ -55,7 +54,7 @@ struct DgnMarkupLinkIterator : std::iterator<std::input_iterator_tag, DgnMarkupL
     DgnMarkupLinkIterator const* operator->() const {return this;}
     //! Get the RedlineModel in the DgnMarkupProject that is the source of this link.
     DGNPLATFORM_EXPORT DgnModelId GetRedlineModelId() const;
-    //! Get the element in the DgnProject that is the target of this link.
+    //! Get the element in the DgnDb that is the target of this link.
     DGNPLATFORM_EXPORT ElementId GetTargetElementId() const;
     //! Get the URI that identifies the target of this link
     DGNPLATFORM_EXPORT Utf8StringCR GetUriString() const;
@@ -69,11 +68,11 @@ struct DgnMarkupLinksCollection
 private:
     friend struct DgnMarkupLinkIterator;
     friend struct DgnMarkupLinks;
-    DgnProject&                     m_targetProject;
+    DgnDb&                     m_targetProject;
     DgnMarkupProject&               m_markupProject;
     DgnLinkTable::InProjectIterator m_allDgnLinksInProject;
 
-    DgnMarkupLinksCollection (DgnProject&, DgnMarkupProject&);
+    DgnMarkupLinksCollection (DgnDb&, DgnMarkupProject&);
 
 public:
     //! Get the first markup link in the collection
@@ -91,11 +90,11 @@ struct DgnMarkupLinksForRedlineModelCollection
 private:
     friend struct DgnMarkupLinkIterator;
     friend struct DgnMarkupLinks;
-    DgnProject&                     m_targetProject;
+    DgnDb&                     m_targetProject;
     DgnMarkupProject&               m_markupProject;
     DgnLinkTable::OnElementIterator m_linksOnElementIterator;
 
-    DgnMarkupLinksForRedlineModelCollection (DgnProject&, DgnMarkupProject&, PersistentElementRefR anchor);
+    DgnMarkupLinksForRedlineModelCollection (DgnDb&, DgnMarkupProject&, PersistentElementRefR anchor);
 
 public:
     //! Get the first markup link in the collection
@@ -117,14 +116,14 @@ struct DgnMarkupLinks
     DGNPLATFORM_EXPORT static BentleyStatus CreateRedlineLink (RedlineModelR rdlModel, PersistentElementRefR targetElement);
 
     //! Make an iterator over all redline links in the markup project that point to elements in the target project.
-    //! @param targetProject    The DgnProject that contains the targets of the links.
+    //! @param targetProject    The DgnDb that contains the targets of the links.
     //! @param markupProject    The markup project that contains the links.
-    DGNPLATFORM_EXPORT static DgnMarkupLinksCollection MakeIterator (DgnProject& targetProject, DgnMarkupProject& markupProject);
+    DGNPLATFORM_EXPORT static DgnMarkupLinksCollection MakeIterator (DgnDb& targetProject, DgnMarkupProject& markupProject);
 
     //! Make an iterator over the links in the specified redline model that point to elements in the target project.
-    //! @param targetProject    The DgnProject that contains the targets of the links.
+    //! @param targetProject    The DgnDb that contains the targets of the links.
     //! @param rdlModel         The redline model that contains the links.
-    DGNPLATFORM_EXPORT static DgnMarkupLinksForRedlineModelCollection MakeIteratorForRedlineModel (DgnProject& targetProject, RedlineModelR rdlModel);
+    DGNPLATFORM_EXPORT static DgnMarkupLinksForRedlineModelCollection MakeIteratorForRedlineModel (DgnDb& targetProject, RedlineModelR rdlModel);
 
     //! Get the dummy element in this specified redline model that can be used as the anchor for DgnLinks.
     //! @param rdlModel The redline model

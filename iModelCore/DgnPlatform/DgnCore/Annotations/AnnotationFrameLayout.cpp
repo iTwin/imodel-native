@@ -268,7 +268,7 @@ size_t AnnotationFrameLayout::GetAttachmentIdCount() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-UInt32 AnnotationFrameLayout::GetAttachmentId(size_t iID) const
+uint32_t AnnotationFrameLayout::GetAttachmentId(size_t iID) const
     {
     AnnotationFrameStylePtr frameStyle = m_frame->CreateEffectiveStyle();
     switch (frameStyle->GetType())
@@ -277,7 +277,7 @@ UInt32 AnnotationFrameLayout::GetAttachmentId(size_t iID) const
         case AnnotationFrameType::Box:
         case AnnotationFrameType::Circle:
         case AnnotationFrameType::Ellipse:
-            return (UInt32)iID;
+            return (uint32_t)iID;
 
         default:
             BeAssert(false); // Unknown/unexpected AnnotationFrameType.
@@ -297,7 +297,7 @@ UInt32 AnnotationFrameLayout::GetAttachmentId(size_t iID) const
 */
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-void AnnotationFrameLayout::ComputePhysicalPointForAttachmentId(DPoint3dR physicalPoint, DVec3dR tangent, UInt32 attachmentID) const
+void AnnotationFrameLayout::ComputePhysicalPointForAttachmentId(DPoint3dR physicalPoint, DVec3dR tangent, uint32_t attachmentID) const
     {
     const_cast<AnnotationFrameLayoutP>(this)->Update(); 
     

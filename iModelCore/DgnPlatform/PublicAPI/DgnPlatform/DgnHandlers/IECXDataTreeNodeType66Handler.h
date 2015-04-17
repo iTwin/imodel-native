@@ -23,7 +23,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct          IECXDataTreeNodeType66Handler : Handler, ITransactionHandler
 {
 virtual int     GetApplicationSignature () = 0;
-virtual void    _GetDescription (ElementHandleCR el, WStringR descr, UInt32 desiredLength) override = 0;
+virtual void    _GetDescription (ElementHandleCR el, WStringR descr, uint32_t desiredLength) override = 0;
 
 virtual void    _OnUndoRedo (ElementHandleP afterUndoRedo, ElementHandleP beforeUndoRedo, ChangeTrackAction action, bool isUndo, ChangeTrackSource source) override = 0;
 };

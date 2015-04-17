@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/ElementProperties.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,25 +13,25 @@
 #include <Bentley/RefCounted.h>
 #include "PropertyContext.h"
 
+DGNPLATFORM_REF_COUNTED_PTR (ElementPropertiesGetter);
+DGNPLATFORM_REF_COUNTED_PTR (ElementPropertiesSetter);
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /// @addtogroup ElementProperties
 /// @beginGroup
 
-typedef RefCountedPtr<ElementPropertiesGetter> ElementPropertiesGetterPtr;
-typedef RefCountedPtr<ElementPropertiesSetter> ElementPropertiesSetterPtr;
-
 /*=================================================================================**//**
   ElementPropertiesGetter is a helper class to query element symbology and properties.
   This information is typically extracted from the "dhdr" section of the element header 
   and from user data.The following example illustrates using this class to get the 
-  level and color of the supplied ElementHandle:
+  category and color of the supplied ElementHandle:
   \code
-static void getLevelAndColor (ElementHandleCR eh, LevelId& level, UInt32& color)
+static void getCategoryAndColor (ElementHandleCR eh, DgnCategoryId& category, uint32_t& color)
     {
     ElementPropertiesGetterPtr propGetter = ElementPropertiesGetter::Create (eh);
 
-    level = propGetter->GetLevel ();
+    category = propGetter->GetCategory ();
     color = propGetter->GetColor ();
     }
   \endcode
@@ -64,28 +64,22 @@ public:
 DGNPLATFORM_EXPORT static ElementPropertiesGetterPtr Create (ElementHandleCR eh);
 
 //! Get element color id.
-DGNPLATFORM_EXPORT UInt32 GetColor () const;
+DGNPLATFORM_EXPORT ColorDef GetColor () const;
 
 //! Get element linestyle and modifiers (optional).
-DGNPLATFORM_EXPORT Int32 GetLineStyle (LineStyleParams* lsParams = NULL) const;
+DGNPLATFORM_EXPORT int32_t GetLineStyle (LineStyleParams* lsParams = NULL) const;
 
 //! Get element weight.
-DGNPLATFORM_EXPORT UInt32 GetWeight () const;
+DGNPLATFORM_EXPORT uint32_t GetWeight () const;
 
-//! Get element level.
-DGNPLATFORM_EXPORT LevelId GetLevel () const;
-
-//! Get element class.
-DGNPLATFORM_EXPORT DgnElementClass GetElementClass () const;
+//! Get element category.
+DGNPLATFORM_EXPORT DgnCategoryId GetCategory () const;
 
 //! Get element display priority (2d only).
-DGNPLATFORM_EXPORT Int32 GetDisplayPriority () const;
+DGNPLATFORM_EXPORT int32_t GetDisplayPriority () const;
 
 //! Get element transparency.
 DGNPLATFORM_EXPORT double GetTransparency () const;
-
-//! Get element extrude thickness.
-DGNPLATFORM_EXPORT DVec3dCP GetThickness (bool& isCapped) const;
 
 }; // ElementPropertiesGetter
 
@@ -93,13 +87,13 @@ DGNPLATFORM_EXPORT DVec3dCP GetThickness (bool& isCapped) const;
   ElementPropertiesSetter is a helper class for changing element symbology
   and properties. It provides an implementation of IEditProperties for setting
   an element's basic property values. The following example illustrates using 
-  this class to set the level and color of the supplied EditElementHandle:
+  this class to set the category and color of the supplied EditElementHandle:
   \code
-static bool setLevelAndColor (EditElementHandleR eeh, LevelId newLevel, UInt32 newColor)
+static bool setCategoryAndColor (EditElementHandleR eeh, DgnCategoryId newCategory, uint32_t newColor)
     {
     ElementPropertiesSetterPtr remapper = ElementPropertiesSetter::Create ();
 
-    remapper->SetLevel (newLevel);
+    remapper->SetCategory (newCategory);
     remapper->SetColor (newColor);
 
     return remapper->Apply (eeh);
@@ -129,7 +123,7 @@ enum TemplateIgnores
     TEMPLATE_IGNORE_Material        = (0x01 << 4),
     TEMPLATE_IGNORE_ElemClass       = (0x01 << 5),
     TEMPLATE_IGNORE_Pattern         = (0x01 << 6),
-    TEMPLATE_IGNORE_Level           = (0x01 << 7),
+    TEMPLATE_IGNORE_Category        = (0x01 << 7),
     TEMPLATE_IGNORE_Transparency    = (0x01 << 8),
     TEMPLATE_IGNORE_Priority        = (0x01 << 9),
     TEMPLATE_IGNORE_StyleModifiers  = (0x01 << 10),
@@ -144,22 +138,16 @@ bool                m_changeAll;
 bool                m_setElemColor;
 bool                m_setFillColor;
 
-UInt32              m_color;
-UInt32              m_fillColor;
-Int32               m_style;
-UInt32              m_weight;
-LevelId             m_level;
-DgnElementClass     m_elmClass;
-Int32               m_priority;
+ColorDef            m_color;
+ColorDef            m_fillColor;
+int32_t             m_style;
+uint32_t            m_weight;
+DgnCategoryId       m_category;
+int32_t             m_priority;
 double              m_transparency;
 DgnFontCP           m_font;
 
 LineStyleParamsCP   m_lsParams;
-
-double              m_thickness;
-DVec3dCP            m_direction;
-bool                m_isCapped;
-bool                m_alwaysUseDir;
 
 protected:
 
@@ -170,11 +158,9 @@ bool IsValidBaseID (EachPropertyBaseArg& arg);
 DGNPLATFORM_EXPORT virtual void _EachColorCallback (EachColorArg& arg) override;
 DGNPLATFORM_EXPORT virtual void _EachLineStyleCallback (EachLineStyleArg& arg) override;
 DGNPLATFORM_EXPORT virtual void _EachWeightCallback (EachWeightArg& arg) override;
-DGNPLATFORM_EXPORT virtual void _EachLevelCallback (EachLevelArg& arg) override;
-DGNPLATFORM_EXPORT virtual void _EachElementClassCallback (EachElementClassArg& arg) override;
+DGNPLATFORM_EXPORT virtual void _EachCategoryCallback (EachCategoryArg& arg) override;
 DGNPLATFORM_EXPORT virtual void _EachDisplayPriorityCallback (EachDisplayPriorityArg& arg) override;
 DGNPLATFORM_EXPORT virtual void _EachTransparencyCallback (EachTransparencyArg& arg) override;
-DGNPLATFORM_EXPORT virtual void _EachThicknessCallback (EachThicknessArg& arg) override;
 DGNPLATFORM_EXPORT virtual void _EachFontCallback (EachFontArg& arg) override;
 
 public:
@@ -213,50 +199,36 @@ DGNPLATFORM_EXPORT bool Apply (EditElementHandleR eeh);
 //! @note For opaque filled elements changing the element color will also change
 //!       the fill color so that it continues to match the outline color. The same
 //!       behavior is also true for patterns/hatches.
-DGNPLATFORM_EXPORT void SetColor (UInt32 color);
+DGNPLATFORM_EXPORT void SetColor (ColorDef color);
 
 //! Set remapper object to change just the solid fill color of an element.
 //! @param[in] fillColor New fill color value.
 //! @note Will not add fill to an element that is currently un-filled. Fill colors 
 //! announced to color callback using PROPSCALLBACK_FLAGS_IsBackgroundID.
 //! @see IAreaFillPropertiesEdit
-DGNPLATFORM_EXPORT void SetFillColor (UInt32 fillColor);
+DGNPLATFORM_EXPORT void SetFillColor (ColorDef fillColor);
 
 //! Set remapper object to change the linestyle of an element.
 //! @param[in] style New linestyle id.
 //! @param[in] lsParams Modifiers for custom linestyle (or NULL).
-DGNPLATFORM_EXPORT void SetLinestyle (Int32 style, LineStyleParamsCP lsParams);
+DGNPLATFORM_EXPORT void SetLinestyle (int32_t style, LineStyleParamsCP lsParams);
 
 //! Set remapper object to change the weight of an element.
 //! @param[in] weight New weight value.
-DGNPLATFORM_EXPORT void SetWeight (UInt32 weight);
+DGNPLATFORM_EXPORT void SetWeight (uint32_t weight);
 
-//! Set remapper object to change the level of an element.
-//! @param[in] level New level id.
-DGNPLATFORM_EXPORT void SetLevel (LevelId level);
-
-//! Set remapper object to change the class type of an element.
-//! @param[in] elmClass New element class (Typically just primary/construction).
-DGNPLATFORM_EXPORT void SetElementClass (DgnElementClass elmClass);
+//! Set remapper object to change the category of an element.
+//! @param[in] category New category id.
+DGNPLATFORM_EXPORT void SetCategory (DgnCategoryId category);
 
 //! Set remapper object to change the display priority of an element.
 //! @param[in] priority New display priority value.
 //! @note Only applicable for 2d elements, will be ignored by 3d elements.
-DGNPLATFORM_EXPORT void SetDisplayPriority (Int32 priority);
+DGNPLATFORM_EXPORT void SetDisplayPriority (int32_t priority);
 
 //! Set remapper object to change the transparency of an element.
 //! @param[in] transparency New transparency value, 0.0 for fully opaque.
 DGNPLATFORM_EXPORT void SetTransparency (double transparency);
-
-//! Set remapper object to change the thickness of an element. Thickness is used to
-//! display planar elements as extrusions in 3d when the view is not aligned with the extrude
-//! direction bvector.
-//! @param[in] thickness New thickness value.
-//! @param[in] direction Extrude direction, required for lines, optional for elements with well defined normal.
-//! @param[in] isCapped true to display closed curves as capped solids instead of surface.
-//! @param[in] alwaysUseDirection true to use direction even for elements with a well defined normal (skewed extrusions).
-//! @note This property is supported by simple open and closed curves, text, and multilines.
-DGNPLATFORM_EXPORT void SetThickness (double thickness, DVec3dCP direction, bool isCapped, bool alwaysUseDirection);
 
 //! Set remapper object to change the font of an element.
 //! @param[in] font the new font to use
@@ -274,7 +246,7 @@ DGNPLATFORM_EXPORT void SetChangeEntireElement (bool changeAll);
 //! Assign or clear the graphic group number of the supplied element.
 //! @param[in,out] eeh The element to change the properties of.
 //! @param[in] gg the graphic group number to use, 0 to remove element from group.
-DGNPLATFORM_EXPORT static void SetGraphicGroup (EditElementHandleR eeh, UInt32 gg);
+DGNPLATFORM_EXPORT static void SetGraphicGroup (EditElementHandleR eeh, uint32_t gg);
 
 //! Assign or clear the locked flag of the supplied element.
 //! @param[in,out] eeh The element to change the properties of.

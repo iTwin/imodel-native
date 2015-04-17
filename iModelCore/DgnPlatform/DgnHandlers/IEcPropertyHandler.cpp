@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    IEcPropertyHandler::_IsPropertyReadOnly (ElementHandleCR eh, UInt32, size_t)
+bool    IEcPropertyHandler::_IsPropertyReadOnly (ElementHandleCR eh, uint32_t, size_t)
     {
     return false;
     }
@@ -26,7 +26,7 @@ bool    IEcPropertyHandler::_IsNullProperty (WCharCP enabler, WCharCP className,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    JoshSchifter                    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-IsNullReturnType   IEcPropertyHandler::_IsNullProperty (ElementHandleCR eh, UInt32 propId, size_t arrayIndex)
+IsNullReturnType   IEcPropertyHandler::_IsNullProperty (ElementHandleCR eh, uint32_t propId, size_t arrayIndex)
     {
     return ISNULLRETURN_NotNull;
     }
@@ -232,7 +232,7 @@ IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ( EcValueAccessor const& va, UInt32 propId, Bentley::WString const& name, Bentley::WString const& displayName, UInt32 pri)
+IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ( EcValueAccessor const& va, uint32_t propId, Bentley::WString const& name, Bentley::WString const& displayName, uint32_t pri)
     :
     m_propID (propId),
     m_name (name),
@@ -246,7 +246,7 @@ IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ( EcValueAccessor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ( EcArrayValueAccessor const& va, UInt32 propId, Bentley::WString const& name, Bentley::WString const& displayName, UInt32 pri)
+IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ( EcArrayValueAccessor const& va, uint32_t propId, Bentley::WString const& name, Bentley::WString const& displayName, uint32_t pri)
     :
     m_propID (propId),
     m_name (name),
@@ -262,9 +262,9 @@ IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ( EcArrayValueAcc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ( IRefCountedEcPropertyHandler* s, Bentley::WString const& name, Bentley::WString const& displayName, UInt32 pri)
+IEcPropertyHandler::EcPropertyDescriptor::EcPropertyDescriptor ( IRefCountedEcPropertyHandler* s, Bentley::WString const& name, Bentley::WString const& displayName, uint32_t pri)
     :
-    m_propID ((UInt32)-1),
+    m_propID ((uint32_t)-1),
     m_name (name),
     m_displayName (displayName.c_str()),
     m_priority (pri),
@@ -294,7 +294,7 @@ IEcPropertyHandler::EcPropertyCategory::EcPropertyCategory
 (
 Bentley::WString const&  n,
 Bentley::WString const&  d,
-UInt32                   p
+uint32_t                 p
 )   :
     m_standardId (NonStandard),
     m_name (n.c_str()),

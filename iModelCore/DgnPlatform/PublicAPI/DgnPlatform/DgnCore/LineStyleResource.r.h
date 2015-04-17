@@ -117,8 +117,8 @@ Multiline modifiers
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct LineStyleParamsResource
     {
-    UInt32      modifiers;      /* see STYLEMOD_... above              */
-    UInt32      reserved;
+    uint32_t    modifiers;      /* see STYLEMOD_... above              */
+    uint32_t    reserved;
     double      scale;          /* Applied to all length values        */
     double      dashScale;      /* Applied to adjustable dash strokes  */
     double      gapScale;       /* Applied to adjustable gap strokes   */
@@ -126,8 +126,8 @@ struct LineStyleParamsResource
     double      endWidth;       /* Taper end width                     */
     double      distPhase;      /* Phase shift by distance             */
     double      fractPhase;     /* Phase shift by fraction             */
-    UInt32      lineMask;       /* Multiline line mask                 */
-    UInt32      mlineFlags;     /* Multiline flags                     */
+    uint32_t    lineMask;       /* Multiline line mask                 */
+    uint32_t    mlineFlags;     /* Multiline flags                     */
     DPoint3d    normal;
     RotMatrix   rMatrix;
     };
@@ -172,9 +172,9 @@ resourceclass LineStyleNames        RTYPE_LineStyleNames;
 +----------------------------------------------------------------------*/
 typedef struct
     {
-    UInt32      type;
-    UInt32      id;
-    UInt32      __lReserved1, __lReserved2, __lReserved3, __lReserved4;
+    uint32_t    type;
+    uint32_t    id;
+    uint32_t    __lReserved1, __lReserved2, __lReserved3, __lReserved4;
     double      offset;
     double      __dReserved1;
     double      __dReserved2;
@@ -184,19 +184,19 @@ typedef struct
 typedef struct LineStyleRsc
     {
     char            descr[LS_MAX_DESCR];               // WIP_CHAR_OK - in resource
-    UInt32          __lHdr1;
-    UInt32          __lHdr2;
-    UInt32          auxType;
-    UInt32          __auxID;
-    UInt32          __lRes1;
-    UInt32          __lRes2;
+    uint32_t        __lHdr1;
+    uint32_t        __lHdr2;
+    uint32_t        auxType;
+    uint32_t        __auxID;
+    uint32_t        __lRes1;
+    uint32_t        __lRes2;
     double          __dReserved1;
     double          __dReserved2;
-    UInt32          __lRes3;
+    uint32_t        __lRes3;
 #ifdef resource
     ComponentInfo   component[];
 #else
-    UInt32          nComp;
+    uint32_t        nComp;
     ComponentInfo   component[1];
 #endif
     } LineStyleRsc;
@@ -241,35 +241,35 @@ typedef struct
     long        lReserved2;
     long        lReserved3;
 
-    UInt8       strokeMode;     /* bit 0: dash          | gap    dash  */
+    uint8_t     strokeMode;     /* bit 0: dash          | gap    dash  */
                                 /* bit 1: trace mode    | linear ray   */
                                 /* bit 2: scale mode    | off    on    */
                                 /* bit 3: start invert                 */
                                 /* bit 4: end invert                   */
 
-    UInt8       widthMode;      /* bit 0: left half     | off    on    */
+    uint8_t     widthMode;      /* bit 0: left half     | off    on    */
                                 /* bit 1: right half    | off    on    */
                                 /* bit 2: in taper      | no     yes   */
                                 /* bit 3: end taper     | no     yes   */
-    UInt8       capMode;
-    UInt8       bReserved;
+    uint8_t     capMode;
+    uint8_t     bReserved;
     } StrokeData, LineCodeStroke;
 
 typedef struct
     {
     char          descr[LS_MAX_DESCR];                      // WIP_CHAR_OK - in resource
-    UInt32        _lHdr1, _lHdr2, _auxType, _auxID;
+    uint32_t      _lHdr1, _lHdr2, _auxType, _auxID;
     double        phase;
     double        orgAngle_unused;
     double        endAngle_unused;
     double        _dReserved1, _dReserved2, _dReserved3;
-    UInt32        options;
-    UInt32        maxIterate;
-    UInt32        _lReserved;
+    uint32_t      options;
+    uint32_t      maxIterate;
+    uint32_t      _lReserved;
 #ifdef resource
     StrokeData    stroke[];
 #else
-    UInt32        nStrokes;
+    uint32_t      nStrokes;
     StrokeData    stroke[1];
 #endif
     } LineCodeRsc;
@@ -318,11 +318,11 @@ resourceclass LineCodeRsc       RTYPE_LineCode;
 +----------------------------------------------------------------------*/
 typedef struct
     {
-    UInt32        symType;              //  must specify a symbol component in the same file
-    UInt32        symID;                //                  ""
-    UInt16        strokeNo;             //  If (!(mod1 & LCPOINT_ANYVERTEX)) && (mod1 & LCPOINT_ONSTROKE)) selects stroke number from stroke pattern
-    UInt16        mod1;
-    UInt32        mod2;                 //  unused
+    uint32_t      symType;              //  must specify a symbol component in the same file
+    uint32_t      symID;                //                  ""
+    uint16_t      strokeNo;             //  If (!(mod1 & LCPOINT_ANYVERTEX)) && (mod1 & LCPOINT_ONSTROKE)) selects stroke number from stroke pattern
+    uint16_t      mod1;
+    uint32_t      mod2;                 //  unused
 
     double        xOffset;
     double        yOffset;
@@ -338,15 +338,15 @@ typedef struct
 typedef struct
     {
     char          descr[LS_MAX_DESCR];                           // WIP_CHAR_OK - in resource
-    UInt32        __lHdr1, __lHdr2, __auxType, __auxID;
+    uint32_t      __lHdr1, __lHdr2, __auxType, __auxID;
     double        __dReserved1;
-    UInt32        lcType;
-    UInt32        lcID;
-    UInt32        __lReserved1;
+    uint32_t      lcType;
+    uint32_t      lcID;
+    uint32_t      __lReserved1;
 #ifdef resource
     PointSymInfo  symbol[];     /* Point symbol info                   */
 #else
-    UInt32        nSym;         /* Number of point symbols             */
+    uint32_t      nSym;         /* Number of point symbols             */
     PointSymInfo  symbol[1];    /* Point symbol components             */
 #endif
     } LinePointRsc;
@@ -403,19 +403,19 @@ typedef struct
     struct
         {
         char        descr[LS_MAX_DESCR];                           // WIP_CHAR_OK - in resource
-        UInt32      symbolType, __lHdr2, __auxType, __auxID;
+        uint32_t    symbolType, __lHdr2, __auxType, __auxID;
         SymbolRange range;
         T_DPoint3d  __offset_unused;
         double      scale;
         double      __dReserve[12];
         } header;
 
-    UInt32      symFlags;
+    uint32_t    symFlags;
 #ifndef resource
-    UInt32      nBytes;
-    UInt8       symBuf[8];
+    uint32_t    nBytes;
+    uint8_t     symBuf[8];
 #else
-    UInt8       symBuf[];
+    uint8_t     symBuf[];
 #endif
 
     SymbolType GetSymbolType () { return (SymbolType)header.symbolType; }

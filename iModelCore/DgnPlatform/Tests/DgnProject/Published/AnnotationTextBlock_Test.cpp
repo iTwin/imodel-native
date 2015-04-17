@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationTextBlock_Test.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
@@ -80,7 +80,7 @@ TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
     {
     //.............................................................................................
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnProjectR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
     AnnotationTextBlockPtr doc = AnnotationTextBlock::Create(project);
@@ -168,13 +168,13 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     {
     //.............................................................................................
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnProjectR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
     DgnFontCR ttFont = DgnFontManager::GetDefaultTrueTypeFont();
     ASSERT_TRUE(!ttFont.IsMissing());
 
-    UInt32 ttFontId = 0;
+    uint32_t ttFontId = 0;
     ASSERT_TRUE(SUCCESS == project.Fonts().AcquireFontNumber(ttFontId, ttFont));
 
     AnnotationTextStylePtr docStyle = AnnotationTextStyle::Create(project);
@@ -182,19 +182,19 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     docStyle->SetFontId(ttFontId);
     docStyle->SetHeight(11.0);
 
-    docStyle = project.Styles().AnnotationTextStyles().Insert(*docStyle);
+    project.Styles().AnnotationTextStyles().Insert(*docStyle);
     ASSERT_TRUE(docStyle.IsValid());
     ASSERT_TRUE(docStyle->GetId().IsValid());
 
     AnnotationTextStylePtr parStyle = docStyle->Clone();
     parStyle->SetName("parStyle");
-    parStyle = project.Styles().AnnotationTextStyles().Insert(*parStyle);
+    project.Styles().AnnotationTextStyles().Insert(*parStyle);
     ASSERT_TRUE(parStyle.IsValid());
     ASSERT_TRUE(parStyle->GetId().IsValid());
 
     AnnotationTextStylePtr runStyle = docStyle->Clone();
     runStyle->SetName("runStyle");
-    runStyle = project.Styles().AnnotationTextStyles().Insert(*runStyle);
+    project.Styles().AnnotationTextStyles().Insert(*runStyle);
     ASSERT_TRUE(runStyle.IsValid());
     ASSERT_TRUE(runStyle->GetId().IsValid());
 

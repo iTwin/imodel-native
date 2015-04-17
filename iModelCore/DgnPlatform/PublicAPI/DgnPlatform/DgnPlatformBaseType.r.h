@@ -20,20 +20,6 @@
 // This file is included by both .cpp/h and .r files
 //--------------------------------------------------------------------
 
-#if defined (mdl_type_resource_generator)
-    // These types sometimes appear in structs that are published for CExpression
-    typedef void*  DgnModelP;
-    typedef void*  DgnModelListP;
-    typedef void*  DgnModelIteratorP;
-    typedef void*  BitMaskP;
-
-    typedef struct BSIRect
-        {
-        Point2d origin;
-        Point2d corner;
-        } BSIRect;
-#endif // defined (mdl_type_resource_generator)
-
 #if defined (mdl_resource_compiler) || defined (mdl_type_resource_generator)
     #define BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
     #define END_BENTLEY_DGNPLATFORM_NAMESPACE

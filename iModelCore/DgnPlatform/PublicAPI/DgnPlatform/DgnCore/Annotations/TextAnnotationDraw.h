@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/TextAnnotationDraw.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -17,6 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! Used to draw a TextAnnotation.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct TextAnnotationDraw : public RefCountedBase
@@ -44,7 +45,7 @@ public:
     DGNPLATFORM_EXPORT TransformCR GetDocumentTransform() const;
     DGNPLATFORM_EXPORT void SetDocumentTransform(TransformCR);
 
-    DGNVIEW_EXPORT BentleyStatus Draw(ViewportR, DgnDrawMode, DrawPurpose, LevelId) const;
+    DGNVIEW_EXPORT BentleyStatus Draw(DgnViewportR, DgnDrawMode, DrawPurpose, DgnCategoryId) const;
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
 
 }; // TextAnnotationDraw

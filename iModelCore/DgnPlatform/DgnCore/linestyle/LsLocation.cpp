@@ -18,19 +18,19 @@ LsLocation::~LsLocation ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsLocation::SetLocation (DgnProjectR project, UInt32 componentType, UInt32 componentId)
+void            LsLocation::SetLocation (DgnDbR project, uint32_t componentType, uint32_t componentId)
     {
     Init ();
-    m_project   = &project;
+    m_dgndb   = &project;
     m_rscType   = static_cast <LsResourceType>(remapElmTypeToRscType ((LsElementType)componentType));
     m_rscID = componentId;
-    m_fileType  = LsLocationType::DgnProject;
+    m_fileType  = LsLocationType::DgnDb;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsLocation::SetFrom (LsLocation const* base, UInt32 rscType)
+void LsLocation::SetFrom (LsLocation const* base, uint32_t rscType)
     {
     SetFrom (base);
     m_rscType   = static_cast <LsResourceType> (rscType);
@@ -43,7 +43,7 @@ void            LsLocation::SetFrom (LsLocation const* base)
     {
     m_rscType   = base->m_rscType;
     m_rscID     = base->m_rscID;
-    m_project   = base->m_project;
+    m_dgndb   = base->m_dgndb;
     m_fileType  = base->m_fileType;
     m_idDefined = base->m_idDefined;
     }
@@ -55,8 +55,8 @@ intptr_t        LsLocation::GetFileKey () const
     {
     switch (m_fileType)
         {
-        case    LsLocationType::DgnProject:
-            return (intptr_t)m_project;
+        case    LsLocationType::DgnDb:
+            return (intptr_t)m_dgndb;
         }
 
     return (intptr_t)LsLocationType::Unknown;
@@ -65,11 +65,11 @@ intptr_t        LsLocation::GetFileKey () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt64 LsLocation::GetIdentKey () const
+uint64_t LsLocation::GetIdentKey () const
     {
     switch (m_fileType)
         {
-        case    LsLocationType::DgnProject:
+        case    LsLocationType::DgnDb:
             return m_rscID;
         }
 
@@ -81,7 +81,7 @@ UInt64 LsLocation::GetIdentKey () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsElementType      LsLocation::GetElementType () const
     {
-    return (LsElementType)remapRscTypeToElmType ((UInt32)m_rscType);
+    return (LsElementType)remapRscTypeToElmType ((uint32_t)m_rscType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -90,8 +90,8 @@ LsElementType      LsLocation::GetElementType () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct          LsMap *LsLocation::GetMapPtr () const
     {
-    if (LsLocationType::DgnProject == m_fileType)
-        return LsMap::GetMapPtr (*m_project);
+    if (LsLocationType::DgnDb == m_fileType)
+        return LsMap::GetMapPtr (*m_dgndb);
 
     return LsSystemMap::GetSystemMapPtr ();
     }
@@ -160,7 +160,7 @@ bool            LsLocation::IsValid () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32   LsLocation::GetSeedID
+int32_t LsLocation::GetSeedID
 (
 ) const
     {

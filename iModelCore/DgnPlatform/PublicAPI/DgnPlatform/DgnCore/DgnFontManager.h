@@ -2,14 +2,13 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnFontManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include "../DgnPlatform.h"
-#include "TextParam.h"
 #include <Bentley/CodePages.h>
 
 //! @defgroup DgnFontModule DGN Platform Font System
@@ -17,17 +16,17 @@
 //!
 //! <b>Enumerating Fonts</b>
 //!
-//! DgnFontManager and DgnProject can be used to enumerate or find fonts. Project objects only know about their embedded fonts; the font manager knows about system and workspace fonts, and can optionally query a project (taken as a CP to many methods).
+//! DgnFontManager and DgnDb can be used to enumerate or find fonts. Project objects only know about their embedded fonts; the font manager knows about system and workspace fonts, and can optionally query a project (taken as a CP to many methods).
 //!
 //! <b>Font Numbers</b>
 //!
-//! While the vast majority of APIs will work with DgnFont objects, you may still encounter font numbers. These are granted on a per-project basis. The first time a font is used by an element, it is granted a number. There is no way to directly correlate any information about a font from its number (you must always query a sepcific instance of a project to resolve the number into a font object), and this number has no meaning outside of the given project. You can use DgnProject::FindFont to resolve a font number to a DgnFont object and vice versa (DgnProject::FindFontNumber and DgnProject::AcquireFontNumber).
+//! While the vast majority of APIs will work with DgnFont objects, you may still encounter font numbers. These are granted on a per-project basis. The first time a font is used by an element, it is granted a number. There is no way to directly correlate any information about a font from its number (you must always query a sepcific instance of a project to resolve the number into a font object), and this number has no meaning outside of the given project. You can use DgnDb::FindFont to resolve a font number to a DgnFont object and vice versa (DgnDb::FindFontNumber and DgnDb::AcquireFontNumber).
 //!
 //! <b>Font Types</b>
 //!
 //! DGN platform supports three font types (DgnFontType): MicroStation resource (RSC), AutoCAD SHX, and TrueType. A font is uniquely identified by its name and type. If there are duplicates between a project and the environment (e.g. embedded vs. workspace and system), the embedded version gets priority. Within the environment, the first copy found gets priority.
 //!
-//! While "type" is used at a higher level to essentially separate the format of the font, the SHX format has three sub-types; "variant" (DgnFontVariant) is used to distinguish at this level. Because certain sub-types are only valid in certain scenarios, you sometimes need to distinguish the variant, not just the type. For example, it is invalid to specify an SHX big font for the base font of TextStringProperties. If you are requesting a font and specify DGNFONTVARIANT_DontCare, the precedence is as follows: RSC, SHX (other than DGNFONTVARIANT_ShxBig), then TrueType; note the absence of DGNFONTVARIANT_ShxBig in the precedence order.
+//! While "type" is used at a higher level to essentially separate the format of the font, the SHX format has three sub-types; "variant" (DgnFontVariant) is used to distinguish at this level. Because certain sub-types are only valid in certain scenarios, you sometimes need to distinguish the variant, not just the type. If you are requesting a font and specify DGNFONTVARIANT_DontCare, the precedence is as follows: RSC, SHX, then TrueType.
 //!
 //! @note Future development and enhancements will be focused on TrueType fonts. RSC and SHX fonts will only continue to be supported in the interest of backwards compatibility and interoperability.
 //!
@@ -36,7 +35,7 @@
 //! <ul>
 //! <li>Find a font by-name: DgnFontManager::FindFont</li>
 //! <li>Get a list of available fonts: DgnFontManager::GetFonts</li>
-//! <li>Get a list of embedded fonts: DgnProject::EmbeddedFonts</li>
+//! <li>Get a list of embedded fonts: DgnDb::EmbeddedFonts</li>
 //! <li>Get a font's name and type: DgnFont::GetName and DgnFont::GetType</li>
 //! </ul>
 
@@ -82,12 +81,11 @@ enum class DgnFontType
 enum DgnFontVariant
     {
     DGNFONTVARIANT_Invalid = 0, //!< An invalid font variant; used in error conditions.
-    DGNFONTVARIANT_DontCare = 0, //!< When asking for a font, use a system-defined precedence, ignoring SHX big fonts.
+    DGNFONTVARIANT_DontCare = 0, //!< When asking for a font, use a system-defined precedence.
     DGNFONTVARIANT_Rsc = (1 << 0), //!< MicroStation RSC font
     DGNFONTVARIANT_TrueType = (1 << 1), //!< TrueType font
     DGNFONTVARIANT_ShxShape = (1 << 2), //!< AutoCAD SHX shape font
-    DGNFONTVARIANT_ShxUni = (1 << 3), //!< AutoCAD SHX unicode font
-    DGNFONTVARIANT_ShxBig = (1 << 4) //!< AutoCAD SHX big font
+    DGNFONTVARIANT_ShxUni = (1 << 3) //!< AutoCAD SHX unicode font
     };
 
 //=======================================================================================
@@ -142,15 +140,24 @@ enum SpecialCharValues
 // __PUBLISH_SECTION_START__
     }; // SpecialCharValues
 
+enum class CharacterSpacingType
+    {
+    Absolute                = 0,    //!< Treat value as an absolute distance beyond the normal pen movement
+    FixedWidth              = 1,    //!< Treat value as an absolute distance from one glyph origin to the next (ignores normal pen movement)
+    Factor                  = 2     //!< Treat (value * text height) as an absolute distance beyond the normal pen movement
+    }; // CharacterSpacingType
+
+// I think this is perhaps redundant with FontChar, however at this time the font system differentiates... should revisit that with the intention of removing FontChar.
+typedef uint16_t GlyphCode;
+typedef uint16_t* GlyphCodeP;
+typedef uint16_t const* GlyphCodeCP;
+
 // __PUBLISH_SECTION_END__
 
-struct IDgnGlyphLayoutListener;
-
 // FontChar is most aptly described as a glyph index. It is only intended for quick lookup for glyphs in a font, and should remain an internal concept.
-typedef UInt16 FontChar;
-typedef UInt16* FontCharP;
-typedef UInt16 const* FontCharCP;
-typedef bvector<FontChar> T_FontChars;
+typedef uint16_t FontChar;
+typedef uint16_t* FontCharP;
+typedef uint16_t const* FontCharCP;
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     11/2010
@@ -169,138 +176,65 @@ enum DgnGlyphRunLayoutFlags
 // @bsiclass                                                      Jeff.Marker     12/2009
 //=======================================================================================
 struct DgnGlyphLayoutContext
-    {
+{
+    typedef bvector<FontChar> T_FontChars;
     typedef T_FontChars const& T_FontCharsCR;
-    typedef bvector<bool> T_EdfMask;
-    typedef T_EdfMask const& T_EdfMaskCR;
 
 private:
-    CharacterSpacingType m_characterSpacingType;
-    double m_characterSpacingValue;
-    DPoint3d m_displayOffset;
-    DPoint2d m_displaySize;
+    T_FontChars m_fontChars;
     DgnFontCP m_font;
-    DgnFontCP m_shxBigFont;
+    DPoint2d m_size;
     bool m_isBold;
     bool m_shouldUseItalicTypeface;
-
-    DgnGlyphRunLayoutFlags m_runLayoutFlags;
-    T_FontChars m_fontChars;
-    T_EdfMask m_edfMask;
-    IDgnGlyphLayoutListener* m_glyphLayoutListener;
-    bool m_shouldIgnoreDisplayShifts;
     bool m_shouldIgnorePercentEscapes;
-    bool m_shouldIgnoreLsb;
 
 public:
-    CharacterSpacingType GetCharacterSpacingType() const;
-    void SetCharacterSpacingType(CharacterSpacingType);
-    double GetCharacterSpacingValue() const;
-    void SetCharacterSpacingValue(double);
-    DPoint3d GetDisplayOffset() const;
-    void SetDisplayOffset(DPoint3d);
-    DPoint2d GetDisplaySize() const;
-    void SetDisplaySize(DPoint2d);
+    T_FontCharsCR GetFontChars() const;
     DgnFontCR GetFont() const;
-    DgnFontCP GetShxBigFont() const;
+    DPoint2dCR GetSize() const;
+    void SetSize(DPoint2dCR);
     bool IsBold() const;
     void SetIsBold(bool);
     bool ShouldUseItalicTypeface() const;
     void SetShouldUseItalicTypeface(bool);
-    DgnGlyphRunLayoutFlags GetRunLayoutFlags() const;
-    bool IsVertical() const;
-    bool IsBackwards() const;
-    bool IsUpsideDown() const;
-    void SetRunLayoutFlags(DgnGlyphRunLayoutFlags);
-    T_FontCharsCR GetFontChars() const;
-    void SetFontChars(T_FontChars::value_type const*, T_EdfMask::value_type const*, size_t count);
-    void SetFontChars(WCharCP, T_EdfMask::value_type const*, size_t count);
-    void SetFontChars(Utf8CP, size_t count);
-    T_EdfMaskCR GetEDFMask() const;
-    IDgnGlyphLayoutListener* GetIDgnGlyphLayoutListenerP() const;
-    void SetIDgnGlyphLayoutListenerP(IDgnGlyphLayoutListener*);
-    bool ShouldIgnoreDisplayShifts() const;
-    void SetShouldIgnoreDisplayShifts(bool);
     bool ShouldIgnorePercentEscapes() const;
     void SetShouldIgnorePercentEscapes(bool);
-    bool ShouldIgnoreLsb() const;
-    void SetShouldIgnoreLsb(bool);
 
-    DgnGlyphLayoutContext(DgnFontCR font, DgnFontCP shxBixFont);
+    DgnGlyphLayoutContext(DgnFontCR, FontCharCP, size_t count);
+    DgnGlyphLayoutContext(DgnFontCR, Utf8CP, size_t count);
 
-    void SetPropertiesFromRunPropertiesBase(RunPropertiesBaseCR);
-
-    }; // DgnGlyphLayoutContext
+}; // DgnGlyphLayoutContext
 
 //=======================================================================================
 //! This is the output container for DgnFont::LayoutGlyphs.
 // @bsiclass                                                      Jeff.Marker     12/2009
 //=======================================================================================
 struct DgnGlyphLayoutResult
-    {
-    typedef bvector<FontChar> T_GlyphCodes;
+{
+    typedef bvector<GlyphCode> T_GlyphCodes;
     typedef T_GlyphCodes& T_GlyphCodesR;
     typedef bvector<DPoint3d> T_GlyphOrigins;
     typedef T_GlyphOrigins& T_GlyphOriginsR;
+    typedef bvector<DgnGlyphCP> T_Glyphs;
+    typedef T_Glyphs& T_GlyphsR;
 
 private:
+    DRange2d m_range;
+    DRange2d m_justificationRange;
+    T_Glyphs m_glyphs;
     T_GlyphCodes m_glyphCodes;
     T_GlyphOrigins m_glyphOrigins;
-    T_DoubleVector m_leadingCaretOffsets;
-    T_DoubleVector m_trailingCaretOffsets;
-    DRange2d m_cellBoxRange;
-    DRange2d m_blackBoxRange;
-    DRange2d m_justificationCellBoxRange;
-    DRange2d m_justificationBlackBoxRange;
-    double m_trailingInterCharacterSpacing;
-    double m_maxHorizontalCellIncrement;
-    bool m_isLastGlyphBlank;
-    double m_leftSideBearingToIgnore;
 
 public:
-    //! The glyph codes resolved from the input string. This potentially includes Windows API- or plug-in-based remapping.
-    DGNPLATFORM_EXPORT T_GlyphCodesR GetGlyphCodesR();
-
-    //! Origin for each glyph.
-    DGNPLATFORM_EXPORT T_GlyphOriginsR GetGlyphOriginsR();
-
-    //! Leading caret offsets for each logical character in the input(can differ from the glyph codes recorded in this structure).
-    DGNPLATFORM_EXPORT T_DoubleVectorR GetLeadingCaretOffsetsR();
-
-    //! Trailing caret offsets for each logical character in the input(can differ from the glyph codes recorded in this structure).
-    DGNPLATFORM_EXPORT T_DoubleVectorR GetTrailingCaretOffsetsR();
-
-    //! The union of all glyph cell boxes. The cell box height is defined by the run properties, and its width is defined by the font. This includes all bearings.
-    DGNPLATFORM_EXPORT DRange2dR GetCellBoxRangeR();
-
-    //! The union of all glyph black boxes. The black box is defined by the font, and includes no bearings.
-    DGNPLATFORM_EXPORT DRange2dR GetBlackBoxRangeR();
-
-    //! The union of glyph cell boxes, excluding trailing blank glyphs. The cell box height is defined by the run properties, and its width is defined by the font. This includes all bearings.
-    DGNPLATFORM_EXPORT DRange2dR GetJustificationCellBoxRangeR();
+    DRange2dR GetRangeR();
+    DRange2dR GetJustificationRangeR();
+    T_GlyphsR GetGlyphsR();
+    T_GlyphCodesR GetGlyphCodesR();
+    T_GlyphOriginsR GetGlyphOriginsR();
     
-    //! The union of glyph black boxes, excluding trailing blank glyphs (except if they're part of an EDF). The black box is defined by the font, and includes no bearings.
-    DGNPLATFORM_EXPORT DRange2dR GetJustificationBlackBoxRangeR();
+    DgnGlyphLayoutResult();
 
-    //! The distance from the last glyph's cell box to the theoretical next glyph's origin(axis determined by orientation provided to DgnGlyphLayoutContext).
-    DGNPLATFORM_EXPORT double& GetTrailingInterCharacterSpacingR();
-
-    //! The maximum horizontal cell increment among all of the glyphs. Maximum horizontal cell increment is an evil derived value, computed by and for legacy reasons.
-    DGNPLATFORM_EXPORT double& GetMaxHorizontalCellIncrementR();
-
-    //! True if the very last glyph is blank; used for computing element range(another evil legacy behavior).
-    DGNPLATFORM_EXPORT bool& IsLastGlyphBlankR();
-
-    //! The font- and orientation-dependent left-side bearing to ignore if the run properties say to do so.
-    DGNPLATFORM_EXPORT double& LeftSideBearingToIgnoreR();
-
-    //! Creates a new instance with zero'ed values.
-    DGNPLATFORM_EXPORT DgnGlyphLayoutResult();
-
-    //! Based on evil legacy rules and the internal computed values, computes element range as if the original string were for a text element.
-    DGNPLATFORM_EXPORT DRange2d ComputeElementRange(DgnGlyphLayoutContextCR) const;
-
-    }; // DgnGlyphLayoutResult
+}; // DgnGlyphLayoutResult
 
 // __PUBLISH_SECTION_START__
 
@@ -366,7 +300,7 @@ struct DgnFontConfigurationData
 // __PUBLISH_SECTION_START__
 
 //=======================================================================================
-//! The font base class represents fonts in text-related APIs, and gives access to properties and metadata common to all font types. Font types include TrueType, RSC, and SHX, which can come from the system, workspace, or can be embedded in a project. You cannot create instances of this type directly; see DgnFontManager and DgnProject to access instances of this type, as well as the documentation for DgnFontModule for more background.
+//! The font base class represents fonts in text-related APIs, and gives access to properties and metadata common to all font types. Font types include TrueType, RSC, and SHX, which can come from the system, workspace, or can be embedded in a project. You cannot create instances of this type directly; see DgnFontManager and DgnDb to access instances of this type, as well as the documentation for DgnFontModule for more background.
 // @bsiclass                                                    Jeff.Marker     07/2012
 //=======================================================================================
 struct DgnFont : public RefCountedBase, public NonCopyableClass
@@ -394,7 +328,6 @@ protected:
         FontChar m_charCode;
         CharType m_charType;
         FontCharCP m_currChar;
-        FontCharCP m_startOfString;
         FontCharCP m_lastCharacter;
         DgnFontCR m_font;
         bool m_shouldIgnorePercentEscapes;
@@ -417,7 +350,7 @@ protected:
     bool m_isLastResort;
 
     virtual bool _ContainsCharacter(WChar) const = 0;
-    virtual DgnFontPtr _Embed(DgnProjectR) const = 0;
+    virtual DgnFontPtr _Embed(DgnDbR) const = 0;
     virtual LangCodePage _GetCodePage() const = 0;
     virtual FontChar _GetDegreeCharCode() const = 0;
     virtual double _GetDescenderRatio() const = 0;
@@ -429,26 +362,26 @@ protected:
     virtual BentleyStatus _LayoutGlyphs(DgnGlyphLayoutContextCR, DgnGlyphLayoutResultR) const = 0;
     virtual WChar _RemapFontCharToUnicodeChar(FontChar) const;
     virtual FontChar _RemapUnicodeCharToFontChar(WChar) const;
-    virtual bool _ShouldDrawWithLineWeight() const = 0;
+    virtual bool _CanDrawWithLineWeight() const = 0;
     DgnFont(Utf8CP name, DgnFontConfigurationData const&);
 
 public:
     DGNPLATFORM_EXPORT bool ContainsCharacter(WChar) const;
     bool DoGlyphsHaveBlankGeometry(FontCharCP, size_t) const;
-    DgnFontPtr Embed(DgnProjectR) const;
+    DgnFontPtr Embed(DgnDbR) const;
     DGNPLATFORM_EXPORT bool Equals(DgnFontCR) const;
     DGNPLATFORM_EXPORT WString FontCharsToUnicodeString(FontCharCP) const;
     DGNPLATFORM_EXPORT FontChar GetDegreeCharCode() const;
     DGNPLATFORM_EXPORT double GetDescenderRatio() const;
     DGNPLATFORM_EXPORT FontChar GetDiameterCharCode() const;
     DGNPLATFORM_EXPORT FontChar GetPlusMinusCharCode() const;
-    DGNPLATFORM_EXPORT bool IsAccessibleByProject(DgnProjectCR) const;
+    DGNPLATFORM_EXPORT bool IsAccessibleByProject(DgnDbCR) const;
     DGNPLATFORM_EXPORT BentleyStatus LayoutGlyphs(DgnGlyphLayoutContextCR, DgnGlyphLayoutResultR) const;
     DGNPLATFORM_EXPORT WChar RemapFontCharToUnicodeChar(FontChar) const;
     DGNPLATFORM_EXPORT FontChar RemapUnicodeCharToFontChar(WChar) const;
     DGNPLATFORM_EXPORT DgnFontCP ResolveToRenderFont() const;
-    bool ShouldDrawWithLineWeight() const;
-    DGNPLATFORM_EXPORT T_FontChars UnicodeStringToFontChars(WCharCP) const;
+    bool CanDrawWithLineWeight() const;
+    DGNPLATFORM_EXPORT bvector<FontChar> UnicodeStringToFontChars(WCharCP) const;
 
 // __PUBLISH_CLASS_VIRTUAL__
 // __PUBLISH_SECTION_START__
@@ -524,7 +457,6 @@ private:
     T_PerFontConfigurationMap m_perFontConfigurations;
     DgnFontCP m_defaultRscFont;
     DgnFontCP m_defaultShxFont;
-    DgnFontCP m_defaultShxBigFont;
     DgnFontCP m_defaultTrueTypeFont;
     DgnFontPtr m_decoratorFont;
     bool m_isUsingAnRtlLocale;
@@ -544,7 +476,6 @@ private:
 public:
     virtual void _OnHostTermination(bool) override;
     static DgnFontConfigurationData const* FindCustomFontConfiguration(DgnFontKey const&);
-    DGNPLATFORM_EXPORT static DgnFontCR GetFontForCodePage(UInt32 baseFontID, UInt32 shxBigFontID, DgnProjectCR);
     DGNPLATFORM_EXPORT void Initialize();
     DGNPLATFORM_EXPORT void InitializeRscFontFinder (IDgnFontFinder&);
     bool static IsUsingAnRtlLocale();
@@ -560,7 +491,7 @@ public:
     DGNPLATFORM_EXPORT static DgnFontType ConvertFontVariantToType(DgnFontVariant);
 
     //! Attempts to find a font by-type and -name in the system and workspace, and optionally embedded in a project.
-    DGNPLATFORM_EXPORT static DgnFontCP FindFont(Utf8CP name, DgnFontType, DgnProjectCP);
+    DGNPLATFORM_EXPORT static DgnFontCP FindFont(Utf8CP name, DgnFontType, DgnDbCP);
 
     //! Gets the default decorator font. The decorator font is most useful for displaying text in a view window(e.g. when drawing with DGN objects, not necessarily for your higher level user interface).
     DGNPLATFORM_EXPORT static DgnFontCR GetDecoratorFont();
@@ -568,20 +499,17 @@ public:
     //! Gets the default MicroStation RSC font. This is used when an element uses an RSC font that cannot be resolved in the current session.
     DGNPLATFORM_EXPORT static DgnFontCR GetDefaultRscFont();
 
-    //! Gets the default AutoCAD SHX(non-big) font. This is used when an element uses an SHX font that cannot be resolved in the current session.
+    //! Gets the default AutoCAD SHX font. This is used when an element uses an SHX font that cannot be resolved in the current session.
     DGNPLATFORM_EXPORT static DgnFontCR GetDefaultShxFont();
-
-    //! Gets the default AutoCAD SHX big font. This is used when an element uses an SHX big font that cannot be resolved in the current session.
-    DGNPLATFORM_EXPORT static DgnFontCP GetDefaultShxBigFont();
 
     //! Gets the default TrueType font. This is used when an element uses an SHX font that cannot be resolved in the current session.
     DGNPLATFORM_EXPORT static DgnFontCR GetDefaultTrueTypeFont();
 
     //! Gets a collection of known fonts of the requested variant, optionally searching the embedded fonts of a project.
-    DGNPLATFORM_EXPORT static T_DgnFontCPs GetFonts(DgnFontVariant, DgnProjectCP);
+    DGNPLATFORM_EXPORT static T_DgnFontCPs GetFonts(DgnFontVariant, DgnDbCP);
 
-    //! Attempts to resolve a font number to a font object. This method will always return non-NULL for DGNFONTVARIANT_DontCare, DGNFONTVARIANT_Rsc, DGNFONTVARIANT_TrueType, DGNFONTVARIANT_ShxShape, andDGNFONTVARIANT_ShxUni. Note that requesting DGNFONTVARIANT_ShxBig may return NULL.
-    DGNPLATFORM_EXPORT static DgnFontCP ResolveFont(UInt32 fontID, DgnProjectCR, DgnFontVariant preferredFallbackType);
+    //! Resolves a font number to a font object. If fontID is invalid, preferredFallbackType will be used to return a default font of the same type.
+    DGNPLATFORM_EXPORT static DgnFontCR ResolveFont(uint32_t fontID, DgnDbCR, DgnFontVariant preferredFallbackType);
 
     }; // DgnFontManager
 

@@ -126,11 +126,11 @@ protected:
     virtual void                         _SetWidth (double newWidth ) = 0;
 
     //virtual bool      _HasClip                 (ElementHandleCR) const = 0; removed in graphite
-    virtual StatusInt _GetClipBoundary         (ClipVectorPtr& clip, DRange3dR maxRange, ClipVolumePass pass, DynamicViewSettingsCP settings, bool displayCutGeometry) const = 0; // changed in graphite
+    virtual StatusInt _GetClipBoundary         (ClipVectorPtr& clip, DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const = 0; // changed in graphite
     virtual bool      _IsClipVolumePassValid   (ClipVolumePass) const {return false;}
-    virtual StatusInt _GetCuttingPlane         (DPlane3dR cutPlane, DVec3dR xDir, DVec3dR yDir, ClipMask& clipMask, DRange2dR clipRange, bool& forwardFacing, int index, ViewContextR, DynamicViewSettingsCR) const {return ERROR;}
+    virtual StatusInt _GetCuttingPlane         (DPlane3dR cutPlane, DVec3dR xDir, DVec3dR yDir, ClipMask& clipMask, DRange2dR clipRange, bool& forwardFacing, int index, ViewContextR) const {return ERROR;}
     //virtual StatusInt _GetCuttingElement       (EditElementHandleR cutEeh, ViewContextR, DynamicViewSettingsCR) const{return ERROR;} removed in graphite
-    virtual bool      _GetAuxTransform         (TransformR, ClipVolumePass, DynamicViewSettingsCR) const {return false;}
+    virtual bool      _GetAuxTransform         (TransformR, ClipVolumePass) const {return false;}
     virtual StatusInt _GetTransform            (TransformR trans) const = 0;
     virtual size_t    _GetPrimaryCutPlaneCount () const = 0;
     
@@ -216,10 +216,10 @@ public:
     //! @returns width of the clip element to a user defined value newWidth.
     DGNPLATFORM_EXPORT void                         SetWidth (double newWidth );
 
-    DGNPLATFORM_EXPORT StatusInt GetClipBoundary         (ClipVectorPtr& clip, DRange3dR maxRange, ClipVolumePass pass, DynamicViewSettingsCP settings, bool displayCutGeometry) const; // changed in graphite
+    DGNPLATFORM_EXPORT StatusInt GetClipBoundary         (ClipVectorPtr& clip, DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const; // changed in graphite
     DGNPLATFORM_EXPORT bool      IsClipVolumePassValid   (ClipVolumePass) const;
-    DGNPLATFORM_EXPORT StatusInt GetCuttingPlane         (DPlane3dR cutPlane, DVec3dR xDir, DVec3dR yDir, ClipMask& clipMask, DRange2dR clipRange, bool& forwardFacing, int index, ViewContextR, DynamicViewSettingsCR) const;
-    DGNPLATFORM_EXPORT bool      GetAuxTransform         (TransformR, ClipVolumePass, DynamicViewSettingsCR) const;
+    DGNPLATFORM_EXPORT StatusInt GetCuttingPlane         (DPlane3dR cutPlane, DVec3dR xDir, DVec3dR yDir, ClipMask& clipMask, DRange2dR clipRange, bool& forwardFacing, int index, ViewContextR) const;
+    DGNPLATFORM_EXPORT bool      GetAuxTransform         (TransformR, ClipVolumePass) const;
     DGNPLATFORM_EXPORT StatusInt GetTransform            (TransformR trans) const;
     DGNPLATFORM_EXPORT size_t    GetPrimaryCutPlaneCount () const;
     DGNPLATFORM_EXPORT StatusInt ApplyTransform (TransformCR);
@@ -241,9 +241,9 @@ struct SectionClipObjectLegacyData
         {
         struct Params
             {
-            UInt32  cropMask:6;
-            UInt32  preserveUp:1;
-            UInt32  reserved:25;
+            uint32_t cropMask:6;
+            uint32_t preserveUp:1;
+            uint32_t reserved:25;
             } params;
 
         int         numPoints;

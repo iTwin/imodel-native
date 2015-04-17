@@ -49,13 +49,13 @@ struct BsiSerializable
 {
 
 private:
-    UInt32      m_blockTypeId;
-    UInt32      m_version;
-    UInt32      m_highestVersionWritten;
-    UInt32      m_lastVersionWritten;
+    uint32_t    m_blockTypeId;
+    uint32_t    m_version;
+    uint32_t    m_highestVersionWritten;
+    uint32_t    m_lastVersionWritten;
     bool        m_storeRead;
-    UInt32      m_extraDataSize;
-    byte*       m_extraData;
+    uint32_t    m_extraDataSize;
+    Byte*       m_extraData;
 
 protected:
      //! @function    SerWriteFields
@@ -78,12 +78,12 @@ protected:
 
      //! @function    SerSetId
      //!              Sets the unique ID of the settings block.
-    void    SerSetId                    (UInt32 id)   {m_blockTypeId = id;}
+    void    SerSetId                    (uint32_t id)   {m_blockTypeId = id;}
 
      //! @function    SerGetId
      //!              Returns the ID that uniquely identifies the settings block within the settings element.
      //! @result      Settings block ID
-    UInt32  SerGetId                    () {return m_blockTypeId;}
+    uint32_t SerGetId                    () {return m_blockTypeId;}
 
      //! @function    SerWasStoreLoaded
      //!              Indicates whether the fields in the store were set by the initialization process or by loading a store.
@@ -96,7 +96,7 @@ protected:
      //!              might be 2 and the version written might be 1.
      //!              If V10 MStn updates a V9 settings element, the versions will be the same.
      //! @result      Version created
-    UInt32  SerGetHighestVersionWritten () {return m_highestVersionWritten;}
+    uint32_t SerGetHighestVersionWritten () {return m_highestVersionWritten;}
 
      //! @function    SerGetVersionWritten
      //!              Returns the (last written) version number of the settings block.
@@ -104,12 +104,12 @@ protected:
      //!              might be 2 and the version written might be 1.
      //!              If V10 MStn updates a V9 settings element, the versions will be the same.
      //! @result      Version written
-    UInt32  SerGetLastVersionWritten    () {return m_lastVersionWritten;}
+    uint32_t SerGetLastVersionWritten    () {return m_lastVersionWritten;}
 
      //! @function    BsiSerializable
      //!              BsiSerializable constructor
      //! @param       version (IN) Version of settings block
-    DGNPLATFORM_EXPORT BsiSerializable      (UInt32 version);
+    DGNPLATFORM_EXPORT BsiSerializable      (uint32_t version);
 
      //! @function    ~BsiSerializable
      //!              BsiSerializable destructor
@@ -122,14 +122,14 @@ public:
      //! @param       numBytes    (OUT) Size of the settings block store
      //! @param       block       (OUT) Raw data of the settings block store
      //! @result      BSISUCCESS or BSIERROR
-    DGNPLATFORM_EXPORT virtual StatusInt   SerWrite     (int* id, UInt32* numBytes, byte** block);
+    DGNPLATFORM_EXPORT virtual StatusInt   SerWrite     (int* id, uint32_t* numBytes, Byte** block);
 
      //! @function    SerRead
      //!              Extracts a settings block from a raw byte buffer
      //! @param       startOfStore (IN) buffer to extract from
      //! @param       sizeOfStore  (IN) size in bytes of the buffer
      //! @result      The number of bytes consumed
-    DGNPLATFORM_EXPORT virtual StatusInt   SerRead      (byte* startOfStore, int sizeOfStore);
+    DGNPLATFORM_EXPORT virtual StatusInt   SerRead      (Byte* startOfStore, int sizeOfStore);
 
      //! @enum        PersistentDataTags
      //!              List of settings block ID's.

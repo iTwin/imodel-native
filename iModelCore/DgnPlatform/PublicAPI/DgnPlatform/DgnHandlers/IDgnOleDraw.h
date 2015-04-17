@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/IDgnOleDraw.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,10 +17,10 @@ struct DgnOleInfo;
 // WIP_NONPORT - don't use this Windows-specific data type
 #ifndef _WINDEF_
 typedef struct _RECTL {
-    Long32 left;
-    Long32 top;
-    Long32 right;
-    Long32 bottom;
+    int32_t left;
+    int32_t top;
+    int32_t right;
+    int32_t bottom;
 } RECTL, *PRECTL;
 #endif
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/Tag_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -27,7 +27,7 @@ class TagTest : public GenericDgnModelTestFixture
             {}
     
         virtual void    SetUp () override;
-        DgnTextStylePtr GetTextStyle () const {return DgnTextStyle::GetByName (tagStyleName, *GetDgnModelP()->GetDgnProject());}
+        DgnTextStylePtr GetTextStyle () const {return DgnTextStyle::GetByName (tagStyleName, *GetDgnModelP()->GetDgnDb());}
         BentleyStatus   GetTagDef (DgnTagDefinitionR tagDef);
         BentleyStatus   CreateTagWithTextStyle (EditElementHandleR element, DgnTextStyleCR style);
         BentleyStatus   GetOrigin (DPoint3dR origin, ElementHandleCR tagElement);
@@ -43,7 +43,7 @@ char*    TagTest::tagValue = "DgnTagValue";
 void            TagTest::SetUp () 
     {
     T_Super::SetUp ();
-    DgnTextStylePtr tagStyle = DgnTextStyle::Create (tagStyleName, *GetDgnModelP()->GetDgnProject());
+    DgnTextStylePtr tagStyle = DgnTextStyle::Create (tagStyleName, *GetDgnModelP()->GetDgnDb());
     tagStyle->SetProperty(DgnTextStyleProperty::Height, 10000.0);
     tagStyle->SetProperty(DgnTextStyleProperty::Width, 10000.0);
 
@@ -58,9 +58,9 @@ void            TagTest::SetUp ()
     tagDef.value.val.stringVal = new char [20];
     strcpy(tagDef.value.val.stringVal, tagValue);
     EditElementHandle tagElment;
-    if (SUCCESS == (status = TagSetHandler::Create (tagElment, &tagDef, 1, tagSetName, NULL, true, *GetDgnModelP()->GetDgnProject())))
+    if (SUCCESS == (status = TagSetHandler::Create (tagElment, &tagDef, 1, tagSetName, NULL, true, *GetDgnModelP()->GetDgnDb())))
         {
-        tagElment.SetDgnModel (GetDgnModelP()->GetDgnProject()->GetDictionaryModel());
+        tagElment.SetDgnModel (GetDgnModelP()->GetDgnDb()->GetDictionaryModel());
         status = (BentleyStatus) tagElment.AddToModel ();
         }
     }
@@ -72,7 +72,7 @@ BentleyStatus   TagTest::GetTagDef (DgnTagDefinitionR tagDef)
     {
     BentleyStatus status = SUCCESS;
     EditElementHandle tagElement;
-    if (SUCCESS != (status = TagSetHandler::GetByName (tagElement, tagSetName, *GetDgnModelP()->GetDgnProject())))
+    if (SUCCESS != (status = TagSetHandler::GetByName (tagElement, tagSetName, *GetDgnModelP()->GetDgnDb())))
         return status;
     
     return SUCCESS;
@@ -93,7 +93,7 @@ TEST_F (TagTest, CreateTag)
     DgnTagDefinition tagDef;
     ASSERT_TRUE (SUCCESS == GetTagDef(tagDef)); //This tests tagset creation
 
-    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, *textStyle, *GetDgnModelP()->GetDgnProject());
+    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, *textStyle, *GetDgnModelP()->GetDgnDb());
     ASSERT_TRUE (tagData.IsValid());
     
     EditElementHandle lineElement;
@@ -105,7 +105,7 @@ TEST_F (TagTest, CreateTag)
 
     RotMatrix rotation;
     EditElementHandle tagElement;
-    ASSERT_TRUE (SUCCESS == TagElementHandler::Create (tagElement, NULL, *tagData, *GetDgnModelP(), GetDgnModelP()->Is3d(), loc, rotation, lineElement.GetElementRef()));
+    ASSERT_TRUE (SUCCESS == TagElementHandler::Create (tagElement, NULL, *tagData, *GetDgnModelP(), GetDgnModelP()->Is3d(), loc, rotation, lineElement.GetDgnElement()));
 
     tagElement.AddToModel ();
 
@@ -127,7 +127,7 @@ TEST_F (TagTest, CreateTag)
     EXPECT_EQ (storedValue.type, newVal.type);
     EXPECT_EQ (storedValue.val.doubleVal, newVal.val.doubleVal);
 
-//    GetDgnModelP()->GetDgnProject()->ProcessChanges(DgnSaveReason::ApplInitiated);
+//    GetDgnModelP()->GetDgnDb()->ProcessChanges(DgnSaveReason::ApplInitiated);
     }
 #endif
 /*---------------------------------------------------------------------------------**//**
@@ -145,7 +145,7 @@ TEST_F (TagTest, CreateEmptyTag)
     DgnTagDefinition tagDef;
     ASSERT_TRUE (SUCCESS == GetTagDef(tagDef)); //This tests tagset creation
 
-    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, *textStyle, *GetDgnModelP()->GetDgnProject());
+    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, *textStyle, *GetDgnModelP()->GetDgnDb());
     ASSERT_TRUE (tagData.IsValid());
     
     EditElementHandle lineElement;
@@ -157,11 +157,11 @@ TEST_F (TagTest, CreateEmptyTag)
 
     RotMatrix rotation;
     EditElementHandle tagElement;
-    ASSERT_TRUE (SUCCESS == TagElementHandler::Create (tagElement, NULL, *tagData, *GetDgnModelP(), GetDgnModelP()->Is3d(), loc, rotation, lineElement.GetElementRef()));
+    ASSERT_TRUE (SUCCESS == TagElementHandler::Create (tagElement, NULL, *tagData, *GetDgnModelP(), GetDgnModelP()->Is3d(), loc, rotation, lineElement.GetDgnElement()));
 
     tagElement.AddToModel ();
 
-    ElementRefP oldElem = tagElement.GetElementRef();
+    DgnElementP oldElem = tagElement.GetDgnElement();
     DgnTagValue newVal;
     newVal.type = MS_TAGTYPE_DOUBLE;
     newVal.val.doubleVal = 2.0;
@@ -169,7 +169,7 @@ TEST_F (TagTest, CreateEmptyTag)
     ASSERT_TRUE (SUCCESS == TagElementHandler::SetAttributeValue (tagElement, newVal));
     tagElement.ReplaceInModel (oldElem);
 
-    oldElem = tagElement.GetElementRef();
+    oldElem = tagElement.GetDgnElement();
 
     DgnTagValue storedValue;
     ASSERT_TRUE (SUCCESS == TagElementHandler::GetAttributeValue (tagElement, storedValue));
@@ -197,7 +197,7 @@ BentleyStatus   TagTest::CreateTagWithTextStyle (EditElementHandleR tagElement, 
     if (SUCCESS != GetTagDef(tagDef))
         return ERROR;
 
-    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, style, *GetDgnModelP()->GetDgnProject());
+    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, style, *GetDgnModelP()->GetDgnDb());
     if (tagData.IsNull())
         return ERROR;
     
@@ -236,7 +236,7 @@ TEST_F (TagTest, MultiJustifiedTag)
     DgnTextStylePtr textStyle = GetTextStyle ();
     ASSERT_TRUE (textStyle.IsValid());
     
-    for (UInt32 index = 0; index < 15; ++index)
+    for (uint32_t index = 0; index < 15; ++index)
         {
         switch (index)
             {
@@ -283,14 +283,14 @@ TEST_F (TagTest, FindTagByName)
     defs[1] = tagDef2;
     EditElementHandle tagElement;
     StatusInt status;
-    if (SUCCESS == (status = TagSetHandler::Create (tagElement, defs, 2, L"NewTagSet", NULL, true, *GetDgnModelP()->GetDgnProject())))
+    if (SUCCESS == (status = TagSetHandler::Create (tagElement, defs, 2, L"NewTagSet", NULL, true, *GetDgnModelP()->GetDgnDb())))
         {
-        tagElement.SetDgnModel (GetDgnModelP()->GetDgnProject()->GetDictionaryModel());
+        tagElement.SetDgnModel (GetDgnModelP()->GetDgnDb()->GetDictionaryModel());
         status = (BentleyStatus) tagElement.AddToModel ();
         }
     
     EditElementHandle foundElement;
-    if (SUCCESS != (status = TagSetHandler::GetByName (foundElement, L"NewTagSet", *GetDgnModelP()->GetDgnProject())))
+    if (SUCCESS != (status = TagSetHandler::GetByName (foundElement, L"NewTagSet", *GetDgnModelP()->GetDgnDb())))
         return;
     
     DgnTagDefinition newtag;
@@ -326,7 +326,7 @@ TEST (TagAcadTest, AcadTextTest)
     ASSERT_TRUE (fabs(origin.x - 6167154.0270009805) < mgds_fc_epsilon);
     ASSERT_TRUE (fabs(origin.y - 382184.49056941038) < mgds_fc_epsilon);
 
-    ElementRefP oldElemRef = tagElement.GetElementRef();
+    DgnElementP oldElemRef = tagElement.GetDgnElement();
     CaretPtr start = text->CreateStartCaret();
     ASSERT_TRUE (start.IsValid());
 
@@ -349,7 +349,7 @@ TEST (TagAcadTest, AcadTextTest)
     text2->AppendText(charStream->GetString().c_str());
     ASSERT_TRUE(ITextEdit::ReplaceStatus_Success == textEdit->ReplaceTextPart (tagElement, **textPart.begin(), *text2));
     tagElement.ReplaceInModel(oldElemRef);
-    oldElemRef = tagElement.GetElementRef();
+    oldElemRef = tagElement.GetDgnElement();
 
     TextBlockPtr assingedText = textEdit->GetTextPart(tagElement, **textPart.begin());
     start = assingedText->CreateStartCaret();
@@ -378,6 +378,6 @@ TEST (TagAcadTest, AcadTextTest)
     ASSERT_TRUE(ITextEdit::ReplaceStatus_Error == textEdit->ReplaceTextPart (tagElement, **textPart.begin(), *text2));
     
     tagElement.ReplaceInModel(oldElemRef);
-//    dgnCache->GetDgnProject()->ProcessChanges(DgnSaveReason::ApplInitiated);
+//    dgnCache->GetDgnDb()->ProcessChanges(DgnSaveReason::ApplInitiated);
     }
 #endif

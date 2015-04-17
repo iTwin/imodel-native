@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <ECSchema schemaName="DgnMarkupSchema" nameSpacePrefix="redline" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
 
+   <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
+
+    <ECCustomAttributes>
+        <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
+    </ECCustomAttributes>
+
     <!-- The Bentley Redline class. -->
 
     <ECClass typeName="Redline"

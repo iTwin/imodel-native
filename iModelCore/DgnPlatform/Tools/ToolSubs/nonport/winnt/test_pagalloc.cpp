@@ -20,11 +20,11 @@
 class customConstructor
     {
     public:
-        byte* dynamicMem;
-        Int32 constMem[10000];
-        customConstructor(Int32 memSize)
+        Byte* dynamicMem;
+        int32_t constMem[10000];
+        customConstructor(int32_t memSize)
             {
-            dynamicMem = new byte[memSize];
+            dynamicMem = new Byte[memSize];
             }
         ~customConstructor()
             {
@@ -44,7 +44,7 @@ void test_customConstructor()
 
 void  test_strdup()
     {
-    Int32 i;
+    int32_t i;
     char *cp, fmt[]=" strdup %2d @ %#x\n";
 
     printf ("  Begin test_strdup\n");
@@ -67,15 +67,15 @@ void  test_strdup()
     printf ("  done  test_strdup\n");
     }
 
-byte *a[10];
+Byte *a[10];
 void  test_cppNew_new
 (
 void
 )
     {
-    for (Int32 i=0; i < 10; i++)
+    for (int32_t i=0; i < 10; i++)
         {
-        a[i] = new byte[11+i];                                                  // + 10 leaks
+        a[i] = new Byte[11+i];                                                  // + 10 leaks
         memset (a[i], 'A'+i, 11+i);
         }
     }
@@ -84,7 +84,7 @@ void  test_cppNew_delete
 (
 )
 {
-    for (Int32 i=0; i < 10; i+=3)   // 6 leaked allocations here                        // + 6 leaks
+    for (int32_t i=0; i < 10; i+=3)   // 6 leaked allocations here                        // + 6 leaks
         //    for (Int32 i=0; i < 10; i+=1)     // No leak here
         delete [] a[i];
 
@@ -96,7 +96,7 @@ void  test_cppNew_delete
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/test_pagalloc.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------------**//**
@@ -106,7 +106,7 @@ void            test_doubleFree
 (
 )
 {
-    Int32     i=0;
+    int32_t   i=0;
     void *vp0, *vp0p, *vp1, *vp2;
     printf("PagallocOutputFunction\n");
     printf ("  Begin test_doubleFree\n");
@@ -153,7 +153,7 @@ void
 )
 {
     _HEAPINFO    hinfo;
-    Int32        heapstatus;
+    int32_t      heapstatus;
 
     printf ("test_heapWalk: \n");
     memset (&hinfo, 0, sizeof(hinfo));
@@ -195,18 +195,18 @@ void test_checkered
     )
     {
     // 2 "New" blocks
-    byte *a = new  byte [12];
-    byte *b = new  byte [13];
+    Byte *a = new  Byte [12];
+    Byte *b = new  Byte [13];
 
     a = NULL; b = NULL;
-    delete new  byte [14];
+    delete new  Byte [14];
 
     // 3 block outside of the SBH
-    for (Int32 i=1; i < 4; i++)
+    for (int32_t i=1; i < 4; i++)
         {
-        byte* x = (byte*)calloc(1, 4096 + i);
+        Byte* x = (Byte*)calloc(1, 4096 + i);
         //Check for proper initialization
-        for(Int32 j=0; j < 4096 + i; j++)
+        for(int32_t j=0; j < 4096 + i; j++)
             if(x[j])
                 DebugBreak();
         }
@@ -223,9 +223,9 @@ void test_checkered
 
 void  test_cppNew_3GB()
     {
-    const Int32 chunkSize = 500;
-    const UInt32 lim =  840000;
-    for (UInt32  i = 0; i < lim; i+= chunkSize)      // testing 2 small block heaps
+    const int32_t chunkSize = 500;
+    const uint32_t lim =  840000;
+    for (uint32_t i = 0; i < lim; i+= chunkSize)      // testing 2 small block heaps
         {
         void *p= NULL;
         if ( ! (i % 1000))
@@ -295,31 +295,31 @@ test may not catch. */
 void test_CRTOriginals()
     {
     /* First test that all the functions can be called without exploding */
-    byte* CRTMem = (byte*)patchData->callCrtMalloc(10);
-    for(Int32 i=0; i < 10; i++)
+    Byte* CRTMem = (Byte*)patchData->callCrtMalloc(10);
+    for(int32_t i=0; i < 10; i++)
         {
         CRTMem[i]=1;
         }
-    CRTMem = (byte*)patchData->callCrtRealloc(CRTMem, 20);
-    for(Int32 i=10; i<20; i++)
+    CRTMem = (Byte*)patchData->callCrtRealloc(CRTMem, 20);
+    for(int32_t i=10; i<20; i++)
         {
         CRTMem[i]=1;
         }
-    Int32 memSize = patchData->callCrtMsize(CRTMem);
+    int32_t memSize = patchData->callCrtMsize(CRTMem);
     if(memSize == 10)
         OutputDebugString("Realloc failed to change memory size!\r\n");
     else if(memSize != 20)
         OutputDebugString("Realloc left memory at wrong size!\r\n");
 
-    byte* CallocMem = (byte*) patchData->callCrtCalloc(10, 2);
+    Byte* CallocMem = (Byte*) patchData->callCrtCalloc(10, 2);
     //Check that the memory is all 0s
-    for(Int32 i=0; i < 20; i++)
+    for(int32_t i=0; i < 20; i++)
         if(CallocMem[i])
             OutputDebugString("Calloc did not initialize its data! \r\n");
 
     //Make sure new returns writeable memory.
-    byte* NewMem = (byte*) patchData->callCrtOperatorNew(10);
-    for(Int32 i=0; i<10; i++)
+    Byte* NewMem = (Byte*) patchData->callCrtOperatorNew(10);
+    for(int32_t i=0; i<10; i++)
         NewMem[i] = 0;
     patchData->callCrtFree(CallocMem);
     patchData->callCrtFree(CRTMem);
@@ -357,11 +357,11 @@ void test_CRTOriginals()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mike.Stratoti   10/101
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32 main()
+int32_t main()
     {
     // hard-coded breakpoint here for debugging
     DebugBreak();
-    Int32 success = 0;
+    int32_t success = 0;
     memutil_forceHighAddress(false);
 
     //Allocate some memory with CRT, see if pagalloc successfully detects this later.

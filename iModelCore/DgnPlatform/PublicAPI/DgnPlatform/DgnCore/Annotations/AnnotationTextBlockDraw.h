@@ -18,6 +18,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! Used to draw an AnnotationTextBlock.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationTextBlockDraw : public RefCountedBase

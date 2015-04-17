@@ -2,14 +2,13 @@
 |
 |     $Source: DgnCore/GParray.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <Mtg/MtgApi.h>
 
 GPArrayP        GPArray::Grab () {return (GPArrayP) jmdlGraphicsPointArray_grab();}
-
 
 void            GPArray::Drop()                                  {jmdlGraphicsPointArray_drop (this);}
 void            GPArray::Empty()                                 {GraphicsPointArray::Clear ();}
@@ -309,30 +308,24 @@ GPArrayParam    GPArray::GetEndParam() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   GPArray::GetLineString (int *index, DPoint3dP points, int* nPoints, int maxPoints) const
+BentleyStatus   GPArray::GetLineString (int *index, bvector<DPoint3d>& points) const
     {
     if (NULL == index)
         return ERROR;
     
     size_t i0 = (size_t)*index;
     size_t i1;
+
     if (!IsLineString (i0, i1))
         return ERROR;
-    *nPoints = (int)(i1 - i0) + 1;
-    if (NULL == points)
-        {
-        // Umm .. you got the count, no advance of index.
-        return SUCCESS;
-        }
 
-    if (maxPoints < *nPoints)
+    for (; (size_t)*index <= i1; (*index)++)
         {
-        *nPoints = maxPoints;
-        i1 = *nPoints + *index - 1;
-        }
+        DPoint3d  pt;
 
-    for (; (size_t)*index <= i1; (*index)++, points++)
-        this->GetNormalized (*points, (size_t)*index);
+        this->GetNormalized (pt, (size_t)*index);
+        points.push_back (pt);
+        }
 
     return SUCCESS;
     }
@@ -753,7 +746,7 @@ int                 order
     curve->params.numPoles = numPoles;
     curve->params.numKnots = numKnots;
 
-    if (SUCCESS != bspcurv_allocateCurve (curve))
+    if (SUCCESS != curve->Allocate ())
         return ERROR;
     
     for (int i = 0; i < numPoles; i++)
@@ -877,11 +870,10 @@ BentleyStatus   GPArray::GetAsBCurve (int* i, MSBsplineCurve* curve) const
 
         case GPCurveType::LineString:
             {
-            int         nPoints;
-            DPoint3d    points[MAX_VERTICES];
+            bvector<DPoint3d> points;
 
-            if (SUCCESS == (status = GetLineString (i, points, &nPoints, MAX_VERTICES)))
-                status = (BentleyStatus) curve->InitFromPoints (points, nPoints);
+            if (SUCCESS == (status = GetLineString (i, points)))
+                status = (BentleyStatus) curve->InitFromPoints (&points.front (), (int) points.size ());
             break;
             }
         }
@@ -1423,26 +1415,6 @@ void            GPArray::Add (MSBsplineCurve const& curve)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   GPArray::Add (ElementHandleCR eh)
-    {
-    CurveVectorPtr pathCurve = ICurvePathQuery::ElementToCurveVector (eh);
-
-    return (pathCurve.IsValid () ? this->AddCurves (*pathCurve) : ERROR);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   GPArray::Add (ElementHandleCR eh, bool splinesAsBeziers)
-    {
-    CurveVectorPtr pathCurve = ICurvePathQuery::ElementToCurveVector (eh);
-
-    return (pathCurve.IsValid () ? this->AddCurves (*pathCurve, splinesAsBeziers) : ERROR);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICurvePrimitivePtr GPArray::GetCurvePrimitive (int& index) const
@@ -1453,13 +1425,12 @@ ICurvePrimitivePtr GPArray::GetCurvePrimitive (int& index) const
         {
         case GPCurveType::LineString:
             {
-            int         nPoints;
-            DPoint3d    points[MAX_VERTICES];
+            bvector<DPoint3d> points;
 
-            if (SUCCESS != GetLineString (&index, points, &nPoints, MAX_VERTICES))
+            if (SUCCESS != GetLineString (&index, points))
                 break;
 
-            primitive = ICurvePrimitive::CreateLineString (points, nPoints);
+            primitive = ICurvePrimitive::CreateLineString (points);
             break;
             }
 
@@ -1603,7 +1574,7 @@ GPArrayInterval GPArrayInterval::InterpolateSubInterval (GPArrayIntervalCR inter
 +---------------+---------------+---------------+---------------+---------------+------*/
 GPArrayParam::GPArrayParam (double value)
     {
-    m_index = (UInt32) value; 
+    m_index = (uint32_t) value; 
     m_param = fmod (value, 1.0); 
 
     if (m_index > 0 && 0.0 == m_param)

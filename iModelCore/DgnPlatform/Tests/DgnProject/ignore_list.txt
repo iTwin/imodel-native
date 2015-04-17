@@ -48,8 +48,88 @@ DgnECNavigatorTest.Ifc_WithLatestDgnDb # Failing after 0501 to 06 merge; EC team
 TextAnnotationTest* # Platform code needs cleanup after 0501 to 06 merge.
 
 DgnViewsTest.GetRelatedDrawings # Failing after 0501 to 06 merge.
-ECDbInstances.JsonValueStructure # Failing after 0501 to 06 merge.
 RefImport.DupDirectAttachments # Failing after 0501 to 06 merge.
 RefImport.LiveNesting # Failing after 0501 to 06 merge.
 RefImport.NoNesting # Failing after 0501 to 06 merge.
 RefImport.BFS # Failing after 0501 to 06 merge.
+
+ECDbInstances.JsonValueStructure # Fails after geomlibs/ecobjects merge from topaz
+
+#TFS160290 to address this
+ECDbInstances.FieldEngineerStructArray
+
+#----------------------------------------------------------------------------------------
+# *** Broken in 06; need to be re-visited ***
+#----------------------------------------------------------------------------------------
+AnnotationTextBlockTest.DefaultsAndAccessors
+DgnColorsTest.GetElementColor
+DgnColorsTest.ImportElement
+DgnDb.AddDeleteLine
+DgnDb.CheckStandardProperties
+DgnDb.GetCoordinateSystemProperties
+DgnDb.LoadModelThroughProject
+DgnDb.WorkWithDgnModelTable
+DgnFontTests.CompressEscapeSequencesRsc
+DgnFontTests.CompressRscFractions
+DgnFontTests.ExpandRscFractions
+DgnFontTests.GetFontAndConvertFontVariantToType
+DgnFontTests.GetTypeVariantAndName
+DgnFontTests.ResolveFonts
+DgnGraphicsTest2d.AddCurveVector
+DgnGraphicsTest2d.CreateDrawingGraphics
+DgnGraphicsTest2d.SaveAndLoadDrawingGraphics
+DgnGraphicsTest3d.AddMSBsplineCurve
+DgnGraphicsTest3d.AddMSBsplineSurface
+DgnGraphicsTest3d.AddPolyface
+DgnGraphicsTest3d.AddSolidPrimitive_Box
+DgnGraphicsTest3d.AddSolidPrimitive_Cone
+DgnGraphicsTest3d.AddSolidPrimitive_Extrusion
+DgnGraphicsTest3d.AddSolidPrimitive_Rotation
+DgnGraphicsTest3d.AddSolidPrimitive_Ruled
+DgnGraphicsTest3d.AddSolidPrimitive_Sphere
+DgnGraphicsTest3d.AddTextString
+DgnGraphicsTest3d.CreatePhysicalGraphics
+DgnGraphicsTest3d.CreateWithLevel
+DgnGraphicsTest3d.IterateOverGeometry
+DgnGraphicsTest3d.LoadModifyAndSave
+DgnGraphicsTest3d.SaveAndLoadPhysicalGraphics
+DgnMarkupProjectTest.CreateDgnMarkupProject
+DgnModelSelector.DeleteModelSelector
+DgnModelSelector.DeleteNonExistingModelSelector
+DgnModelSelector.WorkWithDgnModelSelector
+DgnModelTests.EmptyList
+DgnModelTests.GetGraphicElements
+DgnModelTests.GetName
+DgnStylesTest.InsertLineStyle
+DgnStylesTest.InsertLineStyleWithExistingName
+DgnStylesTest.InsertLineStyleWithId
+DgnStylesTest.ReadLineStyles
+DgnStylesTest.UpdateLineStyleTable
+DgnStylesTest.UpdateLineStyleWithExistingName
+DgnTextStylesTest.DeleteTextStyle
+DgnTextStylesTest.GetTextStyleCount
+DgnTextStylesTest.InsertTextStyle
+DgnTextStylesTest.QueryTextStyle
+DgnTextStylesTest.UpdateTextStyle
+DgnViewsTest.InsertDeletedView
+DgnViewsTest.InsertExistingView
+DgnViewsTest.InsertView
+DgnViewsTest.WorkWithViewTable
+ECDbInstances.SelectDgnLinksForDgnElement
+EntityDependencyGraph.CycleTest1
+EntityDependencyGraph.CycleTest2
+EntityDependencyGraph.DiamondTest2
+EntityDependencyGraph.FailureTest1
+EntityDependencyGraph.MixedTest1
+EntityDependencyGraph.MixedTest2
+EntityDependencyGraph.ModelDependenciesTest
+EntityDependencyGraph.ModelDependenciesWithCycleTest
+EntityDependencyGraph.NonDependencyOrderTest
+EntityDependencyGraph.OverlappingOutputOrderTest1
+EntityDependencyGraph.OverlappingOutputOrderTest2
+EntityDependencyGraph.ParentChildTest1
+EntityDependencyGraph.ParentChildTest2
+EntityDependencyGraph.PersistentHandlerTest
+NamedVolume.CrudTest
+NotificationManagerTest.GetPriority
+TransactionManagerTests.CRUD

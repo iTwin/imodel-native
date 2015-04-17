@@ -205,7 +205,7 @@ int               endCondition
         return  false;
 
     DPoint3d    segOrg, segEnd, segDir, symOrg;
-    bool        checkOrigin = !symRef->GetProject();
+    bool        checkOrigin = !symRef->GetDgnDb();
 
     switch (symRef->GetJustification())
         {
@@ -328,7 +328,7 @@ BentleyStatus LsPointSymbolComponent::ToResource (void** outRsc, bool forResourc
     /* Copy in the rest of the info from our element */
     if (SUCCESS == status && NULL != pPointSymRsc)
         {
-        UInt32 oldType = pPointSymRsc->header.auxType; /* Hang onto type; set up by createSymbolResource for V7 */
+        uint32_t oldType = pPointSymRsc->header.auxType; /* Hang onto type; set up by createSymbolResource for V7 */
         size_t dataSize = sizeof (*pPointSymRsc) - sizeof (pPointSymRsc->nBytes) - sizeof (pPointSymRsc->symBuf);
         memcpy (pPointSymRsc, pRsc, dataSize);
         pPointSymRsc->header.auxType = oldType;
@@ -441,12 +441,12 @@ void            LsPointComponent::SaveToResource (LinePointRsc& resource)
     
     //  Seems odd, but lcType = LsElementType::LineCode has always been used when there is no linecode.
     //  Leaving lcType causes _loadComponent to call LoadInternalComponent and it 
-    resource.lcType = (UInt32)LsElementType::LineCode;
+    resource.lcType = (uint32_t)LsElementType::LineCode;
     LsComponentP    comp = m_strokeComponent.get ();
     if (NULL != comp)
         {
         LsLocationCP    loc = comp->GetLocation ();
-        resource.lcType = (UInt32)loc->GetRscType ();
+        resource.lcType = (uint32_t)loc->GetRscType ();
         resource.lcID   = loc->GetRscID ();
         }
 
@@ -457,11 +457,11 @@ void            LsPointComponent::SaveToResource (LinePointRsc& resource)
 
         PointSymInfo*   pointSymInfo = resource.symbol + resource.nSym++;
         LsLocationCP    loc = curr->m_symbol->GetLocation ();
-        pointSymInfo->symType = (UInt32)loc->GetRscType ();
+        pointSymInfo->symType = (uint32_t)loc->GetRscType ();
         pointSymInfo->symID   = loc->GetRscID ();
 
-        pointSymInfo->strokeNo  = (UInt16)curr->m_strokeNo;
-        pointSymInfo->mod1      = (UInt16)curr->m_mod1;
+        pointSymInfo->strokeNo  = (uint16_t)curr->m_strokeNo;
+        pointSymInfo->mod1      = (uint16_t)curr->m_mod1;
         if (-1 == curr->m_strokeNo && (pointSymInfo->mod1 & LsSymbolReference::VERTEX_Any))
             pointSymInfo->strokeNo = 0;
 
@@ -529,7 +529,7 @@ int             strokeNo
 (
 LsSymbolComponentP symbol, 
 LsPointComponentP parent, 
-UInt32          mod1, 
+uint32_t        mod1, 
 double          xOffset, 
 double          yOffset, 
 double          radians,
@@ -559,7 +559,7 @@ LsRscReader*    reader
 
     LineStyleCacheManager::CacheAdd (pointComp);
 
-    DgnProjectR     project = reader->GetDgnProject();
+    DgnDbR     project = reader->GetDgnDb();
     LsLocation      tmpLocation;
     tmpLocation.GetLineCodeLocation (reader);
 

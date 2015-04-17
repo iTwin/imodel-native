@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SectionClip.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DgnPlatformInternal.h"
@@ -19,11 +19,8 @@ struct          SectionClipObject : IViewClipObject
 friend struct DgnPlatform::SectionClipObjectFactory;
 friend struct DgnPlatform::SectionClipObjectLegacyData;
 
-public:  // OPERATOR_NEW_KLUDGE
-    void * operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
-    void operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
-    void * operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
-    void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS 
+
 private:
 
     bvector<DPoint3d> m_points;
@@ -32,9 +29,9 @@ private:
         {
         struct Params
             {
-            UInt32  cropMask:6;
-            UInt32  preserveUp:1;
-            UInt32  reserved:25;
+            uint32_t cropMask:6;
+            uint32_t preserveUp:1;
+            uint32_t reserved:25;
             } params;
 
         double      topHeight;
@@ -55,27 +52,28 @@ DVec3dR                 yDirection,
 ClipMask&               clipMask,
 DRange2dR               clipRange,
 size_t                  index,
-ViewContextR            viewContext,
-DynamicViewSettingsCR   settings
+ViewContextR            viewContext
 ) const;
 
 void   SetDrawSymbology
 (
 ViewContextR    context,
-UInt32          color,
-UInt32          weight,
-Int32           style
+ColorDef     color,
+uint32_t        weight,
+int32_t         style
 );
 
 bool IsDraw3D (ViewContextR context, DVec3dCR zVec);
 
-StatusInt GetClipBoundaryByShape (ClipVectorPtr& clip, /*DgnModelP target, ViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, DynamicViewSettingsCP settings, bool displayCutGeometry) const;
-virtual StatusInt _GetClipBoundary (ClipVectorPtr& clip, /*DgnModelP target, ViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, DynamicViewSettingsCP settings, bool displayCutGeometry) const override; // added in graphite
+StatusInt GetClipBoundaryByShape (ClipVectorPtr& clip, /*DgnModelP target, DgnViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const;
+#if defined (NEEDS_WORK_DGNITEM)
+virtual StatusInt _GetClipBoundary (ClipVectorPtr& clip, /*DgnModelP target, DgnViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const override; // added in graphite
 virtual bool      _IsClipVolumePassValid (ClipVolumePass pass) const override;
-virtual StatusInt _GetCuttingPlane (DPlane3dR cutPlane, DVec3dR xDirection, DVec3dR yDirection, ClipMask& clipMask, DRange2dR clipRange, bool& forward, int index, ViewContextR context, DynamicViewSettingsCR settings) const override;
-virtual bool      _GetAuxTransform (TransformR transform, ClipVolumePass pass, DynamicViewSettingsCR settings) const override;
+virtual StatusInt _GetCuttingPlane (DPlane3dR cutPlane, DVec3dR xDirection, DVec3dR yDirection, ClipMask& clipMask, DRange2dR clipRange, bool& forward, int index, ViewContextR context) const override;
+virtual bool      _GetAuxTransform (TransformR transform, ClipVolumePass pass) const override;
 virtual StatusInt _GetTransform (TransformR trans) const override;
 virtual size_t    _GetPrimaryCutPlaneCount() const override;
+#endif
 virtual StatusInt _ApplyTransform (TransformCR) override;
 
 virtual void _Draw (ViewContextR) override;
@@ -434,22 +432,16 @@ static bool             AreClipPointsEqual (void const* data1, int numBytes1, vo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar  08/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   SectionClipObject::SetDrawSymbology
-(
-ViewContextR    context,
-UInt32          color,
-UInt32          weight,
-Int32           style
-)
+void SectionClipObject::SetDrawSymbology (ViewContextR context, ColorDef color, uint32_t weight, int32_t style)
     {
-    ViewportP      viewport    = context.GetViewport ();
+    DgnViewportP      viewport    = context.GetViewport ();
     if (!viewport)
         return; // ex. RangeContext
 
     ElemMatSymbP    currElemSymb = context.GetElemMatSymb ();
-    UInt32          adjustedColor = viewport->AdjustColorForContrast (viewport->GetMenuColor (color), viewport->GetBackgroundColor ());
+    ColorDef    adjustedColor = viewport->AdjustColorForContrast(color, viewport->GetBackgroundColor ());
 
-    currElemSymb->SetLineColorTBGR (adjustedColor);
+    currElemSymb->SetLineColor (adjustedColor);
     context.SetIndexedLineWidth (*currElemSymb, weight);
     context.SetIndexedLinePattern (*currElemSymb, style);
     context.GetIDrawGeom().ActivateMatSymb (currElemSymb);
@@ -460,7 +452,7 @@ Int32           style
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SectionClipObject::IsDraw3D (ViewContextR context, DVec3dCR zVec)
     {
-    ViewportP      viewport    = context.GetViewport ();
+    DgnViewportP      viewport    = context.GetViewport ();
     if (!viewport)
         return true; // ex. RangeContext
 
@@ -527,7 +519,7 @@ ViewContextR        context
         shape[3].sumOf (&points[iseg], &zVec, topHeight);
         shape[4] = shape[0];
 
-        SetDrawSymbology (context, WHITE_MENU_COLOR_INDEX, 0, 4);
+        SetDrawSymbology (context, ColorDef::White(), 0, 4);
         output.DrawLineString3d (5, shape, NULL);
 
         // Draw fat corners
@@ -536,7 +528,7 @@ ViewContextR        context
             for (size_t iseg = 0; iseg < numPoints-1; iseg++)
                 {
                 segVec.normalizedDifference (&points[iseg+1], &points[iseg]);
-                SetDrawSymbology (context, WHITE_MENU_COLOR_INDEX, 2, 0);
+                SetDrawSymbology (context, ColorDef::White(), 2, 0);
 
                 cornerPts[0] = points[iseg];
                 cornerPts[1].sumOf (&cornerPts[0], &segVec, cornerEdgeLen);
@@ -550,7 +542,7 @@ ViewContextR        context
         else
             {
             segVec.normalizedDifference (&points[iseg+1], &points[iseg]);
-            SetDrawSymbology (context, WHITE_MENU_COLOR_INDEX, 2, 0);
+            SetDrawSymbology (context, ColorDef::White(), 2, 0);
 
             cornerPts[0] = shape[0];
             cornerPts[1].sumOf (&cornerPts[0], &segVec, cornerEdgeLen);
@@ -646,6 +638,7 @@ StatusInt       SectionClipObject::_ApplyTransform (TransformCR transform)
     return SUCCESS;
     }
 
+#if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    RBB                             6/90
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -679,7 +672,7 @@ enum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*DgnModelP target, ViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, DynamicViewSettingsCP settings, bool displayCutGeometry) const
+StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*DgnModelP target, DgnViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const
     {
     int             nLoops;
     int             nLoopPoints[MAX_REFBOUNDS];
@@ -719,6 +712,7 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
     double          bottomHeight        = this->GetSize (CLIPVOLUME_SIZE_BottomHeight);
     bool            flipped             = frontDepth < 0.0;
     double          depthScale          = 1.0;
+    bool            noBoundaryClipping  = (NULL != settings) && settings->ShouldIgnoreBoundaryClipping ();
     bool            noBoundaryClipping  = (NULL != settings) && settings->ShouldIgnoreBoundaryClipping ();
 
     if (flipped)
@@ -830,7 +824,7 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModelP target, ViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, DynamicViewSettingsCP settings, bool displayCutGeometry) const
+StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModelP target, DgnViewportP vp*/DRange3dR maxRange, ClipVolumePass pass, DynamicViewSettingsCP settings, bool displayCutGeometry) const
     {
     // Doglegs can't be defined with just planes (GetClipBoundaryByShape will be used.)
     if (2 != this->GetNumPoints () || pass == ClipVolumePass::Outside)
@@ -839,7 +833,6 @@ StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModel
     ConvexClipPlaneSet  convexSet;
     DMatrix3d           dMatrix;
     DVec3d              normal;
-
 
     DPoint3dVector      pts;
     this->GetPoints (pts, 0, 1);
@@ -1359,15 +1352,19 @@ void            DynamicViewSettings::Init() // graphite moved this here from Vie
     //m_displayStyleIndex                 = -1;
     m_levelOfDetail                     = 1.0;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 IViewClipObjectPtr SectionClipObjectFactory::_FromJson (JsonValueCR json)
     {
+#if defined (NEEDS_WORK_DGNITEM)
     auto clip = new SectionClipObject;
     clip->_FromJson (json);
     return clip;
+#endif
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1380,12 +1377,15 @@ Utf8String SectionClipObject::_GetFactoryId() const {return SectionClipObjectFac
 +---------------+---------------+---------------+---------------+---------------+------*/
 IViewClipObjectPtr SectionClipObjectLegacyData::CreateObject()
     {
+#if defined (NEEDS_WORK_DGNITEM)
     auto clip = new SectionClipObject;
     clip->FromLegacyData (*this);
     return clip;
+#endif
+    return nullptr;
     }
 
-#define CLIP_FACTORY_GUARDED    BeCriticalSectionHolder guard (BeCriticalSection::GetSystemCriticalSection())
+#define CLIP_FACTORY_GUARDED    BeSystemMutexHolder guard;
 static bmap<Utf8String,RefCountedPtr<IViewClipObject::Factory>> s_factories;
 
 /*---------------------------------------------------------------------------------**//**

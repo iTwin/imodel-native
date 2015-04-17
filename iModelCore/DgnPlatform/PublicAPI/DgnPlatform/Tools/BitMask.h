@@ -32,7 +32,6 @@ enum class BitMaskOperation
 
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-
 typedef BitMaskP* BitMaskH;
 
 /*=================================================================================**//**
@@ -55,20 +54,20 @@ private:
     static size_t       s_totalBitMaskMemoryMalloced;
 #endif
 
-    UInt16*             m_bitArray;
-    UInt32              m_numValidBits;
+    uint16_t*             m_bitArray;
+    uint32_t            m_numValidBits;
     bool                m_defaultBitValue;    /* default value for bits beyond end of array */
 
     BitMask (bool defaultBitValue);
     ~BitMask();
 
-    void                                AllocBitArray       (UInt32 numBits);
-    void                                ReallocBitArray     (UInt32 newNumBits);
+    void                                AllocBitArray       (uint32_t numBits);
+    void                                ReallocBitArray     (uint32_t newNumBits);
     void                                FreeBitArray ();
 
 public:
-    DGNPLATFORM_EXPORT const UInt16*        GetBitArray() const;
-    DGNPLATFORM_EXPORT StatusInt            SetByBitPosition (UInt32 arrayIndex, UInt16 bitPosition, bool value);
+    DGNPLATFORM_EXPORT const uint16_t*        GetBitArray() const;
+    DGNPLATFORM_EXPORT StatusInt            SetByBitPosition (uint32_t arrayIndex, uint16_t bitPosition, bool value);
     DGNPLATFORM_EXPORT void                 SetAll (bool value);
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -100,20 +99,20 @@ DGNPLATFORM_EXPORT void                Free ();
 //! Gets the capacity of this BitMask.
 //! @return        The capacity of this BitMask.
 //! @see           EnsureCapacity, SetCapacity
-DGNPLATFORM_EXPORT UInt32              GetCapacity () const;
+DGNPLATFORM_EXPORT uint32_t            GetCapacity () const;
 
 //! Sets this BitMask's capacity to at least the value specified.
 //! @param[in]      numBits         The number of bits required.
 //! @note           If the current capacity is greater than or equal to numBits, the call does nothing.
 //!                 <br>If the current capacity is less than numBits, the newly added bits are set to the default value.
 //! @see            SetCapacity, GetCapacity.
-DGNPLATFORM_EXPORT StatusInt           EnsureCapacity (UInt32 numBits);
+DGNPLATFORM_EXPORT StatusInt           EnsureCapacity (uint32_t numBits);
 
 //! Sets this BitMasks' capacity to exactly the value specified.
 //! @param[in]      numBits         The number of bits required.
 //! @note           If the current capacity is less than numBits, the newly added bits are set to the default value.
 //! @see            EnsureCapacity, GetCapacity.
-DGNPLATFORM_EXPORT StatusInt           SetCapacity (UInt32 numBits);
+DGNPLATFORM_EXPORT StatusInt           SetCapacity (uint32_t numBits);
 
 //! Gets this BitMask's default bit value.
 //! @return          The value of the default bit.
@@ -128,7 +127,7 @@ DGNPLATFORM_EXPORT void                SetDefaultBitValue (bool value);
 //! Tests a bit of this BitMask.
 //! @param[in]      bitIndex        The bit to test.
 //! @return         The value of the bit.
-DGNPLATFORM_EXPORT bool                Test (UInt32 bitIndex) const;
+DGNPLATFORM_EXPORT bool                Test (uint32_t bitIndex) const;
 
 //! Tests the specified bits of this BitMask.
 //! @param[in]      testMask        The bits to test.
@@ -139,11 +138,11 @@ DGNPLATFORM_EXPORT bool                Test (BitMaskCR testMask) const;
 //! Sets a bit of this BitMask to the specified value.
 //! @param[in]      bitIndex        The bit to set.
 //! @param[in]      value           The value to set.
-DGNPLATFORM_EXPORT StatusInt            SetBit (UInt32 bitIndex, bool value);
+DGNPLATFORM_EXPORT StatusInt            SetBit (uint32_t bitIndex, bool value);
 
 //! Sets a bit of this BitMask to true.
 //! @param[in]      bitIndex        The bit to set to true.
-DGNPLATFORM_EXPORT StatusInt           Set (UInt32 bitIndex);
+DGNPLATFORM_EXPORT StatusInt           Set (uint32_t bitIndex);
 
 //! Sets all bits of this BitMask to true.
 DGNPLATFORM_EXPORT void                SetAll ();
@@ -151,14 +150,14 @@ DGNPLATFORM_EXPORT void                SetAll ();
 //! Sets a bit of this BitMask to false.
 //! @param[in]      bitIndex        The bit to set to false.
 //! @bsimethod
-DGNPLATFORM_EXPORT StatusInt           Clear (UInt32 bitIndex);
+DGNPLATFORM_EXPORT StatusInt           Clear (uint32_t bitIndex);
 
 //! Sets all bits of this BitMask to false.
 DGNPLATFORM_EXPORT void                ClearAll ();
 
 //! Inverts the specified bit of this BitMask.
 //! @param[in]      bitIndex        The bit to set to invert.
-DGNPLATFORM_EXPORT StatusInt           Invert (UInt32 bitIndex);
+DGNPLATFORM_EXPORT StatusInt           Invert (uint32_t bitIndex);
 
 //! Inverts all bits of this BitMask.
 DGNPLATFORM_EXPORT void                InvertAll ();
@@ -193,7 +192,7 @@ DGNPLATFORM_EXPORT void                OrNot (BitMaskCR rhs);
 //! @param[in]      bitIndexArray   An array of bit indexes.
 //! @param[in]      value           The value to set.
 //! @note           If necessary, the capacity of this BitMask is increased.
-DGNPLATFORM_EXPORT StatusInt           SetBits (UInt32 arraySize, const UInt32 *bitIndexArray, bool value);
+DGNPLATFORM_EXPORT StatusInt           SetBits (uint32_t arraySize, const uint32_t *bitIndexArray, bool value);
 
 //! Copies the contents of the given BitMask to this BitMask.
 //! @param[in]      source          The BitMask to copy the contents of.
@@ -203,17 +202,17 @@ DGNPLATFORM_EXPORT StatusInt           SetFromBitMask (BitMaskCR source);
 //! @param[in]      numValidBits    The number of valid bits in the input bitArray
 //! @param[in]      bitArray        An array of at least (numValidBits+15)%16 UInt16's that contain the values.
 //! @note           If necessary, the capacity of this BitMask is increased.
-DGNPLATFORM_EXPORT StatusInt           SetFromBitArray (UInt32 numValidBits, const UInt16* bitArray);
+DGNPLATFORM_EXPORT StatusInt           SetFromBitArray (uint32_t numValidBits, const uint16_t* bitArray);
 
 //! Sets this BitMask from a string containing the bits that are true.
 //! @param[in]      sourceString    The string containing integers that are the bits to set to true. It is of the form n,m,...p-q,r-s
 //! @param[in]      indexOrigin     Either 0 or 1. The value is subtracted from each integer specified in sourceString.
 //! @param[in]      maxIndex        The maximum value that is allowed in sourceString.
-DGNPLATFORM_EXPORT void SetFromString (Utf8StringCR sourceString, UInt32 indexOrigin, UInt32 maxIndex);
+DGNPLATFORM_EXPORT void SetFromString (Utf8StringCR sourceString, uint32_t indexOrigin, uint32_t maxIndex);
 
 //! The count of bits that are true in this BitMask.
 //! @return         The number of true bits.
-DGNPLATFORM_EXPORT UInt32              GetNumBitsSet () const;
+DGNPLATFORM_EXPORT uint32_t            GetNumBitsSet () const;
 
 //! Tests this BitMask for equality with another BitMask.
 //! @param[in]      other           The other BitMask
@@ -236,13 +235,13 @@ DGNPLATFORM_EXPORT void                LogicalOperation (BitMaskCR rhs, BitMaskO
 //! @param[in]      file            The file to which the output is dumped.
 //! @param[in]      asString        The output is a string if true, binary otherwise.
 //! @param[in]      indexOrigin     If asString true, this indicates the index value of the lowest bit. Must be 0 or 1.
-DGNPLATFORM_EXPORT void                Dump (FILE *file, bool asString, UInt32 indexOrigin) const;
+DGNPLATFORM_EXPORT void                Dump (FILE *file, bool asString, uint32_t indexOrigin) const;
 
 
 //! Create a string representing the contents of this BitMask.
 //! @param[out]     outString       The string that is filled in.
 //! @param[in]      indexOrigin     If asString true, this indicates the index value of the lowest bit. Must be 0 or 1.
-DGNPLATFORM_EXPORT void ToString (Utf8StringR outString, UInt32 indexOrigin) const;
+DGNPLATFORM_EXPORT void ToString (Utf8StringR outString, uint32_t indexOrigin) const;
 };
 
 /*=================================================================================**//**
@@ -252,7 +251,7 @@ DGNPLATFORM_EXPORT void ToString (Utf8StringR outString, UInt32 indexOrigin) con
 struct BitMaskHolder 
 {
 private:
-    BitMaskP    m_mask;
+    BitMask*    m_mask;
 
 public:
 //! Construct a new Instance of BitMaskHolder.
@@ -332,7 +331,7 @@ public:
 //__PUBLISH_SECTION_END__
 
 /*----------------------------------------------------------------------------------*//**
-* Copy the contents of the bitmask to a byte array so it can be written to a file.
+* Copy the contents of the bitmask to a Byte array so it can be written to a file.
 * The bytes can be converted back to a bitmask via bitMask_fromFileByteArray.
 * pNumBytes should contain the number of bytes in pByteArray when this function is called.
 * When the function returns it will contain the actual number of bytes required to represent
@@ -347,12 +346,12 @@ public:
 StatusInt       bitMask_toFileByteArray
 (
 BitMaskCP       pBitMaskIn,
-UInt16*         pNumBytes,
-byte**          pByteArray
+uint16_t*         pNumBytes,
+Byte**          pByteArray
 );
 
 /*----------------------------------------------------------------------------------*//**
-* Free the byte array from bitMask_toFileByteArray.
+* Free the Byte array from bitMask_toFileByteArray.
 *
 * @param    pByteArray          IN ptr to buffer from bitMask_toFileByteArray.
 * @return   void
@@ -360,11 +359,11 @@ byte**          pByteArray
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            bitMask_freeFileByteArray
 (
-byte**          pByteArray
+Byte**          pByteArray
 );
 
 /*----------------------------------------------------------------------------------*//**
-* Get the contents of the bitmask from a byte array that was read from a file
+* Get the contents of the bitmask from a Byte array that was read from a file
 *
 * @param    ppBitMaskOut        OUT bit mask object
 * @param    numBytes            IN number of bytes in pByteArray
@@ -375,8 +374,8 @@ byte**          pByteArray
 StatusInt       bitMask_fromFileByteArray
 (
 BitMaskH        ppBitMaskOut,
-const UInt16    numBytes,
-const byte*     pByteArray
+const uint16_t  numBytes,
+const Byte*     pByteArray
 );
 
 //__PUBLISH_SECTION_START__

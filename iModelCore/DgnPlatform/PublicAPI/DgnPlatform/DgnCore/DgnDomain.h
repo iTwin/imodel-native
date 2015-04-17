@@ -2,192 +2,381 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnDomain.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
 //__PUBLISH_SECTION_START__
-/** @cond BENTLEY_SDK_Internal */
-#include "DgnCore.h"
+#include <DgnPlatform/DgnCore/DgnDbTables.h>
+
+/** @addtogroup DgnDomainGroup
+
+A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
+
+To connect your Domain's ECSChema with your C++ classes, create a subclass of DgnDomain. A DgnDomain is a singleton - that is, 
+there is only one instance of a DgnDomain subclass that applies to all DgnDbs for a session. You tell the DgnDbPlatform 
+about your DgnDomain by calling the static method DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name", 
+which must match the ECShema file name. That is how a DgnDomain is paired with its ECSchema.
+
+A DgnDomain holds an array of C++ singleton objects, each of which each derive from DgnDomain::Handler. A DgnDomain::Handler 
+holds the name of the ECClass it "handles". DgnDomain::Handlers are added to a DgnDomain by calling DgnDomain::RegisterHandler. 
+Note that DgnDomain::Handlers are singletons - they apply to all DgnDbs, and have no instance data. 
+
+You can create a DgnDomain::Handler for any ECClass, and the connection between them is via schema name/class name. 
+A DgnDomain::Handler handles an ECClass, *and all of its subclasses* unless they have their own DgnDomain::Handler
+
+Within a given DgnDb, instances of an ECClass are known by their local DgnClassId. The same ECClass may have two different 
+DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the list of loaded DgnDomains is stored in a map of 
+local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class 
+called DgnDomains, which is accessed through the method DgnDb::Domains().
+
+The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers. 
+
+*/
+
+#define DOMAIN_DECLARE_MEMBERS(__classname__,__exporter__) \
+    private:   __exporter__ static __classname__*& z_PeekInstance(); \
+                            static __classname__* z_CreateInstance(); \
+    public:    __exporter__ static __classname__& GetDomain() {return z_Get##__classname__##Instance();}\
+               __exporter__ static __classname__& z_Get##__classname__##Instance();
+
+// This macro must be included within the source file that implements a DgnDomain
+#define DOMAIN_DEFINE_MEMBERS(__classname__) \
+    __classname__*  __classname__::z_CreateInstance() {__classname__* instance= new __classname__(); return instance;}\
+    __classname__*& __classname__::z_PeekInstance() {static __classname__* s_instance = 0; return s_instance;}\
+    __classname__&  __classname__::z_Get##__classname__##Instance(){__classname__*& instance=z_PeekInstance(); if (nullptr==instance) instance=z_CreateInstance(); return *instance;}
+
+// This macro must be included within the class declaration of a DgnDomain::Handler.
+#define HANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
+    private:   __exporter__ static __classname__*& z_PeekInstance(); \
+                            static __classname__* z_CreateInstance(); \
+    public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
+               __exporter__ static __classname__& z_Get##__classname__##Instance();
+
+#define HANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__superclass__,__exporter__) \
+    private:   typedef __superclass__ T_Super; \
+    protected: __classname__()  {m_ecClassName =  __ECClassName__ ;} \
+    HANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__)
+
+// This macro must be included within the source file that implements an DgnDomain::Handler
+#define HANDLER_DEFINE_MEMBERS(__classname__) \
+    __classname__*  __classname__::z_CreateInstance() {__classname__* instance= new __classname__(); instance->SetSuperClass(&T_Super::GetHandler()); return instance;}\
+    __classname__*& __classname__::z_PeekInstance() {static __classname__* s_instance = 0; return s_instance;}\
+    __classname__&  __classname__::z_Get##__classname__##Instance(){__classname__*& instance=z_PeekInstance(); if (nullptr==instance) instance=z_CreateInstance(); return *instance;}
+
+#define HANDLER_EXTENSION_DECLARE_MEMBERS(__classname__,__exporter__) \
+    private: __exporter__ static Token& z_Get##__classname__##Token();\
+    public: static BentleyStatus RegisterExtension(DgnDomain::Handler& handler, __classname__& obj) {return obj.RegisterExt(handler,z_Get##__classname__##Token());}\
+            static BentleyStatus DropExtension    (DgnDomain::Handler& handler) {return DropExt(handler,z_Get##__classname__##Token());}\
+            static __classname__* Cast            (DgnDomain::Handler& handler) {return (__classname__*) CastExt(handler,z_Get##__classname__##Token());}
+
+#define HANDLER_EXTENSION_DEFINE_MEMBERS(__classname__) \
+    DgnDomain::Handler::Extension::Token& __classname__::z_Get##__classname__##Token(){static DgnDomain::Handler::Extension::Token* s_token=0; if (0==s_token) s_token = NewToken(); return *s_token;}
+
+#define TABLEHANDLER_DECLARE_MEMBERS(__tableName__,__classname__,__exporter__) \
+    public:  __classname__() : DgnDomain::TableHandler(__tableName__) {} \
+    public:  __exporter__ static __classname__& GetHandler();
+
+#define TABLEHANDLER_DEFINE_MEMBERS(__classname__) \
+    __classname__&  __classname__::GetHandler(){static __classname__* s_instance=nullptr; if (nullptr==s_instance) s_instance=new __classname__(); return *s_instance;}
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//__PUBLISH_SECTION_END__
-
 //=======================================================================================
-//! Interface adopted by a "sub-type" handler. A sub-type handler overrides a type handler
-//!   for particular elements by recognizing a sub-type from level, user data linkages, etc.
-//! Note: a sub-type handler MUST inherit from the Handler for the base type that it specializes.
-// @bsiclass
-//=======================================================================================
-struct ISubTypeHandlerQuery
-{
-//! @remarks NOTE TO IMPLEMENTERS: This method is called when converting from V8 on import. Therefore, the element data will be in V8 format!
-virtual bool _ClaimElement (ElementHandleCR el) = 0;
-};
-
-enum SubTypeHandlerPriority
-{
-    SUBTYPEHANDLER_PRIORITY_Highest     = 1000,
-    SUBTYPEHANDLER_PRIORITY_High        = 750,
-    SUBTYPEHANDLER_PRIORITY_Normal      = 500,
-    SUBTYPEHANDLER_PRIORITY_Low         = 250,
-    SUBTYPEHANDLER_PRIORITY_Lowest      = 0,
-};
-
-enum
-    {
-    LEGACY_ELEMENT_TypeHandlerMajorId        = 0x58ef,
-    LEGACY_ELEMENT_SubTypeHandlerMajorId     = 0x58f0,
-    };
-//__PUBLISH_SECTION_START__
-
-typedef bvector<DgnDomainCP> DomainList;
-
-//=======================================================================================
-// A list of DgnDomains that is sorted by priority.
+//! A DgnDomain is a singleton C++ object that provides the runtime implementation for an ECSchema.
+//! A given DgnDomain supplies set of "handlers," each of which are singleton C++ objects derived from DgnDomain::Handler,
+//! that provide the implementation for one of its ECClasses. Stated differently, a DgnDomain is a collection of DgnDomain::Handlers
+//! for its ECClasses. It is not possible for one DgnDomain to supply a DgnDomain::Handler for a different DgnDomain.
+//! Domains are "registered" at program startup time (via that static method DgnDomains::RegisterDomain),
+//! remain for an entire session, and apply to all DgnDb's that are opened
+//! or created during that session. If a DgnDomain is registered, its name is recorded in every DgnDb accessed during the session
+//! and becomes "required" to access that DgnDb in the future.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-struct DgnDomains : NonCopyableClass
-    {
-//__PUBLISH_SECTION_END__
-private:
-    friend struct DgnProject;
-    friend struct DgnDomain;
-    DomainList  m_domains;
-    DgnProjectP m_project;
-
-    BeSQLite::DbResult AddElementHandler (Utf8CP domain, HandlerR handler);
-    BeSQLite::DbResult AddDomainToProject (DgnDomainCR domain);
-
-public:
-    DgnDomains(DgnProjectP project=NULL) : m_project(project){}
-
-    HandlerR ResolveHandler (ElementHandlerId) const;
-    DGNPLATFORM_EXPORT void AddLoadedDomain (DgnDomainCR domain);
-    DGNPLATFORM_EXPORT void DropDomain (DgnDomainCR domain);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    DGNPLATFORM_EXPORT DgnDomainCP FindDomain (Utf8CP name) const;
-    DGNPLATFORM_EXPORT HandlerP FindElementHandler (ElementHandlerId id) const;
-    DGNPLATFORM_EXPORT XAttributeHandlerP FindXAttributeHandler (XAttributeHandlerId) const;
-    DGNPLATFORM_EXPORT DomainList const& GetDomainList() const;
-    };
-
-//=======================================================================================
-// Handles locating, loading and tracking the list of "loaded" domains for opening DgnProjects.
-// @bsiclass                                                    Keith.Bentley   09/11
-//=======================================================================================
-struct DgnDomainLoader
-    {
-    //! Applications can call this method to register a domain as available for use by DgnProjects.
-    DGNPLATFORM_EXPORT static void RegisterLoadedDomain (DgnDomainR domain);
-    DGNPLATFORM_EXPORT static void UnregisterLoadedDomain (DgnDomainR domain);
-
-    DGNPLATFORM_EXPORT static DgnDomainCP LoadDomain (Utf8CP name, UInt32 version=0); // 0 means "latest"
-    DGNPLATFORM_EXPORT static DgnDomainCR GetSystemDomain();
-    DGNPLATFORM_EXPORT static DgnDomains const& GetLoadedDomains();
-    DGNPLATFORM_EXPORT static HandlerR GetIllegalHandler();
-
-    static DgnDomainCP FindDomain (Utf8CP name) {return GetLoadedDomains().FindDomain(name);}
-    };
-
-//=======================================================================================
-// A DgnDomain is a set of related classes, usually implemented in a single .dll, that handles persistence, maintenance, interpretation, and display of
-// domain-specific information in DgnProjects. A single DgnProject can hold information from many DgnDomains. In this context, a "domain" can
-// supply the implementation a set of related concepts that may map to terms like: "discipline", "application", "schema", etc.
-// Among the types of classes supplied by a "DgnDomain" are:
-//  - Element Handlers
-//  - Table Handlers
-//  - XAttribute Handlers
-// A DgnDomain has a priority. A domain's priority determines its position in a DomainList. When a DgnProject
-// works with multiple domains, it queries the domains in a DomainList in order. so, the highest-priority domain
-// gets the first chance to supply a handler for an element, for example. This allows an higher priority app or importer domain
-// to supply a handler for an element that is considered missing by lower priority system domain.
-// The ranges for domain priorities are:
-// 0-99     platform domains (system, drafting)
-// 100-199  vertical application domains
-// 200-299  layered product domains
-// 300-399  importer domains
-// @bsiclass                                                    Keith.Bentley   02/11
-//=======================================================================================
-struct DgnDomain : NonCopyableClass
-    {
-//__PUBLISH_SECTION_END__
-    typedef bmap<ElementHandlerId, HandlerP> Handlers;
-    typedef bmap<XAttributeHandlerId,XAttributeHandlerP> XAttributeHandlers;
+struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
+{
     friend struct DgnDomains;
+
+    //! The current version of the HandlerAPI
+    enum {API_VERSION = 1};
+
+    //! A DgnDomain::Handler is a C++ singleton object that provides an implementation for an ECClass and all of its subclasses.
+    //! A DgnDomain::Handler must be registered with its DgnDomain via DgnDomain::RegisterHandler before any DgnDbs are created or opened.
+    struct Handler : NonCopyableClass
+        {
+        //! A DgnDomain::Handler::Extension can be used to add additional interfaces to a Handler at runtime. If a Handler is
+        //! extended, all of its registered subclasses inherit that extension too.
+        //! To implement a DgnDomain::Handler::Extension, derive from that class and put the HANDLER_EXTENSION_DECLARE_MEMBERS macro in
+        //! your class declaration and the HANDLER_EXTENSION_DEFINE_MEMBERS in your implementation. E.g.:
+
+        /**
+    @verbatim
+    struct ExampleInterface : Handler::Extension
+        {
+        HANDLER_EXTENSION_DECLARE_MEMBERS (ExampleInterface,)
+        virtual void _DoExample(ElementHandleCR) = 0;
+        };
+    HANDLER_EXTENSION_DEFINE_MEMBERS(ExampleInterface)
+        @endverbatim
+        You can then implement your interface on many classes, e.g.:
+        @verbatim
+    struct Example1 : ExampleInterface
+        {
+        virtual void _DoExample(ElementHandleCR) override {printf("Example1");}
+        };
+    struct Example2 : ExampleInterface
+        {
+        virtual void _DoExample(ElementHandleCR) override {printf("Example2");}
+        };
+        @endverbatim
+        Then, register your Handler::Extension on an existing Handler by calling the Handler::Extension's "RegisterExtension" method.
+        For example, to register your extension on ModelHandler, use:
+        @verbatim
+    ExampleInterface::RegisterExtension (ModelHandler::Handler(), *new Example1());
+        @endverbatim
+        A Handler can have many registered Handler::Extensions, but can only be extended by one instance of a given Handler::Extension. Therefore:
+        @verbatim
+    status = ExampleInterface::RegisterExtension(ModelHandler::Handler(), *new Example1()); // SUCCESS
+    status = ExampleInterface::RegisterExtension(ModelHandler::Handler(), *new Example2()); // ERROR - already extended with Example1!
+        @endverbatim
+        Will fail. However, you can add your extension at any level in the Handler class hierarchy. So:
+        @verbatim
+    ExampleInterface::RegisterExtension(ModelHandler::Handler(), *new Example1());
+    ExampleInterface::RegisterExtension(Model2dHandler::Handler(), *new Example2());
+        @endverbatim
+        Will extend all ModelHandler classes with "Example1", but the Model2dHandler class (which is a subclass of ModelHandler)
+        with "Example2".<p>
+        You can then look up your extension on a Handler by calling the Handler::Extension's "Cast" method. E.g.:
+        @verbatim
+    void doExample (ElementHandleCR eh)
+        {
+        ExampleInterface* exampleExt = ExampleInterface::Cast(eh.GetHandler());
+        if (NULL != exampleExt)
+            exampleExt->_DoExample(eh);
+        }
+        @endverbatim
+        This will print "Example2" for all Model2ds and "Example1" for all other types of Models.<p>
+        To remove a Handler::Extension, call "DropExtension". E.g.:
+        @verbatim
+    ExampleInterface::DropExtension (LineHandler::Handler());
+        @endverbatim
+        */
+        struct Extension
+        {
+            friend struct Handler;
+            struct Token
+            {
+                friend struct Extension;
+            private:
+                Token() {}
+            };
+
+    #if !defined (DOCUMENTATION_GENERATOR)
+        protected:
+            BentleyStatus RegisterExt (Handler& handler, Token& extensionToken) {return handler.AddExtension(extensionToken, *this);}
+            static BentleyStatus DropExt (Handler& handler, Token& extensionToken) {return handler.DropExtension(extensionToken);}
+            static Extension* CastExt (Handler& handler, Token& extensionToken) {return handler.FindExtension(extensionToken);}
+            static Token* NewToken() {return new Token();}
+    #endif
+        }; // Extension
+
+        private:
+            DGNPLATFORM_EXPORT BentleyStatus AddExtension (Extension::Token&, Extension&);
+            DGNPLATFORM_EXPORT BentleyStatus DropExtension (Extension::Token&);
+            DGNPLATFORM_EXPORT Extension* FindExtension (Extension::Token&);
+
+        struct ExtensionEntry
+        {
+            ExtensionEntry (Extension::Token& token, Extension& extension, ExtensionEntry* next) : m_token(token), m_extension(extension), m_next(next){}
+            static ExtensionEntry* Find(ExtensionEntry*, Extension::Token const&);
+
+            Extension::Token&   m_token;
+            Extension&          m_extension;
+            ExtensionEntry*     m_next;
+        }; // ExtensionEntry
+
+        friend struct DgnDomain;
+        static Handler*  z_CreateInstance();
+        static Handler*& z_PeekInstance();
+
+    protected:
+        Handler*        m_superClass;
+        Utf8String      m_ecClassName;
+        ExtensionEntry* m_extensions;
+        DgnDomainCP     m_domain;
+        Handler() : m_domain(nullptr), m_ecClassName("Handler") {m_superClass = (Handler*) 0xbadf00d; m_extensions=nullptr;  }
+        virtual ~Handler(){}
+        void SetSuperClass(Handler* super) {m_superClass = super;}
+        void SetDomain(DgnDomain& domain) {m_domain = &domain;}
+
+    public:
+        //! To enable version-checking for your handler, override this method to report the
+        //! API version that was used to compiler your handler.
+        //! @remarks Version-checking is a convenience to developers during the product development
+        //!          cycle. It allows one to detect when a handler needs to be recompiled
+        //!          in order to catch up with API changes.
+        //! @remarks To override this method, simply copy the following line into your handler.
+        virtual uint32_t _GetApiVersion() {return API_VERSION;}
+
+        //! Get the name of the ECClass handled by this Handler
+        Utf8CP GetClassName() const {return m_ecClassName.c_str();}
+
+        //! Get DgnDomain of Handler
+        DgnDomainCR GetDomain() const {return *m_domain;}
+
+        //! get a localized version of the class name for this handler
+        virtual void _GetLocalizedName(Utf8StringR name, uint32_t desiredLength) {name = GetClassName();}
+
+        //! get a localized description of this handler's class
+        virtual void _GetLocalizedDescription(Utf8StringR descr, uint32_t desiredLength) {descr = "";}
+
+        virtual ElementHandlerP _ToElementHandler() {return nullptr;} //!< dynamic_cast this Handler to an ElementHandler
+        virtual ModelHandlerP _ToModelHandler() {return nullptr;}     //!< dynamic_cast this Handler to a ModelHandler
+        virtual ViewHandlerP _ToViewHandler() {return nullptr;}       //!< dynamic_cast this Handler to a ViewHandler
+        virtual ElementItemHandlerP _ToElementItemHandler() {return nullptr;}     //!< dynamic_cast this Handler to a ElementItemHandler
+
+        #if !defined (DOCUMENTATION_GENERATOR)
+        static Handler& z_GetHandlerInstance();
+        DGNPLATFORM_EXPORT static Handler& GetHandler() {return z_GetHandlerInstance();}
+        #endif
+    }; // Handler
+
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   07/11
+    //=======================================================================================
+    struct TableHandler
+    {
+    private:
+        Utf8String   m_tableName;
+        DgnDomainCP  m_domain;
+    public:
+        TableHandler(Utf8CP tableName) : m_domain(nullptr), m_tableName(tableName) {}
+        void SetDomain(DgnDomain& domain) {m_domain = &domain;}
+
+        Utf8CP GetTableName() const {return m_tableName.c_str();}
+        DgnDomainCR GetDomain() const {return *m_domain;}
+        virtual void _OnAdd(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
+        virtual void _OnDelete(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
+        virtual void _OnUpdate(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
+    }; //TableHandler
+
 protected:
-    UInt32      m_version;
-    Utf8String  m_name;
-    Utf8String  m_description;
-    Handlers    m_handlers;
-    XAttributeHandlers m_xAttHandlers;
+    int32_t         m_version;
+    Utf8String      m_domainName;
+    Utf8String      m_domainDescr;
+    bvector<Handler*> m_handlers;
+    bvector<TableHandler*> m_tableHandlers;
     virtual ~DgnDomain() {}
 
+    BeSQLite::DbResult LoadHandlers(DgnDbR) const;
+
+    //! Called after a DgnDomain schema has been imported.
+    //! @note Domains are expected to override this method and use it to create required domain objects (like categories, for example).
+    //! @see ImportSchema
+    virtual void _OnSchemaImported(DgnDbR db) {}
+
 public:
-    DgnDomain (Utf8CP name, Utf8CP descr, UInt32 version) : m_name(name), m_description(descr) {m_version=version;}
-    DGNPLATFORM_EXPORT virtual UInt32 _GetPriority() const = 0;
-    DGNPLATFORM_EXPORT virtual void _OnProjectCreated (DgnProjectR project) const;
+    //! Construct a new DgnDomain.
+    //! @param[in] name Domain name. Must match filename of ECSchema this domain handles.
+    //! @param[in] descr A description of this domain. For information purposes only, not used internally.
+    //! @param[in] version The version of this DgnDomain API.
+    DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr) {m_version=version;}
 
-    DGNPLATFORM_EXPORT Handlers const& GetHandlers() const;
-    DGNPLATFORM_EXPORT XAttributeHandlers const& GetXAttributeHandlers() const;
+    //! Get the name for this DgnDomain.
+    Utf8CP GetDomainName() const {return m_domainName.c_str();}
 
-    DGNPLATFORM_EXPORT BentleyStatus RegisterHandler (ElementHandlerId, HandlerR);
-    DGNPLATFORM_EXPORT BentleyStatus RegisterXAttributeHandler (XAttributeHandlerId, XAttributeHandlerR);
+    //! Get the description for this DgnDomain.
+    Utf8CP GetDomainDescription() const {return m_domainDescr.c_str();}
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    DGNPLATFORM_EXPORT Utf8CP GetName() const;
-    DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
-    DGNPLATFORM_EXPORT UInt32 GetVersion() const;
-    DGNPLATFORM_EXPORT HandlerP FindElementHandler (ElementHandlerId) const;
-    DGNPLATFORM_EXPORT XAttributeHandlerP FindXAttributeHandler (XAttributeHandlerId) const;
-    };
+    //! Get the version of this DgnDomain.
+    int32_t GetVersion() const {return m_version;}
+
+    DGNPLATFORM_EXPORT Handler* FindHandler(Utf8CP className) const;
+
+    //! Register a handler with this DgnDomain.
+    void RegisterHandler(Handler& handler) {handler.SetDomain(*this); m_handlers.push_back(&handler);}
+
+    //! Register a table handler with this DgnDomain.
+    void RegisterTableHandler(TableHandler& handler) {handler.SetDomain(*this); m_tableHandlers.push_back(&handler);}
+
+    //! Import an ECSchema for this DgnDomain.
+    //! @param[in] db Import the domain schema into this DgnDb
+    //! @param[in] schemaFileName The domain ECSchema file to import
+    DGNPLATFORM_EXPORT BentleyStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName);
+};
 
 //=======================================================================================
+//! The set of DgnDomains used by this DgnDb. This class also caches the DgnDomain::Handler to DgnDb-specific
+//! DgnClassId lookups.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-struct DgnDraftingDomain : DgnDomain
-    {
-//__PUBLISH_SECTION_END__
+struct DgnDomains : DgnDbTable
+{
+    typedef bvector<DgnDomainCP> DomainList;
+    typedef bmap<DgnClassId,DgnDomain::Handler*> Handlers;
+
 private:
-    virtual ~DgnDraftingDomain(){}
-    virtual UInt32 _GetPriority() const {return 49;}
+    friend struct DgnDb;
+    friend struct DgnDomain;
+    friend struct TxnSummary;
+
+    DomainList    m_domains;
+    Handlers      m_handlers;
+
+    void LoadDomain(DgnDomainR);
+    void AddHandler(DgnClassId id, DgnDomain::Handler* handler) {m_handlers.Insert(id, handler);}
+    BeSQLite::DbResult InsertHandler(DgnDomain::Handler& handler);
+    BeSQLite::DbResult InsertDomain(DgnDomainCR);
+    ECN::ECClassCP FindBaseOfType(DgnClassId subClassId, DgnClassId baseClassId);
+
+    explicit DgnDomains(DgnDbR db) : DgnDbTable(db) {}
+    static DgnDomain::TableHandler* FindTableHandler(Utf8CP tableName);
+
+    //! Initialize the Domains for this DgnDb from its schemas and the the registered DgnDomain set.
+    //! @note This method must be called any time a new schema is imported to a DgnDb.  Now called automatically from DgnDomain::ImportSchema
+    BeSQLite::DbResult SyncWithSchemas();
 
 public:
-    DgnDraftingDomain();
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    DGNPLATFORM_EXPORT static DgnDraftingDomain& GetInstance();
-    };
+    //! Look up a handler for a given DgnClassId. Does not check base classes.
+    //! This is for internal use only, and #FindHandler should be used by client code.
+    //! @private
+    DgnDomain::Handler* LookupHandler(DgnClassId handlerId);
+
+    //! Register a domain to be used for this session. This supplies all of the handlers for classes of that domain.
+    //! @param[in] domain The domain to register. Domains are singletons and cannot change during a session.
+    //! @note This call must be made before any DgnDbs are created or opened.
+    DGNPLATFORM_EXPORT static void RegisterDomain(DgnDomain& domain);
+
+    //! Look up a domain by name.
+    //! @param[in] name The name of the domain to find.
+    DGNPLATFORM_EXPORT DgnDomainCP FindDomain(Utf8CP name) const;
+
+    //! Get the local (within this DgnDb) DgnClassId for the specified handler.
+    DGNPLATFORM_EXPORT DgnClassId GetClassId(DgnDomain::Handler& handler);
+
+    //! Find the DgnDomain::Handler for a DgnClassId within this DgnDb.
+    //! If there is no handler registered for the supplied DgnClassId, recursively look for one on any of its base classes
+    //! derived from the supplied baseClassId.
+    //! @param[in] handlerId The DgnClassId for which the handler is desired.
+    //! @param[in] baseClassId The root DgnClassId of the handler of interest. This method will walk through the base class hierarchy
+    //! of handlerId towards baseClassId until it finds a registered handler.
+    //! @note The DgnClassId /b is a ECClassId.
+    DGNPLATFORM_EXPORT DgnDomain::Handler* FindHandler(DgnClassId handlerId, DgnClassId baseClassId);
+};
 
 //=======================================================================================
+//! The DgnDomain for the base "dgn" schema.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-struct DgnSystemDomain : DgnDomain
+struct DgnSchemaDomain : DgnDomain
     {
-//__PUBLISH_SECTION_END__
-private:
-    virtual ~DgnSystemDomain() {}
+    DOMAIN_DECLARE_MEMBERS(DgnSchemaDomain,DGNPLATFORM_EXPORT)
+
+    void RegisterDefaultDependencyHandlers(); 
 
 public:
-    virtual HandlerP _GenerateMissingHandler (ElementHandlerId);
-    virtual UInt32 _GetPriority() const {return 50;}
-
-    DgnSystemDomain();
-    DGNPLATFORM_EXPORT void InitDgnCore(DgnDraftingDomain&);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    DGNPLATFORM_EXPORT static DgnSystemDomain& GetInstance();
+    DgnSchemaDomain();
     };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-/** @endcond */

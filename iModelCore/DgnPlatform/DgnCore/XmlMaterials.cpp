@@ -226,15 +226,15 @@ private:
         unsigned int m_padding  : 29;
         };
 
-    static void                 SetLegacyLayerFlagsFromUInt32 (MaterialMapLayerR layer, UInt32 uint32Value);
-    static void                 SetUInt32FromLegacyLayerFlags (UInt32& uint32Value, MaterialMapLayerCR layer);
+    static void                 SetLegacyLayerFlagsFromUInt32 (MaterialMapLayerR layer, uint32_t uint32Value);
+    static void                 SetUInt32FromLegacyLayerFlags (uint32_t& uint32Value, MaterialMapLayerCR layer);
 
     static BentleyStatus        SkipLayerToken (WStringR layerType);
     static BentleyStatus        ConvertProcedureToLuxology (MaterialMapLayerR layer, WCharCP name, BeXmlNodeR rootElement, MaterialVersion version);
 
     static bool                 GetDouble (double& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version);
-    static bool                 GetInt32 (Int32& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version);
-    static bool                 GetUInt32 (UInt32& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version);
+    static bool                 GetInt32 (int32_t& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version);
+    static bool                 GetUInt32 (uint32_t& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version);
     static bool                 GetColor (RgbFactor& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version);
     static bool                 GetColorFromLxoProcedureXml (RgbFactor& result, BeXmlNodeR rootElement, Utf8CP tag);
     static bool                 GetPoint3d (DPoint3d& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version);
@@ -295,12 +295,12 @@ private:
     static void                 GetMaterialMapLayers (MaterialMapR map, BeXmlNodeR rootElement, MaterialVersion version);
     static void                 GetMaterialShader (MaterialShaderR shader, BeXmlNodeR rootElement, MaterialVersion version);
     static void                 GetMaterialMap (MaterialSettingsR settings, BeXmlNodeR rootElement, MaterialVersion version);
-    static void                 GetMaterialFur (MaterialFurR fur, BeXmlNodeR rootElement, MaterialVersion version, DgnProjectR source);
+    static void                 GetMaterialFur (MaterialFurR fur, BeXmlNodeR rootElement, MaterialVersion version, DgnDbR source);
     static bool                 IsLayeredProcedural (WCharCP fileName);
     static bool                 IsPMAProcedural (WCharCP fileName);
 
 public:
-    static void                 GetMaterialSettings (MaterialSettingsR settings, MaterialVersion version, BeXmlNodeR rootElement, DgnProjectR source);
+    static void                 GetMaterialSettings (MaterialSettingsR settings, MaterialVersion version, BeXmlNodeR rootElement, DgnDbR source);
     static BentleyStatus        GetMaterialMapLayer (MaterialMapLayerP layer, BeXmlNodeR layerElement, MaterialVersion version);
 };
 
@@ -338,7 +338,7 @@ bool XmlMaterialReader::GetDouble (double& result, BeXmlNodeR rootElement, Palet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool XmlMaterialReader::GetInt32 (Int32& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version)
+bool XmlMaterialReader::GetInt32 (int32_t& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version)
     {
     Utf8String keyword;
     MaterialTokenManager::GetManagerR ().ResolvePaletteKeyword (keyword, token, version);
@@ -349,7 +349,7 @@ bool XmlMaterialReader::GetInt32 (Int32& result, BeXmlNodeR rootElement, Palette
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool XmlMaterialReader::GetUInt32 (UInt32& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version)
+bool XmlMaterialReader::GetUInt32 (uint32_t& result, BeXmlNodeR rootElement, PaletteToken token, MaterialVersion version)
     {
     Utf8String keyword;
     MaterialTokenManager::GetManagerR ().ResolvePaletteKeyword (keyword, token, version);
@@ -516,7 +516,7 @@ void XmlMaterialReader::GetLxoNoiseProcedure (LxoProcedureR procedure, BeXmlNode
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_Value1))             { noise->SetValue1 (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_Value2))             { noise->SetValue2 (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_Frequencies))        { noise->SetFrequencies (uint32Value); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_NoiseType))
         noise->SetNoiseType (static_cast <LxoNoiseProcedure::NoiseType> (uint32Value));
@@ -542,7 +542,7 @@ void XmlMaterialReader::GetLxoCheckerProcedure (LxoProcedureR procedure, BeXmlNo
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_Value1))             { checker->SetValue1 (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_Value2))             { checker->SetValue2 (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_CheckerType))
         checker->SetCheckerType (static_cast <LxoCheckerProcedure::CheckerType> (uint32Value));
     }
@@ -568,7 +568,7 @@ void XmlMaterialReader::GetLxoGridProcedure (LxoProcedureR procedure, BeXmlNodeR
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_LineValue))          { grid->SetLineValue (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_FillerValue))        { grid->SetFillerValue (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_GridType))
         grid->SetGridType (static_cast <LxoGridProcedure::GridType> (uint32Value));
     }
@@ -594,7 +594,7 @@ void XmlMaterialReader::GetLxoDotProcedure (LxoProcedureR procedure, BeXmlNodeR 
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_DotValue))           { dot->SetDotValue (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_FillerValue))        { dot->SetFillerValue (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_DotType))
         dot->SetDotType (static_cast <LxoDotProcedure::DotType> (uint32Value));
     }
@@ -639,7 +639,7 @@ void XmlMaterialReader::GetLxoCellularProcedure (LxoProcedureR procedure, BeXmlN
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_CellValue))              { cellular->SetCellValue (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_FillerValue))            { cellular->SetFillerValue (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_Frequencies))            { cellular->SetFrequencies (uint32Value); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_CellType))
         cellular->SetCellularType (static_cast <LxoCellularProcedure::CellularType> (uint32Value));
@@ -713,7 +713,7 @@ void XmlMaterialReader::GetLxoRipplesProcedure (LxoProcedureR procedure, BeXmlNo
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_CrestValue))             { ripples->SetCrestValue (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_TroughValue))            { ripples->SetTroughValue (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_Sources))                { ripples->SetSources (uint32Value); }
     }
 
@@ -741,7 +741,7 @@ void XmlMaterialReader::GetLxoOcclusionProcedure (LxoProcedureR procedure, BeXml
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_SpreadAngle))                   { occl->SetSpreadAngle (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_MaxCavityAngle))                { occl->SetMaxCavityAngle (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_SameSurface))                   { occl->SetSameSurface (TO_BOOL (uint32Value)); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_OcclusionType))                 { occl->SetOcclusionType (static_cast <LxoOcclusionProcedure::OcclusionType> (uint32Value)); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_OcclusionRays))                 { occl->SetOcclusionRays (uint32Value); }
@@ -757,7 +757,7 @@ void XmlMaterialReader::GetLxoFloatEnvelope (LxoFloatEnvelopeR envelope, BeXmlNo
     if (NULL == envelopeElement)
         return;
 
-    UInt32                  uint32Value;
+    uint32_t                uint32Value;
     LxoEnvelopeXmlVersion   envelopeVersion;
     if (BEXML_Success == envelopeElement->GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_EnvelopeVersion))
         envelopeVersion = static_cast <LxoEnvelopeXmlVersion> (uint32Value);
@@ -772,7 +772,7 @@ void XmlMaterialReader::GetLxoFloatEnvelope (LxoFloatEnvelopeR envelope, BeXmlNo
     for (BeXmlNodeP childElement = envelopeElement->GetFirstChild(); NULL != childElement; childElement = childElement->GetNextSibling())
         {
         LxoFloatEnvelopeComponentR  component = envelope.GetComponentsR ().AddComponent ();
-        UInt32                      uint32Value;
+        uint32_t                    uint32Value;
         double                      doubleValue;
 
         LxoFloatEnvelopeKeyR key = component.GetKeyR ();
@@ -809,7 +809,7 @@ void XmlMaterialReader::GetLxoGradientProcedure (LxoProcedureR procedure, BeXmlN
     {
     LxoGradientProcedureP gradient = reinterpret_cast <LxoGradientProcedureP> (&procedure);
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_Input))
         gradient->SetGradientInput (static_cast <LxoGradientProcedure::GradientInput> (uint32Value));
 
@@ -865,7 +865,7 @@ void XmlMaterialReader::GetLxoBoardsProcedure (LxoProcedureR procedure, BeXmlNod
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_HorizontalVariation))               { proc->SetHorizontalVariation (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_GrainScale))                        { proc->SetGrainScale (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_BoardsPerColumn))                   { proc->SetBoardsPerColumn (uint32Value); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_BoardsPerRow))                      { proc->SetBoardsPerRow (static_cast <LxoOcclusionProcedure::OcclusionType> (uint32Value)); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_PatternID))                         { proc->SetPatternId (uint32Value); }
@@ -889,7 +889,7 @@ void XmlMaterialReader::GetLxoBrickProcedure (LxoProcedureR procedure, BeXmlNode
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_Noisiness))                         { proc->SetNoisiness (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_AspectRatio))                       { proc->SetAspectRatio (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_BondType))                          { proc->SetBondType (static_cast <LxoBrickProcedure::BrickBondType> (uint32Value)); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_FlemishHeaders))                    { proc->SetFlemishHeaders (TO_BOOL (uint32Value)); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_HeaderCourseInterval))              { proc->SetHeaderCourseInterval (uint32Value); }
@@ -942,7 +942,7 @@ void XmlMaterialReader::GetLxoCloudsProcedure (LxoProcedureR procedure, BeXmlNod
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_Complexity))               { proc->SetComplexity (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_Noise))                    { proc->SetNoise (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_CloudsOnly))               { proc->SetCloudsOnly (TO_BOOL (uint32Value)); }
     }
 
@@ -1032,7 +1032,7 @@ void XmlMaterialReader::GetLxoStoneProcedure (LxoProcedureR procedure, BeXmlNode
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_MortarWidth))             { proc->SetMortarWidth (doubleValue); }
     if (BEXML_Success == rootElement.GetAttributeDoubleValue (doubleValue, INTERNALMATERIALTAGS_Noisiness))               { proc->SetNoisiness (doubleValue); }
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_StoneColors))               { proc->SetStoneColors (uint32Value); }
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_StoneColorOffset))          { proc->SetStoneColorOffset (uint32Value); }
     }
@@ -1731,7 +1731,7 @@ void XmlMaterialReader::GetLxoBGradientProcedureFromLegacyData (LxoProcedureR pr
             LxoFloatEnvelopeR   gValue = proc->GetValueEnvelopeR (), gRed = proc->GetRedEnvelopeR (), gGreen = proc->GetGreenEnvelopeR (),
                                 gBlue = proc->GetBlueEnvelopeR (), gAlpha = proc->GetAlphaEnvelopeR ();
             WCharCP             pStr, pStrEnd;
-            UInt32              length;
+            uint32_t            length;
 
             gValue.GetComponentsR ().Clear ();
             gRed.GetComponentsR ().Clear ();
@@ -1768,7 +1768,7 @@ void XmlMaterialReader::GetLxoBGradientProcedureFromLegacyData (LxoProcedureR pr
             LxoFloatEnvelopeR   gValue = proc->GetValueEnvelopeR (), gRed = proc->GetRedEnvelopeR (), gGreen = proc->GetGreenEnvelopeR (),
                                 gBlue = proc->GetBlueEnvelopeR ();
             WCharCP             pStr, pStrEnd;
-            UInt32              length = 0, index = 0;
+            uint32_t            length = 0, index = 0;
 
             pStr = value.c_str ();
             pStrEnd = value.c_str () + value.length ();
@@ -1908,7 +1908,7 @@ void XmlMaterialReader::GetLxoProcedure (MaterialMapLayerR layer, BeXmlNodeR roo
     if (NULL == childElement)
         return;
 
-    UInt32 uint32Value;
+    uint32_t uint32Value;
     if (BEXML_Success != childElement->GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_LxoProcedureType))
         return;
 
@@ -1934,7 +1934,7 @@ void XmlMaterialReader::GetLegacyProcedure (MaterialMapLayer::LegacyProcedureDat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XmlMaterialReader::SetLegacyLayerFlagsFromUInt32 (MaterialMapLayerR layer, UInt32 uint32Value)
+void XmlMaterialReader::SetLegacyLayerFlagsFromUInt32 (MaterialMapLayerR layer, uint32_t uint32Value)
     {
     LegacyLayerFlags* flags = reinterpret_cast <LegacyLayerFlags *> (&uint32Value);
     layer.SetIsEnabled                  (TO_BOOL(flags->m_on));
@@ -1945,7 +1945,7 @@ void XmlMaterialReader::SetLegacyLayerFlagsFromUInt32 (MaterialMapLayerR layer, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XmlMaterialReader::SetUInt32FromLegacyLayerFlags (UInt32& uint32Value, MaterialMapLayerCR layer)
+void XmlMaterialReader::SetUInt32FromLegacyLayerFlags (uint32_t& uint32Value, MaterialMapLayerCR layer)
     {
     LegacyLayerFlags* flags = reinterpret_cast <LegacyLayerFlags *> (&uint32Value);
     flags->m_on             = layer.IsEnabled ();
@@ -2091,8 +2091,8 @@ BentleyStatus  XmlMaterialReader::ConvertProcedureToLuxology (MaterialMapLayerR 
 BentleyStatus XmlMaterialReader::GetMaterialMapLayer (MaterialMapLayerP layer, BeXmlNodeR layerElement, MaterialVersion version)
     {
     MaterialTokenManagerR   tokenManager = MaterialTokenManager::GetManagerR ();
-    UInt32                  uint32Value;
-    Int32                   int32Value;
+    uint32_t                uint32Value;
+    int32_t                 int32Value;
     WString                 stringValue;
     DPoint2d                point2dValue;
     double                  doubleValue;
@@ -2232,8 +2232,8 @@ void XmlMaterialReader::GetMaterialMapLayers (MaterialMapR map, BeXmlNodeR rootE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void XmlMaterialReader::GetMaterialMap (MaterialSettingsR settings, BeXmlNodeR rootElement, MaterialVersion version)
     {
-    Int32                   int32Value;
-    UInt32                  uint32Value;
+    int32_t                 int32Value;
+    uint32_t                uint32Value;
     double                  doubleValue;
     DPoint3d                point3dValue;
     DPoint2d                point2dValue;
@@ -2340,10 +2340,10 @@ void XmlMaterialReader::GetMaterialMap (MaterialSettingsR settings, BeXmlNodeR r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XmlMaterialReader::GetMaterialFur (MaterialFurR fur, BeXmlNodeR rootElement, MaterialVersion version, DgnProjectR source)
+void XmlMaterialReader::GetMaterialFur (MaterialFurR fur, BeXmlNodeR rootElement, MaterialVersion version, DgnDbR source)
     {
-    Int32   int32Value;
-    UInt32  uint32Value;
+    int32_t int32Value;
+    uint32_t uint32Value;
     double  doubleValue;
 
     if (BEXML_Success == rootElement.GetAttributeUInt32Value (uint32Value, INTERNALMATERIALTAGS_Flags))
@@ -2392,8 +2392,8 @@ void XmlMaterialReader::GetMaterialFur (MaterialFurR fur, BeXmlNodeR rootElement
 +---------------+---------------+---------------+---------------+---------------+------*/
 void XmlMaterialReader::GetMaterialShader (MaterialShaderR shader, BeXmlNodeR rootElement, MaterialVersion version)
     {
-    Int32   int32Value;
-    UInt32  uint32Value;
+    int32_t int32Value;
+    uint32_t uint32Value;
     double  doubleValue;
 
     if (GetInt32 (int32Value, rootElement, PALETTETOKEN_ShaderType, version))
@@ -2420,10 +2420,10 @@ void XmlMaterialReader::GetMaterialShader (MaterialShaderR shader, BeXmlNodeR ro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater     12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XmlMaterialReader::GetMaterialSettings (MaterialSettingsR settings, MaterialVersion version, BeXmlNodeR rootElement, DgnProjectR source)
+void XmlMaterialReader::GetMaterialSettings (MaterialSettingsR settings, MaterialVersion version, BeXmlNodeR rootElement, DgnDbR source)
     {
-    UInt32              uint32Value;
-    Int32               int32Value;
+    uint32_t            uint32Value;
+    int32_t             int32Value;
     double              doubleValue;
     RgbFactor           colorValue;
 
@@ -2485,7 +2485,7 @@ void XmlMaterialReader::GetMaterialSettings (MaterialSettingsR settings, Materia
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MattGooding     08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-MaterialPtr MaterialManager::CreateFromXml (Utf8CP xmlString, DgnProjectR source)
+MaterialPtr MaterialManager::CreateFromXml (Utf8CP xmlString, DgnDbR source)
     {
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString);
@@ -2499,7 +2499,7 @@ MaterialPtr MaterialManager::CreateFromXml (Utf8CP xmlString, DgnProjectR source
     MaterialPtr         material = Material::Create (source);
     MaterialSettingsR   settings = material->GetSettingsR ();
     MaterialVersion     version  = MATERIALVERSION_Invalid;
-    Int32               int32Value;
+    int32_t             int32Value;
     if (XmlMaterialReader::GetInt32 (int32Value, *rootElement, PALETTETOKEN_MaterialVersion, version))
         version = static_cast <MaterialVersion> (int32Value);
 

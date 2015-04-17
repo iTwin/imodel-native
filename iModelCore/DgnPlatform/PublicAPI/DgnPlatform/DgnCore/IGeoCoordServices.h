@@ -34,17 +34,17 @@ struct          IGeoCoordinateServices
 {
 virtual WCharCP                             GetGCSName (WStringR gcsName, DgnGCSP sourceGCS) = 0;
 virtual WCharCP                             GetDescription (WStringR gcsDescription, DgnGCSP sourceGCS) = 0;
-virtual GeoReferenceStatus                  ReprojectUorPoints (DgnProjectR source, DgnProjectR target, DPoint3dP outUors, DPoint3dCP inUors, int numPoints) = 0;
+virtual GeoReferenceStatus                  ReprojectUorPoints (DgnDbR source, DgnDbR target, DPoint3dP outUors, DPoint3dCP inUors, int numPoints) = 0;
 
 virtual GeoReferenceStatus                  ReprojectUorPoints (DgnGCSP sourceGCS, DgnGCSP targetGCS, DPoint3dP outUors, DPoint3dCP inUors, int numPoints) = 0;
 
 //! Get the DgnGCS for the specified project.
 //! @return the DgnGCS for this project or NULL if the project is not geo-located
 //! @remarks Do not call delete on the returned point
-virtual DgnGCS*                             GetGCSFromProject (DgnProjectR) = 0;
+virtual DgnGCS*                             GetGCSFromProject (DgnDbR) = 0;
 
 //! Returns true if the project has an assigned GCS.
-virtual bool                                HasGCS (DgnProjectR) = 0;
+virtual bool                                HasGCS (DgnDbR) = 0;
 
 //! Returns true if a reprojection operation is required to convert UORs from sourceGCS to targetGCS.
 virtual bool                                RequiresReprojection (DgnGCSP sourceGCS, DgnGCSP targetGCS) = 0;

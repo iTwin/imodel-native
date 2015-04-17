@@ -2,255 +2,82 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnModel.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "DgnCore.h"
-#include "DgnProjectTables.h"
-#include "MSElementDescr.h"
-#include "ElementRef.h"
-#include "ModelInfo.h"
+#include "DgnDomain.h"
+#include "DgnElement.h"
+#include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
-//__PUBLISH_SECTION_END__
-#include <Bentley/WString.h>
-
-#define DGN_TABLE_LEVEL_FOR_MODEL(m)  (m)->GetDgnProject().Levels()
-
+DGNPLATFORM_TYPEDEFS (DgnModel2d)
+DGNPLATFORM_TYPEDEFS (DgnModel3d)
 DGNPLATFORM_TYPEDEFS (ElemRangeIndex)
-DGNPLATFORM_TYPEDEFS (SectioningViewController)
-DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
-FOREIGNFORMAT_DGNV8_TYPEDEFS (DgnV8ModelReader)
-
-//__PUBLISH_SECTION_START__
 DGNPLATFORM_TYPEDEFS (ICheckStop)
+DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
+DGNPLATFORM_TYPEDEFS (SectioningViewController)
+DGNPLATFORM_TYPEDEFS (SheetModel)
+DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-typedef bset<ElementRefP> T_StdElementRefSet;
-struct PersistentElementRefList;
+typedef bset<DgnElementP> T_StdDgnElementSet;
 
-//__PUBLISH_SECTION_END__
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   06/11
-//=======================================================================================
-struct AddElementOptions
-{
-    bool m_newElement; // true = created this session, false means loaded from file
-    DgnModelR m_model;
-
-    AddElementOptions (bool isNew, DgnModelR model) : m_newElement(isNew), m_model(model){}
-
-    bool IsNewElement() const {return m_newElement;}
-    bool IsLoadFromFile() const {return !IsNewElement();}
-
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _VerifyElemDescr(ElementListHandler& list, MSElementDescrR descr) const;
-    DGNPLATFORM_EXPORT virtual void _ResolveHandler (MSElementDescrR descr) const;
-    DGNPLATFORM_EXPORT virtual void _ValidateIds(DgnProjectR dgnFile, MSElementDescrR descr) const;
-    DGNPLATFORM_EXPORT virtual void _OnAdded(PersistentElementRefR, bool isGraphicsList) const;
-};
+struct DgnElementMap : bmap<DgnElementId, DgnElementPtr>
+    {
+    void Add(DgnElementR el) 
+        {
+        DgnElementId  id = el.GetElementId();
+        if (!id.IsValid())
+            {
+            BeAssert(false);
+            return;
+            }
+        Insert(id, &el);
+        }
+    };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   06/11
-//=======================================================================================
-struct AddFromUndoOptions : AddElementOptions
-{
-    DEFINE_T_SUPER(AddElementOptions)
-    AddFromUndoOptions(DgnModelR model) : AddElementOptions(false, model) {}
-    virtual DgnModelStatus _VerifyElemDescr(ElementListHandler& list, MSElementDescrR descr) const override {return DGNMODEL_STATUS_Success;}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   06/11
-//=======================================================================================
-struct AddNewElementOptions : AddElementOptions
-{
-    DEFINE_T_SUPER(AddElementOptions)
-    double m_createTime;
-    DGNPLATFORM_EXPORT AddNewElementOptions(DgnModelR);
-
-    DGNPLATFORM_EXPORT virtual void _ValidateIds(DgnProjectR dgnFile, MSElementDescrR descr) const override;
-    DGNPLATFORM_EXPORT virtual void _OnAdded(PersistentElementRefR, bool isGraphicsList) const override;
-};
-
-//__PUBLISH_SECTION_START__
-struct ElementRefMap : bmap<ElementId, PersistentElementRefPtr>{};
-struct ElementRefVec : bvector<PersistentElementRefP>{};
-
-//=======================================================================================
-//! Iterate over the elements in a PersistentElementRefList.
-//! @note It is <b>not legal to add or delete elements to the list while iterating it</b>. To do that, first make a
-//! ElementRefVec by calling PersistentElementRefList::MakeElementRefVec.
-//! @see PersistentElementRefList
+//! Iterate over the elements of a DgnModel.
+//! @note It is <b>not legal to add or delete elements to a DgnModel while iterating it</b>.
+//! @see DgnModel
 //! @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
-struct PersistentElementRefListIterator : std::iterator<std::input_iterator_tag, PersistentElementRefP const>
+struct DgnElementIterator : std::iterator<std::input_iterator_tag, DgnElementP const>
 {
 private:
-    ElementRefMap*                m_map;
-    ElementRefMap::const_iterator m_it;
+    DgnElementMap const*          m_map;
+    DgnElementMap::const_iterator m_it;
 public:
 
-    //! Construct a blank PersistentElementRefListIterator.
-    PersistentElementRefListIterator () {Invalidate();}
+    //! Construct a blank DgnElementIterator.
+    DgnElementIterator() {Invalidate();}
     void Invalidate() {m_map = NULL;}
     bool IsValid() const {return NULL != m_map && m_it != m_map->end();}
 
-    PersistentElementRefP GetCurrentElementRef() const {return IsValid() ? m_it->second.get() : NULL;}
+    DgnElementCP GetCurrentDgnElement() const {return IsValid() ? m_it->second.get() : NULL;}
 
-    //! Change the current ElementRefP pointed to by this iterator to toElm.
-    DGNPLATFORM_EXPORT PersistentElementRefP SetCurrentElementRef (PersistentElementRefP toElm);
+    //! Change the current DgnElementP pointed to by this iterator to toElm.
+    DGNPLATFORM_EXPORT DgnElementCP SetCurrentDgnElement (DgnElementCP toElm);
 
-//__PUBLISH_SECTION_END__
-    //! Set the current position of this iterator to the first element in elmList
-    DGNPLATFORM_EXPORT PersistentElementRefP GetFirstElementRef (PersistentElementRefList* elmList, bool wantDeleted=false);
+    //! Set the current position of this iterator to the first element in DgnModel
+    DGNPLATFORM_EXPORT DgnElementCP GetFirstDgnElement (DgnModelCR elmList, bool wantDeleted=false);
 
-    //! Set the current position of this iterator to the next element in the PersistentElementRefList. If the iterator is currently
-    //! at the end of the list, then CurrElm() will return NULL.
+    //! Set the current position of this iterator to the next element in the DgnModel. If the iterator is currently
+    //! at the end of the DgnModel, then CurrElm() will return NULL.
     //! @param[in] wantDeleted if false, the iterator will skip deleted elements.
-    //! @param[in] wantChildren if false, the iterator will skip the children of complex elements and only return non-complex elements.
-    DGNPLATFORM_EXPORT PersistentElementRefP GetNextElementRef (bool wantDeleted=false);
+    DGNPLATFORM_EXPORT DgnElementCP GetNextDgnElement (bool wantDeleted=false);
 
-//__PUBLISH_SECTION_START__
 public:
-    DGNPLATFORM_EXPORT PersistentElementRefListIterator& operator++();
-    DGNPLATFORM_EXPORT bool operator==(PersistentElementRefListIterator const& rhs) const;
-    bool operator!=(PersistentElementRefListIterator const& rhs) const {return !(*this == rhs);}
+    DGNPLATFORM_EXPORT DgnElementIterator& operator++();
+    DGNPLATFORM_EXPORT bool operator==(DgnElementIterator const& rhs) const;
+    bool operator!=(DgnElementIterator const& rhs) const {return !(*this == rhs);}
 
     //! Access the element data
-    PersistentElementRefP operator*() const {return GetCurrentElementRef();}
-};
-
-//=======================================================================================
-// Values for the Owner column of DGNELEMENT_TABLE_Data
-// @bsiclass                                                    Keith.Bentley   07/11
-//=======================================================================================
-enum ElementOwnerType
-    {
-    OWNER_ChildElem  = 1,
-    OWNER_Physical   = 4,
-    OWNER_Drawing    = 5,
-    OWNER_Component  = 6,
-    };
-
-//__PUBLISH_SECTION_END__
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/11
-//=======================================================================================
-struct ElementListHandler
-{
-    virtual UInt32 _BindGraphicColumns(BeSQLiteStatementP, DgnElementCR) const {return sizeof(DgnElementHeader);}
-    virtual ElementOwnerType _GetElementOwnerType() const = 0;
-    virtual UInt32 _GetHeaderSize() const = 0;
-    virtual void _LoadGraphicColumns(BeSQLiteStatementR, DgnElementP) const {}
-    virtual PersistentElementRefList* _CreateList(DgnModelP) = 0;
-
-    virtual bool _VerifyDimensionality (DgnElementCR) {return true;}
-    virtual DgnModelStatus _VerifyElemDescr (MSElementDescrR elemDescr);
-
-    DgnElementRef& CreateNewElementRef (DgnModelR, MSElementDescrR descr, AddElementOptions const& opts);
-    DgnModelStatus CheckElementIntegrity (DgnElementR);
-
-    DGNPLATFORM_EXPORT DgnModelStatus AddElementToModel (DgnModelR, MSElementDescrR, AddElementOptions const&);
-    DGNPLATFORM_EXPORT DgnModelStatus ReplaceElement (MSElementDescrR newDescr, PersistentElementRefR oldElm, AddElementOptions const& opts);
-};
-
-//__PUBLISH_SECTION_START__
-//=======================================================================================
-//! A iterable list of PersistentElementRefP.
-//! @bsiclass                                                     KeithBentley    10/00
-//=======================================================================================
-struct PersistentElementRefList
-{
-//__PUBLISH_SECTION_END__
-    friend struct ElementListHandler;
-    friend struct PersistentElementRefListIterator;
-    friend struct PersistentElementRef;
-    friend struct DgnModel;
-    friend struct AddElementOptions;
-    friend struct DbElementListReader;
-    friend struct DbElementReloader;
-    friend struct ForeignFormat::DgnV8::DgnV8ModelReader;
-
-protected:
-    ElementRefMap       m_ownedElems;
-    DgnModelP           m_dgnModel;
-    ElementListHandlerR m_listHandler;
-    bool                m_wasFilled; // true if the list was filled from db
-
-    virtual void _EmptyList() {ReleaseAllElements();}
-    virtual void _SetFilled () {m_wasFilled = true;}
-    virtual StatusInt _OnElementAdded (PersistentElementRefR elRef) {return RegisterId(elRef);}
-    virtual void _OnElementModify (PersistentElementRefR elRef) {}
-    virtual void _OnElementModified (PersistentElementRefR elRef) {}
-    virtual void _OnElementDeletedFromDb (PersistentElementRefR, bool canceled);
-
-    DGNPLATFORM_EXPORT void ReleaseAllElements ();
-
-public:
-    PersistentElementRefList (ElementListHandlerR, DgnModelP);
-    virtual ~PersistentElementRefList ();
-    void EmptyList() {_EmptyList();}
-    DGNPLATFORM_EXPORT ElementRefVec MakeElementRefVec() const;
-    DGNPLATFORM_EXPORT UInt32 CountElements() const;
-
-    ElementListHandlerR GetListHandler() const {return m_listHandler;}
-    PersistentElementRefP FindElementById (ElementId id);
-    DGNPLATFORM_EXPORT StatusInt RegisterId (PersistentElementRef& elRef);
-
-    bool WasFilled () const {return m_wasFilled;}
-    DgnModelP MyModel () const {return m_dgnModel;}
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProject() const;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    typedef PersistentElementRefListIterator const_iterator;
-    typedef const_iterator iterator;    //!< only const iteration is possible
-
-    bool IsEmpty () const {return (begin() != end());}
-    DGNPLATFORM_EXPORT const_iterator begin () const;
-    DGNPLATFORM_EXPORT const_iterator end () const;
-    DGNPLATFORM_EXPORT DgnModelP GetDgnModelP() const;
-};
-
-//=======================================================================================
-//! An iterable list of graphical elements that may have a range index
-// @bsiclass                                                    Keith.Bentley   01/12
-//=======================================================================================
-struct GraphicElementRefList : public PersistentElementRefList
-{
-//__PUBLISH_SECTION_END__
-    DEFINE_T_SUPER(PersistentElementRefList)
-    friend struct DgnModel;
-    friend struct QueryModel;
-
-protected:
-    ElemRangeIndexP  m_rangeIndex;               // range tree information
-    virtual void _EmptyList() override {T_Super::_EmptyList(); ClearRangeIndex();}
-    virtual StatusInt _OnElementAdded (PersistentElementRefR elRef) override {if (SUCCESS!=T_Super::_OnElementAdded(elRef)) return ERROR; InsertRangeElement(&elRef,false); return SUCCESS;}
-    virtual void _OnElementModify (PersistentElementRefR elRef) override { T_Super::_OnElementModify(elRef); RemoveRangeElement (elRef);}
-    virtual void _OnElementModified (PersistentElementRefR elRef) override {T_Super::_OnElementModified(elRef); InsertRangeElement(&elRef,false);}
-    virtual void _SetFilled () override {T_Super::_SetFilled(); AllocateRangeIndex();}
-    DGNPLATFORM_EXPORT virtual void _OnElementDeletedFromDb (PersistentElementRefR, bool canceled) override;
-
-    GraphicElementRefList(ElementListHandlerR ListHandler, DgnModelP dgnModel) : PersistentElementRefList (ListHandler,dgnModel) {m_rangeIndex = NULL;}
-    ~GraphicElementRefList() {ClearRangeIndex();}
-
-    DGNPLATFORM_EXPORT void AllocateRangeIndex();
-    DGNPLATFORM_EXPORT void ClearRangeIndex();
-    DGNPLATFORM_EXPORT int GetRangeStamp();
-    void RemoveRangeElement (PersistentElementRefR elemRef);
-
-public:
-    ElemRangeIndexP GetRangeIndexP(bool createIfNotPresent);
-    StatusInt InsertRangeElement (PersistentElementRefP, bool updateDerivedRangeFirst);
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
+    DgnElementCP operator*() const {return GetCurrentDgnElement();}
 };
 
 //========================================================================================
@@ -287,424 +114,359 @@ struct DgnModelAppData
 
     //! Override this method to be notified after the persistent MicroStationModel is undeleted.
     virtual void _OnModelUnDelete (DgnModelR host) {}
-
-    //! Override this method to be notified when a (top-level) element is added to the host DgnModel.
-    //! @remarks This is called before the element is added to the range index.
-    //! @param host         The host model.
-    //! @param elem         The element that was just added to the host model. Note that only top-level elements are reported.
-    //! @param isGraphicsList Is this element in the graphics list of the host model?
-    virtual void _OnElementAdded (DgnModelR host, PersistentElementRef& elem, bool isGraphicsList) {;}
-
-    //! Override this method to be notified when a model's properties are changed.
-    //! @param host         The host model.
-    //! @param original     The model's original properties
-    virtual void _OnSaveModelProperties (DgnModelR host, ModelInfoCR original) {;}
     };
 
 //=======================================================================================
-//! A DgnModel represents a model in memory and holds the elements that belong to the model, if filled.
-//!
-//! <h3>Filling</h3>
-//! Opening a DgnProject does not cause it to load any element data. To access elements, you can either
-//! access them by ElementId, or get a DgnModel and then "fill" it.
-//!   \li Call #FillSections to fill a model.
-//!   \li Call #IsFilled to test if a model is filled.
-//!
-//! A DgnModel contains two DgnElmLists of elements:
-//! the GraphicElm list holds all displayable elements.
-//! Each of these lists is a collection.
-//! If you wish to find only graphic elements, the most efficient way is to call #GetGraphicElementsP and then iterate.
-//! @ingroup DgnFileGroup
+//! The properties for a DgnModel.
+//! @bsiclass
+//=======================================================================================
+struct DgnModelInfo
+{
+    friend struct DgnModel;
+
+private:
+    struct FormatterFlags
+    {
+        uint32_t m_linearUnitMode:2;
+        uint32_t m_linearPrecType:4;
+        uint32_t m_linearPrecision:8;
+        uint32_t m_angularMode:3;
+        uint32_t m_angularPrecision:8;
+        uint32_t m_directionMode:2;
+        uint32_t m_directionClockwise:1;
+        void FromJson (Json::Value const& inValue);
+        void ToJson(Json::Value& outValue) const;
+    };
+
+    FormatterFlags   m_formatterFlags;               //!< Flags saved on "save settings"
+    UnitDefinition   m_masterUnit;                   //!< Master Unit information
+    UnitDefinition   m_subUnit;                      //!< Sub Unit information
+    double           m_roundoffUnit;                 //!< unit lock roundoff val in uors
+    double           m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
+    double           m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
+
+public:
+    DgnModelInfo()
+        {
+        m_formatterFlags.m_linearUnitMode = 0;
+        m_formatterFlags.m_linearPrecType = 0;
+        m_formatterFlags.m_linearPrecision= 0;
+        m_formatterFlags.m_angularMode = 0;
+        m_formatterFlags.m_angularPrecision = 0;
+        m_formatterFlags.m_directionMode = 0;
+        m_formatterFlags.m_directionClockwise = 0;
+        m_roundoffRatio= 0;
+        m_formatterBaseDir = 0;
+        m_roundoffUnit = 0;
+        m_subUnit.Init (UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
+        m_masterUnit = m_subUnit;
+        }
+
+    void FromJson (Json::Value const& inValue);
+    void ToJson(Json::Value& outValue) const;
+
+    //! Set working-units and sub-units. Units must be valid and comparable.
+    DGNPLATFORM_EXPORT BentleyStatus SetWorkingUnits (UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
+
+    void SetLinearUnitMode (DgnUnitFormat value) { m_formatterFlags.m_linearUnitMode = (uint32_t)value; }
+    void SetLinearPrecision (PrecisionFormat value) {
+            m_formatterFlags.m_linearPrecType  = static_cast<uint32_t>(DoubleFormatter::GetTypeFromPrecision (value));
+            m_formatterFlags.m_linearPrecision = DoubleFormatter::GetByteFromPrecision (value);}
+    void SetAngularMode (AngleMode value) { m_formatterFlags.m_angularMode = (uint32_t)value; }
+    void SetAngularPrecision (AnglePrecision value) { m_formatterFlags.m_angularPrecision = (uint32_t)value; }
+    void SetDirectionMode (DirectionMode value) {m_formatterFlags.m_directionMode = (uint32_t)value; }
+    void SetDirectionClockwise (bool value) { m_formatterFlags.m_directionClockwise = value; }
+    void SetDirectionBaseDir (double value) { m_formatterBaseDir = value; }
+
+    DgnUnitFormat GetLinearUnitMode() const {return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
+    PrecisionFormat GetLinearPrecision() const {return DoubleFormatter::ToPrecisionEnum ((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
+    AngleMode GetAngularMode() const {return (AngleMode) m_formatterFlags.m_angularMode; }
+    AnglePrecision GetAngularPrecision() const {return (AnglePrecision) m_formatterFlags.m_angularPrecision; }
+    DirectionMode GetDirectionMode() const {return (DirectionMode) m_formatterFlags.m_directionMode; }
+    bool GetDirectionClockwise() const {return m_formatterFlags.m_directionClockwise; }
+    double GetDirectionBaseDir() const {return m_formatterBaseDir; }
+
+    void SetRoundoffUnit (double roundoffUnit, double roundoffRatio) {m_roundoffUnit  = roundoffUnit;m_roundoffRatio = roundoffRatio;}
+    double GetRoundoffUnit() const {return m_roundoffUnit;}
+    double GetRoundoffRatio() const {return m_roundoffRatio;}
+    FormatterFlags GetFormatterFlags() const    {return m_formatterFlags;}
+    UnitDefinitionCR GetMasterUnit() const {return m_masterUnit;}
+    UnitDefinitionCR GetSubUnit() const {return m_subUnit;}
+};
+
+//=======================================================================================
+//! A DgnModel represents a model in memory and may hold references to elements that belong to it.
 //! @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     {
-//__PUBLISH_SECTION_END__
-
     friend struct DgnModels;
-    friend struct DgnElementRef;
-    friend struct PersistentElementRef;
-    friend struct PersistentElementRefList;
-    friend struct DerivedElementRangeUtils;
-    friend struct DbElementReader;
-    friend struct ModelInfoAccess;
+    friend struct DgnElement;
+    friend struct DgnElementIterator;
+    friend struct DgnElementPool;
 
 protected:
     typedef BeSQLite::AppDataList<DgnModelAppData, DgnModelAppData::Key, DgnModelR> T_AppDataList;
 
-    DgnProjectR     m_project;
+    DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
+    DgnClassId      m_classId;
     T_AppDataList   m_appData;
     Utf8String      m_name;
-    ModelInfo       m_modelInfo;
-    GraphicElementRefList*    m_graphicElems;  // elements that have their "isGraphics" flag on
-    bool  m_readonly;                 // true if this model is from a read-only file.
-    bool  m_isGeoReprojected;         // if true, model has been transformed by application, make sure reference to it is not scaled.
-    bool  m_mark;                     // "mark" that can be used by applications on a temporary basis.
+    DgnModelInfo    m_modelInfo;
+    DgnElementMap   m_elements;
+    mutable ElemRangeIndexP m_rangeIndex;
+    bool            m_wasFilled;    // true if the list was filled from db
+    bool            m_readonly;     // true if this model is from a read-only file.
+    bool            m_mark;         // "mark" that can be used by applications on a temporary basis.
 
-private:
-    void UpdateElmDscrInPlace (PersistentElementRefP, MSElementDescrP newEL, ElementRefP parent, bool directWrite);
-    ElementListHandlerR DetermineListHandler (MSElementDescrR);
-
-protected:
-    DGNPLATFORM_EXPORT DgnModel (DgnProjectR project, DgnModelId modelID, Utf8CP name);
-    DGNPLATFORM_EXPORT virtual ~DgnModel ();
+    DGNPLATFORM_EXPORT DgnModel(DgnDbR project, DgnModelId modelID, DgnClassId classId, Utf8CP name);
+    DGNPLATFORM_EXPORT virtual ~DgnModel();
 
     virtual DgnModelType _GetModelType() const = 0;
     virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) {return BeSQLite::BE_SQLITE_ERROR;}
-    DGNPLATFORM_EXPORT virtual void _Dump (int nestLevel, bool brief) const;
-    virtual ElementListHandlerR _GetGraphicElementHandler() const = 0;
     virtual bool _Is3d() const = 0;
-    DGNPLATFORM_EXPORT virtual void _ToSettingsJson(Json::Value&) const;
-    DGNPLATFORM_EXPORT virtual void _FromSettingsJson(Json::Value const&);
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);
     DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const ;
-    DGNPLATFORM_EXPORT virtual BentleyStatus _LoadFromDb();
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnReplaceElement(DgnElementR element, DgnElementR replacement);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnAddElement(DgnElementR element);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementR element);
+    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementR el);
+    DGNPLATFORM_EXPORT virtual void _OnAddedElement(DgnElementR el);
+    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementR element, bool cancel);
+    DGNPLATFORM_EXPORT virtual void _OnReplacedElement(DgnElementR element, DgnElementR original);
+
+    virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
+    virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
+    virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
+    virtual PlanarPhysicalModelCP _ToPlanarPhysicalModel() const {return nullptr;}
+    virtual SheetModelCP _ToSheetModel() const {return nullptr;}
+
+    void RegisterElement(DgnElementR);
+    void SetFilled() {m_wasFilled=true; AllocateRangeIndex();}
+    void AllocateRangeIndex() const;
+    void ClearRangeIndex();
+    int GetRangeStamp();
+    void ReleaseAllElements();
 
 public:
-    DGNPLATFORM_EXPORT void Dump (int nestLevel, bool brief) const;
-    DGNPLATFORM_EXPORT bool NotifyOnEmpty ();
+    //! Add graphics to the scene.
+    //! Normally, the scene is generated by QueryViewController from the elements in a model.
+    //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
+    //! can override this method to do add graphics that QueryViewController would normally exclude.
+    //! Currently, only QueryViewController calls this method.
+    virtual void _AddGraphicsToScene(ViewContextR) {;}
+
+    bool NotifyOnEmpty();
+
+    DGNPLATFORM_EXPORT DgnModelStatus ReplaceElement(DgnElementR element, DgnElementR replacement);
 
     void ModelFillComplete();
-    void SetIsGeographicReprojected (bool newState) {m_isGeoReprojected = newState;}
-    bool IsGeographicReprojected () {return m_isGeoReprojected;}
-    void ChangeToReadOnly ();
-    DGNPLATFORM_EXPORT bool SetReadOnly (bool newState);
-    void ElementChanged(DgnElementRef&, ElemRefChangeReason);
-    void ElementAdded(PersistentElementRef&, bool isGraphicsList);
-    void OnElementDeletedFromDb(PersistentElementRefR, bool canceled);
+    void ElementChanged(DgnElement&, DgnElementChangeReason);
     DGNPLATFORM_EXPORT ElemRangeIndexP GetRangeIndexP(bool create) const;
     StatusInt GetRangeIfKnown (DRange3dR pRange);
-    BentleyStatus LoadFromDb();
+    void ReadProperties();
     DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProperties();
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveSettings();
 
-    bool IsReadOnly () {return m_readonly;}
-    DGNPLATFORM_EXPORT bool IsLocked () const; // == GetModelInfo().GetIsLocked()
-    bool IsReadonlyOrLocked () const {return IsReadOnly() || IsLocked();}
-    DGNPLATFORM_EXPORT void ClearAllDirtyFlags ();
-    QvCache* GetQvCache ();
-    void ClearAllQvElems ();
-    DGNPLATFORM_EXPORT void SetFilled ();
-    DGNPLATFORM_EXPORT BeSQLite::DbResult ChangeElementHandlerInDb (ElementId, ElementHandlerId);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult ChangeElementLevelInDb (ElementId elementId, LevelId levelId);
+    DGNPLATFORM_EXPORT void ClearAllDirtyFlags();
+    void ClearAllQvElems();
 
-    bool GetMark () { return m_mark; }
+    bool GetMark() { return m_mark; }
     void SetMark (bool mark) { m_mark = mark; }
-    DGNPLATFORM_EXPORT double GetLineStyleScale () const;
-    DGNPLATFORM_EXPORT double GetBRepScaleToDestination (DgnModelR dst);
 
-    //! Direct element I/O. To be called only by Itxn!
-    //! Add a new element to this model.
-    //! @param[in,out] newEl The new element to add. The "elementID" and "elementRef" fields of the header
-    //!                       are updated to reflect the new persistent state of the element.
-    //! @return SUCCESS if the element was successfully added to the DgnModel.
-    //! @see #PersistentElementRefP::DeleteElement for how to delete an element.
-    DGNPLATFORM_EXPORT DgnModelStatus AddElementDescr (MSElementDescrR newEl, AddElementOptions const&);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
     DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
-    DGNPLATFORM_EXPORT double GetSubPerMaster () const;
+    DGNPLATFORM_EXPORT double GetSubPerMaster() const;
     DGNPLATFORM_EXPORT DPoint3d GetGlobalOrigin() const;
     DGNPLATFORM_EXPORT BeSQLite::DbResult CopyPropertiesFrom(DgnModelCR);
 
-/** @name Filling */
-/** @{ */
+    /** @name Filling */
+    /** @{ */
     //! Empty the contents of this model.
-    DGNPLATFORM_EXPORT void Empty ();
+    DGNPLATFORM_EXPORT void Empty();
 
     //! Make sure this model is filled.
     DGNPLATFORM_EXPORT DgnFileStatus FillModel();
 
     //! Determine whether this model has been "filled" from disk or not.
     //! @return true if the model is filled.
-    DGNPLATFORM_EXPORT bool IsFilled() const;
+    bool IsFilled() const {return m_wasFilled;}
 
-    //! Get the number of loaded elements in this model.
+    //! Get the number of elements in this model.
     //! @return the number of elements in this model.
-    //! @note The model must be filled before calling this method. 
+    //! @note The model must be filled before calling this method.
     //! @see FillSections
-    DGNPLATFORM_EXPORT UInt32 GetElementCount() const;
-/** @} */
+    DGNPLATFORM_EXPORT uint32_t CountElements() const;
+    /** @} */
 
-/** @name Finding Elements */
-/** @{ */
-    DGNPLATFORM_EXPORT GraphicElementRefList* GetGraphicElementsP(bool createIfNotPresent=false) const;
-
-    //=======================================================================================
-    //! Iterator over the elements in a DgnModel.
-    //! @bsiclass                                                     KeithBentley    10/00
-    //=======================================================================================
-    struct ElementRefIterator : std::iterator<std::forward_iterator_tag, PersistentElementRefP const>
-    {
-    private:
-    //__PUBLISH_SECTION_END__
-    public:
-    //__PUBLISH_SECTION_START__
-        enum IteratorState {ITERATING_GraphicElms = 2, ITERATING_HitEOF = 3};
-
-    private:
-        PersistentElementRefListIterator m_iter;
-        DgnModelP                       m_model;
-        IteratorState                   m_state;
-
-    private:
-    //__PUBLISH_SECTION_END__
-    public:                                  // Make sure this is not constructible in the published API
-    //__PUBLISH_SECTION_START__
-        ElementRefIterator () {m_model = NULL; m_state = ITERATING_GraphicElms;}
-        DGNPLATFORM_EXPORT ElementRefIterator (DgnModel* pModel);    // iterate this model only
-        DGNPLATFORM_EXPORT ElementRefIterator (ElementRefIterator *source);
-
-    //__PUBLISH_SECTION_END__
-    public:
-        PersistentElementRefP GetCurrentElementRef() {return m_iter.GetCurrentElementRef();}
-        IteratorState GetState () {return m_state;}
-        DgnModelP GetModel () {return m_model;}
-
-        DGNPLATFORM_EXPORT PersistentElementRefP GetFirstElementRef (DgnModelP pModel, bool wantDeleted=false);
-                       PersistentElementRefP GetFirstElementRef () { return GetFirstElementRef (m_model, false); }
-        DGNPLATFORM_EXPORT PersistentElementRefP GetNextElementRef (bool wantDeleted=false);
-                       void SetModel (DgnModelP dgnModel) {m_model = dgnModel; m_iter.Invalidate();}
-        DGNPLATFORM_EXPORT bool SetCurrentElm (PersistentElementRefP toElm);
-        DGNPLATFORM_EXPORT void SetAtEOF ();
-        bool HitEOF () const {return m_state == ITERATING_HitEOF;}
-    //__PUBLISH_SECTION_START__
-    public:
-        DGNPLATFORM_EXPORT ElementRefIterator& operator++();
-        DGNPLATFORM_EXPORT bool operator!=(ElementRefIterator const& rhs) const;
-        bool operator==(ElementRefIterator const& rhs) const {return !(*this != rhs);}
-
-        //! Access the element data
-        DGNPLATFORM_EXPORT PersistentElementRefP operator* () const;
-    };
-
-#if defined (NEEDS_WORK_DGNITEM)
-    //=======================================================================================
-    //! Collection of all elements in a model
-    //! @bsiclass                                                 Sam.Wilson      05/2009
-    //=======================================================================================
-    struct      ElementsCollection
-    {
-    private:
-        friend struct  DgnModel;
-        DgnModel const& m_model;
-        ElementsCollection (DgnModelCR model) : m_model(model) {}
-
-    public:
-        typedef ElementRefIterator const_iterator;
-        typedef const_iterator iterator;    //!< only const iteration is possible
-        DGNPLATFORM_EXPORT const_iterator begin () const;
-        DGNPLATFORM_EXPORT const_iterator end () const;
-    };
-
-    //!Get the collection of all elements in the model, including both control and graphics elements.
-    //!   Example:
-    //!   \code
-    //!   for (PersistentElementRefP ref : model.GetElementsCollection ())
-    //!       {
-    //!       ...
-    //!       }
-    //!   \endcode
-    //! @see GetControlElementsP, GetGraphicElementsP
-    ElementsCollection GetElementsCollection () const {return ElementsCollection (*this);}
-#endif
-
-    //! Find a PersistentElementRefP in this model by ElementId.
-    //! @return PersistentElementRefP of element with \a id, or NULL.
-    DGNPLATFORM_EXPORT PersistentElementRefP FindElementById (ElementId id);
-/** @} */
-
-/** @name Model properties */
-/** @{ */
-    typedef DgnModelProperty::Spec const& DgnModelPropertySpecCR;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProperty (DgnModelPropertySpecCR , void const* value, UInt32 size, UInt64 id=0);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SavePropertyString (DgnModelPropertySpecCR , Utf8StringCR, UInt64 id=0);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryProperty (void* value, UInt32 size, DgnModelPropertySpecCR , UInt64 id=0);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryProperty (Utf8StringR, DgnModelPropertySpecCR, UInt64 id=0);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryPropertySize (UInt32& size, DgnModelPropertySpecCR spec, UInt64 id);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteProperty (UInt32& size, DgnModelPropertySpecCR spec, UInt64 id);
-
-    //! Get the ModelId for this model.
-    DGNPLATFORM_EXPORT DgnModelId GetModelId () const;
+    /** @name Finding Elements */
+    /** @{ */
+    //! Find a DgnElementP in this model by DgnElementId.
+    //! @return DgnElementP of element with \a id, or NULL.
+    DGNPLATFORM_EXPORT DgnElementP FindElementById(DgnElementId id);
+    /** @} */
 
     //! Query if this is a 3D model
-    DGNPLATFORM_EXPORT bool Is3d () const;
+    bool Is3d() const {return _Is3d();}
 
     //! Get the range of all graphical elements in the model.
     DGNPLATFORM_EXPORT BeSQLite::DbResult QueryModelRange (DRange3dR range);
 
-//__PUBLISH_SECTION_END__
     //! Get the ModelInfo for this model.
     //! This should only be used internally. ModelInfo should NOT be modified directly because the values need to be verified for the given model.
-    DGNPLATFORM_EXPORT ModelInfoR GetModelInfoR ();
+    DGNPLATFORM_EXPORT DgnModelInfoR GetModelInfoR();
 
-//__PUBLISH_SECTION_START__
-public:
     //! Get the ModelInfo for this model.
-    DGNPLATFORM_EXPORT ModelInfoCR GetModelInfo() const;
+    DGNPLATFORM_EXPORT DgnModelInfoCR GetModelInfo() const;
 
     //! Get the name of this model
-    DGNPLATFORM_EXPORT Utf8CP GetModelName () const;
-
-    DGNPLATFORM_EXPORT DgnModelType GetModelType() const;
+    Utf8CP GetModelName() const {return m_name.c_str();}
+    DgnModelType GetModelType() const {return _GetModelType();}
+    DgnClassId GetClassId() const {return m_classId;}
+    DgnModelId GetModelId() const {return m_modelId;}
 
     //! Determine whether this is a readonly DgnModel or not.
-    DGNPLATFORM_EXPORT bool IsReadOnly () const;
+    bool IsReadOnly() const {return m_readonly;}
+    void SetReadOnly(bool val) {m_readonly = val;}
 
-    //! Get the project that contains this model.
-    //! @return the DgnProject that contains this model.
-    DGNPLATFORM_EXPORT DgnProjectR GetDgnProject() const;
+    //! Get the DgnDb that contains this model.
+    //! @return the DgnDb that contains this model.
+    DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the spatial extent of all elements in this model.
     //! @param[out]     range      Filled with the union of all of the ranges of the elements in model.
     DGNPLATFORM_EXPORT StatusInt GetRange(DRange3dR range);
 
-/** @} */
-
-/** @name DgnModelAppData */
-/** @{ */
+    /** @name DgnModelAppData */
+    /** @{ */
     //! Add (or replace) appData to this model.
     //! @return SUCCESS if appData was successfully added. Note that it is illegal to add or remove AppData from within
     //! any of the AppData "_On" methods. If an entry with \a key already exists, it will be dropped and replaced with \a appData.
-    DGNPLATFORM_EXPORT StatusInt AddAppData (DgnModelAppData::Key const& key, DgnModelAppData* appData);
+    DGNPLATFORM_EXPORT StatusInt AddAppData(DgnModelAppData::Key const& key, DgnModelAppData* appData);
     //! @return SUCCESS if appData with key is found and was dropped.
     //! @remarks Calls the app data object's _OnCleanup method.
-    DGNPLATFORM_EXPORT StatusInt DropAppData (DgnModelAppData::Key const& key);
+    DGNPLATFORM_EXPORT StatusInt DropAppData(DgnModelAppData::Key const& key);
 
     //! Search for appData on this model that was added with the specified key.
-    //! @return the DgnModelAppData with \a key, or NULL.
-    DGNPLATFORM_EXPORT DgnModelAppData* FindAppData (DgnModelAppData::Key const& key) const;
-/** @} */
+    //! @return the DgnModelAppData with \a key, or nullptr.
+    DGNPLATFORM_EXPORT DgnModelAppData* FindAppData(DgnModelAppData::Key const& key) const;
+    /** @} */
+
+    typedef DgnElementIterator const_iterator;
+    typedef const_iterator iterator;    //!< only const iteration is possible
+
+    bool IsEmpty() const {return (begin() != end());}
+    DGNPLATFORM_EXPORT const_iterator begin() const;
+    DGNPLATFORM_EXPORT const_iterator end() const;
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   10/11
+// @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : DgnModel
 {
     DEFINE_T_SUPER(DgnModel)
-//__PUBLISH_SECTION_END__
+
 protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
-    virtual ElementListHandlerR _GetGraphicElementHandler() const override;
     virtual bool _Is3d() const override {return true;}
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) override;
+    virtual DgnModel3dCP _ToDgnModel3d() const override {return this;}
 
 public:
-    PhysicalModel (DgnProjectR project, DgnModelId modelId, Utf8CP name) : DgnModel (project, modelId, name) {}
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-    //! Create a PhysicalGraphics associated with this model on the specified level. 
-    //! @param[in] level The level to create this PhysicalGraphics on.
-    //! @return The newly created PhysicalGraphics. 
-    //! @see DgnGraphicsGroup
-    DGNPLATFORM_EXPORT PhysicalGraphicsPtr CreatePhysicalGraphics (LevelId level = LEVEL_DEFAULT_LEVEL_ID);
-
-    //! Create a PhysicalGraphics and populate it from the element in this DgnModel with the specified id.
-    //! @param[in] id The ElementId of the element to create this PhysicalGraphics from.
-    //! @return The newly created PhysicalGraphics. 
-    //! @see DgnGraphicsGroup
-    DGNPLATFORM_EXPORT PhysicalGraphicsPtr ReadPhysicalGraphics (ElementId id);
+    DgnModel3d(DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel(project, modelId, classId, name) {}
 };
 
 //=======================================================================================
-//! @private
+//! A DgnModel2d is a infinite planar model. Coordinates values are X,Y.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : PhysicalModel
-{
-    DEFINE_T_SUPER(PhysicalModel)
-//__PUBLISH_SECTION_END__
-protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Component;}
-    virtual DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
-
-public:
-    ComponentModel (DgnProjectR project, DgnModelId modelId, Utf8CP name) : PhysicalModel (project, modelId, name) {}
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-};
-
-//=======================================================================================
-//! A Drawing Model is a infinite planar model.
-// @bsiclass                                                    Keith.Bentley   10/11
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : DgnModel
+struct DgnModel2d : DgnModel
     {
     DEFINE_T_SUPER(DgnModel)
 
-//__PUBLISH_SECTION_END__
 protected:
-    DPoint2d m_globalOrigin;       //!< Global Origin - in millimeters
+    DPoint2d m_globalOrigin;    //!< Global Origin - all coordinates are offset by this value.
 
-    DGNPLATFORM_EXPORT virtual ElementListHandlerR _GetGraphicElementHandler() const override;
     virtual bool _Is3d() const override {return false;}
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
     virtual DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
+    virtual DgnModel2dCP _ToDgnModel2d() const override {return this;}
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) override;
 
 public:
     void SetGlobalOrigin(DPoint2dCR org) {m_globalOrigin = org;}
 
-    DgnModel2d (DgnProjectR project, DgnModelId modelId, Utf8CP name) : DgnModel (project, modelId, name) {m_globalOrigin.Zero();}
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-
-    //! Create a DrawingGraphics associated with this drawing model on the specified level.
-    //! @param[in] level The level to create this DrawingGraphics on.
-    //! @return The newly created DrawingGraphics.
-    //! @see DgnGraphicsGroup
-    DGNPLATFORM_EXPORT DrawingGraphicsPtr Create2dGraphics (LevelId level = LEVEL_DEFAULT_LEVEL_ID);
-
-    //! Create a DrawingGraphics and populate it from the element in this DgnModel with the specified id.
-    //! @param[in] id The ElementId of the element to create this DrawingGraphics from.
-    //! @return The newly created DrawingGraphics. 
-    //! @see DgnGraphicsGroup
-    DGNPLATFORM_EXPORT DrawingGraphicsPtr Read2dGraphics (ElementId id);
+    DgnModel2d (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel (project, modelId, classId, name) {m_globalOrigin.Zero();}
     };
 
 //=======================================================================================
-//! A Drawing Model is a infinite planar model.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : DgnModel2d
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
 {
-    DEFINE_T_SUPER(DgnModel2d)
-
-//__PUBLISH_SECTION_END__
+    DEFINE_T_SUPER(DgnModel3d)
 protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
+    virtual DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
+    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) override;
+    virtual PhysicalModelCP _ToPhysicalModel() const override {return this;}
 
 public:
-    DrawingModel (DgnProjectR project, DgnModelId modelId, Utf8CP name) : DgnModel2d (project, modelId, name) {}
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
+    PhysicalModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel3d (project, modelId, classId, name) {}
 };
 
 //=======================================================================================
-//! A SectionDrawingModel represents a plane in physical space. The SectionDrawingModel contains 
+//! @private
+// @bsiclass                                                    Keith.Bentley   10/11
+//=======================================================================================
+struct ComponentModel : DgnModel3d
+{
+    DEFINE_T_SUPER(DgnModel3d)
+
+protected:
+    virtual DgnModelType _GetModelType() const override {return DgnModelType::Component;}
+    virtual DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
+
+public:
+    ComponentModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel3d(project, modelId, classId, name) {}
+};
+
+//=======================================================================================
+//! A PlanarPhysicalModel is a infinite planar model that is positioned in physical space.
+// @bsiclass                                                    Keith.Bentley   10/11
+//=======================================================================================
+struct PlanarPhysicalModel : DgnModel2d
+{
+    DEFINE_T_SUPER(DgnModel2d)
+
+    Transform m_worldTrans;  // positions XY model coordinates into XYZ physical coordinates
+
+protected:
+    virtual void _FromPropertiesJson(Json::Value const&) override;
+    virtual void _ToPropertiesJson(Json::Value&) const override;
+    virtual DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
+    virtual PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
+
+public:
+    PlanarPhysicalModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel2d (project, modelId, classId, name) {m_worldTrans.InitIdentity();}
+
+    Transform GetTransformToWorld() const {return m_worldTrans;} //!< Returns the transform FROM a local coordinate system TO world coordinates.
+    void SetTransformToWorld(TransformCR trans) {m_worldTrans=trans;}
+};
+
+//=======================================================================================
+//! A SectionDrawingModel represents a plane in physical space. The SectionDrawingModel contains
 //! graphics that were computed in some way by intersecting physical models with the drawing model plane.
 //! SectionDrawingModel can have one or more convex clip plane sets that can be used to clip a
 //! physical view in order to display the drawing.
 //! SectionDrawingModels can also contain 2-D annotation elements.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DrawingModel
+struct SectionDrawingModel : PlanarPhysicalModel
     {
-    DEFINE_T_SUPER(DrawingModel)
+    DEFINE_T_SUPER(PlanarPhysicalModel)
 
-//__PUBLISH_SECTION_END__
 protected:
-    Transform m_transformFromDrawingLCS;  // Equal to m_transformFromCutPlaneLCS, plus additional scaling and possibly additional translation.
     DRange1d m_zrange; // range of Z values of non-planar proxy graphics such as "forward" visible edges in drawing's LCS.
     double m_annotationScale; // the intended viewing scale of annotations in this drawing
 
@@ -713,9 +475,8 @@ protected:
     DRange1d GetZRange() const {return m_zrange;}
 
 public:
-    SectionDrawingModel (DgnProjectR project, DgnModelId modelId, Utf8CP name) : DrawingModel (project, modelId, name) 
+    SectionDrawingModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : PlanarPhysicalModel (project, modelId, classId, name)
         {
-        m_transformFromDrawingLCS.InitIdentity();
         m_zrange.InitNull();
         m_annotationScale = 1.0;
         }
@@ -725,8 +486,6 @@ public:
     DGNPLATFORM_EXPORT SectioningViewControllerPtr GetSourceView();
 
 public:
-    Transform GetTransformToWorld() const {return m_transformFromDrawingLCS;} //!< Returns the transform FROM a local coordinate system that lies in one of the cut planes TO world/project coordinates.
-    void SetTransformFromDrawingLCS (TransformCR t) {m_transformFromDrawingLCS=t;} //!< Stores the transform FROM a local coordinate system that lies in one of the cut planes TO world/project coordinates.
 
     Transform GetFlatteningMatrix (double zdelta = 0.0) const; //!< Get the matrix to use when viewing this model. It ensures that all elements lie in the LCS plane.
     void AddToZRange (double z) {m_zrange.Extend(z);} //!< Report the Z value of non-planar proxy graphics such as "forward" visible edges in drawing's LCS.
@@ -734,10 +493,8 @@ public:
     //! Set the scale of annotations in this drawing
     void SetAnnotationScale (double s) {m_annotationScale = s;}
 
-    //! Get the scale of annotations in this drawing 
+    //! Get the scale of annotations in this drawing
     double GetAnnotationScale() const {return m_annotationScale;}
-
-//__PUBLISH_SECTION_START__
     };
 
 //=======================================================================================
@@ -747,25 +504,36 @@ public:
 struct SheetModel : DgnModel2d
     {
     DEFINE_T_SUPER(DgnModel2d)
-//__PUBLISH_SECTION_END__
 protected:
     virtual DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
+    virtual SheetModelCP _ToSheetModel() const {return this;}
 
 public:
-    SheetModel (DgnProjectR project, DgnModelId modelId, Utf8CP name) : DgnModel2d (project, modelId, name) {}
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
+    SheetModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel2d (project, modelId, classId, name) {}
     };
 
 //=======================================================================================
-//! A DgnModelList is-a bvector of DgnModel pointers.
-//! @deprecated
-//! @private
+// @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
-struct DgnModelList : bvector<DgnModelP>
-    {
-    bool IsFound (DgnModelP modelRef) const {return std::find (begin(), end(), modelRef) != end();}
-    };
+struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : DgnDomain::Handler
+{
+    HANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, ModelHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+
+protected:
+    ModelHandlerP _ToModelHandler() override {return this;}
+
+public:
+    //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class
+    //! of "dgn.Model".
+    DGNPLATFORM_EXPORT static ModelHandlerP FindHandler(DgnDb const&, DgnClassId handlerId);
+
+    //! Create an instance of a DgnModel for a Model, if appropriate.
+    //! @param[in] db The DgnDb for the model
+    //! @param[in] model The DgnModels::Model to test.
+    //! @return an instance of a DgnModel for the supplied DgnModels::Model, or NULL if the Model is not of interest.
+    //! All registered DgnModel::Factory are called, in turn, until one of them returns non-NULL.
+    DGNPLATFORM_EXPORT virtual DgnModelPtr _SupplyDgnModel(DgnDbR db, DgnModels::Model const& model);
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

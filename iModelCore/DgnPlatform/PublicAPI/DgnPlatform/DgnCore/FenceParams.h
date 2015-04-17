@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/FenceParams.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,7 @@ double                  m_onTolerance;
 double                  m_unusedRemove;
 double                  m_zCameraLimit;
 
-ViewportP               m_viewport;
+DgnViewportP               m_viewport;
 
 FenceClipMode           m_clipMode;
 bool                    m_clipOwned;
@@ -87,7 +87,7 @@ DRange3dCP                      GetFenceRange () {return &m_fenceRange;}
 DGNPLATFORM_EXPORT bool         PointInsideClip (DPoint3dCR testPoint);
 DGNPLATFORM_EXPORT bool         PointInOtherClips (DPoint3dCR testPoint, ClipPrimitiveCP clip);
 DGNPLATFORM_EXPORT ClipVectorP  ExtractClipP ();
-DGNPLATFORM_EXPORT void         PushClip (ViewContextP, ViewportP vp, bool displayCut=true);
+DGNPLATFORM_EXPORT void         PushClip (ViewContextP, DgnViewportP vp, bool displayCut=true);
 DGNPLATFORM_EXPORT StatusInt    PushClip (ViewContextR, TransformCP transform) const;
 DGNPLATFORM_EXPORT void         ClearCurrentClip ();
 DGNPLATFORM_EXPORT void         ClearSplitParams ();
@@ -108,7 +108,7 @@ DGNPLATFORM_EXPORT void         ParseAcceptedElement (ElementAgendaP inside, Ele
 public:
 
 //! Setup the fence parameters from the supplied viewport.
-DGNPLATFORM_EXPORT void                 SetViewParams (ViewportP);
+DGNPLATFORM_EXPORT void                 SetViewParams (DgnViewportP);
 
 //! Set fence mode to inside or overlap for when the clip model is none.
 DGNPLATFORM_EXPORT void                 SetOverlapMode (bool mode);
@@ -132,7 +132,7 @@ DGNPLATFORM_EXPORT StatusInt            StoreClippingPoints (bool outside, DPoin
 DGNPLATFORM_EXPORT StatusInt            StoreClippingVector (ClipVectorCR clip, bool outside);
 
 //! Return 2d clipping points suitable for calling StoreClippingPoints from 3d input points in the coordinates of the view's root model.
-DGNPLATFORM_EXPORT void                 ClippingPointsFromRootPoints (DPoint2dP, DPoint3dP, int numPts, ViewportP);
+DGNPLATFORM_EXPORT void                 ClippingPointsFromRootPoints (DPoint2dP, DPoint3dP, int numPts, DgnViewportP);
 
 //! Return true if fence was defined by 2d points in a camera view.
 DGNPLATFORM_EXPORT bool                 IsCameraOn () const;
@@ -147,7 +147,7 @@ DGNPLATFORM_EXPORT ClipVectorPtr        GetClipVector () const;
 DGNPLATFORM_EXPORT FenceClipMode        GetClipMode () const;
 
 //! Return current fence viewport.
-DGNPLATFORM_EXPORT ViewportP            GetViewport () const;
+DGNPLATFORM_EXPORT DgnViewportP            GetViewport () const;
 
 //! Return the target model for fence viewport. Used as destination for copy with clip.
 DGNPLATFORM_EXPORT DgnModelP            GetDgnModel () const;

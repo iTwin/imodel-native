@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsElem.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
@@ -19,8 +19,8 @@
 struct ElmIDMapEntry
     {
     LsLocation          location;
-    ElementId           elmID;
-    MSElementDescr      *pEntryElm;
+    DgnElementId        elmID;
+    DgnElementP pEntryElm;
     } ;
 
 #define CREATE_ELM_ID_ENTRY(entry, pLocation, eID, elm) \
@@ -30,8 +30,8 @@ struct ElmIDMapEntry
 
 Public int      lstyleElm_appendLineStyleDefElm
 (
-MSElementDescrP pEntryElement,     /* => element to append*/
-DgnProjectP        dgnFile             /* => */
+DgnElementP pEntryElement,     /* => element to append*/
+DgnDbP        dgnFile             /* => */
 );
 
 /*---------------------------------------------------------------------------------**//**

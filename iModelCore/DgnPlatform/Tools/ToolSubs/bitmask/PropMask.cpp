@@ -81,7 +81,7 @@ IPropMask const*    from
 StatusInt       IPropMask::_SetBitMaskForCategory
 (
 BitMaskP                pBitMaskIn,
-UInt16                  categoryIdIn
+uint16_t                categoryIdIn
 )
     {
     if (0 > categoryIdIn || _GetMaxCategories () <= categoryIdIn)
@@ -103,7 +103,7 @@ UInt16                  categoryIdIn
 StatusInt       IPropMask::_GetBitMaskByCategory
 (
 BitMaskH            ppBitMaskOut,
-UInt16              categoryIdIn
+uint16_t            categoryIdIn
 ) const
     {
     if (0 > categoryIdIn || _GetMaxCategories () <= categoryIdIn)
@@ -127,7 +127,7 @@ void
     {
     if (NULL != m_bitMaskArray)
         {
-        UInt16      iCategory;
+        uint16_t    iCategory;
         BitMaskP    pBitMask;
 
         for (iCategory = 0; iCategory < _GetMaxCategories (); iCategory++)
@@ -146,9 +146,9 @@ void
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       IPropMask::_SetCategoryByBitArray
 (
-UInt16          pArrayIn[],
+uint16_t        pArrayIn[],
 int             nValidBits,
-UInt16          categoryId
+uint16_t        categoryId
 )
     {
     BitMaskP    pBitMask = NULL;
@@ -178,7 +178,7 @@ UInt16          categoryId
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       IPropMask::_SetBitByCategoryAndPosition
 (
-UInt16              categoryID,
+uint16_t            categoryID,
 int                 bitPosition,
 bool                bitValue
 )
@@ -220,7 +220,7 @@ void
     {
     if (NULL != m_bitMaskArray)
         {
-        UInt16      iCategory;
+        uint16_t    iCategory;
         BitMaskP    pBitMask;
 
         for (iCategory = 0; iCategory < _GetMaxCategories (); iCategory++)
@@ -234,7 +234,7 @@ void
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sridhar.Margam                  12/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IPropMask::SetBitMaskForCategory (BitMaskP pBitMaskIn, UInt16 categoryIdIn)
+StatusInt       IPropMask::SetBitMaskForCategory (BitMaskP pBitMaskIn, uint16_t categoryIdIn)
     {
     return _SetBitMaskForCategory (pBitMaskIn, categoryIdIn);
     }
@@ -242,7 +242,7 @@ StatusInt       IPropMask::SetBitMaskForCategory (BitMaskP pBitMaskIn, UInt16 ca
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sridhar.Margam                  12/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IPropMask::GetBitMaskByCategory (BitMaskH ppBitMaskOut, UInt16 categoryIdIn) const
+StatusInt       IPropMask::GetBitMaskByCategory (BitMaskH ppBitMaskOut, uint16_t categoryIdIn) const
     {
     return _GetBitMaskByCategory (ppBitMaskOut, categoryIdIn);
     }
@@ -258,7 +258,7 @@ bool            IPropMask::SetAnyBit ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sridhar.Margam                  12/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IPropMask::SetCategoryByBitArray (UInt16 pArrayIn[], int nValidBits, UInt16 categoryId)
+StatusInt       IPropMask::SetCategoryByBitArray (uint16_t pArrayIn[], int nValidBits, uint16_t categoryId)
     {
     return _SetCategoryByBitArray (pArrayIn, nValidBits, categoryId);
     }
@@ -266,7 +266,7 @@ StatusInt       IPropMask::SetCategoryByBitArray (UInt16 pArrayIn[], int nValidB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sridhar.Margam                  12/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IPropMask::SetBitByCategoryAndPosition (UInt16 categoryId, int bitPosition, bool bitValue)
+StatusInt       IPropMask::SetBitByCategoryAndPosition (uint16_t categoryId, int bitPosition, bool bitValue)
     {
     return _SetBitByCategoryAndPosition (categoryId, bitPosition, bitValue);
     }

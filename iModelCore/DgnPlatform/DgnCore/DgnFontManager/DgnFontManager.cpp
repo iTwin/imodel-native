@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnFontManager/DgnFontManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -13,123 +13,48 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2009
 //---------------------------------------------------------------------------------------
-DgnGlyphLayoutContext::DgnGlyphLayoutContext(DgnFontCR font, DgnFontCP shxBixFont)
+DgnGlyphLayoutContext::DgnGlyphLayoutContext(DgnFontCR font, FontCharCP chars, size_t count) :
+m_font(&font),
+m_size(DPoint2d::FromZero()),
+m_isBold(false),
+m_shouldUseItalicTypeface(false),
+m_shouldIgnorePercentEscapes(false)
     {
-    m_font = &font;
-    m_shxBigFont = shxBixFont;
-
-    m_characterSpacingType = CharacterSpacingType::Absolute;
-    m_characterSpacingValue = 0.0;
-    m_displayOffset.Zero();
-    m_displaySize.Zero();
-    m_isBold = false;
-    m_shouldUseItalicTypeface = false;
-    m_runLayoutFlags = GLYPH_RUN_LAYOUT_FLAG_None;
-    m_glyphLayoutListener = NULL;
-    m_shouldIgnoreDisplayShifts = false;
-    m_shouldIgnorePercentEscapes = false;
-    m_shouldIgnoreLsb = false;
+    m_fontChars.resize(count);
+    memcpy(&m_fontChars[0], chars, (sizeof(FontChar) * count));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2009
 //---------------------------------------------------------------------------------------
-CharacterSpacingType DgnGlyphLayoutContext::GetCharacterSpacingType() const { return m_characterSpacingType; }
-void DgnGlyphLayoutContext::SetCharacterSpacingType(CharacterSpacingType value) { m_characterSpacingType = value; }
-double DgnGlyphLayoutContext::GetCharacterSpacingValue() const { return m_characterSpacingValue; }
-void DgnGlyphLayoutContext::SetCharacterSpacingValue(double value) { m_characterSpacingValue = value; }
-DPoint3d DgnGlyphLayoutContext::GetDisplayOffset() const { return m_displayOffset; }
-void DgnGlyphLayoutContext::SetDisplayOffset(DPoint3d value) { m_displayOffset = value; }
-DPoint2d DgnGlyphLayoutContext::GetDisplaySize() const { return m_displaySize; }
-void DgnGlyphLayoutContext::SetDisplaySize(DPoint2d value) { m_displaySize = value; }
+DgnGlyphLayoutContext::DgnGlyphLayoutContext(DgnFontCR font, Utf8CP chars, size_t count) :
+m_font(&font),
+m_size(DPoint2d::FromZero()),
+m_isBold(false),
+m_shouldUseItalicTypeface(false),
+m_shouldIgnorePercentEscapes(false)
+    {
+    // Best way to go character-by-character in Utf8 is just to convert...
+    WString wstr;
+    BeStringUtilities::Utf8ToWChar(wstr, chars, count);
+
+    m_fontChars.resize(count);
+    std::transform(wstr.begin(), wstr.end(), m_fontChars.begin(), [&](WChar const& uniChar){return m_font->RemapUnicodeCharToFontChar(uniChar); });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2009
+//---------------------------------------------------------------------------------------
+DgnGlyphLayoutContext::T_FontCharsCR DgnGlyphLayoutContext::GetFontChars() const { return m_fontChars; }
 DgnFontCR DgnGlyphLayoutContext::GetFont() const { return *m_font; }
-DgnFontCP DgnGlyphLayoutContext::GetShxBigFont() const { return m_shxBigFont; }
+DPoint2dCR DgnGlyphLayoutContext::GetSize() const { return m_size; }
+void DgnGlyphLayoutContext::SetSize(DPoint2dCR value) { m_size = value; }
 bool DgnGlyphLayoutContext::IsBold() const { return m_isBold; }
 void DgnGlyphLayoutContext::SetIsBold(bool value) { m_isBold = value; }
 bool DgnGlyphLayoutContext::ShouldUseItalicTypeface() const { return m_shouldUseItalicTypeface; }
 void DgnGlyphLayoutContext::SetShouldUseItalicTypeface(bool value) { m_shouldUseItalicTypeface = value; }
-DgnGlyphRunLayoutFlags DgnGlyphLayoutContext::GetRunLayoutFlags() const { return m_runLayoutFlags; }
-bool DgnGlyphLayoutContext::IsVertical() const { return (GLYPH_RUN_LAYOUT_FLAG_Backwards == (GLYPH_RUN_LAYOUT_FLAG_Backwards & m_runLayoutFlags)); }
-bool DgnGlyphLayoutContext::IsBackwards() const { return (GLYPH_RUN_LAYOUT_FLAG_UpsideDown == (GLYPH_RUN_LAYOUT_FLAG_UpsideDown & m_runLayoutFlags)); }
-bool DgnGlyphLayoutContext::IsUpsideDown() const { return (GLYPH_RUN_LAYOUT_FLAG_Vertical == (GLYPH_RUN_LAYOUT_FLAG_Vertical & m_runLayoutFlags)); }
-void DgnGlyphLayoutContext::SetRunLayoutFlags(DgnGlyphRunLayoutFlags value) { m_runLayoutFlags = value; }
-DgnGlyphLayoutContext::T_FontCharsCR DgnGlyphLayoutContext::GetFontChars() const { return m_fontChars; }
-DgnGlyphLayoutContext::T_EdfMaskCR DgnGlyphLayoutContext::GetEDFMask() const { return m_edfMask; }
-IDgnGlyphLayoutListener* DgnGlyphLayoutContext::GetIDgnGlyphLayoutListenerP() const { return m_glyphLayoutListener; }
-void DgnGlyphLayoutContext::SetIDgnGlyphLayoutListenerP(IDgnGlyphLayoutListener* value) { m_glyphLayoutListener = value; }
-bool DgnGlyphLayoutContext::ShouldIgnoreDisplayShifts() const { return m_shouldIgnoreDisplayShifts; }
-void DgnGlyphLayoutContext::SetShouldIgnoreDisplayShifts(bool value) { m_shouldIgnoreDisplayShifts = value; }
 bool DgnGlyphLayoutContext::ShouldIgnorePercentEscapes() const { return m_shouldIgnorePercentEscapes; }
 void DgnGlyphLayoutContext::SetShouldIgnorePercentEscapes(bool value) { m_shouldIgnorePercentEscapes = value; }
-bool DgnGlyphLayoutContext::ShouldIgnoreLsb() const { return m_shouldIgnoreLsb; }
-void DgnGlyphLayoutContext::SetShouldIgnoreLsb(bool value) { m_shouldIgnoreLsb = value; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     12/2009
-//---------------------------------------------------------------------------------------
-void DgnGlyphLayoutContext::SetFontChars(T_FontChars::value_type const* chars, T_EdfMask::value_type const* edfs, size_t count)
-    {
-    m_fontChars.resize(count);
-    m_edfMask.resize(count);
-    
-    if (EXPECTED_CONDITION(NULL != chars))
-        memcpy(&m_fontChars[0], chars, (sizeof (T_FontChars::value_type) * count));
-    else
-        std::fill(m_fontChars.begin(), m_fontChars.end(), 0);
-
-    if (NULL != edfs)
-        memcpy(&m_edfMask[0], edfs, (sizeof (T_EdfMask::value_type) * count));
-    else
-        std::fill(m_edfMask.begin(), m_edfMask.end(), false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     12/2009
-//---------------------------------------------------------------------------------------
-void DgnGlyphLayoutContext::SetFontChars(WCharCP chars, T_EdfMask::value_type const* edfs, size_t count)
-    {
-    m_fontChars.resize(count);
-    m_edfMask.resize(count);
-
-    DgnFontCR fontForCodePage = (m_shxBigFont ? *m_shxBigFont : *m_font);
-
-    if (EXPECTED_CONDITION(NULL != chars))
-        std::transform(chars, chars + count, m_fontChars.begin(), [&](WChar const& uniChar){return fontForCodePage.RemapUnicodeCharToFontChar(uniChar); });
-    else
-        std::fill(m_fontChars.begin(), m_fontChars.end(), 0);
-
-    if (NULL != edfs)
-        memcpy(&m_edfMask[0], edfs, (sizeof (T_EdfMask::value_type) * count));
-    else
-        std::fill(m_edfMask.begin(), m_edfMask.end(), false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     12/2009
-//---------------------------------------------------------------------------------------
-void DgnGlyphLayoutContext::SetFontChars(Utf8CP chars, size_t count)
-    {
-    // Best way to go character-by-character in Utf8 is just to convert...
-    WString wstr;
-    EXPECTED_CONDITION(SUCCESS == BeStringUtilities::Utf8ToWChar(wstr, chars, count));
-    SetFontChars(wstr.c_str(), NULL, wstr.size());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     12/2009
-//---------------------------------------------------------------------------------------
-void DgnGlyphLayoutContext::SetPropertiesFromRunPropertiesBase(RunPropertiesBaseCR props)
-    {
-    m_characterSpacingType = props.GetCharacterSpacingType();
-    m_characterSpacingValue = props.GetCharacterSpacingValue();
-    m_displayOffset = props.GetDisplayOffset();
-    m_displaySize = props.GetDisplaySize();
-    m_font = &props.GetFont();
-    m_shxBigFont = props.GetShxBigFontCP();
-    m_isBold = props.IsBold();
-    m_shouldIgnoreLsb = props.ShouldIgnoreLSB();
-    m_shouldUseItalicTypeface = props.ShouldUseItalicTypeface();
-    }
 
 //***************************************************************************************************************************************************
 //***************************************************************************************************************************************************
@@ -137,51 +62,20 @@ void DgnGlyphLayoutContext::SetPropertiesFromRunPropertiesBase(RunPropertiesBase
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2009
 //---------------------------------------------------------------------------------------
-DRange2dR                               DgnGlyphLayoutResult::GetBlackBoxRangeR                 () { return m_blackBoxRange; }
-DRange2dR                               DgnGlyphLayoutResult::GetCellBoxRangeR                  () { return m_cellBoxRange; }
-DgnGlyphLayoutResult::T_GlyphCodesR     DgnGlyphLayoutResult::GetGlyphCodesR                    () { return m_glyphCodes; }
-DgnGlyphLayoutResult::T_GlyphOriginsR   DgnGlyphLayoutResult::GetGlyphOriginsR                  () { return m_glyphOrigins; }
-DRange2dR                               DgnGlyphLayoutResult::GetJustificationCellBoxRangeR     () { return m_justificationCellBoxRange; }
-DRange2dR                               DgnGlyphLayoutResult::GetJustificationBlackBoxRangeR    () { return m_justificationBlackBoxRange; }
-T_DoubleVectorR                         DgnGlyphLayoutResult::GetLeadingCaretOffsetsR           () { return m_leadingCaretOffsets; }
-double&                                 DgnGlyphLayoutResult::GetMaxHorizontalCellIncrementR    () { return m_maxHorizontalCellIncrement; }
-T_DoubleVectorR                         DgnGlyphLayoutResult::GetTrailingCaretOffsetsR          () { return m_trailingCaretOffsets; }
-double&                                 DgnGlyphLayoutResult::GetTrailingInterCharacterSpacingR () { return m_trailingInterCharacterSpacing; }
-bool&                                   DgnGlyphLayoutResult::IsLastGlyphBlankR                 () { return m_isLastGlyphBlank; }
-double&                                 DgnGlyphLayoutResult::LeftSideBearingToIgnoreR          () { return m_leftSideBearingToIgnore; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     12/2009
-//---------------------------------------------------------------------------------------
-DgnGlyphLayoutResult::DgnGlyphLayoutResult () :
-    m_trailingInterCharacterSpacing (0.0),
-    m_maxHorizontalCellIncrement    (0.0),
-    m_isLastGlyphBlank              (false),
-    m_leftSideBearingToIgnore       (0.0)
+DgnGlyphLayoutResult::DgnGlyphLayoutResult()
     {
-    m_cellBoxRange.Init ();
-    m_blackBoxRange.Init ();
-    m_justificationCellBoxRange.Init();
-    m_justificationBlackBoxRange.Init ();
+    m_range.Init();
+    m_justificationRange.Init();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2009
 //---------------------------------------------------------------------------------------
-DRange2d DgnGlyphLayoutResult::ComputeElementRange (DgnGlyphLayoutContextCR layoutContext) const
-    {
-    DRange2d elementRange = m_cellBoxRange;
-
-    // Didn't use to have an IsVertical check, even though it kinda makes sense; this is for DWG at any rate, so not breaking what's already broke...
-    if (layoutContext.ShouldIgnoreLsb ())
-        elementRange.low.x += m_leftSideBearingToIgnore;
-
-    // I'm generally speechless about this old legacy behavior...
-    if (!layoutContext.IsVertical () && !m_isLastGlyphBlank && !layoutContext.GetEDFMask ().back ())
-        elementRange.high.x = m_blackBoxRange.high.x;
-
-    return elementRange;
-    }
+DRange2dR DgnGlyphLayoutResult::GetRangeR() { return m_range; }
+DRange2dR DgnGlyphLayoutResult::GetJustificationRangeR() { return m_justificationRange; }
+DgnGlyphLayoutResult::T_GlyphsR DgnGlyphLayoutResult::GetGlyphsR() { return m_glyphs; }
+DgnGlyphLayoutResult::T_GlyphCodesR DgnGlyphLayoutResult::GetGlyphCodesR() { return m_glyphCodes; }
+DgnGlyphLayoutResult::T_GlyphOriginsR DgnGlyphLayoutResult::GetGlyphOriginsR() { return m_glyphOrigins; }
 
 //***************************************************************************************************************************************************
 //***************************************************************************************************************************************************
@@ -249,7 +143,6 @@ void                        DgnFont::CharIter::SetChar      (FontChar charCode, 
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
 DgnFont::CharIter::CharIter (DgnFontCR font, FontCharCP chars, size_t nChars) :
-    m_startOfString                 (chars),
     m_lastCharacter                 (chars + nChars - 1),
     m_currChar                      (chars - 1),
     m_font                          (font),
@@ -262,7 +155,6 @@ DgnFont::CharIter::CharIter (DgnFontCR font, FontCharCP chars, size_t nChars) :
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
 DgnFont::CharIter::CharIter (DgnFontCR font, FontCharCP chars, size_t nChars, bool shouldIgnorePercentEscapes) :
-    m_startOfString                 (chars),
     m_lastCharacter                 (chars + nChars - 1),
     m_currChar                      (chars - 1),
     m_font                          (font),
@@ -317,7 +209,7 @@ void DgnFont::CharIter::ToNext ()
         return;
         }
 
-    UInt16 val = (*m_currChar - '0');
+    uint16_t val = (*m_currChar - '0');
     
     for (int count = 0; IsValid () && (count < 2); ++count)
         {
@@ -367,7 +259,7 @@ static bool detectEscapeSequence (WCharCP str, DgnFontCR font, WChar& realChar, 
     if ((charCodeI < 0) || (charCodeI > USHRT_MAX))
         return false;
 
-    realChar                    = font.RemapFontCharToUnicodeChar ((UInt16)charCodeI);
+    realChar                    = font.RemapFontCharToUnicodeChar ((uint16_t)charCodeI);
     numCharsInEscapeSequence    = (1 + (size_t)(floor (log10 ((double)charCodeI)) + 1.0));
     
     return true;
@@ -377,7 +269,7 @@ static bool detectEscapeSequence (WCharCP str, DgnFontCR font, WChar& realChar, 
 // @bsimethod                                                   Jeff.Marker     07/2012
 //---------------------------------------------------------------------------------------
 bool                            DgnFont::ContainsCharacter          (WChar uniChar) const                                                   {return _ContainsCharacter(uniChar);}
-DgnFontPtr                      DgnFont::Embed                      (DgnProjectR project) const                                             {return _Embed(project);}
+DgnFontPtr                      DgnFont::Embed                      (DgnDbR project) const                                             {return _Embed(project);}
 LangCodePage                    DgnFont::GetCodePage                () const                                                                {return _GetCodePage();}
 FontChar                        DgnFont::GetDegreeCharCode          () const                                                                {return _GetDegreeCharCode();}
 double                          DgnFont::GetDescenderRatio          () const                                                                {return _GetDescenderRatio();}
@@ -391,7 +283,7 @@ bool                            DgnFont::IsMissing                  () const    
 BentleyStatus                   DgnFont::LayoutGlyphs               (DgnGlyphLayoutContextCR context, DgnGlyphLayoutResultR result) const   {return _LayoutGlyphs(context, result);}
 WChar                           DgnFont::RemapFontCharToUnicodeChar (FontChar charCode) const                                               {return _RemapFontCharToUnicodeChar(charCode);}
 FontChar                        DgnFont::RemapUnicodeCharToFontChar (WChar uniChar) const                                                   {return _RemapUnicodeCharToFontChar(uniChar);}
-bool                            DgnFont::ShouldDrawWithLineWeight   () const                                                                {return _ShouldDrawWithLineWeight();}
+bool                            DgnFont::CanDrawWithLineWeight   () const                                                                {return _CanDrawWithLineWeight();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2012
@@ -446,7 +338,7 @@ void DgnFont::CompressEscapeSequences (WStringR outStr, WCharCP inStr) const
 //---------------------------------------------------------------------------------------
 bool DgnFont::DoGlyphsHaveBlankGeometry (FontCharCP charCodes, size_t numCharCodes) const
     {
-    for (UInt32 iCharCode = 0; iCharCode < numCharCodes; ++iCharCode)
+    for (uint32_t iCharCode = 0; iCharCode < numCharCodes; ++iCharCode)
         {
         if (!_IsGlyphBlank (charCodes[iCharCode]))
             return false;
@@ -504,7 +396,7 @@ WString DgnFont::FontCharsToUnicodeString (FontCharCP fontCharBuffer) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-bool DgnFont::IsAccessibleByProject (DgnProjectCR project) const
+bool DgnFont::IsAccessibleByProject (DgnDbCR project) const
     {
     // Last resort fonts are always available; also always consider missing fonts available.
     if (IsLastResort() || IsMissing())
@@ -588,9 +480,8 @@ DgnFontCP DgnFont::ResolveToRenderFont () const
     switch (GetVariant ())
         {
         case DGNFONTVARIANT_Rsc:        return &DgnFontManager::GetDefaultRscFont ();
-        case DGNFONTVARIANT_ShxShape:   // Fall through; distinction for SHX is only whether it's a big font or not
+        case DGNFONTVARIANT_ShxShape:   // Fall through.
         case DGNFONTVARIANT_ShxUni:     return &DgnFontManager::GetDefaultShxFont ();
-        case DGNFONTVARIANT_ShxBig:     return DgnFontManager::GetDefaultShxBigFont ();
         case DGNFONTVARIANT_TrueType:   return &DgnFontManager::GetDefaultTrueTypeFont ();
         }
     
@@ -601,9 +492,9 @@ DgnFontCP DgnFont::ResolveToRenderFont () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2012
 //---------------------------------------------------------------------------------------
-T_FontChars DgnFont::UnicodeStringToFontChars (WCharCP uniString) const
+bvector<FontChar> DgnFont::UnicodeStringToFontChars(WCharCP uniString) const
     {
-    T_FontChars fontCharBuffer;
+    bvector<FontChar> fontCharBuffer;
 
     if (!WString::IsNullOrEmpty (uniString))
         {    
@@ -671,7 +562,7 @@ static WString detectEffectiveLocaleName ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static DgnFontCP findFirstAvailableFont (Utf8CP fontNamesString, DgnFontType type, DgnProjectCP project)
+static DgnFontCP findFirstAvailableFont (Utf8CP fontNamesString, DgnFontType type, DgnDbCP project)
     {
     T_Utf8StringVector fontNames;
     BeStringUtilities::Split(fontNamesString, ",;", NULL, fontNames);
@@ -713,7 +604,6 @@ static void getFontsFromCatalog (bmap<DgnFontKey, DgnFontCP>& foundFontsMap, T_F
 DgnFontCR   DgnFontManager::GetDecoratorFont        ()  { return *T_HOST.GetDgnFontManager ().m_decoratorFont; }
 DgnFontCR   DgnFontManager::GetDefaultRscFont       ()  { return *T_HOST.GetDgnFontManager ().m_defaultRscFont; }
 DgnFontCR   DgnFontManager::GetDefaultShxFont       ()  { return *T_HOST.GetDgnFontManager ().m_defaultShxFont; }
-DgnFontCP   DgnFontManager::GetDefaultShxBigFont    ()  { return T_HOST.GetDgnFontManager ().m_defaultShxBigFont; }
 DgnFontCR   DgnFontManager::GetDefaultTrueTypeFont  ()  { return *T_HOST.GetDgnFontManager ().m_defaultTrueTypeFont; }
 bool        DgnFontManager::IsUsingAnRtlLocale      ()  { return T_HOST.GetDgnFontManager ().m_isUsingAnRtlLocale; }
 bool        DgnFontManager::IsFontLinkingEnabled    ()  { return T_HOST.GetDgnFontManager ().m_isFontLinkingEnabled; }
@@ -730,7 +620,6 @@ DgnFontType DgnFontManager::ConvertFontVariantToType (DgnFontVariant fontVariant
         case DGNFONTVARIANT_TrueType:   return DgnFontType::TrueType;
         case DGNFONTVARIANT_ShxShape:   return DgnFontType::Shx;
         case DGNFONTVARIANT_ShxUni:     return DgnFontType::Shx;
-        case DGNFONTVARIANT_ShxBig:     return DgnFontType::Shx;
         }
     
     BeAssert (false && L"Unknown/unexpected DgnFontVariant");
@@ -740,7 +629,7 @@ DgnFontType DgnFontManager::ConvertFontVariantToType (DgnFontVariant fontVariant
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2012
 //---------------------------------------------------------------------------------------
-DgnFontCP DgnFontManager::FindFont (Utf8CP name, DgnFontType type, DgnProjectCP project)
+DgnFontCP DgnFontManager::FindFont (Utf8CP name, DgnFontType type, DgnDbCP project)
     {
     // Embedded fonts get first priority.
     if (NULL != project)
@@ -780,19 +669,7 @@ DgnFontConfigurationData const* DgnFontManager::FindCustomFontConfiguration (Dgn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2012
 //---------------------------------------------------------------------------------------
-DgnFontCR DgnFontManager::GetFontForCodePage (UInt32 baseFontID, UInt32 shxBigFontID, DgnProjectCR project)
-    {
-    DgnFontCP shxBigFont = DgnFontManager::ResolveFont (shxBigFontID, project, DGNFONTVARIANT_ShxBig);
-    if (NULL != shxBigFont)
-        return *shxBigFont;
-    
-    return *DgnFontManager::ResolveFont (baseFontID, project, DGNFONTVARIANT_DontCare);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2012
-//---------------------------------------------------------------------------------------
-T_DgnFontCPs DgnFontManager::GetFonts (DgnFontVariant variant, DgnProjectCP project)
+T_DgnFontCPs DgnFontManager::GetFonts (DgnFontVariant variant, DgnDbCP project)
     {
     bmap<DgnFontKey, DgnFontCP> foundFontsMap;
     
@@ -879,7 +756,6 @@ void DgnFontManager::Initialize ()
         {
         m_defaultRscFont            = &GetLastResortRscFont ();
         m_defaultShxFont            = &GetLastResortShxFont ();
-        m_defaultShxBigFont         = NULL;
         m_defaultTrueTypeFont       = &GetLastResortTrueTypeFont ();
         m_isUsingAnRtlLocale        = false;
         m_isFontLinkingEnabled      = false;
@@ -963,18 +839,6 @@ void DgnFontManager::ProcessLocaleConfiguration (BeXmlDomR dom, WCharCP effectiv
         if ((NULL == m_defaultShxFont) || m_defaultShxFont->IsMissing ())
             m_defaultShxFont = &GetLastResortShxFont ();
 
-        WString defaultShxBigFontName;
-        if ((BEXML_Success != dom.SelectNodeContent (defaultShxBigFontName, "./DefaultShxBigFont", localeElementContext, BeXmlDom::NODE_BIAS_Last)) || defaultShxBigFontName.empty ())
-            {
-            m_defaultShxBigFont = NULL;
-            }
-        else
-            {
-            m_defaultShxBigFont = findFirstAvailableFont (Utf8String (defaultShxBigFontName.c_str ()).c_str (), DgnFontType::Shx, NULL);
-            if ((NULL != m_defaultShxBigFont) && (m_defaultShxBigFont->IsMissing () || (DGNFONTVARIANT_ShxBig != m_defaultShxBigFont->GetVariant ())))
-                m_defaultShxBigFont = NULL;
-            }
-
         WString defaultTTFontName;
         if ((BEXML_Success != dom.SelectNodeContent (defaultTTFontName, "./DefaultTTFont", localeElementContext, BeXmlDom::NODE_BIAS_Last)) || defaultTTFontName.empty ())
             { BeDataAssert (false && L"Invalid or missing DefaultTTFont attribute in language element."); continue; }
@@ -1021,7 +885,7 @@ void DgnFontManager::ReadPerFontConfigurations (BeXmlDomR dom)
         if ((BEXML_Success != dom.SelectNodeContent (fontNamesValue, "./Name", fontElementContext, BeXmlDom::NODE_BIAS_Last)) || fontNamesValue.empty ())
             { BeDataAssert (false && L"Invalid or missing Name attribute in font element."); continue; }
         
-        UInt32 codePageValue;
+        uint32_t codePageValue;
         if (BEXML_Success != dom.SelectNodeContentAsUInt32 (codePageValue, "./CodePage", fontElementContext, BeXmlDom::NODE_BIAS_Last))
             codePageValue = 0;
         
@@ -1076,25 +940,365 @@ void DgnFontManager::ReadPerFontConfigurations (BeXmlDomR dom)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2012
 //---------------------------------------------------------------------------------------
-DgnFontCP DgnFontManager::ResolveFont (UInt32 fontID, DgnProjectCR project, DgnFontVariant preferredFallbackType)
+DgnFontCR DgnFontManager::ResolveFont (uint32_t fontID, DgnDbCR project, DgnFontVariant preferredFallbackType)
     {
     DgnFontCP foundFont = project.Fonts().FindFont(fontID);
     if ((NULL != foundFont) && !foundFont->IsMissing () && ((DGNFONTVARIANT_DontCare == preferredFallbackType) || (foundFont->GetVariant () == preferredFallbackType)))
-        return foundFont;
+        return *foundFont;
 
     if ((NULL != foundFont) && (DGNFONTVARIANT_DontCare == preferredFallbackType))
         preferredFallbackType = foundFont->GetVariant ();
     
     switch (preferredFallbackType)
         {
-        case DGNFONTVARIANT_DontCare:   { return &DgnFontManager::GetDefaultTrueTypeFont (); }
-        case DGNFONTVARIANT_Rsc:        { return &DgnFontManager::GetDefaultRscFont (); }
-        case DGNFONTVARIANT_TrueType:   { return &DgnFontManager::GetDefaultTrueTypeFont (); }
-        case DGNFONTVARIANT_ShxShape:   { return &DgnFontManager::GetDefaultShxFont (); }
-        case DGNFONTVARIANT_ShxUni:     { return &DgnFontManager::GetDefaultShxFont (); }
-        case DGNFONTVARIANT_ShxBig:     { return DgnFontManager::GetDefaultShxBigFont (); }
+        case DGNFONTVARIANT_Rsc:        return DgnFontManager::GetDefaultRscFont ();
+        case DGNFONTVARIANT_TrueType:   return DgnFontManager::GetDefaultTrueTypeFont ();
+        case DGNFONTVARIANT_ShxShape:   return DgnFontManager::GetDefaultShxFont ();
+        case DGNFONTVARIANT_ShxUni:     return DgnFontManager::GetDefaultShxFont ();
+        
+        default:
+            BeAssert(false && L"Unknown/unexpected DgnFontVariant.");
+            // Fall through to DGNFONTVARIANT_DontCare
+        
+        case DGNFONTVARIANT_DontCare:   return DgnFontManager::GetDefaultTrueTypeFont();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnFonts::DgnFonts(DgnDbR project) : DgnDbTable(project)
+    {
+    m_fontNumberMapLoaded = m_embeddedFontsLoaded = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnFontCP DgnFonts::GetMissingFont(DgnFontType fontType, Utf8CP fontName) const
+    {
+    T_FontCatalogMap::const_iterator existingMissingFont = m_missingFonts.find(DgnFontKey(fontType, fontName));
+    return (m_missingFonts.end() != existingMissingFont) ? existingMissingFont->second.get() : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jeff.Marker                     10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnFontCP DgnFonts::GetOrCreateMissingFont(DgnFontType fontType, Utf8CP fontName, uint32_t v8FontNumber) const
+    {
+    DgnFontCP missing = GetMissingFont(fontType, fontName);
+    if (NULL != missing)
+        return  missing;
+
+    switch (fontType)
+        {
+        case DgnFontType::Rsc:
+            {
+            T_HOST.GetFontAdmin()._OnMissingRscFont(fontName);
+            DgnFontPtr missingFont = DgnRscFont::CreateMissingFont(fontName, v8FontNumber);
+            m_missingFonts.Insert(DgnFontKey(DgnFontType::Rsc, fontName), missingFont);
+            return missingFont.get();
+            }
+
+        case DgnFontType::Shx:
+            {
+            T_HOST.GetFontAdmin()._OnMissingShxFont(fontName);
+            DgnFontPtr missingFont = DgnShxFont::CreateMissingFont(fontName);
+            m_missingFonts.Insert(DgnFontKey(DgnFontType::Shx, fontName), missingFont);
+            return missingFont.get();
+            }
+
+        case DgnFontType::TrueType:
+            {
+            T_HOST.GetFontAdmin()._OnMissingTrueTypeFont(fontName);
+            DgnFontPtr missingFont = DgnTrueTypeFont::CreateMissingFont(fontName);
+            m_missingFonts.Insert(DgnFontKey(DgnFontType::TrueType, fontName), missingFont);
+            return missingFont.get();
+            }
         }
 
-    BeAssert (false && L"Unknown/unexpected DgnFontVariant.");
-    return NULL;
+    BeAssert(false && L"Unknown/unexpected DgnFontType.");
+    return &DgnFontManager::GetDefaultTrueTypeFont();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t DgnFonts::Iterator::QueryCount() const
+    {
+    Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE_Font);
+
+    Statement sql;
+    sql.Prepare (*m_db, sqlString.c_str());
+
+    return (BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnFonts::Iterator::Entry DgnFonts::Iterator::begin() const
+    {
+    if (!m_stmt.IsValid())
+        {
+        Utf8String sqlString = MakeSqlString("SELECT Id,Name,Type FROM " DGN_TABLE_Font);
+
+        m_db->GetCachedStatement (m_stmt, sqlString.c_str());
+        m_params.Bind(*m_stmt);
+        }
+    else
+        {
+        m_stmt->Reset();
+        }
+
+    return Entry (m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+uint32_t DgnFonts::Iterator::Entry::GetFontId() const   {Verify(); return m_sql->GetValueInt(0);}
+Utf8CP DgnFonts::Iterator::Entry::GetName() const     {Verify(); return m_sql->GetValueText(1);}
+DgnFontType DgnFonts::Iterator::Entry::GetFontType() const {Verify(); return (DgnFontType) m_sql->GetValueInt(2);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/11
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnFonts::InsertFontNumberMappingDirect (uint32_t id, DgnFontType fontType, Utf8CP name)
+    {
+    // Basic sanity check... primarily to prevent -1, but catches other corrupt cases.
+    if (id > 5000000)
+        {
+        BeAssert (false);
+        return ERROR;
+        }
+
+    // Existing elements' internal data may depend on the font they're using; you cannot simply replace a font mapping.
+    if (m_fontNumberMap.end() != m_fontNumberMap.find (id))
+        {
+        BeDataAssert (false && L"A font with this ID already exists, and the mapping cannot be replaced.");
+        return ERROR;
+        }
+
+    Statement stmt;
+    stmt.Prepare (m_dgndb, "INSERT INTO " DGN_TABLE_Font " (Id,Name,Type) VALUES(?,?,?)");
+    stmt.BindInt (1, (int)id);
+    stmt.BindText (2, name, Statement::MakeCopy::No);
+    stmt.BindInt (3, (int)fontType);
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        return ERROR;
+
+    DgnFontCP font = DgnFontManager::FindFont (name, fontType, &m_dgndb);
+    if (NULL == font)
+        font = GetOrCreateMissingFont(fontType, name);
+
+    m_fontNumberMap[id] = font;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     01/2014
+//---------------------------------------------------------------------------------------
+bool DgnFonts::IsFontNumberMapLoaded() const
+    {
+    return m_fontNumberMapLoaded;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     07/2012
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::AcquireFontNumber (uint32_t& acquiredID, DgnFontCR font)
+    {
+    acquiredID = (uint32_t)-1;
+
+    if (!font.IsAccessibleByProject(m_dgndb))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    // Attempt to re-use an existing mapping first.
+    if (SUCCESS == FindFontNumber(&acquiredID, font))
+        return SUCCESS;
+
+    // Attempt to maintain RSC font numbers, unless it's a system fallback font. These are last-resort options that are fine getting re-mapped because they don't reflect real-world RSC font libraries.
+    if ((DgnFontType::Rsc == font.GetType()) && !font.IsLastResort())
+        {
+        auto const& rscFont = (DgnRscFont const&)font;
+        auto rscFontNumber = rscFont.GetV8FontNumber();
+
+        // If it's already in the map by-instance, we've returned above.
+        // Therefore, if the V8 ID doesn't already have a mapping use it (otherwise it's a collision).
+        // In the case of RSC font number collisions (now possible in DgnDb), the first one in gets its preferred ID; others are re-mapped like all other fonts.
+        if (m_fontNumberMap.end() == m_fontNumberMap.find(rscFontNumber))
+            {
+            if (SUCCESS != InsertFontNumberMappingDirect(rscFontNumber, font.GetType(), font.GetName().c_str()))
+                return ERROR;
+
+            acquiredID = rscFontNumber;
+
+            return SUCCESS;
+            }
+
+        // Otherwise fall through and give it the next available number (e.g. there was a collision above).
+        }
+
+    // To attempt to keep RSC font number mappings, don't attempt to assign anything but RSC fonts (tested above) less than 256.
+    uint32_t tryFontNumber = 256;
+    while (m_fontNumberMap.end() != m_fontNumberMap.find(tryFontNumber))
+        ++tryFontNumber;
+
+    if (SUCCESS != InsertFontNumberMappingDirect(tryFontNumber, font.GetType(), font.GetName().c_str()))
+        return ERROR;
+
+    acquiredID = tryFontNumber;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     07/2012
+//---------------------------------------------------------------------------------------
+DgnFontCP DgnFonts::FindFont (uint32_t fontNumber) const
+    {
+    auto fontIter = FontNumberMap().find (fontNumber);
+    return (FontNumberMap().end() == fontIter) ? NULL : fontIter->second;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     07/2012
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::FindFontNumber (uint32_t* foundID, DgnFontCR font) const
+    {
+    if (NULL != foundID)
+        *foundID = (uint32_t)-1;
+
+    for (auto fontIter : FontNumberMap())
+        {
+        if (!fontIter.second->Equals (font))
+            continue;
+
+        if (NULL != foundID)
+            *foundID = fontIter.first;
+
+        return SUCCESS;
+        }
+
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     02/2012
+//---------------------------------------------------------------------------------------
+DgnFontCP DgnFonts::EmbedFont (DgnFontCR font)
+    {
+    // Can't embed missing fonts; don't bother embedding last resort fonts.
+    if (font.IsLastResort() || font.IsMissing())
+        return NULL;
+
+    for (auto embeddedFontIter : EmbeddedFonts())
+        {
+        if ((font.GetType() != embeddedFontIter.first.m_type) || !font.GetName().EqualsI (embeddedFontIter.first.m_name.c_str()))
+            continue;
+
+        return embeddedFontIter.second.get();
+        }
+
+    DgnFontPtr embeddedFont = font.Embed (m_dgndb);
+    if (!embeddedFont.IsValid())
+        return NULL;
+
+    m_embeddedFonts.Insert (DgnFontKey (embeddedFont->GetType(), embeddedFont->GetName()), embeddedFont);
+
+    return embeddedFont.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     07/2012
+//---------------------------------------------------------------------------------------
+T_FontCatalogMap const& DgnFonts::EmbeddedFonts() const
+    {
+    if (m_embeddedFontsLoaded)
+        return m_embeddedFonts;
+
+    m_embeddedFontsLoaded = true;
+
+    Statement embeddedFontNumberStmt;
+    embeddedFontNumberStmt.Prepare (m_dgndb, "SELECT DISTINCT(Id) FROM " BEDB_TABLE_Property " WHERE Namespace=?");
+    embeddedFontNumberStmt.BindText (1, PROPERTY_APPNAME_DgnFont, Statement::MakeCopy::No);
+
+    while (BE_SQLITE_ROW == embeddedFontNumberStmt.Step())
+        {
+        uint32_t fontNumber = static_cast<uint32_t>(embeddedFontNumberStmt.GetValueInt(0));
+
+        Statement fontTypeStmt;
+        fontTypeStmt.Prepare (m_dgndb, "SELECT Type,Name FROM " DGN_TABLE_Font " WHERE Id=?");
+        fontTypeStmt.BindInt (1, fontNumber);
+
+        if (BE_SQLITE_ROW != fontTypeStmt.Step())
+            {
+            BeAssert (false);
+            continue;
+            }
+
+        DgnFontType fontType = static_cast<DgnFontType>(fontTypeStmt.GetValueInt (0));
+        Utf8String  fontName(fontTypeStmt.GetValueText (1));
+        DgnFontPtr  embeddedFont;
+
+        BeAssert (BE_SQLITE_DONE == fontTypeStmt.Step());
+
+        switch (fontType)
+            {
+            case DgnFontType::Rsc:
+                embeddedFont = DgnRscFont::CreateFromEmbeddedFont (fontName.c_str(), fontNumber, m_dgndb);
+                break;
+            case DgnFontType::Shx:
+                embeddedFont = DgnShxFont::CreateFromEmbeddedFont (fontName.c_str(), fontNumber, m_dgndb);
+                break;
+            case DgnFontType::TrueType:
+                embeddedFont = DgnTrueTypeFont::CreateFromEmbeddedFont (fontName.c_str(), fontNumber, m_dgndb);
+                break;
+            }
+
+        if (!embeddedFont.IsValid())
+            {
+            BeAssert (false);
+            continue;
+            }
+
+        m_embeddedFonts.Insert(DgnFontKey (fontType, embeddedFont->GetName()), embeddedFont);
+        }
+
+    return m_embeddedFonts;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     07/2012
+//---------------------------------------------------------------------------------------
+T_FontNumberMap const& DgnFonts::FontNumberMap() const
+    {
+    if (!m_fontNumberMapLoaded)
+        {
+        // See TFS#78396, scheduled for Graphite06.
+        HighPriorityOperationBlock  highPriority;
+        m_fontNumberMapLoaded = true;
+
+        Statement stmt;
+        stmt.Prepare (m_dgndb, "SELECT Id,Type,Name FROM " DGN_TABLE_Font);
+
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            uint32_t    fontID      = (uint32_t)stmt.GetValueInt (0);
+            DgnFontType fontType    = (DgnFontType)stmt.GetValueInt (1);
+            Utf8String  fontName    (stmt.GetValueText (2));
+            DgnFontCP   font        = DgnFontManager::FindFont (fontName.c_str(), fontType, &m_dgndb);
+
+            if (NULL == font)
+                font = GetOrCreateMissingFont(fontType, fontName.c_str());
+
+            m_fontNumberMap[fontID] = font;
+            }
+        }
+
+    return m_fontNumberMap;
+    }
+

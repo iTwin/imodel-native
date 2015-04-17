@@ -31,7 +31,7 @@ struct  ClipPlanesPrimitive : ClipPrimitive
 {
     mutable ClipPlaneSetP       m_clipPlanes;
     mutable ClipPlaneSetP       m_maskPlanes;
-    UInt32                      m_flags;
+    uint32_t                    m_flags;
 
 
     enum 

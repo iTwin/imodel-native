@@ -22,19 +22,19 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationPtr TextAnnotation::Create(DgnProjectR project) { return new TextAnnotation(project); }
-TextAnnotation::TextAnnotation(DgnProjectR project) :
+TextAnnotationPtr TextAnnotation::Create(DgnDbR project) { return new TextAnnotation(project); }
+TextAnnotation::TextAnnotation(DgnDbR project) :
     T_Super()
     {
     // Making additions or changes? Please check TextAnnotation::Reset.
 
-    m_project = &project;
+    m_dgndb = &project;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationPtr TextAnnotation::Create(DgnProjectR project, DgnStyleId seedID)
+TextAnnotationPtr TextAnnotation::Create(DgnDbR project, DgnStyleId seedID)
     {
     auto annotation = TextAnnotation::Create(project);
     annotation->ApplySeed(seedID);
@@ -50,7 +50,7 @@ TextAnnotation::TextAnnotation(TextAnnotationCR rhs) : T_Super(rhs) { CopyFrom(r
 TextAnnotationR TextAnnotation::operator=(TextAnnotationCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void TextAnnotation::CopyFrom(TextAnnotationCR rhs)
     {
-    m_project = rhs.m_project;
+    m_dgndb = rhs.m_dgndb;
     
     m_text = (rhs.m_text.IsValid() ? rhs.m_text->Clone() : NULL);
     m_frame = (rhs.m_frame.IsValid() ? rhs.m_frame->Clone() : NULL);
@@ -75,7 +75,7 @@ void TextAnnotation::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-DgnProjectR TextAnnotation::GetDgnProjectR() const { return *m_project; }
+DgnDbR TextAnnotation::GetDgnProjectR() const { return *m_dgndb; }
 AnnotationTextBlockCP TextAnnotation::GetTextCP() const { return m_text.get(); }
 AnnotationTextBlockP TextAnnotation::GetTextP() { return m_text.get(); }
 void TextAnnotation::SetText(AnnotationTextBlockCP value) { m_text = const_cast<AnnotationTextBlockP>(value); }
@@ -90,7 +90,7 @@ AnnotationLeaderCollectionR TextAnnotation::GetLeadersR() { return m_leaders; }
 //---------------------------------------------------------------------------------------
 void TextAnnotation::ApplySeed(DgnStyleId value)
     {
-    auto seed = m_project->Styles().TextAnnotationSeeds().QueryById(value);
+    auto seed = m_dgndb->Styles().TextAnnotationSeeds().QueryById(value);
     PRECONDITION(seed.IsValid(), );
     
     if (m_text.IsValid())
@@ -182,7 +182,7 @@ BentleyStatus TextAnnotationPersistence::DecodeFromFlatBuf(TextAnnotationR annot
     if (fbAnnotation.has_document())
         {
         if (!annotation.m_text.IsValid())
-            annotation.m_text = AnnotationTextBlock::Create(*annotation.m_project);
+            annotation.m_text = AnnotationTextBlock::Create(*annotation.m_dgndb);
         
         EXPECTED_CONDITION(SUCCESS == AnnotationTextBlockPersistence::DecodeFromFlatBuf(*annotation.m_text, *fbAnnotation.document()));
         }
@@ -194,7 +194,7 @@ BentleyStatus TextAnnotationPersistence::DecodeFromFlatBuf(TextAnnotationR annot
     if (fbAnnotation.has_frame())
         {
         if (!annotation.m_frame.IsValid())
-            annotation.m_frame = AnnotationFrame::Create(*annotation.m_project);
+            annotation.m_frame = AnnotationFrame::Create(*annotation.m_dgndb);
         
         EXPECTED_CONDITION(SUCCESS == AnnotationFramePersistence::DecodeFromFlatBuf(*annotation.m_frame, *fbAnnotation.frame()));
         }
@@ -210,7 +210,7 @@ BentleyStatus TextAnnotationPersistence::DecodeFromFlatBuf(TextAnnotationR annot
         {
         for (auto const& fbLeader : *fbAnnotation.leaders())
             {
-            auto leader = AnnotationLeader::Create(*annotation.m_project);
+            auto leader = AnnotationLeader::Create(*annotation.m_dgndb);
             if (UNEXPECTED_CONDITION(SUCCESS != AnnotationLeaderPersistence::DecodeFromFlatBuf(*leader, fbLeader)))
                 continue;
 

@@ -54,7 +54,7 @@ static void recookDisplayParams(ViewContextR context, ElemDisplayParamsR display
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, UInt32 color, Int32 style, UInt32 weight)
+static void setStrokeSymbology(ViewContextR context, ColorDef color, int32_t style, uint32_t weight)
     {
 #ifdef MERGE_0501_06_JEFF
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
@@ -72,7 +72,7 @@ static void setStrokeSymbology(ViewContextR context, UInt32 color, Int32 style, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, UInt32 color, double transparency)
+static void setFillSymbology(ViewContextR context, ColorDef color, double transparency)
     {
 #ifdef MERGE_0501_06_JEFF
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
@@ -229,7 +229,7 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
         CurveVectorPtr effectiveLineGeometry = createEffectiveLineGeometry(m_leaderLayout->GetLineGeometry(), transformedTerminatorGeometry.get());
         if (effectiveLineGeometry.IsValid())
             {
-            setStrokeSymbology(context, leaderStyle->GetLineColorId(), leaderStyle->GetLineStyle(), leaderStyle->GetLineWeight());
+            setStrokeSymbology(context, leaderStyle->GetLineColor(), leaderStyle->GetLineStyle(), leaderStyle->GetLineWeight());
             output.DrawCurveVector(*effectiveLineGeometry, false);
             }
         }
@@ -242,12 +242,12 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
 
         if (CurveVector::BOUNDARY_TYPE_Open == terminatorGeometry.GetBoundaryType())
             {
-            setStrokeSymbology(context, leaderStyle->GetTerminatorColorId(), leaderStyle->GetTerminatorStyle(), leaderStyle->GetTerminatorWeight());
+            setStrokeSymbology(context, leaderStyle->GetTerminatorColor(), leaderStyle->GetTerminatorStyle(), leaderStyle->GetTerminatorWeight());
             output.DrawCurveVector(terminatorGeometry, false);
             }
         else
             {
-            setFillSymbology(context, leaderStyle->GetTerminatorColorId(), 0.0);
+            setFillSymbology(context, leaderStyle->GetTerminatorColor(), 0.0);
             output.DrawCurveVector(terminatorGeometry, true);
             }
         

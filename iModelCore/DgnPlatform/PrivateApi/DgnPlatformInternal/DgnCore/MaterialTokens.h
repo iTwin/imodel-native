@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/DgnPlatformInternal/DgnCore/MaterialTokens.h $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -574,8 +574,8 @@ enum TileToken
     TILETOKEN_TokenCount, // Always add above this entry and add corresponding keyword to s_tileKeywords in MaterialTokens.cpp.
     };
 
-typedef std::map <WString, Int32>           KeywordTokenMap;
-typedef std::pair <WString, Int32>          KeywordTokenPair;
+typedef std::map <WString, int32_t>           KeywordTokenMap;
+typedef std::pair <WString, int32_t>          KeywordTokenPair;
 
 //=======================================================================================
 // @bsiclass                                                    MattGooding     01/10
@@ -593,7 +593,7 @@ private:
 
     MaterialTokenManager ();
 
-    Int32 ResolveToken (WStringR arg, WCharCP keyword, KeywordTokenMap const& map);
+    int32_t ResolveToken (WStringR arg, WCharCP keyword, KeywordTokenMap const& map);
 
 public:
     PaletteToken ResolvePaletteToken (WStringR arg, WCharCP input);

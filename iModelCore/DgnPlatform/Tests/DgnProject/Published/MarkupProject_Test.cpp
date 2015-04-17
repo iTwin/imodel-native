@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/MarkupProject_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void checkProjectAssociation (DgnProjectR dgnProject, DgnMarkupProjectR markupProject)
+void checkProjectAssociation (DgnDbR dgnProject, DgnMarkupProjectR markupProject)
     {
     DgnProjectAssociationData::CheckResults results = markupProject.CheckAssociation (dgnProject);
     ASSERT_TRUE( !results.GuidChanged );
@@ -40,12 +40,12 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     DgnViewId   seedViewId;
     if (true)
         {
-        DgnDbTestDgnManager tdmSeed (L"empty2d_english.idgndb", __FILE__, OPENMODE_READONLY);
+        DgnDbTestDgnManager tdmSeed (L"empty2d_english.idgndb", __FILE__, Db::OPEN_Readonly);
         seedModelId = tdmSeed.GetDgnProjectP()->Models().QueryModelId ("RedlineSeedModel");
         seedViewId  = tdmSeed.GetDgnProjectP()->Views().QueryViewId ("RedlineSeedView");
 
-        DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, OPENMODE_READONLY);
-        DgnProjectP project = tdm.GetDgnProjectP();
+        DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, Db::OPEN_Readonly);
+        DgnDbP project = tdm.GetDgnProjectP();
         ASSERT_TRUE( project != NULL );
 
         dgnProjectFileName.SetNameUtf8 (project->GetDbFileName());
@@ -55,9 +55,9 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
         CreateDgnMarkupProjectParams cparms (*project);
         cparms.SetOverwriteExisting(true);
         cparms.SetSeedDb (BeFileName(tdmSeed.GetPath()));
-        DgnFileStatus status;
-        DgnMarkupProjectPtr mproject = DgnMarkupProject::CreateProject (&status, markupProjectFileName, cparms);
-        ASSERT_TRUE( status == SUCCESS );
+        DbResult status;
+        DgnMarkupProjectPtr mproject = DgnMarkupProject::CreateDgnDb (&status, markupProjectFileName, cparms);
+        ASSERT_TRUE( status == BE_SQLITE_OK );
         ASSERT_TRUE( mproject.get() != NULL );
         Utf8String mpname = mproject->GetDbFileName();
         ASSERT_TRUE( mpname.find (markupProjectBasename) != Utf8String::npos );
@@ -65,19 +65,19 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     //  Both .dgndb are now closed
 
-    DgnFileStatus status;
+    DbResult status;
 
-    DgnProject::OpenParams oparms (Db::OPEN_ReadWrite);
-    DgnMarkupProjectPtr mproject = DgnMarkupProject::OpenProject (&status, markupProjectFileName, oparms, true);
-    ASSERT_TRUE( status == SUCCESS );
+    DgnDb::OpenParams oparms (Db::OPEN_ReadWrite);
+    DgnMarkupProjectPtr mproject = DgnMarkupProject::OpenDgnDb(&status, markupProjectFileName, oparms);
+    ASSERT_TRUE( status == BE_SQLITE_OK);
     ASSERT_TRUE( mproject.get() != NULL );
     Utf8String mpname = mproject->GetDbFileName();
     ASSERT_TRUE( mpname.find (markupProjectBasename) != Utf8String::npos );
 
-    // Reopen DgnProject
+    // Reopen DgnDb
 
-    DgnProjectPtr dgnProject = DgnProject::OpenProject (&status, dgnProjectFileName, oparms);
-    ASSERT_TRUE( status == SUCCESS );
+    DgnDbPtr dgnProject = DgnDb::OpenDgnDb (&status, dgnProjectFileName, oparms);
+    ASSERT_TRUE( status == BE_SQLITE_OK );
     ASSERT_TRUE( dgnProject.get() != NULL );
 
     checkProjectAssociation (*dgnProject, *mproject);
@@ -89,7 +89,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     ASSERT_EQ( rdlModel->GetDgnMarkupProject(), mproject.get() );
 
     // Work with redline properties
-    ECN::ECClassP rdlClass = rdlModel->GetECClass();
+    ECN::ECClassCP rdlClass = rdlModel->GetECClass();
     
     if (true) // Check that the Name property was set (in model creation) as expected and can be accessed as an ECProperty
         {
@@ -138,8 +138,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     // ----------------------------------------------------------
     // Markups
-    ECN::ECClassP markupClass = NULL;
-    mproject->GetEC().GetSchemaManager().GetECClass (markupClass, "Bentley_Markup", "Markup");
+    ECN::ECClassCP markupClass = mproject->Schemas().GetECClass ("Bentley_Markup", "Markup");
     ECN::IECInstancePtr markupECInstance = markupClass->GetDefaultStandaloneEnabler ()->CreateInstance (3);
     ECN::ECValue value;
 

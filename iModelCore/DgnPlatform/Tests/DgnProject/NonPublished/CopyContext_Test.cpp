@@ -11,7 +11,6 @@
 #include <DgnPlatform/ForeignFormat/CopyContext.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_FOREIGNFORMAT
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  10/10
@@ -271,9 +270,9 @@ CopyContextTestColorRemap () : CopyContextTestFixtureBase (true, true, false)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          GetTestColor (TestColorId id)
+uint32_t        GetTestColor (TestColorId id)
     {
-    static UInt32 s_rgbColors[] =
+    static uint32_t s_rgbColors[] =
         {
         0x000000,   // black    = 0
         0xFFFFFF,   // white    = 1
@@ -296,7 +295,7 @@ UInt32          GetTestColor (TestColorId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _PrepareSource () override
     {
-    DgnColorMapP colorMap = (DgnColorMapP) DgnColorMap::GetForFile (m_srcModel->GetDgnProject ());
+    DgnColorMapP colorMap = (DgnColorMapP) DgnColorMap::GetForFile (m_srcModel->GetDgnDb ());
 
     // Setup some known color indices with rgb mis-match...
     colorMap->GetTbgrColorsP ()[0]   = GetTestColor (COLORID_Red);
@@ -317,17 +316,17 @@ virtual void    _PrepareSource () override
 
     // Create some common rgb colors ahead of time to control extended color index...
     DgnColors& colors = m_srcModel->Colors();
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Red)),    NULL, NULL);
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Green)),  NULL, NULL);
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Blue)),   NULL, NULL);
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Red)),    NULL, NULL);
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Green)),  NULL, NULL);
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Blue)),   NULL, NULL);
  
     // Create some named rgb colors...
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Cyan)),   "BOOK1", "CYAN");
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Yellow)), "BOOK1", "YELLOW");
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Cyan)),   "BOOK1", "CYAN");
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Yellow)), "BOOK1", "YELLOW");
 
     // Create rgb/book colors that only exist in source...
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Violet)), NULL, NULL);
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Magenta)), "BOOK1", "MAGENTA");
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Violet)), NULL, NULL);
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Magenta)), "BOOK1", "MAGENTA");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,7 +334,7 @@ virtual void    _PrepareSource () override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _PrepareDestination () override
     {
-    DgnColorMapP colorMap = (DgnColorMapP) DgnColorMap::GetForFile (m_dstModel->GetDgnProject ());
+    DgnColorMapP colorMap = (DgnColorMapP) DgnColorMap::GetForFile (m_dstModel->GetDgnDb ());
 
     // Setup some known color indices with rgb mis-match...
     colorMap->GetTbgrColorsP ()[0]   = GetTestColor (COLORID_Green);
@@ -356,13 +355,13 @@ virtual void    _PrepareDestination () override
 
     // Create some common rgb colors ahead of time to control extended color index...
     DgnColors& colors = m_dstModel->Colors();
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Red)),   NULL, NULL);
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Blue)),  NULL, NULL);
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Green)), NULL, NULL);
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Red)),   NULL, NULL);
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Blue)),  NULL, NULL);
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Green)), NULL, NULL);
 
     // Create some named rgb colors...
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Cyan)),   "BOOK1", "CYAN");
-    colors.CreateElementColor (IntColorDef (GetTestColor (COLORID_Yellow)), "BOOK2", "YELLOW");
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Cyan)),   "BOOK1", "CYAN");
+    colors.CreateElementColor (ColorDef (GetTestColor (COLORID_Yellow)), "BOOK2", "YELLOW");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -390,7 +389,7 @@ virtual void    _CreateSourceElements () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          GetSourceElementColor ()
+uint32_t        GetSourceElementColor ()
     {
     switch (m_colorTest)
         {
@@ -405,22 +404,22 @@ UInt32          GetSourceElementColor ()
             return 255;
 
         case EXTENDED_INDEX_Same:
-            return m_srcModel->Colors().CreateElementColor (IntColorDef (GetTestColor (COLORID_Red)),     NULL, NULL);
+            return m_srcModel->Colors().CreateElementColor (ColorDef (GetTestColor (COLORID_Red)),     NULL, NULL);
 
         case EXTENDED_INDEX_Different:
-            return m_srcModel->Colors().CreateElementColor (IntColorDef (GetTestColor (COLORID_Green)),   NULL, NULL);
+            return m_srcModel->Colors().CreateElementColor (ColorDef (GetTestColor (COLORID_Green)),   NULL, NULL);
 
         case EXTENDED_INDEX_New:
-            return m_srcModel->Colors().CreateElementColor (IntColorDef (GetTestColor (COLORID_Violet)),  NULL, NULL);
+            return m_srcModel->Colors().CreateElementColor (ColorDef (GetTestColor (COLORID_Violet)),  NULL, NULL);
 
         case EXTENDED_BOOK_Same:
-            return m_srcModel->Colors().CreateElementColor (IntColorDef (GetTestColor (COLORID_Cyan)),    NULL, NULL);
+            return m_srcModel->Colors().CreateElementColor (ColorDef (GetTestColor (COLORID_Cyan)),    NULL, NULL);
 
         case EXTENDED_BOOK_Different:
-            return m_srcModel->Colors().CreateElementColor (IntColorDef (GetTestColor (COLORID_Yellow)),  NULL, NULL);
+            return m_srcModel->Colors().CreateElementColor (ColorDef (GetTestColor (COLORID_Yellow)),  NULL, NULL);
 
         case EXTENDED_BOOK_New:
-            return m_srcModel->Colors().CreateElementColor (IntColorDef (GetTestColor (COLORID_Magenta)), NULL, NULL);
+            return m_srcModel->Colors().CreateElementColor (ColorDef (GetTestColor (COLORID_Magenta)), NULL, NULL);
         }
     }
 
@@ -434,17 +433,17 @@ virtual void    EachColorCallback (EachColorArg& arg) override
     if (0 != (arg.GetPropertyFlags () & PROPSCALLBACK_FLAGS_ElementIgnoresID))
         return;
 
-    DgnColorMapP srcColorMap = DgnColorMap::GetForFile (m_srcModel->GetDgnProject ());
-    DgnColorMapP dstColorMap = DgnColorMap::GetForFile (m_dstModel->GetDgnProject ());
+    DgnColorMapP srcColorMap = DgnColorMap::GetForFile (m_srcModel->GetDgnDb ());
+    DgnColorMapP dstColorMap = DgnColorMap::GetForFile (m_dstModel->GetDgnDb ());
 
-    IntColorDef  srcColorDef, dstColorDef;
-    UInt32       srcColorIndex, dstColorIndex;
+    ColorDef  srcColorDef, dstColorDef;
+    uint32_t     srcColorIndex, dstColorIndex;
     bool         srcIsTrueColor, dstIsTrueColor;
     WString     srcBookName, dstBookName;
     WString     srcEntryName, dstEntryName;
 
-    EXPECT_EQ (SUCCESS, srcColorMap->ExtractElementColorInfo (&srcColorDef, &srcColorIndex, &srcIsTrueColor, &srcBookName, &srcEntryName, GetSourceElementColor (), *m_srcModel->GetDgnProject ()));
-    EXPECT_EQ (SUCCESS, dstColorMap->ExtractElementColorInfo (&dstColorDef, &dstColorIndex, &dstIsTrueColor, &dstBookName, &dstEntryName, arg.GetStoredValue (), *m_dstModel->GetDgnProject ()));
+    EXPECT_EQ (SUCCESS, srcColorMap->ExtractElementColorInfo (&srcColorDef, &srcColorIndex, &srcIsTrueColor, &srcBookName, &srcEntryName, GetSourceElementColor (), *m_srcModel->GetDgnDb ()));
+    EXPECT_EQ (SUCCESS, dstColorMap->ExtractElementColorInfo (&dstColorDef, &dstColorIndex, &dstIsTrueColor, &dstBookName, &dstEntryName, arg.GetStoredValue (), *m_dstModel->GetDgnDb ()));
 
     EXPECT_EQ (srcIsTrueColor, dstIsTrueColor); // Expect color to remain either color table index or extended index...
 
@@ -502,9 +501,9 @@ virtual void    EachColorCallback (EachColorArg& arg) override
             EXPECT_EQ (dstIsTrueColor, true);
             EXPECT_EQ (srcColorDef.m_int, dstColorDef.m_int); // Expect rgb to be the same always...
 
-            IntColorDef  closeColorDef;
+            ColorDef  closeColorDef;
 
-            EXPECT_EQ (SUCCESS, dstColorMap->ExtractElementColorInfo (&closeColorDef, NULL, NULL, NULL, NULL, dstColorIndex, *m_dstModel->GetDgnProject ()));
+            EXPECT_EQ (SUCCESS, dstColorMap->ExtractElementColorInfo (&closeColorDef, NULL, NULL, NULL, NULL, dstColorIndex, *m_dstModel->GetDgnDb ()));
             EXPECT_EQ (closeColorDef.m_int, dstColorDef.m_int); // Expect rgb of "closest" match from fixed color table to be the same (exact match)...
             break;
             }
@@ -733,19 +732,19 @@ virtual void    _PrepareSource () override
 
     EditElementHandle   eeh;
 
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET1", NULL, true, *m_srcModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET1", NULL, true, *m_srcModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
 
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET2", NULL, true, *m_srcModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET2", NULL, true, *m_srcModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
 
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET3", NULL, true, *m_srcModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET3", NULL, true, *m_srcModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
 
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET4", NULL, true, *m_srcModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET4", NULL, true, *m_srcModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
 
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET5", NULL, true, *m_srcModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET5", NULL, true, *m_srcModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
     }
 
@@ -775,15 +774,15 @@ virtual void    _PrepareDestination () override
     EditElementHandle   eeh;
 
     // Exact match with source...
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET1", NULL, true, *m_dstModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 3, L"TAGSET1", NULL, true, *m_dstModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
 
     // More entries than source...
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 4, L"TAGSET2", NULL, true, *m_dstModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 4, L"TAGSET2", NULL, true, *m_dstModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
 
     // Less entries than source...
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 2, L"TAGSET3", NULL, true, *m_dstModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 2, L"TAGSET3", NULL, true, *m_dstModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
 
     // Additional entries and different attribute ids than source...
@@ -792,7 +791,7 @@ virtual void    _PrepareDestination () override
     tagDefs[2].id = 2;
     tagDefs[3].id = 4;
 
-    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 4, L"TAGSET4", NULL, false, *m_dstModel->GetDgnProject ())) << "Failed to create tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::Create (eeh, tagDefs, 4, L"TAGSET4", NULL, false, *m_dstModel->GetDgnDb ())) << "Failed to create tag set.\n";
     eeh.AddToModel ();
     }
 
@@ -801,7 +800,7 @@ virtual void    _PrepareDestination () override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _CreateSourceElements () override
     {
-    DgnTextStylePtr     textStyle = DgnTextStyle::Create (L"TextStyle", *m_srcModel->GetDgnProject ());
+    DgnTextStylePtr     textStyle = DgnTextStyle::Create (L"TextStyle", *m_srcModel->GetDgnDb ());
     ITagCreateDataPtr   tagInfo;
     WChar             tagName[TAG_NAME_MAX];
     EditElementHandle   eeh;
@@ -810,7 +809,7 @@ virtual void    _CreateSourceElements () override
     for (int iTag = 0; iTag < 3; iTag++)
         {
         BeStringUtilities::Snwprintf (tagName, L"TAG%d", iTag+1);
-        tagInfo = ITagCreateData::Create (tagName, m_tagSetName, *textStyle.get (), *m_srcModel->GetDgnProject ());
+        tagInfo = ITagCreateData::Create (tagName, m_tagSetName, *textStyle.get (), *m_srcModel->GetDgnDb ());
         ASSERT_FALSE (tagInfo.IsNull ()) << "Failed to create tag info.\n";
 
         // Create 2 tags for every entry to test that subsequent copies also work...
@@ -841,7 +840,7 @@ virtual void    _ValidateElement (ElementHandleCR eh) override
     EditElementHandle   srcTagSetEeh;
     DgnTagDefinition    srcTagDef;
 
-    EXPECT_EQ (SUCCESS, TagSetHandler::GetByName (srcTagSetEeh, m_tagSetName, *m_srcModel->GetDgnProject ())) << "Failed to find source tag set.\n";
+    EXPECT_EQ (SUCCESS, TagSetHandler::GetByName (srcTagSetEeh, m_tagSetName, *m_srcModel->GetDgnDb ())) << "Failed to find source tag set.\n";
     EXPECT_EQ (SUCCESS, TagSetHandler::ExtractTagDefByName (srcTagSetEeh, srcTagDef, dstTagSpec.tagName)) << "Failed to find source tag definition by name.\n";
 
     switch (setIndex)
@@ -968,7 +967,7 @@ int             GetCurrentSCIndex ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            CreateSharedCellDef (WCharCP name, bool anonymous, DgnModelR model, bool is3d, double size, UInt32 color1, UInt32 color2)
+void            CreateSharedCellDef (WCharCP name, bool anonymous, DgnModelR model, bool is3d, double size, uint32_t color1, uint32_t color2)
     {
     ElementPropertiesSetterPtr remapper = ElementPropertiesSetter::Create ();
 
@@ -1003,7 +1002,7 @@ void            CreateSharedCellDef (WCharCP name, bool anonymous, DgnModelR mod
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _PrepareSource () override
     {
-    DgnColorMapP colorMap = (DgnColorMapP) DgnColorMap::GetForFile (m_srcModel->GetDgnProject ());
+    DgnColorMapP colorMap = (DgnColorMapP) DgnColorMap::GetForFile (m_srcModel->GetDgnDb ());
 
     // Setup some known color indices...
     colorMap->GetTbgrColorsP ()[1] = 0x0000FF; // Red   - Same as destination
@@ -1046,7 +1045,7 @@ virtual void    _PrepareSource () override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _PrepareDestination () override
     {
-    DgnColorMapP colorMap = (DgnColorMapP) DgnColorMap::GetForFile (m_dstModel->GetDgnProject ());
+    DgnColorMapP colorMap = (DgnColorMapP) DgnColorMap::GetForFile (m_dstModel->GetDgnDb ());
 
     // Setup some known color indices...
     colorMap->GetTbgrColorsP ()[1] = 0x0000FF; // Red   - Same as source
@@ -1119,7 +1118,7 @@ virtual void    _ValidateElement (ElementHandleCR eh) override
 
     ASSERT_TRUE (NULL != scInstQuery) << "Unexpected element.";
 
-    EditElementHandle scDefEh (scInstQuery->GetDefinition (eh, *eh.GetDgnProject ()));
+    EditElementHandle scDefEh (scInstQuery->GetDefinition (eh, *eh.GetDgnDb ()));
 
     ASSERT_TRUE (scDefEh.IsValid ()) << "Unable to fine shared cell def.";
 

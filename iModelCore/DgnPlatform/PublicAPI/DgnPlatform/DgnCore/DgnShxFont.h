@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnShxFont.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,6 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnShxFont)
 
 // __PUBLISH_SECTION_END__
 
-DGNPLATFORM_TYPEDEFS (DgnShxBigFont)
 DGNPLATFORM_TYPEDEFS (DgnShxGlyph)
 DGNPLATFORM_TYPEDEFS (DgnShxShapeFont)
 DGNPLATFORM_TYPEDEFS (DgnShxUniFont)
@@ -46,7 +45,6 @@ struct DgnShxGlyph : public DgnGlyph
     DEFINE_T_SUPER (DgnGlyph)
 
 private:
-    DgnShxFontCP m_font;
     IShxDataAccessor* m_data;
     DPoint2d m_verticalCellBoxStart;
     DPoint2d m_verticalCellBoxEnd;
@@ -71,8 +69,8 @@ public:
 //=======================================================================================
 struct DgnShxGlyphFPos
     {
-    UInt16 m_charCode;
-    UInt16 m_dataSize;
+    uint16_t m_charCode;
+    uint16_t m_dataSize;
     long m_filePosition;
 
     }; // DgnShxGlyphFPos
@@ -112,11 +110,11 @@ protected:
     mutable T_GlyphFPosMap m_glyphFPosMap;
 
 private:
-    size_t LookupGlyphs (DgnShxGlyphCP* glyphs, UInt16 const* inChars, int nChars, bool shouldIgnorePercentEscapes, DgnShxBigFontCP) const;
+    size_t LookupGlyphs(DgnGlyphLayoutResult::T_GlyphsR glyphs, uint16_t const* inChars, int nChars, bool shouldIgnorePercentEscapes) const;
 
 protected:
     virtual bool _ContainsCharacter (WChar) const override;
-    virtual DgnFontPtr _Embed (DgnProjectR) const override;
+    virtual DgnFontPtr _Embed (DgnDbR) const override;
     virtual void _EnsureFontIsLoaded () const = 0;
     virtual LangCodePage _GetCodePage () const override;
     virtual FontChar _GetDegreeCharCode () const override;
@@ -126,14 +124,14 @@ protected:
     virtual DgnFontType _GetType () const override;
     virtual bool _IsGlyphBlank (FontChar) const override;
     virtual BentleyStatus _LayoutGlyphs (DgnGlyphLayoutContextCR, DgnGlyphLayoutResultR) const override;
-    virtual bool _ShouldDrawWithLineWeight () const override;
+    virtual bool _CanDrawWithLineWeight () const override;
     DgnShxFont (Utf8CP name, DgnFontConfigurationData const&, WCharCP filePath);
-    DgnShxFont (Utf8CP name, DgnFontConfigurationData const&, UInt32 fontNumber, DgnProjectCR);
+    DgnShxFont (Utf8CP name, DgnFontConfigurationData const&, uint32_t fontNumber, DgnDbCR);
 
 public:
     virtual ~DgnShxFont ();
     static void AcquireSystemFonts (T_FontCatalogMap&);
-    static DgnFontPtr CreateFromEmbeddedFont (Utf8CP name, UInt32 fontNumber, DgnProjectCR);
+    static DgnFontPtr CreateFromEmbeddedFont (Utf8CP name, uint32_t fontNumber, DgnDbCR);
     static DgnFontPtr CreateLastResortFont ();
     static DgnFontPtr CreateMissingFont (Utf8CP name);
     DgnShxGlyphCP FindGlyphCP (FontChar) const;
@@ -169,36 +167,9 @@ protected:
     virtual void _EnsureFontIsLoaded () const override;
     virtual DgnFontVariant _GetVariant () const override;
     DgnShxShapeFont (Utf8CP name, DgnFontConfigurationData const&, WCharCP filePath);
-    DgnShxShapeFont (Utf8CP name, DgnFontConfigurationData const&, UInt32 fontNumber, DgnProjectCR);
+    DgnShxShapeFont (Utf8CP name, DgnFontConfigurationData const&, uint32_t fontNumber, DgnDbCR);
 
     }; // DgnShxShapeFont
-
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     08/2012
-//=======================================================================================
-struct DgnShxBigFont : public DgnShxFont
-    {
-    friend struct DgnShxFont;
-
-    DEFINE_T_SUPER (DgnShxFont)
-
-private:
-    typedef std::pair<FontChar, FontChar> T_InducerRange;
-    typedef bvector<T_InducerRange> T_InducerRanges;
-
-    mutable bool m_wasLoaded;
-    mutable T_InducerRanges m_inducerRanges;
-
-protected:
-    virtual void _EnsureFontIsLoaded () const override;
-    virtual DgnFontVariant _GetVariant () const override;
-    DgnShxBigFont (Utf8CP name, DgnFontConfigurationData const&, WCharCP filePath);
-    DgnShxBigFont (Utf8CP name, DgnFontConfigurationData const&, UInt32 fontNumber, DgnProjectCR);
-
-public:
-    bool IsMultiCharInducer (FontChar) const;
-
-    }; // DgnShxBigFont
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     08/2012
@@ -216,7 +187,7 @@ protected:
     virtual void _EnsureFontIsLoaded () const override;
     virtual DgnFontVariant _GetVariant () const override;
     DgnShxUniFont (Utf8CP name, DgnFontConfigurationData const&, WCharCP filePath);
-    DgnShxUniFont (Utf8CP name, DgnFontConfigurationData const&, UInt32 fontNumber, DgnProjectCR);
+    DgnShxUniFont (Utf8CP name, DgnFontConfigurationData const&, uint32_t fontNumber, DgnDbCR);
 
     }; // DgnShxUniFont
 
