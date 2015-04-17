@@ -189,7 +189,7 @@ protected:
     DgnModelStatus ReloadFromDb();
     ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
 
-    DgnElement(CreateParams const& params) : m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId), 
+    DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId), 
                                 m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId)
         {
         m_appData  = nullptr;
