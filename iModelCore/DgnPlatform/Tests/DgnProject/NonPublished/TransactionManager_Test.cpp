@@ -73,7 +73,7 @@ struct TestElement : DgnPlatform::PhysicalElement
 private:
     friend struct TestElementHandler;
 
-    TestElement(DgnElement::CreateParams const& params) : T_Super(params) {} 
+    TestElement(CreateParams const& params) : T_Super(params) {} 
 };
 
 //---------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
 
     virtual DgnElementP _CreateInstance(DgnElement::CreateParams const& params) override
         {
-        return new TestElement(params);
+        return new TestElement(TestElement::CreateParams(params));
         }
 
     ECN::ECClassCP GetTestElementECClass (DgnDbR db)

@@ -84,9 +84,6 @@ struct DgnElementAppData
     virtual bool _OnElemChanged(DgnElementP host, bool qvCacheDeleted, DgnElementChangeReason reason) {return false;}
 };
 
-
-struct DgnModel;
-
 template <class _QvKey> struct QvElemSet;
 //=======================================================================================
 //! @bsiclass
@@ -189,8 +186,8 @@ protected:
     DgnModelStatus ReloadFromDb();
     ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
 
-    DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId), 
-                                m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId)
+    explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId), 
+             m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId)
         {
         m_appData  = nullptr;
         }
@@ -255,7 +252,7 @@ public:
     //! Determine whether this DgnElement is an element that once existed, but has been deleted.
     bool IsDeleted() const {return m_flags.m_deletedRef;}
 
-    static DgnElementPtr CreateDgnElement(CreateParams const& params) {return new DgnElement(params);}
+    static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
 
     DGNPLATFORM_EXPORT virtual DgnElementPtr Duplicate() const;
 
@@ -396,7 +393,8 @@ protected:
 
 public:
     Placement3d() : m_origin(DPoint3d::FromZero())  {}
-    explicit Placement3d(DRange3dCR range) : m_origin(DPoint3d::FromZero()), m_range(range) {}
+    Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box, AxisAlignedBox3dCR range) 
+            : m_origin(origin), m_angles(angles), m_boundingBox(box), m_range(range) {}
     Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
     Placement3d(Placement3d&& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
     Placement3d& operator=(Placement3d&& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; m_range=rhs.m_range; return *this;}
@@ -442,8 +440,9 @@ protected:
     AxisAlignedBox2d    m_range;
 
 public:
-    Placement2d() : m_origin(DPoint2d::FromZero())  {}
-    explicit Placement2d(DRange2dCR range) : m_origin(DPoint2d::FromZero()), m_range(range) {}
+    Placement2d() : m_origin(DPoint2d::FromZero()), m_angle(0.0)  {}
+    Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box, AxisAlignedBox2dCR range) 
+            : m_origin(origin), m_angle(angle), m_boundingBox(box), m_range(range) {}
     Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
     Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
     Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; m_range=rhs.m_range; return *this;}
@@ -483,10 +482,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
-    struct GeomCreateParams : CreateParams
-    {
-    GeomStream m_geom;
-    };
 
 protected:
     GeomStream m_geom;
@@ -502,8 +497,8 @@ protected:
     virtual DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) = 0;
     DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR) override;
     GeometricElementCP _ToGeometricElement() const override {return this;}
-    GeometricElement(CreateParams const& params) : T_Super(params) {m_itemHandler=nullptr;} 
-    
+    explicit GeometricElement(CreateParams const& params) : T_Super(params) {m_itemHandler=nullptr;} 
+     
     bvector<ECN::IECInstancePtr> GetAspects(ECN::ECClassCP ecclass) const;
     template<typename RTYPE, bool SETMODIFIED>
     bvector<RTYPE> GetAspects(DgnClassId aspectClass) const;
@@ -592,7 +587,7 @@ public:
     //! @see GetItemP, SetItem, RemoveItem
     DGNPLATFORM_EXPORT void CancelItemChange();
 
-    //! Add or update an aspect that is associated with this element.
+    //! Add or update an aspect of this element.
     //! The change is buffered in memory and is applied to the database when the element itself is inserted or replaced.
     //! @param[in] instance      The new state of the aspect
     //! @note DgnElement will increment the reference count on the supplied instance and then hold onto it.
@@ -601,7 +596,7 @@ public:
     //! @see GetAspectsP, CancelAspectChange, RemoveAspect
     DGNPLATFORM_EXPORT void SetAspect(ECN::IECInstanceR instance);
 
-    //! Specify that an element aspect should be deleted.
+    //! Specify that an aspect of this element should be deleted.
     //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.
     //! @param[in] aspectClass      The ECClass of the ElementAspect to be deleted
     //! @param[in] aspectId         The ID of the ElementAspect to be deleted
@@ -610,7 +605,7 @@ public:
     //! @see RemoveItem for a direct way to delete the ElementItem.
     DGNPLATFORM_EXPORT void RemoveAspect(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
 
-    //! Cancel a pending request to insert, update, or delete the ElementItem.
+    //! Cancel a pending request to insert, update, or delete the aspects of this element.
     //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
     //! @see RemoveAspect, SetAspect, GetAspectsP
     DGNPLATFORM_EXPORT void CancelAspectChange(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
@@ -624,10 +619,22 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
 {
     DEFINE_T_SUPER(GeometricElement);
+
+    struct CreateParams : DgnElement::CreateParams
+    {
+    DEFINE_T_SUPER(DgnElement::CreateParams);
+
+    Placement3dCR m_placement;
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(model, classId, category, code, id, parent), m_placement(placement) {}
+
+    explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
+    };
+
 protected:
     Placement3d m_placement;
 
-    DgnElement3d(CreateParams const& params) : T_Super(params) {} 
+    explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {} 
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
@@ -643,7 +650,6 @@ public:
     ElementAlignedBox3d GetElementBox() const {return m_placement.GetElementBox();}
     ElementAlignedBox3d _GetElementBox3d() const override {return GetElementBox();}
     Transform _GetPlacementTrans() const override {return m_placement.GetAngles().ToTransform(m_placement.GetOrigin());}
-
 };
 
 //=======================================================================================
@@ -658,8 +664,7 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb(DgnElementPool& pool) override;
 
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
-    PhysicalElement(CreateParams const& params) : T_Super(params) {} 
-    
+    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {} 
 };
 
 //=======================================================================================
@@ -668,9 +673,20 @@ protected:
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
 {
     DEFINE_T_SUPER(GeometricElement);
+    struct CreateParams : DgnElement::CreateParams
+    {
+    DEFINE_T_SUPER(DgnElement::CreateParams);
+
+    Placement2dCR m_placement;
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(model, classId, category, code, id, parent), m_placement(placement) {}
+
+    explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
+    };
+
 protected:
     Placement2d m_placement;
-    DgnElement2d(CreateParams const& params) : T_Super(params) {} 
+    explicit DgnElement2d(CreateParams const& params) : T_Super(params) {} 
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
@@ -685,7 +701,6 @@ public:
     ElementAlignedBox2d GetElementBox() const {return m_placement.GetElementBox();}
     ElementAlignedBox3d _GetElementBox3d() const override {return ElementAlignedBox3d(GetElementBox());}
     Transform _GetPlacementTrans() const override {Transform t; t.InitFromOriginAngleAndLengths(m_placement.GetOrigin(), m_placement.GetAngle(), 1.0, 1.0); return t;}
-
 };
 
 //=======================================================================================
@@ -696,7 +711,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
     DEFINE_T_SUPER(DgnElement2d);
 protected:
     friend struct DrawingElementHandler;
-    DrawingElement(CreateParams const& params) : T_Super(params) {} 
+    explicit DrawingElement(CreateParams const& params) : T_Super(params) {} 
 
     DrawingElementCP _ToDrawingElement() const override {return this;}
 };

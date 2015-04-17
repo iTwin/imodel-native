@@ -743,7 +743,6 @@ DgnModelStatus DgnElement2d::_LoadFromDb(DgnElementPool& pool)
     return DGNMODEL_STATUS_Success;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/06
 +---------------+---------------+---------------+---------------+---------------+------*/

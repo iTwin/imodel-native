@@ -809,14 +809,14 @@ DgnElementP ElementHandler::_CreateInstance(DgnElement::CreateParams const& para
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementP PhysicalElementHandler::_CreateInstance(DgnElement::CreateParams const& params)
     {
-    return new PhysicalElement(params);
+    return new PhysicalElement(PhysicalElement::CreateParams(params));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementP DrawingElementHandler::_CreateInstance(DgnElement::CreateParams const& params)
     {
-    return new DrawingElement(params);
+    return new DrawingElement(DrawingElement::CreateParams(params));
     }
 
 /*---------------------------------------------------------------------------------**//**
