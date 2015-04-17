@@ -41,13 +41,15 @@
 
     BEGIN_BENTLEY_NAMESPACE
 
+    // Note: the default constructor for std::atomic does not 0-initialize the value. That's why BeAtomic does not 0-initialize m_value below.
+
     #define BE_ATOMIC_IMPL(UTYPE,TYPE_SUFFIX,CAST_TYPE)\
         private:\
             UTYPE volatile m_value;\
             BeAtomic& operator= (BeAtomic const&);\
             BeAtomic (BeAtomic const&);\
         public:\
-            BeAtomic() : m_value(0) {;}\
+            BeAtomic() {;}\
             BeAtomic (UTYPE v) : m_value(v) {;}\
             UTYPE operator++() volatile {return _InterlockedIncrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value);}\
             UTYPE operator++(int) volatile {return _InterlockedIncrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value)-1;}\
