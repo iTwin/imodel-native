@@ -34,6 +34,9 @@ CCompPDBName = $(appName)
 nameToDefine=__REALITYPLATFORM_BUILD__
 %include cdefapnd.mki
 
+nameToDefine=__WMSPARSER_BUILD__
+%include cdefapnd.mki
+
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
@@ -47,7 +50,7 @@ nameToDefine=__REALITYPLATFORM_BUILD__
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)RealityPlatformAdmins$(oext) : $(baseDir)RealityPlatformAdmins.cpp $(baseDir)RealityPlatformAdmins.h ${MultiCompileDepends}
+$(o)RealityPlatformAdmins$(oext) : $(baseDir)RealityPlatformAdmins.cpp $(baseDir)RealityPlatformAdmins.h $(PublicApiDir)RealityPlatformAPI.h ${MultiCompileDepends}
 
 $(o)RealityDataHandler$(oext) : $(baseDir)RealityDataHandler.cpp $(PublicApiDir)RealityDataHandler.h ${MultiCompileDepends}
 
@@ -59,7 +62,7 @@ $(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointClou
 
 $(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(baseDir)RealityPlatformUtil.h ${MultiCompileDepends}
 
-#$(o)WMSCapabilitiesParser$(oext) : $(baseDir)WMSCapabilitiesParser.cpp $(PublicApiDir)WMSCapabilitiesParser.h ${MultiCompileDepends}
+$(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(PublicApiDir)WMSCapabilities.h $(baseDir)WMSTag.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -76,12 +79,14 @@ DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NO_SIGN	    = 1
 
 
-LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley.lib \
-                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator.lib \
-					   $(ContextSubpartsLibs)IppGraLibs.lib \
-					   $(ContextSubpartsLibs)IppUtlLibs.lib \
-                       $(ContextSubpartsLibs)BentleyGeom.lib \
-                       $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
+					   $(ContextSubpartsLibs)IppGraLibs$(libext) \
+					   $(ContextSubpartsLibs)IppUtlLibs$(libext) \
+                       $(ContextSubpartsLibs)BentleyGeom$(libext) \
+                       $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
                        
 
 %include dlmlink.mki

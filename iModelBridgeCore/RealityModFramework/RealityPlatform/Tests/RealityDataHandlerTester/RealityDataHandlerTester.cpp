@@ -8,7 +8,8 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
-#include <RealityPlatform/RealityDataHandler.h>
+//#include <RealityPlatform/RealityDataHandler.h>
+#include <RealityPlatform/WMSCapabilities.h>
 
 #include <vcclr.h>
 
@@ -18,6 +19,8 @@ using namespace System;
 using namespace System::Drawing;
 using namespace System::IO;
 using namespace std;
+
+USING_BENTLEY_NAMESPACE_WMSPARSER
 
 //-----------------------------------------------------------------------------
 // This function print out the usage for the current program.
@@ -37,14 +40,52 @@ int main(array<System::String ^> ^args)
     {
     cout << "Copyright (c) Bentley Systems Inc, PropertiesTester " << "version 1.0 --- " << __DATE__ << endl;
 
-
     // Check that we have the right number of parameters.
     if (args->Length != 2 && args->Length != 3)
         {
         ShowUsage();
         exit(1);
         }
-    
+
+    //WCharCP url = L"http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xml";
+    WCharCP url = L"http://wms.gsfc.nasa.gov/cgi-bin/goes-wms.cgi?SERVICE=WMS&REQUEST=GetCapabilities";
+    //WCharCP url = L"http://gdr.ess.nrcan.gc.ca/wmsconnector/com.esri.wms.Esrimap/energy_e?SERVICE=WMS&REQUEST=GetCapabilities";
+    //WCharCP url = L"http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities";
+  
+    WMSParserStatus status;
+    WMSCapabilitiesPtr capabilities = WMSCapabilities::CreateAndReadFromUrl(status, url);
+    /*
+    wprintf(L"NAME: %s\n", capabilities.GetName());
+    wprintf(L"TITLE: %s\n", capabilities.GetTitle());
+    wprintf(L"ABSTRACT: %s\n", capabilities.GetAbstract());
+    wprintf(L"KEYWORDLIST: %s\n", capabilities.GetKeywords());
+    wprintf(L"ONLINERESOURCE \n");
+    wprintf(L"  TYPE: %s\n", capabilities.GetOnlineResource().GetXlinkType());
+    wprintf(L"  HREF: %s\n", capabilities.GetOnlineResource().GetXlinkHref());
+    wprintf(L"FORMAT: %s\n", capabilities.GetFormat());
+    wprintf(L"CONTACTINFORMATION \n");
+    wprintf(L"  PERSON: %s\n", capabilities.GetContactInformation().GetPerson());
+    wprintf(L"  ORGANIZATION: %s\n", capabilities.GetContactInformation().GetOrganization());
+    wprintf(L"  POSITION: %s\n", capabilities.GetContactInformation().GetPosition());
+    wprintf(L"  ADDRESS \n");
+    wprintf(L"      TYPE: %s\n", capabilities.GetContactInformation().GetAddress().GetType());
+    wprintf(L"      ADDRESS: %s\n", capabilities.GetContactInformation().GetAddress().GetAddress());
+    wprintf(L"      CITY: %s\n", capabilities.GetContactInformation().GetAddress().GetCity());
+    wprintf(L"      STATEORPROVINCE: %s\n", capabilities.GetContactInformation().GetAddress().GetStateOrProvince());
+    wprintf(L"      POSTCODE: %s\n", capabilities.GetContactInformation().GetAddress().GetPostCode());
+    wprintf(L"      COUNTRY: %s\n", capabilities.GetContactInformation().GetAddress().GetCountry());
+    wprintf(L"  VOICETELEPHONE: %s\n", capabilities.GetContactInformation().GetVoiceTelephone());
+    wprintf(L"  FACSIMILETELEPHONE: %s\n", capabilities.GetContactInformation().GetFacsimileTelephone());
+    wprintf(L"  EMAILADDRESS: %s\n", capabilities.GetContactInformation().GetEmailAddress());
+    wprintf(L"FEES: %s\n", capabilities.GetFees());   
+    wprintf(L"ACCESSCONSTRAINTS: %s\n", capabilities.GetAccessConstraints());
+    wprintf(L"LAYERLIMIT: %s\n", capabilities.GetLayerLimit());
+    wprintf(L"MAXWIDTH: %s\n", capabilities.GetMaxWidth());
+    wprintf(L"MAXHEIGHT: %s\n", capabilities.GetMaxHeight());
+    */
+
+
+    /*
     for each(String^ arg in args)
         Console::WriteLine(arg);
 
@@ -135,6 +176,7 @@ int main(array<System::String ^> ^args)
         }
     else
         Console::WriteLine("There was a problem input file.");
+    */
 
     Console::WriteLine("Done.");
 

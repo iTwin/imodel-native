@@ -13,6 +13,7 @@
       <SubPart PartName="PublicAPI" />
       <SubPart PartName="ImagePPDLL"                 PartFile="ImagePP"                   Repository="ImagePP" />
       <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
+      <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
       <Bindings>
           <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
           <Files ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Files>
@@ -104,7 +105,7 @@
         <ProductDirectory Name="GeoCoordNativeAssemblies"   Path="" />
         <ProductDirectory Name="MrSidAssemblies"            Path="" />
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="" />
-        <ProductDirectory Name="ECObjectsNativeAssemblies" Path="" />
+        <ProductDirectory Name="ECObjectsNativeAssemblies"  Path="" />
         
         <ProductDirectory Name="ECSchemas" Path="ECSchemas" />       
 
