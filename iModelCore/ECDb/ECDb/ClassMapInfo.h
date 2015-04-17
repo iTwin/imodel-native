@@ -94,7 +94,7 @@ public:
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
-    void RestoreSaveSettings (MapStrategy mapStrategy, Utf8CP tableName){ m_mapStrategy = mapStrategy; if (tableName != nullptr) m_tableName = tableName; }
+    void RestoreSaveSettings (ECDbMapStrategy mapStrategy, Utf8CP tableName){ m_strategy = mapStrategy; if (tableName != nullptr) m_tableName = tableName; }
     };
 
 /*=================================================================================**//**
