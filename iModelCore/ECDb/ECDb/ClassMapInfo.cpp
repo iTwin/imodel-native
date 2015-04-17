@@ -105,7 +105,7 @@ ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap,
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
 : m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_isMapToVirtualTable (IClassMap::IsAbstractECClass (ecClass)), m_ClassHasCurrentTimeStampProperty (NULL), m_parentClassMap (nullptr), m_strategy (mapStrategy)
     {
-    if (Utf8String::IsNullOrEmpty (tableName))
+  //  if (Utf8String::IsNullOrEmpty (tableName))
         _InitializeFromSchema ();
 
     //Default values for table name and primary key column name

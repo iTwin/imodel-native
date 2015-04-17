@@ -81,18 +81,24 @@
 
     @section ECSQLSamplesBasics Basics
 
-        SELECT AssetID FROM stco.Hardware
-        WHERE HasWarranty = True AND
-        WarrantyExpiryDate DATE '2014-01-01'
+        SELECT AssetID FROM stco.Hardware WHERE WarrantyExpiryDate DATE '2014-01-01'
 
-        SELECT count(*) FROM stco.Hardware
-        WHERE HasWarranty = True AND
-        WarrantyExpiryDate < DATE '2014-01-01'
+        SELECT count(*) FROM stco.Hardware WHERE WarrantyExpiryDate < DATE '2014-01-01'
 
-        SELECT AssetID, Length * Breadth AS Area FROM stco.Desk
-        WHERE Type = ?
+        SELECT FirstName, LastName FROM stco.Employee WHERE LastModified > TIMESTAMP '2014-01-01T12:00:00Z'
+        
+        SELECT AssetID, Length * Breadth AS Area FROM stco.Desk WHERE Type = ?
+        
+        SELECT AssetID FROM stco.Hardware WHERE HasWarranty = True
 
+        SELECT AssetID FROM stco.Hardware WHERE HasWarranty = False
+        
+    Any boolean expression can be simplified like this: 
 
+        SELECT AssetID FROM stco.Hardware WHERE HasWarranty
+
+        SELECT AssetID FROM stco.Hardware WHERE NOT HasWarranty
+    
     @section ECSQLSamplesStructs ECStructs
 
         SELECT FirstName, LastName, Address FROM stco.Employee
