@@ -1468,6 +1468,7 @@ namespace connectivity
                     {OSQLParseNode::table_ref, "table_ref"},
                     {OSQLParseNode::term, "term"},
                     {OSQLParseNode::test_for_null, "test_for_null"},
+                    {OSQLParseNode::unary_predicate, "unary_predicate"},
                     {OSQLParseNode::union_statement, "union_statement"},
                     {OSQLParseNode::unique_test, "unique_test"},
                     {OSQLParseNode::update_statement_positioned, "update_statement_positioned"},

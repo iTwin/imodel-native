@@ -44,10 +44,10 @@ private:
 public:
     static ECSqlStatus PrepareAllOrAnyExp (ECSqlPrepareContext& ctx, AllOrAnyExp const* exp);
     static ECSqlStatus PrepareBetweenRangeValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BetweenRangeValueExp const* exp);
-    static ECSqlStatus PrepareBinaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryExp const* exp);
-    static ECSqlStatus PrepareBooleanExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanExp const& exp);
-    static ECSqlStatus PrepareBooleanBinaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanBinaryExp const* exp);
-    static ECSqlStatus PrepareBooleanUnaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanUnaryExp const* exp);
+    static ECSqlStatus PrepareBinaryValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryValueExp const* exp);
+    static ECSqlStatus PrepareBinaryBooleanExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryBooleanExp const* exp);
+    static ECSqlStatus PrepareBooleanExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanExp const& exp);
+    static ECSqlStatus PrepareBooleanFactorExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanFactorExp const* exp);
     static ECSqlStatus PrepareCastExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const* exp);
     static ECSqlStatus PrepareClassNameExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassNameExp const* exp);
     static ECSqlStatus PrepareClassRefExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassRefExp const* exp);
@@ -79,8 +79,9 @@ public:
     static ECSqlStatus PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, SubqueryRefExp const* exp);
     static ECSqlStatus PrepareSubqueryTestExp (ECSqlPrepareContext& ctx, SubqueryTestExp const* exp);
     static ECSqlStatus PrepareSubqueryValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const* exp);
-    static ECSqlStatus PrepareUnaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryExp const* exp);
-    static ECSqlStatus PrepareValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const* exp);
+    static ECSqlStatus PrepareUnaryPredicateExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryPredicateExp const* exp);
+    static ECSqlStatus PrepareUnaryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryValueExp const* exp);
+    static ECSqlStatus PrepareValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const* exp);
     static ECSqlStatus PrepareValueExpListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const* exp);
     static ECSqlStatus PrepareValueExpListExp(NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, ValueExpListExp const* exp, PropertyNameListExp const* targetExp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists);
     static ECSqlStatus PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, WhereExp const* exp);

@@ -349,6 +349,7 @@ unique_ptr<DeleteStatementExp> ECSqlParser::parse_delete_statement_searched (ECS
     }
 
 //****************** Parsing common expression ***********************************
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -583,7 +584,7 @@ std::unique_ptr<ValueExp> ECSqlParser::parse_term (ECSqlParseContext& ctx, OSQLP
         return nullptr;
         }
 
-    return unique_ptr<ValueExp>(new BinaryExp (move (operand_left_expr), op, move (operand_right_expr)));
+    return unique_ptr<ValueExp>(new BinaryValueExp (move (operand_left_expr), op, move (operand_right_expr)));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -820,7 +821,7 @@ unique_ptr<ValueExp> ECSqlParser::parse_value_exp_primary (ECSqlParseContext& ct
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<ValueExp> ECSqlParser::parse_num_value_expr (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+unique_ptr<ValueExp> ECSqlParser::parse_num_value_exp (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE(parseNode, num_value_exp ))
         {
@@ -848,13 +849,13 @@ unique_ptr<ValueExp> ECSqlParser::parse_num_value_expr (ECSqlParseContext& ctx, 
         return nullptr;
         }
 
-    return unique_ptr<ValueExp>(new BinaryExp(move (operand_left_expr), op, move (operand_right_expr)));
+    return unique_ptr<ValueExp>(new BinaryValueExp(move (operand_left_expr), op, move (operand_right_expr)));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<UnaryExp> ECSqlParser::parse_factor (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+unique_ptr<UnaryValueExp> ECSqlParser::parse_factor (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE(parseNode, factor ))
         {
@@ -869,12 +870,11 @@ unique_ptr<UnaryExp> ECSqlParser::parse_factor (ECSqlParseContext& ctx, OSQLPars
     if (!ctx.IsSuccess())
         return nullptr;
 
-    SqlUnaryOperator op = SqlUnaryOperator::PLUS;
-
+    UnarySqlOperator op = UnarySqlOperator::Plus;
     if (opNode->getTokenValue ().Equals ("+"))
-        op = SqlUnaryOperator::PLUS;
+        op = UnarySqlOperator::Plus;
     else if (opNode->getTokenValue().Equals ("-"))
-        op = SqlUnaryOperator::MINUS;
+        op = UnarySqlOperator::Minus;
     else
         {
         BeAssert (false && "Wrong grammar");
@@ -882,7 +882,7 @@ unique_ptr<UnaryExp> ECSqlParser::parse_factor (ECSqlParseContext& ctx, OSQLPars
         return nullptr;
         }
 
-    return unique_ptr<UnaryExp> (new UnaryExp (operand_expr.release (), op));
+    return unique_ptr<UnaryValueExp> (new UnaryValueExp (operand_expr.release (), op));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -906,7 +906,7 @@ unique_ptr<ValueExp> ECSqlParser::parse_concatenation (ECSqlParseContext& ctx, O
     if (!ctx.IsSuccess())
         return nullptr;
 
-    return unique_ptr<ValueExp>(new BinaryExp(move (operand_left_expr), SqlBinaryOperator::CONCAT, move (operand_right_expr)));
+    return unique_ptr<ValueExp>(new BinaryValueExp(move (operand_left_expr), SqlBinaryOperator::CONCAT, move (operand_right_expr)));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1463,7 +1463,7 @@ unique_ptr<WhereExp> ECSqlParser::parse_opt_where_clause (ECSqlParseContext& ctx
         return nullptr;
         }
 
-    auto search_condition = parse_search_conditon(ctx, parseNode->getChild(1/*search_condition*/));
+    unique_ptr<BooleanExp> search_condition = parse_search_conditon(ctx, parseNode->getChild(1/*search_condition*/));
     if (ctx.IsSuccess())
         return unique_ptr<WhereExp>(new WhereExp(move (search_condition)));
 
@@ -1485,7 +1485,7 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             //auto op = parseNode->getChild(1/*SQL_TOKEN_OR*/);
             auto op2 = parse_search_conditon(ctx, parseNode->getChild(2/*boolean_tern*/));
             if (ctx.IsSuccess())
-                return unique_ptr<BooleanExp>(new BooleanBinaryExp(move (op1), SqlBooleanOperator::OR, move (op2)));
+                return unique_ptr<BooleanExp>(new BinaryBooleanExp(move (op1), BooleanSqlOperator::OR, move (op2)));
 
             break;
             }
@@ -1496,16 +1496,15 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             auto op2 = parse_search_conditon(ctx, parseNode->getChild(2/*boolean_factor*/));
 
             if (ctx.IsSuccess())
-                return unique_ptr<BooleanExp>(new BooleanBinaryExp(move (op1), SqlBooleanOperator::AND, move (op2)));
+                return unique_ptr<BooleanExp>(new BinaryBooleanExp(move (op1), BooleanSqlOperator::AND, move (op2)));
 
             break;
             }
         case OSQLParseNode::boolean_factor:
             {
-            //auto op = parseNode->getChild(0/*SQL_TOKEN_NOT*/);
-            auto op1 = parse_search_conditon(ctx, parseNode->getChild(2/*boolean_test*/));
+            auto operandValueExp = parse_search_conditon(ctx, parseNode->getChild(1/*boolean_test*/));
             if (ctx.IsSuccess())
-                return unique_ptr<BooleanExp>(new BooleanUnaryExp(move (op1), SqlBooleanUnaryOperator::NOT));
+                return unique_ptr<BooleanExp>(new BooleanFactorExp(move(operandValueExp), true));
             
             break;
             }
@@ -1519,9 +1518,9 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             if (ctx.IsSuccess())
                 {
                 return unique_ptr<BooleanExp> (
-                    new BooleanBinaryExp(
+                    new BinaryBooleanExp(
                         move (op1), 
-                        sql_not ? SqlBooleanOperator::IS_NOT : SqlBooleanOperator::IS,
+                        sql_not ? BooleanSqlOperator::IS_NOT : BooleanSqlOperator::IS,
                         move (truth_value_expr)));
                 }
 
@@ -1534,6 +1533,9 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
 
             break;
             }
+        case OSQLParseNode::unary_predicate:
+            return parse_unary_predicate(ctx, parseNode);
+
         case OSQLParseNode::comparison_predicate:
             {
             if (parseNode->count() == 3 /*row_value_constructor comparison row_value_constructor*/)
@@ -1542,7 +1544,7 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
                 auto op  = parse_comparison (ctx, parseNode->getChild(1/*comparison*/));
                 auto op2 = parse_row_value_constructor (ctx, parseNode->getChild(2/*row_value_constructor*/));
                 if (ctx.IsSuccess())
-                    return unique_ptr<BooleanExp>(new BooleanBinaryExp(move (op1), op, move (op2)));            
+                    return unique_ptr<BooleanExp>(new BinaryBooleanExp(move (op1), op, move (op2)));            
                 }
 
             break;
@@ -1553,7 +1555,7 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
 
             auto between_predicate_part_2 = parseNode->getChild(1/*between_predicate_part_2*/);
             auto sql_not = parse_sql_not(ctx, between_predicate_part_2->getChild(0/*sql_not*/));
-            const auto op = sql_not ? SqlBooleanOperator::NOT_BETWEEN : SqlBooleanOperator::BETWEEN;
+            const auto op = sql_not ? BooleanSqlOperator::NOT_BETWEEN : BooleanSqlOperator::BETWEEN;
 
             auto lowerBound = parse_row_value_constructor(ctx, between_predicate_part_2->getChild(2/*row_value_constructor*/));
             auto upperBound = parse_row_value_constructor(ctx, between_predicate_part_2->getChild(4/*row_value_constructor*/));
@@ -1562,7 +1564,7 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             if (!ctx.IsSuccess())
                 break;
 
-            return unique_ptr<BooleanExp>(new BooleanBinaryExp(move (lhsOperand), op, move (betweenRangeValueExp)));
+            return unique_ptr<BooleanExp>(new BinaryBooleanExp(move (lhsOperand), op, move (betweenRangeValueExp)));
             }
 
         case OSQLParseNode::all_or_any_predicate:
@@ -1602,9 +1604,9 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             auto nullExp = parse_value_exp (ctx, null_predicate_part_2->getChild(2/*NULL*/));
             if (ctx.IsSuccess())
                 {
-                return unique_ptr<BooleanExp> (new BooleanBinaryExp(
+                return unique_ptr<BooleanExp> (new BinaryBooleanExp(
                                                         move (row_value_constructor), 
-                                                        sql_not? SqlBooleanOperator::IS_NOT:SqlBooleanOperator::IS,
+                                                        sql_not? BooleanSqlOperator::IS_NOT:BooleanSqlOperator::IS,
                                                         move (nullExp)));
 
                 }
@@ -1616,6 +1618,7 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
 
         case OSQLParseNode::like_predicate:
             return parse_like_predicate (ctx, parseNode);
+
 
         default:
             BeAssert (false && "Invalid grammar");
@@ -1647,6 +1650,7 @@ bool ECSqlParser::isPredicate(OSQLParseNode const* parseNode)
         case OSQLParseNode::test_for_null:
         case OSQLParseNode::in_predicate:
         case OSQLParseNode::like_predicate:
+        case OSQLParseNode::unary_predicate:
             return true;
         }
     return false;
@@ -1677,18 +1681,18 @@ unique_ptr<BooleanExp> ECSqlParser::parse_in_predicate (ECSqlParseContext& ctx, 
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    auto inOperator = SqlBooleanOperator::IN;
+    auto inOperator = BooleanSqlOperator::IN;
     auto rhsExp = parse_in_predicate_part_2 (ctx, inOperator, parseNode->getChild (1));
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    return unique_ptr<BooleanExp> (new BooleanBinaryExp (move (lhsExp), inOperator, move(rhsExp)));
+    return unique_ptr<BooleanExp> (new BinaryBooleanExp (move (lhsExp), inOperator, move(rhsExp)));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<ComputedExp> ECSqlParser::parse_in_predicate_part_2 (ECSqlParseContext& ctx, SqlBooleanOperator& inOperator, OSQLParseNode const* parseNode)
+unique_ptr<ComputedExp> ECSqlParser::parse_in_predicate_part_2 (ECSqlParseContext& ctx, BooleanSqlOperator& inOperator, OSQLParseNode const* parseNode)
     {
     //in_predicate_part_2: sql_not SQL_TOKEN_IN in_predicate_value
     if (!SQL_ISRULE (parseNode, in_predicate_part_2))
@@ -1699,7 +1703,7 @@ unique_ptr<ComputedExp> ECSqlParser::parse_in_predicate_part_2 (ECSqlParseContex
         }
 
     const auto sqlnotFlag = parse_sql_not (ctx, parseNode->getChild (0));
-    inOperator = sqlnotFlag ? SqlBooleanOperator::NOT_IN : SqlBooleanOperator::IN;
+    inOperator = sqlnotFlag ? BooleanSqlOperator::NOT_IN : BooleanSqlOperator::IN;
 
     //third item is the predicate value (second item is IN token)
     auto in_predicate_valueNode = parseNode->getChild (2);
@@ -1730,18 +1734,18 @@ unique_ptr<BooleanExp> ECSqlParser::parse_like_predicate (ECSqlParseContext& ctx
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    auto likeOperator = SqlBooleanOperator::LIKE;
+    auto likeOperator = BooleanSqlOperator::LIKE;
     auto rhsExp = parse_like_predicate_part_2 (ctx, likeOperator, parseNode->getChild (1));
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    return unique_ptr<BooleanExp> (new BooleanBinaryExp (move (lhsExp), likeOperator, move(rhsExp)));
+    return unique_ptr<BooleanExp> (new BinaryBooleanExp (move (lhsExp), likeOperator, move(rhsExp)));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<ComputedExp> ECSqlParser::parse_like_predicate_part_2 (ECSqlParseContext& ctx, SqlBooleanOperator& likeOperator, OSQLParseNode const* parseNode)
+unique_ptr<ComputedExp> ECSqlParser::parse_like_predicate_part_2 (ECSqlParseContext& ctx, BooleanSqlOperator& likeOperator, OSQLParseNode const* parseNode)
     {
     //character_like_predicate_part_2: sql_not SQL_TOKEN_LIKE string_value_exp opt_escape
     //other_like_predicate_part_2: sql_not SQL_TOKEN_LIKE value_exp_primary opt_escape
@@ -1753,7 +1757,7 @@ unique_ptr<ComputedExp> ECSqlParser::parse_like_predicate_part_2 (ECSqlParseCont
         }
 
     const auto sqlnotFlag = parse_sql_not (ctx, parseNode->getChild (0));
-    likeOperator = sqlnotFlag ? SqlBooleanOperator::NOT_LIKE : SqlBooleanOperator::LIKE;
+    likeOperator = sqlnotFlag ? BooleanSqlOperator::NOT_LIKE : BooleanSqlOperator::LIKE;
 
     //third item is value_exp_primary or string_value_exp value (second item is LIKE token)
     auto valueExpNode = parseNode->getChild (2);
@@ -1979,34 +1983,34 @@ unique_ptr<ValueExpListExp> ECSqlParser::parse_row_value_constructor_commalist(E
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-SqlBooleanOperator ECSqlParser::parse_comparison(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+BooleanSqlOperator ECSqlParser::parse_comparison(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     if (SQL_ISRULE(parseNode, comparison))
         {
         if (parseNode->count() == 4 /*SQL_TOKEN_IS sql_not SQL_TOKEN_DISTINCT SQL_TOKEN_FROM*/)
             {
             ctx.SetError(ECSqlStatus::InvalidECSql,"'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
-            return SqlBooleanOperator::LE;
+            return BooleanSqlOperator::LE;
             }
         if (parseNode->count() == 2 /*SQL_TOKEN_IS sql_not*/)
             {
             auto sql_not = parse_sql_not(ctx, parseNode->getChild(1/*sql_not*/));
-            return sql_not ? SqlBooleanOperator::IS_NOT : SqlBooleanOperator::IS;
+            return sql_not ? BooleanSqlOperator::IS_NOT : BooleanSqlOperator::IS;
             }
         }
     switch(parseNode->getNodeType())
         {
-        case SQL_NODE_LESS: return SqlBooleanOperator::LT;
-        case SQL_NODE_NOTEQUAL: return SqlBooleanOperator::NE;
-        case SQL_NODE_EQUAL: return SqlBooleanOperator::EQ;
-        case SQL_NODE_GREAT: return SqlBooleanOperator::GT;
-        case SQL_NODE_LESSEQ: return SqlBooleanOperator::LE;
-        case SQL_NODE_GREATEQ: return SqlBooleanOperator::GE;
+        case SQL_NODE_LESS: return BooleanSqlOperator::LT;
+        case SQL_NODE_NOTEQUAL: return BooleanSqlOperator::NE;
+        case SQL_NODE_EQUAL: return BooleanSqlOperator::EQ;
+        case SQL_NODE_GREAT: return BooleanSqlOperator::GT;
+        case SQL_NODE_LESSEQ: return BooleanSqlOperator::LE;
+        case SQL_NODE_GREATEQ: return BooleanSqlOperator::GE;
         }
 
     BeAssert (false && "'comparison' rule not handled");
     ctx.SetError (ECSqlStatus::ProgrammerError,"'comparison' rule not handled");
-    return SqlBooleanOperator::LE;
+    return BooleanSqlOperator::LE;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2214,6 +2218,25 @@ SqlSetQuantifier ECSqlParser::parse_opt_all_distinct (ECSqlParseContext& ctx, OS
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+unique_ptr<UnaryPredicateExp> ECSqlParser::parse_unary_predicate(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+    {
+    if (!SQL_ISRULE(parseNode, unary_predicate) || parseNode->count() != 1)
+        {
+        BeAssert(false && "Invalid grammar. Expecting unary_predicate");
+        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. Expecting unary_predicate");
+        return nullptr;
+        }
+
+    unique_ptr<ValueExp> valueExp = parse_value_exp(ctx, parseNode->getChild(0));
+    if (!ctx.IsSuccess())
+        return nullptr;
+
+    return unique_ptr<UnaryPredicateExp>(new UnaryPredicateExp(move(valueExp)));
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 unique_ptr<UnionStatementExp> ECSqlParser::parse_union_statement(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
@@ -2250,7 +2273,7 @@ unique_ptr<UnionStatementExp> ECSqlParser::parse_union_statement(ECSqlParseConte
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<ValueExp> ECSqlParser::parse_value_exp (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+unique_ptr<ValueExp> ECSqlParser::parse_value_exp(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     unique_ptr<ValueExp> valueExp = nullptr;;
     if (parseNode->isRule())
@@ -2262,7 +2285,7 @@ unique_ptr<ValueExp> ECSqlParser::parse_value_exp (ECSqlParseContext& ctx, OSQLP
             case OSQLParseNode::column_ref:
                 valueExp = parse_column_ref(ctx, parseNode); break;
             case OSQLParseNode::num_value_exp:
-                valueExp = parse_num_value_expr(ctx, parseNode); break;
+                valueExp = parse_num_value_exp(ctx, parseNode); break;
             case OSQLParseNode::concatenation:
                 valueExp = parse_concatenation(ctx, parseNode); break;
             case OSQLParseNode::datetime_value_exp:

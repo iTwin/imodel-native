@@ -92,7 +92,7 @@ enum class SqlBinaryOperator
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
-enum class SqlBooleanOperator
+enum class BooleanSqlOperator
     {
     //WIP_ECSQL: use pascal casing
     LE,
@@ -116,20 +116,13 @@ enum class SqlBooleanOperator
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-enum class SqlUnaryOperator
+enum class UnarySqlOperator
     {
-    //WIP_ECSQL: use pascal casing
-    MINUS, PLUS, BITWISE_NOT
+    Minus,
+    Plus,
+    BitwiseNot
     };
 
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      03/2013
-//+===============+===============+===============+===============+===============+======
-enum class SqlBooleanUnaryOperator
-    {
-    //WIP_ECSQL: use pascal casing
-    MINUS, PLUS, NOT, BITWISE_NOT
-    };
 
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013

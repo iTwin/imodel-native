@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NativeSqlBuilder.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,10 +63,9 @@ public:
 
     NativeSqlBuilder& Append (Utf8CP classIdentifier, Utf8CP identifier);
     NativeSqlBuilder& Append (SqlBinaryOperator op, bool appendTrailingSpace = true);
-    NativeSqlBuilder& Append (SqlBooleanOperator op, bool appendTrailingSpace = true);
-    NativeSqlBuilder& Append (SqlBooleanUnaryOperator op, bool appendTrailingSpace = true);
+    NativeSqlBuilder& Append (BooleanSqlOperator op, bool appendTrailingSpace = true);
     NativeSqlBuilder& Append (SqlSetQuantifier setQuantifier, bool appendTrailingSpace = true);
-    NativeSqlBuilder& Append (SqlUnaryOperator op, bool appendTrailingSpace = true);
+    NativeSqlBuilder& Append (UnarySqlOperator op, bool appendTrailingSpace = true);
     //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
     NativeSqlBuilder& AppendParameter (Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex);
     //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed

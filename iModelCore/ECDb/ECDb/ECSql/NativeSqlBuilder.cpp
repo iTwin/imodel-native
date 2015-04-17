@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NativeSqlBuilder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -167,16 +167,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append (SqlBinaryOperator op, bool appendTra
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append (SqlBooleanOperator op, bool appendTrailingSpace)
-    {
-    //No difference of operator in ECSQL and SQLite SQL
-    return Append (ExpHelper::ToString (op), appendTrailingSpace);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append (SqlBooleanUnaryOperator op, bool appendTrailingSpace)
+NativeSqlBuilder& NativeSqlBuilder::Append (BooleanSqlOperator op, bool appendTrailingSpace)
     {
     //No difference of operator in ECSQL and SQLite SQL
     return Append (ExpHelper::ToString (op), appendTrailingSpace);
@@ -198,7 +189,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append (SqlSetQuantifier setQuantifier, bool
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append (SqlUnaryOperator op, bool appendTrailingSpace)
+NativeSqlBuilder& NativeSqlBuilder::Append (UnarySqlOperator op, bool appendTrailingSpace)
     {
     //No difference of operator in ECSQL and SQLite SQL
     return Append (ExpHelper::ToString (op), appendTrailingSpace);

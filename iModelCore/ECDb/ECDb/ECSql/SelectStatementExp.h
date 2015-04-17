@@ -539,19 +539,19 @@ struct AllOrAnyExp : BooleanExp
 DEFINE_EXPR_TYPE(AllOrAny)
 private:
     SqlCompareListType m_type;
-    SqlBooleanOperator m_operator;
+    BooleanSqlOperator m_operator;
     size_t m_operandExpIndex;
     size_t m_subqueryExpIndex;
 
     virtual Utf8String _ToString () const override;
 
 public:
-    AllOrAnyExp(std::unique_ptr<ValueExp> operand, SqlBooleanOperator op, SqlCompareListType type, std::unique_ptr<SubqueryExp> subquery);
+    AllOrAnyExp(std::unique_ptr<ValueExp> operand, BooleanSqlOperator op, SqlCompareListType type, std::unique_ptr<SubqueryExp> subquery);
 
     ValueExp const* GetOperand() const { return GetChild<ValueExp> (m_operandExpIndex);}
     SqlCompareListType GetCompareType() const { return m_type;}
     SubqueryExp const* GetSubquery() const { return GetChild<SubqueryExp> (m_subqueryExpIndex);}
-    SqlBooleanOperator GetOperator() const { return m_operator;}
+    BooleanSqlOperator GetOperator() const { return m_operator;}
 
     virtual Utf8String ToECSql() const override;
     };

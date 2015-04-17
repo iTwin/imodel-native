@@ -133,7 +133,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp (NativeSqlBuilder::Lis
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareBinaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryValueExp const* exp)
     {
     NativeSqlBuilder::List lhsSqlTokens;
     auto status = PrepareValueExp (lhsSqlTokens, ctx, exp->GetLeftOperand ());  
@@ -166,7 +166,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryExp (NativeSqlBuilder::List& nativeSq
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareBooleanBinaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanBinaryExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryBooleanExp const* exp)
     {
     const auto op = exp->GetOperator ();
     auto lhsOperand = exp->GetLeftOperand ();
@@ -239,15 +239,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanExp (NativeSqlBuilder::List& nativeS
         {
         case Exp::Type::AllOrAny:
             return PrepareAllOrAnyExp (ctx, static_cast<AllOrAnyExp const*> (&exp));
-        case Exp::Type::BooleanBinary:
-            return PrepareBooleanBinaryExp (nativeSqlSnippets, ctx, static_cast<BooleanBinaryExp const*> (&exp));
-        case Exp::Type::BooleanUnary:
-            return PrepareBooleanUnaryExp (nativeSqlSnippets, ctx, static_cast<BooleanUnaryExp const*> (&exp));
+        case Exp::Type::BinaryBoolean:
+            return PrepareBinaryBooleanExp (nativeSqlSnippets, ctx, static_cast<BinaryBooleanExp const*> (&exp));
+        case Exp::Type::BooleanFactor:
+            return PrepareBooleanFactorExp (nativeSqlSnippets, ctx, static_cast<BooleanFactorExp const*> (&exp));
         case Exp::Type::SubqueryTest:
             return PrepareSubqueryTestExp (ctx, static_cast<SubqueryTestExp const*> (&exp));
+        case Exp::Type::UnaryPredicate:
+            return PrepareUnaryPredicateExp(nativeSqlSnippets, ctx, static_cast<UnaryPredicateExp const*> (&exp));
 
         default:
-            BeAssert (false && "ECSqlPreparer::PrepareBooleanExpression> Case not handled");
+            BeAssert (false && "ECSqlPreparer::PrepareBooleanExp> Case not handled");
             return ECSqlStatus::ProgrammerError;
         }
     }
@@ -256,7 +258,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanExp (NativeSqlBuilder::List& nativeS
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareBooleanUnaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanUnaryExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanFactorExp const* exp)
     {
     NativeSqlBuilder::List operandSqlSnippets;
     auto status = PrepareBooleanExp (operandSqlSnippets, ctx, *exp->GetOperand ());
@@ -266,7 +268,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanUnaryExp (NativeSqlBuilder::List& na
     for (auto const& operandSqlSnippet : operandSqlSnippets)
         {
         NativeSqlBuilder sqlBuilder;
-        sqlBuilder.Append (exp->GetOperator ());
+        if (exp->HasNotOperator ())
+            sqlBuilder.Append ("NOT ");
+
         sqlBuilder.AppendParenLeft ();
         sqlBuilder.Append (operandSqlSnippet, false);
         sqlBuilder.AppendParenRight ();
@@ -1386,10 +1390,19 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp (NativeSqlBuilder::List& n
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareUnaryPredicateExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryPredicateExp const* exp)
+    {
+    return PrepareValueExp(nativeSqlSnippets, ctx, exp->GetValueExp());
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareUnaryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryValueExp const* exp)
     {
     NativeSqlBuilder::List unaryOperandSqlBuilders;
     auto status = PrepareValueExp (unaryOperandSqlBuilders, ctx, exp->GetOperand ());
@@ -1419,8 +1432,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSql
         {
         case Exp::Type::BetweenRangeValue:
             return PrepareBetweenRangeValueExp (nativeSqlSnippets, ctx, static_cast<BetweenRangeValueExp const*> (exp));
-        case Exp::Type::Binary:
-            return PrepareBinaryExp (nativeSqlSnippets, ctx, static_cast<BinaryExp const*> (exp));
+        case Exp::Type::BinaryValue:
+            return PrepareBinaryValueExp (nativeSqlSnippets, ctx, static_cast<BinaryValueExp const*> (exp));
         case Exp::Type::Cast:
             return PrepareCastExp (nativeSqlSnippets, ctx, static_cast<CastExp const*> (exp));
         case Exp::Type::ConstantValue:
@@ -1435,8 +1448,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSql
             return ECSqlPropertyNameExpPreparer::Prepare (nativeSqlSnippets, ctx, static_cast<PropertyNameExp const*>(exp));
         case Exp::Type::SubqueryValue:
             return PrepareSubqueryValueExp (nativeSqlSnippets, ctx, static_cast<SubqueryValueExp const*> (exp));
-        case Exp::Type::Unary:           
-            return PrepareUnaryExp (nativeSqlSnippets, ctx, static_cast<UnaryExp const*> (exp));
+        case Exp::Type::UnaryValue:           
+            return PrepareUnaryValueExp (nativeSqlSnippets, ctx, static_cast<UnaryValueExp const*> (exp));
         default:
             break;
         }

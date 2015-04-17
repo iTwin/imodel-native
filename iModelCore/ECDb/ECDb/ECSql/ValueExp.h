@@ -66,9 +66,9 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-struct BinaryExp : ValueExp
+struct BinaryValueExp : ValueExp
     {
-    DEFINE_EXPR_TYPE(Binary) 
+    DEFINE_EXPR_TYPE(BinaryValue) 
 
 private:
     size_t m_leftOperandExpIndex;
@@ -80,7 +80,7 @@ private:
     virtual Utf8String _ToString () const override;
 
 public:
-    BinaryExp(std::unique_ptr<ValueExp> lhs, SqlBinaryOperator op ,std::unique_ptr<ValueExp> rhs)
+    BinaryValueExp(std::unique_ptr<ValueExp> lhs, SqlBinaryOperator op ,std::unique_ptr<ValueExp> rhs)
         : ValueExp (), m_op(op)
         {
         m_leftOperandExpIndex = AddChild (std::move(lhs));
@@ -351,27 +351,27 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-struct UnaryExp : ValueExp
+struct UnaryValueExp : ValueExp
     {
-    DEFINE_EXPR_TYPE(Unary)
+    DEFINE_EXPR_TYPE(UnaryValue)
 
 private:
     size_t m_operandExpIndex;
-    SqlUnaryOperator m_op;
+    UnarySqlOperator m_op;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToString () const override;
 
 public:
-    UnaryExp(ValueExp* operand, SqlUnaryOperator op)
+    UnaryValueExp(ValueExp* operand, UnarySqlOperator op)
         : ValueExp (), m_op(op)
         {
         m_operandExpIndex = AddChild (std::unique_ptr<Exp> (operand));
         }
 
     ValueExp const* GetOperand() const {return GetChild<ValueExp> (m_operandExpIndex);}
-    SqlUnaryOperator GetOperator() const {return m_op;}
+    UnarySqlOperator GetOperator() const {return m_op;}
 
     virtual Utf8String ToECSql() const override;
     };

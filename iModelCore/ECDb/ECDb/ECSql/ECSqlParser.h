@@ -54,12 +54,12 @@ private:
     static bool                                        parse_all                       (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static SqlCompareListType                          parse_any_all_some              (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
-    static Utf8CP                                      parse_catalog_name              (Utf8CP& schemaName, Utf8CP& className, ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static Utf8CP                                      parse_catalog_name(Utf8CP& schemaName, Utf8CP& className, ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<CastExp>                    parse_cast_spec                 (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<PropertyNameExp>            parse_column                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<PropertyNameListExp>        parse_column_ref_commalist      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<PropertyNameExp>            parse_column_ref                (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-    static SqlBooleanOperator                          parse_comparison                (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static BooleanSqlOperator                          parse_comparison                (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<ValueExp>                   parse_concatenation             (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<CrossJoinExp>               parse_cross_union               (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
@@ -73,8 +73,8 @@ private:
 
     static std::unique_ptr<FunctionCallExp>            parse_fct_spec                  (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static BentleyStatus                               parse_and_add_functionarg       (ECSqlParseContext& ctx, FunctionCallExp& functionCallExp, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<UnaryExp>                   parse_factor                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<FoldFunctionCallExp>      parse_fold                      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<UnaryValueExp>                   parse_factor                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<FoldFunctionCallExp>        parse_fold                      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<SetFunctionCallExp>         parse_general_set_fct           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<GroupByExp>                 parse_group_by_clause           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
@@ -83,7 +83,7 @@ private:
 
     static std::unique_ptr<BooleanExp>                 parse_in_predicate              (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     //!@param[out] inOperator parsed IN operator, e.g. IN or NOT IN
-    static std::unique_ptr<ComputedExp>                parse_in_predicate_part_2       (ECSqlParseContext& ctx, SqlBooleanOperator& inOperator, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<ComputedExp>                parse_in_predicate_part_2       (ECSqlParseContext& ctx, BooleanSqlOperator& inOperator, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<JoinConditionExp>           parse_join_condition            (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<JoinExp>                    parse_joined_table              (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
@@ -92,7 +92,7 @@ private:
 
     static std::unique_ptr<BooleanExp>                 parse_like_predicate            (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     //!@param[out] likeOperator parsed LIKE operator, e.g. LIKE or NOT LIKE
-    static std::unique_ptr<ComputedExp>                parse_like_predicate_part_2     (ECSqlParseContext& ctx, SqlBooleanOperator& likeOperator, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<ComputedExp>                parse_like_predicate_part_2     (ECSqlParseContext& ctx, BooleanSqlOperator& likeOperator, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<LimitOffsetExp>             parse_limit_offset_clause       (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<NamedPropertiesJoinExp>     parse_named_columns_join        (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
@@ -100,7 +100,7 @@ private:
     static NonJoinQueryOperator                        parse_non_join_query_operator   (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<QueryExp>                   parse_non_join_query_primary    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<QueryExp>                   parse_non_join_query_term       (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<ValueExp>                   parse_num_value_expr            (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<ValueExp>                   parse_num_value_exp            (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static SqlSetQuantifier                            parse_opt_all_distinct          (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static OrderBySpecExp::SortDirection               parse_opt_asc_desc              (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
@@ -132,6 +132,7 @@ private:
     static std::unique_ptr<BooleanExp>                 parse_search_conditon           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static bool                                        parse_sql_not                   (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
+    static std::unique_ptr<UnaryPredicateExp>          parse_unary_predicate           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<UnionStatementExp>          parse_union_statement           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<ValueExp>                   parse_value_exp                 (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);

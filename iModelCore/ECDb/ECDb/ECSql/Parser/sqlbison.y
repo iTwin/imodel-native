@@ -214,7 +214,7 @@ using namespace connectivity;
 %type <pParseNode> non_join_query_term non_join_query_primary simple_table
 %type <pParseNode> row_value_constructor_commalist row_value_constructor  row_value_constructor_elem
 /* %type <pParseNode> row_value_const_list*/
-%type <pParseNode> qualified_join value_exp query_term join_type outer_join_type join_condition boolean_term
+%type <pParseNode> qualified_join value_exp query_term join_type outer_join_type join_condition boolean_term unary_predicate
 %type <pParseNode> boolean_factor truth_value boolean_test boolean_primary named_columns_join join_spec
 %type <pParseNode> cast_operand cast_target factor datetime_value_exp /*interval_value_exp*/ datetime_term datetime_factor
 %type <pParseNode> datetime_primary datetime_value_fct /*time_zone time_zone_specifier interval_term */ interval_qualifier
@@ -1029,6 +1029,7 @@ truth_value:
       ;
 boolean_primary:
         predicate
+    |   unary_predicate
     |   '(' search_condition ')'
         { // boolean_primary: rule 2
             $$ = SQL_NEW_RULE;
@@ -1036,31 +1037,21 @@ boolean_primary:
             $$->append($2);
             $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
         }
-    |    row_value_constructor_elem  /*[^')' ',']*/
-        {
-            if(xxx_pGLOBAL_SQLPARSER->inPredicateCheck())// boolean_primary: rule 3
-            {
-                $$ = SQL_NEW_RULE;
-                sal_Int16 nErg = xxx_pGLOBAL_SQLPARSER->buildComparsionRule($$,$1);
-                if(nErg == 1)
-                {
-                    OSQLParseNode* pTemp = $$;
-                    $$ = pTemp->removeAt((sal_uInt32)0);
-                    delete pTemp;
-                }
-                else
-                {
-                    delete $$;
-                    if(nErg)
-                        YYERROR;
-                    else
-                        YYABORT;
-                }
-            }
-            else
-                YYERROR;
-        }
     ;
+
+// cannot be in the predicate rule as it would conflict with other predicates
+//starting with a value_exp
+unary_predicate:
+    // in order to support predicates made of unary boolean expressions.
+    // validation that the value is of bool type
+    // has to be done in the post-processing steps
+    value_exp
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($1);
+    }
+    ;
+
 parenthesized_boolean_value_expression:
    '(' search_condition ')'
     { // boolean_primary: rule 2
@@ -1110,6 +1101,7 @@ search_condition:
             $$->append($3);
         }
     ;
+
 predicate:
         comparison_predicate
     |   between_predicate
@@ -1120,6 +1112,9 @@ predicate:
     |   in_predicate
     |   like_predicate
     ;
+
+
+
 comparison_predicate_part_2:    
         comparison row_value_constructor
         {
@@ -2875,15 +2870,9 @@ function_args_commalist:
     ;
     
 value_exp:
-        num_value_exp /*[^')']*/
+        num_value_exp
       | string_value_exp
       | datetime_value_exp
-      /*
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-        }
-        */
     ;
 string_value_exp:
         char_value_exp

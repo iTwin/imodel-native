@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ExpHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -161,13 +161,7 @@ Utf8CP ExpHelper::ToString(SqlBinaryOperator op)
         case SqlBinaryOperator::SHIFT_RIGHT:   return ">>";
         case SqlBinaryOperator::BITWISE_AND:   return "&"; //Alternate BITWISE_OR(op1, op2) 
         case SqlBinaryOperator::BITWISE_OR:    return "|"; //Alternate BITWISE_AND(op1, op2)  
-        case SqlBinaryOperator::BITWISE_XOR:   return "^"; //Alternate BITWISE_XOR(op1, op2) 
-                
-        /*==Non standard==
-        case BinaryOperator::MATCH:         return "MATCH"; 
-        case BinaryOperator::GLOB:          return "GLOB"; 
-        case BinaryOperator::REGEXP:        return "REGEXP"; 
-        */
+        case SqlBinaryOperator::BITWISE_XOR:   return "^"; //Alternate BITWISE_XOR(op1, op2)              
         }
     BeAssert(false && "case not handled");
     return nullptr;
@@ -176,36 +170,30 @@ Utf8CP ExpHelper::ToString(SqlBinaryOperator op)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString(SqlBooleanOperator op)
+Utf8CP ExpHelper::ToString(BooleanSqlOperator op)
     {
     switch(op)
         {
         //Relational
-        case SqlBooleanOperator::AND:           return "AND";
-        case SqlBooleanOperator::OR:            return "OR";
+        case BooleanSqlOperator::AND:           return "AND";
+        case BooleanSqlOperator::OR:            return "OR";
         //Boolean
-        case SqlBooleanOperator::EQ:             return "=";
-        case SqlBooleanOperator::GE:            return ">=";
-        case SqlBooleanOperator::GT:            return ">";
-        case SqlBooleanOperator::LE:            return "<=";
-        case SqlBooleanOperator::LT:            return "<";
-        case SqlBooleanOperator::NE:            return "<>";
+        case BooleanSqlOperator::EQ:            return "=";
+        case BooleanSqlOperator::GE:            return ">=";
+        case BooleanSqlOperator::GT:            return ">";
+        case BooleanSqlOperator::LE:            return "<=";
+        case BooleanSqlOperator::LT:            return "<";
+        case BooleanSqlOperator::NE:            return "<>";
 
-        case SqlBooleanOperator::IN:            return "IN";
-        case SqlBooleanOperator::NOT_IN:        return "NOT IN";
-        case SqlBooleanOperator::BETWEEN:       return "BETWEEN";
-        case SqlBooleanOperator::NOT_BETWEEN:   return "NOT BETWEEN";
-        case SqlBooleanOperator::IS:            return "IS";
-        case SqlBooleanOperator::IS_NOT:        return "IS NOT";
+        case BooleanSqlOperator::IN:            return "IN";
+        case BooleanSqlOperator::NOT_IN:        return "NOT IN";
+        case BooleanSqlOperator::BETWEEN:       return "BETWEEN";
+        case BooleanSqlOperator::NOT_BETWEEN:   return "NOT BETWEEN";
+        case BooleanSqlOperator::IS:            return "IS";
+        case BooleanSqlOperator::IS_NOT:        return "IS NOT";
         //Pattern
-        case SqlBooleanOperator::LIKE:          return "LIKE";
-        case SqlBooleanOperator::NOT_LIKE:      return "NOT LIKE";
-                
-        /*==Non standard==
-        case BooleanOperator::MATCH:         return "MATCH"; 
-        case BooleanOperator::GLOB:          return "GLOB"; 
-        case BooleanOperator::REGEXP:        return "REGEXP"; 
-        */
+        case BooleanSqlOperator::LIKE:          return "LIKE";
+        case BooleanSqlOperator::NOT_LIKE:      return "NOT LIKE";               
         }
     BeAssert(false && "case not handled");
     return nullptr;
@@ -233,26 +221,13 @@ Utf8CP ExpHelper::ToString (SqlCompareListType type)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString(SqlUnaryOperator op)
+Utf8CP ExpHelper::ToString(UnarySqlOperator op)
     {
     switch(op)
         {
-        case SqlUnaryOperator::PLUS:       return "+";
-        case SqlUnaryOperator::MINUS:      return "-";
-        case SqlUnaryOperator::BITWISE_NOT:return "~";
-        }
-    BeAssert(false && "case not handled");
-    return nullptr;
-    }
-
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      05/2013
-//+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString(SqlBooleanUnaryOperator op)
-    {
-    switch(op)
-        {
-        case SqlBooleanUnaryOperator::NOT:        return "NOT";
+        case UnarySqlOperator::Plus:       return "+";
+        case UnarySqlOperator::Minus:      return "-";
+        case UnarySqlOperator::BitwiseNot: return "~";
         }
     BeAssert(false && "case not handled");
     return nullptr;

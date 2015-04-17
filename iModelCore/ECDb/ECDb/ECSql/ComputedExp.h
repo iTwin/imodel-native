@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ComputedExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //forward declarations of referenced Exp classes
-struct ConstantValueExp;
 struct ParameterExp;
 struct ValueExp;
 
@@ -28,16 +27,13 @@ private:
 
     static void FindHasTargetExpExpressions (std::vector<ParameterExp const*>& parameterExpList, ComputedExp const* expr);
 protected:
-    ComputedExp ()
-        : Exp ()
-        {}
+    ComputedExp () : Exp () {}
 
     ECSqlStatus DetermineOperandsTargetTypes (ECSqlParseContext& ctx, ComputedExp const* lhs, ComputedExp const* rhs) const;
 
     void SetTypeInfo (ECSqlTypeInfo const& typeInfo) {m_typeInfo = typeInfo;}
 
 public:
-
     virtual ~ComputedExp () {}
 
     ECSqlTypeInfo const& GetTypeInfo () const {return m_typeInfo;}
@@ -51,19 +47,7 @@ struct BooleanExp : ComputedExp
     DEFINE_EXPR_TYPE(Boolean)
 
 protected:
-    BooleanExp ()
-        : ComputedExp ()
-        {}
-
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override
-        {
-        if (mode == FinalizeParseMode::BeforeFinalizingChildren)
-            {
-            SetTypeInfo (ECSqlTypeInfo (ECN::PRIMITIVETYPE_Boolean));
-            }
-
-        return FinalizeParseStatus::Completed;
-        }
+    BooleanExp() : ComputedExp() { SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Boolean)); }
 
 public:
     virtual ~BooleanExp () {}
@@ -74,12 +58,12 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-struct BooleanBinaryExp : BooleanExp
+struct BinaryBooleanExp : BooleanExp
     {
-    DEFINE_EXPR_TYPE(BooleanBinary)
+    DEFINE_EXPR_TYPE(BinaryBoolean)
 
 private:
-    SqlBooleanOperator m_op;
+    BooleanSqlOperator m_op;
     size_t m_leftOperandExpIndex;
     size_t m_rightOperandExpIndex;
 
@@ -90,35 +74,59 @@ private:
     virtual Utf8String _ToString () const override;
 
 public:
-    BooleanBinaryExp(std::unique_ptr<ComputedExp> left, SqlBooleanOperator op, std::unique_ptr<ComputedExp> right);
+    BinaryBooleanExp(std::unique_ptr<ComputedExp> left, BooleanSqlOperator op, std::unique_ptr<ComputedExp> right);
 
     ComputedExp const* GetLeftOperand() const {return GetChild<ComputedExp> (m_leftOperandExpIndex);}
     ComputedExp const* GetRightOperand() const {return GetChild<ComputedExp> (m_rightOperandExpIndex);}
-    SqlBooleanOperator GetOperator() const {return m_op;}
+    BooleanSqlOperator GetOperator() const {return m_op;}
+
+    virtual Utf8String ToECSql() const override;
+    };
+
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      04/2013
+//+===============+===============+===============+===============+===============+======
+struct BooleanFactorExp : BooleanExp
+    {
+    DEFINE_EXPR_TYPE(BooleanFactor)
+
+private:
+    bool m_notOperator;
+    size_t m_operandExpIndex;
+
+    virtual Utf8String _ToString() const override;
+
+public:
+    BooleanFactorExp(std::unique_ptr<BooleanExp> operand, bool notOperator = false);
+
+    BooleanExp const* GetOperand() const { return GetChild<BooleanExp>(m_operandExpIndex); }
+    bool HasNotOperator() const { return m_notOperator; }
 
     virtual Utf8String ToECSql() const override;
     };
 
 //=======================================================================================
-//! @bsiclass                                                Affan.Khan      04/2013
+//! @bsiclass                                                Krischan.Eberle      04/2015
 //+===============+===============+===============+===============+===============+======
-struct BooleanUnaryExp : BooleanExp
+struct UnaryPredicateExp : BooleanExp
     {
-    DEFINE_EXPR_TYPE(BooleanUnary)
+    DEFINE_EXPR_TYPE(UnaryPredicate)
 private:
-    SqlBooleanUnaryOperator m_op;
-    size_t m_operandExpIndex;
+    size_t m_booleanValueExpIndex;
 
-    virtual Utf8String _ToString () const override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+
+    virtual Utf8String _ToString() const override { return "UnaryPredicate"; }
 
 public:
-    BooleanUnaryExp (std::unique_ptr<BooleanExp> operand, SqlBooleanUnaryOperator op);
+    explicit UnaryPredicateExp(std::unique_ptr<ValueExp> predicateExp);
 
-    BooleanExp const* GetOperand () const {return GetChild<BooleanExp> (m_operandExpIndex);}
-    SqlBooleanUnaryOperator GetOperator () const {return m_op;}
+    ValueExp const* GetValueExp() const { return GetChild<ValueExp>(m_booleanValueExpIndex); }
 
     virtual Utf8String ToECSql() const override;
     };
+
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

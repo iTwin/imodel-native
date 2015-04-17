@@ -104,6 +104,78 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ecsql.Sprintf ("%s WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
+        //unary predicates
+        ecsql.Sprintf("%s WHERE True", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE NOT True", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE B", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE NOT B", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        //SQLite function which ECDb knows to return a bool
+        ecsql.Sprintf("%s WHERE Glob('*amp*',S)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE NOT Glob('*amp*',S)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        //Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
+        ecsql.Sprintf("%s WHERE I", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE NOT I", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE L", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE NOT L", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE Length(S)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE NOT Length(S)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE (I IS NOT NULL) AND L", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE (I IS NOT NULL) AND NOT L", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE 3.14", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE 'hello'", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE D", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE S", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE P2D", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE P3D", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE ?", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE Random()", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE Hex(Bi)", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
         //unary operator
         ecsql.Sprintf ("%s WHERE -I = -123", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
