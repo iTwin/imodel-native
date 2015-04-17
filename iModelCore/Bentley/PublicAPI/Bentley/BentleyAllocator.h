@@ -11,6 +11,7 @@
 
 #include "Bentley.h"
 #include <memory>
+#include <memory.h>
 
 //! Convenience to declare Bentley overrides of new and delete to allow the operations to be inlined in header files. In this case, it should be included in a public: section.
 #define DEFINE_BENTLEY_NEW_DELETE_OPERATORS\

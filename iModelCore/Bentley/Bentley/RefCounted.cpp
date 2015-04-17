@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <memory.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/BentleyAllocator.h>
 
