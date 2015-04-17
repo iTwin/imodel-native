@@ -271,13 +271,13 @@ void SetupProject (WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mo
     ASSERT_TRUE(BentleyStatus::SUCCESS == status);
 
     auto schema = m_db->Schemas().GetECSchema (TMTEST_SCHEMA_NAME, true);
-    ASSERT_NE( NULL , schema );
-    ASSERT_NE( NULL ,  TestElementHandler::GetHandler().GetTestElementECClass(*m_db) );
-    ASSERT_NE( NULL ,  m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME) );
+    ASSERT_NE( nullptr , schema );
+    ASSERT_NE( nullptr ,  TestElementHandler::GetHandler().GetTestElementECClass(*m_db) );
+    ASSERT_NE( nullptr ,  m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     DgnModelP defaultModel = m_db->Models().GetModelById(m_defaultModelId);
-    ASSERT_NE( NULL , defaultModel );
+    ASSERT_NE( nullptr , defaultModel );
     GetDefaultModel().FillModel();
 
     m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
