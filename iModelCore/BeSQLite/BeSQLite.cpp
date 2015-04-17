@@ -2251,6 +2251,52 @@ DbResult ChangeSet::PatchSetFromChangeTrack(ChangeTracker& session)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static int diffFilter(void* tracker, Utf8CP tableName) 
+    {
+    BeAssert(0 != strcmp(tableName, "be_Local"));
+    return 1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/11
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::PatchSetFromDiff(Db& db, BeFileNameCR baseFile)
+    {
+    DbResult result =  db.AttachDb(Utf8String(baseFile).c_str(), "base");
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    sqlite3_session* session;
+    result = (DbResult) sqlite3session_create(db.GetSqlDb(), "main", &session);
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    sqlite3session_table_filter(session, diffFilter, this); // set up auto-attach for most tables
+
+    BeSQLite::Statement tables;
+    tables.Prepare(db, "SELECT name FROM main.sqlite_master WHERE type='table'");
+    while (tables.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP tableName = tables.GetValueText(0);
+        char* errMsg = nullptr;
+        result = (DbResult)sqlite3session_diff(session, "base", tableName, &errMsg);
+        if (BE_SQLITE_OK != result)
+            break;
+        }
+
+    if (BE_SQLITE_OK == result)
+        result = (DbResult) sqlite3session_patchset(session, &m_size, &m_changeset);
+
+    sqlite3session_delete(session);
+
+    db.DetachDb("base");
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeSet::FromData(int size, void const* data, bool invert)

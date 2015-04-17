@@ -1350,6 +1350,9 @@ public:
     //! Create a "PatchSet" from a ChangeTracker. The PatchSet can then be saved persistently.
     BE_SQLITE_EXPORT DbResult PatchSetFromChangeTrack(ChangeTracker&);
 
+    //! Create a "PatchSet" by comparing db with baseFile
+    BE_SQLITE_EXPORT DbResult PatchSetFromDiff(Db& db, BeFileNameCR baseFile);
+
     //! Apply all of the changes in a ChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
     BE_SQLITE_EXPORT DbResult ApplyChanges(BeSQLiteDbR db);
