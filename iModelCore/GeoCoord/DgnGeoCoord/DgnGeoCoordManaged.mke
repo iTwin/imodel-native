@@ -2,7 +2,7 @@
 #
 #     $Source: DgnGeoCoord/DgnGeoCoordManaged.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 ASSEMBLY_NAME   = Bentley.DgnGeoCoord
@@ -21,7 +21,7 @@ assemDirToSearch    = $(BuildContextSubPartsAssemblies)
 #----------------------------------------------------------------------
 #  Create output directories
 #----------------------------------------------------------------------
-o               = $(dgnGeoCoordObj)
+o               = $(dgnGeoCoordObj)Managed/
 
 always:
     !~@mkdir $(o)
