@@ -26,6 +26,10 @@
 #define DGN_CLASSNAME_Category                      "Category"
 #define DGN_CLASSNAME_Link                          "Link"
 #define DGN_CLASSNAME_Model                         "Model"
+#define DGN_CLASSNAME_PhysicalModel                 "PhysicalModel"
+#define DGN_CLASSNAME_DrawingModel                  "DrawingModel"
+#define DGN_CLASSNAME_SheetModel                    "SheetModel"
+#define DGN_CLASSNAME_ComponentModel                "ComponentModel"
 #define DGN_CLASSNAME_PhysicalElement               "PhysicalElement"
 #define DGN_CLASSNAME_SubCategory                   "SubCategory"
 #define DGN_CLASSNAME_Style                         "Style"
@@ -633,7 +637,7 @@ struct DgnModels : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    friend struct DgnFile;
+    friend struct DgnModel;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
 
     T_DgnModelMap            m_models;
@@ -641,7 +645,7 @@ private:
     bmap<DgnModelId,bpair<uint64_t,DgnModelType>> m_modelDependencyIndexAndType;
 
     void ClearLoaded();
-    DgnModelP SupplyDgnModel(DgnModelId modelId);
+    DgnModelP CreateDgnModel(DgnModelId modelId);
     bool FreeQvCache();
     void Empty() {ClearLoaded(); FreeQvCache();}
 
@@ -668,29 +672,30 @@ public:
         Utf8String   m_description;
         DgnModelType m_modelType;
         CoordinateSpace  m_space;
-        uint32_t     m_visibility; //!< mask of values from ModelIterate
+        bool         m_inGuiList; 
 
     public:
         Model()
             {
             m_modelType = DgnModelType::Physical;
             m_space = CoordinateSpace::Local;
-            m_visibility = 0xff;
+            m_inGuiList = true;
             };
 
         Model(Utf8CP name, DgnModelType modelType, CoordinateSpace space, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
             {
             m_modelType = modelType;
             m_space = space;
-            m_visibility = 0xff;
+            m_inGuiList = true;
             }
 
         Utf8StringR GetNameR() {return m_name;}
         Utf8StringR GetDescriptionR() {return m_description;}
         void SetName(Utf8CP val) {m_name.assign(val);}
         void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);}
-        void SetVisibility(uint32_t val)   {m_visibility = val;}
+        void SetInGuiList(bool val)   {m_inGuiList = val;}
         void SetId(DgnModelId id) {m_id = id;}
+        void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModelType(DgnClassId classId, DgnModelType val) {m_classId = classId; m_modelType = val;}
         void SetCoordinateSpace(CoordinateSpace val) {m_space = val;}
 
@@ -701,9 +706,7 @@ public:
         DgnModelType GetModelType() const {return m_modelType;}
         DgnClassId GetClassId() const {return m_classId;}
         CoordinateSpace GetCoordinateSpace() const {return m_space;}
-        uint32_t GetVisibility() const {return m_visibility;}
-        bool IsIterable() const {return 0 != m_visibility;}
-        bool InModelGui() const {return 0 != ((int) ModelIterate::Gui & m_visibility);}
+        bool InGuiList() const {return m_inGuiList;}
         bool Is3d() const {return m_modelType==DgnModelType::Physical;}
 
     }; // Model
@@ -743,19 +746,13 @@ public:
         const_iterator end() const {return Entry(nullptr, false);}
     };
 
-//__PUBLISH_SECTION_END__
 private:
-    DgnModelStatus InsertNewModel(Model& row);
     BeSQLite::DbResult InsertModel(Model& row);
 
 public:
-//__PUBLISH_SECTION_START__
     DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
-//__PUBLISH_SECTION_END__
     void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
 
-
-//__PUBLISH_SECTION_START__
     //! Determine the Id of the first model in this DgnDb.
     DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;
 
@@ -823,22 +820,11 @@ public:
 
     //@}
 
-    //! Create a new model.
-    //! @param[in,out] modelData The data that defines the model. On input, the name and model type at least must be defined. On output, the id and fileid fields will be set.
-    //! @return DGNMODEL_STATUS_Success if the new model was successfully create or non-zero if not.
-    //! @Note Only default settings and properties are created for the new model. The caller should update these values.
-    DGNPLATFORM_EXPORT DgnModelStatus CreateNewModel(Model& modelData);
+    //! Insert a new model.
+    //! @return DGNMODEL_STATUS_Success if the new model was successfully create or error otherwise.
+    DGNPLATFORM_EXPORT DgnModelStatus InsertNewModel(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
 
-
-    //! Create a new model
-    //! @param result   If not nullptr, a non-zero error status if model creation is unsuccessful:
-    //!                 DGNMODEL_STATUS_BadSeedModel if the seed is specified but not found;
-    //!                 DGNMODEL_STATUS_ModelTableWriteError if the new model cannot be inserted;
-    //!                 DGNMODEL_STATUS_InvalidModelName if \a name is invalid;
-    //!                 DGNMODEL_STATUS_DuplicateModelName if \a name is already in use.
-    //! @param name     The name of the new model.
-    //! @param seedModel If valid, this function copies the properties of the the seed model in order to create the new model.
-    DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModel);
+    DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModelId);
 
     //! Generate a model name that is not currently in use in this file
     //! @param[in]  baseName base model name to start with (optional)

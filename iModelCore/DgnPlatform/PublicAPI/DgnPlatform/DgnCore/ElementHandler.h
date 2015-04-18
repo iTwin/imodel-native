@@ -104,34 +104,10 @@ public:
 
 protected:
     virtual ElementHandlerP _ToElementHandler() {return this;}
-
     DGNPLATFORM_EXPORT virtual DgnElementP _CreateInstance(DgnElement::CreateParams const& params);
 
 public:
-    DGNPLATFORM_EXPORT virtual DgnElementPtr CreateInstance(DgnElement::CreateParams const& params);
-
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    //! Called when an instance of this handler is about to be deleted from a DgnDb.
-    //! @param[in] el the DgnElement of the element to be deleted.
-    //! @return PRE_ACTION_Ok to allow the delete to proceed or PRE_ACTION_Block to stop it from happening.
-    virtual PreActionStatus _OnElementDelete(DgnElementR element) {return PRE_ACTION_Ok;}
-
-    //! Called when an instance of this handler is about to be modified with a changed version.
-    //! @param[in] newEl the new instance of the element to replace the current data. The handler may make changes to the data in the element, if necessary.
-    //! @param[in] oldEl the existing instance of the element that will be replaced.
-    //! @return PRE_ACTION_Ok to allow the replace to proceed or PRE_ACTION_Block to stop it from happening.
-    virtual PreActionStatus _OnElementModify(EditElementHandleR newElement) {return PRE_ACTION_Ok;}
-
-    //! Called after an instance of this handler has been successfully deleted from a DgnDb.
-    //! @param[in] DgnDb the DgnDb from which the instance was deleted.
-    //! @param[in] el the DgnElementId of the now-deleted element.
-    virtual void _OnElementDeleted (DgnDbR dgnFile, DgnElementId el) {}
-
-    //! Called after an existing instance of this handler has been successfully modified with a new instance of this handler.
-    //! @param[in] newEl The DgnElement of the replaced element.
-    virtual void _OnElementModified(DgnElementR newElement) {}
-#endif
-
+    DgnElementPtr Create(DgnElement::CreateParams const& params) {return _CreateInstance(params);}
 
 public:
     //! Find the ElemenntHandler for a DgnClassId within a supplied DgnDb.

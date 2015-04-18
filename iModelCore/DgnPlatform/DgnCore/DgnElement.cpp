@@ -467,13 +467,22 @@ DgnModelStatus DgnElement::AddToModel()
     return DGNMODEL_STATUS_Success;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP DgnElement::GetClass() const
+    {
+    return GetDgnDb().Schemas().GetECClass(GetClassId().GetValue());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_GenerateDefaultCode()
     {
     if (m_elementId.IsValid())
-        m_code = Utf8PrintfString("%s%lld", GetElementHandler().GetClassName(), m_elementId.GetValue());
+        m_code = Utf8PrintfString("%s%lld", GetClass()->GetName().c_str(), m_elementId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1111,24 +1120,6 @@ static ECN::IECInstancePtr getDirectlyLinkedInstance(DgnDbR db, ECN::ECClassCP e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-static ECN::ECClassCR getEffectiveElementClass(DgnElementCR el)
-    {
-    DgnDbR db = el.GetDgnDb();
-    ECN::ECClassCP cls = db.Schemas().GetECClass(el.GetClassId().GetValue());
-    if (nullptr == cls)
-        {
-        cls = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element);
-        if (nullptr == cls)
-            {
-            BeAssert(false && "missing or invalid dgn schema");
-            }
-        }
-    return *cls;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson  04/2015
-//---------------------------------------------------------------------------------------
 ECN::IECInstanceR DgnElement::GetSubclassProperties(bool setModified) const
     {
     CachedInstances& instances = CachedInstances::Get(*this);
@@ -1146,7 +1137,7 @@ ECN::IECInstanceR DgnElement::GetSubclassProperties(bool setModified) const
             ignoreList.insert("CategoryId");
             ignoreList.insert("Code");
             ignoreList.insert("LastMod");
-            instances.m_element = CachedInstance(getDirectlyLinkedInstance(GetDgnDb(), &getEffectiveElementClass(*this), GetElementId(), ignoreList));
+            instances.m_element = CachedInstance(getDirectlyLinkedInstance(GetDgnDb(), GetClass(), GetElementId(), ignoreList));
             }
         }
     if (setModified)
@@ -1257,7 +1248,7 @@ bvector<ECN::IECInstancePtr> GeometricElement::GetAspects(ECN::ECClassCP aspectC
     Utf8String aspectProps = getPropertiesList(*aspectClass, bset<Utf8String>());
 
     ECSqlSelectBuilder b;
-    b.Select(aspectProps.c_str()).From(*aspectClass, "a", false).Join(getEffectiveElementClass(*this), "e", false).Using(*elementOwnsAspectRelationship).WhereSourceEndIs("e", "?");
+    b.Select(aspectProps.c_str()).From(*aspectClass, "a", false).Join(*GetClass(), "e", false).Using(*elementOwnsAspectRelationship).WhereSourceEndIs("e", "?");
     ECSqlStatement stmt;
     stmt.Prepare(GetDgnDb(), b.ToString().c_str());
     stmt.BindId(1, GetElementId());

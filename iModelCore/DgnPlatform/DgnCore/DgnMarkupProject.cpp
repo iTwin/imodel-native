@@ -15,10 +15,7 @@
 #define QV_RGB_FORMAT    2
 #define QV_BGR_FORMAT    3
 
-USING_NAMESPACE_BENTLEY_SQLITE_EC
-
 static WCharCP s_markupDgnDbExt   = L".markupdb";
-
 static Utf8CP  s_projectType      = "Markup";
 
 /*---------------------------------------------------------------------------------**//**
@@ -812,24 +809,6 @@ BentleyStatus DgnMarkupProject::ImportMarkupEcschema ()
     return SaveChanges() == BE_SQLITE_OK? SUCCESS: ERROR;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModel::RedlineModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : SheetModel (project, modelId, classId, name), 
-        m_dgndb (dynamic_cast<DgnMarkupProject*>(&project)) 
-    {
-    m_tilesX = 0;
-    //BeAssert (m_dgndb != nullptr && "a redlinemodel should be loaded only by a markup project");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineModel::PhysicalRedlineModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : PhysicalModel (project, modelId, classId, name), 
-    m_dgndb (dynamic_cast<DgnMarkupProject*>(&project)) 
-    {
-    //BeAssert (m_dgndb != nullptr && "a redlinemodel should be loaded only by a markup project");
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
@@ -1234,7 +1213,7 @@ RedlineModelP RedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP
         DgnModelP templateModel = markupProject.Models().GetModelById (templateModelId);
 
         //  Copy model properties and settings
-        rdlModel->GetModelInfoR() = templateModel->GetModelInfo();
+        rdlModel->GetPropertiesR() = templateModel->GetProperties();
         rdlModel->SaveProperties();
         rdlModel->FillModel();
 
@@ -1307,9 +1286,9 @@ PhysicalRedlineModelP PhysicalRedlineModel::CreateModel (DgnMarkupProjectR marku
 
     PhysicalRedlineModelP rdlModel = Open (markupProject, modelId);
 
-    UnitDefinition mu = subjectViewTargetModel.GetModelInfo().GetMasterUnit();
-    UnitDefinition su = subjectViewTargetModel.GetModelInfo().GetSubUnit();
-    rdlModel->GetModelInfoR().SetWorkingUnits (mu, su);
+    UnitDefinition mu = subjectViewTargetModel.GetProperties().GetMasterUnit();
+    UnitDefinition su = subjectViewTargetModel.GetProperties().GetSubUnit();
+    rdlModel->GetPropertiesR().SetWorkingUnits (mu, su);
 
     rdlModel->SaveProperties();
 

@@ -40,12 +40,12 @@ void AngleFormatter::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::InitModelSettings (DgnModelCR model)
+void AngleFormatter::InitModelSettings(DgnModelCR model)
     {
-    DgnModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModel::Properties const& props= model.GetProperties();
 
-    SetAngleMode (modelInfo.GetAngularMode ());
-    SetAnglePrecision (modelInfo.GetAngularPrecision ());
+    SetAngleMode (props.GetAngularMode ());
+    SetAnglePrecision (props.GetAngularPrecision ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -439,7 +439,7 @@ void DirectionFormatter::InitModelSettings (DgnModelCR model)
     {
     m_angleFormatter->InitModelSettings (model);
 
-    DgnModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModel::Properties const& modelInfo = model.GetProperties();
 
     SetDirectionMode (modelInfo.GetDirectionMode ());
     SetClockwise (modelInfo.GetDirectionClockwise ());
@@ -711,7 +711,7 @@ BentleyStatus   DistanceFormatter::ToDwgUnitFormat (DwgUnitFormat& dwgUnitFormat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DistanceFormatter::InitializeForDwg (DgnModelInfoCR modelInfo)
+void DistanceFormatter::InitializeForDwg (DgnModel::Properties const& modelInfo)
     {
     DgnUnitFormat       dgnUnitFormat   = modelInfo.GetLinearUnitMode();
     PrecisionFormat     precision       = modelInfo.GetLinearPrecision();
@@ -775,7 +775,7 @@ void DistanceFormatter::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DistanceFormatter::InitModelSettings (DgnModelCR model)
     {
-    DgnModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModel::Properties const& modelInfo = model.GetProperties();
 
     SetUnitFormat (modelInfo.GetLinearUnitMode());
     SetPrecision (modelInfo.GetLinearPrecision());
@@ -860,7 +860,7 @@ DistanceFormatterPtr    DistanceFormatter::Create (DgnViewportR viewport)
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
 
-    if (targetModel->GetModelInfo().GetIsAcsLocked())
+    if (targetModel->GetProperties().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive (viewport);
 
     if (NULL == acs)
@@ -1192,7 +1192,7 @@ PointFormatterPtr   PointFormatter::Create (DgnViewportR viewport)
     {
     DgnModelP       targetModel = viewport.GetViewController ().GetTargetModel();
 #ifdef WIP_V10_MODEL_ACS
-    bool            useViewACS  = targetModel->GetModelInfo().GetIsAcsLocked();
+    bool            useViewACS  = targetModel->GetProperties().GetIsAcsLocked();
 #else
     bool            useViewACS  = false;
 #endif
@@ -1293,7 +1293,7 @@ void AreaOrVolumeFormatterBase::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AreaOrVolumeFormatterBase::InitModelSettings (DgnModelCR model)
     {
-    DgnModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModel::Properties const& modelInfo = model.GetProperties();
 
     SetPrecision (modelInfo.GetLinearPrecision());
 
@@ -1335,7 +1335,7 @@ void AreaOrVolumeFormatterBase::SetDWGUnitFormat (DwgUnitFormat newVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AreaOrVolumeFormatterBase::InitializeForDwg (DgnModelInfoCR modelInfo)
+void            AreaOrVolumeFormatterBase::InitializeForDwg (DgnModel::Properties const& modelInfo)
     {
     DgnUnitFormat       dgnUnitFormat   = modelInfo.GetLinearUnitMode();
     PrecisionFormat     precision       = modelInfo.GetLinearPrecision();
@@ -1387,7 +1387,7 @@ AreaFormatterPtr    AreaFormatter::Create (DgnViewportR viewport)
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetModelInfo().GetIsAcsLocked())
+    if (targetModel->GetProperties().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive (viewport);
 
     if (NULL == acs)
@@ -1474,7 +1474,7 @@ VolumeFormatterPtr VolumeFormatter::Create (DgnViewportR viewport)
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetModelInfo().GetIsAcsLocked())
+    if (targetModel->GetProperties().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive (viewport);
 
     if (NULL == acs)

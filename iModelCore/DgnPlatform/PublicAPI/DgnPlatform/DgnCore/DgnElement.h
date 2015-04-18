@@ -233,7 +233,6 @@ public:
 
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
     uint32_t GetRefCount() const {return m_refCount.load();}
-
     void SetDirtyFlags(DirtyFlags flags) {m_flags.m_dirtyFlag |= flags;}
 
     DGNPLATFORM_EXPORT void ForceElemChanged(bool qvCacheCleared, DgnElementChangeReason);
@@ -296,6 +295,8 @@ public:
 
     //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this element.
     DgnElementKey GetElementKey() const {return DgnElementKey(GetClassId(), GetElementId());}
+
+    DGNPLATFORM_EXPORT ECN::ECClassCP GetClass() const;
 
     //! Get the category of the element held by this element.
     DgnCategoryId GetCategoryId() const {return m_categoryId;}

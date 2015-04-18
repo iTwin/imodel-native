@@ -280,7 +280,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : PhysicalModel
     DEFINE_T_SUPER(PhysicalModel)
 
 public:
-    struct Properties
+    struct Mercator
         {
         DRange3d   m_range;             //! The range covered by this map -- typically the project's extents -- could be the whole world
         Utf8String m_mapService;        //! Identifies the source of the tiled map data. This is a token that is supplied by the 
@@ -299,13 +299,11 @@ protected:
     friend struct WebMercatorModelHandler;
     friend struct WebMercatorDisplay;
 
-    Properties m_properties;
+    Mercator m_mercator;
 
+public:
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
-    DGNPLATFORM_EXPORT WebMercatorModel(DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name);
-
-    //! Destruct a WebMercatorModel object.
-    DGNPLATFORM_EXPORT ~WebMercatorModel();
+    WebMercatorModel(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
@@ -313,7 +311,7 @@ protected:
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _QueryModelRange (DRange3dR) override;
 
     //! Call this after creating a new model, in order to set up subclass-specific properties.
-    void SetProperties (Properties const&);
+    void SetMercator(Mercator const&);
 };
 
 //=======================================================================================
@@ -327,9 +325,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModelHandler : ModelHandler
     HANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
 protected:
 
-    DGNPLATFORM_EXPORT virtual DgnModelPtr _SupplyDgnModel(DgnDbR db, DgnModels::Model const& model) override;
-
-    void FinishCreation (DgnDbR, DgnModels::Model const&, WebMercatorModel::Properties const&);
+    DGNPLATFORM_EXPORT DgnModelP _CreateInstance(DgnModel::CreateParams const&) override;
 
 public:
     //! Create the URL to request the specified tile from a map service.
@@ -339,7 +335,7 @@ public:
     //!                             when constructing URLs at runtime for requesting tiles for the model.
     //! @param[in] mapType          Identifies the type of map data to request and display.
     //! @param[in] tileid           The location of the tile, according to the WebMercator tiling system
-    DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Properties const&, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
+    DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
 };
 
 //=======================================================================================
@@ -365,9 +361,9 @@ struct StreetMapModelHandler : WebMercatorModelHandler
         };
 
 protected:
-    DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Properties const&, WebMercatorTilingSystem::TileId const&) override;
+    DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
 
-    DGNPLATFORM_EXPORT Utf8String CreateMapquestUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Properties const&);
+    DGNPLATFORM_EXPORT Utf8String CreateMapquestUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
 
 public:
     //! Create a new street map model in the DgnDb.

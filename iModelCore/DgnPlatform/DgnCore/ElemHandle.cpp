@@ -115,7 +115,7 @@ BentleyStatus EditElementHandle::CreateNewElement(DgnModelR model, DgnClassId el
         }
 
     m_element = nullptr;
-    m_dscr = elementHandler->CreateInstance(DgnElement::CreateParams(model, elementClassId, categoryId, code, DgnElementId()));
+    m_dscr = elementHandler->Create(DgnElement::CreateParams(model, elementClassId, categoryId, code, DgnElementId()));
     return BentleyStatus::SUCCESS;
     }
 

@@ -258,7 +258,7 @@ TEST (DgnDb, CheckStandardProperties)
     DgnModelP defaultModel = project->Models().GetModelById(project->Models().QueryFirstModelId());
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
-    DgnModelInfoCR minfo = defaultModel->GetModelInfo ();
+    DgnModel::Properties const& minfo = defaultModel->GetProperties();
     ASSERT_TRUE( minfo.GetMasterUnit().GetBase() == UnitBase::Meter );
     ASSERT_TRUE( minfo.GetSubUnit().GetBase() == UnitBase::Meter );
     }

@@ -927,7 +927,7 @@ BentleyStatus WebMercatorDisplay::CreateUrl (Utf8StringR url, ImageUtilities::Rg
         BeAssert(false);
         return BSIERROR;
         }
-    return webMercatorModelHandler->_CreateUrl(url, imageInfo, m_model.m_properties, tileid);
+    return webMercatorModelHandler->_CreateUrl(url, imageInfo, m_model.m_mercator, tileid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1068,7 +1068,7 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
 DbResult WebMercatorModel::_QueryModelRange (DRange3dR range)
     {
     // *** WIP_WEBMERCATORMODEL - range
-    range = m_properties.m_range;
+    range = m_mercator.m_range;
     return BE_SQLITE_ROW;
     }
 
@@ -1368,7 +1368,7 @@ Utf8String StreetMapModelHandler::CreateGoogleMapsUrl (WebMercatorTilingSystem::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapModelHandler::CreateMapquestUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Properties const& props)
+Utf8String StreetMapModelHandler::CreateMapquestUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
     {
     Utf8String url = "http://otile1.mqcdn.com/tiles/1.0.0/";
     if (!props.m_mapType.empty() && props.m_mapType[0] == '0')
@@ -1388,7 +1388,7 @@ Utf8String StreetMapModelHandler::CreateMapquestUrl (WebMercatorTilingSystem::Ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StreetMapModelHandler::_CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorModel::Properties const& props, WebMercatorTilingSystem::TileId const& tileid)
+BentleyStatus StreetMapModelHandler::_CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorModel::Mercator const& props, WebMercatorTilingSystem::TileId const& tileid)
     {
     // The usual image format info
     expectedImageInfo.height = expectedImageInfo.width = 256;
@@ -1427,16 +1427,6 @@ BentleyStatus StreetMapModelHandler::_CreateUrl (Utf8StringR url, ImageUtilities
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModelHandler::FinishCreation (DgnDbR db, DgnModels::Model const& modelData, WebMercatorModel::Properties const& props)
-    {
-    WebMercatorModel* model = dynamic_cast<WebMercatorModel*>(db.Models().GetModelById(modelData.GetId()));
-    model->SetProperties(props);
-    model->SaveProperties();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String getStreetMapServerDescription(StreetMapModelHandler::MapService mapService, StreetMapModelHandler::MapType mapType)
@@ -1457,6 +1447,7 @@ static Utf8String getStreetMapServerDescription(StreetMapModelHandler::MapServic
     return descr;
     }
 
+DGNPLATFORM_REF_COUNTED_PTR(WebMercatorModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1464,55 +1455,42 @@ DgnModelId StreetMapModelHandler::CreateStreetMapModel(DgnDbR db, MapService map
     {
     //Utf8PrintfString modelName("com.bentley.dgn.StreetMap_%d_%d", mapService, mapType); // *** WIP_STREET_MAP how to make sure name is unique?
     Utf8String modelName = getStreetMapServerDescription(mapService,mapType).c_str();
-    ECN::ECClassId classId = db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel");
-    BeAssert(classId != -1);
-    DgnModels::Model modelData(modelName.c_str(), DgnModelType::Physical, DgnModels::Model::CoordinateSpace::World, DgnClassId(classId));
-    db.Models().CreateNewModel(modelData);
+    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel"));
+    BeAssert(classId.IsValid());
 
-    WebMercatorModel::Properties props;
+    WebMercatorModelPtr model = new WebMercatorModel(DgnModel::CreateParams(db, classId, modelName.c_str()));
+
+    WebMercatorModel::Mercator props;
     props.m_mapService = Utf8PrintfString("%d", mapService);
     props.m_mapType = Utf8PrintfString("%d", mapType);
     props.m_finerResolution = finerResolution;
     props.m_range = db.Units().GetProjectExtents(); // The "range" of a map could be the whole world. We'll fall back on the project's full extents.
 
-    GetHandler().FinishCreation(db, modelData, props);
-
-    return modelData.GetId();
+    model->SetMercator(props);
+    db.Models().InsertNewModel(*model);
+    return model->GetModelId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr WebMercatorModelHandler::_SupplyDgnModel(DgnDbR db, DgnModels::Model const& model)
+DgnModelP WebMercatorModelHandler::_CreateInstance(WebMercatorModel::CreateParams const& params)
     {
-    return new WebMercatorModel(db, model.GetId(), model.GetClassId(), model.GetName().c_str());
+    return new WebMercatorModel(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::WebMercatorModel(DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : T_Super (project, modelId, classId, name)
+void WebMercatorModel::SetMercator(WebMercatorModel::Mercator const& props)
     {
+    m_mercator = props;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::~WebMercatorModel()
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::SetProperties (WebMercatorModel::Properties const& props)
-    {
-    m_properties = props;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::Properties::ToJson(Json::Value& v) const
+void WebMercatorModel::Mercator::ToJson(Json::Value& v) const
     {
     v["mapService"] = m_mapService.c_str();
     v["mapType"] = m_mapType.c_str();
@@ -1524,7 +1502,7 @@ void WebMercatorModel::Properties::ToJson(Json::Value& v) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::Properties::FromJson(Json::Value const& v)
+void WebMercatorModel::Mercator::FromJson(Json::Value const& v)
     {
     m_mapService = v["mapService"].asString();
     m_mapType = v["mapType"].asString();

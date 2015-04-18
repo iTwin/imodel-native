@@ -145,11 +145,9 @@ struct DgnViewAssociationData : DgnProjectAssociationData
 //=======================================================================================
 struct RedlineModel : SheetModel
     {
+    DEFINE_T_SUPER(SheetModel)
+
 private:
-    DECLARE_KEY_METHOD
-
-//__PUBLISH_SECTION_END__
-
     //! Describes the sheet, include its origina and size.
     // *** WIP_SHEETMODEL - reinstate SheetDef?? Copy more fields from SheetDef??
     struct RDLSheetDef
@@ -203,8 +201,8 @@ protected:
 
     void DefineImageTexturesForRow (ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross);
 
+    RedlineModel(CreateParams const& params): T_Super(params) {m_tilesX = 0;}
 public:
-    RedlineModel (DgnDbR, DgnModelId modelId, DgnClassId classid, Utf8CP name);
 
     static RedlineModelP Create (DgnMarkupProjectR, Utf8CP name, DgnModelId templateModel);
     static RedlineModelP Open   (DgnMarkupProjectR, DgnModelId);
@@ -216,8 +214,6 @@ public:
 
     void LoadImageDataAndDefineTexture();
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
 
     DGNPLATFORM_EXPORT uintptr_t GetBackDropTextureId() const;
@@ -416,13 +412,9 @@ public:
 struct PhysicalRedlineModel : PhysicalModel
     {
 private:
-    DECLARE_KEY_METHOD
+    DEFINE_T_SUPER(PhysicalModel)
 
-//__PUBLISH_SECTION_END__
-
-private:
     DgnMarkupProject*   m_dgndb;
-
     friend struct DgnMarkupProject;
 
 protected:
@@ -431,13 +423,10 @@ protected:
 
     static PhysicalRedlineModelP CreateModel (DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel);
 
-public:
-    PhysicalRedlineModel (DgnDbR, DgnModelId modelId, DgnClassId classId, Utf8CP name);
+    PhysicalRedlineModel(CreateParams const& params) : T_Super(params) {}
 
-    static PhysicalRedlineModelP Open   (DgnMarkupProjectR, DgnModelId);
+    static PhysicalRedlineModelP Open(DgnMarkupProjectR, DgnModelId);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     //! Get the ECClass of the ECInstance that holds the properties of this model.
     DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass () const;

@@ -24,7 +24,7 @@ DbResult DgnModels::InsertModel(Model& row)
     stmt.BindInt(4,(int)row.GetModelType());
     stmt.BindInt64(5, row.GetClassId().GetValue());
     stmt.BindInt(6,(int) row.GetCoordinateSpace());
-    stmt.BindInt(7, row.GetVisibility());
+    stmt.BindInt(7, row.InGuiList());
 
     status = stmt.Step();
     BeAssert(BE_SQLITE_DONE==status);
@@ -84,7 +84,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_modelType = (DgnModelType) stmt.GetValueInt(2);
         out->m_classId = DgnClassId(stmt.GetValueInt64(3));
         out->m_space = (Model::CoordinateSpace) stmt.GetValueInt(4);
-        out->m_visibility = stmt.GetValueInt(5);
+        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(5));
         }
 
     return  SUCCESS;
@@ -197,20 +197,12 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(DgnDbR dgndb, DgnModelId modelId, DgnClassId classId, Utf8CP name) : m_dgndb(dgndb), m_modelId(modelId), m_modelInfo(), m_classId(classId)
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name)
     {
     m_rangeIndex = nullptr;
     m_wasFilled = false;
     m_readonly  = false;
-    m_mark      = false;
-    m_name.AssignOrClear(name);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    02/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelInfoCR DgnModel::GetModelInfo () const {return m_modelInfo;}
-DgnModelInfoR DgnModel::GetModelInfoR() {return m_modelInfo;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
@@ -295,8 +287,8 @@ DgnModel::~DgnModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_ToPropertiesJson(Json::Value& val) const {m_modelInfo.ToJson(val);}
-void DgnModel::_FromPropertiesJson(Json::Value const& val) {m_modelInfo.FromJson(val);}
+void DgnModel::_ToPropertiesJson(Json::Value& val) const {m_properties.ToJson(val);}
+void DgnModel::_FromPropertiesJson(Json::Value const& val) {m_properties.FromJson(val);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
@@ -446,18 +438,6 @@ BeSQLite::DbResult DgnModel::SaveProperties()
 
     auto rc=stmt.Step();
     return rc== BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnModel::CopyPropertiesFrom(DgnModelCR source)
-    {
-    Json::Value props;
-    source._ToPropertiesJson(props);
-    _FromPropertiesJson(props);
-
-    return SaveProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -731,8 +711,17 @@ bool DgnModels::FreeQvCache()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModels::InsertNewModel(Model& row)
+DgnModelStatus DgnModels::InsertNewModel(DgnModelR model, Utf8CP description, bool inGuiList)
     {
+    if (model.m_modelId.IsValid())
+        return DGNMODEL_STATUS_IdExists;
+
+    if (&model.m_dgndb != &m_dgndb)
+        return DGNMODEL_STATUS_WrongDgnDb;
+
+    DgnModels::Model row(model.m_name.c_str(), model._GetModelType(), model._GetCoordinateSpace(), model.GetClassId());
+    row.SetDescription(description);
+    row.SetInGuiList(inGuiList);
     row.GetNameR().Trim();
     row.GetDescriptionR().Trim();
 
@@ -745,10 +734,40 @@ DgnModelStatus DgnModels::InsertNewModel(Model& row)
     if (QueryModelId(row.GetNameCP()).IsValid()) // can't allow two models with the same name
         return DGNMODEL_STATUS_DuplicateModelName;
 
-    if (row.GetId().IsValid() && (SUCCESS == QueryModelById(nullptr, row.GetId()))) // can't allow two models with the same ModelId
-        return DGNMODEL_STATUS_DuplicateModelID;
+    if (BE_SQLITE_OK != InsertModel(row))
+        return DGNMODEL_STATUS_ModelTableWriteError;
 
-    return (BE_SQLITE_OK != InsertModel(row)) ?  DGNMODEL_STATUS_ModelTableWriteError : DGNMODEL_STATUS_Success;
+    model.m_modelId = row.GetId(); // retrieve new modelId
+    m_models[model.m_modelId] = &model;  // this holds the reference count
+    return (BE_SQLITE_OK == model.SaveProperties()) ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_BadRequest;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_InitFrom(DgnModelCR other)
+    {
+    Json::Value props;
+    other._ToPropertiesJson(props);
+    _FromPropertiesJson(props);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr DgnModel::Duplicate(Utf8CP newName) const
+    {
+    DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, newName));
+    newModel->_InitFrom(*this);
+    return newModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ModelHandlerR DgnModel::GetModelHandler() const
+    {
+    return *ModelHandler::FindHandler(m_dgndb, m_classId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -757,7 +776,6 @@ DgnModelStatus DgnModels::InsertNewModel(Model& row)
 DgnModelP DgnModels::CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModelId)
     {
     DgnModelStatus t, &status(result ? *result : t);
-
     if (!seedModelId.IsValid())
         {
         status = DGNMODEL_STATUS_BadSeedModel;
@@ -771,80 +789,26 @@ DgnModelP DgnModels::CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name,
         return nullptr;
         }
 
-    DgnModels::Model seedRow;
-    if (SUCCESS != QueryModelById(&seedRow, seedModelId))
-        {
-        status = DGNMODEL_STATUS_BadSeedModel;
-        return nullptr;
-        }
-
-    DgnModels::Model newRow(seedRow);
-    newRow.SetName(name);
-    newRow.SetId(DgnModelId());
-
-    status = CreateNewModel(newRow);
+    DgnModelPtr newModel = seedModel->Duplicate(name);
+    status = InsertNewModel(*newModel);
     if (DGNMODEL_STATUS_Success != status)
         return nullptr;
 
-    DgnModelP newModel = GetModelById(newRow.GetId());
-    newModel->CopyPropertiesFrom(*seedModel);
-    return newModel;
+    return newModel.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr ModelHandler::_SupplyDgnModel(DgnDbR db, DgnModels::Model const& model)
+DgnModelP PhysicalModelHandler::_CreateInstance(DgnModel::CreateParams const& params)
     {
-    auto const& schemas = db.Schemas();
-    ECClassCP modelClass = schemas.GetECClass(model.GetClassId().GetValue());
-
-    if (nullptr==modelClass)
-        return nullptr;
-
-    if (modelClass->Is(schemas.GetECClass("dgn", "ComponentModel")))
-        return new ComponentModel(db, model.GetId(), model.GetClassId(), model.GetNameCP());
-
-    if (modelClass->Is(schemas.GetECClass("dgn", "PhysicalModel")))
-        return new PhysicalModel(db, model.GetId(), model.GetClassId(), model.GetNameCP());
-
-#if defined (NEEDS_WORK_ELEMENT_REFACTOR)
-    if (modelClass->Is(schemas.GetECClass("dgn", "DrawingModel")))
-        return new DrawingModel(db, model.GetId(), model.GetClassId(), model.GetNameCP());
-#endif
-
-    if (modelClass->Is(schemas.GetECClass("dgn", "SheetModel")))
-        return new SheetModel(db, model.GetId(), model.GetClassId(), model.GetNameCP());
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModels::CreateNewModel(DgnModels::Model& model)
-    {
-    // make sure the class derives from Model (has a handler)
-    ModelHandlerP handler = ModelHandler::FindHandler(m_dgndb, model.GetClassId());
-    if (nullptr == handler)
-        return DGNMODEL_STATUS_InvalidClassId;
-
-    // create new row in the database, obtain modelid
-    DgnModelStatus status = InsertNewModel(model);
-    if (status != DGNMODEL_STATUS_Success)
-        return status;
-
-    DgnModelPtr dgnModel = handler->_SupplyDgnModel(m_dgndb, model);
-    if (!dgnModel.IsValid())
-        return DGNMODEL_STATUS_InvalidHandler;
-
-    return (BE_SQLITE_OK == dgnModel->SaveProperties()) ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_BadRequest;
+    return new PhysicalModel(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::SupplyDgnModel(DgnModelId modelId)
+DgnModelP DgnModels::CreateDgnModel(DgnModelId modelId)
     {
     DgnModels::Model model;
     if (SUCCESS != QueryModelById(&model, modelId))
@@ -855,7 +819,8 @@ DgnModelP DgnModels::SupplyDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModelPtr dgnModel = handler->_SupplyDgnModel(m_dgndb, model);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), modelId);
+    DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
 
@@ -883,7 +848,7 @@ DgnModelP DgnModels::GetModelById(DgnModelId modelId)
         return  NULL;
 
     DgnModelP dgnModel = FindModelById(modelId);
-    return (NULL != dgnModel) ? dgnModel : SupplyDgnModel(modelId);
+    return (NULL != dgnModel) ? dgnModel : CreateDgnModel(modelId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1050,7 +1015,7 @@ SectioningViewControllerPtr SectionDrawingModel::GetSourceView()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DgnModel::GetMillimetersPerMaster() const
     {
-    return m_modelInfo.GetMasterUnit().IsLinear() ? m_modelInfo.GetMasterUnit().ToMillimeters() : 1000.;
+    return m_properties.GetMasterUnit().IsLinear() ? m_properties.GetMasterUnit().ToMillimeters() : 1000.;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1059,10 +1024,9 @@ double DgnModel::GetMillimetersPerMaster() const
 double DgnModel::GetSubPerMaster() const
     {
     double  subPerMast;
-    m_modelInfo.GetSubUnit().ConvertDistanceFrom(subPerMast, 1.0, m_modelInfo.GetMasterUnit());
+    m_properties.GetSubUnit().ConvertDistanceFrom(subPerMast, 1.0, m_properties.GetMasterUnit());
     return subPerMast;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
@@ -1093,7 +1057,7 @@ DgnFileStatus DgnModel::FillModel()
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman      01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  DgnModelInfo::SetWorkingUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
+BentleyStatus DgnModel::Properties::SetWorkingUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
     {
     if (!newMasterUnit.IsValid() || !newSubUnit.IsValid() || !newMasterUnit.AreComparable(newSubUnit))
         return ERROR;

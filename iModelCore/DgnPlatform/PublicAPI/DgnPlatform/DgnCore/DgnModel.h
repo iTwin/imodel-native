@@ -26,6 +26,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 typedef bset<DgnElementP> T_StdDgnElementSet;
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
 struct DgnElementMap : bmap<DgnElementId, DgnElementPtr>
     {
     void Add(DgnElementR el) 
@@ -117,84 +120,6 @@ struct DgnModelAppData
     };
 
 //=======================================================================================
-//! The properties for a DgnModel.
-//! @bsiclass
-//=======================================================================================
-struct DgnModelInfo
-{
-    friend struct DgnModel;
-
-private:
-    struct FormatterFlags
-    {
-        uint32_t m_linearUnitMode:2;
-        uint32_t m_linearPrecType:4;
-        uint32_t m_linearPrecision:8;
-        uint32_t m_angularMode:3;
-        uint32_t m_angularPrecision:8;
-        uint32_t m_directionMode:2;
-        uint32_t m_directionClockwise:1;
-        void FromJson (Json::Value const& inValue);
-        void ToJson(Json::Value& outValue) const;
-    };
-
-    FormatterFlags   m_formatterFlags;               //!< Flags saved on "save settings"
-    UnitDefinition   m_masterUnit;                   //!< Master Unit information
-    UnitDefinition   m_subUnit;                      //!< Sub Unit information
-    double           m_roundoffUnit;                 //!< unit lock roundoff val in uors
-    double           m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
-    double           m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
-
-public:
-    DgnModelInfo()
-        {
-        m_formatterFlags.m_linearUnitMode = 0;
-        m_formatterFlags.m_linearPrecType = 0;
-        m_formatterFlags.m_linearPrecision= 0;
-        m_formatterFlags.m_angularMode = 0;
-        m_formatterFlags.m_angularPrecision = 0;
-        m_formatterFlags.m_directionMode = 0;
-        m_formatterFlags.m_directionClockwise = 0;
-        m_roundoffRatio= 0;
-        m_formatterBaseDir = 0;
-        m_roundoffUnit = 0;
-        m_subUnit.Init (UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
-        m_masterUnit = m_subUnit;
-        }
-
-    void FromJson (Json::Value const& inValue);
-    void ToJson(Json::Value& outValue) const;
-
-    //! Set working-units and sub-units. Units must be valid and comparable.
-    DGNPLATFORM_EXPORT BentleyStatus SetWorkingUnits (UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
-
-    void SetLinearUnitMode (DgnUnitFormat value) { m_formatterFlags.m_linearUnitMode = (uint32_t)value; }
-    void SetLinearPrecision (PrecisionFormat value) {
-            m_formatterFlags.m_linearPrecType  = static_cast<uint32_t>(DoubleFormatter::GetTypeFromPrecision (value));
-            m_formatterFlags.m_linearPrecision = DoubleFormatter::GetByteFromPrecision (value);}
-    void SetAngularMode (AngleMode value) { m_formatterFlags.m_angularMode = (uint32_t)value; }
-    void SetAngularPrecision (AnglePrecision value) { m_formatterFlags.m_angularPrecision = (uint32_t)value; }
-    void SetDirectionMode (DirectionMode value) {m_formatterFlags.m_directionMode = (uint32_t)value; }
-    void SetDirectionClockwise (bool value) { m_formatterFlags.m_directionClockwise = value; }
-    void SetDirectionBaseDir (double value) { m_formatterBaseDir = value; }
-
-    DgnUnitFormat GetLinearUnitMode() const {return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
-    PrecisionFormat GetLinearPrecision() const {return DoubleFormatter::ToPrecisionEnum ((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
-    AngleMode GetAngularMode() const {return (AngleMode) m_formatterFlags.m_angularMode; }
-    AnglePrecision GetAngularPrecision() const {return (AnglePrecision) m_formatterFlags.m_angularPrecision; }
-    DirectionMode GetDirectionMode() const {return (DirectionMode) m_formatterFlags.m_directionMode; }
-    bool GetDirectionClockwise() const {return m_formatterFlags.m_directionClockwise; }
-    double GetDirectionBaseDir() const {return m_formatterBaseDir; }
-
-    void SetRoundoffUnit (double roundoffUnit, double roundoffRatio) {m_roundoffUnit  = roundoffUnit;m_roundoffRatio = roundoffRatio;}
-    double GetRoundoffUnit() const {return m_roundoffUnit;}
-    double GetRoundoffRatio() const {return m_roundoffRatio;}
-    FormatterFlags GetFormatterFlags() const    {return m_formatterFlags;}
-    UnitDefinitionCR GetMasterUnit() const {return m_masterUnit;}
-    UnitDefinitionCR GetSubUnit() const {return m_subUnit;}
-};
-
-//=======================================================================================
 //! A DgnModel represents a model in memory and may hold references to elements that belong to it.
 //! @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
@@ -205,6 +130,93 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct DgnElementIterator;
     friend struct DgnElementPool;
 
+    //=======================================================================================
+    //! The properties for a DgnModel.
+    //! @bsiclass
+    //=======================================================================================
+    struct Properties
+    {
+        friend struct DgnModel;
+
+    private:
+        struct FormatterFlags
+        {
+            uint32_t m_linearUnitMode:2;
+            uint32_t m_linearPrecType:4;
+            uint32_t m_linearPrecision:8;
+            uint32_t m_angularMode:3;
+            uint32_t m_angularPrecision:8;
+            uint32_t m_directionMode:2;
+            uint32_t m_directionClockwise:1;
+            void FromJson (Json::Value const& inValue);
+            void ToJson(Json::Value& outValue) const;
+        };
+
+        FormatterFlags   m_formatterFlags;               //!< Flags saved on "save settings"
+        UnitDefinition   m_masterUnit;                   //!< Master Unit information
+        UnitDefinition   m_subUnit;                      //!< Sub Unit information
+        double           m_roundoffUnit;                 //!< unit lock roundoff val in uors
+        double           m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
+        double           m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
+
+    public:
+        Properties()
+            {
+            m_formatterFlags.m_linearUnitMode = 0;
+            m_formatterFlags.m_linearPrecType = 0;
+            m_formatterFlags.m_linearPrecision= 0;
+            m_formatterFlags.m_angularMode = 0;
+            m_formatterFlags.m_angularPrecision = 0;
+            m_formatterFlags.m_directionMode = 0;
+            m_formatterFlags.m_directionClockwise = 0;
+            m_roundoffRatio= 0;
+            m_formatterBaseDir = 0;
+            m_roundoffUnit = 0;
+            m_subUnit.Init (UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
+            m_masterUnit = m_subUnit;
+            }
+
+        void FromJson (Json::Value const& inValue);
+        void ToJson(Json::Value& outValue) const;
+
+        //! Set working-units and sub-units. Units must be valid and comparable.
+        DGNPLATFORM_EXPORT BentleyStatus SetWorkingUnits (UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
+        void SetLinearUnitMode (DgnUnitFormat value) { m_formatterFlags.m_linearUnitMode = (uint32_t)value; }
+        void SetLinearPrecision (PrecisionFormat value) {
+                m_formatterFlags.m_linearPrecType  = static_cast<uint32_t>(DoubleFormatter::GetTypeFromPrecision (value));
+                m_formatterFlags.m_linearPrecision = DoubleFormatter::GetByteFromPrecision (value);}
+        void SetAngularMode (AngleMode value) { m_formatterFlags.m_angularMode = (uint32_t)value; }
+        void SetAngularPrecision (AnglePrecision value) { m_formatterFlags.m_angularPrecision = (uint32_t)value; }
+        void SetDirectionMode (DirectionMode value) {m_formatterFlags.m_directionMode = (uint32_t)value; }
+        void SetDirectionClockwise (bool value) { m_formatterFlags.m_directionClockwise = value; }
+        void SetDirectionBaseDir (double value) { m_formatterBaseDir = value; }
+        DgnUnitFormat GetLinearUnitMode() const {return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
+        PrecisionFormat GetLinearPrecision() const {return DoubleFormatter::ToPrecisionEnum ((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
+        AngleMode GetAngularMode() const {return (AngleMode) m_formatterFlags.m_angularMode; }
+        AnglePrecision GetAngularPrecision() const {return (AnglePrecision) m_formatterFlags.m_angularPrecision; }
+        DirectionMode GetDirectionMode() const {return (DirectionMode) m_formatterFlags.m_directionMode; }
+        bool GetDirectionClockwise() const {return m_formatterFlags.m_directionClockwise; }
+        double GetDirectionBaseDir() const {return m_formatterBaseDir; }
+        void SetRoundoffUnit (double roundoffUnit, double roundoffRatio) {m_roundoffUnit  = roundoffUnit;m_roundoffRatio = roundoffRatio;}
+        double GetRoundoffUnit() const {return m_roundoffUnit;}
+        double GetRoundoffRatio() const {return m_roundoffRatio;}
+        FormatterFlags GetFormatterFlags() const    {return m_formatterFlags;}
+        UnitDefinitionCR GetMasterUnit() const {return m_masterUnit;}
+        UnitDefinitionCR GetSubUnit() const {return m_subUnit;}
+    };
+
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct CreateParams
+    {
+    DgnDbR      m_dgndb;
+    DgnModelId  m_id;
+    DgnClassId  m_classId;
+    Utf8String  m_name;
+    CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DgnModelId id=DgnModelId()) : m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name) {}
+    };
+    
 protected:
     typedef BeSQLite::AppDataList<DgnModelAppData, DgnModelAppData::Key, DgnModelR> T_AppDataList;
 
@@ -213,22 +225,24 @@ protected:
     DgnClassId      m_classId;
     T_AppDataList   m_appData;
     Utf8String      m_name;
-    DgnModelInfo    m_modelInfo;
+    Properties      m_properties;
     DgnElementMap   m_elements;
     mutable ElemRangeIndexP m_rangeIndex;
     bool            m_wasFilled;    // true if the list was filled from db
     bool            m_readonly;     // true if this model is from a read-only file.
-    bool            m_mark;         // "mark" that can be used by applications on a temporary basis.
 
-    DGNPLATFORM_EXPORT DgnModel(DgnDbR project, DgnModelId modelID, DgnClassId classId, Utf8CP name);
+    explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
 
+    DGNPLATFORM_EXPORT virtual DgnModelPtr Duplicate(Utf8CP newName) const;
+    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);
     virtual DgnModelType _GetModelType() const = 0;
+    virtual DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const = 0;
     virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) {return BeSQLite::BE_SQLITE_ERROR;}
     virtual bool _Is3d() const = 0;
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);
-    DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const ;
+    DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnReplaceElement(DgnElementR element, DgnElementR replacement);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnAddElement(DgnElementR element);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementR element);
@@ -256,10 +270,11 @@ public:
     //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
     //! can override this method to do add graphics that QueryViewController would normally exclude.
     //! Currently, only QueryViewController calls this method.
-    virtual void _AddGraphicsToScene(ViewContextR) {;}
+    virtual void _AddGraphicsToScene(ViewContextR) {}
 
     bool NotifyOnEmpty();
 
+    DGNPLATFORM_EXPORT ModelHandler& GetModelHandler() const;
     DGNPLATFORM_EXPORT DgnModelStatus ReplaceElement(DgnElementR element, DgnElementR replacement);
 
     void ModelFillComplete();
@@ -272,13 +287,9 @@ public:
     DGNPLATFORM_EXPORT void ClearAllDirtyFlags();
     void ClearAllQvElems();
 
-    bool GetMark() { return m_mark; }
-    void SetMark (bool mark) { m_mark = mark; }
-
     DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
     DGNPLATFORM_EXPORT double GetSubPerMaster() const;
     DGNPLATFORM_EXPORT DPoint3d GetGlobalOrigin() const;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult CopyPropertiesFrom(DgnModelCR);
 
     /** @name Filling */
     /** @{ */
@@ -312,12 +323,11 @@ public:
     //! Get the range of all graphical elements in the model.
     DGNPLATFORM_EXPORT BeSQLite::DbResult QueryModelRange (DRange3dR range);
 
-    //! Get the ModelInfo for this model.
-    //! This should only be used internally. ModelInfo should NOT be modified directly because the values need to be verified for the given model.
-    DGNPLATFORM_EXPORT DgnModelInfoR GetModelInfoR();
+    //! Get the Properties for this model.
+    Properties& GetPropertiesR() {return m_properties;}
 
-    //! Get the ModelInfo for this model.
-    DGNPLATFORM_EXPORT DgnModelInfoCR GetModelInfo() const;
+    //! Get the Properties for this model.
+    Properties const& GetProperties() const {return m_properties;}
 
     //! Get the name of this model
     Utf8CP GetModelName() const {return m_name.c_str();}
@@ -372,7 +382,7 @@ protected:
     virtual DgnModel3dCP _ToDgnModel3d() const override {return this;}
 
 public:
-    DgnModel3d(DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel(project, modelId, classId, name) {}
+    explicit DgnModel3d(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -386,18 +396,17 @@ struct DgnModel2d : DgnModel
 protected:
     DPoint2d m_globalOrigin;    //!< Global Origin - all coordinates are offset by this value.
 
-    virtual bool _Is3d() const override {return false;}
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
-    virtual DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
-    virtual DgnModel2dCP _ToDgnModel2d() const override {return this;}
-
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) override;
+    bool _Is3d() const override {return false;}
+    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;
+    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;
+    DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
+    DgnModel2dCP _ToDgnModel2d() const override {return this;}
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _QueryModelRange (DRange3dR range) override;
 
 public:
     void SetGlobalOrigin(DPoint2dCR org) {m_globalOrigin = org;}
 
-    DgnModel2d (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel (project, modelId, classId, name) {m_globalOrigin.Zero();}
+    explicit DgnModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params), m_globalOrigin(origin) {}
     };
 
 //=======================================================================================
@@ -407,12 +416,13 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
 {
     DEFINE_T_SUPER(DgnModel3d)
 protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
+    DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) override;
-    virtual PhysicalModelCP _ToPhysicalModel() const override {return this;}
+    PhysicalModelCP _ToPhysicalModel() const override {return this;}
+    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::World;}
 
 public:
-    PhysicalModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel3d (project, modelId, classId, name) {}
+    explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -424,11 +434,11 @@ struct ComponentModel : DgnModel3d
     DEFINE_T_SUPER(DgnModel3d)
 
 protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Component;}
-    virtual DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
+    DgnModelType _GetModelType() const override {return DgnModelType::Component;}
+    DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
 
 public:
-    ComponentModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel3d(project, modelId, classId, name) {}
+    explicit ComponentModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -442,13 +452,13 @@ struct PlanarPhysicalModel : DgnModel2d
     Transform m_worldTrans;  // positions XY model coordinates into XYZ physical coordinates
 
 protected:
-    virtual void _FromPropertiesJson(Json::Value const&) override;
-    virtual void _ToPropertiesJson(Json::Value&) const override;
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
-    virtual PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
+    void _FromPropertiesJson(Json::Value const&) override;
+    void _ToPropertiesJson(Json::Value&) const override;
+    DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
+    PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
 
 public:
-    PlanarPhysicalModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel2d (project, modelId, classId, name) {m_worldTrans.InitIdentity();}
+    PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {m_worldTrans.InitIdentity();}
 
     Transform GetTransformToWorld() const {return m_worldTrans;} //!< Returns the transform FROM a local coordinate system TO world coordinates.
     void SetTransformToWorld(TransformCR trans) {m_worldTrans=trans;}
@@ -470,12 +480,12 @@ protected:
     DRange1d m_zrange; // range of Z values of non-planar proxy graphics such as "forward" visible edges in drawing's LCS.
     double m_annotationScale; // the intended viewing scale of annotations in this drawing
 
-    virtual void _FromPropertiesJson(Json::Value const&) override;
-    virtual void _ToPropertiesJson(Json::Value&) const override;
+    void _FromPropertiesJson(Json::Value const&) override;
+    void _ToPropertiesJson(Json::Value&) const override;
     DRange1d GetZRange() const {return m_zrange;}
 
 public:
-    SectionDrawingModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : PlanarPhysicalModel (project, modelId, classId, name)
+    SectionDrawingModel(CreateParams const& params) : T_Super(params)
         {
         m_zrange.InitNull();
         m_annotationScale = 1.0;
@@ -505,11 +515,11 @@ struct SheetModel : DgnModel2d
     {
     DEFINE_T_SUPER(DgnModel2d)
 protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
-    virtual SheetModelCP _ToSheetModel() const {return this;}
+    DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
+    SheetModelCP _ToSheetModel() const override {return this;}
 
 public:
-    SheetModel (DgnDbR project, DgnModelId modelId, DgnClassId classId, Utf8CP name) : DgnModel2d (project, modelId, classId, name) {}
+    SheetModel(CreateParams const& params) : T_Super(params) {}
     };
 
 //=======================================================================================
@@ -517,22 +527,31 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : DgnDomain::Handler
 {
-    HANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, ModelHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    HANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model, ModelHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
 protected:
     ModelHandlerP _ToModelHandler() override {return this;}
+    virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
 
 public:
     //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class
     //! of "dgn.Model".
     DGNPLATFORM_EXPORT static ModelHandlerP FindHandler(DgnDb const&, DgnClassId handlerId);
 
-    //! Create an instance of a DgnModel for a Model, if appropriate.
-    //! @param[in] db The DgnDb for the model
-    //! @param[in] model The DgnModels::Model to test.
-    //! @return an instance of a DgnModel for the supplied DgnModels::Model, or NULL if the Model is not of interest.
-    //! All registered DgnModel::Factory are called, in turn, until one of them returns non-NULL.
-    DGNPLATFORM_EXPORT virtual DgnModelPtr _SupplyDgnModel(DgnDbR db, DgnModels::Model const& model);
+    //! Create an instance of a DgnModel for a Model.
+    //! @param[in] params the parameters for the model
+    DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalModelHandler : ModelHandler
+{
+    HANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
+
+protected:
+    DGNPLATFORM_EXPORT DgnModelP _CreateInstance(DgnModel::CreateParams const& params) override;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

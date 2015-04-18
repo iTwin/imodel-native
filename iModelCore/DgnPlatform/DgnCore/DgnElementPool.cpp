@@ -1167,7 +1167,7 @@ DgnElementPtr DgnElementPool::FindOrLoadElement(DgnElementId elementId)
     Utf8String code = stmt->GetValueText(Column::Code);
 
     DgnElement::CreateParams params(*dgnModel, classId, categoryId, code.c_str(), elementId, stmt->GetValueId<DgnElementId>(Column::ParentId));
-    elRef = elHandler->CreateInstance(params);
+    elRef = elHandler->Create(params);
     if (!elRef.IsValid())
         {
         BeAssert(false);

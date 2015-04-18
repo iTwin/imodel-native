@@ -755,6 +755,7 @@ TABLEHANDLER_DEFINE_MEMBERS(DgnSchemaTableHandler::ModelDrivesModel)
 TABLEHANDLER_DEFINE_MEMBERS(DgnSchemaTableHandler::ElementDrivesElement)
 
 HANDLER_DEFINE_MEMBERS(ModelHandler)
+HANDLER_DEFINE_MEMBERS(PhysicalModelHandler)
 HANDLER_DEFINE_MEMBERS(WebMercatorModelHandler)
 HANDLER_DEFINE_MEMBERS(StreetMapModelHandler)
 HANDLER_DEFINE_MEMBERS(ElementHandler)
@@ -791,14 +792,6 @@ ElementHandlerP ElementHandler::FindHandler(DgnDb const& db, DgnClassId handlerI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr ElementHandler::CreateInstance(DgnElement::CreateParams const& params)
-    {
-    return _CreateInstance(params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementP ElementHandler::_CreateInstance(DgnElement::CreateParams const& params)
     {
     return new DgnElement(params);
@@ -824,7 +817,7 @@ DgnElementP DrawingElementHandler::_CreateInstance(DgnElement::CreateParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb Domain",1) 
     {
-    RegisterHandler(ModelHandler::GetHandler());
+    RegisterHandler(PhysicalModelHandler::GetHandler());
     RegisterHandler(WebMercatorModelHandler::GetHandler());
     RegisterHandler(StreetMapModelHandler::GetHandler());
     RegisterHandler(ElementHandler::GetHandler());

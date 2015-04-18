@@ -487,7 +487,7 @@ void            AngleParser::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            AngleParser::InitModelSettings (DgnModelCR model)
     {
-    DgnModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModel::Properties const& modelInfo = model.GetProperties();
 
     SetAngleMode (modelInfo.GetAngularMode ());
     }
@@ -656,7 +656,7 @@ void            DirectionParser::InitModelSettings (DgnModelCR model)
     {
     m_angleParser->InitModelSettings (model);
 
-    DgnModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModel::Properties const& modelInfo = model.GetProperties();
 
     SetDirectionMode (modelInfo.GetDirectionMode ());
     SetClockwise (modelInfo.GetDirectionClockwise ());
@@ -856,7 +856,7 @@ void            DistanceParser::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DistanceParser::InitModelSettings (DgnModelCR model)
     {
-    DgnModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModel::Properties const& modelInfo = model.GetProperties();
 
     UnitDefinitionCR  subUnit       = modelInfo.GetSubUnit();
     UnitDefinitionCR  masterUnit    = modelInfo.GetMasterUnit();
@@ -911,7 +911,7 @@ DistanceParserPtr       DistanceParser::Create (DgnViewportR viewport)
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetModelInfo().GetIsAcsLocked())
+    if (targetModel->GetProperties().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive (viewport);
 
     if (NULL == acs)
@@ -1030,7 +1030,7 @@ PointParserPtr          PointParser::Create (DgnViewportR viewport)
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetModelInfo().GetIsAcsLocked())
+    if (targetModel->GetProperties().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive (viewport);
 
     if (NULL == acs)
@@ -1178,7 +1178,7 @@ void            AreaOrVolumeParser::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            AreaOrVolumeParser::InitModelSettings (DgnModelCR model)
     {
-    DgnModelInfoCR modelInfo = model.GetModelInfo();
+    DgnModel::Properties const& modelInfo = model.GetProperties();
 
     UnitDefinition  masterUnit = modelInfo.GetMasterUnit();
     double          uorPerMast = masterUnit.ToMillimeters();
@@ -1276,7 +1276,7 @@ AreaParserPtr       AreaParser::Create (DgnViewportR viewport)
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetModelInfo().GetIsAcsLocked())
+    if (targetModel->GetProperties().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive (viewport);
 
     if (NULL == acs)
@@ -1326,7 +1326,7 @@ VolumeParserPtr       VolumeParser::Create (DgnViewportR viewport)
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetRoot()->GetModelInfoCP()->GetIsAcsLocked())
+    if (targetModel->GetRoot()->GetPropertiesCP()->GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive (viewport);
 
     if (NULL == acs)
