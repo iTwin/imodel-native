@@ -165,6 +165,3 @@ DgnPlatformLib::Host::PointCloudAdmin&       DgnPlatformLib::Host::_SupplyPointC
 // ???
 void _wassert(wchar_t const*, wchar_t const*, int) {BeAssert (false);}
 #endif
-
-
-DEFINE_KEY_METHOD(IDeleteManipulator)
