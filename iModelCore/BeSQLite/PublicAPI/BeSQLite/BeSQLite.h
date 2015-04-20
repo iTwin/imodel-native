@@ -1351,7 +1351,11 @@ public:
     BE_SQLITE_EXPORT DbResult PatchSetFromChangeTrack(ChangeTracker&);
 
     //! Create a "PatchSet" by comparing db with baseFile
-    BE_SQLITE_EXPORT DbResult PatchSetFromDiff(Db& db, BeFileNameCR baseFile);
+    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
+    //! @param[in] db       The db
+    //! @param[in] baseFile A different version of the same db
+    //! @param BE_SQLITE_OK if the patchset was generated; else BE_SQLITE_ERROR
+    BE_SQLITE_EXPORT DbResult PatchSetFromDiff(Utf8StringP errMsg, Db& db, BeFileNameCR baseFile);
 
     //! Apply all of the changes in a ChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.

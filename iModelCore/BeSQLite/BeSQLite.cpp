@@ -2255,23 +2255,34 @@ DbResult ChangeSet::PatchSetFromChangeTrack(ChangeTracker& session)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int diffFilter(void* tracker, Utf8CP tableName) 
     {
-    BeAssert(0 != strcmp(tableName, "be_Local"));
+    // We must weed out all tables that have no primary key
+    if ( (0 == strcmp(tableName, "be_Local")) || (0 == strcmp(tableName, "ec_SchemaReference")) || (0 == strcmp(tableName, "ec_ForeignKeyColumn"))
+     ||  (0 == strcmp(tableName, "dgn_PrjRTree")) || (0==strcmp(tableName, "dgn_RasterData")) )
+        return 0;
     return 1;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::PatchSetFromDiff(Db& db, BeFileNameCR baseFile)
+DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile)
     {
     DbResult result =  db.AttachDb(Utf8String(baseFile).c_str(), "base");
     if (BE_SQLITE_OK != result)
+        {
+        if (errMsgOut != nullptr)
+            *errMsgOut = db.GetLastError();
         return result;
+        }
 
     sqlite3_session* session;
     result = (DbResult) sqlite3session_create(db.GetSqlDb(), "main", &session);
     if (BE_SQLITE_OK != result)
+        {
+        if (errMsgOut != nullptr)
+            *errMsgOut = db.GetLastError();
         return result;
+        }
 
     sqlite3session_table_filter(session, diffFilter, this); // set up auto-attach for most tables
 
@@ -2283,15 +2294,28 @@ DbResult ChangeSet::PatchSetFromDiff(Db& db, BeFileNameCR baseFile)
         char* errMsg = nullptr;
         result = (DbResult)sqlite3session_diff(session, "base", tableName, &errMsg);
         if (BE_SQLITE_OK != result)
+            {
+            if (errMsgOut != nullptr)
+                {
+                if (errMsg != nullptr)
+                    *errMsgOut = errMsg;
+                else
+                    *errMsgOut = tableName;
+                }
             break;
+            }
         }
 
     if (BE_SQLITE_OK == result)
+        {
         result = (DbResult) sqlite3session_patchset(session, &m_size, &m_changeset);
+        if (errMsgOut != nullptr)
+            *errMsgOut = db.GetLastError();
+        }
 
     sqlite3session_delete(session);
 
-    db.DetachDb("base");
+    //db.DetachDb("base");  -- gets error -- database 'base' is locked
 
     return result;
     }
