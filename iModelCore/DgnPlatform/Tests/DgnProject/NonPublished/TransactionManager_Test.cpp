@@ -117,7 +117,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         {
         DgnModelP model = db.Models().GetModelById(mid);
 
-        DgnElementPtr testElement = TestElementHandler::CreateInstance(DgnElement::CreateParams(GetTestElementECClass(db)->GetId()), categoryId, elementCode);
+        DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
 
         ElementItemHandler::GetHandler().SetElementGeom(*testElement, *computeShape());// DgnCategories::DefaultSubCategoryId(categoryId), DPoint3d::FromZero(), YawPitchRollAngles());
 
