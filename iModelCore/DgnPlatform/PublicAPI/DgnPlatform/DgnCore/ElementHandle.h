@@ -257,7 +257,7 @@ public:
     //! Construct an EditElementHandle from an ElementHandle.
     DGNPLATFORM_EXPORT EditElementHandle (ElementHandleCR from, bool duplicateDescr);
 
-    //! Setup the input EditElementHandle for a new non-persistent element.
+    //! @deprected Use a factory method on DgnElement sub-class
     DGNPLATFORM_EXPORT BentleyStatus CreateNewElement (DgnModelR model, DgnClassId elementClassId, DgnCategoryId category, Utf8CP code=nullptr);
 
     //! Duplicate the element descriptor and its scheduled XAttribute changes.

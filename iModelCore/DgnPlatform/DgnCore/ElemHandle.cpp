@@ -97,6 +97,7 @@ void EditElementHandle::Duplicate(ElementHandleCR eh)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* *** DEPRECATED *** Use a factory method on DgnElement sub-class
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus EditElementHandle::CreateNewElement(DgnModelR model, DgnClassId elementClassId, DgnCategoryId categoryId, Utf8CP code)

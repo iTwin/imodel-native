@@ -117,13 +117,12 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         {
         DgnModelP model = db.Models().GetModelById(mid);
 
-        EditElementHandle eh;
-        eh.CreateNewElement(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, elementCode);
+        DgnElementPtr testElement = TestElementHandler::CreateInstance(DgnElement::CreateParams(GetTestElementECClass(db)->GetId()), categoryId, elementCode);
 
-        ElementItemHandler::GetHandler().SetElementGeom(eh, *computeShape());// DgnCategories::DefaultSubCategoryId(categoryId), DPoint3d::FromZero(), YawPitchRollAngles());
+        ElementItemHandler::GetHandler().SetElementGeom(*testElement, *computeShape());// DgnCategories::DefaultSubCategoryId(categoryId), DPoint3d::FromZero(), YawPitchRollAngles());
 
-        eh.GetElementDescrP()->AddToModel();
-        return eh.GetElementKey();
+        testElement->AddToModel();
+        return testElement->GetElementKey();
         }
 
     BentleyStatus DeleteElement (DgnDbR db, DgnElementId eid)

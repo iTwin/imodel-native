@@ -111,7 +111,7 @@ public:
 
 public:
     //! Find the ElemenntHandler for a DgnClassId within a supplied DgnDb.
-    static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
+    DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
 
 }; // Handler
 
