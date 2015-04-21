@@ -722,6 +722,30 @@ DgnModelStatus DgnElement3d::_LoadFromDb(DgnElementPool& pool)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
+    {
+    if (!categoryId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    PhysicalElementPtr elementPtr = new PhysicalElement(CreateParams(model, PhysicalElement::GetClassId(model.GetDgnDb()), categoryId));
+    elementPtr->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(model.GetDgnDb()));
+    return elementPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnClassId PhysicalElement::GetClassId(DgnDbR db)
+    {
+    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus PhysicalElement::_InsertInDb(DgnElementPool& pool)
