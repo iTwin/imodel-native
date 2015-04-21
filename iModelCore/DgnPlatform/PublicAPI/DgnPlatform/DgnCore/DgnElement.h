@@ -503,6 +503,8 @@ protected:
     DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR) override;
     GeometricElementCP _ToGeometricElement() const override {return this;}
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {m_itemHandler=nullptr;} 
+    
+    DgnModelStatus DoInsertOrUpdate(BeSQLite::Statement&, DgnElementPool&);
      
     bvector<ECN::IECInstancePtr> GetAspects(ECN::ECClassCP ecclass) const;
     template<typename RTYPE, bool SETMODIFIED>
@@ -670,8 +672,7 @@ protected:
 
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {} 
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override; // This injects DgnElement3d's members into both _InsertInDb and _UpdateInDb 
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
 
@@ -697,6 +698,7 @@ protected:
     friend struct PhysicalElementHandler;
 
     DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb(DgnElementPool& pool) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
 
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {} 
@@ -723,8 +725,7 @@ protected:
     Placement2d m_placement;
     explicit DgnElement2d(CreateParams const& params) : T_Super(params) {} 
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override; // This injects DgnElement2d's members into both _InsertInDb and _UpdateInDb 
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
 
