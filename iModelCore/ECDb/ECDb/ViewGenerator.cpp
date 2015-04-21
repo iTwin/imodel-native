@@ -588,13 +588,56 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
     status = ComputeViewMembers (vmt, map, relationMap.GetClass (), isPolymorphic, optimizeByIncludingOnlyRealTables, true);
     if (status != BentleyStatus::SUCCESS)
         return status;
-
     if (vmt.empty ())
         {
         return CreateNullViewForRelationship (viewSql, map, prepareContext, relationMap, relationMap);
         }
+     ViewMember viewMember = vmt[&relationMap.GetTable()];
+     NativeSqlBuilder unionQuery;
 
-    NativeSqlBuilder unionQuery;
+     for (auto cm : viewMember.GetClassMaps())
+         {
+         switch (cm->GetClassMapType())
+             {
+             case ClassMap::Type::RelationshipEndTable:
+                 if (!unionQuery.IsEmpty())
+                     unionQuery.Append(" UNION ");
+                 status = CreateViewForRelationshipClassEndTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassEndTableMapCP>(cm), relationMap);
+                 if (status != BentleyStatus::SUCCESS)
+                     return status;
+                     break;
+             case ClassMap::Type::RelationshipLinkTable:
+             {
+                 if (!unionQuery.IsEmpty())
+                     unionQuery.Append(" UNION ");
+
+                 status = CreateViewForRelationshipClassLinkTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassLinkTableMapCP>(cm), relationMap);
+                 if (status != BentleyStatus::SUCCESS)
+                     return status;
+
+                 auto column = relationMap.GetTable().GetFilteredColumnFirst(ECDbSystemColumnECClassId);
+                 if (column != nullptr)
+                     {
+
+                     std::vector<ECClassId> classesMappedToTable;
+                     if (ECDbSchemaPersistence::GetClassesMappedToTable(classesMappedToTable, relationMap.GetTable(), false, map.GetECDbR()) != BE_SQLITE_DONE)
+                         return BentleyStatus::ERROR;
+
+                     if (classesMappedToTable.size() != 1)
+                         {
+                         unionQuery.Append(" WHERE ");
+                         unionQuery.AppendEscaped(column->GetName().c_str()).Append(" IN ");
+                         unionQuery.AppendParenLeft();
+                         
+                             unionQuery.Append(cm->GetClass().GetId());
+                             
+                         unionQuery.AppendParenRight();
+                         }
+                     }
+                }
+             }
+         }
+     vmt.erase(&relationMap.GetTable());
     for (auto& vm : vmt)
         {
         auto table = vm.first;
@@ -607,7 +650,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
         std::vector<RelationshipClassLinkTableMapCP> ltm;
         for (auto cm : vm.second.GetClassMaps ())
             {
-            switch (relationMap.GetClassMapType ())
+            switch (cm->GetClassMapType ())
                 {
                 case ClassMap::Type::RelationshipEndTable:
                     etm.push_back (static_cast<RelationshipClassEndTableMapCP>(cm)); break;
