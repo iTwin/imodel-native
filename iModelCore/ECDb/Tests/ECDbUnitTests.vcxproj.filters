@@ -181,6 +181,9 @@
     <ClCompile Include="NonPublished\ECDb\ECDbHints_Tests.cpp">
       <Filter>NonPublished\ECDb</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

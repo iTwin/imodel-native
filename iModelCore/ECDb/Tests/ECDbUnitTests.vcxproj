@@ -33,6 +33,7 @@
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECSqlStatementTestFixture.cpp" />
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp" />
+    <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
