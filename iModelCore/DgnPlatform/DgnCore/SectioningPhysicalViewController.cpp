@@ -216,7 +216,7 @@ void SectioningViewController::_DrawElement(ViewContextR context, GeometricEleme
         }
 
     SetOverrideMatSymb(context);
-    element.Draw(context);
+    element._Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

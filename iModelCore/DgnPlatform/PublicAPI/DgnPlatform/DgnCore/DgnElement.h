@@ -517,7 +517,36 @@ public:
     T_QvElemSet* GetQvElems(bool createIfNotPresent) const;
     void SetItemClassId(DgnClassId classId) {m_itemClassId = classId;}
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
-    DGNPLATFORM_EXPORT void Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
+
+    //! Set the geometry and placement information for this GeometricElement from the supplied ElementGeometry.
+    //! @param[in] geom The element geometry.
+    //! @param[in] subCategory Optional DgnSubCategoryId to control the appearance and visibility of this geometry. if invalid, the default sub-category for the element's category is used.
+    //! @param[in] origin Optional placement origin. When not nullptr, geometry coordinates are assumed to be relative to this origin instead of world.
+    //! @param[in] angles Optional placement angles. Pass nullptr for identity rotation or specific angles. Ignored when origin is nullptr.
+    //! @return SUCCESS if element geometry could be set.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(ElementGeometryCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
+
+    //! Set the geometry and placement information for this GeometricElement from a CurveVector.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(CurveVectorCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
+
+    //! Set the geometry and placement information for this GeometricElement from a ICurvePrimitive.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(ICurvePrimitiveCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
+
+    //! Set the geometry and placement information for this GeometricElement from a ISolidPrimitive.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(ISolidPrimitiveCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
+
+    //! Set the geometry and placement information for this GeometricElement from a MSBsplineSurface.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(MSBsplineSurfaceCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
+
+    //! Set the geometry and placement information for this GeometricElement from a PolyfaceQuery.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(PolyfaceQueryCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
+
+    //! Set the geometry and placement information for this GeometricElement from a ISolidKernelEntity.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(ISolidKernelEntityCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
+
+    //! Set the geometry and placement information for this GeometricElement from PhysicalGeometry.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(PhysicalGeometryCR geom, DPoint3dCR origin, YawPitchRollAnglesCR angles);
 
     //! Get the ElementGeom for this element.
     GeomStreamCR GetGeomStream() const {return m_geom;}

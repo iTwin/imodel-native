@@ -406,7 +406,7 @@ DRange3d ViewController::_GetProjectExtents() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
-    element.Draw(context);
+    element._Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

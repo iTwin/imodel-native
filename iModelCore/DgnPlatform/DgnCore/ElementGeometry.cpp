@@ -1850,7 +1850,7 @@ virtual void _StrokeForCache (ViewContextR context, double pixelSize) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::Draw (ViewContextR context) const
+void GeometricElement::_Draw (ViewContextR context) const
     {
     bool        isQVis = context.GetIViewDraw().IsOutputQuickVision();
     bool        isQVWireframe = (isQVis && DgnRenderMode::Wireframe == context.GetViewFlags()->GetRenderMode());
@@ -1905,19 +1905,18 @@ static AxisAlignedBox3d computeElementRange (DRange3dCR localBox, DPoint3dCR ori
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, PhysicalGeometryCR geom, DPoint3dCR origin, YawPitchRollAnglesCR angles)
+BentleyStatus GeometricElement::SetElementGeom(PhysicalGeometryCR geom, DPoint3dCR origin, YawPitchRollAnglesCR angles)
     {
-    PhysicalElementP edP = const_cast<PhysicalElementP>(element._ToPhysicalElement());
+    // NEEDSWORK: This method needs to be removed or moved to PhysicalGeometry... 
+    DgnElement3dP element3d = nullptr;
 
-    if (nullptr == edP)
+    if (nullptr == (element3d = const_cast<DgnElement3dP>(_ToElement3d())))
         return BentleyStatus::ERROR;
 
-    DgnCategoryId categoryId = edP->GetCategoryId();
+    DgnCategoryId categoryId = GetCategoryId();
 
     if (!categoryId.IsValid())
         return BentleyStatus::ERROR;
-
-    edP->SetItemClassId(GetItemClassId(element.GetDgnDb()));
 
     ElementGeomIO::Writer writer;
 
@@ -1970,13 +1969,14 @@ BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, PhysicalGe
     if (0 == writer.m_buffer.size())
         return BentleyStatus::ERROR;
 
-    Placement3dR elGeom = edP->GetPlacementR();
-    elGeom.GetOriginR() = origin;
-    elGeom.GetAnglesR() = angles;
-    elGeom.GetElementBoxR() = geom.CalculateBoundingBox();
-    elGeom.GetRangeR() = computeElementRange(elGeom.GetElementBox(), origin, angles, element.GetDgnModel().Is3d());
+    Placement3dR placement = element3d->GetPlacementR();
 
-    edP->GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
+    placement.GetOriginR() = origin;
+    placement.GetAnglesR() = angles;
+    placement.GetElementBoxR() = geom.CalculateBoundingBox();
+    placement.GetRangeR() = computeElementRange(placement.GetElementBox(), origin, angles, true);
+
+    GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
 
     return BentleyStatus::SUCCESS;
 
@@ -1993,13 +1993,17 @@ BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, PhysicalGe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus setElementGeom(DgnElementR element, ElementGeometryR geom, DgnSubCategoryId subCategoryId, DgnClassId itemClassId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+static BentleyStatus setElementGeom(GeometricElementR element, ElementGeometryR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
     {
-    PhysicalElementP edP = const_cast<PhysicalElementP>(element._ToPhysicalElement());
-    if (nullptr == edP)
+    // NEEDSWORK: The methods that call this need to move to DgnElement3d/DgnElement2d, DgnElement2d only supports ICurvePrimitive/CurveVector, etc.
+    DgnElement3dP element3d = nullptr;
+    DgnElement2dP element2d = nullptr;
+
+    if (nullptr == (element3d = const_cast<DgnElement3dP>(element._ToElement3d())) &&
+        nullptr == (element2d = const_cast<DgnElement2dP>(element._ToElement2d())))
         return BentleyStatus::ERROR;
 
-    DgnCategoryId categoryId = edP->GetCategoryId();
+    DgnCategoryId categoryId = element.GetCategoryId();
 
     if (!categoryId.IsValid())
         return BentleyStatus::ERROR;
@@ -2007,8 +2011,6 @@ static BentleyStatus setElementGeom(DgnElementR element, ElementGeometryR geom, 
         subCategoryId = DgnCategories::DefaultSubCategoryId(categoryId);
     else if (categoryId != element.GetDgnDb().Categories().QueryCategoryId(subCategoryId))
         return BentleyStatus::ERROR;
-
-    edP->SetItemClassId(itemClassId);
 
     DPoint3d            tmpOrigin;
     YawPitchRollAngles  tmpAngles;
@@ -2047,11 +2049,25 @@ static BentleyStatus setElementGeom(DgnElementR element, ElementGeometryR geom, 
     if (!geom.GetRange(localBox))
         return BentleyStatus::ERROR;
  
-    Placement3dR elGeom = edP->GetPlacementR();
-    elGeom.GetOriginR() = tmpOrigin;
-    elGeom.GetAnglesR() = tmpAngles;
-    elGeom.GetElementBoxR() = localBox;
-    elGeom.GetRangeR() = computeElementRange (localBox, tmpOrigin, tmpAngles, element.GetDgnModel().Is3d());
+    if (nullptr != element3d)
+        {
+        Placement3dR placement = element3d->GetPlacementR();
+
+        placement.GetOriginR() = tmpOrigin;
+        placement.GetAnglesR() = tmpAngles;
+        placement.GetElementBoxR() = localBox;
+        placement.GetRangeR() = computeElementRange(localBox, tmpOrigin, tmpAngles, true);
+        }
+    else
+        {
+        Placement2dR placement = const_cast<Placement2dR>(element2d->GetPlacement()); // NEEDSWORK...
+        AxisAlignedBox3d axisBox = computeElementRange(localBox, tmpOrigin, tmpAngles, false);
+
+        placement.GetOriginR() = DPoint2d::From(tmpOrigin);
+        placement.GetAngleR() = tmpAngles.GetRoll().Degrees();
+        placement.GetElementBoxR() = ElementAlignedBox2d(localBox.GetLeft(), localBox.GetFront(), localBox.GetRight(), localBox.GetBack());
+        placement.GetRangeR() = DRange2d::From(DPoint2d::From(axisBox.low), DPoint2d::From(axisBox.high));
+        }
 
     ElementGeomIO::Writer writer;
 
@@ -2059,7 +2075,7 @@ static BentleyStatus setElementGeom(DgnElementR element, ElementGeometryR geom, 
     writer.Append(subCategoryId, localToWorld);
     writer.Append(geom);
 
-    edP->GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
+    element.GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
 
     return BentleyStatus::SUCCESS;
     }
@@ -2067,7 +2083,7 @@ static BentleyStatus setElementGeom(DgnElementR element, ElementGeometryR geom, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, ElementGeometryCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+BentleyStatus GeometricElement::SetElementGeom(ElementGeometryCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
     {
     ElementGeometryPtr geomPtr;
     
@@ -2086,46 +2102,46 @@ BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, ElementGeo
         geomPtr = geom.Clone ();
         }
 
-    return setElementGeom(element, *geomPtr, subCategoryId, GetItemClassId(element.GetDgnDb()), origin, angles);
+    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, CurveVectorCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+BentleyStatus GeometricElement::SetElementGeom(CurveVectorCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
     {
     CurveVectorPtr      clone = geom.Clone();
     ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
 
-    return setElementGeom(element, *geomPtr, subCategoryId, GetItemClassId(element.GetDgnDb()), origin, angles);
+    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, ICurvePrimitiveCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+BentleyStatus GeometricElement::SetElementGeom(ICurvePrimitiveCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
     {
     ICurvePrimitivePtr  clone = geom.Clone();
     ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
 
-    return setElementGeom(element, *geomPtr, subCategoryId, GetItemClassId(element.GetDgnDb()), origin, angles);
+    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, ISolidPrimitiveCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+BentleyStatus GeometricElement::SetElementGeom(ISolidPrimitiveCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
     {
     ISolidPrimitivePtr  clone = geom.Clone();
     ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
 
-    return setElementGeom(element, *geomPtr, subCategoryId, GetItemClassId(element.GetDgnDb()), origin, angles);
+    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, MSBsplineSurfaceCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+BentleyStatus GeometricElement::SetElementGeom(MSBsplineSurfaceCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
     {
     MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
 
@@ -2133,13 +2149,13 @@ BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, MSBsplineS
 
     ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
 
-    return setElementGeom(element, *geomPtr, subCategoryId, GetItemClassId(element.GetDgnDb()), origin, angles);
+    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, PolyfaceQueryCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+BentleyStatus GeometricElement::SetElementGeom(PolyfaceQueryCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
     {
     PolyfaceHeaderPtr clone = PolyfaceHeader::New();
 
@@ -2147,13 +2163,13 @@ BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, PolyfaceQu
 
     ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
 
-    return setElementGeom(element, *geomPtr, subCategoryId, GetItemClassId(element.GetDgnDb()), origin, angles);
+    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, ISolidKernelEntityCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+BentleyStatus GeometricElement::SetElementGeom(ISolidKernelEntityCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
     {
     ISolidKernelEntityPtr clone;
 
@@ -2163,5 +2179,5 @@ BentleyStatus ElementItemHandler::SetElementGeom(DgnElementR element, ISolidKern
 
     ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
 
-    return setElementGeom(element, *geomPtr, subCategoryId, GetItemClassId(element.GetDgnDb()), origin, angles);
+    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
     }

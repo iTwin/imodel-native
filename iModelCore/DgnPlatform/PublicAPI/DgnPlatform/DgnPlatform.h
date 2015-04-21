@@ -503,7 +503,7 @@ struct AxisAlignedBox2d : BoundingBox2d
 {
 public:
     AxisAlignedBox2d() {}
-    AxisAlignedBox2d(DRange2dCR range) {*this=range;}
+    AxisAlignedBox2d(DRange2dCR range) {DRange2d::InitFrom(range.low, range.high);}
     AxisAlignedBox2d(DPoint2dCR low, DPoint2dCR high) {DRange2d::InitFrom(low, high);}
 };
 
