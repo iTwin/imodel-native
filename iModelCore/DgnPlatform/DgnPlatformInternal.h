@@ -65,6 +65,7 @@
 #include <DgnPlatform/DgnCore/DgnIModel.h>
 #include <DgnPlatform/DgnCore/RealityDataCache.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
+#include <DgnPlatform/DgnCore/ElementGeometry.h>
 #include <DgnPlatform/MSSmartPtr.h>
 #include <RmgrTools/Tools/DataExternalizer.h>
 #include <Logging/bentleylogging.h>

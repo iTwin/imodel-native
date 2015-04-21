@@ -34,6 +34,8 @@ enum ElementHiliteState
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
+
 //=======================================================================================
 // @bsiclass                                                     Keith.Bentley   06/08
 //=======================================================================================
@@ -522,6 +524,9 @@ public:
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
 
     //! Set the geometry and placement information for this GeometricElement from the supplied ElementGeometry.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(bvector<ElementGeometryPtr> const& geometry, bvector<ElemDisplayParams> const& appearance, bvector<Transform> const* geomToAspects, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+
+    //! Set the geometry and placement information for this GeometricElement from the supplied ElementGeometry.
     //! @param[in] geom The element geometry.
     //! @param[in] subCategory Optional DgnSubCategoryId to control the appearance and visibility of this geometry. if invalid, the default sub-category for the element's category is used.
     //! @param[in] origin Optional placement origin. When not nullptr, geometry coordinates are assumed to be relative to this origin instead of world.
@@ -546,9 +551,6 @@ public:
 
     //! Set the geometry and placement information for this GeometricElement from a ISolidKernelEntity.
     DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(ISolidKernelEntityCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
-
-    //! Set the geometry and placement information for this GeometricElement from PhysicalGeometry.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(PhysicalGeometryCR geom, DPoint3dCR origin, YawPitchRollAnglesCR angles);
 
     //! Get the ElementGeom for this element.
     GeomStreamCR GetGeomStream() const {return m_geom;}
