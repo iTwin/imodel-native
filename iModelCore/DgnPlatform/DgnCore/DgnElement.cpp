@@ -493,6 +493,7 @@ void DgnElement::_GenerateDefaultCode()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_LoadFromDb(DgnElementPool& pool)
     {
+    // Note: DgnElementPool::FindOrLoadElement takes care of populating DgnElement's member variables by calling the handler's _CreateInstance method with CreateParams set up from a DB query
     pool.AddDgnElement(*this);
     return DGNMODEL_STATUS_Success;
     }
@@ -525,10 +526,21 @@ DgnModelStatus DgnElement::_InsertInDb(DgnElementPool& pool)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_UpdateInDb(DgnElementPool&)
+DgnModelStatus DgnElement::_UpdateInDb(DgnElementPool& pool)
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-#endif
+    CachedStatementPtr stmt;
+    pool.GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET ECClassId=?,ModelId=?,CategoryId=?,Code=?,ParentId=? WHERE Id=?");
+
+    stmt->BindId(1, m_classId);
+    stmt->BindId(2, m_dgnModel.GetModelId());
+    stmt->BindId(3, m_categoryId);
+    stmt->BindText(4, m_code.c_str(), Statement::MakeCopy::No);
+    stmt->BindId(5, m_parentId);
+    stmt->BindId(6, m_elementId);
+
+    if (stmt->Step() != BE_SQLITE_DONE)
+        return DGNMODEL_STATUS_ElementWriteError;
+
     return DGNMODEL_STATUS_Success;
     }
 
@@ -603,6 +615,35 @@ DgnModelStatus GeometricElement::_InsertInDb(DgnElementPool& pool)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
+    return DoInsertOrUpdate(*stmt, pool);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus GeometricElement::_UpdateInDb(DgnElementPool& pool)
+    {
+    DgnModelStatus stat = T_Super::_UpdateInDb(pool);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    CachedStatementPtr stmt;
+    pool.GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET ElementId=?,Range=?,Box=?,Origin=?,Rotation=?,Geom=? WHERE ElementId=?");
+    stmt->BindId(1, m_elementId);
+    stmt->BindId(7, m_elementId);
+
+    stat = _BindInsertGeom(*stmt);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    return DoInsertOrUpdate(*stmt, pool);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt, DgnElementPool& pool)
+    {
     SnappyToBlob& snappy = pool.GetSnappyTo();
 
     snappy.Init();
@@ -617,12 +658,12 @@ DgnModelStatus GeometricElement::_InsertInDb(DgnElementPool& pool)
     if (0 < zipSize)
         {
         if (1 == snappy.GetCurrChunk())
-            stmt->BindBlob (6, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
+            stmt.BindBlob (6, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
         else
-            stmt->BindZeroBlob (6, zipSize); // more than one chunk in geom stream
+            stmt.BindZeroBlob (6, zipSize); // more than one chunk in geom stream
         }
 
-    if (BE_SQLITE_DONE != stmt->Step())
+    if (BE_SQLITE_DONE != stmt.Step())
         return DGNMODEL_STATUS_ElementWriteError;
 
     if (1 == snappy.GetCurrChunk())
@@ -630,16 +671,6 @@ DgnModelStatus GeometricElement::_InsertInDb(DgnElementPool& pool)
 
     StatusInt status = snappy.SaveToRow (pool.GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
     return (SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::_UpdateInDb(DgnElementPool&)
-    {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-#endif
-    return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -715,23 +746,27 @@ DgnModelStatus PhysicalElement::_InsertInDb(DgnElementPool& pool)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
+* @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement3d::_UpdateInDb(DgnElementPool&)
+DgnModelStatus PhysicalElement::_UpdateInDb(DgnElementPool& pool)
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-#endif
-    return DGNMODEL_STATUS_Success;
-    }
+    DgnModelStatus stat = T_Super::_UpdateInDb(pool);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement2d::_UpdateInDb(DgnElementPool&)
-    {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-#endif
-    return DGNMODEL_STATUS_Success;
+    CachedStatementPtr stmt;
+    pool.GetStatement(stmt, "UPDATE " DGN_VTABLE_PrjRTree " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
+
+    AxisAlignedBox3dCR range = m_placement.GetRange();
+    stmt->BindDouble(1, range.low.x);
+    stmt->BindDouble(2, range.high.x);
+    stmt->BindDouble(3, range.low.y);
+    stmt->BindDouble(4, range.high.y);
+    stmt->BindDouble(5, range.low.z);
+    stmt->BindDouble(6, range.high.z);
+    stmt->BindId(7, m_elementId);
+
+    return stmt->Step() == BE_SQLITE_DONE ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_ElementWriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
