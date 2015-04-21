@@ -1387,15 +1387,18 @@ void GeometricElement::SetAspect(ECN::IECInstanceR aspectInstance)
     GetAspects(aspectClassId); // make sure we have read the aspects that are there.
 
     CachedInstances& instances = CachedInstances::Get(*this);
-    CachedInstance* aspect = instances.FindAspectInstanceAccessor(aspectInstance.GetClass().GetId(), aspectInstance.GetInstanceId());
-    if (nullptr != aspect)
+    if (!aspectInstance.GetInstanceId().empty())
         {
-        aspect->m_instance = &aspectInstance;
-        aspect->m_changeType = InstanceChangeType::Write;
-        return;
+        CachedInstance* aspect = instances.FindAspectInstanceAccessor(aspectInstance.GetClass().GetId(), aspectInstance.GetInstanceId());
+        if (nullptr != aspect)
+            {
+            aspect->m_instance = &aspectInstance;
+            aspect->m_changeType = InstanceChangeType::Write;
+            return;
+            }
         }
 
-    // No existing aspect found => insert a new one.
+    // New aspect or no matching aspect found => insert a new one.
     instances.m_otherAspects[aspectClassId].push_back(CachedInstance(&aspectInstance, InstanceChangeType::Write));
     }
 
