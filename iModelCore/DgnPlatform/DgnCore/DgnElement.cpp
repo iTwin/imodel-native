@@ -784,6 +784,8 @@ DgnModelStatus DgnElement::_SwapWithModified(DgnElementR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_InitFrom(DgnElementCR other)
     {
+    T_Super::_InitFrom(other);
+
     GeometricElementCP otherGeom = other._ToGeometricElement();
     if (nullptr == otherGeom)
         return;
@@ -791,6 +793,34 @@ void GeometricElement::_InitFrom(DgnElementCR other)
     SaveGeomStream(&otherGeom->m_geom);
     m_itemClassId = otherGeom->m_itemClassId;
     m_itemHandler = otherGeom->m_itemHandler;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement3d::_InitFrom(DgnElementCR other)
+    {
+    T_Super::_InitFrom(other);
+
+    DgnElement3dCP other3d = other._ToElement3d();
+    if (nullptr == other3d)
+        return;
+
+    m_placement = other3d->m_placement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement2d::_InitFrom(DgnElementCR other)
+    {
+    T_Super::_InitFrom(other);
+
+    DgnElement2dCP other2d = other._ToElement2d();
+    if (nullptr == other2d)
+        return;
+
+    m_placement = other2d->m_placement;
     }
 
 /*---------------------------------------------------------------------------------**//**
