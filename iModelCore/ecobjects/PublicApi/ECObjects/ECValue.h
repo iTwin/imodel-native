@@ -237,52 +237,52 @@ public:
     //! @param[in] primitiveType The type to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
-    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Integer
+    //! Initializes a new instance of ECValue from the given value. Type is set to DgnPlatform::PRIMITIVETYPE_Integer
     //! @param[in] integer32 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
 
-    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Long
+    //! Initializes a new instance of ECValue from the given value. Type is set to DgnPlatform::PRIMITIVETYPE_Long
     //! @param[in] long64 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
 
-    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Double
+    //! Initializes a new instance of ECValue from the given value. Type is set to DgnPlatform::PRIMITIVETYPE_Double
     //! @param[in] doubleVal Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_String
+    //! Initializes a new instance of ECValue from the given value.  Type is set to DgnPlatform::PRIMITIVETYPE_String
     //! @param[in] string           Value to initialize this ECValue from
     //! @param[in] holdADuplicate   true, if a copy of \p string should be held in the ECValue object.
     //!                             false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (WCharCP string, bool holdADuplicate = true);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_String
+    //! Initializes a new instance of ECValue from the given value.  Type is set to DgnPlatform::PRIMITIVETYPE_String
     //! @param[in] string           Value to initialize this ECValue from
     //! @param[in] holdADuplicate   true, if a copy of \p string should be held in the ECValue object.
     //!                             false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (Utf8CP string, bool holdADuplicate = true);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_String
+    //! Initializes a new instance of ECValue from the given value.  Type is set to DgnPlatform::PRIMITIVETYPE_String
     //! @param[in] string           Value to initialize this ECValue from
     //! @param[in] holdADuplicate   true, if a copy of \p string should be held in the ECValue object.
     //!                             false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (Utf16CP string, bool holdADuplicate = true);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Binary
+    //! Initializes a new instance of ECValue from the given value.  Type is set to DgnPlatform::PRIMITIVETYPE_Binary
     //! @Note No copy of \p blob is created. Use ECValue::SetBinary otherwise.
     //! @see ECValue::SetBinary
     //! @param[in] blob Value to initialize this ECValue from
     //! @param[in] size Size in bytes of the blob
     ECOBJECTS_EXPORT explicit ECValue (const Byte * blob, size_t size);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Point2D
+    //! Initializes a new instance of ECValue from the given value.  Type is set to DgnPlatform::PRIMITIVETYPE_Point2D
     //! @param[in] point2d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Point3D
+    //! Initializes a new instance of ECValue from the given value.  Type is set to DgnPlatform::PRIMITIVETYPE_Point3D
     //! @param[in] point3d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Boolean
+    //! Initializes a new instance of ECValue from the given value.  Type is set to DgnPlatform::PRIMITIVETYPE_Boolean
     //! @param[in] value Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (bool value);
 
@@ -326,10 +326,10 @@ public:
     //! Checks whether this ECValue is uninitialized
     ECOBJECTS_EXPORT bool           IsUninitialized () const; 
     
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_String (regardless of encoding).
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_String. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_String (regardless of encoding).
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_String. false otherwise.
     ECOBJECTS_EXPORT bool           IsString () const;
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_String and
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_String and
     //! is encoded in UTF-8.
     //! @remarks Use this method to pick the appropriate Get method to avoid unnecessary
     //!          string conversions.
@@ -351,42 +351,42 @@ public:
     //!
     //! @return true if the ECValue content is encoded in UTF-8. false otherwise.
     ECOBJECTS_EXPORT bool           IsUtf8 () const;
-    //! Indicates whether the content of this ECValue is of type #PRIMITIVETYPE_Integer.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Integer. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_Integer.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_Integer. false otherwise.
     ECOBJECTS_EXPORT bool           IsInteger () const;
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Long.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Long. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_Long.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_Long. false otherwise.
     ECOBJECTS_EXPORT bool           IsLong () const;
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Double.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Double. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_Double.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_Double. false otherwise.
     ECOBJECTS_EXPORT bool           IsDouble () const;
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Binary.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Binary. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_Binary.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_Binary. false otherwise.
     ECOBJECTS_EXPORT bool           IsBinary () const;
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Boolean.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Boolean. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_Boolean.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_Boolean. false otherwise.
     ECOBJECTS_EXPORT bool           IsBoolean () const;
 
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Point2D.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Point2D. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_Point2D.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_Point2D. false otherwise.
     ECOBJECTS_EXPORT bool           IsPoint2D () const;
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Point3D.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Point3D. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_Point3D.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_Point3D. false otherwise.
     ECOBJECTS_EXPORT bool           IsPoint3D () const;
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_DateTime.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_DateTime. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_DateTime.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_DateTime. false otherwise.
     ECOBJECTS_EXPORT bool           IsDateTime () const;
-    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_IGeometry.
-    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_IGeometry. false otherwise.
+    //! Indicates whether the content of this ECValue is of type DgnPlatform::PRIMITIVETYPE_IGeometry.
+    //! @return true if the ECValue content is of type DgnPlatform::PRIMITIVETYPE_IGeometry. false otherwise.
     ECOBJECTS_EXPORT bool           IsIGeometry() const;
 
-    //! Indicates whether the content of this ECValue is an array (::VALUEKIND_Array).
+    //! Indicates whether the content of this ECValue is an array (DgnPlatform::VALUEKIND_Array).
     //! @return true if the ECValue content is an array. false otherwise.
     ECOBJECTS_EXPORT bool           IsArray () const;
-    //! Indicates whether the content of this ECValue is a struct (::VALUEKIND_Struct).
+    //! Indicates whether the content of this ECValue is a struct (DgnPlatform::VALUEKIND_Struct).
     //! @return true if the ECValue content is a struct. false otherwise.
     ECOBJECTS_EXPORT bool           IsStruct () const;
-    //! Indicates whether the content of this ECValue is of a primitive type (::VALUEKIND_Primitive).
+    //! Indicates whether the content of this ECValue is of a primitive type (DgnPlatform::VALUEKIND_Primitive).
     //! @return true if the ECValue content is of a primitive type. false otherwise.
     ECOBJECTS_EXPORT bool           IsPrimitive () const;
     //! Gets the PrimitiveType of this ECValue        

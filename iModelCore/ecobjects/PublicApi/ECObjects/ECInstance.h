@@ -614,7 +614,7 @@ public:
 
 //=======================================================================================
 //! ECN::IECRelationshipInstance is an instance of an ECRelationshipClass and represents
-//! the relationship between two \ref IECInstance "IECInstances"
+//! the relationship between two \ref ECN::IECInstance "IECInstances"
 //! @see IECInstance, ECRelationshipClass
 //! @ingroup ECObjectsGroup
 //! @bsiclass
