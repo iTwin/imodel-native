@@ -32,7 +32,8 @@ static Utf8String s_deviceId;
 #ifdef QA_URLS
 #define LEARN_STS_AUTH_URI "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx"
 // The below DEFAULT_WSG_URL might need to be localized, since both production and QA urls contain "-eus".
-#define DEFAULT_WSG_URL "https://qa-connectgateway-eus.cloudapp.net"
+//#define DEFAULT_WSG_URL "https://qa-connectgateway-eus.cloudapp.net"
+#define DEFAULT_WSG_URL "https://dev-wsg20-eus.cloudapp.net"
 #define DEFAULT_EULA_URL "https://dev-agreement-eus.cloudapp.net/rest"
 #else // QA_URLS
 #define LEARN_STS_AUTH_URI "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx"
