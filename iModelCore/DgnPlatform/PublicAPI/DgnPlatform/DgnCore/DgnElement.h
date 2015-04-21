@@ -195,12 +195,14 @@ protected:
     virtual ~DgnElement() {}
     DGNPLATFORM_EXPORT virtual uint32_t _AddRef() const;
     DGNPLATFORM_EXPORT virtual uint32_t _Release() const;
-    virtual void _InitFrom(DgnElementCR other) {}
     DGNPLATFORM_EXPORT virtual void _GenerateDefaultCode();
     DGNPLATFORM_EXPORT virtual DgnModelStatus _LoadFromDb(DgnElementPool&);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb(DgnElementPool&);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb(DgnElementPool&);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb(DgnElementPool&);
+    //! Virtual copy constructor. If your subclass has member variables, it \em must override _InitFrom. @see _SwapWithModified
+    virtual void _InitFrom(DgnElementCR other) {}
+    //! Virtual move assignment operator. If your subclass has member variables, it \em must override _SwapWithModified. @see _InitFrom
     DGNPLATFORM_EXPORT virtual DgnModelStatus _SwapWithModified(DgnElementR);
     virtual DgnModelStatus _OnAdd() {return DGNMODEL_STATUS_Success;}
     virtual void _OnAdded() {}
@@ -640,6 +642,7 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
+    DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
 
 public:
     DgnElement3dCP _ToElement3d() const override {return this;}
@@ -692,6 +695,7 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
+    DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
 
 public:
     DgnElement2dCP _ToElement2d() const override {return this;}
