@@ -37,37 +37,6 @@ public:
     DGNPLATFORM_EXPORT DgnClassId GetItemClassId(DgnDbR db);
 
     DGNPLATFORM_EXPORT ElementItemHandler* GetItemHandler(DgnDbR db, DgnClassId itemClassId);
-
-    //! Set the geometry and placement information for the input DgnElement from PhysicalGeometry.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom (DgnElementR eeh, PhysicalGeometryCR geom, DPoint3dCR origin, YawPitchRollAnglesCR angles);
-
-    //! Set the geometry and placement information for the input DgnElement from the supplied ElementGeometry.
-    //! @param[in,out] eeh The element to modify.
-    //! @param[in] geom The element geometry.
-    //! @param[in] subCategory Optional DgnSubCategoryId to control the appearance and visibility of this geometry. if invalid, the default sub-category for the element's category is used.
-    //! @param[in] origin Optional placement origin. When not nullptr, geometry coordinates are assumed to be relative to this origin instead of world.
-    //! @param[in] angles Optional placement angles. Pass nullptr for identity rotation or specific angles. Ignored when origin is nullptr.
-    //! @return SUCCESS if element geometry could be set.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(DgnElementR eeh, ElementGeometryCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
-
-    //! Set the geometry and placement information for the input DgnElement from a CurveVector.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(DgnElementR eeh, CurveVectorCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
-
-    //! Set the geometry and placement information for the input DgnElement from a ICurvePrimitive.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(DgnElementR eeh, ICurvePrimitiveCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
-
-    //! Set the geometry and placement information for the input DgnElement from a ISolidPrimitive.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(DgnElementR eeh, ISolidPrimitiveCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
-
-    //! Set the geometry and placement information for the input DgnElement from a MSBsplineSurface.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(DgnElementR eeh, MSBsplineSurfaceCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
-
-    //! Set the geometry and placement information for the input DgnElement from a PolyfaceQuery.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(DgnElementR eeh, PolyfaceQueryCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
-
-    //! Set the geometry and placement information for the input DgnElement from a ISolidKernelEntity.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(DgnElementR eeh, ISolidKernelEntityCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

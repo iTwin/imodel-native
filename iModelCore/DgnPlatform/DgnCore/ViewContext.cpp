@@ -969,7 +969,7 @@ void ViewContext::_OutputElement (GeometricElementCR element)
     if (m_viewport)
         return m_viewport->GetViewControllerR()._DrawElement(*this, element);
 
-    element.Draw(*this);
+    element._Draw(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

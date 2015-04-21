@@ -412,8 +412,6 @@ $(coreObjs)ScopedDgnHost$(oext)          : $(DgnHandlersDir)ScopedDgnHost.cpp  $
 
 $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAPISrc)NamedVolume.h ${MultiCompileDepends}
 
-$(coreObjs)AreaFillProperties$(oext): $(DgnHandlersDir)AreaFillProperties.cpp  $(DgnPlatformAPISrc)DgnHandlers/IAreaFillProperties.h ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 
 coreObjects =% $(MultiCompileObjectList)

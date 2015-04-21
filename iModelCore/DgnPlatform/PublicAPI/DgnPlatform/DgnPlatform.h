@@ -191,9 +191,8 @@ DGNPLATFORM_TYPEDEFS (IACSManager)
 DGNPLATFORM_TYPEDEFS (IAnnotationHandler)
 DGNPLATFORM_TYPEDEFS (IAuxCoordSys)
 DGNPLATFORM_TYPEDEFS (ICachedDraw)
-DGNPLATFORM_TYPEDEFS (IDeleteManipulator)
 DGNPLATFORM_TYPEDEFS (IDisplaySymbol)
-DGNPLATFORM_TYPEDEFS (IDragManipulator)
+DGNPLATFORM_TYPEDEFS (IEditManipulator)
 DGNPLATFORM_TYPEDEFS (IEditAction)
 DGNPLATFORM_TYPEDEFS (IEditActionArray)
 DGNPLATFORM_TYPEDEFS (IEditActionSource)
@@ -210,9 +209,7 @@ DGNPLATFORM_TYPEDEFS (ISprite)
 DGNPLATFORM_TYPEDEFS (ISubEntity)
 DGNPLATFORM_TYPEDEFS (ITiledRaster)
 DGNPLATFORM_TYPEDEFS (ITransactionHandler)
-DGNPLATFORM_TYPEDEFS (ITransformManipulator)
 DGNPLATFORM_TYPEDEFS (ITxnManager)
-DGNPLATFORM_TYPEDEFS (IVertexManipulator)
 DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
 DGNPLATFORM_TYPEDEFS (IViewTransients)
 DGNPLATFORM_TYPEDEFS (IndexedViewSet)
@@ -506,7 +503,7 @@ struct AxisAlignedBox2d : BoundingBox2d
 {
 public:
     AxisAlignedBox2d() {}
-    AxisAlignedBox2d(DRange2dCR range) {*this=range;}
+    AxisAlignedBox2d(DRange2dCR range) {DRange2d::InitFrom(range.low, range.high);}
     AxisAlignedBox2d(DPoint2dCR low, DPoint2dCR high) {DRange2d::InitFrom(low, high);}
 };
 

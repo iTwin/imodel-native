@@ -116,10 +116,11 @@ struct TestElementHandler : DgnPlatform::ElementHandler
     DgnElementKey InsertElement (DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
         {
         DgnModelP model = db.Models().GetModelById(mid);
-
         DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
+        GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->_ToGeometricElement());
 
-        ElementItemHandler::GetHandler().SetElementGeom(*testElement, *computeShape());// DgnCategories::DefaultSubCategoryId(categoryId), DPoint3d::FromZero(), YawPitchRollAngles());
+        geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
+        geomElem->SetElementGeom(*computeShape());// DgnCategories::DefaultSubCategoryId(categoryId), DPoint3d::FromZero(), YawPitchRollAngles());
 
         testElement->AddToModel();
         return testElement->GetElementKey();
