@@ -482,7 +482,10 @@ ECClassCP DgnElement::GetClass() const
 void DgnElement::_GenerateDefaultCode()
     {
     if (m_elementId.IsValid())
-        m_code = Utf8PrintfString("%s%lld", GetClass()->GetName().c_str(), m_elementId.GetValue());
+        {
+        Utf8String className(GetClass()->GetName());
+        m_code = Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
