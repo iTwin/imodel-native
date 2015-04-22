@@ -1863,47 +1863,6 @@ void GeometricElement::_Draw (ViewContextR context) const
     context.DrawCached(stroker);
     }
 
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static AxisAlignedBox3d computeElementRange (DRange3dCR localBox, DPoint3dCR origin, YawPitchRollAnglesCR angles, bool is3d)
-    {
-    static const double s_smallVal = .0005;
-    AxisAlignedBox3d range;
-
-    angles.ToTransform(origin).Multiply(range, localBox);
-
-    // low and high are no longer allowed to be equal...
-    if (range.low.x == range.high.x)
-        {
-        range.low.x -= s_smallVal;
-        range.high.x += s_smallVal;
-        }
-
-    if (range.low.y == range.high.y)
-        {
-        range.low.y -= s_smallVal;
-        range.high.y += s_smallVal;
-        }
-
-    if (is3d)
-        {
-        if (range.low.z == range.high.z)
-            {
-            range.low.z -= s_smallVal;
-            range.high.z += s_smallVal;
-            }
-        }
-    else
-        {
-        range.low.z = range.high.z = 0.0;
-        }
-
-    return range;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1918,9 +1877,8 @@ BentleyStatus GeometricElement::SetElementGeom(bvector<ElementGeometryPtr> const
     if (nGeom != appearance.size() && 1 != appearance.size())
         return BentleyStatus::ERROR;
 
-    DgnElement3dP element3d = nullptr;
-
-    if (nullptr == (element3d = const_cast<DgnElement3dP>(_ToElement3d())))
+    DgnElement3dP element3d = const_cast<DgnElement3dP>(_ToElement3d());
+    if (nullptr == element3d)
         return BentleyStatus::ERROR;
 
     DgnCategoryId categoryId = GetCategoryId();
@@ -1979,8 +1937,8 @@ BentleyStatus GeometricElement::SetElementGeom(bvector<ElementGeometryPtr> const
     if (0 == writer.m_buffer.size())
         return BentleyStatus::ERROR;
 
-    Placement3d elGeom(origin, angles, geom.CalculateBoundingBox());
-    SetPlacement(elGeom);
+    Placement3d elGeom(origin, angles, overallBoundingBox);
+    element3d->SetPlacement(elGeom);
     GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
 
     return BentleyStatus::SUCCESS;        
@@ -2047,17 +2005,14 @@ static BentleyStatus setElementGeom(GeometricElementR element, ElementGeometryR 
  
     if (nullptr != element3d)
         {
-		Placement3d elGeom(tmpOrigin, tmpAngles, localBox);
-    	SetPlacement(elGeom);
+        Placement3d elGeom(tmpOrigin, tmpAngles, localBox);
+        element3d->SetPlacement(elGeom);
+        }
     else
         {
-        Placement2dR placement = const_cast<Placement2dR>(element2d->GetPlacement()); // NEEDSWORK...
-        AxisAlignedBox3d axisBox = computeElementRange(localBox, tmpOrigin, tmpAngles, false);
-
-        placement.GetOriginR() = DPoint2d::From(tmpOrigin);
-        placement.GetAngleR() = tmpAngles.GetRoll().Degrees();
-        placement.GetElementBoxR() = ElementAlignedBox2d(localBox.GetLeft(), localBox.GetFront(), localBox.GetRight(), localBox.GetBack());
-        placement.GetRangeR() = DRange2d::From(DPoint2d::From(axisBox.low), DPoint2d::From(axisBox.high));
+        ElementAlignedBox2d box2d(localBox.GetLeft(), localBox.GetFront(), localBox.GetRight(), localBox.GetBack());
+        Placement2d placement(DPoint2d::From(tmpOrigin), tmpAngles.GetRoll().Degrees(), box2d);
+        element2d->SetPlacement(placement);
         }
 
     ElementGeomIO::Writer writer;

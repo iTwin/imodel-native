@@ -25,11 +25,11 @@ BENTLEY_API_TYPEDEFS (HeapZone);
 
 enum ElementHiliteState
 {
-    HILITED_None                = 0,
-    HILITED_Normal              = 1,
-    HILITED_Bold                = 2,
-    HILITED_Dashed              = 3,
-    HILITED_Background          = 4,
+    HILITED_None         = 0,
+    HILITED_Normal       = 1,
+    HILITED_Bold         = 2,
+    HILITED_Dashed       = 3,
+    HILITED_Background   = 4,
 };
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -740,7 +740,7 @@ public:
     DgnElement2dCP _ToElement2d() const override {return this;}
     AxisAlignedBox3d _GetRange3d() const override {return AxisAlignedBox3d(GetRange());}
     DPoint3d _GetOrigin3d() const override {return DPoint3d::From(m_placement.GetOrigin());}
-    Placement2dCR GetPlacement() const {return m_placement;}
+    void SetPlacement(Placement2dCR placement) {m_placement=placement;}
     AxisAlignedBox2dCR GetRange() const {return m_placement.GetRange();}
     ElementAlignedBox2d GetElementBox() const {return m_placement.GetElementBox();}
     ElementAlignedBox3d _GetElementBox3d() const override {return ElementAlignedBox3d(GetElementBox());}

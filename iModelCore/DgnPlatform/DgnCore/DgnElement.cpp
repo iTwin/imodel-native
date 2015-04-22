@@ -467,7 +467,6 @@ DgnModelStatus DgnElement::AddToModel()
     return DGNMODEL_STATUS_Success;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -610,8 +609,8 @@ DgnModelStatus GeometricElement::_InsertInDb(DgnElementPool& pool)
         return stat;
 
     CachedStatementPtr stmt;
-    pool.GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(ElementId,Range,Box,Origin,Rotation,Geom) VALUES(?,?,?,?,?,?)");
-    stmt->BindId(1, m_elementId);
+    pool.GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Range,Box,Origin,Rotation,ElementId) VALUES(?,?,?,?,?,?)");
+    stmt->BindId(6, m_elementId);
 
     stat = _BindInsertGeom(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
@@ -633,9 +632,8 @@ DgnModelStatus GeometricElement::_UpdateInDb(DgnElementPool& pool)
         return stat;
 
     CachedStatementPtr stmt;
-    pool.GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET ElementId=?,Range=?,Box=?,Origin=?,Rotation=?,Geom=? WHERE ElementId=?");
-    stmt->BindId(1, m_elementId);
-    stmt->BindId(7, m_elementId);
+    pool.GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Range=?,Box=?,Origin=?,Rotation=? WHERE ElementId=?");
+    stmt->BindId(6, m_elementId);
 
     stat = _BindInsertGeom(*stmt);
     if (DGNMODEL_STATUS_Success != stat)
@@ -663,9 +661,9 @@ DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt, DgnElementPoo
     if (0 < zipSize)
         {
         if (1 == snappy.GetCurrChunk())
-            stmt.BindBlob (6, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
+            stmt.BindBlob(1, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
         else
-            stmt.BindZeroBlob (6, zipSize); // more than one chunk in geom stream
+            stmt.BindZeroBlob(1, zipSize); // more than one chunk in geom stream
         }
 
     if (BE_SQLITE_DONE != stmt.Step())
@@ -686,10 +684,11 @@ DgnModelStatus DgnElement3d::_BindInsertGeom(Statement& stmt)
     if (!m_placement.IsValid())
         DGNMODEL_STATUS_NoGeometry;
 
-    stmt.BindBlob(2, &m_placement.GetRange(), sizeof(DRange3d), Statement::MakeCopy::No);
-    stmt.BindBlob(3, &m_placement.GetElementBox(), sizeof(DRange3d), Statement::MakeCopy::No);
-    stmt.BindBlob(4, &m_placement.GetOrigin(), sizeof(DPoint3d), Statement::MakeCopy::No);
-    stmt.BindBlob(5, &m_placement.GetAngles(), sizeof(YawPitchRollAngles), Statement::MakeCopy::No);
+    int col=2;
+    stmt.BindBlob(col++, &m_placement.GetRange(), sizeof(DRange3d), Statement::MakeCopy::No);
+    stmt.BindBlob(col++, &m_placement.GetElementBox(), sizeof(DRange3d), Statement::MakeCopy::No);
+    stmt.BindBlob(col++, &m_placement.GetOrigin(), sizeof(DPoint3d), Statement::MakeCopy::No);
+    stmt.BindBlob(col++, &m_placement.GetAngles(), sizeof(YawPitchRollAngles), Statement::MakeCopy::No);
     return DGNMODEL_STATUS_Success;
     }
 

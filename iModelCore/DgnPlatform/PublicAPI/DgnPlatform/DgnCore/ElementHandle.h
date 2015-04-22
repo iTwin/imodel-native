@@ -68,7 +68,6 @@ protected:
     void ClearPersistent() {m_persistent = nullptr;}
     void ClearElemState() {RELEASE_AND_CLEAR(m_state);}
     void ClearAll() {ClearWriteable(); ClearElemState(); ClearPersistent();}
-    void Invalidate() {ClearAll();}
     void AssignDgnElement(DgnElementCP element)
         {
         m_persistent = (DgnElementP) element; // keep this order so element doesn't become garbage if element==m_writeable;
@@ -81,6 +80,8 @@ protected:
     DGNPLATFORM_EXPORT void Init(DgnElementId, DgnDbR);
 
 public:
+    void Invalidate() {ClearAll();}
+
     ElementHandle() {Init(nullptr);} //!< construct a blank, invalid, ElementHandle
     ~ElementHandle() {ClearAll();}
 
