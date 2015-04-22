@@ -1517,7 +1517,7 @@ void WebMercatorModel::Mercator::FromJson(Json::Value const& v)
 void WebMercatorModel::_ToPropertiesJson(Json::Value& v) const
     {
     T_Super::_ToPropertiesJson(v);
-    m_properties.ToJson(v);
+    m_mercator.ToJson(v);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1526,7 +1526,7 @@ void WebMercatorModel::_ToPropertiesJson(Json::Value& v) const
 void WebMercatorModel::_FromPropertiesJson(Json::Value const& v)
     {
     T_Super::_FromPropertiesJson(v);
-    m_properties.FromJson(v);
+    m_mercator.FromJson(v);
     }
 
 #ifdef TBD_LATLNG_GRID
