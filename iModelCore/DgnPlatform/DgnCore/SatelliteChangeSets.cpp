@@ -277,6 +277,34 @@ BentleyStatus SatelliteChangeSets::ExtractChangeSetBySequenceNumber(BeSQLite::Ch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus extractChangeSetBySequenceNumberDirect(BeSQLite::ChangeSet& cset, Db& db, uint64_t sequenceNumber)
+    {
+    Statement stmt;
+    stmt.Prepare(db, "SELECT Data,length(Data),Compressed FROM " CHANGESET_Table " WHERE (SequenceNumber=?)");
+    stmt.BindInt64(1, sequenceNumber);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return BSIERROR;
+
+    void const* data = stmt.GetValueBlob(0);
+    int datasize = stmt.GetValueInt(1);
+    SatelliteChangeSets::Compressed compressed = (SatelliteChangeSets::Compressed)(stmt.GetValueInt(2));
+
+    bvector<Byte> expanded;
+    if (compressed != SatelliteChangeSets::Compressed::No)
+        {
+        if (expandData (expanded, data, datasize, compressed) != BSISUCCESS)
+            return BSIERROR;
+        data = &expanded[0];
+        datasize = (int32_t)expanded.size();
+        }
+
+    DbResult rc = cset.FromData (datasize, data, false);
+    return (rc == BE_SQLITE_OK)? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SatelliteChangeSets::OnFatalError (uint64_t lastCsid)
     {
     Statement stmt;
@@ -469,6 +497,35 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets (uint32_t& nChangesApplied, D
         files.push_back (entry.second);
     return ApplyChangeSets (nChangesApplied, project, files);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db)
+    {
+    Db csfile;
+    if (BE_SQLITE_OK != csfile.OpenBeSQLiteDb(csfileName, Db::OpenParams(Db::OpenMode::OPEN_Readonly)))
+        return BSIERROR;
+
+    BeSQLite::Statement stmt;
+    stmt.Prepare(csfile, "SELECT " CHANGSETINFO_COLS " FROM " CHANGESET_Table);
+
+    while (true)
+        {
+        ChangeSetInfo info(stmt);
+        if (!info.IsValid())
+            break;
+
+        SyncInfoChangeSet changeSet(db);
+        extractChangeSetBySequenceNumberDirect (changeSet, csfile, info.m_sequenceNumber);
+
+        printf ("--No=%llu type=%d desc=[%s] time=%ls---\n", info.m_sequenceNumber, info.m_type, info.m_description.c_str(), info.m_time.ToString().c_str());
+
+        changeSet.Dump(db);
+        }
+
+    return BSISUCCESS;
+    } 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
