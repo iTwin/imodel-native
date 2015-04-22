@@ -1863,6 +1863,7 @@ void GeometricElement::_Draw (ViewContextR context) const
     context.DrawCached(stroker);
     }
 
+#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1901,6 +1902,7 @@ static AxisAlignedBox3d computeElementRange (DRange3dCR localBox, DPoint3dCR ori
 
     return range;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
@@ -1977,13 +1979,8 @@ BentleyStatus GeometricElement::SetElementGeom(bvector<ElementGeometryPtr> const
     if (0 == writer.m_buffer.size())
         return BentleyStatus::ERROR;
 
-    Placement3dR placement = element3d->GetPlacementR();
-
-    placement.GetOriginR() = origin;
-    placement.GetAnglesR() = angles;
-    placement.GetElementBoxR() = overallBoundingBox;
-    placement.GetRangeR() = computeElementRange(placement.GetElementBox(), origin, angles, true);
-
+    Placement3d elGeom(origin, angles, geom.CalculateBoundingBox());
+    SetPlacement(elGeom);
     GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
 
     return BentleyStatus::SUCCESS;        
@@ -2050,13 +2047,8 @@ static BentleyStatus setElementGeom(GeometricElementR element, ElementGeometryR 
  
     if (nullptr != element3d)
         {
-        Placement3dR placement = element3d->GetPlacementR();
-
-        placement.GetOriginR() = tmpOrigin;
-        placement.GetAnglesR() = tmpAngles;
-        placement.GetElementBoxR() = localBox;
-        placement.GetRangeR() = computeElementRange(localBox, tmpOrigin, tmpAngles, true);
-        }
+		Placement3d elGeom(tmpOrigin, tmpAngles, localBox);
+    	SetPlacement(elGeom);
     else
         {
         Placement2dR placement = const_cast<Placement2dR>(element2d->GetPlacement()); // NEEDSWORK...

@@ -2709,7 +2709,7 @@ static void     flushPartialCurve (ElementAgendaP inside, ElementAgendaP outside
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh)
+void FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh)
     {
     // TODO: Look into pushing the fence clip onto the output and having SimplifyViewDrawGeom do the clipping...
 #if defined (NEEDS_WORK_DGNITEM)
@@ -2737,11 +2737,7 @@ void            FenceParams::ParseAcceptedElement (ElementAgendaP inside, Elemen
         if (!context.AcceptCurveVector (*curveVector, &tmpFp))
             return;
 
-        EditElementHandle   tmpEeh;
-
-        tmpEeh.Duplicate (eh);
-        inside->Insert (tmpEeh);
-
+        inside->Insert(eh.GetDgnElement());
         return;
         }
 

@@ -158,7 +158,7 @@ protected:
         uint32_t m_deletedRef:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hiliteState:3;
-        uint32_t m_undisplayed:1;                  // don't display this element.
+        uint32_t m_undisplayed:1;
         uint32_t m_mark1:1;                        // used by applications
         uint32_t m_mark2:1;                        // used by applications
         uint32_t m_elFlags:4;                      // used by element type specific code
@@ -398,8 +398,7 @@ protected:
 
 public:
     Placement3d() : m_origin(DPoint3d::FromZero())  {}
-    Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box, AxisAlignedBox3dCR range) 
-            : m_origin(origin), m_angles(angles), m_boundingBox(box), m_range(range) {}
+    DGNPLATFORM_EXPORT Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box);
     Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
     Placement3d(Placement3d&& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
     Placement3d& operator=(Placement3d&& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; m_range=rhs.m_range; return *this;}
@@ -430,7 +429,7 @@ public:
     void SetRange(AxisAlignedBox3dCR val) {m_range=val;}
     
     //! Determine whether the range of the element is valid 
-    bool IsRangeValid(bool is3d) const {return m_range.IsValid();}
+    bool IsValid() const {return m_boundingBox.IsValid();}
     };
 
 //=======================================================================================
@@ -446,8 +445,7 @@ protected:
 
 public:
     Placement2d() : m_origin(DPoint2d::FromZero()), m_angle(0.0)  {}
-    Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box, AxisAlignedBox2dCR range) 
-            : m_origin(origin), m_angle(angle), m_boundingBox(box), m_range(range) {}
+    DGNPLATFORM_EXPORT Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box);
     Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
     Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
     Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; m_range=rhs.m_range; return *this;}
@@ -478,7 +476,7 @@ public:
     void SetRange(DRange2dCR val) {m_range=val;}
     
     //! Determine whether the range of the element is valid 
-    bool IsRangeValid(bool is2d) const {return m_range.IsValid();}
+    bool IsValid() const {return m_boundingBox.IsValid();}
     };
 
 //=======================================================================================
@@ -681,7 +679,7 @@ public:
     AxisAlignedBox3d _GetRange3d() const override {return GetRange();}
     DPoint3d _GetOrigin3d() const override {return m_placement.GetOrigin();}
     Placement3dCR GetPlacement() const {return m_placement;}
-    Placement3dR GetPlacementR() {return m_placement;}
+    void SetPlacement(Placement3dCR placement) {m_placement=placement;}
     AxisAlignedBox3dCR GetRange() const {return m_placement.GetRange();}
     ElementAlignedBox3d GetElementBox() const {return m_placement.GetElementBox();}
     ElementAlignedBox3d _GetElementBox3d() const override {return GetElementBox();}

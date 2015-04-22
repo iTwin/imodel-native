@@ -570,7 +570,9 @@ DgnModelStatus GeometricElement::_LoadFromDb(DgnElementPool& pool)
     SnappyFromBlob& snappy = pool.GetSnappyFrom();
 
     if (ZIP_SUCCESS != snappy.Init(pool.GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue()))
-        return DGNMODEL_STATUS_ElementReadError;
+        {
+        return DGNMODEL_STATUS_Success; // this element has no geometry
+        }
 
     GeomBlobHeader header (snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
@@ -579,7 +581,7 @@ DgnModelStatus GeometricElement::_LoadFromDb(DgnElementPool& pool)
         return DGNMODEL_STATUS_ElementReadError;
         }
 
-    // determine how much memory is to be allocated for this element's geom (new size -
+    // determine how much memory is to be allocated for this element's geom (new size - old size)
     uint32_t oldSize = m_geom.GetAllocSize();
     m_geom.ReserveMemory(header.m_size);
     int32_t sizeChange = m_geom.GetAllocSize() - oldSize;
@@ -612,6 +614,9 @@ DgnModelStatus GeometricElement::_InsertInDb(DgnElementPool& pool)
     stmt->BindId(1, m_elementId);
 
     stat = _BindInsertGeom(*stmt);
+    if (DGNMODEL_STATUS_NoGeometry == stat)
+        return DGNMODEL_STATUS_Success;
+
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
@@ -678,6 +683,9 @@ DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt, DgnElementPoo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement3d::_BindInsertGeom(Statement& stmt)
     {
+    if (!m_placement.IsValid())
+        DGNMODEL_STATUS_NoGeometry;
+
     stmt.BindBlob(2, &m_placement.GetRange(), sizeof(DRange3d), Statement::MakeCopy::No);
     stmt.BindBlob(3, &m_placement.GetElementBox(), sizeof(DRange3d), Statement::MakeCopy::No);
     stmt.BindBlob(4, &m_placement.GetOrigin(), sizeof(DPoint3d), Statement::MakeCopy::No);
@@ -693,6 +701,9 @@ DgnModelStatus DgnElement3d::_LoadFromDb(DgnElementPool& pool)
     DgnModelStatus stat = T_Super::_LoadFromDb(pool);
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
+
+    if (IsUndisplayed()) // has no geometry, and therefore no placement
+        return DGNMODEL_STATUS_Success;
 
     CachedStatementPtr stmt;
     pool.GetStatement(stmt, "SELECT Range,Box,Origin,Rotation FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
@@ -753,6 +764,9 @@ DgnModelStatus PhysicalElement::_InsertInDb(DgnElementPool& pool)
     DgnModelStatus stat = T_Super::_InsertInDb(pool);
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
+
+    if (!IsUndisplayed()) // this is an invisible element
+        return DGNMODEL_STATUS_Success;
 
     CachedStatementPtr stmt;
     pool.GetStatement(stmt, "INSERT INTO " DGN_VTABLE_PrjRTree " (ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ) VALUES (?,?,?,?,?,?,?)");
@@ -1654,4 +1668,60 @@ BentleyStatus GeometricElement::_ApplyScheduledChangesToInstances(DgnElement& mo
         }
 
     return BSISUCCESS;
+    }
+
+static const double s_smallVal = .0005;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Placement3d::Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box) : m_origin(origin), m_angles(angles), m_boundingBox(box)
+    {
+    angles.ToTransform(origin).Multiply(m_range, box);
+
+    // low and high are no longer allowed to be equal...
+    if (m_range.low.x == m_range.high.x)
+        {
+        m_range.low.x -= s_smallVal;
+        m_range.high.x += s_smallVal;
+        }
+
+    if (m_range.low.y == m_range.high.y)
+        {
+        m_range.low.y -= s_smallVal;
+        m_range.high.y += s_smallVal;
+        }
+
+    if (m_range.low.z == m_range.high.z)
+        {
+        m_range.low.z -= s_smallVal;
+        m_range.high.z += s_smallVal;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Placement2d::Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box)
+    {
+    Transform t;
+    t.InitFromOriginAngleAndLengths(origin, angle, 1.0, 1.0);
+
+    DRange3d box3d = DRange3d::From(&box.low, 2, 0.0);
+    DRange3d range3d;
+    t.Multiply(range3d, box3d);
+
+    m_range.From(&range3d.low,2);
+
+    // low and high are no longer allowed to be equal...
+    if (m_range.low.x == m_range.high.x)
+        {
+        m_range.low.x -= s_smallVal;
+        m_range.high.x += s_smallVal;
+        }
+
+    if (m_range.low.y == m_range.high.y)
+        {
+        m_range.low.y -= s_smallVal;
+        m_range.high.y += s_smallVal;
+        }
     }

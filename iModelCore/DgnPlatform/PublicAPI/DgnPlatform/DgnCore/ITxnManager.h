@@ -202,19 +202,6 @@ public:
     //! @return SUCCESS if the element was deleted.
     DGNPLATFORM_EXPORT StatusInt DeleteElement (DgnElementP elem);
 
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    //! Add a new element to a model.
-    //! @remarks \a newEl must already be associated with a model.
-    //! @param[in,out]      newEl           The element to be added. Must hold an DgnElementDescr.
-    //! @return SUCCESS if the element was added or non-zero indicating failure. Possible reasons for failure include:
-    //! -- \a newEl is not associated with a model,
-    //! -- the model is not writable,
-    //! -- the element handler blocked the add,
-    //! -- the element could not be assigned an DgnElementId,
-    //! -- any scheduled XAttribute change failed.
-    DGNPLATFORM_EXPORT StatusInt AddElement (EditElementHandleR newEl);
-#endif
-
     //! Replace an existing element in a model with a different one.
     //! @param[in,out] el The element to be replaced.
     //! @return SUCCESS if the element was replaced and out is non-NULL.
@@ -242,8 +229,7 @@ public:
 };
 
 //=======================================================================================
-//! To reinstate a reversed transaction, we need to know the first and last entry number, PLUS the
-//! current value of the end of transaction data (before the transaction was reversed.)
+//! To reinstate a reversed transaction, we need to know the first and last entry number.
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
 struct RevTxn
@@ -356,7 +342,6 @@ struct ITxnManager
 
     friend struct TxnIter;
     friend struct ITxn;
-    friend struct DgnCacheTxn;
 
 protected:
     DgnDbR          m_dgndb;
@@ -405,11 +390,6 @@ public:
 
     DGNPLATFORM_EXPORT bool GetDoChangePropagation() const {return m_doChangePropagation;}
     DGNPLATFORM_EXPORT void SetDoChangePropagation (bool b) {m_doChangePropagation=b;}
-
-#if defined (NEEDS_WORK_VIEW_HANDLER_REFACTOR)
-    DGNPLATFORM_EXPORT static void AddTableHandler(TxnTableHandler&);
-    static TxnTableHandler* FindTableHandler(Utf8CP);
-#endif
 
     DGNPLATFORM_EXPORT BentleyStatus SaveUndoMark(Utf8CP name);
     DGNPLATFORM_EXPORT void GetUndoString (Utf8StringR);

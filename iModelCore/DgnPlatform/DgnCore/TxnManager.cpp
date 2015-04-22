@@ -1069,7 +1069,7 @@ void ITxnManager::ClearReversedTxns()
         return;                     // nothing currently undone, nothing to do
 
     RevTxn firstTxn = m_reversedTxn.back(); // oldest, most recently undone
-    RevTxn lastTxn = m_reversedTxn.front();
+    RevTxn lastTxn  = m_reversedTxn.front();
     for (TxnId curr (lastTxn.m_range.GetLast()-1); curr.IsValid() && (curr >= firstTxn.m_range.GetFirst()); curr.Prev())
         CancelChanges(curr);
 

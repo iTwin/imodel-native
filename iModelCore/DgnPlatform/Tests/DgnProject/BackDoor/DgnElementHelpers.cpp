@@ -22,7 +22,7 @@ StatusInt AddElementToModel (EditElementHandleR eeh)
 
     size_t numberBeforeAdded = model->CountElements();
 
-    DgnPlatform::DgnElementId id = eeh.GetElementId ();
+    DgnPlatform::DgnElementId id = eeh.GetDgnElement()->GetElementId();
     if (id.IsValid())
         return BSIERROR;
 
@@ -30,7 +30,7 @@ StatusInt AddElementToModel (EditElementHandleR eeh)
     if (SUCCESS != result)
         return result;
 
-    id = eeh.GetElementId ();
+    id = eeh.GetDgnElement()->GetElementId();
     if (!id.IsValid())
         return BSIERROR;
 
