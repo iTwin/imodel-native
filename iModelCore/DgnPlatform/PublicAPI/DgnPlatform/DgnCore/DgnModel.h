@@ -250,7 +250,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnAddedElement(DgnElementR el);
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementR element, bool cancel);
     DGNPLATFORM_EXPORT virtual void _OnReplacedElement(DgnElementR element, DgnElementR original);
-
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
@@ -334,6 +333,17 @@ public:
     DgnModelType GetModelType() const {return _GetModelType();}
     DgnClassId GetClassId() const {return m_classId;}
     DgnModelId GetModelId() const {return m_modelId;}
+
+    DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();}
+    DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();}
+    PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();}
+    PlanarPhysicalModelCP ToPlanarPhysicalModel() const {return _ToPlanarPhysicalModel();}
+    SheetModelCP ToSheetModel() const {return _ToSheetModel();}
+    DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());}
+    DgnModel3dP ToDgnModel3dP() {return const_cast<DgnModel3dP>(_ToDgnModel3d());}
+    PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());}
+    PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());}
+    SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}
 
     //! Determine whether this is a readonly DgnModel or not.
     bool IsReadOnly() const {return m_readonly;}

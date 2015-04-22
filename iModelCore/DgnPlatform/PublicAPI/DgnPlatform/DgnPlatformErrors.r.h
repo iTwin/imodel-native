@@ -181,6 +181,7 @@ enum DgnModelStatus
     DGNMODEL_STATUS_InvalidClassId              = DGNMODEL_ERROR_BASE + 0x2d,
     DGNMODEL_STATUS_InvalidHandler              = DGNMODEL_ERROR_BASE + 0x2e,
     DGNMODEL_STATUS_WrongDgnDb                  = DGNMODEL_ERROR_BASE + 0x2f,
+    DGNMODEL_STATUS_NoGeometry                  = DGNMODEL_ERROR_BASE + 0x30,
     };
 
 //=======================================================================================

@@ -291,7 +291,7 @@ ElementHiliteState  DisplayPath::IsHilited () const
 
     for (int i=0; i <= cursor; i++, elem++)
         {
-        ElementHiliteState  hiliteState = (*elem)->_ToGeometricElement()->IsHilited();
+        ElementHiliteState  hiliteState = (*elem)->ToGeometricElement()->IsHilited();
 
         switch (hiliteState)
             {
@@ -315,11 +315,11 @@ void DisplayPath::SetHilited (ElementHiliteState newState) const
     DgnElementP  cursorElem = GetCursorElem();
 
     // don't turn on/off hilite bit for elements in the selection set.
-    if (cursorElem->_ToGeometricElement()->IsInSelectionSet())
+    if (cursorElem->ToGeometricElement()->IsInSelectionSet())
         return;
 
     // KLUDGE: Preserve any alternative hilite state (i.e. HILITED_Bold) already set on this element...
-    if (HILITED_None == newState || HILITED_None == cursorElem->_ToGeometricElement()->IsHilited())
+    if (HILITED_None == newState || HILITED_None == cursorElem->ToGeometricElement()->IsHilited())
         {
         cursorElem->SetHilited(newState);
         }

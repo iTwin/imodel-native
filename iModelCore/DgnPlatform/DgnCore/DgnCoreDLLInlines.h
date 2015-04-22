@@ -207,7 +207,7 @@ DG_INLINE ISubEntity::SubEntityType ISubEntity::GetSubEntityType () const {retur
 
 DG_INLINE DgnDbR                  ViewContext::GetDgnDb () const {BeAssert (nullptr != m_dgnDb); return *m_dgnDb;}
 DG_INLINE void                    ViewContext::SetDgnDb (DgnDbR dgnDb) {return _SetDgnDb (dgnDb);}
-DG_INLINE GeometricElementCP      ViewContext::GetCurrentElement () const {return (m_currentElement.IsValid() ? m_currentElement.get()->_ToGeometricElement() : nullptr);}
+DG_INLINE GeometricElementCP      ViewContext::GetCurrentElement () const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometricElement() : nullptr);}
 DG_INLINE void                    ViewContext::SetCurrentElement (GeometricElementCP element) {_SetCurrentElement (element);}
 DG_INLINE DisplayPathCP           ViewContext::GetSourceDisplayPath () const {return m_sourcePath;}
 

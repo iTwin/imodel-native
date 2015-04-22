@@ -815,7 +815,7 @@ ElementProperties   PropertyContext::GetElementPropertiesMask ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PropertyContext::SetCurrentElemHandleP (ElementHandleCP eh)
+void PropertyContext::SetCurrentElemHandleP (ElementHandleCP eh)
     {
     m_elmHandle = eh;
 
@@ -823,7 +823,7 @@ void            PropertyContext::SetCurrentElemHandleP (ElementHandleCP eh)
              GetCategory is base category id. Mlines will need to account for
              profile categories; multi-category elements are an aberration. */
 
-    SetCurrentCategoryID (eh ? eh->GetCategoryId() : DgnCategoryId());
+    SetCurrentCategoryID (eh ? eh->GetDgnElement()->GetCategoryId() : DgnCategoryId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -851,7 +851,6 @@ DgnModelP    PropertyContext::GetDestinationDgnModel ()
 
     return GetSourceDgnModel ();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/06

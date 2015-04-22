@@ -76,6 +76,6 @@ StatusInt ITxn::ReplaceElement(EditElementHandleR eeh)
     if (DGNMODEL_STATUS_Success != status)
         return  status;
 
-    eeh.ClearElementDescr();
+    eeh.ClearWriteable();
     return SUCCESS;
     }

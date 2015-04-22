@@ -15,9 +15,9 @@ void ElementHandle::Clone(ElementHandle const& from)
     if (this == &from)
         return;
 
-    m_element = from.m_element;
-    m_dscr   = from.m_dscr;
-    m_state  = from.m_state;
+    m_persistent = from.m_persistent;
+    m_writeable  = from.m_writeable;
+    m_state = from.m_state;
 
     if (m_state)
         m_state->AddRef();
@@ -26,7 +26,7 @@ void ElementHandle::Clone(ElementHandle const& from)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementHandle::ElementHandle (ElementHandleCR from) : m_element(from.m_element), m_dscr(from.m_dscr), m_state(from.m_state)
+ElementHandle::ElementHandle(ElementHandleCR from) : m_persistent(from.m_persistent), m_writeable(from.m_writeable), m_state(from.m_state)
     {
     if (m_state)
         m_state->AddRef();
@@ -37,104 +37,81 @@ ElementHandle::ElementHandle (ElementHandleCR from) : m_element(from.m_element),
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelP ElementHandle::GetDgnModelP() const
     {
-    if (m_element.IsValid ())
-        return &m_element->GetDgnModel();
+    if (m_persistent.IsValid())
+        return &m_persistent->GetDgnModel();
 
-    return (m_dscr.IsValid() ? &m_dscr->GetDgnModel () : nullptr);
+    return (m_writeable.IsValid() ? &m_writeable->GetDgnModel() : nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP ElementHandle::GetElementDescrCP () const
+DgnElementP EditElementHandle::GetElementDescrP() 
     {
-    if (!m_dscr.IsValid () && m_element.IsValid())
-        m_dscr = m_element->Duplicate();
+    if (!m_writeable.IsValid() && m_persistent.IsValid())
+        m_writeable = m_persistent->Duplicate();
 
-    return m_dscr.get();
+    return m_writeable.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   11/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementHandle::AssignElemDescr (DgnElementP newDscr, bool isPersistent)
+void ElementHandle::AssignElemDescr(DgnElementP newDscr, bool isPersistent)
     {
-    if (newDscr == m_dscr.get())
+    if (newDscr == m_writeable.get())
         return;
 
     if (newDscr)
         {
-        AssignDgnElement (isPersistent ? newDscr : nullptr);
+        AssignDgnElement(isPersistent ? newDscr : nullptr);
         }
     else
         {
-        ClearElementDescr();
-        ClearDgnElement();
+        ClearWriteable();
+        ClearPersistent();
         }
 
-    m_dscr = newDscr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-void EditElementHandle::Duplicate(ElementHandleCR eh)
-    {
-    DgnElementCP ed = eh.GetElementDescrCP ();
-
-    if (nullptr == ed)
-        {
-        AssignElemDescr (nullptr, false);
-        return;
-        }
-
-    DgnElementPtr cc = ed->Duplicate();
-    
-    if (PeekElementDescrCP())
-        AssignElemDescr (cc.get(), false);
-    else
-        SetElementDescr (cc.get(), eh.IsPersistent ());
+    m_writeable = newDscr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   11/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr EditElementHandle::ExtractElementDescr ()
+DgnElementPtr EditElementHandle::ExtractElementDescr()
     {
-    DgnElementPtr currDescr = m_dscr;
-    m_dscr = nullptr;
+    DgnElementPtr currDescr = m_writeable;
+    m_writeable = nullptr;
     return currDescr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   11/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-EditElementHandle::EditElementHandle (ElementHandleCR from, bool duplicateDscr) : ElementHandle(from)
+EditElementHandle::EditElementHandle(ElementHandleCR from, bool duplicateDscr) : ElementHandle(from)
     {
-    if (!m_dscr.IsValid())
+    if (!m_writeable.IsValid())
         return;
 
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
     if (duplicateDscr)
-        m_dscr = m_dscr->Duplicate(true, true);
-#endif
+        m_writeable = m_writeable->Duplicate();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt EditElementHandle::DeleteFromModel ()
+StatusInt EditElementHandle::DeleteFromModel()
     {
-    if (!m_element.IsValid() && m_dscr.IsValid())
-        m_element = m_dscr;
+    if (!m_persistent.IsValid() && m_writeable.IsValid())
+        m_persistent = m_writeable;
         
-    if (!m_element.IsValid())
+    if (!m_persistent.IsValid())
         {
-        BeAssert (false);
+        BeAssert(false);
         return ERROR;
         }
 
-    StatusInt status = m_element->GetDgnDb().GetTxnManager().GetCurrentTxn().DeleteElement (m_element.get());
+    StatusInt status = m_persistent->GetDgnDb().GetTxnManager().GetCurrentTxn().DeleteElement(m_persistent.get());
     if (SUCCESS == status)
         Invalidate();
 
@@ -146,101 +123,63 @@ StatusInt EditElementHandle::DeleteFromModel ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt EditElementHandle::ReplaceInModel()
     {
-    if (!m_element.IsValid())
+    if (!m_persistent.IsValid())
         {
         BeAssert(false);
         return ERROR;
         }
-    return  m_element->GetDgnDb().GetTxnManager().GetCurrentTxn().ReplaceElement(*this);
+    return  m_persistent->GetDgnDb().GetTxnManager().GetCurrentTxn().ReplaceElement(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementHandle::Init (DgnElementId id, DgnDbR project)
+void ElementHandle::Init(DgnElementId id, DgnDbR project)
     {
-    Init (project.Elements().GetElementById(id).get());
+    Init(project.Elements().GetElementById(id).get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt EditElementHandle::FindById (DgnElementId elemID, DgnModelP model, bool allowDeleted)
+StatusInt EditElementHandle::FindById(DgnElementId elemID, DgnModelP model, bool allowDeleted)
     {
     if (nullptr == model)
         return ERROR;
     
-    DgnElementPtr  element = model->GetDgnDb().Elements().GetElementById (elemID);
+    DgnElementPtr  element = model->GetDgnDb().Elements().GetElementById(elemID);
     if (!element.IsValid())
         return DGNMODEL_STATUS_ElementNotFound;
 
     if (!allowDeleted && element->IsDeleted())
         return DGNMODEL_STATUS_ElementNotFound;
 
-    SetDgnElement (element.get());
+    SetDgnElement(element.get());
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jeff.Marker     03/09
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ElementHandle::GetElementId () const
+void ElementHandle::Init(DgnElementCP elRef)
     {
-    return m_element.IsValid() ? m_element->GetElementId() : 
-             m_dscr.IsValid() ? m_dscr->GetElementId() : DgnElementId();
-    }
+    m_persistent = nullptr;
+    m_writeable = nullptr;
+    m_state = nullptr;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementItemKey ElementHandle::GetItemKey () const
-    {
-    GeometricElementCP geom = GetGeometricElement();
-    return geom ? geom->GetItemKey() : ElementItemKey();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementItemHandlerP ElementHandle::GetItemHandler () const
-    {
-    GeometricElementCP geom = GetGeometricElement();
-    return geom ? &geom->GetItemHandler() : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey ElementHandle::GetElementKey() const
-    {
-    if (!IsValid())
-        return DgnElementKey();
-
-    return m_dscr.IsValid() ? m_dscr->GetElementKey() : m_element->GetElementKey();
+    AssignDgnElement(elRef);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementHandle::Init (DgnElementCP elRef)
+void ElementHandle::Init(DgnElementCP elDscr, bool isPersistent)
     {
-    m_element = nullptr;
-    m_dscr = nullptr;
+    m_writeable = (DgnElementP) elDscr;
+    m_persistent = isPersistent ? m_writeable : nullptr;
     m_state = nullptr;
 
-    AssignDgnElement (elRef);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementHandle::Init (DgnElementCP elDscr, bool isPersistent)
-    {
-    m_dscr = (DgnElementP) elDscr;
-    m_element = isPersistent ? m_dscr : nullptr;
-    m_state = nullptr;
-
-    BeAssert (!m_dscr.IsValid() || GetDgnModelP()); // DgnModel is required.
+    BeAssert(!m_writeable.IsValid() || GetDgnModelP()); // DgnModel is required.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,5 +194,5 @@ ElementHandlerR ElementHandle::GetElementHandler() const
         return *bad;
         }
 
-    return m_dscr.IsValid() ? m_dscr->GetElementHandler() : m_element->GetElementHandler();
+    return GetDgnElement()->GetElementHandler();
     }
