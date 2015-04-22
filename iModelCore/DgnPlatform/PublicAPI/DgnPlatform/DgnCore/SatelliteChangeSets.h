@@ -196,40 +196,45 @@ public:
         uint64_t m_latest;
         };
 
-    //! Apply the applicable changesets contained in \a csfiles to \a project. To be applicable, a changes file must have been generated from 
-    //! the project (or a copy of it), and its starting sequence number must be after the project's latest changeset property.
+    //! Dump the contents of the specified changes file.
+    //! @param[in] csfile           The changes file to dump
+    //! @param[in] db               The DgnDb to which the changes file applies
+    DGNPLATFORM_EXPORT static BentleyStatus Dump(BeFileNameCR csfile, BeSQLite::Db& db);
+
+    //! Apply the applicable changesets contained in \a csfiles to \a DgnDb. To be applicable, a changes file must have been generated from 
+    //! the DgnDb (or a copy of it), and its starting sequence number must be after the DgnDb's latest changeset property.
     //! Note that a changes file can contain multiple changesets.
     //! @param[out] nChangesApplied The number of changes that were actually applied is returned here.
-    //! @param[in] project          The project to be updated. Must already be open for read-write
+    //! @param[in] db               The DgnDb to be updated. Must already be open for read-write
     //! @param[in] csfiles          The changeset files to use
     //! @param[in] applier          Delegate that actually applies the changeset.
-    //! @return non-zero error status if the project is not open read-write or if the change sets could not be applied
+    //! @return non-zero error status if the DgnDb is not open read-write or if the change sets could not be applied
     //! @see DetectChangeSets
-    DGNPLATFORM_EXPORT static BentleyStatus ApplyChangeSets(uint32_t& nChangesApplied, BeSQLite::Db& project, bvector<BeFileName> const& csfiles);
+    DGNPLATFORM_EXPORT static BentleyStatus ApplyChangeSets(uint32_t& nChangesApplied, BeSQLite::Db& db, bvector<BeFileName> const& csfiles);
 
-    //! Apply the applicable changesets contained in \a csfiles to \a project. To be applicable, a changes file must have been generated from 
-    //! the project (or a copy of it), and its starting sequence number must be after the project's latest changeset property.
+    //! Apply the applicable changesets contained in \a csfiles to \a DgnDb. To be applicable, a changes file must have been generated from 
+    //! the DgnDb (or a copy of it), and its starting sequence number must be after the DgnDb's latest changeset property.
     //! Note that a changes file can contain multiple changesets.
     //! @param[out] nChangesApplied The number of changes that were actually applied is returned here.
-    //! @param[in] project          The project to be updated. Must already be open for read-write
+    //! @param[in] db               The DgnDb to be updated. Must already be open for read-write
     //! @param[in] csfiles          The changeset files to use
     //! @param[in] applier          Delegate that actually applies the changeset.
-    //! @return non-zero error status if the project is not open read-write or if the change sets could not be applied
+    //! @return non-zero error status if the DgnDb is not open read-write or if the change sets could not be applied
     //! @see DetectChangeSets
-    DGNPLATFORM_EXPORT static BentleyStatus ApplyChangeSets(uint32_t& nChangesApplied, BeSQLite::Db& project, T_ChangesFileDictionary const& csfiles);
+    DGNPLATFORM_EXPORT static BentleyStatus ApplyChangeSets(uint32_t& nChangesApplied, BeSQLite::Db& db, T_ChangesFileDictionary const& csfiles);
 
-    //! Detect the changes files in \a changeSetDir that are applicable to \a project. To be applicable, a changes file must have been generated from 
-    //! the project (or a copy of it), and its starting sequence number must be after the project's latest changeset property.
+    //! Detect the changes files in \a changeSetDir that are applicable to \a DgnDb. To be applicable, a changes file must have been generated from 
+    //! the DgnDb (or a copy of it), and its starting sequence number must be after the DgnDb's latest changeset property.
     //! Note that a changes file can contain multiple changesets.
-    //! @param[out] csfiles         A dictionary of changeset files found \a changeSetDir that are applicable to \a project. The key for each entry is the changeset ID.
+    //! @param[out] csfiles         A dictionary of changeset files found \a changeSetDir that are applicable to \a DgnDb. The key for each entry is the changeset ID.
     //! @param[out] range           The range of changeset SequenceNumbers found in the files.
-    //! @param[in] project          The project that the changesets relate to. 
+    //! @param[in] db               The DgnDb that the changesets relate to. 
     //! @param[in] candidateFiles   The files to consider
     //! @return non-zero error status if the changesets found in \a candidateFiles are invalid
-    //! @note This function does not apply changesets to the project. It just detects relevant changesets.
+    //! @note This function does not apply changesets to the DgnDb. It just detects relevant changesets.
     //! @see ExtractChangeSets
     //! @see ApplyChangeSets
-    DGNPLATFORM_EXPORT static BentleyStatus DetectChangeSets(T_ChangesFileDictionary& csfiles, ChangeSetRange& range, BeSQLite::Db& project, bvector<BeFileName> const& candidateFiles);
+    DGNPLATFORM_EXPORT static BentleyStatus DetectChangeSets(T_ChangesFileDictionary& csfiles, ChangeSetRange& range, BeSQLite::Db& db, bvector<BeFileName> const& candidateFiles);
     //! @}
     
 };
