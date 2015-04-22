@@ -467,6 +467,13 @@ DgnModelStatus DgnElement::AddToModel()
     return DGNMODEL_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnClassId DgnElement::GetClassId(DgnDbR db)
+    {
+    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
