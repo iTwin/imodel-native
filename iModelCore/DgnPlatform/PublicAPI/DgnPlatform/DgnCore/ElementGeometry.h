@@ -144,14 +144,12 @@ struct Operation
 //=======================================================================================
 struct Writer
     {
-    bool              m_creatingElement;
     bvector<uint8_t>  m_buffer;
 
-    Writer () {m_creatingElement = false; AppendHeader ();}
+    Writer () {AppendHeader ();}
 
     void AppendHeader () {Header hdr; Append (Operation (OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
     void Reset () {m_buffer.clear (); AppendHeader ();};
-    void SetCreatingElement () {m_creatingElement = true;}
 
     DGNPLATFORM_EXPORT void Append (Operation const& egOp);    
     DGNPLATFORM_EXPORT void Append (DPoint3dCP, size_t nPts, int8_t boundary);
@@ -247,4 +245,46 @@ struct Collection
 }; // ElementGeomIO
 
 //__PUBLISH_SECTION_START__
+typedef RefCountedPtr<ElementGeometryBuilder> ElementGeometryBuilderPtr;
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ElementGeometryBuilder : RefCountedBase
+{
+//__PUBLISH_SECTION_END__
+protected:
+
+DgnModelR               m_model;
+bool                    m_appearanceSet;
+bool                    m_appearanceChanged;
+bool                    m_havePlacement;
+Placement3d             m_placement3d;
+Placement2d             m_placement2d;
+ElemDisplayParams       m_elParams;
+ElementGeomIO::Writer   m_writer;
+
+ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement3dCR placement);
+ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement2dCR placement);
+ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId);
+
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
+public:
+
+DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);
+
+DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
+DGNPLATFORM_EXPORT bool Append (ElemDisplayParamsCR);
+DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCP geomToElement = nullptr);
+DGNPLATFORM_EXPORT bool Append (ElementGeometryCR, TransformCP geomToElement = nullptr);
+DGNPLATFORM_EXPORT bool Append (CurveVectorCR, TransformCP geomToElement = nullptr);
+DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR, TransformCP geomToElement = nullptr);
+
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create3d (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin = DPoint3d::FromZero(), YawPitchRollAngles angles = YawPitchRollAngles());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create2d (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin = DPoint2d::FromZero(), double angle = 0.0);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (DgnModelR model, DgnCategoryId categoryId);
+
+}; // ElementGeometryBuilder
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE

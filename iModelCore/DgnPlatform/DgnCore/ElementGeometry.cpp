@@ -564,7 +564,7 @@ static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePri
 void ElementGeomIO::Writer::Append (CurveVectorCR curves, bool isFilled)
     {
     // Special case to avoid having to call new during draw...
-    if (m_creatingElement && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive() && appendSimpleCurvePrimitive (*this, *curves.front(), curves.IsClosedPath(), isFilled))
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive() && appendSimpleCurvePrimitive (*this, *curves.front(), curves.IsClosedPath(), isFilled))
         return;
 
     bvector<Byte> buffer;
@@ -586,7 +586,7 @@ void ElementGeomIO::Writer::Append (CurveVectorCR curves, bool isFilled)
 void ElementGeomIO::Writer::Append (ICurvePrimitiveCR curvePrimitive, bool isClosed, bool isFilled)
     {
     // Special case to avoid having to call new during draw...
-    if (m_creatingElement && appendSimpleCurvePrimitive (*this, curvePrimitive, isClosed, isFilled))
+    if (appendSimpleCurvePrimitive (*this, curvePrimitive, isClosed, isFilled))
         return;
 
     OpCode        opCode;
@@ -1702,122 +1702,28 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
         }
     }
 
-#if defined (NEEDS_WORK_ELEMENT_REFACTOR)
-// WIP: not sure we should support drawing from PhysicalGeometry any longer
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Collection::Draw (ViewContextR context, PhysicalGeometryCR geom)
-    {
-    DrawState   state(context);
-
-    for (PlacedGeomPart part : geom)
-        {
-        // NOTE: Caller was responsible for pushing itemToWorld on context, ex. RedrawElems::SetTransform...
-        state.Begin(part.GetPartPtr()->GetSubCategoryId(), part.GetGeomPartToGeomAspectTransform());
-        state.CookElemDisplayParams();
-
-        context.SetDgnGeomPartId(part.GetPartPtr()->GetId()); // Announce geom part id for picking, etc.
-
-        for (ElementGeometryPtr elemGeom : part.GetPartPtr()->GetGeometry())
-            {
-            if (!elemGeom.IsValid())
-                continue;
-
-            //context.CookDisplayParams(); // NEEDSWORK: Setup from sub-category...
-
-            switch (elemGeom->GetGeometryType())
-                {
-                case ElementGeometry::GeometryType::CurvePrimitive:
-                    {
-                    ICurvePrimitivePtr curvePrimitivePtr = elemGeom->GetAsICurvePrimitive();
-                    CurveVectorPtr curvePtr = CurveVector::Create (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr);
-
-                    context.GetIDrawGeom().DrawCurveVector (*curvePtr, false);
-                    break;
-                    }
-
-                case ElementGeometry::GeometryType::CurveVector:
-                    {
-                    context.GetIDrawGeom().DrawCurveVector (*elemGeom->GetAsCurveVector(), false);
-                    break;
-                    }
-
-                case ElementGeometry::GeometryType::SolidPrimitive:
-                    {
-                    context.GetIDrawGeom().DrawSolidPrimitive (*elemGeom->GetAsISolidPrimitive());
-                    break;
-                    }
-
-                case ElementGeometry::GeometryType::Polyface:
-                    {
-                    context.GetIDrawGeom().DrawPolyface (*elemGeom->GetAsPolyfaceHeader(), false);
-                    break;
-                    }
-
-                case ElementGeometry::GeometryType::BsplineSurface:
-                    {
-                    context.GetIDrawGeom().DrawBSplineSurface (*elemGeom->GetAsMSBsplineSurface());
-                    break;
-                    }
-            
-                case ElementGeometry::GeometryType::SolidKernelEntity:
-                    {
-                    context.GetIDrawGeom().DrawBody (*elemGeom->GetAsISolidKernelEntity()); // This is a problem if not cached!!!
-                    break;
-                    }
-                }
-            }
-
-        context.SetDgnGeomPartId (DgnGeomPartId());
-        }
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementGeomIO::Collection::ToGeometry (bvector<ElementGeometryPtr>& geometry) const
     {
-    BentleyStatus   status = BentleyStatus::SUCCESS;        
-
+    // NEEDSWORK: Just want this method for DgnGeomParts::LoadGeomPart where we 
+    //            don't have transforms or symbology. Need to special case
+    //            brep vs. facets...returning ERROR isn't right for mobile platforms...
     for (auto const& egOp : *this)
         {
-        switch (egOp.m_opCode)
-            {
-            // NOTE: Symbology always comes before geometry...
-            case ElementGeomIO::OpCode::BasicSymbology:
-                {
-                // NEEDSWORK...
-                break;
-                }
-
-            case ElementGeomIO::OpCode::ResetSubCategory:
-                {
-                // NEEDSWORK...
-                break;
-                }
-                
-            default:
-                {
-                ElementGeometryPtr  geom;
+        ElementGeometryPtr  geom;
         
-                if (!ElementGeomIO::Reader::Get (egOp, geom))
-                    break; // Ignore non-geometry opCode, it's not an error...
+        if (!ElementGeomIO::Reader::Get (egOp, geom))
+            continue; // Ignore non-geometry opCode, it's not an error...
 
-                if (!geom.IsValid())
-                    {
-                    status = BentleyStatus::ERROR; // Failed to create geometry (ex. ISolidKernelEntity).
-                    break;
-                    }
+        if (!geom.IsValid())
+            return ERROR; // Failed to create geometry (ex. ISolidKernelEntity).
 
-                geometry.push_back (geom);
-                break;
-                }
-            }
+        geometry.push_back (geom);
         }
 
-    return status;
+    return SUCCESS;
     }
 
 /*=================================================================================**//**
@@ -1864,276 +1770,264 @@ void GeometricElement::_Draw (ViewContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
+* @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(bvector<ElementGeometryPtr> const& geometry, bvector<ElemDisplayParams> const& appearance, bvector<Transform> const* geomToAspect, DPoint3dCR origin, YawPitchRollAnglesCR angles)
+BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement (GeometricElementR element)
     {
-    size_t nGeom;
+    if (0 == m_writer.m_buffer.size())
+        return ERROR;
 
-    if (0 == (nGeom = geometry.size()))
-        return BentleyStatus::ERROR;
-        
-    // Allow ElemDisplayParams per-ElementGeometry or single ElemDisplayParams for all...
-    if (nGeom != appearance.size() && 1 != appearance.size())
-        return BentleyStatus::ERROR;
+    if (!m_havePlacement)
+        return ERROR;
 
-    DgnElement3dP element3d = const_cast<DgnElement3dP>(_ToElement3d());
-    if (nullptr == element3d)
-        return BentleyStatus::ERROR;
+    if (element.GetCategoryId() != m_elParams.GetCategoryId())
+        return ERROR;
 
-    DgnCategoryId categoryId = GetCategoryId();
-
-    if (!categoryId.IsValid())
-        return BentleyStatus::ERROR;
-
-    ElementGeomIO::Writer writer;
-
-    writer.SetCreatingElement(); // For element graphics we don't store breps and can make other changes for performance...
-
-    ElementAlignedBox3d overallBoundingBox;
-
-    for (size_t iGeom = 0; iGeom < nGeom; ++iGeom)
+    if (m_model.Is3d())
         {
-        ElementGeometryPtr const& elemGeom = geometry.at(iGeom);
+        DgnElement3dP element3d;
 
-        if (!elemGeom.IsValid())
-            continue;
+        if (nullptr == (element3d = element.ToElement3dP()))
+            return ERROR;
 
-        ElemDisplayParams const& elParams = appearance.at(1 == appearance.size () ? 0 : iGeom);
-        Transform partToAspect = (nullptr == geomToAspect ? Transform::FromIdentity() : geomToAspect->at(iGeom));
+        // NEEDSWORK: A method to update the axis aligned box might be nicer...
+        element3d->SetPlacement(Placement3d(m_placement3d.GetOrigin(), m_placement3d.GetAngles(), m_placement3d.GetElementBox()));
+        }
+    else
+        {
+        DgnElement2dP element2d;
 
-#if defined (NOT_NOW) // Don't store redundant geometry, draw directly from geom part...
-        DgnGeomPartId geomPartId = part.GetPartPtr()->GetId();
+        if (nullptr == (element2d = element.ToElement2dP()))
+            return ERROR;
 
-        if (!geomPartId.IsValid())
-            return BentleyStatus::ERROR; // Geom parts must be created before element can be created.
-#endif
-
-        DgnSubCategoryId subCategoryId = elParams.GetSubCategoryId();
-
-        if (!subCategoryId.IsValid())
-            subCategoryId = DgnCategories::DefaultSubCategoryId(categoryId);
-        else if (categoryId != GetDgnDb().Categories().QueryCategoryId(subCategoryId))
-            return BentleyStatus::ERROR; // All sub-categories must be for element's category.
-
-        ElementAlignedBox3d partBoundingBox;
-
-        if (elemGeom->GetRange(partBoundingBox, &partToAspect))
-            overallBoundingBox.Extend(partBoundingBox);
-
-        // NEEDSWORK: Instancing/Stamps?!?
-        Transform aspectToWorld = angles.ToTransform(origin);
-        Transform partToWorld = Transform::FromProduct(aspectToWorld, partToAspect);
-
-        // Mark the start of a new geom part/sub-category...geom part id might be useful to communicate to item during picking?
-        writer.Append(subCategoryId, partToWorld);
-#if defined (NOT_NOW) // Don't store redundant geometry, draw directly from geom part...
-        writer.Append(geomPartId);
-#endif
-        writer.Append(elParams);
-        writer.Append(*elemGeom);
+        // NEEDSWORK: A method to update the axis aligned box might be nicer...
+        element2d->SetPlacement(Placement2d(m_placement2d.GetOrigin(), m_placement2d.GetAngle(), m_placement2d.GetElementBox()));
         }
 
-    if (0 == writer.m_buffer.size())
-        return BentleyStatus::ERROR;
+    element.GetGeomStreamR().SaveData (&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
 
-    Placement3d elGeom(origin, angles, overallBoundingBox);
-    element3d->SetPlacement(elGeom);
-    GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
-
-    return BentleyStatus::SUCCESS;        
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
+* @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus setElementGeom(GeometricElementR element, ElementGeometryR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+bool ElementGeometryBuilder::Append (DgnSubCategoryId subCategoryId)
     {
-    // NEEDSWORK: The methods that call this need to move to DgnElement3d/DgnElement2d, DgnElement2d only supports ICurvePrimitive/CurveVector, etc.
-    DgnElement3dP element3d = nullptr;
-    DgnElement2dP element2d = nullptr;
-
-    if (nullptr == (element3d = const_cast<DgnElement3dP>(element.ToElement3d())) &&
-        nullptr == (element2d = const_cast<DgnElement2dP>(element.ToElement2d())))
-        return BentleyStatus::ERROR;
-
-    DgnCategoryId categoryId = element.GetCategoryId();
-
-    if (!categoryId.IsValid())
-        return BentleyStatus::ERROR;
-    else if (!subCategoryId.IsValid())
-        subCategoryId = DgnCategories::DefaultSubCategoryId(categoryId);
-    else if (categoryId != element.GetDgnDb().Categories().QueryCategoryId(subCategoryId))
-        return BentleyStatus::ERROR;
-
-    DPoint3d            tmpOrigin;
-    YawPitchRollAngles  tmpAngles;
-    Transform           localToWorld;
-
-    // NOTE: Assume geometry already in local coords when origin is supplied (angles are optional and ignore if origin isn't specified)...
-    if (nullptr != origin)
-        {
-        tmpOrigin = *origin;
-
-        if (nullptr != angles)
-            tmpAngles = *angles;
-
-        localToWorld = tmpAngles.ToTransform(tmpOrigin);
-        }
-    else
-        {
-        if (!geom.GetLocalCoordinateFrame(localToWorld))
-            return BentleyStatus::ERROR;
-
-        RotMatrix   rMatrix;
-        Transform   worldToLocal;
-
-        worldToLocal.InverseOf(localToWorld);
-
-        if (!localToWorld.IsIdentity() && !geom.TransformInPlace(worldToLocal))
-            return BentleyStatus::ERROR;
-
-        localToWorld.GetTranslation(tmpOrigin);
-        localToWorld.GetMatrix(rMatrix);
-        YawPitchRollAngles::TryFromRotMatrix(tmpAngles, rMatrix);
-        }
-
-    ElementAlignedBox3d localBox;
-
-    if (!geom.GetRange(localBox))
-        return BentleyStatus::ERROR;
- 
-    if (nullptr != element3d)
-        {
-        Placement3d elGeom(tmpOrigin, tmpAngles, localBox);
-        element3d->SetPlacement(elGeom);
-        }
-    else
-        {
-        ElementAlignedBox2d box2d(localBox.GetLeft(), localBox.GetFront(), localBox.GetRight(), localBox.GetBack());
-        Placement2d placement(DPoint2d::From(tmpOrigin), tmpAngles.GetRoll().Degrees(), box2d);
-        element2d->SetPlacement(placement);
-        }
-
-    ElementGeomIO::Writer writer;
-
-    writer.SetCreatingElement();
-    writer.Append(subCategoryId, localToWorld);
-
-    /* NEEDSWORK_TESTING */
     ElemDisplayParams elParams;
 
-    elParams.SetSubCategoryId (subCategoryId);
-    elParams.SetLineColor (ColorDef::Green());
+    elParams.SetCategoryId(m_elParams.GetCategoryId()); // Preserve current category...
+    elParams.SetSubCategoryId(subCategoryId);
 
-    writer.Append (elParams);
-    /* NEEDSWORK_TESTING */
-
-    writer.Append(geom);
-
-    element.GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
-
-    return BentleyStatus::SUCCESS;
+    return Append (elParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
+* @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(ElementGeometryCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+bool ElementGeometryBuilder::Append (ElemDisplayParamsCR elParams)
     {
-    ElementGeometryPtr geomPtr;
-    
-    // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
-    if (ElementGeometry::GeometryType::SolidKernelEntity == geom.GetGeometryType())
-        {
-        ISolidKernelEntityPtr clone;
+    if (!m_elParams.GetCategoryId().IsValid())
+        return false;
 
-        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (clone, *geom.GetAsISolidKernelEntity()))
-            return BentleyStatus::ERROR;
+    if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
+        return false;
 
-        geomPtr = ElementGeometry::Create (clone);
-        }
-    else
-        {
-        geomPtr = geom.Clone ();
-        }
+    if (elParams.GetCategoryId() != m_model.GetDgnDb().Categories().QueryCategoryId(elParams.GetSubCategoryId()))
+        return false;
 
-    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
+    if (m_elParams == elParams)
+        return true;
+
+    m_elParams = elParams;
+    m_appearanceChanged = true; // Defer append until we actually have some geometry...
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
+* @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(CurveVectorCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCP geomToElement)
+    {
+    // NEEDSWORK: Need to get geometry to update range, etc...
+    //            Should we require a placement to have been specified already?!?
+//    m_writer.Append(subCategoryId, partToWorld);
+//    m_writer.Append(geomPartId);
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::Append (ElementGeometryCR elemGeom, TransformCP geomToElement)
+    {
+    // NEEDSWORK: Make sure geometry is suitable for 2d/3d...use m_placement2d, etc.
+    ElementGeometryPtr elemGeomPtr;
+
+    if (!m_havePlacement)
+        {
+        Transform   localToWorld;
+
+        if (!elemGeom.GetLocalCoordinateFrame(localToWorld))
+            return false;
+
+        if (!localToWorld.IsIdentity())
+            {
+            // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
+            if (ElementGeometry::GeometryType::SolidKernelEntity == elemGeom.GetGeometryType())
+                {
+                ISolidKernelEntityPtr clone;
+
+                if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (clone, *elemGeom.GetAsISolidKernelEntity()))
+                    return false;
+
+                elemGeomPtr = ElementGeometry::Create (clone);
+                }
+            else
+                {
+                elemGeomPtr = elemGeom.Clone ();
+                }
+
+            Transform   worldToLocal;
+
+            worldToLocal.InverseOf(localToWorld);
+
+            if (!elemGeomPtr->TransformInPlace(worldToLocal))
+                return false;
+            }
+
+        RotMatrix   rMatrix;
+
+        localToWorld.GetMatrix(rMatrix);
+        localToWorld.GetTranslation(m_placement3d.GetOriginR());
+        YawPitchRollAngles::TryFromRotMatrix(m_placement3d.GetAnglesR(), rMatrix);
+
+        BeAssert (nullptr == geomToElement); // Doesn't make sense to specify this with world coordinate geometry...
+        geomToElement = nullptr;
+        m_havePlacement = true;
+        }
+
+    ElementAlignedBox3d geomBox;
+
+    if (elemGeomPtr.IsValid() ? elemGeomPtr->GetRange(geomBox, geomToElement) : elemGeom.GetRange(geomBox, geomToElement))
+        m_placement3d.GetElementBoxR().Extend(geomBox);
+
+    Transform elementToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
+    Transform geomToWorld = (nullptr == geomToElement ? elementToWorld : Transform::FromProduct(elementToWorld, *geomToElement));
+
+    // NEEDSWORK: Should transform and sub-category be separated to avoid extra op-codes
+    //            as well as extra push/pop of transforms?!?
+    //            Would then handle sub-category from elParams and have to explicity
+    //            push/pop transforms...geomToAspect should typically be null/identity...
+    m_writer.Append(m_elParams.GetSubCategoryId(), geomToWorld);
+
+    if (!m_appearanceSet || m_appearanceChanged)
+        {
+        m_writer.Append(m_elParams);
+        m_appearanceChanged = false;
+        m_appearanceSet = true;
+        }
+
+    m_writer.Append(elemGeomPtr.IsValid() ? *elemGeomPtr : elemGeom);
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::Append (CurveVectorCR geom, TransformCP geomToElement)
     {
     CurveVectorPtr      clone = geom.Clone();
     ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
 
-    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
+    return Append (*geomPtr, geomToElement);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
+* @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(ICurvePrimitiveCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
-    {
-    ICurvePrimitivePtr  clone = geom.Clone();
-    ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
-
-    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(ISolidPrimitiveCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom, TransformCP geomToElement)
     {
     ISolidPrimitivePtr  clone = geom.Clone();
     ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
 
-    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
+    return Append (*geomPtr, geomToElement);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
+* @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(MSBsplineSurfaceCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement3dCR placement) : m_model (model)
     {
-    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
-
-    clone->CopyFrom (geom);
-
-    ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
-
-    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
+    m_elParams.SetCategoryId(categoryId);
+    m_appearanceSet = m_appearanceChanged = false;
+    m_placement3d = placement;
+    m_havePlacement = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
+* @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(PolyfaceQueryCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement2dCR placement) : m_model (model)
     {
-    PolyfaceHeaderPtr clone = PolyfaceHeader::New();
-
-    clone->CopyFrom (geom);
-
-    ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
-
-    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
+    m_elParams.SetCategoryId(categoryId);
+    m_appearanceSet = m_appearanceChanged = false;
+    m_placement2d = placement;
+    m_havePlacement = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2015
+* @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(ISolidKernelEntityCR geom, DgnSubCategoryId subCategoryId, DPoint3dCP origin, YawPitchRollAnglesCP angles)
+ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId) : m_model (model)
     {
-    ISolidKernelEntityPtr clone;
+    m_elParams.SetCategoryId(categoryId);
+    m_appearanceSet = m_appearanceChanged = false;
+    m_havePlacement = false;
+    }
 
-    // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(clone, geom))
-        return BentleyStatus::ERROR;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create3d (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles)
+    {
+    if (!categoryId.IsValid() || !model.Is3d())
+        return nullptr;
 
-    ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
+    Placement3d placement;
 
-    return setElementGeom(*this, *geomPtr, subCategoryId, origin, angles);
+    placement.GetOriginR() = origin;
+    placement.GetAnglesR() = angles;
+
+    return new ElementGeometryBuilder(model, categoryId, placement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create2d (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle)
+    {
+    if (!categoryId.IsValid() || model.Is3d())
+        return nullptr;
+
+    Placement2d placement;
+
+    placement.GetOriginR() = origin;
+    placement.GetAngleR()  = angle;
+
+    return new ElementGeometryBuilder(model, categoryId, placement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld (DgnModelR model, DgnCategoryId categoryId)
+    {
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    return new ElementGeometryBuilder(model, categoryId);
     }

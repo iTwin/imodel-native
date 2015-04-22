@@ -120,7 +120,13 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
         geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
-        geomElem->SetElementGeom(*computeShape());// DgnCategories::DefaultSubCategoryId(categoryId), DPoint3d::FromZero(), YawPitchRollAngles());
+
+        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*model, categoryId);
+
+        builder->Append(*computeShape());
+
+        if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+            return DgnElementKey();
 
         testElement->AddToModel();
         return testElement->GetElementKey();
