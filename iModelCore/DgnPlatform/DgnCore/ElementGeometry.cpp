@@ -1905,9 +1905,17 @@ static AxisAlignedBox3d computeElementRange (DRange3dCR localBox, DPoint3dCR ori
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::SetElementGeom(PhysicalGeometryCR geom, DPoint3dCR origin, YawPitchRollAnglesCR angles)
+BentleyStatus GeometricElement::SetElementGeom(bvector<ElementGeometryPtr> const& geometry, bvector<ElemDisplayParams> const& appearance, bvector<Transform> const* geomToAspect, DPoint3dCR origin, YawPitchRollAnglesCR angles)
     {
-    // NEEDSWORK: This method needs to be removed or moved to PhysicalGeometry... 
+    size_t nGeom;
+
+    if (0 == (nGeom = geometry.size()))
+        return BentleyStatus::ERROR;
+        
+    // Allow ElemDisplayParams per-ElementGeometry or single ElemDisplayParams for all...
+    if (nGeom != appearance.size() && 1 != appearance.size())
+        return BentleyStatus::ERROR;
+
     DgnElement3dP element3d = nullptr;
 
     if (nullptr == (element3d = const_cast<DgnElement3dP>(_ToElement3d())))
@@ -1922,48 +1930,48 @@ BentleyStatus GeometricElement::SetElementGeom(PhysicalGeometryCR geom, DPoint3d
 
     writer.SetCreatingElement(); // For element graphics we don't store breps and can make other changes for performance...
 
-    for (PlacedGeomPart const& part : geom)
+    ElementAlignedBox3d overallBoundingBox;
+
+    for (size_t iGeom = 0; iGeom < nGeom; ++iGeom)
         {
+        ElementGeometryPtr const& elemGeom = geometry.at(iGeom);
+
+        if (!elemGeom.IsValid())
+            continue;
+
+        ElemDisplayParams const& elParams = appearance.at(1 == appearance.size () ? 0 : iGeom);
+        Transform partToAspect = (nullptr == geomToAspect ? Transform::FromIdentity() : geomToAspect->at(iGeom));
+
 #if defined (NOT_NOW) // Don't store redundant geometry, draw directly from geom part...
         DgnGeomPartId geomPartId = part.GetPartPtr()->GetId();
 
         if (!geomPartId.IsValid())
             return BentleyStatus::ERROR; // Geom parts must be created before element can be created.
+#endif
 
-        DgnSubCategoryId subCategoryId = part.GetPartPtr()->GetSubCategoryId();
+        DgnSubCategoryId subCategoryId = elParams.GetSubCategoryId();
 
         if (!subCategoryId.IsValid())
             subCategoryId = DgnCategories::DefaultSubCategoryId(categoryId);
-        else if (categoryId != element.GetDgnDb().Categories().QueryCategoryId(subCategoryId))
+        else if (categoryId != GetDgnDb().Categories().QueryCategoryId(subCategoryId))
             return BentleyStatus::ERROR; // All sub-categories must be for element's category.
-#else
-        DgnSubCategoryId subCategoryId = DgnCategories::DefaultSubCategoryId(categoryId);
-#endif
+
+        ElementAlignedBox3d partBoundingBox;
+
+        if (elemGeom->GetRange(partBoundingBox, &partToAspect))
+            overallBoundingBox.Extend(partBoundingBox);
 
         // NEEDSWORK: Instancing/Stamps?!?
-        Transform     aspectToWorld = angles.ToTransform(origin);
-        Transform     partToAspect = part.GetGeomPartToGeomAspectTransform();
-        Transform     partToWorld = Transform::FromProduct(aspectToWorld, partToAspect);
+        Transform aspectToWorld = angles.ToTransform(origin);
+        Transform partToWorld = Transform::FromProduct(aspectToWorld, partToAspect);
 
         // Mark the start of a new geom part/sub-category...geom part id might be useful to communicate to item during picking?
         writer.Append(subCategoryId, partToWorld);
 #if defined (NOT_NOW) // Don't store redundant geometry, draw directly from geom part...
         writer.Append(geomPartId);
-#else
-        ElemDisplayParams elParams;
-
-        elParams.SetSubCategoryId (subCategoryId);
-        elParams.SetLineColor (ColorDef::Green());
-
-        for (ElementGeometryPtr elemGeom : part.GetPartPtr()->GetGeometry())
-            {
-            if (!elemGeom.IsValid())
-                continue;
-
-            writer.Append (elParams); // TESTING...
-            writer.Append (*elemGeom);
-            }
 #endif
+        writer.Append(elParams);
+        writer.Append(*elemGeom);
         }
 
     if (0 == writer.m_buffer.size())
@@ -1973,21 +1981,12 @@ BentleyStatus GeometricElement::SetElementGeom(PhysicalGeometryCR geom, DPoint3d
 
     placement.GetOriginR() = origin;
     placement.GetAnglesR() = angles;
-    placement.GetElementBoxR() = geom.CalculateBoundingBox();
+    placement.GetElementBoxR() = overallBoundingBox;
     placement.GetRangeR() = computeElementRange(placement.GetElementBox(), origin, angles, true);
 
     GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
 
-    return BentleyStatus::SUCCESS;
-
-#if defined (WIP_DO_THIS_IN_ADD_REPLACE)
-    // Add function to return vector of DgnGeomPartId for graphics stream so we add setup element geom parts...
-    if (BentleyStatus::SUCCESS != element.AddToModel())
-        return ElementItemKey();
-
-    if (BentleyStatus::SUCCESS != InsertElementGeomUsesParts(model.GetDgnDb(), elementKey.GetElementId(), physicalGeometry))
-        return ElementItemKey();
-#endif
+    return BentleyStatus::SUCCESS;        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2073,6 +2072,16 @@ static BentleyStatus setElementGeom(GeometricElementR element, ElementGeometryR 
 
     writer.SetCreatingElement();
     writer.Append(subCategoryId, localToWorld);
+
+    /* NEEDSWORK_TESTING */
+    ElemDisplayParams elParams;
+
+    elParams.SetSubCategoryId (subCategoryId);
+    elParams.SetLineColor (ColorDef::Green());
+
+    writer.Append (elParams);
+    /* NEEDSWORK_TESTING */
+
     writer.Append(geom);
 
     element.GetGeomStreamR().SaveData (&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());

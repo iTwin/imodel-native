@@ -34,6 +34,8 @@ enum ElementHiliteState
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
+
 //=======================================================================================
 // @bsiclass                                                     Keith.Bentley   06/08
 //=======================================================================================
@@ -107,8 +109,8 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
 //! @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
-    {
-    public:
+{
+public:
     enum DirtyFlags {DIRTY_ElemData = 1<<0, DIRTY_Aspects = 1<<1, DIRTY_Both = (DIRTY_ElemData|DIRTY_Aspects)};
     friend struct DgnElementPool;
     friend struct DgnModel;
@@ -524,6 +526,9 @@ public:
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
 
     //! Set the geometry and placement information for this GeometricElement from the supplied ElementGeometry.
+    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(bvector<ElementGeometryPtr> const& geometry, bvector<ElemDisplayParams> const& appearance, bvector<Transform> const* geomToAspects, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+
+    //! Set the geometry and placement information for this GeometricElement from the supplied ElementGeometry.
     //! @param[in] geom The element geometry.
     //! @param[in] subCategory Optional DgnSubCategoryId to control the appearance and visibility of this geometry. if invalid, the default sub-category for the element's category is used.
     //! @param[in] origin Optional placement origin. When not nullptr, geometry coordinates are assumed to be relative to this origin instead of world.
@@ -549,13 +554,10 @@ public:
     //! Set the geometry and placement information for this GeometricElement from a ISolidKernelEntity.
     DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(ISolidKernelEntityCR geom, DgnSubCategoryId subCategoryId=DgnSubCategoryId(), DPoint3dCP origin=nullptr, YawPitchRollAnglesCP angles=nullptr);
 
-    //! Set the geometry and placement information for this GeometricElement from PhysicalGeometry.
-    DGNPLATFORM_EXPORT BentleyStatus SetElementGeom(PhysicalGeometryCR geom, DPoint3dCR origin, YawPitchRollAnglesCR angles);
-
-    //! Get the ElementGeom for this element.
+    //! Get the GeomStream for this element.
     GeomStreamCR GetGeomStream() const {return m_geom;}
 
-    //! Get a writeable reference to the ElementGeom for this element.
+    //! Get a writeable reference to the GeomStream for this element.
     GeomStreamR GetGeomStreamR() {return m_geom;}
 
     //! Get the ElementGeom's DgnClassId (the form/geometry of the element)
@@ -700,6 +702,15 @@ protected:
 
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {} 
+
+public:
+    //! Factory method that creates an instance of a PhysicalElement
+    //! @param[in] model Create the PhysicalElement in this PhysicalModel
+    //! @param[in] categoryId specifies the category for the PhysicalElement.
+    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+
+    //! Get PhysicalElement's DgnClassId in the specified DgnDb.
+    DGNPLATFORM_EXPORT static DgnClassId GetClassId(DgnDbR db);
 };
 
 //=======================================================================================
