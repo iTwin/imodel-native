@@ -208,15 +208,28 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelStatus _SwapWithModified(DgnElementR);
     virtual DgnModelStatus _OnAdd() {return DGNMODEL_STATUS_Success;}
     virtual void _OnAdded() {}
-
-public:
-    DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR);
-    DGNPLATFORM_EXPORT void _ClearScheduledChangesToInstances();
     virtual GeometricElementCP _ToGeometricElement() const {return nullptr;}
     virtual DgnElement3dCP _ToElement3d() const {return nullptr;}
     virtual DgnElement2dCP _ToElement2d() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
+
+public:
+    DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR);
+    DGNPLATFORM_EXPORT void _ClearScheduledChangesToInstances();
+
+    GeometricElementCP ToGeometricElement() const {return _ToGeometricElement();}
+    DgnElement3dCP ToElement3d() const {return _ToElement3d();}
+    DgnElement2dCP ToElement2d() const {return _ToElement2d();}
+    PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}
+    DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}
+
+    GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());}
+    DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}
+    DgnElement2dP ToElement2dP() {return const_cast<DgnElement2dP>(_ToElement2d());}
+    PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}
+    DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}
+
     bool Is3d() const {return nullptr != _ToElement3d();}
     bool IsInPool() const {return m_flags.m_inPool;}
 

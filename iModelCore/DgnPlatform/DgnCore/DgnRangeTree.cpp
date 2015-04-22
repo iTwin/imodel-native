@@ -1068,7 +1068,7 @@ void DgnRangeTree::LoadTree (DgnModelCR dgnModel)
     DgnElementIterator  iter;
     for (DgnElementCP element = iter.GetFirstDgnElement(dgnModel); NULL != element;  element = iter.GetNextDgnElement())
         {
-        GeometricElementCP geom = element->_ToGeometricElement();
+        GeometricElementCP geom = element->ToGeometricElement();
         if (nullptr == geom)
             continue;
 
@@ -2507,7 +2507,7 @@ void ProgressiveViewFilter::_StepAggregate(DbFunction::Context*, int nArgs, DbVa
     DgnElementPtr el = m_dgndb.Elements().GetElementById(elementId);
     if (el.IsValid())
         {
-        GeometricElementCP geomElem = el->_ToGeometricElement();
+        GeometricElementCP geomElem = el->ToGeometricElement();
 
         if (nullptr != geomElem)
             {

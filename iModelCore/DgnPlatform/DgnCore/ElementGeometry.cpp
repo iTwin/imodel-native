@@ -1953,8 +1953,8 @@ static BentleyStatus setElementGeom(GeometricElementR element, ElementGeometryR 
     DgnElement3dP element3d = nullptr;
     DgnElement2dP element2d = nullptr;
 
-    if (nullptr == (element3d = const_cast<DgnElement3dP>(element._ToElement3d())) &&
-        nullptr == (element2d = const_cast<DgnElement2dP>(element._ToElement2d())))
+    if (nullptr == (element3d = const_cast<DgnElement3dP>(element.ToElement3d())) &&
+        nullptr == (element2d = const_cast<DgnElement2dP>(element.ToElement2d())))
         return BentleyStatus::ERROR;
 
     DgnCategoryId categoryId = element.GetCategoryId();

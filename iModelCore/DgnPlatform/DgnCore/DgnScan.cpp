@@ -335,7 +335,7 @@ ScanTestResult  ScanCriteria::CheckRange (DRange3dCR elemRange, bool isElem3d) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ScanCriteria::CheckElementRange (DgnElementCR element) const
     {
-    GeometricElementCP geom = element._ToGeometricElement();
+    GeometricElementCP geom = element.ToGeometricElement();
     return geom ? _CheckRangeIndexNode(geom->_GetRange3d(), element.GetDgnModel().Is3d(), true) : false;
     }
 

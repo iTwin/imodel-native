@@ -76,30 +76,6 @@ void ElementHandle::AssignElemDescr(DgnElementP newDscr, bool isPersistent)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* *** DEPRECATED *** Use a factory method on DgnElement sub-class
-* @bsimethod                                                    Brien.Bastings  03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus EditElementHandle::CreateNewElement(DgnModelR model, DgnClassId elementClassId, DgnCategoryId categoryId, Utf8CP code)
-    {
-    ElementHandlerP elementHandler = ElementHandler::FindHandler(model.GetDgnDb(), elementClassId);
-    if (nullptr == elementHandler)
-        {
-    BeAssert(false);
-        return BentleyStatus::ERROR;
-        }
-
-    if (!categoryId.IsValid())
-        {
-        BeAssert(false);
-        return BentleyStatus::ERROR;
-        }
-
-    m_persistent = nullptr;
-    m_writeable = elementHandler->Create(DgnElement::CreateParams(model, elementClassId, categoryId, code, DgnElementId()));
-    return BentleyStatus::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   11/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr EditElementHandle::ExtractElementDescr()

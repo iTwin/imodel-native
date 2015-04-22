@@ -14,7 +14,7 @@ StatusInt ViewController::_VisitPath (DisplayPathCP path, void* arg, ViewContext
     {
     // NEEDSWORK: _VisitPath with a DisplayPathCP is now un-necessary as you can just use VisitElement.
     //            We do still need to be able to visit a "HitPath" for segment/sub-selection flash/hilite...
-    GeometricElementCP geomElement = (nullptr != path ? path->GetHeadElem ()->_ToGeometricElement() : nullptr);
+    GeometricElementCP geomElement = (nullptr != path ? path->GetHeadElem ()->ToGeometricElement() : nullptr);
 
     if (nullptr == geomElement)
         return ERROR;

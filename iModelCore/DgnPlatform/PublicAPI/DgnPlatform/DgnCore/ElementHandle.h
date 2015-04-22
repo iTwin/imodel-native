@@ -10,7 +10,6 @@
 
 #include <Bentley/RefCounted.h>
 #include "../DgnPlatform.h"
-#include "ElementHandler.h"
 #include "DgnDb.h"
 #include "DgnModel.h"
 
@@ -145,9 +144,9 @@ public:
     //! @note This method will only return nullptr for an invalid ElementHandle.
     DgnDbP GetDgnDb() const {DgnModelP dgnCache=GetDgnModelP(); return (nullptr == dgnCache) ? nullptr : &dgnCache->GetDgnDb();}
 
-    GeometricElementCP GetGeometricElement() const {return GetDgnElement()->_ToGeometricElement();}
-    PhysicalElementCP GetPhysicalElement() const {return GetDgnElement()->_ToPhysicalElement();}
-    DrawingElementCP GetDrawingElement() const {return GetDgnElement()->_ToDrawingElement();}
+    GeometricElementCP GetGeometricElement() const {return GetDgnElement()->ToGeometricElement();}
+    PhysicalElementCP GetPhysicalElement() const {return GetDgnElement()->ToPhysicalElement();}
+    DrawingElementCP GetDrawingElement() const {return GetDgnElement()->ToDrawingElement();}
 
     //! Determine whether this ElementHandle is currently valid.
     //! @return true if this ElementHandle references a valid element. If not, all other methods on this ElementHandle will either fail or crash.
@@ -197,15 +196,12 @@ public:
 
     //! Construct an EditElementHandle from an DgnElementId and a DgnDb.
     //! @param[in]  id  The DgnElementId of the element for this ElementHandle.
-    //! @param[in]  project The DgnDb used to access the element.
+    //! @param[in]  dgndb The DgnDb used to access the element.
     //! @remarks NOTE: test IsValid to determine whether the element was found!
-    EditElementHandle(DgnElementId id, DgnDbR project) : ElementHandle(id, project) {}
+    EditElementHandle(DgnElementId id, DgnDbR dgndb) : ElementHandle(id, dgndb) {}
 
     //! Construct an EditElementHandle from an ElementHandle.
     DGNPLATFORM_EXPORT EditElementHandle(ElementHandleCR from, bool duplicateDescr);
-
-    //! @deprected Use a factory method on DgnElement sub-class
-    DGNPLATFORM_EXPORT BentleyStatus CreateNewElement(DgnModelR model, DgnClassId elementClassId, DgnCategoryId category, Utf8CP code=nullptr);
 
     //! Invalidate the DgnElement for this EditElementHandle. This EditElementHandle will no longer be treated as an exact image of the element in the model.
     void SetNonPersistent() {ClearPersistent();}

@@ -1204,7 +1204,7 @@ void            ViewContext::_VisitTransientGraphics (bool isPreUpdate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt visitElementFunc (DgnElementCR element, ViewContextP context, ScanCriteriaR sc)
     {
-    GeometricElementCP geomElement = element._ToGeometricElement();
+    GeometricElementCP geomElement = element.ToGeometricElement();
     if (nullptr == geomElement)
         return SUCCESS;
     

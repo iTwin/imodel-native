@@ -636,6 +636,9 @@ DgnModelStatus GeometricElement::_UpdateInDb(DgnElementPool& pool)
     stmt->BindId(6, m_elementId);
 
     stat = _BindInsertGeom(*stmt);
+    if (DGNMODEL_STATUS_NoGeometry == stat)
+        return DGNMODEL_STATUS_Success;
+
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
@@ -764,7 +767,7 @@ DgnModelStatus PhysicalElement::_InsertInDb(DgnElementPool& pool)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    if (!IsUndisplayed()) // this is an invisible element
+    if (!m_placement.IsValid()) // this is an invisible element
         return DGNMODEL_STATUS_Success;
 
     CachedStatementPtr stmt;
@@ -790,6 +793,9 @@ DgnModelStatus PhysicalElement::_UpdateInDb(DgnElementPool& pool)
     DgnModelStatus stat = T_Super::_UpdateInDb(pool);
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
+
+    if (!m_placement.IsValid()) // this is an invisible element
+        return DGNMODEL_STATUS_Success;
 
     CachedStatementPtr stmt;
     pool.GetStatement(stmt, "UPDATE " DGN_VTABLE_PrjRTree " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
@@ -858,7 +864,7 @@ void GeometricElement::_InitFrom(DgnElementCR other)
     {
     T_Super::_InitFrom(other);
 
-    GeometricElementCP otherGeom = other._ToGeometricElement();
+    GeometricElementCP otherGeom = other.ToGeometricElement();
     if (nullptr == otherGeom)
         return;
 
@@ -874,7 +880,7 @@ void DgnElement3d::_InitFrom(DgnElementCR other)
     {
     T_Super::_InitFrom(other);
 
-    DgnElement3dCP other3d = other._ToElement3d();
+    DgnElement3dCP other3d = other.ToElement3d();
     if (nullptr == other3d)
         return;
 
@@ -888,7 +894,7 @@ void DgnElement2d::_InitFrom(DgnElementCR other)
     {
     T_Super::_InitFrom(other);
 
-    DgnElement2dCP other2d = other._ToElement2d();
+    DgnElement2dCP other2d = other.ToElement2d();
     if (nullptr == other2d)
         return;
 
@@ -904,7 +910,7 @@ DgnModelStatus GeometricElement::_SwapWithModified(DgnElementR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    GeometricElementP geom = (GeometricElementP) other._ToGeometricElement();
+    GeometricElementP geom = (GeometricElementP) other.ToGeometricElement();
     if (nullptr == geom)
         return DGNMODEL_STATUS_BadElement;
 
@@ -924,7 +930,7 @@ DgnModelStatus DgnElement3d::_SwapWithModified(DgnElementR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement3dP el3d = (DgnElement3dP) other._ToElement3d();
+    DgnElement3dP el3d = (DgnElement3dP) other.ToElement3d();
     if (nullptr == el3d)
         return DGNMODEL_STATUS_BadElement;
 
@@ -941,7 +947,7 @@ DgnModelStatus DgnElement2d::_SwapWithModified(DgnElementR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement2dP el2d = (DgnElement2dP) other._ToElement2d();
+    DgnElement2dP el2d = (DgnElement2dP) other.ToElement2d();
     if (nullptr == el2d)
         return DGNMODEL_STATUS_BadElement;
 

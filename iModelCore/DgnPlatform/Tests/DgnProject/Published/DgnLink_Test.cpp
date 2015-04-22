@@ -43,10 +43,10 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     ASSERT_TRUE(elementClassId.IsValid());
 
     //.............................................................................................
-    EditElementHandle element1;
-    element1.CreateNewElement(*modelP, elementClassId, categoryId);
-    element1.GetElementDescrP()->AddToModel();
-    ASSERT_TRUE(element1.GetDgnElement()->GetElementKey().IsValid());
+    DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
+    ASSERT_TRUE(elementPtr.IsValid());
+    elementPtr->AddToModel();
+    ASSERT_TRUE(elementPtr->GetElementKey().IsValid());
     
     //.............................................................................................
     static const Utf8CP LINK1_DISPLAY_LABEL = "Url Link 1";
@@ -58,7 +58,7 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
 
     EXPECT_TRUE(DgnLinkType::Url == link1->GetType());
     EXPECT_FALSE(link1->GetId().IsValid());
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element1.GetDgnElement()->GetElementKey(), *link1));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(elementPtr->GetElementKey(), *link1));
     ASSERT_TRUE(link1->GetId().IsValid());
 
     //.............................................................................................
@@ -95,10 +95,10 @@ TEST_F(DgnLinkTest, Iterator)
     ASSERT_TRUE(elementClassId.IsValid());
 
     //.............................................................................................
-    EditElementHandle element1;
-    element1.CreateNewElement(*modelP, elementClassId, categoryId);
-    element1.GetElementDescrP()->AddToModel();
-    ASSERT_TRUE(element1.GetDgnElement()->GetElementKey().IsValid());
+    DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
+    ASSERT_TRUE(elementPtr.IsValid());
+    elementPtr->AddToModel();
+    ASSERT_TRUE(elementPtr->GetElementKey().IsValid());
     
     //.............................................................................................
     static const size_t NUM_LINKS = 5;
@@ -115,12 +115,12 @@ TEST_F(DgnLinkTest, Iterator)
 
     //.............................................................................................
     EXPECT_TRUE(0 == db.Links().MakeIterator().QueryCount());
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element1.GetDgnElement()->GetElementKey(), *links[0]));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(elementPtr->GetElementKey(), *links[0]));
     EXPECT_TRUE(1 == db.Links().MakeIterator().QueryCount());
 
     //.............................................................................................
     for (size_t iLink = 1; iLink < NUM_LINKS; ++iLink)
-        ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element1.GetDgnElement()->GetElementKey(), *links[iLink]));
+        ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(elementPtr->GetElementKey(), *links[iLink]));
 
     EXPECT_TRUE(NUM_LINKS == db.Links().MakeIterator().QueryCount());
 
@@ -136,7 +136,7 @@ TEST_F(DgnLinkTest, Iterator)
     EXPECT_TRUE(1 == numFoundLinks);
     
     //.............................................................................................
-    db.Links().DeleteFromElement(element1.GetDgnElement()->GetElementKey(), links[0]->GetId());
+    db.Links().DeleteFromElement(elementPtr->GetElementKey(), links[0]->GetId());
     EXPECT_TRUE(NUM_LINKS == db.Links().MakeIterator().QueryCount());
 
     db.Links().PurgeUnused();
@@ -178,15 +178,15 @@ TEST_F(DgnLinkTest, OtherIterators)
     ASSERT_TRUE(elementClassId.IsValid());
 
     //.............................................................................................
-    EditElementHandle element1;
-    element1.CreateNewElement(*modelP, elementClassId, categoryId);
-    element1.GetElementDescrP()->AddToModel();
-    ASSERT_TRUE(element1.GetDgnElement()->GetElementKey().IsValid());
+    DgnElementPtr element1 = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
+    ASSERT_TRUE(element1.IsValid());
+    element1->AddToModel();
+    ASSERT_TRUE(element1->GetElementKey().IsValid());
 
-    EditElementHandle element2;
-    element2.CreateNewElement(*modelP, elementClassId, categoryId);
-    element2.GetElementDescrP()->AddToModel();
-    ASSERT_TRUE(element2.GetDgnElement()->GetElementKey().IsValid());
+    DgnElementPtr element2 = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
+    ASSERT_TRUE(element2.IsValid());
+    element2->AddToModel();
+    ASSERT_TRUE(element2->GetElementKey().IsValid());
 
     DgnLinkPtr link1 = DgnLink::Create(db); link1->SetDisplayLabel("link1"); link1->SetEmbeddedDocumentName("EmbeddedDocumentName1");
     DgnLinkPtr link2 = DgnLink::Create(db); link2->SetDisplayLabel("link2"); link2->SetEmbeddedDocumentName("EmbeddedDocumentName2");
@@ -194,17 +194,17 @@ TEST_F(DgnLinkTest, OtherIterators)
     DgnLinkPtr link4 = DgnLink::Create(db); link4->SetDisplayLabel("link4"); link4->SetEmbeddedDocumentName("EmbeddedDocumentName4");
 
     //.............................................................................................
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element1.GetDgnElement()->GetElementKey(), *link1));
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element1.GetDgnElement()->GetElementKey(), *link2));
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element2.GetDgnElement()->GetElementKey(), link2->GetId()));
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element2.GetDgnElement()->GetElementKey(), *link3));
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element2.GetDgnElement()->GetElementKey(), *link4));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element1->GetElementKey(), *link1));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element1->GetElementKey(), *link2));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element2->GetElementKey(), link2->GetId()));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element2->GetElementKey(), *link3));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(element2->GetElementKey(), *link4));
 
     //.............................................................................................
     checkIteratorCount(db.Links().MakeIterator(), 4);
     
-    checkIteratorCount(db.Links().MakeOnElementIterator(element1.GetDgnElement()->GetElementKey()), 2);
-    checkIteratorCount(db.Links().MakeOnElementIterator(element2.GetDgnElement()->GetElementKey()), 3);
+    checkIteratorCount(db.Links().MakeOnElementIterator(element1->GetElementKey()), 2);
+    checkIteratorCount(db.Links().MakeOnElementIterator(element2->GetElementKey()), 3);
 
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link1->GetId()), 1);
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link2->GetId()), 2);

@@ -536,7 +536,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             context.SetIntermediatePaintsBlocked(false);
             }
 
-        GeometricElementCP geom = results->m_elements[numDrawn]->_ToGeometricElement();
+        GeometricElementCP geom = results->m_elements[numDrawn]->ToGeometricElement();
 
         if (nullptr != geom)
             context.VisitElement (*geom);

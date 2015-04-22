@@ -117,7 +117,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         {
         DgnModelP model = db.Models().GetModelById(mid);
         DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
-        GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->_ToGeometricElement());
+        GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
         geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
         geomElem->SetElementGeom(*computeShape());// DgnCategories::DefaultSubCategoryId(categoryId), DPoint3d::FromZero(), YawPitchRollAngles());
@@ -580,7 +580,7 @@ TEST_F (TransactionManagerTests, ElementItem)
     auto key1 = InsertElement ("E1");
     ASSERT_TRUE( key1.GetElementId().IsValid() );
 
-    GeometricElementCP el = m_db->Elements().GetElementById(key1.GetElementId())->_ToGeometricElement();
+    GeometricElementCP el = m_db->Elements().GetElementById(key1.GetElementId())->ToGeometricElement();
     ASSERT_TRUE( el != nullptr );
 
     ASSERT_EQ( &el->GetElementHandler(), &TestElementHandler::GetHandler() );
@@ -595,7 +595,7 @@ TEST_F (TransactionManagerTests, ElementItem)
         newItem->SetValue(TMTEST_TEST_ITEM_TestItemProperty, ECN::ECValue(initialTestPropValue));
 
         EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetElementDescrP()->_ToGeometricElement());
+        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetElementDescrP()->ToGeometricElement());
         ASSERT_TRUE( modifiedEl != nullptr );
 
         modifiedEl->SetItem(*newItem);
@@ -611,7 +611,7 @@ TEST_F (TransactionManagerTests, ElementItem)
     if (true)
         {
         EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetElementDescrP()->_ToGeometricElement());
+        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetElementDescrP()->ToGeometricElement());
 
         ECN::IECInstanceP existingItem = modifiedEl->GetItemP();
         ASSERT_NE( existingItem , nullptr );
