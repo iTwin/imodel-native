@@ -470,9 +470,9 @@ DgnModelStatus DgnElement::AddToModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP DgnElement::GetClass() const
+ECClassCP DgnElement::GetElementClass() const
     {
-    return GetDgnDb().Schemas().GetECClass(GetClassId().GetValue());
+    return GetDgnDb().Schemas().GetECClass(GetElementClassId().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -482,7 +482,7 @@ void DgnElement::_GenerateDefaultCode()
     {
     if (m_elementId.IsValid())
         {
-        Utf8String className(GetClass()->GetName());
+        Utf8String className(GetElementClass()->GetName());
         m_code = Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
         }
     }
@@ -1239,7 +1239,7 @@ ECN::IECInstanceR DgnElement::GetSubclassProperties(bool setModified) const
         if (!GetElementId().IsValid())
             {
             if (setModified)
-                instances.m_element.m_instance = GetDgnDb().Schemas().GetECClass(GetClassId().GetValue())->GetDefaultStandaloneEnabler()->CreateInstance();
+                instances.m_element.m_instance = GetDgnDb().Schemas().GetECClass(GetElementClassId().GetValue())->GetDefaultStandaloneEnabler()->CreateInstance();
             }
         else
             {
@@ -1248,7 +1248,7 @@ ECN::IECInstanceR DgnElement::GetSubclassProperties(bool setModified) const
             ignoreList.insert("CategoryId");
             ignoreList.insert("Code");
             ignoreList.insert("LastMod");
-            instances.m_element = CachedInstance(getDirectlyLinkedInstance(GetDgnDb(), GetClass(), GetElementId(), ignoreList));
+            instances.m_element = CachedInstance(getDirectlyLinkedInstance(GetDgnDb(), GetElementClass(), GetElementId(), ignoreList));
             }
         }
     if (setModified)
@@ -1359,7 +1359,7 @@ bvector<ECN::IECInstancePtr> GeometricElement::GetAspects(ECN::ECClassCP aspectC
     Utf8String aspectProps = getPropertiesList(*aspectClass, bset<Utf8String>());
 
     ECSqlSelectBuilder b;
-    b.Select(aspectProps.c_str()).From(*aspectClass, "a", false).Join(*GetClass(), "e", false).Using(*elementOwnsAspectRelationship).WhereSourceEndIs("e", "?");
+    b.Select(aspectProps.c_str()).From(*aspectClass, "a", false).Join(*GetElementClass(), "e", false).Using(*elementOwnsAspectRelationship).WhereSourceEndIs("e", "?");
     ECSqlStatement stmt;
     stmt.Prepare(GetDgnDb(), b.ToString().c_str());
     stmt.BindId(1, GetElementId());
@@ -1498,7 +1498,7 @@ BentleyStatus CachedInstance::ApplyScheduledChangeToElementInstance(DgnElementR 
         return BSIERROR;
         }
 
-    if (m_instance->GetClass().GetId() != el.GetClassId().GetValue())
+    if (m_instance->GetClass().GetId() != el.GetElementClassId().GetValue())
         {
         BeAssert(false && "You can't change the class of the element instance");
         return BSIERROR;

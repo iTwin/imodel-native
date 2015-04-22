@@ -304,16 +304,22 @@ public:
     //! Get the DgnDb of this element.
     DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
 
-    //! Get the DgnElementId of the element held by this element.
+    //! Get the DgnElementId for this instance of DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
 
-    //! Get the Element's DgnClassId (the function/identity of the element)
-    DgnClassId GetClassId() const {return m_classId;}
+    //! Get the DgnClassId for this instance of DgnElement
+    //! @see DgnElement::GetClassId
+    DgnClassId GetElementClassId() const {return m_classId;}
 
-    //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this element.
-    DgnElementKey GetElementKey() const {return DgnElementKey(GetClassId(), GetElementId());}
+    //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this instance of DgnElement
+    DgnElementKey GetElementKey() const {return DgnElementKey(GetElementClassId(), GetElementId());}
 
-    DGNPLATFORM_EXPORT ECN::ECClassCP GetClass() const;
+    //! Get the ECClass for this instance of DgnElement
+    DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
+
+    //! Get the DgnClassId for the dgn.Element ECClass in the specified DgnDb.
+    //! @see DgnElement::GetElementClassId
+    DGNPLATFORM_EXPORT static DgnClassId GetClassId(DgnDbR db);
 
     //! Get the category of the element held by this element.
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
@@ -365,7 +371,7 @@ public:
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 struct GeomStream
-    {
+{
 private:
     uint32_t m_size;
     uint32_t m_allocSize;
@@ -396,13 +402,13 @@ public:
     //! @param[in] data the data to save
     //! @param[in] size number of bytes in data
     DGNPLATFORM_EXPORT void SaveData(uint8_t const* data, uint32_t size);
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
 struct Placement3d
-    {
+{
 protected:
     DPoint3d            m_origin;
     YawPitchRollAngles  m_angles;
@@ -443,13 +449,13 @@ public:
     
     //! Determine whether the range of the element is valid 
     bool IsValid() const {return m_boundingBox.IsValid();}
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
 struct Placement2d
-    {
+{
 protected:
     DPoint2d            m_origin;
     double              m_angle;
@@ -490,7 +496,7 @@ public:
     
     //! Determine whether the range of the element is valid 
     bool IsValid() const {return m_boundingBox.IsValid();}
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
@@ -720,7 +726,7 @@ public:
     //! @param[in] categoryId specifies the category for the PhysicalElement.
     DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
 
-    //! Get PhysicalElement's DgnClassId in the specified DgnDb.
+    //! Get the DgnClassId for the dgn.PhysicalElement ECClass in the specified DgnDb.
     DGNPLATFORM_EXPORT static DgnClassId GetClassId(DgnDbR db);
 };
 
@@ -775,5 +781,3 @@ protected:
 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-//__PUBLISH_SECTION_END__
-
