@@ -272,6 +272,8 @@ EXPORTS
 	ptSetEditWorkingMode
 	ptGetEditWorkingMode
 
+	_ptCountVisiblePoints
+
 	ptSetCacheSizeMb
 	ptGetCacheSizeMb
 	ptAutoCacheSize

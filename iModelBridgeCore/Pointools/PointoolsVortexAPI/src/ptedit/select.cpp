@@ -25,13 +25,15 @@ bool DestroyFilterVisitor::visitNode(const pcloud::Node *n)
 //
 bool ClearFilterVisitor::visitNode(const pcloud::Node *n)
 {
-	if (NodeCheck::isExcluded(n)) return false;
+	//if (NodeCheck::isExcluded(n)) return false;
 
 	pcloud::Node *node = const_cast<pcloud::Node*>(n);
 
 	if (n->isLeaf())
 	{
-		const_cast<pcloud::Voxel*>(static_cast<const pcloud::Voxel*>(n))->destroyEditChannel();
+		pcloud::Voxel* v = const_cast<pcloud::Voxel*>(static_cast<const pcloud::Voxel*>(n));
+		v->destroyEditChannel();
+		v->numPointsEdited(0);
 	}	
 	node->flag(pcloud::PartSelected, false, false);
 	node->flag(pcloud::WholeSelected, false, false);

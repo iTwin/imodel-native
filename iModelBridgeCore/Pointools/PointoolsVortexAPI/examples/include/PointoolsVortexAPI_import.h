@@ -456,6 +456,8 @@ typedef PTbool	(__stdcall * PTDELETEEDIT)( const PTstr name );
 typedef PTbool	(__stdcall * PTDELETEEDITBYINDEX)( PTint index );
 typedef PTvoid	(__stdcall * PTDELETEALLEDITS)( void );
 
+typedef PTuint64 (__stdcall *_PTCOUNTVISIBLEPOINTS)( void );
+
 typedef PTvoid	(__stdcall * PTCREATEEDITFROMDATA)( const PTubyte *data );
 typedef PTint	(__stdcall * PTGETEDITDATASIZE)( PTint index );
 typedef PTint	(__stdcall * PTGETEDITDATA)( PTint index, PTubyte *data );
@@ -850,6 +852,8 @@ extern PTUNHIDEALL ptUnhideAll;
 extern PTUNSELECTALL ptUnselectAll;
 extern PTRESETSELECTION ptResetSelection;
 extern PTSELECTALL ptSelectAll;
+
+extern _PTCOUNTVISIBLEPOINTS _ptCountVisiblePoints;
 
 extern PTSETSELECTIONSCOPE ptSetSelectionScope;
 extern PTSETSELECTIONDRAWCOLOR ptSetSelectionDrawColor;

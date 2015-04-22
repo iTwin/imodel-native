@@ -227,6 +227,8 @@ PTDESELECTCLOUD ptDeselectCloud = 0;
 PTSELECTSCENE ptSelectScene = 0;
 PTDESELECTSCENE ptDeselectScene = 0;
 
+_PTCOUNTVISIBLEPOINTS _ptCountVisiblePoints = 0;
+
 PTHIDESELECTED		ptHideSelected = 0;
 PTISOLATESELECTED	ptIsolateSelected = 0;
 PTUNHIDEALL			ptUnhideAll = 0;
@@ -602,6 +604,8 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptDeleteEditByIndex = (PTDELETEEDITBYINDEX) GetAPIFunc("ptDeleteEditByIndex");
 		ptDeleteAllEdits = (PTDELETEALLEDITS) GetAPIFunc("ptDeleteAllEdits");
 		
+		_ptCountVisiblePoints = (_PTCOUNTVISIBLEPOINTS) GetAPIFunc("_ptCountVisiblePoints");
+
 		ptResetSceneEditing = (PTRESETSCENEEDITING) GetAPIFunc("ptResetSceneEditing");
 
 		ptSetSelectionDrawColor = (PTSETSELECTIONDRAWCOLOR) GetAPIFunc("ptSetSelectionDrawColor");

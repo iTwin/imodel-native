@@ -24,7 +24,14 @@ void FileTool::command( int cmdId )
 		ptBrowseAndOpenPOD();
 
 		if (ptNumScenes())
+		{
+			// this assumes only one scene has been loaded
+			PThandle handles[256];
+			int num = ptGetSceneHandles(handles);
+			
+			ptResetSceneEditing( handles[num-1] );		
 			viewRedraw();
+		}
 
 		VortexExampleApp::instance()->notifySceneUpdate();
 

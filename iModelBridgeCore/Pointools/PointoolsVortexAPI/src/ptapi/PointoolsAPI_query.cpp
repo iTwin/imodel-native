@@ -3626,6 +3626,14 @@ public:
 
 				PTfloat amount = getVoxelAmount(currentVoxel, density, densityCoeff, doload);
 
+				// adjust for point editing - so invisble points etc are not picked
+				PTfloat edited_proportion = (float)currentVoxel->numPointsEdited() / currentVoxel->fullPointCount();
+
+				if (currentVoxel->numPointsEdited() && amount > edited_proportion)
+				{
+					amount = edited_proportion;
+				}
+
 				// NOTE: SHOULD A LOAD EVER BE NECESSARY ???
 //				pointsengine::VoxelLoader load( doload ? vox : 0, amount, false, false);
 

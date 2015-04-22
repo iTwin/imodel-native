@@ -262,7 +262,12 @@ PTvoid PTAPI ptSetSelectionScope( PThandle sceneOrCloudHandle )
 		PointEditManager::instance()->setEditingScope( cloud->guid(), false, scene->getInstanceIndex() );
 	}
 }
-
+//-----------------------------------------------------------------------------
+PTuint64 PTAPI _ptCountVisiblePoints( void )
+{
+	PTuint64 count = PointEditManager::instance()->countVisiblePoints();
+	return count;
+}
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptInvertVisibility()
 {
@@ -501,18 +506,21 @@ PTbool PTAPI ptDoesLayerHavePoints( PTuint layer )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptClearPointsFromLayer( PTuint layer )
 {
-	
+	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptResetLayers()
 {
-
+	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
 }
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptResetSceneEditing( PThandle scene )
 {
-	// to do
-	return PTV_NOT_IMPLEMENTED_IN_VERSION;
+	ptSetSelectionScope( scene );
+	ptUnhideAll();
+	ptSetSelectionScope( 0 );
+
+	return PTV_SUCCESS;
 }
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptCopySelToCurrentLayer( PTbool deselect )
@@ -539,6 +547,7 @@ PTres	PTAPI ptSelectCloud( PThandle cloud )
 {
 	pcloud::PointCloud *c = cloudFromHandle( cloud );
 
+	// this will not select on hidden layers
 	if (c)
 	{
 		// for now we use scope

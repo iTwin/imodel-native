@@ -278,14 +278,14 @@ int setLastErrorCode( int code )
 //-------------------------------------------------------------------------------
 const PTstr PTAPI ptGetVersionString()
 {
-	return L"Pointools Vortex 2.0.0.208";
+	return L"Pointools Vortex 2.0.0.210";
 }
 void PTAPI ptGetVersionNum(PTubyte *version)
 {
 	version[0] = 2;
 	version[1] = 0;
 	version[2] = 0;
-	version[3] = 208;
+	version[3] = 210;
 }
 
 //-------------------------------------------------------------------------------

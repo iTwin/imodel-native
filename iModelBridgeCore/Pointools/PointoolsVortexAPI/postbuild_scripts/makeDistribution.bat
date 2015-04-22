@@ -13,7 +13,7 @@ SET customDistrib=0
 @REM path for copying PRG LKG Vortex and PODFormats/PODwriter DLLS/libs from if required
 @REM (currently used when making the Siemens or FME distribution)
 @REM an example command line for building a custom build using the LKG is:
-@REM makeDistribution.bat -distrib fme -uselkg 2-1-0-1
+@REM makeDistribution.bat -distrib siemens -uselkg 2-1-0-1
 SET useLKG=0
 SET lkgVersion="0-0-0-0"
 
@@ -101,7 +101,7 @@ cd %thisdir%
 @REM get date in YYMMDD format, WARNING: might be local dependent
 set compile_date=%date:~8,2%%date:~3,2%%date:~0,2%
 
-SET version=2.0.0.208
+SET version=2.0.0.210
 SET topfolder=%PointoolsVortex%\Distrib\PointoolsVortexAPI-%version%
 SET folder=%PointoolsVortex%\Distrib\PointoolsVortexAPI-%version%\VortexAPI
 SET releasenotes=%PointoolsVortex%\ReleaseNotes\PointoolsVortexAPI-ReleaseNotes-%version%.txt

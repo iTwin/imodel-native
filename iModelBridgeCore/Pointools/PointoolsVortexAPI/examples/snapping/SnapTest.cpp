@@ -108,19 +108,29 @@ bool SnapTest::findSnapPoint( int mx, int my, bool test_scene_only )
 	// find nearest screen point based on reading GL buffer and searching for point
 	int res = ptFindNearestScreenPoint( scene, mx, my, pnt );
 
-	if (res >=0 )	
+	//if (res >=0 )	
 	{
 		/* this point maybe good enough, but a ray intersection should give us something
 		that is closer to the viewer and potentially a better point */ 
 
 		/* generate a ray from this using the camera position*/ 
 		// compute the cam position from the modelview matrix
-		GLdouble mdl[16];    
+		GLdouble mdl[16], prj[16];
+		GLint viewport[4];
 		GLdouble camera[3];    
 		glGetDoublev(GL_MODELVIEW_MATRIX, mdl);    
+		glGetDoublev(GL_PROJECTION_MATRIX, prj);
+		glGetIntegerv(GL_VIEWPORT, viewport);
 		camera[0] = -(mdl[0] * mdl[12] + mdl[1] * mdl[13] + mdl[2] * mdl[14]);
 		camera[1] = -(mdl[4] * mdl[12] + mdl[5] * mdl[13] + mdl[6] * mdl[14]);
 		camera[2] = -(mdl[8] * mdl[12] + mdl[9] * mdl[13] + mdl[10] * mdl[14]);
+
+		// construct a ray without the result - this is to test that hidden points (ie. layers that are off) are
+		// not returned
+		if (res <0 )	//ie. pnt is not valid
+		{
+			gluUnProject( mx, viewport[3]-my, 0.2, mdl, prj, viewport, &pnt[0], &pnt[1], &pnt[2]);
+		}
 
 		double dir[] = { pnt[0] - camera[0], pnt[1] - camera[1], pnt[2] - camera[2] };
 

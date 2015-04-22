@@ -40,6 +40,7 @@ public:
 	static PointEditManager *instance();
 
 	void	regenEditQuick();
+	void	regenEditQuick_run();
 	void	regenEditComplete();
 	void	regenOOCComplete();
 
@@ -89,6 +90,9 @@ public:
 	void	planeSelect( const pt::vector3d &origin, const pt::vector3d &normal, double thickness );
 
 	void	layersFromUserChannel( pointsengine::UserChannel* userChannel );
+
+	// query
+	__int64 countVisiblePoints();
 
 	//editing operations
 	void	selectAll();

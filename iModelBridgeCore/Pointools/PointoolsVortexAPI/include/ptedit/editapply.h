@@ -64,7 +64,7 @@ namespace ptedit
 
 			{
 				// for ooc we will dump data after loading + processing
-				bool dumpAfterLoad = g_editApplyMode & EditIncludeOOC || !fp ? true : false;
+				bool dumpAfterLoad = (g_editApplyMode & EditIncludeOOC || !fp) && am > MIN_FILTER ? true : false;
 
 				/* load points, dump if was non-empty */ 
 				pointsengine::VoxelLoader load( v, am, false, false, dumpAfterLoad );

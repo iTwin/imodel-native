@@ -24,6 +24,7 @@
 #include <fastdelegate/fastdelegate.h>
 #include <ptl/dispatcher.h>
 
+#include <boost/thread/thread.hpp>
 
 #include <stack>
 #include <map>
@@ -717,7 +718,37 @@ class SetEditPointToLODVisitor : public pcloud::Node::Visitor
 		inline void point(const pt::vector3d &pnt, uint index, ubyte &f) {}
 		inline void mt_point(int t, const pt::vector3d &pnt, uint index, ubyte &f) {}
 };
+void PointEditManager::regenEditQuick_run()
+{
+	g_editApplyMode = EditNormal;
 
+	// scope should not effect this, will be restored by PreserveState
+	g_state.scope = 0;
+
+	// flag nodes first - note this cannot be done any other way since node state will be changing
+	StoreNodeStateAndPrepForRefresh statev;
+	TraverseScene::withVisitor(&statev);
+
+	g_editApplyMode = EditIntentRefresh | EditIntentFlagged;
+	m_currentEdit.execute(false);
+
+	g_editApplyMode = EditNormal;
+
+	// need to set the edit points in voxels to current lod 
+	// because this is not done in refresh mode
+	SetEditPointToLODVisitor sep;
+	TraverseScene::withVisitor(&sep);
+
+	statev.writeMode();
+	TraverseScene::withVisitor(&statev);
+
+	//ClearFilterVisitor v;
+	//TraverseScene::withVisitor(&v);
+
+	EditNodeDef::applyByName( "ConsolidateAllLayers" );	
+	
+	setCurrentLayer( g_currentLayer, true );
+}
 /*****************************************************************************/
 /**
 * @brief
@@ -730,35 +761,11 @@ void PointEditManager::regenEditQuick()
 		PreserveState save;
 
 		pointsengine::pauseEngine();
+	
+		// this is experimental!
+		// boost::thread regen( MakeDelegate(this, &PointEditManager::regenEditQuick_run) );
 
-		g_editApplyMode = EditNormal;
-
-		// scope should not effect this, will be restored by PreserveState
-		g_state.scope = 0;
-
-		// flag nodes first - note this cannot be done any other way since node state will be changing
-		StoreNodeStateAndPrepForRefresh statev;
-		TraverseScene::withVisitor(&statev);
-
-		g_editApplyMode = EditIntentRefresh | EditIntentFlagged;
-		m_currentEdit.execute(false);
-
-		g_editApplyMode = EditNormal;
-
-		// need to set the edit points in voxels to current lod 
-		// because this is not done in refresh mode
-		SetEditPointToLODVisitor sep;
-		TraverseScene::withVisitor(&sep);
-
-		statev.writeMode();
-		TraverseScene::withVisitor(&statev);
-
-		//ClearFilterVisitor v;
-		//TraverseScene::withVisitor(&v);
-
-		EditNodeDef::applyByName( "ConsolidateAllLayers" );	
-		
-		setCurrentLayer( g_currentLayer, true );
+		regenEditQuick_run();
 
 		pointsengine::unpauseEngine();
 
@@ -936,8 +943,11 @@ void PointEditManager::resetSelection()
 /*****************************************************************************/
 void PointEditManager::clearAll()
 {
-	ClearFilterVisitor v;
-	TraverseScene::withVisitor(&v);
+	/* old implementation (bugged) left for testing
+	ClearFilterVisitor c;
+	TraverseScene::withVisitor( &c );
+	*/
+	m_currentEdit.addOperation( "ClearAll" );
 }
 
 /*****************************************************************************/
@@ -961,7 +971,19 @@ void PointEditManager::invertSelection()
 {	
 	m_currentEdit.addOperation( "InvertSel" );
 }
+/*****************************************************************************/
+/**
+* @brief
+* @return int
+*/
+/*****************************************************************************/
+__int64 PointEditManager::countVisiblePoints()
+{
+	CountVisibleVisitor v;
+	TraverseScene::withVisitor( &v, true );
 
+	return v.totalCount();
+}
 
 /*****************************************************************************/
 /**

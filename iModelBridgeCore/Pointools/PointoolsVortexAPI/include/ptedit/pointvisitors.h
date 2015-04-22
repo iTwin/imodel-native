@@ -293,6 +293,57 @@ namespace ptedit
 	/* ------------------------------------------------------------------------ */ 
 	/*  Count Selected							                                */ 
 	/* ------------------------------------------------------------------------ */ 
+	struct CountVisibleVisitor : public pcloud::Node::Visitor
+	{
+		CountVisibleVisitor() { _count[0] = _count[1] = _count[2] = _count[3] = 0; }
+		bool visitNode(const pcloud::Node *n)
+		{
+			// make sure point count is up to date
+			if (!n->parent())
+				const_cast<pcloud::Node*>(n)->calcLodPointCount();
+
+			if (n->flag(pcloud::WholeHidden)) return false;
+
+			if (!n->flag(pcloud::PartHidden))
+			{
+				_count[0] += n->lodPointCount();	// changed from pointCount
+				return false;						// no need to continue, lodpointcount is recursive
+			}
+			else 
+			{
+				if (n->isLeaf())
+				{
+					pcloud::Voxel *v = const_cast<pcloud::Voxel*>(static_cast<const pcloud::Voxel*>(n));
+
+					if (v->channel( pcloud::PCloud_Filter ))
+					{
+						pcloud::Voxel::LocalSpaceTransform lst;
+						VoxFiltering::iteratePoints( v, *this, lst );
+					}
+					else _count[0] += n->lodPointCount();
+				}
+				else  return true;
+			}
+			return true;
+		}
+		inline void point( const pt::vector3d &p, uint index, ubyte &f) { mt_point(0, p, index, f);}
+		inline void mt_point(int t, const pt::vector3d &p, uint index, ubyte &f) 
+		{ 
+			if (f & g_activeLayers) ++_count[t];
+		}
+
+		__int64 totalCount() const 
+		{ 
+			__int64 c=0;		
+			for (int i=0;i<EDT_MAX_THREADS;i++) c += _count[i];
+			return c;
+		}
+		__int64 _count[EDT_MAX_THREADS];
+	};
+
+	/* ------------------------------------------------------------------------ */ 
+	/*  Count Selected							                                */ 
+	/* ------------------------------------------------------------------------ */ 
 	struct CountSelectedVisitor : public pcloud::Node::Visitor
 	{
 		CountSelectedVisitor() { _count[0] = _count[1] = _count[2] = _count[3] = 0; }
@@ -328,7 +379,7 @@ namespace ptedit
 
 		__int64 totalCount() const 
 		{ 
-			__int64 c;		
+			__int64 c=0;	
 			for (int i=0;i<EDT_MAX_THREADS;i++) c += _count[i];
 			return c;
 		}
