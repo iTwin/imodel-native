@@ -305,7 +305,7 @@ BentleyStatus TextAnnotationHandler::UpdateElement(EditElementHandleR eeh, TextA
 BentleyStatus TextAnnotationHandler::CreateElement(EditElementHandleR eeh, ElementHandleCP templateEh, TextAnnotationCR annotation, DgnModelR model, TransformCR transform, DgnStyleId seedID)
     {
     T_Super::InitializeElement(eeh, model, templateEh->GetGraphicsCP()->GetCategory());
-    eeh.GetElementDescrP()->SetElementHandler(&ELEMENTHANDLER_INSTANCE(TextAnnotationHandler));
+    eeh.GetWriteableElement()->SetElementHandler(&ELEMENTHANDLER_INSTANCE(TextAnnotationHandler));
 
     return UpdateElement(eeh, annotation, transform, seedID);
     }

@@ -829,7 +829,6 @@ DgnModelStatus DgnElement2d::_BindInsertGeom(Statement& stmt)
     return DGNMODEL_STATUS_Success;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/

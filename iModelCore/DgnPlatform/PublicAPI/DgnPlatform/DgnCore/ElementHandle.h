@@ -15,7 +15,6 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-struct ITxn;
 //=======================================================================================
 //! A list of DgnElementDescr's.
 // @bsiclass                                                    Keith.Bentley   02/14
@@ -35,20 +34,15 @@ const_iterator Find(DgnElementCR val) const
 
 /*=================================================================================**//**
 * @addtogroup ElemHandles
-An ElementHandle is an indirect reference to an DgnElement's current state. It permits access to the element transparently, whether the underlying
-element data is held in an DgnElementDescr or merely referenced through an DgnElement. An ElementHandle is the "this" pointer for all
-methods of ElementHandler.
 
-An ElementHandle provides readonly access to the underlying element. The subclass EditElementHandle adds methods for modifying elements.
+ElementHandle provides readonly access to an element. The subclass EditElementHandle adds methods for modifying elements.
 
 +===============+===============+===============+===============+===============+======*/
 
-#if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
 //! Interface implemented to hold additional information about an element held by an ElementHandle.
 //=======================================================================================
-struct     IElementState : public Bentley::IRefCounted {};
-#endif
+struct IElementState : Bentley::IRefCounted {};
 
 //=======================================================================================
 //! A readonly "handle" to an element.
@@ -56,27 +50,32 @@ struct     IElementState : public Bentley::IRefCounted {};
 //=======================================================================================
 struct ElementHandle
 {
+    friend struct ITxn;
 protected:
     DgnElementPtr           m_persistent;
     mutable DgnElementPtr   m_writeable; 
     IElementStateP          m_state;
 
-    DGNPLATFORM_EXPORT void Clone(ElementHandle const& from);
+    void Clone(ElementHandle const& from) 
+        {
+        if (this == &from)
+            return;
 
-    void ClearWriteable() {m_writeable = nullptr;}
+        m_persistent = from.m_persistent;
+        m_writeable  = from.m_writeable;
+        m_state = from.m_state;
+
+        if (m_state)
+            m_state->AddRef();
+        }
+
+    void ClearWriteable()  {m_writeable = nullptr;}
     void ClearPersistent() {m_persistent = nullptr;}
     void ClearElemState() {RELEASE_AND_CLEAR(m_state);}
     void ClearAll() {ClearWriteable(); ClearElemState(); ClearPersistent();}
-    void AssignDgnElement(DgnElementCP element)
-        {
-        m_persistent = (DgnElementP) element; // keep this order so element doesn't become garbage if element==m_writeable;
-        m_writeable = nullptr;
-        }
 
-    DGNPLATFORM_EXPORT void AssignElemDescr(DgnElementP, bool isPersistent);
-    DGNPLATFORM_EXPORT void Init(DgnElementCP element);
-    DGNPLATFORM_EXPORT void Init(DgnElementCP elDscr, bool isPersistent);
-    DGNPLATFORM_EXPORT void Init(DgnElementId, DgnDbR);
+    void Init(DgnElementCP element) {SetDgnElement(element); m_state = nullptr;}
+    void Init(DgnElementId id, DgnDbR dgndb) {Init(dgndb.Elements().GetElementById(id).get());}
 
 public:
     void Invalidate() {ClearAll();}
@@ -100,44 +99,26 @@ public:
     //! @remarks NOTE: test IsValid to determine whether the element was found.
     ElementHandle(DgnElementId id, DgnDbR db) {Init(id, db);}
 
-    //! Construct an ElementHandle from a DgnElement.
-    //! @param[in]  elDscr       DgnElementDescr to be referenced by this ElementHandle.
-    //! @param[in]  isUnmodified if true and elDscr->GetDgnElement(), \a elDscr is considered to be as an exact image of the element in the model.
-    //!                          When this is true, users of this ElementHandle may choose to use the DgnElement instead of \a elDscr.
-    //!                          For example, the display code may choose to use a previously-cached presentation to draw the element. If you're not sure, pass false.
-    ElementHandle(DgnElementCP elDscr, bool isUnmodified) {Init(elDscr, isUnmodified);}
+    ElementHandle(ElementHandleCR from) : m_persistent(from.m_persistent), m_writeable(from.m_writeable), m_state(from.m_state) {if (m_state) m_state->AddRef();}
 
-    DGNPLATFORM_EXPORT ElementHandle(ElementHandleCR from); //!< Copy an ElementHandle
+    ElementHandleR operator= (ElementHandleCR from) {if (this != &from) Clone(from); return *this;}
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    ElementHandleR operator= (ElementHandleCR from)
-        {
-        if (this == &from)
-            return *this;
+    //! Change the persistent element for this ElementHandle. If there is currently a writeable element associated with
+    //! this ElementHandle, it is cleared.
+    //! @param[in]  element  New persistent DgnElement.
+    void SetDgnElement(DgnElementCP element) {m_persistent = (DgnElementP) element; m_writeable = nullptr;}
 
-        Clone(from);
-        return *this;
-        }
-#endif
-
-/** @name Handler Queries */
-/** @{ */
-    //! Get the Handler for this ElementHandle. Every element must have a element handler. This method returns a reference to the ElementHandler
-    //! for this element. If this ElementHandle has an DgnElementP, its handler is returned. Otherwise, the DgnElementDescr is used.
-    //! @note It is illegal to call this method on an Invalid ElementHandle.
-    DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
-/** @} */
-
-    //! Get the DgnElementP for this ElementHandle.
-    //! @return the DgnElementP, or nullptr.
+    //! Get the persistent elemnent for this ElementHandle.
+    //! @return the persistent DgnElement, or nullptr.
     DgnElementCP GetPersistentElement() const {return m_persistent.get();}
-    DgnElementCP GetDgnElement() const {return m_writeable.IsValid() ? m_writeable.get() : m_persistent.get();}
     DgnElementP GetEditElement() const {return m_writeable.get();}
+
+    DgnElementCP GetDgnElement() const {return m_writeable.IsValid() ? m_writeable.get() : m_persistent.get();}
 
     //! Get the DgnModelP for this ElementHandle.
     //! @return the DgnModelP. First checks persitent element, if present, and then resorts to using writeable element.
     //! @note This method will only return nullptr for an invalid ElementHandle.
-    DGNPLATFORM_EXPORT DgnModelP GetDgnModelP() const;
+    DgnModelP GetDgnModelP() const {return m_persistent.IsValid() ? &m_persistent->GetDgnModel() : nullptr;}
 
     //! Get the DgnDb for this ElementHandle.
     //! @return the DgnDb.
@@ -158,11 +139,11 @@ public:
 
     //! Peek to see whether this ElementHandle currently has an DgnElementDescr.
     //! @return the current DgnElementDescr or nullptr.
-    DgnElementCP PeekElementDescrCP() const {return m_writeable.get();}
+    DgnElementCP PeekWriteableElement() const {return m_writeable.get();}
 };
 
 /*=================================================================================**//**
-* A writeable "handle" to an DgnElement.
+* A writeable handle to a DgnElement.
 *
 * EditElementHandle is used for methods that modify a DgnElement.
 *
@@ -170,8 +151,6 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct  EditElementHandle : public ElementHandle
 {
-    friend struct ITxn;
-
 private:
     EditElementHandleR operator= (EditElementHandleCR from); // illegal!!
     explicit EditElementHandle(ElementHandleCR from);        // illegal!!
@@ -179,10 +158,6 @@ private:
 
 public:
     EditElementHandle() {} //!< construct a blank, invalid, EditElementHandle
-
-    //! Construct an EditElementHandle from an DgnElementDescr.
-    //! @see ElementHandle::ElementHandle
-    EditElementHandle(DgnElementP element, bool isUnmodified) : ElementHandle(element, isUnmodified) {}
 
     //! Construct an EditElementHandle from an DgnElement.
     //! @see ElementHandle::ElementHandle
@@ -201,7 +176,7 @@ public:
     EditElementHandle(DgnElementId id, DgnDbR dgndb) : ElementHandle(id, dgndb) {}
 
     //! Construct an EditElementHandle from an ElementHandle.
-    DGNPLATFORM_EXPORT EditElementHandle(ElementHandleCR from, bool duplicateDescr);
+    EditElementHandle(ElementHandleCR from, bool duplicate) : ElementHandle(from) {if (duplicate && m_writeable.IsValid()) m_writeable = m_writeable->Duplicate();}
 
     //! Invalidate the DgnElement for this EditElementHandle. This EditElementHandle will no longer be treated as an exact image of the element in the model.
     void SetNonPersistent() {ClearPersistent();}
@@ -214,37 +189,16 @@ public:
 
     //! Get a writable DgnElementDescr from this EditElementHandle. If this EditElementHandle does not already have an DgnElementDescr, allocate one using
     //! the DgnElementP/DgnModel.
-    //! @remarks Use #PeekElementDescrCP to see whether this EditElementHandle already has an DgnElementDescr.
+    //! @remarks Use #PeekWriteableElement to see whether this EditElementHandle already has an DgnElementDescr.
     //! @remarks This method returns a pointer to the DgnElementDescr in the EditElementHandle. It is still owned by the EditElementHandle and \b must \b not
     //!          be freed by the caller.
-    DGNPLATFORM_EXPORT DgnElementP GetElementDescrP();
+    DgnElementP GetWriteableElement() {if (!m_writeable.IsValid() && m_persistent.IsValid()) m_writeable=m_persistent->Duplicate(); return m_writeable.get();}
 
     //! Extract and take ownership of the DgnElementDescr associated with this EditElementHandle.
     //! @return The DgnElementDescrP from the EditElementHandle. The DgnElementDescr is no longer associated with the EditElementHandle, and the
     //!         caller is responsible for freeing it.
     //! @remarks This method will fail if there is no "owned" DgnElementDescr already associated with this EditElementHandle.
-    DGNPLATFORM_EXPORT DgnElementPtr ExtractElementDescr();
-
-    //! Assign a new DgnElementDescr to this EditElementHandle. The existing DgnElementDescr (if present) is freed.
-    //! @param[in]  elDscr       DgnElementDescr to be referenced by this ElementHandle.
-    //! @param[in]  isUnmodified if true and elDscr->GetDgnElement(), \a elDscr is considered to be as an exact image of the element in the model.
-    //!                          When this is true, users of this EditElementHandle may choose to use the DgnElement instead of \a elDscr.
-    //!                          For example, the display code may choose to use a previously-cached presentation to draw the element. If you're not sure, pass false.
-    void SetElementDescr(DgnElementP elDscr, bool isUnmodified=false) {AssignElemDescr(elDscr, isUnmodified);}
-
-    //! Change the DgnElementP for this EditElementHandle. If there is currently an DgnElementDescr associated with
-    //! this EditElementHandle, it is freed.
-    //! @param[in]  element       New DgnElementP.
-    //! @see SetDgnModel
-    void SetDgnElement(DgnElementCP element) {AssignDgnElement(element);}
-
-    //@}
-
-    //! @name Read from model
-    //@{
-    DGNPLATFORM_EXPORT StatusInt FindById(DgnElementId elemID, DgnModelP dgnCache, bool allowDeleted = false);
-
-    //@}
+    DgnElementPtr ExtractWriteableElement() {DgnElementPtr el=m_writeable; m_writeable=nullptr; return el;}
 
     //! @name Write changes to a Model
     //@{
@@ -270,7 +224,7 @@ public:
 * of ElementHandle collections.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct     IElementSet
+struct IElementSet
 {
     //! Reset the iterator to the beginning of the set and return the first member.
     //! @param[out] elHandle    The ElementHandle for the first member.
