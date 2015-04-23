@@ -8,12 +8,10 @@
 #pragma once
 
 #define WMS_PREFIX                      "wms"
-#define WMS_NAMESPACE_1_0               "http://www.bentley.com/RealityDataServer/1.0"
-#define WMS_VERSION_1_0                 "1.0"
 
-#define WMS_ROOT_ELEMENT                "WMT_MS_Capabilities"
 #define WMS_ROOT_ATTRIBUTE_Version      "version"
-
+#define WMS_ROOT_ATTRIBUTE_Namespace    "xmlns"
+    
 #define WMS_ELEMENT_Service             "Service"
 #define WMS_ELEMENT_Capability          "Capability"
 

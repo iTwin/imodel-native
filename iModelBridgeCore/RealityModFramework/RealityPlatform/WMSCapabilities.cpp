@@ -15,6 +15,8 @@
 
 USING_BENTLEY_NAMESPACE_WMSPARSER
 
+Utf8CP WMSCapabilities::m_namespace = NULL;
+
 //=====================================================================================
 //                              UtilityFunctions
 //=====================================================================================
@@ -39,13 +41,44 @@ size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *user
     return realsize;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 4/2015
+//-------------------------------------------------------------------------------------
+Utf8String BuildNodePath(Utf8CP nodeName)
+    {
+    if (NULL == WMSCapabilities::GetNamespace())
+        return nodeName;
+    else 
+        {
+        // Append prefix to nodeName.
+        Utf8String node;
+        node.append(WMS_PREFIX);
+        node.append(":");
+        node.append(nodeName);
+
+        /*
+        WString nodePath;
+        nodePath.AppendUtf8(WMS_PREFIX);
+        nodePath.AppendUtf8(":");
+        nodePath.AppendUtf8(nodeName);
+
+        Utf8String node;
+        BeStringUtilities::WCharToUtf8(node, nodePath.c_str(), nodePath.size());
+        */
+
+        return node;
+        }
+    }
+
 //=====================================================================================
 //                              WMSCapabilities
 //=====================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
-WMSCapabilities::WMSCapabilities(WString version) { m_version = version; }
+WMSCapabilities::WMSCapabilities(WStringCR version)
+    : m_version(version)    
+    {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
@@ -57,7 +90,7 @@ WMSCapabilities::~WMSCapabilities() {}
 //-------------------------------------------------------------------------------------
 void WMSCapabilities::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -109,11 +142,17 @@ WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromMemory(WMSParserStatus& sta
         return NULL;
         }
 
-    pXmlDom->RegisterNamespace(WMS_PREFIX, WMS_NAMESPACE_1_0);
-
     WMSCapabilitiesPtr pCapabilities = WMSCapabilities::Create(status, version);
     if (WMSParserStatus::Success != status)
         return NULL;
+
+    //Read namespace attribute.
+    Utf8CP xmlns = pRootNode->GetNamespace();
+    if (NULL != xmlns)
+        {
+        pCapabilities->SetNamespace(xmlns);
+        pXmlDom->RegisterNamespace(WMS_PREFIX, xmlns);
+        } 
 
     //Read nodes.
     pCapabilities->Read(status, WMS_ELEMENT_Service, *pXmlDom, *pRootNode);
@@ -161,15 +200,21 @@ WMSCapabilitiesPtr WMSCapabilities::CreateFromString(WMSParserStatus& status, Ut
         return NULL;
         }
 
-    pXmlDom->RegisterNamespace(WMS_PREFIX, WMS_NAMESPACE_1_0);
-
     WMSCapabilitiesPtr pCapabilities = WMSCapabilities::Create(status, version);
     if (WMSParserStatus::Success != status)
         return NULL;
 
+    //Read namespace attribute.
+    Utf8CP xmlns = pRootNode->GetNamespace();
+    if (NULL != xmlns)
+        {
+        pCapabilities->SetNamespace(xmlns);
+        pXmlDom->RegisterNamespace(WMS_PREFIX, xmlns);
+        }
+
     //Read nodes.
     pCapabilities->Read(status, WMS_ELEMENT_Service, *pXmlDom, *pRootNode);
-    //pCapabilities->Read(status, WMS_ELEMENT_Capability, *pXmlDom, *pRootNode);
+    pCapabilities->Read(status, WMS_ELEMENT_Capability, *pXmlDom, *pRootNode);
 
     //if (WMSParserStatus::Success != status)
     //    return NULL;
@@ -180,25 +225,7 @@ WMSCapabilitiesPtr WMSCapabilities::CreateFromString(WMSParserStatus& status, Ut
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
-bool WMSCapabilities::IsValid() const
-    {
-    if (!m_version.Equals(L"1.3.0") ||
-        !m_version.Equals(L"1.1.1") ||
-        !m_version.Equals(L"1.1.0") ||
-        !m_version.Equals(L"1.0.0"))
-        return false;
-
-    if (m_pService.IsNull() ||
-        m_pCapability.IsNull())
-        return false;
-
-    return true;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 3/2015
-//-------------------------------------------------------------------------------------
-WMSCapabilitiesPtr WMSCapabilities::Create(WMSParserStatus& status, WString version)
+WMSCapabilitiesPtr WMSCapabilities::Create(WMSParserStatus& status, WStringCR version)
     {
     if (version.Equals(L"1.3.0") ||
         version.Equals(L"1.1.1") ||
@@ -308,7 +335,7 @@ WMSElementListPtr WMSElementList::Create(WMSParserStatus& status, BeXmlNodeR pPa
 //-------------------------------------------------------------------------------------
 void WMSService::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -333,19 +360,19 @@ WMSServicePtr WMSService::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXm
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
     
     // Read string.
-    xmlDom.SelectNodeContent(pService->GetNameR(), WMS_ELEMENT_Name, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pService->GetTitleR(), WMS_ELEMENT_Title, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pService->GetAbstractR(), WMS_ELEMENT_Abstract, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pService->GetFeesR(), WMS_ELEMENT_Fees, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pService->GetAccessConstraintsR(), WMS_ELEMENT_AccessConstraints, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pService->GetNameR(), BuildNodePath(WMS_ELEMENT_Name).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pService->GetTitleR(), BuildNodePath(WMS_ELEMENT_Title).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pService->GetAbstractR(), BuildNodePath(WMS_ELEMENT_Abstract).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pService->GetFeesR(), BuildNodePath(WMS_ELEMENT_Fees).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pService->GetAccessConstraintsR(), BuildNodePath(WMS_ELEMENT_AccessConstraints).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     
     // Read positive integer.
     WString posInt = L"";
-    xmlDom.SelectNodeContent(posInt, WMS_ELEMENT_LayerLimit, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(posInt, BuildNodePath(WMS_ELEMENT_LayerLimit).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pService->SetLayerLimit(posInt);
-    xmlDom.SelectNodeContent(posInt, WMS_ELEMENT_MaxWidth, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(posInt, BuildNodePath(WMS_ELEMENT_MaxWidth).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pService->SetMaxWidth(posInt);
-    xmlDom.SelectNodeContent(posInt, WMS_ELEMENT_MaxHeight, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(posInt, BuildNodePath(WMS_ELEMENT_MaxHeight).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pService->SetMaxHeight(posInt);
     
     // Read complex type.
@@ -380,7 +407,7 @@ WMSOnlineResourcePtr WMSOnlineResource::Create(WMSParserStatus& status, BeXmlNod
 //-------------------------------------------------------------------------------------
 void WMSContactInformation::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -403,10 +430,10 @@ WMSContactInformationPtr WMSContactInformation::Create(WMSParserStatus& status, 
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
 
     // Read string.
-    xmlDom.SelectNodeContent(pContactInfo->GetPositionR(), WMS_ELEMENT_Position, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactInfo->GetVoiceTelephoneR(), WMS_ELEMENT_VoiceTel, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactInfo->GetFacsimileTelephoneR(), WMS_ELEMENT_FacsimileTel, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactInfo->GetEmailAddressR(), WMS_ELEMENT_EmailAddress, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactInfo->GetPositionR(), BuildNodePath(WMS_ELEMENT_Position).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactInfo->GetVoiceTelephoneR(), BuildNodePath(WMS_ELEMENT_VoiceTel).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactInfo->GetFacsimileTelephoneR(), BuildNodePath(WMS_ELEMENT_FacsimileTel).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactInfo->GetEmailAddressR(), BuildNodePath(WMS_ELEMENT_EmailAddress).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
 
     // Read complex type.
     pContactInfo->Read(status, WMS_ELEMENT_ContactPerson, xmlDom, parentNode);
@@ -425,8 +452,8 @@ WMSContactPersonPtr WMSContactPerson::Create(WMSParserStatus& status, BeXmlDomR 
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
 
     // Read string.
-    xmlDom.SelectNodeContent(pContactPerson->GetNameR(), WMS_ELEMENT_Person, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactPerson->GetOrganizationR(), WMS_ELEMENT_Organization, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactPerson->GetNameR(), BuildNodePath(WMS_ELEMENT_Person).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactPerson->GetOrganizationR(), BuildNodePath(WMS_ELEMENT_Organization).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
 
     return pContactPerson;
     }
@@ -441,12 +468,12 @@ WMSContactAddressPtr WMSContactAddress::Create(WMSParserStatus& status, BeXmlDom
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
 
     // Read string.
-    xmlDom.SelectNodeContent(pContactAddress->GetTypeR(), WMS_ELEMENT_Type, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactAddress->GetAddressR(), WMS_ELEMENT_Address, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactAddress->GetCityR(), WMS_ELEMENT_City, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactAddress->GetStateOrProvinceR(), WMS_ELEMENT_StateProv, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactAddress->GetPostCodeR(), WMS_ELEMENT_PostCode, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pContactAddress->GetCountryR(), WMS_ELEMENT_Country, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactAddress->GetTypeR(), BuildNodePath(WMS_ELEMENT_Type).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactAddress->GetAddressR(), BuildNodePath(WMS_ELEMENT_Address).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactAddress->GetCityR(), BuildNodePath(WMS_ELEMENT_City).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactAddress->GetStateOrProvinceR(), BuildNodePath(WMS_ELEMENT_StateProv).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactAddress->GetPostCodeR(), BuildNodePath(WMS_ELEMENT_PostCode).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pContactAddress->GetCountryR(), BuildNodePath(WMS_ELEMENT_Country).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
 
     return pContactAddress;
     }
@@ -459,7 +486,7 @@ WMSContactAddressPtr WMSContactAddress::Create(WMSParserStatus& status, BeXmlDom
 //-------------------------------------------------------------------------------------
 void WMSCapability::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -497,7 +524,7 @@ WMSCapabilityPtr WMSCapability::Create(WMSParserStatus& status, BeXmlDomR xmlDom
 //-------------------------------------------------------------------------------------
 void WMSRequest::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -508,7 +535,7 @@ void WMSRequest::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom
         m_pGetCapabilities = WMSOperationType::Create(status, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_GetMap))
         m_pGetMap = WMSOperationType::Create(status, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_GetFeatureInfo))
+    else if (0 == BeStringUtilities::Stricmp(nodeName,WMS_ELEMENT_GetFeatureInfo))
         m_pGetFeatureInfo = WMSOperationType::Create(status, *pNode);
     }
 
@@ -535,7 +562,7 @@ WMSRequestPtr WMSRequest::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXm
 //-------------------------------------------------------------------------------------
 void WMSOperationType::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -571,7 +598,7 @@ WMSOperationTypePtr WMSOperationType::Create(WMSParserStatus& status, BeXmlNodeR
 void WMSDCPType::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
     {
     // No need for HTTP node, we only want to process his child's.
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(WMS_ELEMENT_Http)->SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(WMS_ELEMENT_Http).c_str())->SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -580,10 +607,10 @@ void WMSDCPType::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR paren
 
     if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_HttpGet))
         // No need for HTTPGet node, we only want to process his child's.
-        m_pHttpGet = WMSOnlineResource::Create(status, *pNode->SelectSingleNode(WMS_ELEMENT_OnlineResource));
+        m_pHttpGet = WMSOnlineResource::Create(status, *pNode->SelectSingleNode(BuildNodePath(WMS_ELEMENT_OnlineResource).c_str()));
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_HttpPost))
         // No need for HTTPPost node, we only want to process his child's.
-        m_pHttpPost = WMSOnlineResource::Create(status, *pNode->SelectSingleNode(WMS_ELEMENT_OnlineResource));
+        m_pHttpPost = WMSOnlineResource::Create(status, *pNode->SelectSingleNode(BuildNodePath(WMS_ELEMENT_OnlineResource).c_str()));
     }
 
 //-------------------------------------------------------------------------------------
@@ -610,7 +637,7 @@ void WMSLayer::CreateChilds(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNode
     {
     BeXmlDom::IterableNodeSet nodes;
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
-    xmlDom.SelectNodes(nodes, WMS_ELEMENT_Layer, pContext);
+    xmlDom.SelectNodes(nodes, BuildNodePath(WMS_ELEMENT_Layer).c_str(), pContext);
 
     WMSLayerPtr pChildLayer = new WMSLayer();
     for (BeXmlNodeP pChildNode : nodes)
@@ -640,39 +667,45 @@ void WMSLayer::CreateChilds(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNode
 //-------------------------------------------------------------------------------------
 void WMSLayer::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
-    if (NULL == pNode)
+    BeXmlDom::IterableNodeSet nodes;
+    xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
+    xmlDom.SelectNodes(nodes, BuildNodePath(nodeName).c_str(), pContext);
+    if (0 == nodes.size())
         {
         status = WMSParserStatus::UnknownNode;
         return;
         }
 
-    if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_KeywordList))
-        m_pKeywordList = WMSElementList::Create(status, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_CRS) || 
-             0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_SRS))
-        m_pCRSList = WMSFormatList::Create(status, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_GeoBoundingBox) ||
-             0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_LatLongBoundingBox))
-        m_pGeoBBox = WMSGeoBoundingBox::Create(status, xmlDom, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_BoundingBox))
-        m_pBBoxList.push_back(WMSBoundingBox::Create(status, *pNode));
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Dimension))
-        m_pDimensionList.push_back(WMSDimension::Create(status, xmlDom, *pNode));
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Attribution))
-        m_pAttribution = WMSAttribution::Create(status, xmlDom, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_AuthorityURL))
-        m_pAuthorityUrl = WMSUrl::Create(status, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Identifier))
-        m_pIdentifier = WMSIdentifier::Create(status, xmlDom, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_MetadataURL))
-        m_pMetadataUrlList.push_back(WMSUrl::Create(status, *pNode));
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_DataURL))
-        m_pDataUrl = WMSUrl::Create(status, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_FeatureListURL))
-        m_pFeatureListUrl = WMSUrl::Create(status, *pNode);
-    else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Style))
-        m_pStyle = WMSStyle::Create(status, xmlDom, *pNode);
+    for (BeXmlNodeP pNode : nodes)
+        {
+        if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_KeywordList))
+            m_pKeywordList = WMSElementList::Create(status, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_CRS) ||
+                 0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_SRS))
+                 m_pCRSList = WMSFormatList::Create(status, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_GeoBoundingBox))
+            m_pGeoBBox = WMSGeoBoundingBox::Create(status, xmlDom, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_LatLongBoundingBox))
+            m_pLatLonBBox = WMSLatLonBoundingBox::Create(status, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_BoundingBox))
+            m_pBBoxList.push_back(WMSBoundingBox::Create(status, *pNode));
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Dimension))
+            m_pDimensionList.push_back(WMSDimension::Create(status, xmlDom, *pNode));
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Attribution))
+            m_pAttribution = WMSAttribution::Create(status, xmlDom, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_AuthorityURL))
+            m_pAuthorityUrl = WMSUrl::Create(status, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Identifier))
+            m_pIdentifier = WMSIdentifier::Create(status, xmlDom, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_MetadataURL))
+            m_pMetadataUrlList.push_back(WMSUrl::Create(status, *pNode));
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_DataURL))
+            m_pDataUrl = WMSUrl::Create(status, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_FeatureListURL))
+            m_pFeatureListUrl = WMSUrl::Create(status, *pNode);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Style))
+            m_pStyle = WMSStyle::Create(status, xmlDom, *pNode);
+        }
     }
 
 //-------------------------------------------------------------------------------------
@@ -700,17 +733,19 @@ WMSLayerPtr WMSLayer::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNod
     pLayer->SetFixedHeight(stringValue);
 
     // Read simple type.
-    xmlDom.SelectNodeContent(pLayer->GetNameR(), WMS_ELEMENT_Name, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pLayer->GetTitleR(), WMS_ELEMENT_Title, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pLayer->GetAbstractR(), WMS_ELEMENT_Abstract, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(stringValue, WMS_ELEMENT_MinScaleDenom, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pLayer->GetNameR(), BuildNodePath(WMS_ELEMENT_Name).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pLayer->GetTitleR(), BuildNodePath(WMS_ELEMENT_Title).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pLayer->GetAbstractR(), BuildNodePath(WMS_ELEMENT_Abstract).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(stringValue, BuildNodePath(WMS_ELEMENT_MinScaleDenom).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pLayer->SetMinScaleDenom(stringValue);
-    xmlDom.SelectNodeContent(stringValue, WMS_ELEMENT_MaxScaleDenom, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(stringValue, BuildNodePath(WMS_ELEMENT_MaxScaleDenom).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pLayer->SetMaxScaleDenom(stringValue);
 
     // Read complex type.
     pLayer->Read(status, WMS_ELEMENT_KeywordList, xmlDom, parentNode);
     pLayer->Read(status, WMS_ELEMENT_BoundingBox, xmlDom, parentNode);
+    pLayer->Read(status, WMS_ELEMENT_Dimension, xmlDom, parentNode);
+    pLayer->Read(status, WMS_ELEMENT_Attribution, xmlDom, parentNode);
     pLayer->Read(status, WMS_ELEMENT_AuthorityURL, xmlDom, parentNode);
     pLayer->Read(status, WMS_ELEMENT_Identifier, xmlDom, parentNode);
     pLayer->Read(status, WMS_ELEMENT_MetadataURL, xmlDom, parentNode);
@@ -747,16 +782,37 @@ WMSGeoBoundingBoxPtr WMSGeoBoundingBox::Create(WMSParserStatus& status, BeXmlDom
 
     // Read string.
     WString stringValue = L"";
-    xmlDom.SelectNodeContent(stringValue, WMS_ELEMENT_WestBoundLong, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(stringValue, BuildNodePath(WMS_ELEMENT_WestBoundLong).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pGeoBBox->SetWestBoundLong(stringValue);
-    xmlDom.SelectNodeContent(stringValue, WMS_ELEMENT_EastBoundLong, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(stringValue, BuildNodePath(WMS_ELEMENT_EastBoundLong).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pGeoBBox->SetEastBoundLong(stringValue);
-    xmlDom.SelectNodeContent(stringValue, WMS_ELEMENT_SouthBoundLat, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(stringValue, BuildNodePath(WMS_ELEMENT_SouthBoundLat).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pGeoBBox->SetSouthBoundLat(stringValue);
-    xmlDom.SelectNodeContent(stringValue, WMS_ELEMENT_NorthBoundLat, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(stringValue, BuildNodePath(WMS_ELEMENT_NorthBoundLat).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pGeoBBox->SetNorthBoundLat(stringValue);
 
     return pGeoBBox;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 3/2015
+//-------------------------------------------------------------------------------------
+WMSLatLonBoundingBoxPtr WMSLatLonBoundingBox::Create(WMSParserStatus& status, BeXmlNodeR parentNode)
+    {
+    WMSLatLonBoundingBoxPtr pLatLonBBox = new WMSLatLonBoundingBox();
+
+    // Read attributes.
+    WString stringValue = L"";
+    parentNode.GetAttributeStringValue(stringValue, "minx");
+    pLatLonBBox->SetMinX(stringValue);
+    parentNode.GetAttributeStringValue(stringValue, "miny");
+    pLatLonBBox->SetMinY(stringValue);
+    parentNode.GetAttributeStringValue(stringValue, "maxx");
+    pLatLonBBox->SetMaxX(stringValue);
+    parentNode.GetAttributeStringValue(stringValue, "maxy");
+    pLatLonBBox->SetMaxY(stringValue);
+
+    return pLatLonBBox;
     }
 
 //-------------------------------------------------------------------------------------
@@ -814,7 +870,7 @@ WMSDimensionPtr WMSDimension::Create(WMSParserStatus& status, BeXmlDomR xmlDom, 
     pDimension->SetCurrent(stringValue);
 
     // Read string.
-    xmlDom.SelectNodeContent(pDimension->GetDimensionR(), WMS_ELEMENT_Dimension, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pDimension->GetDimensionR(), BuildNodePath(WMS_ELEMENT_Dimension).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
 
     return pDimension;
     }
@@ -827,7 +883,7 @@ WMSDimensionPtr WMSDimension::Create(WMSParserStatus& status, BeXmlDomR xmlDom, 
 //-------------------------------------------------------------------------------------
 void WMSAttribution::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -850,7 +906,7 @@ WMSAttributionPtr WMSAttribution::Create(WMSParserStatus& status, BeXmlDomR xmlD
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
 
     // Read string.
-    xmlDom.SelectNodeContent(pAttribution->GetTitleR(), WMS_ELEMENT_Title, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pAttribution->GetTitleR(), BuildNodePath(WMS_ELEMENT_Title).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
 
     // Read complex type.
     pAttribution->Read(status, WMS_ELEMENT_OnlineResource, parentNode);
@@ -867,7 +923,7 @@ WMSAttributionPtr WMSAttribution::Create(WMSParserStatus& status, BeXmlDomR xmlD
 //-------------------------------------------------------------------------------------
 void WMSUrl::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -919,7 +975,7 @@ WMSIdentifierPtr WMSIdentifier::Create(WMSParserStatus& status, BeXmlDomR xmlDom
     parentNode.GetAttributeStringValue(pIdentifier->GetAuthorityR(), "authority");
 
     // Read string.
-    xmlDom.SelectNodeContent(pIdentifier->GetIDR(), WMS_ELEMENT_Identifier, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pIdentifier->GetIDR(), BuildNodePath(WMS_ELEMENT_Identifier).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
 
     return pIdentifier;
     }
@@ -932,7 +988,7 @@ WMSIdentifierPtr WMSIdentifier::Create(WMSParserStatus& status, BeXmlDomR xmlDom
 //-------------------------------------------------------------------------------------
 void WMSStyle::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
     {
-    BeXmlNodeP pNode = parentNode.SelectSingleNode(nodeName);
+    BeXmlNodeP pNode = parentNode.SelectSingleNode(BuildNodePath(nodeName).c_str());
     if (NULL == pNode)
         {
         status = WMSParserStatus::UnknownNode;
@@ -957,9 +1013,9 @@ WMSStylePtr WMSStyle::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNod
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
 
     // Read string.
-    xmlDom.SelectNodeContent(pStyle->GetNameR(), WMS_ELEMENT_Name, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pStyle->GetTitleR(), WMS_ELEMENT_Title, pContext, BeXmlDom::NODE_BIAS_First);
-    xmlDom.SelectNodeContent(pStyle->GetAbstractR(), WMS_ELEMENT_Abstract, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pStyle->GetNameR(), BuildNodePath(WMS_ELEMENT_Name).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pStyle->GetTitleR(), BuildNodePath(WMS_ELEMENT_Title).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pStyle->GetAbstractR(), BuildNodePath(WMS_ELEMENT_Abstract).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
 
     // Read complex type.
     pStyle->Read(status, WMS_ELEMENT_LegendURL, parentNode);

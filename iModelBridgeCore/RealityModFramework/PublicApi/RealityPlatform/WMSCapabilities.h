@@ -41,30 +41,33 @@ struct WMSCapabilities : RefCountedBase
         WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromMemory(WMSParserStatus& status, void const* xmlBuffer, size_t xmlBufferSize, WStringP pParseError = NULL);  //&&JFC avoid copy of xmlData
         WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromFile(WMSParserStatus& status);
 
-        WMSPARSER_EXPORT bool IsValid() const;
-
         //! Element.
         WStringCR       GetVersion() const { return m_version; }
+        static Utf8CP   GetNamespace() { return m_namespace; }
+        
 
         //! Complex type.
         WMSServiceCP    GetServiceGroup() const { return m_pService.GetCR(); }
         WMSCapabilityCP GetCapabilityGroup() const { return m_pCapability.GetCR(); }
 
     private:
-        WMSCapabilities(WString version);
+        WMSCapabilities(WStringCR version);
         ~WMSCapabilities();
 
         //! Create from version.
-        static WMSCapabilitiesPtr   Create(WMSParserStatus& status, WString version);
+        static WMSCapabilitiesPtr   Create(WMSParserStatus& status, WStringCR version);
 
         //! Read complex node.
-        void                        Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
+        void    Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
+
+        static void     SetNamespace(Utf8CP xmlns) { m_namespace = xmlns; }
 
         //&&JFC: To be removed eventually.
         static StatusInt GetFromServer(MemoryStruct& chunk, WCharCP url);
 
         //! Element.
         WString             m_version;
+        static Utf8CP       m_namespace;
 
         //! Complex type.
         WMSServicePtr       m_pService;
@@ -449,6 +452,7 @@ struct WMSLayer : RefCountedBase
         bvector<WString>            GetKeywordList() const { return m_pKeywordList->Get(); }
         bvector<WString>            GetCRSList() const { return m_pCRSList->Get(); }
         WMSGeoBoundingBoxCP         GetGeoBBox() const { return m_pGeoBBox.GetCR(); }
+        WMSLatLonBoundingBoxCP      GetLatLonBBox() const { return m_pLatLonBBox.GetCR(); }
         bvector<WMSBoundingBoxPtr>  GetBBox() const { return m_pBBoxList; }
         bvector<WMSDimensionPtr>    GetDimensionList() const { return m_pDimensionList; }
         WMSAttributionCP            GetAttribution() const { return m_pAttribution.GetCR(); }
@@ -484,6 +488,7 @@ struct WMSLayer : RefCountedBase
         WMSElementListPtr m_pKeywordList;
         WMSFormatListPtr m_pCRSList;
         WMSGeoBoundingBoxPtr m_pGeoBBox;
+        WMSLatLonBoundingBoxPtr m_pLatLonBBox;
         bvector<WMSBoundingBoxPtr> m_pBBoxList;
         bvector<WMSDimensionPtr> m_pDimensionList;
         WMSAttributionPtr m_pAttribution;
@@ -499,6 +504,8 @@ struct WMSLayer : RefCountedBase
 //=======================================================================================
 //! The EX_GeographicBoundingBox attributes indicate the limits of the enclosing 
 //! rectangle in longitude and latitude decimal degrees.
+//!
+//! Specific to version 1.3.0
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
@@ -527,6 +534,41 @@ struct WMSGeoBoundingBox : RefCountedBase
         double m_eastBoundLong;
         double m_southBoundLat;
         double m_northBoundLat;
+    };
+
+//=======================================================================================
+//! The LatLonBoundingBox attributes indicate the edges of the enclosing rectangle in
+//! latitude/longitude decimal degrees(as in SRS EPSG:4326[WGS1984 lat/lon]).
+//! 
+//! Specific to version 1.0.0, 1.1.0 and 1.1.1
+//!
+//! @bsiclass                                     Jean-Francois.Cote              03/2015
+//=======================================================================================
+struct WMSLatLonBoundingBox : RefCountedBase
+    {
+    public:
+        //! Create from xml node.
+        static WMSLatLonBoundingBoxPtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
+
+        //! Element.
+        double const&   GetMinX() const { return m_minX; }
+        void            SetMinX(WStringR minX) { m_minX = BeStringUtilities::Wcstod(minX.c_str(), NULL); }
+
+        double const&   GetMinY() const { return m_minY; }
+        void            SetMinY(WStringR minY) { m_minY = BeStringUtilities::Wcstod(minY.c_str(), NULL); }
+
+        double const&   GetMaxX() const { return m_maxX; }
+        void            SetMaxX(WStringR maxX) { m_maxX = BeStringUtilities::Wcstod(maxX.c_str(), NULL); }
+
+        double const&   GetMaxY() const { return m_maxY; }
+        void            SetMaxY(WStringR maxY) { m_maxY = BeStringUtilities::Wcstod(maxY.c_str(), NULL); }
+
+    private:
+        //! Element.
+        double m_minX;
+        double m_minY;
+        double m_maxX;
+        double m_maxY;
     };
 
 //=======================================================================================

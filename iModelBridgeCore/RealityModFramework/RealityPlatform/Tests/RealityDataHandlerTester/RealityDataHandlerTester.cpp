@@ -48,7 +48,12 @@ int main(array<System::String ^> ^args)
         }
 
     //WCharCP url = L"http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xml";
-    WCharCP url = L"http://wms.gsfc.nasa.gov/cgi-bin/goes-wms.cgi?SERVICE=WMS&REQUEST=GetCapabilities";
+
+    //WCharCP url = L"http://wms.gsfc.nasa.gov/cgi-bin/goes-wms.cgi?SERVICE=WMS&REQUEST=GetCapabilities";
+    //WCharCP url = L"http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_Hydrografia/MapServer/WmsServer?SERVICE=WMS&REQUEST=GetCapabilities";
+
+    WCharCP url = L"http://webmap.ornl.gov/ogcbroker/wms?SERVICE=WMS&REQUEST=GetCapabilities";
+
     //WCharCP url = L"http://gdr.ess.nrcan.gc.ca/wmsconnector/com.esri.wms.Esrimap/energy_e?SERVICE=WMS&REQUEST=GetCapabilities";
     //WCharCP url = L"http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities";
   

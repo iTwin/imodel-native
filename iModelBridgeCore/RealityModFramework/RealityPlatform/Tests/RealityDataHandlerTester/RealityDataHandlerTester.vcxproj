@@ -46,11 +46,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>D:\BSI\RMF_Graph06\out\Winx64\</OutDir>
-    <IntDir>$(OutDir)\build\RealityModFramework\ThumbnailTester\</IntDir>
+    <IntDir>$(OutDir)\Product\RealityModFramework\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(OutDir)\build\RealityModFramework\ThumbnailTester\</IntDir>
+    <IntDir>$(OutDir)\Product\RealityModFramework\</IntDir>
     <OutDir>D:\BSI\RMF_Graph06\out\Winx64\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
