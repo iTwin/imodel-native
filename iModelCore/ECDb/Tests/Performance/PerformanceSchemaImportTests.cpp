@@ -280,7 +280,7 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     ASSERT_EQ (stat, BE_SQLITE_OK);
 
     ECSchemaPtr ecSchema;
-    ecSchema = PerformanceTestsSchemaImport::CreateTestSchema (500, 50, true, true, true, 4);
+    ecSchema = PerformanceTestsSchemaImport::CreateTestSchema (10000, 100, false, false, false, 0);
     ASSERT_TRUE (ecSchema.IsValid ());
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
@@ -288,14 +288,18 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     StopWatch timer (true);
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
     timer.Stop ();
-    printf ("Schema Import took %.4f msecs.\n", timer.GetElapsedSeconds () * 1000.0);
-    schemaCache->Clear ();
+    LOG.infov ("Schema Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
     ecdb.SaveChanges ();
+
+    timer.Start ();
+    ecdb.ClearECDbCache ();
+    timer.Stop ();
+    LOG.infov ("ClearCache took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
 
     timer.Start ();
     ECSchemaCP ecschema = ecdb.Schemas ().GetECSchema ("TestSchema", true);
     timer.Stop ();
-    printf ("took %.4f msecs to locate schema \n", timer.GetElapsedSeconds () * 1000.0);
+    LOG.infov ("Schema Export took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
     ASSERT_TRUE (ecschema != nullptr);
 
     ecdb.CloseDb ();
