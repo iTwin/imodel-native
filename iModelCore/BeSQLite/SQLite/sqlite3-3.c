@@ -4451,13 +4451,18 @@ static const void *fetchPayload(
   BtCursor *pCur,      /* Cursor pointing to entry to read from */
   u32 *pAmt            /* Write the number of available bytes here */
 ){
+  u32 amt;
   assert( pCur!=0 && pCur->iPage>=0 && pCur->apPage[pCur->iPage]);
   assert( pCur->eState==CURSOR_VALID );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
   assert( pCur->info.nSize>0 );
-  *pAmt = pCur->info.nLocal;
+  assert( pCur->info.pPayload>pCur->apPage[pCur->iPage]->aData || CORRUPT_DB );
+  assert( pCur->info.pPayload<pCur->apPage[pCur->iPage]->aDataEnd ||CORRUPT_DB);
+  amt = (int)(pCur->apPage[pCur->iPage]->aDataEnd - pCur->info.pPayload);
+  if( pCur->info.nLocal<amt ) amt = pCur->info.nLocal;
+  *pAmt = amt;
   return (void*)pCur->info.pPayload;
 }
 
@@ -8523,6 +8528,57 @@ static void checkList(
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
+/*
+** An implementation of a min-heap.
+**
+** aHeap[0] is the number of elements on the heap.  aHeap[1] is the
+** root element.  The daughter nodes of aHeap[N] are aHeap[N*2]
+** and aHeap[N*2+1].
+**
+** The heap property is this:  Every node is less than or equal to both
+** of its daughter nodes.  A consequence of the heap property is that the
+** root node aHeap[1] is always the minimum value current in the heap.
+**
+** The btreeHeapInsert() routine inserts an unsigned 32-bit number onto
+** the heap, preserving the heap property.  The btreeHeapPull() routine
+** removes the root element from the heap (the minimum value in the heap)
+** and then move other nodes around as necessary to preserve the heap
+** property.
+**
+** This heap is used for cell overlap and coverage testing.  Each u32
+** entry represents the span of a cell or freeblock on a btree page.  
+** The upper 16 bits are the index of the first byte of a range and the
+** lower 16 bits are the index of the last byte of that range.
+*/
+static void btreeHeapInsert(u32 *aHeap, u32 x){
+  u32 j, i = ++aHeap[0];
+  aHeap[i] = x;
+  while( (j = i/2)>0 && aHeap[j]>aHeap[i] ){
+    x = aHeap[j];
+    aHeap[j] = aHeap[i];
+    aHeap[i] = x;
+    i = j;
+  }
+}
+static int btreeHeapPull(u32 *aHeap, u32 *pOut){
+  u32 j, i, x;
+  if( (x = aHeap[0])==0 ) return 0;
+  *pOut = aHeap[1];
+  aHeap[1] = aHeap[x];
+  aHeap[x] = 0xffffffff;
+  aHeap[0]--;
+  i = 1;
+  while( (j = i*2)<=aHeap[0] ){
+    if( aHeap[j]>aHeap[j+1] ) j++;
+    if( aHeap[i]<aHeap[j] ) break;
+    x = aHeap[i];
+    aHeap[i] = aHeap[j];
+    aHeap[j] = x;
+    i = j;
+  }
+  return 1;  
+}
+
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
 ** Do various sanity checks on a single page of a tree.  Return
@@ -8555,7 +8611,8 @@ static int checkTreePage(
   u8 *data;
   BtShared *pBt;
   int usableSize;
-  char *hit = 0;
+  u32 *heap = 0;
+  u32 x, prev = 0;
   i64 nMinKey = 0;
   i64 nMaxKey = 0;
   const char *saved_zPfx = pCheck->zPfx;
@@ -8700,15 +8757,15 @@ static int checkTreePage(
   */
   data = pPage->aData;
   hdr = pPage->hdrOffset;
-  hit = sqlite3PageMalloc( pBt->pageSize );
+  heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
   pCheck->zPfx = 0;
-  if( hit==0 ){
+  if( heap==0 ){
     pCheck->mallocFailed = 1;
   }else{
     int contentOffset = get2byteNotZero(&data[hdr+5]);
     assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
-    memset(hit+contentOffset, 0, usableSize-contentOffset);
-    memset(hit, 1, contentOffset);
+    heap[0] = 0;
+    btreeHeapInsert(heap, contentOffset-1);
     /* EVIDENCE-OF: R-37002-32774 The two-byte integer at offset 3 gives the
     ** number of cells on the page. */
     nCell = get2byte(&data[hdr+3]);
@@ -8720,7 +8777,6 @@ static int checkTreePage(
     for(i=0; i<nCell; i++){
       int pc = get2byte(&data[cellStart+i*2]);
       u32 size = 65536;
-      int j;
       if( pc<=usableSize-4 ){
         size = cellSizePtr(pPage, &data[pc]);
       }
@@ -8729,7 +8785,7 @@ static int checkTreePage(
         checkAppendMsg(pCheck,
             "Corruption detected in cell %d on page %d",i,iPage);
       }else{
-        for(j=pc+size-1; j>=pc; j--) hit[j]++;
+        btreeHeapInsert(heap, (pc<<16)|(pc+size-1));
       }
     }
     /* EVIDENCE-OF: R-20690-50594 The second field of the b-tree page header
@@ -8741,7 +8797,7 @@ static int checkTreePage(
       assert( i<=usableSize-4 );     /* Enforced by btreeInitPage() */
       size = get2byte(&data[i+2]);
       assert( i+size<=usableSize );  /* Enforced by btreeInitPage() */
-      for(j=i+size-1; j>=i; j--) hit[j]++;
+      btreeHeapInsert(heap, (i<<16)|(i+size-1));
       /* EVIDENCE-OF: R-58208-19414 The first 2 bytes of a freeblock are a
       ** big-endian integer which is the offset in the b-tree page of the next
       ** freeblock in the chain, or zero if the freeblock is the last on the
@@ -8753,27 +8809,33 @@ static int checkTreePage(
       assert( j<=usableSize-4 );   /* Enforced by btreeInitPage() */
       i = j;
     }
-    for(i=cnt=0; i<usableSize; i++){
-      if( hit[i]==0 ){
-        cnt++;
-      }else if( hit[i]>1 ){
+    cnt = 0;
+    assert( heap[0]>0 );
+    assert( (heap[1]>>16)==0 );
+    btreeHeapPull(heap,&prev);
+    while( btreeHeapPull(heap,&x) ){
+      if( (prev&0xffff)+1>(x>>16) ){
         checkAppendMsg(pCheck,
-          "Multiple uses for byte %d of page %d", i, iPage);
+          "Multiple uses for byte %u of page %d", x>>16, iPage);
         break;
+      }else{
+        cnt += (x>>16) - (prev&0xffff) - 1;
+        prev = x;
       }
     }
+    cnt += usableSize - (prev&0xffff) - 1;
     /* EVIDENCE-OF: R-43263-13491 The total number of bytes in all fragments
     ** is stored in the fifth field of the b-tree page header.
     ** EVIDENCE-OF: R-07161-27322 The one-byte integer at offset 7 gives the
     ** number of fragmented free bytes within the cell content area.
     */
-    if( cnt!=data[hdr+7] ){
+    if( heap[0]==0 && cnt!=data[hdr+7] ){
       checkAppendMsg(pCheck,
           "Fragmentation of %d bytes reported as %d on page %d",
           cnt, data[hdr+7], iPage);
     }
   }
-  sqlite3PageFree(hit);
+  sqlite3PageFree(heap);
   releasePage(pPage);
 
 end_of_check:
@@ -11620,7 +11682,7 @@ SQLITE_PRIVATE void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
     Mem *aMem = pRec->aMem;
     sqlite3 *db = aMem[0].db;
     for(i=0; i<nCol; i++){
-      if( aMem[i].szMalloc ) sqlite3DbFree(db, aMem[i].zMalloc);
+      sqlite3VdbeMemRelease(&aMem[i]);
     }
     sqlite3KeyInfoUnref(pRec->pKeyInfo);
     sqlite3DbFree(db, pRec);
@@ -13459,12 +13521,29 @@ SQLITE_PRIVATE void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
 }
 
 /*
+** Close all cursors in the current frame.
+*/
+static void closeCursorsInFrame(Vdbe *p){
+  if( p->apCsr ){
+    int i;
+    for(i=0; i<p->nCursor; i++){
+      VdbeCursor *pC = p->apCsr[i];
+      if( pC ){
+        sqlite3VdbeFreeCursor(p, pC);
+        p->apCsr[i] = 0;
+      }
+    }
+  }
+}
+
+/*
 ** Copy the values stored in the VdbeFrame structure to its Vdbe. This
 ** is used, for example, when a trigger sub-program is halted to restore
 ** control to the main program.
 */
 SQLITE_PRIVATE int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   Vdbe *v = pFrame->v;
+  closeCursorsInFrame(v);
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   v->anExec = pFrame->anExec;
 #endif
@@ -13499,17 +13578,7 @@ static void closeAllCursors(Vdbe *p){
     p->nFrame = 0;
   }
   assert( p->nFrame==0 );
-
-  if( p->apCsr ){
-    int i;
-    for(i=0; i<p->nCursor; i++){
-      VdbeCursor *pC = p->apCsr[i];
-      if( pC ){
-        sqlite3VdbeFreeCursor(p, pC);
-        p->apCsr[i] = 0;
-      }
-    }
-  }
+  closeCursorsInFrame(p);
   if( p->aMem ){
     releaseMemArray(&p->aMem[1], p->nMem);
   }
@@ -17793,6 +17862,8 @@ SQLITE_PRIVATE char *sqlite3VdbeExpandSql(
       assert( (zRawSql - zStart) > 0 );
       sqlite3StrAccumAppend(&out, zStart, (int)(zRawSql-zStart));
     }
+  }else if( p->nVar==0 ){
+    sqlite3StrAccumAppend(&out, zRawSql, sqlite3Strlen30(zRawSql));
   }else{
     while( zRawSql[0] ){
       n = findNextHostParameter(zRawSql, &nToken);
@@ -17809,10 +17880,12 @@ SQLITE_PRIVATE char *sqlite3VdbeExpandSql(
           idx = nextIndex;
         }
       }else{
-        assert( zRawSql[0]==':' || zRawSql[0]=='$' || zRawSql[0]=='@' );
+        assert( zRawSql[0]==':' || zRawSql[0]=='$' ||
+                zRawSql[0]=='@' || zRawSql[0]=='#' );
         testcase( zRawSql[0]==':' );
         testcase( zRawSql[0]=='$' );
         testcase( zRawSql[0]=='@' );
+        testcase( zRawSql[0]=='#' );
         idx = sqlite3VdbeParameterIndex(p, zRawSql, nToken);
         assert( idx>0 );
       }
@@ -18522,6 +18595,9 @@ SQLITE_PRIVATE int sqlite3VdbeExec(
 ){
   Op *aOp = p->aOp;          /* Copy of p->aOp */
   Op *pOp = aOp;             /* Current operation */
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+  Op *pOrigOp;               /* Value of pOp at the top of the loop */
+#endif
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if positive */
@@ -18663,6 +18739,9 @@ SQLITE_PRIVATE int sqlite3VdbeExec(
       assert( pOp->p3<=(p->nMem-p->nCursor) );
       memAboutToChange(p, &aMem[pOp->p3]);
     }
+#endif
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+    pOrigOp = pOp;
 #endif
   
     switch( pOp->opcode ){
@@ -20902,7 +20981,7 @@ case OP_Savepoint: {
         db->nDeferredImmCons = pSavepoint->nDeferredImmCons;
       }
 
-      if( !isTransaction ){
+      if( !isTransaction || p1==SAVEPOINT_ROLLBACK ){
         rc = sqlite3VtabSavepoint(db, p1, iSavepoint);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
       }
@@ -24522,8 +24601,8 @@ default: {          /* This is really OP_Noop and OP_Explain */
 #ifdef VDBE_PROFILE
     {
       u64 endTime = sqlite3Hwtime();
-      if( endTime>start ) pOp->cycles += endTime - start;
-      pOp->cnt++;
+      if( endTime>start ) pOrigOp->cycles += endTime - start;
+      pOrigOp->cnt++;
     }
 #endif
 
@@ -24533,16 +24612,16 @@ default: {          /* This is really OP_Noop and OP_Explain */
     ** the evaluator loop.  So we can leave it out when NDEBUG is defined.
     */
 #ifndef NDEBUG
-    assert( pOp>=&aOp[-1] && pOp<&aOp[p->nOp] );
+    assert( pOp>=&aOp[-1] && pOp<&aOp[p->nOp-1] );
 
 #ifdef SQLITE_DEBUG
     if( db->flags & SQLITE_VdbeTrace ){
       if( rc!=0 ) printf("rc=%d\n",rc);
-      if( pOp->opflags & (OPFLG_OUT2) ){
-        registerTrace(pOp->p2, &aMem[pOp->p2]);
+      if( pOrigOp->opflags & (OPFLG_OUT2) ){
+        registerTrace(pOrigOp->p2, &aMem[pOrigOp->p2]);
       }
-      if( pOp->opflags & OPFLG_OUT3 ){
-        registerTrace(pOp->p3, &aMem[pOp->p3]);
+      if( pOrigOp->opflags & OPFLG_OUT3 ){
+        registerTrace(pOrigOp->p3, &aMem[pOrigOp->p3]);
       }
     }
 #endif  /* SQLITE_DEBUG */
@@ -28573,7 +28652,7 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
 **     SELECT a+b, c+d FROM t1 ORDER BY (a+b) COLLATE nocase;
 **
 ** The nSubquery parameter specifies how many levels of subquery the
-** alias is removed from the original expression.  The usually value is
+** alias is removed from the original expression.  The usual value is
 ** zero but it might be more if the alias is contained within a subquery
 ** of the original expression.  The Expr.op2 field of TK_AGG_FUNCTION
 ** structures must be increased by the nSubquery amount.
@@ -28593,7 +28672,7 @@ static void resolveAlias(
   assert( iCol>=0 && iCol<pEList->nExpr );
   pOrig = pEList->a[iCol].pExpr;
   assert( pOrig!=0 );
-  assert( pOrig->flags & EP_Resolved );
+  assert( (pOrig->flags & EP_Resolved)!=0 || zType[0]==0 );
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
   if( pDup==0 ) return;
@@ -28954,7 +29033,6 @@ static int lookupName(
   if( cnt==0 && zTab==0 && ExprHasProperty(pExpr,EP_DblQuoted) ){
     pExpr->op = TK_STRING;
     pExpr->pTab = 0;
-    pExpr->iTable = -1;
     return WRC_Prune;
   }
 
@@ -29794,8 +29872,15 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** The ORDER BY clause for compounds SELECT statements is handled
     ** below, after all of the result-sets for all of the elements of
     ** the compound have been resolved.
+    **
+    ** If there is an ORDER BY clause on a term of a compound-select other
+    ** than the right-most term, then that is a syntax error.  But the error
+    ** is not detected until much later, and so we need to go ahead and
+    ** resolve those symbols on the incorrect ORDER BY for consistency.
     */
-    if( !isCompound && resolveOrderGroupBy(&sNC, p, p->pOrderBy, "ORDER") ){
+    if( isCompound<=nCompound  /* Defer right-most ORDER BY of a compound */
+     && resolveOrderGroupBy(&sNC, p, p->pOrderBy, "ORDER")
+    ){
       return WRC_Abort;
     }
     if( db->mallocFailed ){

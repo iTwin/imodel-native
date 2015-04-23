@@ -326,7 +326,7 @@ static int fts3SqlStmt(
 /* 25 */  "",
 
 /* 26 */ "DELETE FROM %Q.'%q_segdir' WHERE level BETWEEN ? AND ?",
-/* 27 */ "SELECT DISTINCT level / (1024 * ?) FROM %Q.'%q_segdir'",
+/* 27 */ "SELECT ? UNION SELECT level / (1024 * ?) FROM %Q.'%q_segdir'",
 
 /* This statement is used to determine which level to read the input from
 ** when performing an incremental merge. It returns the absolute level number
@@ -3444,7 +3444,8 @@ static int fts3DoOptimize(Fts3Table *p, int bReturnDone){
   rc = fts3SqlStmt(p, SQL_SELECT_ALL_LANGID, &pAllLangid, 0);
   if( rc==SQLITE_OK ){
     int rc2;
-    sqlite3_bind_int(pAllLangid, 1, p->nIndex);
+    sqlite3_bind_int(pAllLangid, 1, p->iPrevLangid);
+    sqlite3_bind_int(pAllLangid, 2, p->nIndex);
     while( sqlite3_step(pAllLangid)==SQLITE_ROW ){
       int i;
       int iLangid = sqlite3_column_int(pAllLangid, 0);
@@ -4776,7 +4777,7 @@ static int fts3IncrmergeHintPop(Blob *pHint, i64 *piAbsLevel, int *pnInput){
   pHint->n = i;
   i += sqlite3Fts3GetVarint(&pHint->a[i], piAbsLevel);
   i += fts3GetVarint32(&pHint->a[i], pnInput);
-  if( i!=nHint ) return SQLITE_CORRUPT_VTAB;
+  if( i!=nHint ) return FTS_CORRUPT_VTAB;
 
   return SQLITE_OK;
 }
@@ -5144,7 +5145,8 @@ static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
   rc = fts3SqlStmt(p, SQL_SELECT_ALL_LANGID, &pAllLangid, 0);
   if( rc==SQLITE_OK ){
     int rc2;
-    sqlite3_bind_int(pAllLangid, 1, p->nIndex);
+    sqlite3_bind_int(pAllLangid, 1, p->iPrevLangid);
+    sqlite3_bind_int(pAllLangid, 2, p->nIndex);
     while( rc==SQLITE_OK && sqlite3_step(pAllLangid)==SQLITE_ROW ){
       int iLangid = sqlite3_column_int(pAllLangid, 0);
       int i;
@@ -5157,7 +5159,6 @@ static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
   }
 
   /* This block calculates the checksum according to the %_content table */
-  rc = fts3SqlStmt(p, SQL_SELECT_ALL_LANGID, &pAllLangid, 0);
   if( rc==SQLITE_OK ){
     sqlite3_tokenizer_module const *pModule = p->pTokenizer->pModule;
     sqlite3_stmt *pStmt = 0;
@@ -5254,7 +5255,7 @@ static int fts3DoIntegrityCheck(
   int rc;
   int bOk = 0;
   rc = fts3IntegrityCheck(p, &bOk);
-  if( rc==SQLITE_OK && bOk==0 ) rc = SQLITE_CORRUPT_VTAB;
+  if( rc==SQLITE_OK && bOk==0 ) rc = FTS_CORRUPT_VTAB;
   return rc;
 }
 
@@ -13607,7 +13608,7 @@ static int sessionDiffFindModified(
     rc = SQLITE_NOMEM;
   }else{
     char *zStmt = sqlite3_mprintf(
-        "SELECT * FROM \"%w\".\"%w\", \"%w\".\"%w\" WHERE %s AND %z",
+        "SELECT * FROM \"%w\".\"%w\", \"%w\".\"%w\" WHERE %s AND (%z)",
         pSession->zDb, pTab->zName, zFrom, pTab->zName, zExpr, zExpr2
     );
     if( zStmt==0 ){
@@ -13663,23 +13664,30 @@ SQLITE_API int SQLITE_STDCALL sqlite3session_diff(
 
     /* Check the table schemas match */
     if( rc==SQLITE_OK ){
+      int bHasPk = 0;
       int nCol;                   /* Columns in zFrom.zTbl */
       u8 *abPK;
       const char **azCol = 0;
       rc = sessionTableInfo(db, zFrom, zTbl, &nCol, 0, &azCol, &abPK);
       if( rc==SQLITE_OK ){
         int bMismatch = 0;
-        if( pTo->nCol!=nCol || memcmp(pTo->abPK, abPK, nCol) ){
+        if( pTo->nCol!=nCol ){
           bMismatch = 1;
         }else{
           int i;
           for(i=0; i<nCol; i++){
+            if( pTo->abPK[i]!=abPK[i] ) bMismatch = 1;
             if( sqlite3_stricmp(azCol[i], pTo->azCol[i]) ) bMismatch = 1;
+            if( abPK[i] ) bHasPk = 1;
           }
         }
 
         if( bMismatch ){
           *pzErrMsg = sqlite3_mprintf("table schemas do not match");
+          rc = SQLITE_ERROR;
+        }
+        if( bHasPk==0 ){
+          *pzErrMsg = sqlite3_mprintf("table has no primary key");
           rc = SQLITE_ERROR;
         }
       }

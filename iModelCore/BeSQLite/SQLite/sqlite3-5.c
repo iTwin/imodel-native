@@ -472,7 +472,7 @@ SQLITE_PRIVATE void sqlite3VtabArgExtend(Parse *pParse, Token *p){
     pArg->z = p->z;
     pArg->n = p->n;
   }else{
-    assert(pArg->z < p->z);
+    assert(pArg->z <= p->z);
     pArg->n = (int)(&p->z[p->n] - pArg->z);
   }
 }
@@ -559,6 +559,7 @@ static int vtabCallConstructor(
       rc = SQLITE_ERROR;
     }else{
       int iCol;
+      u8 oooHidden = 0;
       /* If everything went according to plan, link the new VTable structure
       ** into the linked list headed by pTab->pVTable. Then loop through the 
       ** columns of the table to see if any of them contain the token "hidden".
@@ -571,7 +572,10 @@ static int vtabCallConstructor(
         char *zType = pTab->aCol[iCol].zType;
         int nType;
         int i = 0;
-        if( !zType ) continue;
+        if( !zType ){
+          pTab->tabFlags |= oooHidden;
+          continue;
+        }
         nType = sqlite3Strlen30(zType);
         if( sqlite3StrNICmp("hidden", zType, 6)||(zType[6] && zType[6]!=' ') ){
           for(i=0; i<nType; i++){
@@ -594,6 +598,9 @@ static int vtabCallConstructor(
             zType[i-1] = '\0';
           }
           pTab->aCol[iCol].colFlags |= COLFLAG_HIDDEN;
+          oooHidden = TF_OOOHidden;
+        }else{
+          pTab->tabFlags |= oooHidden;
         }
       }
     }
@@ -957,7 +964,7 @@ SQLITE_PRIVATE int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
   int rc = SQLITE_OK;
 
   assert( op==SAVEPOINT_RELEASE||op==SAVEPOINT_ROLLBACK||op==SAVEPOINT_BEGIN );
-  assert( iSavepoint>=0 );
+  assert( iSavepoint>=-1 );
   if( db->aVTrans ){
     int i;
     for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
@@ -1874,13 +1881,14 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
 ** all terms of the WHERE clause.
 */
 static void whereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
+  Expr *pE2 = sqlite3ExprSkipCollate(pExpr);
   pWC->op = op;
-  if( pExpr==0 ) return;
-  if( pExpr->op!=op ){
+  if( pE2==0 ) return;
+  if( pE2->op!=op ){
     whereClauseInsert(pWC, pExpr, 0);
   }else{
-    whereSplit(pWC, pExpr->pLeft, op);
-    whereSplit(pWC, pExpr->pRight, op);
+    whereSplit(pWC, pE2->pLeft, op);
+    whereSplit(pWC, pE2->pRight, op);
   }
 }
 
@@ -8265,7 +8273,6 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
   }
 #ifdef WHERETRACE_ENABLED /* !=0 */
   if( sqlite3WhereTrace ){
-    int ii;
     sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);
     if( pWInfo->nOBSat>0 ){
       sqlite3DebugPrintf(" ORDERBY=%d,0x%llx", pWInfo->nOBSat, pWInfo->revMask);
@@ -8729,6 +8736,28 @@ struct TrigEvent { int a; IdList * b; };
 */
 struct AttachKey { int type;  Token key; };
 
+
+  /*
+  ** For a compound SELECT statement, make sure p->pPrior->pNext==p for
+  ** all elements in the list.  And make sure list length does not exceed
+  ** SQLITE_LIMIT_COMPOUND_SELECT.
+  */
+  static void parserDoubleLinkSelect(Parse *pParse, Select *p){
+    if( p->pPrior ){
+      Select *pNext = 0, *pLoop;
+      int mxSelect, cnt = 0;
+      for(pLoop=p; pLoop; pNext=pLoop, pLoop=pLoop->pPrior, cnt++){
+        pLoop->pNext = pNext;
+        pLoop->selFlags |= SF_Compound;
+      }
+      if( (p->selFlags & SF_MultiValue)==0 && 
+        (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0 &&
+        cnt>mxSelect
+      ){
+        sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
+      }
+    }
+  }
 
   /* This is a utility routine used to set the ExprSpan.zStart and
   ** ExprSpan.zEnd values of pOut so that the span covers the complete
@@ -11046,27 +11075,10 @@ static void yy_reduce(
         break;
       case 112: /* select ::= with selectnowith */
 {
-  Select *p = yymsp[0].minor.yy3, *pNext, *pLoop;
+  Select *p = yymsp[0].minor.yy3;
   if( p ){
-    int cnt = 0, mxSelect;
     p->pWith = yymsp[-1].minor.yy59;
-    if( p->pPrior ){
-      u16 allValues = SF_Values;
-      pNext = 0;
-      for(pLoop=p; pLoop; pNext=pLoop, pLoop=pLoop->pPrior, cnt++){
-        pLoop->pNext = pNext;
-        pLoop->selFlags |= SF_Compound;
-        allValues &= pLoop->selFlags;
-      }
-      if( allValues ){
-        p->selFlags |= SF_AllValues;
-      }else if(
-        (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0
-        && cnt>mxSelect
-      ){
-        sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
-      }
-    }
+    parserDoubleLinkSelect(pParse, p);
   }else{
     sqlite3WithDelete(pParse->db, yymsp[-1].minor.yy59);
   }
@@ -11084,12 +11096,14 @@ static void yy_reduce(
     SrcList *pFrom;
     Token x;
     x.n = 0;
+    parserDoubleLinkSelect(pParse, pRhs);
     pFrom = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&x,pRhs,0,0);
     pRhs = sqlite3SelectNew(pParse,0,pFrom,0,0,0,0,0,0,0);
   }
   if( pRhs ){
     pRhs->op = (u8)yymsp[-1].minor.yy328;
     pRhs->pPrior = yymsp[-2].minor.yy3;
+    pRhs->selFlags &= ~SF_MultiValue;
     if( yymsp[-1].minor.yy328!=TK_ALL ) pParse->hasCompound = 1;
   }else{
     sqlite3SelectDelete(pParse->db, yymsp[-2].minor.yy3);
@@ -11136,13 +11150,16 @@ static void yy_reduce(
         break;
       case 121: /* values ::= values COMMA LP exprlist RP */
 {
-  Select *pRight = sqlite3SelectNew(pParse,yymsp[-1].minor.yy14,0,0,0,0,0,SF_Values,0,0);
+  Select *pRight, *pLeft = yymsp[-4].minor.yy3;
+  pRight = sqlite3SelectNew(pParse,yymsp[-1].minor.yy14,0,0,0,0,0,SF_Values|SF_MultiValue,0,0);
+  if( ALWAYS(pLeft) ) pLeft->selFlags &= ~SF_MultiValue;
   if( pRight ){
     pRight->op = TK_ALL;
-    pRight->pPrior = yymsp[-4].minor.yy3;
+    pLeft = yymsp[-4].minor.yy3;
+    pRight->pPrior = pLeft;
     yygotominor.yy3 = pRight;
   }else{
-    yygotominor.yy3 = yymsp[-4].minor.yy3;
+    yygotominor.yy3 = pLeft;
   }
 }
         break;
@@ -13032,9 +13049,7 @@ abort_parse:
     pParse->pZombieTab = p->pNextZombie;
     sqlite3DeleteTable(db, p);
   }
-  if( nErr>0 && pParse->rc==SQLITE_OK ){
-    pParse->rc = SQLITE_ERROR;
-  }
+  assert( nErr==0 || pParse->rc!=SQLITE_OK );
   return nErr;
 }
 
@@ -21234,7 +21249,7 @@ static int fts3SegReaderCursor(
   ** calls out here.  */
   if( iLevel<0 && p->aIndex ){
     Fts3SegReader *pSeg = 0;
-    rc = sqlite3Fts3SegReaderPending(p, iIndex, zTerm, nTerm, isPrefix, &pSeg);
+    rc = sqlite3Fts3SegReaderPending(p, iIndex, zTerm, nTerm, isPrefix||isScan, &pSeg);
     if( rc==SQLITE_OK && pSeg ){
       rc = fts3SegReaderCursorAppend(pCsr, pSeg);
     }
@@ -21883,11 +21898,31 @@ static void fts3ReversePoslist(char *pStart, char **ppPoslist){
   char *p = &(*ppPoslist)[-2];
   char c = 0;
 
+  /* Skip backwards passed any trailing 0x00 bytes added by NearTrim() */
   while( p>pStart && (c=*p--)==0 );
+
+  /* Search backwards for a varint with value zero (the end of the previous 
+  ** poslist). This is an 0x00 byte preceded by some byte that does not
+  ** have the 0x80 bit set.  */
   while( p>pStart && (*p & 0x80) | c ){ 
     c = *p--; 
   }
-  if( p>pStart ){ p = &p[2]; }
+  assert( p==pStart || c==0 );
+
+  /* At this point p points to that preceding byte without the 0x80 bit
+  ** set. So to find the start of the poslist, skip forward 2 bytes then
+  ** over a varint. 
+  **
+  ** Normally. The other case is that p==pStart and the poslist to return
+  ** is the first in the doclist. In this case do not skip forward 2 bytes.
+  ** The second part of the if condition (c==0 && *ppPoslist>&p[2])
+  ** is required for cases where the first byte of a doclist and the
+  ** doclist is empty. For example, if the first docid is 10, a doclist
+  ** that begins with:
+  **
+  **   0x0A 0x00 <next docid delta varint>
+  */
+  if( p>pStart || (c==0 && *ppPoslist>&p[2]) ){ p = &p[2]; }
   while( *p++&0x80 );
   *ppPoslist = p;
 }
@@ -23021,12 +23056,14 @@ static void fts3EvalStartReaders(
 ){
   if( pExpr && SQLITE_OK==*pRc ){
     if( pExpr->eType==FTSQUERY_PHRASE ){
-      int i;
       int nToken = pExpr->pPhrase->nToken;
-      for(i=0; i<nToken; i++){
-        if( pExpr->pPhrase->aToken[i].pDeferred==0 ) break;
+      if( nToken ){
+        int i;
+        for(i=0; i<nToken; i++){
+          if( pExpr->pPhrase->aToken[i].pDeferred==0 ) break;
+        }
+        pExpr->bDeferred = (i==nToken);
       }
-      pExpr->bDeferred = (i==nToken);
       *pRc = fts3EvalPhraseStart(pCsr, 1, pExpr->pPhrase);
     }else{
       fts3EvalStartReaders(pCsr, pExpr->pLeft, pRc);
@@ -24189,7 +24226,8 @@ SQLITE_PRIVATE int sqlite3Fts3EvalPhrasePoslist(
     pIter = pPhrase->pOrPoslist;
     iDocid = pPhrase->iOrDocid;
     if( pCsr->bDesc==bDescDoclist ){
-      bEof = (pIter >= (pPhrase->doclist.aAll + pPhrase->doclist.nAll));
+      bEof = !pPhrase->doclist.nAll ||
+                 (pIter >= (pPhrase->doclist.aAll + pPhrase->doclist.nAll));
       while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)<0 ) && bEof==0 ){
         sqlite3Fts3DoclistNext(
             bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
@@ -27448,9 +27486,9 @@ static void testFunc(
   p = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, zName, nName+1);
 
   if( !p ){
-    char *zErr = sqlite3_mprintf("unknown tokenizer: %s", zName);
-    sqlite3_result_error(context, zErr, -1);
-    sqlite3_free(zErr);
+    char *zErr2 = sqlite3_mprintf("unknown tokenizer: %s", zName);
+    sqlite3_result_error(context, zErr2, -1);
+    sqlite3_free(zErr2);
     return;
   }
 
