@@ -63,7 +63,7 @@ DGNPLATFORM_EXPORT ISolidKernelEntityPtr GetAsISolidKernelEntity () const;
 
 DGNPLATFORM_EXPORT bool GetLocalCoordinateFrame (TransformR localToWorld) const;
 DGNPLATFORM_EXPORT bool GetLocalRange (DRange3dR localRange, TransformR localToWorld) const; // Expensive - copies geometry!
-DGNPLATFORM_EXPORT bool GetRange (DRange3dR range, TransformCP transform = NULL) const;
+DGNPLATFORM_EXPORT bool GetRange (DRange3dR range, TransformCP transform = nullptr) const;
 DGNPLATFORM_EXPORT bool TransformInPlace (TransformCR transform);
 
 DGNPLATFORM_EXPORT ElementGeometryPtr Clone () const; // Deep copy
@@ -87,8 +87,7 @@ enum class OpCode : uint32_t
     {
     Invalid             = 0,
     Header              = 1,    //!< Required to be first opcode
-    BeginSubCategory    = 2,    //!< Mark start of a subCategory
-    ResetSubCategory    = 3,    //!< Go back to using subCategory appearance for subsequent geometry
+    BeginSubCategory    = 2,    //!< Mark start of geometry having same sub-category and transform
     GeomPartInstance    = 4,    //!< Draw referenced geometry part
     BasicSymbology      = 5,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
     PointPrimitive      = 6,    //!< Simple lines, line strings, shapes, point strings, etc.
@@ -134,8 +133,8 @@ struct Operation
     uint32_t        m_dataSize;
     uint8_t const*  m_data;
 
-    Operation () : m_opCode (OpCode::Invalid), m_dataSize (0), m_data (NULL) {}
-    Operation (OpCode opCode, uint32_t dataSize = 0, uint8_t const* data = NULL) : m_opCode (opCode), m_dataSize (dataSize), m_data (data) {}
+    Operation () : m_opCode (OpCode::Invalid), m_dataSize (0), m_data (nullptr) {}
+    Operation (OpCode opCode, uint32_t dataSize = 0, uint8_t const* data = nullptr) : m_opCode (opCode), m_dataSize (dataSize), m_data (data) {}
 
     }; // Operation
 
@@ -172,7 +171,7 @@ struct Writer
 //=======================================================================================
 struct Reader
     {
-    static Header const* GetHeader (Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*) egOp.m_data : NULL);}
+    static Header const* GetHeader (Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*) egOp.m_data : nullptr);}
 
     DGNPLATFORM_EXPORT static bool Get (Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary);
     DGNPLATFORM_EXPORT static bool Get (Operation const&, DEllipse3dR, int8_t& boundary);
@@ -255,18 +254,24 @@ struct ElementGeometryBuilder : RefCountedBase
 //__PUBLISH_SECTION_END__
 protected:
 
-DgnModelR               m_model;
-bool                    m_appearanceSet;
 bool                    m_appearanceChanged;
+bool                    m_haveLocalGeom;
 bool                    m_havePlacement;
 Placement3d             m_placement3d;
 Placement2d             m_placement2d;
+DgnModelR               m_model;
+DgnSubCategoryId        m_prevSubCategory;
+Transform               m_prevGeomToWorld;
 ElemDisplayParams       m_elParams;
 ElementGeomIO::Writer   m_writer;
 
 ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement3dCR placement);
 ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement2dCR placement);
 ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId);
+
+bool ConvertToLocal (ElementGeometryR);
+bool AppendWorld (ElementGeometryR);
+void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -278,12 +283,21 @@ DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
 DGNPLATFORM_EXPORT bool Append (ElemDisplayParamsCR);
 DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCP geomToElement = nullptr);
 DGNPLATFORM_EXPORT bool Append (ElementGeometryCR, TransformCP geomToElement = nullptr);
+
+DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR, TransformCP geomToElement = nullptr);
 DGNPLATFORM_EXPORT bool Append (CurveVectorCR, TransformCP geomToElement = nullptr);
 DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR, TransformCP geomToElement = nullptr);
+DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR, TransformCP geomToElement = nullptr);
+DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR, TransformCP geomToElement = nullptr);
+DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, TransformCP geomToElement = nullptr);
 
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create3d (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin = DPoint3d::FromZero(), YawPitchRollAngles angles = YawPitchRollAngles());
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create2d (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin = DPoint2d::FromZero(), double angle = 0.0);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle = 0.0);
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (DgnModelR model, DgnCategoryId categoryId);
+
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement3dCR, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement2dCR, DPoint2dCR origin, double angle = 0.0);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (GeometricElementCR);
 
 }; // ElementGeometryBuilder
 

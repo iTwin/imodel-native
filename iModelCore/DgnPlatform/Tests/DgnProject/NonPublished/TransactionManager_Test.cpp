@@ -121,7 +121,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
 
         geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
 
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*model, categoryId);
+        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
 
         builder->Append(*computeShape());
 
