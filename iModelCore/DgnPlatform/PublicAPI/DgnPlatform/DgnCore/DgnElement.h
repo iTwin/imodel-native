@@ -215,6 +215,8 @@ protected:
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
 
 public:
+    void InitFrom(DgnElementCR rhs) {_InitFrom(rhs);}
+
     DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR);
     DGNPLATFORM_EXPORT void _ClearScheduledChangesToInstances();
 
