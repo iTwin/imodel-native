@@ -692,7 +692,7 @@ DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt, DgnElementPoo
 DgnModelStatus DgnElement3d::_BindInsertGeom(Statement& stmt)
     {
     if (!m_placement.IsValid())
-        DGNMODEL_STATUS_NoGeometry;
+        return DGNMODEL_STATUS_NoGeometry;
 
     int col=2;
     stmt.BindBlob(col++, &m_placement.GetRange(), sizeof(DRange3d), Statement::MakeCopy::No);
