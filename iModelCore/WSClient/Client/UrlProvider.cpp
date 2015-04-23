@@ -37,6 +37,17 @@ const Utf8String UrlProvider::s_connectLearnStsAuthUri[3] = {
     "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx"
     };
 
+const Utf8String UrlProvider::s_usageTrackingUrl[3] = {
+    "https://licenseXM.bentley.com/bss/ws/mobile",
+    "https://licenseXM.bentley.com/bss/ws/mobile",
+    "https://SELECTserver.bentley.com/bss/ws/mobile"
+    };
+
+const Utf8String UrlProvider::s_passportUrl[3] = {
+    "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    "https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport"
+    };
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -88,4 +99,22 @@ Utf8StringCR UrlProvider::GetConnectLearnStsAuthUri ()
     {
     BeAssert (s_isInitialized && "UrlProvider not initialized");
     return s_connectLearnStsAuthUri[s_env];
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier   2/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR UrlProvider::GetUsageTrackingUrl()
+    {
+    BeAssert(s_isInitialized && "UrlProvider not initialized");
+    return s_usageTrackingUrl[s_env];
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier   2/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR UrlProvider::GetPassportUrl()
+    {
+    BeAssert(s_isInitialized && "UrlProvider not initialized");
+    return s_passportUrl[s_env];
     }
