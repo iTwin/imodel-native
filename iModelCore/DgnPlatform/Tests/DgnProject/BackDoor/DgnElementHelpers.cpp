@@ -26,7 +26,7 @@ StatusInt AddElementToModel (EditElementHandleR eeh)
     if (id.IsValid())
         return BSIERROR;
 
-    StatusInt result = eeh.GetElementDescrP()->AddToModel();
+    StatusInt result = eeh.GetWriteableElement()->AddToModel();
     if (SUCCESS != result)
         return result;
 

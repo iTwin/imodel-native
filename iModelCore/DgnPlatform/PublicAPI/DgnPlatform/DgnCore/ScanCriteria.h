@@ -11,16 +11,13 @@
 
 #include "DgnModel.h"
 
-BEGIN_BENTLEY_API_NAMESPACE
-typedef int (*PFScanElementCallback) (DgnElementCR, void *callbackArg, ScanCriteriaR sc);
-END_BENTLEY_API_NAMESPACE
-
-
 DGNPLATFORM_TYPEDEFS (ElemRangeIndex)
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 DGNPLATFORM_TYPEDEFS (IRangeNodeCheck)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+typedef int (*PFScanElementCallback) (DgnElementCR, void *callbackArg, ScanCriteriaR sc);
 
 enum class ScanTestResult
 {

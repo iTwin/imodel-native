@@ -927,7 +927,7 @@ protected:
             {
             case 200:   // ok
                 {
-                BeAssert(!m_data->IsInitialized());
+                BeAssert(!m_data->IsInitialized() || m_data->IsExpired());
                 m_data->ParseExpirationDateAndETag(header);
                 if (SUCCESS != m_data->_InitFrom(m_url.c_str(), header, body, *m_requestOptions))
                     {

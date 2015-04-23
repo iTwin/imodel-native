@@ -62,9 +62,6 @@ ECDbInstances.FieldEngineerStructArray
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
 AnnotationTextBlockTest.DefaultsAndAccessors
-BeSQLiteRealityDataStorageTests.DoesCleanupDatabase
-BeSQLiteRealityDataStorageTests.DoesPrepareDatabase
-BeSQLiteRealityDataStorageTests.Persist
 DgnColorsTest.GetElementColor
 DgnColorsTest.ImportElement
 DgnDb.AddDeleteLine

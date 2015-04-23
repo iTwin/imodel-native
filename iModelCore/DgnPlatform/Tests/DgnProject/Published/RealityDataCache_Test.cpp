@@ -204,7 +204,7 @@ TEST_F (RealityDataCacheTests, Get_Success_DontReturnExpired)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_WhenExpired)
     {
-    bool didRequest = false;
+    BeAtomic<bool> didRequest(false);
     m_storage->SetSelectHandler([](TestStorage::Data& data, Utf8CP, TestStorage::SelectOptions const&)
         {
         static_cast<TestRealityData&>(data).m_expired = true;
@@ -240,7 +240,7 @@ TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_OnlyIfExpired)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_WhenFlagSet)
     {
-    bool didRequest = false;
+    BeAtomic<bool> didRequest(false);
     m_storage->SetSelectHandler([](TestStorage::Data& data, Utf8CP, TestStorage::SelectOptions const&)
         {
         static_cast<TestRealityData&>(data).m_expired = true;
@@ -295,7 +295,7 @@ TEST_F (RealityDataCacheTests, Get_NotFound)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_NotFound_RequestsFromSource_WhenFlagSet)
     {
-    bool didRequest = false;
+    BeAtomic<bool> didRequest(false);
     m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&)
         {
         return RealityDataStorageResult::NotFound;
@@ -334,7 +334,7 @@ TEST_F (RealityDataCacheTests, Get_NotFound_RequestsFromSource_OnlyIfFlagSet)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, SourceResponseHandling_Persists)
     {
-    bool didPersist = false;
+    BeAtomic<bool> didPersist(false);
     TestStorage& storage = *m_storage;
     m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&)
         {
@@ -437,7 +437,7 @@ public:
 //---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteRealityDataStorageTests, Select)
     {
-    bool didInitialize = false;
+    BeAtomic<bool> didInitialize(false);
     RefCountedPtr<TestBeSQLiteStorageData::RequestOptions> options = TestBeSQLiteStorageData::RequestOptions::Create();
     RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create();
     data->SetInitFromHandler([&didInitialize, &options](BeSQLite::Db&, Utf8CP id, BeSQLiteRealityDataStorage::SelectOptions const& opts)
@@ -456,8 +456,8 @@ TEST_F (BeSQLiteRealityDataStorageTests, Select)
 //---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteRealityDataStorageTests, Persist)
     {
-    bool haltPersist = true;
-    bool didPersist = false;
+    BeAtomic<bool> haltPersist(true);
+    BeAtomic<bool> didPersist(false);
     BeConditionVariable cv;
     // create the data in a scope to test if Persist still works (increases refCount) when the data goes out of scope
         {
@@ -481,7 +481,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
 //---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteRealityDataStorageTests, DoesPrepareDatabase)
     {
-    bool didPrepare = false;
+    BeAtomic<bool> didPrepare(false);
     RefCountedPtr<TestDatabasePrepareAndCleanupHandler> handler = new TestDatabasePrepareAndCleanupHandler();
     handler->SetPrepareDatabaseHandler([&didPrepare](BeSQLite::Db&)
         {
@@ -499,7 +499,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, DoesPrepareDatabase)
 //---------------------------------------------------------------------------------------
 TEST_F (BeSQLiteRealityDataStorageTests, DoesCleanupDatabase)
     {
-    bool didCleanup = false;
+    BeAtomic<bool> didCleanup(false);
     BeConditionVariable cv;
     RefCountedPtr<TestDatabasePrepareAndCleanupHandler> handler = new TestDatabasePrepareAndCleanupHandler();
     handler->SetCleanupDatabaseHandler([&didCleanup, &cv](BeSQLite::Db&, double percentage)
@@ -599,7 +599,7 @@ TEST_F (FileRealityDataSourceTests, Request)
     Utf8String filePath = m_filePath;
     Utf8String fileContent = m_fileContent;
 
-    bool didInitialize = false;
+    BeAtomic<bool> didInitialize(false);
     RefCountedPtr<TestFileSourceData::RequestOptions> options = TestFileSourceData::RequestOptions::Create();
     RefCountedPtr<TestFileSourceData> data = TestFileSourceData::Create();
     data->SetInitFromHandler([&didInitialize, &filePath, &options, &fileContent](Utf8CP id, bvector<Byte> const& string, FileRealityDataSource::RequestOptions const& opts)
@@ -610,7 +610,7 @@ TEST_F (FileRealityDataSourceTests, Request)
         didInitialize = true;
         return SUCCESS;
         });
-    bool didReceiveResponse = false;
+    BeAtomic<bool> didReceiveResponse(false);
     BeConditionVariable cv;
     RefCountedPtr<TestResponseReceiver> responseReceiver = TestResponseReceiver::Create([&didReceiveResponse, &cv, &data](RealityDataSourceResponse const& response)
         {
@@ -634,8 +634,8 @@ TEST_F (FileRealityDataSourceTests, Request_WithDataOutOfScope)
     Utf8String fileContent = m_fileContent;
 
     BeAtomic<bool> block(true);
-    bool didInitialize = false;
-    bool didReceiveResponse = false;
+    BeAtomic<bool> didInitialize(false);
+    BeAtomic<bool> didReceiveResponse(false);
     BeConditionVariable cv;
     RefCountedPtr<TestFileSourceData::RequestOptions> options = TestFileSourceData::RequestOptions::Create();
         {
