@@ -296,7 +296,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.10"
 #define SQLITE_VERSION_NUMBER 3008010
-#define SQLITE_SOURCE_ID      "2015-04-23 15:03:14 4d34a3d40da210bebb2a2e6dff094f9a39c92798"
+#define SQLITE_SOURCE_ID      "2015-04-23 17:22:50 aada0ad08e3baa10d14d1f3393183110289e068e"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -8403,6 +8403,11 @@ int sqlite3session_changeset(
 **   <li> Has the same set of columns declared in the same order, and
 **   <li> Has the same PRIMARY KEY definition.
 ** </ul>
+**
+** If the tables are not compatible, SQLITE_SCHEMA is returned. If the tables
+** are compatible but do not have any PRIMARY KEY columns, it is not an error
+** but no changes are added to the session object. As with other session
+** APIs, tables without PRIMARY KEYs are simply ignored.
 **
 ** This function adds a set of changes to the session object that could be
 ** used to update the table in database zFrom (call this the "from-table") 
