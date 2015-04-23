@@ -649,7 +649,9 @@ BentleyStatus SatelliteChangeSets::OnAttach(Db& targetProject, BeSQLite::SchemaV
 BentleyStatus SatelliteChangeSets::AttachToDb(Db& targetProject, BeFileNameCR dbName)
     {
     m_dbFileName = dbName;
-    MUSTBEOK(targetProject.AttachDb(Utf8String(dbName).c_str(), CHANGES_ATTACH_ALIAS));
+    DbResult rc = targetProject.AttachDb(Utf8String(dbName).c_str(), CHANGES_ATTACH_ALIAS);
+    if (BE_SQLITE_OK != rc)
+        return BSIERROR;
     return OnAttach(targetProject, SchemaVersion(0,0,0,0));
     }
 
