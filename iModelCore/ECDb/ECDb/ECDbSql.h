@@ -29,6 +29,19 @@ typedef int64_t ECDbConstraintId;
 typedef int64_t ECDbPropertyPathId;
 typedef int64_t ECDbClassMapId;
 
+enum class SystemColumnType 
+    {
+    DataColumn = 0x0U,
+    ECInstanceId = 0x1U,
+    ECClassId = 0x2U,
+    ParentECInstanceId = 0x4U,
+    ECPropertyPathId = 0x8U,
+    ECArraryIndex = 0x10U,
+    SourceECInstanceId = 0x20U,
+    TargetECInstanceId = 0x40U,
+    SourceECClassId = 0x80U,
+    TargetECClassId = 0x100U,
+    };
 enum class TriggerType
     {
     Create,
@@ -1055,7 +1068,7 @@ struct ECDbMapStorage
     private:
         ECDbPropertyPath* Set (std::unique_ptr<ECDbPropertyPath> propertyPath);
         ECDbClassMapInfo* Set (std::unique_ptr<ECDbClassMapInfo> classMap);
-        Statement* GetStatement (StatementType type);
+        CachedStatementPtr GetStatement (StatementType type);
         DbResult InsertOrReplace ();
         DbResult InsertPropertyMap (ECDbPropertyMapInfo const& o);
         DbResult InsertClassMap (ECDbClassMapInfo const& o);
@@ -1159,7 +1172,7 @@ struct ECDbSqlPersistence : NonCopyableClass
     private:
 
 
-        Statement* GetStatement (StatementType type);
+        CachedStatementPtr GetStatement (StatementType type);
 
         DbResult ReadTables (ECDbSqlDb& o);
         DbResult ReadTable (Statement& stmt, ECDbSqlDb& o);

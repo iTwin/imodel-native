@@ -2958,58 +2958,50 @@ bool ECDbSqlHelper::IsCompatiable (ECDbSqlColumn::Type target, ECDbSqlColumn::Ty
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-Statement* ECDbSqlPersistence::GetStatement (StatementType type)
+CachedStatementPtr ECDbSqlPersistence::GetStatement (StatementType type)
     {
-    auto itor = m_statementCache.find (type);
-    if (itor != m_statementCache.end ())
-        {
-        itor->second->Reset ();
-        itor->second->ClearBindings ();
-        return itor->second.get ();
-        }
+    CachedStatementPtr stmtP;
 
-    DbResult stat = BE_SQLITE_OK;
-    auto stmt = std::unique_ptr<Statement> (new Statement ());
+    DbResult stat = BE_SQLITE_ERROR;
+
     switch (type)
         {
         case StatementType::SqlInsertTable:
-            stat = stmt->Prepare (m_ecdb, Sql_InsertTable);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_InsertTable);
             break;
         case StatementType::SqlInsertColumn:
-            stat = stmt->Prepare (m_ecdb, Sql_InsertColumn);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_InsertColumn);
             break;
         case StatementType::SqlInsertIndex:
-            stat = stmt->Prepare (m_ecdb, Sql_InsertIndex);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_InsertIndex);
             break;
         case StatementType::SqlInsertIndexColumn:
-            stat = stmt->Prepare (m_ecdb, Sql_InsertIndexColumn);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_InsertIndexColumn);
             break;
         case StatementType::SqlInsertForeignKey:
-            stat = stmt->Prepare (m_ecdb, Sql_InsertForeignKey);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_InsertForeignKey);
             break;
         case StatementType::SqlInsertForeignKeyColumn:
-            stat = stmt->Prepare (m_ecdb, Sql_InsertForeignKeyColumn);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_InsertForeignKeyColumn);
             break;
         case StatementType::SqlSelectTable:
-            stat = stmt->Prepare (m_ecdb, Sql_SelectTable);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_SelectTable);
             break;
         case StatementType::SqlSelectColumn:
-            stat = stmt->Prepare (m_ecdb, Sql_SelectColumn);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_SelectColumn);
             break;
         case StatementType::SqlSelectIndex:
-            stat = stmt->Prepare (m_ecdb, Sql_SelectIndex);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_SelectIndex);
             break;
         case StatementType::SqlSelectIndexColumn:
-            stat = stmt->Prepare (m_ecdb, Sql_SelectIndexColumn);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_SelectIndexColumn);
             break;
         case StatementType::SqlSelectForeignKey:
-            stat = stmt->Prepare (m_ecdb, Sql_SelectForeignKey);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_SelectForeignKey);
             break;
         case StatementType::SqlSelectForeignKeyColumn:
-            stat = stmt->Prepare (m_ecdb, Sql_SelectForeignKeyColumn);
+            stat = m_ecdb.GetCachedStatement (stmtP, Sql_SelectForeignKeyColumn);
             break;
-        default:
-            return nullptr;
         }
 
     if (stat != BE_SQLITE_OK)
@@ -3017,9 +3009,7 @@ Statement* ECDbSqlPersistence::GetStatement (StatementType type)
         BeAssert (false && "Failed to prepare statement for inserting table definition");
         return nullptr;
         }
-
-    auto stmtP = stmt.get ();
-    m_statementCache[type] = std::move (stmt);
+    
     return stmtP;
     }
 
@@ -3051,7 +3041,7 @@ DbResult ECDbSqlPersistence::ReadTables (ECDbSqlDb& o)
     {
     DbResult stat = BE_SQLITE_DONE;
     auto stmt = GetStatement (StatementType::SqlSelectTable);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
@@ -3116,7 +3106,7 @@ DbResult ECDbSqlPersistence::ReadTable (Statement& stmt, ECDbSqlDb& o)
 DbResult ECDbSqlPersistence::ReadColumns (ECDbSqlTable& o)
     {
     auto stmt = GetStatement (StatementType::SqlSelectColumn);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     DbResult stat = stmt->BindInt64(1, o.GetId ());
@@ -3155,7 +3145,7 @@ DbResult ECDbSqlPersistence::ReadIndexes (ECDbSqlDb& o)
     {
     DbResult stat = BE_SQLITE_DONE;
     auto stmt = GetStatement (StatementType::SqlSelectIndex);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
@@ -3240,7 +3230,7 @@ DbResult ECDbSqlPersistence::ReadIndex (Statement& stmt, ECDbSqlDb& o)
         n->SetWhereExpression (where);
 
     auto cstmt = GetStatement (StatementType::SqlSelectIndexColumn);
-    if (!stmt)
+    if (cstmt.IsNull())
         return BE_SQLITE_ERROR;
 
     cstmt->BindInt64 (1, id);
@@ -3264,7 +3254,7 @@ DbResult ECDbSqlPersistence::ReadForeignKeys (ECDbSqlTable& o)
     {
     DbResult stat = BE_SQLITE_DONE;
     auto stmt = GetStatement (StatementType::SqlSelectForeignKey);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64 (1, o.GetId ());
@@ -3317,7 +3307,7 @@ DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
     n->SetOnUpdateAction (onUpdate);
 
     auto cstmt = GetStatement (StatementType::SqlSelectForeignKeyColumn);
-    if (!stmt)
+    if (cstmt.IsNull ())
         return BE_SQLITE_ERROR;
 
     DbResult stat = BE_SQLITE_DONE;
@@ -3379,7 +3369,7 @@ DbResult ECDbSqlPersistence::Insert (ECDbSqlDb const& db)
 DbResult ECDbSqlPersistence::InsertTable (ECDbSqlTable const& o)
     {
     auto stmt = GetStatement (StatementType::SqlInsertTable);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64 (1, o.GetId ());
@@ -3417,7 +3407,7 @@ DbResult ECDbSqlPersistence::InsertTable (ECDbSqlTable const& o)
 DbResult ECDbSqlPersistence::InsertIndex (ECDbSqlIndex const& o)
     {
     auto stmt = GetStatement (StatementType::SqlInsertIndex);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64 (1, o.GetId ());
@@ -3433,7 +3423,7 @@ DbResult ECDbSqlPersistence::InsertIndex (ECDbSqlIndex const& o)
 
 
     stmt = GetStatement (StatementType::SqlInsertIndexColumn);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     for (size_t i = 0; i < o.GetColumns ().size (); i++)
@@ -3458,7 +3448,7 @@ DbResult ECDbSqlPersistence::InsertIndex (ECDbSqlIndex const& o)
 DbResult ECDbSqlPersistence::InsertColumn (ECDbSqlColumn const& o, int primaryKeyOrdianal)
     {
     auto stmt = GetStatement (StatementType::SqlInsertColumn);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64 (1, o.GetId ());
@@ -3510,7 +3500,7 @@ DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForeignKeyConstraint const
         }
 
     auto stmt = GetStatement (StatementType::SqlInsertForeignKey);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64 (1, o.GetId ());
@@ -3533,7 +3523,7 @@ DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForeignKeyConstraint const
         return stat;
 
     stmt = GetStatement (StatementType::SqlInsertForeignKeyColumn);
-    if (!stmt)
+    if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     for (size_t i = 0; i < o.Count (); i++)
@@ -3766,50 +3756,39 @@ ECDbClassMapInfo* ECDbMapStorage::CreateClassMap (ECN::ECClassId classId, ECDbMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-Statement* ECDbMapStorage::GetStatement (StatementType type)
+CachedStatementPtr ECDbMapStorage::GetStatement (StatementType type)
     {
-    auto itor = m_statementCache.find (type);
-    if (itor != m_statementCache.end ())
-        {
-        itor->second->Reset ();
-        itor->second->ClearBindings ();
-        return itor->second.get ();
-        }
+    CachedStatementPtr stmt;
 
-    DbResult stat = BE_SQLITE_OK;
-    auto stmt = std::unique_ptr<Statement> (new Statement ());
+    DbResult stat = BE_SQLITE_ERROR;
     switch (type)
         {
         case StatementType::SqlInsertPropertyPath:
-            stat = stmt->Prepare (m_manager.GetECDbR (), Sql_InsertPropertyPath);
+            stat = m_manager.GetECDbR ().GetCachedStatement (stmt, Sql_InsertPropertyPath);
             break;
         case StatementType::SqlInsertClassMap:
-            stat = stmt->Prepare (m_manager.GetECDbR (), Sql_InsertClassMap);
+            stat = m_manager.GetECDbR ().GetCachedStatement (stmt, Sql_InsertClassMap);
             break;
         case StatementType::SqlInsertPropertyMap:
-            stat = stmt->Prepare (m_manager.GetECDbR (), Sql_InsertPropertyMap);
+            stat = m_manager.GetECDbR ().GetCachedStatement (stmt, Sql_InsertPropertyMap);
             break;
         case StatementType::SqlSelectPropertyPath:
-            stat = stmt->Prepare (m_manager.GetECDbR (), Sql_SelectPropertyPath);
+            stat = m_manager.GetECDbR ().GetCachedStatement (stmt, Sql_SelectPropertyPath);
             break;
         case StatementType::SqlSelectClassMap:
-            stat = stmt->Prepare (m_manager.GetECDbR (), Sql_SelectClassMap);
+            stat = m_manager.GetECDbR ().GetCachedStatement (stmt, Sql_SelectClassMap);
             break;
         case StatementType::SqlSelectPropertyMap:
-            stat = stmt->Prepare (m_manager.GetECDbR (), Sql_SelectPropertyMap);
+            stat = m_manager.GetECDbR ().GetCachedStatement (stmt, Sql_SelectPropertyMap);
             break;
-        default:
-            return nullptr;
         }
     if (stat != BE_SQLITE_OK)
         {
-        BeAssert (false && "Failed to prepare statement for inserting table definition");
+        BeAssert (false && "Failed to prepare statement");
         return nullptr;
         }
 
-    auto stmtP = stmt.get ();
-    m_statementCache[type] = std::move (stmt);
-    return stmtP;
+    return stmt;
     }
 
 //---------------------------------------------------------------------------------------
