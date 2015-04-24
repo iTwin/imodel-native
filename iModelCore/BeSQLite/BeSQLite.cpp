@@ -225,7 +225,7 @@ DbResult    Statement::Prepare(BeSQLiteDbCR db, Utf8CP sql) {return Prepare(*db.
 DbValueType DbValue::GetValueType() const             {return (DbValueType) sqlite3_value_type(m_val);}
 int         DbValue::GetValueBytes() const            {return sqlite3_value_bytes(m_val);}
 void const* DbValue::GetValueBlob() const             {return sqlite3_value_blob(m_val);}
-Utf8CP      DbValue::GetValueText() const             {return (Utf8CP) sqlite3_value_text(m_val);}
+Utf8CP      DbValue::GetValueText() const             {return (Utf8CP)sqlite3_value_text(m_val);}
 int         DbValue::GetValueInt() const              {return sqlite3_value_int(m_val);}
 int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int64(m_val);}
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
@@ -2255,16 +2255,18 @@ DbResult ChangeSet::PatchSetFromChangeTrack(ChangeTracker& session)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int diffFilter(void* tracker, Utf8CP tableName) 
     {
-    // We must weed out all tables that have no primary key
-    if ( (0 == strcmp(tableName, "be_Local")) || (0 == strcmp(tableName, "ec_SchemaReference")) || (0 == strcmp(tableName, "ec_ForeignKeyColumn"))
-     ||  (0 == strcmp(tableName, "dgn_PrjRTree")) || (0==strcmp(tableName, "dgn_RasterData")) )
+    // Don't diff these tables:
+    //  *** WIP_DIFF - take list of excluded tables as an argument
+    if (0 == strncmp(tableName, "dgn_PrjRTree", 12))
         return 0;
+
     return 1;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
+// *** WIP_DIFF - take list of excluded tables as an argument
 DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile)
     {
     DbResult result =  db.AttachDb(Utf8String(baseFile).c_str(), "base");
@@ -2478,36 +2480,120 @@ ChangeTracker* Db::FindChangeTracker(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbValue::Dump() const
+static Utf8String toHex(Byte* buf, size_t nb, size_t w)
+    {
+    Utf8String hd;
+    size_t i, n = std::min(nb, w);
+    unsigned char c;
+    static Utf8Char hxdg[] = "0123456789abcdef";
+
+    if (!buf)
+        return "<null>";
+
+    for (i=0; i<n; ++i)
+        {
+        if (i && i%4==0)
+            hd.append(" ");
+
+        c = buf[i];
+        hd.append(1, hxdg[c>>4]);
+        hd.append(1, hxdg[0xf&c]);
+        }
+
+    for (   ; i<w; ++i)
+        {
+        if (i && i%4==0)
+            hd.append(" ");
+
+        hd.append(" ");
+        hd.append(" ");
+        }
+
+    return hd;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String toAsc(Byte* buf, size_t nb, size_t w)
+    {
+    Utf8String ad;
+    size_t i, n = std::min(nb, w);
+    for (i=0; i<n; ++i)
+        if (isprint ((int)buf[i]))
+            ad.append(1, (Utf8Char)buf[i]);
+        else
+            ad.append (".");
+
+    ad.append((w-i), ' ');
+    return ad;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/2005
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String hexDump(Byte* bytes, size_t nbytes)
+    {
+    Utf8String output;
+    size_t const nperline = 32;
+
+    Byte* nextBytes = bytes;
+    Byte* bytesX    = bytes + nbytes;
+
+    size_t nlines = nbytes/nperline;
+    for (size_t i=0; i<nlines; ++i)
+        {
+        output.append("\n");
+        output.append(toHex(nextBytes, nperline, nperline));
+        output.append(" |");
+        output.append(toAsc(nextBytes, nperline, nperline));
+        output.append(" |");
+        nextBytes += nperline;
+        }
+
+    int nrem = static_cast<int>(bytesX - nextBytes);
+    if (0 != nrem)
+        {
+        output.append("\n");
+        output.append(toHex(nextBytes, nrem, nperline));
+        output.append(" |");
+        output.append(toAsc(nextBytes, nrem, nperline));
+        output.append(" |");
+        }
+
+    output.append("\n");
+
+    return output;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DbValue::Format() const
     {
     if (!IsValid())
-        {
-        printf("<<INVALID>>");
-        return;
-        }
+        return "<<INVALID>>";
 
     switch (GetValueType())
         {
         case DbValueType::IntegerVal:
-            printf ("%" PRId64, GetValueInt64());
-            break;
+            return Utf8PrintfString("%" PRId64, GetValueInt64());
 
         case DbValueType::FloatVal:
-            printf("%lg", GetValueDouble());
-            break;
+            return Utf8PrintfString("%lg", GetValueDouble());
 
         case DbValueType::TextVal:
-            printf("%s", GetValueText());
-            break;
+            return Utf8PrintfString("%s", GetValueText());
 
         case DbValueType::BlobVal:
-            printf("%p", GetValueBlob());
-            break;
+            return Utf8PrintfString(hexDump((Byte*)GetValueBlob(), GetValueBytes()).c_str());
 
         case DbValueType::NullVal:
-            printf("NULL");
-            break;
+            return "NULL";
         }
+
+    BeAssert(false);
+    return "?";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2515,23 +2601,36 @@ void DbValue::Dump() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Change::DumpColumns(int startCol, int endCol, Changes::Change::Stage stage, bvector<Utf8String> const& columns) const
     {
+    Byte* pcols;
+    int npcols;
+    GetPrimaryKeyColumns(&pcols, &npcols);
+
+    int nprinted = 0;
     for (int i=startCol; i <= endCol; ++i)
         {
-        if (i != 0)
+        if (std::find(pcols, pcols+npcols, (Byte)i) != pcols+npcols)    // we print the old value of the (unchanging) primary key columns separately
+            continue;
+
+        auto v = GetValue(i, stage);
+        if (!v.IsValid() || v.IsNull())
+            continue;
+
+        if (nprinted != 0)
             printf(", ");
 
         printf("[%s] ", columns[i].c_str());
 
-        auto v = GetValue(i, stage);
         if (v.IsValid())
-            v.Dump();
+            printf("%s", v.Format().c_str());
+
+        ++nprinted;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Changes::Change::FormatPrimarykeyColumns() const
+Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert) const
     {
     Byte* pcols;
     int npcols;
@@ -2542,9 +2641,17 @@ Utf8String Changes::Change::FormatPrimarykeyColumns() const
         {
         if (pcols[i] == 0)
             continue;
+
+        auto pkv = GetValue(i, isInsert? Changes::Change::Stage::New: Changes::Change::Stage::Old);
+        BeAssert(pkv.IsValid());
+        
+        if (pkv.IsNull())   // WIP_CHANGES -- why do we get this??
+            continue;
+
         if (!pcolstr.empty())
             pcolstr.append(", ");
-        pcolstr.append(Utf8PrintfString("%d",pcols[i]));
+
+        pcolstr.append(pkv.Format());
         }
     return pcolstr;
     }
@@ -2552,7 +2659,7 @@ Utf8String Changes::Change::FormatPrimarykeyColumns() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Changes::Change::Dump(Db const& db) const
+void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tablesSeen) const
     {
     Utf8CP tableName;
     int nCols,indirect;
@@ -2561,7 +2668,13 @@ void Changes::Change::Dump(Db const& db) const
     if (rc!=BE_SQLITE_OK)
         { BeAssert(false); }
 
-    printf("\n\tTable: %s indirect=%d primarykeycols=(%s) op=", tableName, indirect, FormatPrimarykeyColumns().c_str());
+    if (tablesSeen.find(tableName) == tablesSeen.end())
+        {
+        printf("\n\tTable: %s\n", tableName);
+        tablesSeen.insert (tableName);
+        }
+
+    printf("\n[%s] ", FormatPrimarykeyColumns((DbOpcode::Insert==opcode)).c_str());
 
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
@@ -2569,18 +2682,21 @@ void Changes::Change::Dump(Db const& db) const
     switch (opcode)
         {
         case DbOpcode::Delete:
-            printf("DELETE\n\t\t");
+            printf("DELETE\n");
             DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames);
             break;
         case DbOpcode::Insert:
-            printf("INSERT\n\t\t");
+            printf("INSERT\n");
             DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames);
             break;
         case DbOpcode::Update:
-            printf("UPDATE");
-            printf("\n\t\told: ");
-            DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames);
-            printf("\n\t\tnew: ");
+            printf("UPDATE\n");
+            if (!isPatchSet)
+                {
+                printf("old: ");
+                DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames);
+                printf("\nnew: ");
+                }
             DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames);
             break;
 
@@ -2593,13 +2709,15 @@ void Changes::Change::Dump(Db const& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeSet::Dump(Db const& db) const
+void ChangeSet::Dump(Db const& db, bool isPatchSet) const
     {
+    bset<Utf8String> tablesSeen;
+
     printf("\nChangeSet:\n");
     Changes changes(*const_cast<ChangeSet*>(this));
     for (auto& change : changes)
         {
-        change.Dump(db);
+        change.Dump(db, isPatchSet, tablesSeen);
         }
     }
 
