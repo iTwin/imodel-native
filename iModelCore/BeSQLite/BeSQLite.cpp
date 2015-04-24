@@ -2264,6 +2264,25 @@ static int diffFilter(void* filterPtr, Utf8CP tableName)
 // *** WIP_DIFF - take list of excluded tables as an argument
 DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile, IgnoreTablesForDiff const& filter)
     {
+    // Check if Db GUIDs match
+    if (true)
+        {
+        Db baseDb;
+        DbResult result = baseDb.OpenBeSQLiteDb(baseFile, Db::OpenParams(Db::OPEN_Readonly));
+        if (BE_SQLITE_OK != result)
+            {
+            if (errMsgOut != nullptr)
+                *errMsgOut = db.GetLastError();
+            return result;
+            }
+        if (db.GetDbGuid() != baseDb.GetDbGuid())
+            {
+            if (errMsgOut != nullptr)
+                *errMsgOut = "DbGuids differ";
+            return BE_SQLITE_MISMATCH;
+            }
+        }
+
     DbResult result =  db.AttachDb(Utf8String(baseFile).c_str(), "base");
     if (BE_SQLITE_OK != result)
         {

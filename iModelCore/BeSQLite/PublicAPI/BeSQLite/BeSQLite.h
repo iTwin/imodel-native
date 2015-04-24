@@ -1358,13 +1358,13 @@ public:
     //! Create a "PatchSet" from a ChangeTracker. The PatchSet can then be saved persistently.
     BE_SQLITE_EXPORT DbResult PatchSetFromChangeTrack(ChangeTracker&);
 
-    //! Create a "PatchSet" by comparing db with baseFile
+    //! Create a "PatchSet" by comparing db with a different version if itself. 
+    //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
     //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
     //! @param[in] db       The db
     //! @param[in] baseFile A different version of the same db
     //! @param[in] filter   Caller's filter to ignore tables for purposes of the diff
-    //! @param BE_SQLITE_OK if the patchset was generated; else BE_SQLITE_ERROR
-    // *** WIP_DIFF - take list of excluded tables as an argument
+    //! @return BE_SQLITE_OK if patchset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
     BE_SQLITE_EXPORT DbResult PatchSetFromDiff(Utf8StringP errMsg, Db& db, BeFileNameCR baseFile, IgnoreTablesForDiff const& filter);
 
     //! Apply all of the changes in a ChangeSet to the supplied database.
