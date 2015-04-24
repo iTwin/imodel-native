@@ -1220,11 +1220,8 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Db::AddAggregateFunction(AggregateFunction& func) const
     {
-    const int stat = m_dbFile->AddAggregateFunction(func);
-    if (stat != 0)
-        return stat;
-
-    return _OnAddFunction(func);
+    int stat = m_dbFile->AddAggregateFunction(func);
+    return (stat != 0) ? stat : _OnAddFunction(func);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1232,11 +1229,8 @@ int Db::AddAggregateFunction(AggregateFunction& func) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Db::AddScalarFunction(ScalarFunction& func) const
     {
-    const int stat = m_dbFile->AddScalarFunction(func);
-    if (stat != 0)
-        return stat;
-
-    return _OnAddFunction(func);
+    int stat = m_dbFile->AddScalarFunction(func);
+    return (stat != 0) ? stat : _OnAddFunction(func);
     }
 
 /*---------------------------------------------------------------------------------**//**
