@@ -68,6 +68,13 @@ DGNPLATFORM_EXPORT bool TransformInPlace (TransformCR transform);
 
 DGNPLATFORM_EXPORT ElementGeometryPtr Clone () const; // Deep copy
 
+DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ICurvePrimitiveCR source);
+DGNPLATFORM_EXPORT static ElementGeometryPtr Create (CurveVectorCR source);
+DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ISolidPrimitiveCR source);
+DGNPLATFORM_EXPORT static ElementGeometryPtr Create (MSBsplineSurfaceCR source);
+DGNPLATFORM_EXPORT static ElementGeometryPtr Create (PolyfaceQueryCR source);
+DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ISolidKernelEntityCR source);
+
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ICurvePrimitivePtr const& source);
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (CurveVectorPtr const& source);
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ISolidPrimitivePtr const& source);
@@ -158,7 +165,7 @@ struct Writer
     DGNPLATFORM_EXPORT void Append (PolyfaceQueryCR, bool isFilled = false);
     DGNPLATFORM_EXPORT void Append (ISolidPrimitiveCR);
     DGNPLATFORM_EXPORT void Append (MSBsplineSurfaceCR);
-    DGNPLATFORM_EXPORT void Append (ISolidKernelEntityCR);
+    DGNPLATFORM_EXPORT void Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
     DGNPLATFORM_EXPORT void Append (ElementGeometryCR);
     DGNPLATFORM_EXPORT void Append (DgnSubCategoryId, TransformCR geomToWorld);
     DGNPLATFORM_EXPORT void Append (DgnGeomPartId);
@@ -270,7 +277,8 @@ ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement2dCR
 ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId);
 
 bool ConvertToLocal (ElementGeometryR);
-bool AppendWorld (ElementGeometryR);
+bool AppendWorld (ElementGeometryR, bool deferWrite = false);
+bool AppendLocal (ElementGeometryCR, TransformCP geomToElement, bool deferWrite = false);
 void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -283,13 +291,12 @@ DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
 DGNPLATFORM_EXPORT bool Append (ElemDisplayParamsCR);
 DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCP geomToElement = nullptr);
 DGNPLATFORM_EXPORT bool Append (ElementGeometryCR, TransformCP geomToElement = nullptr);
-
 DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR, TransformCP geomToElement = nullptr);
 DGNPLATFORM_EXPORT bool Append (CurveVectorCR, TransformCP geomToElement = nullptr);
 DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR, TransformCP geomToElement = nullptr);
 DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR, TransformCP geomToElement = nullptr);
 DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR, TransformCP geomToElement = nullptr);
-DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, TransformCP geomToElement = nullptr);
+DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, TransformCP geomToElement = nullptr, IFaceMaterialAttachmentsCP attachments = nullptr);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle = 0.0);
