@@ -279,7 +279,6 @@ public:
     void ModelFillComplete();
     void ElementChanged(DgnElement&, DgnElementChangeReason);
     DGNPLATFORM_EXPORT ElemRangeIndexP GetRangeIndexP(bool create) const;
-    StatusInt GetRangeIfKnown (DRange3dR pRange);
     void ReadProperties();
     DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProperties();
 

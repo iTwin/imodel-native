@@ -65,25 +65,6 @@ struct  IDrawRasterAttachment;
 
 /** @beginGroup */
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/14
-//=======================================================================================
-struct Frustum
-{
-    DPoint3d m_pts[8];
-    DPoint3dCP GetPts() const {return m_pts;}
-    DPoint3dP GetPtsP() {return m_pts;}
-    DPoint3dCR GetCorner(int i) const {return *(m_pts+i);}
-    DPoint3dR GetCornerR(int i) {return *(m_pts+i);}
-    DPoint3d GetCenter() const {DPoint3d center; center.Interpolate(m_pts[NPC_111], 0.5, m_pts[NPC_000]); return center;}
-    void Multiply(TransformCR trans) {trans.Multiply(m_pts, m_pts, 8);}
-    void Translate(DVec3dCR offset) {for (auto& pt : m_pts) pt.Add(offset);}
-    Frustum TransformBy(TransformCR trans) {Frustum out; trans.Multiply(out.m_pts, m_pts, 8); return out;}
-    DRange3d ToRange() const {DRange3d range; range.InitFrom(m_pts, 8); return range;}
-    void Invalidate() {memset(this, 0, sizeof(*this));}
-    bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
-    bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
-};
 
 //=======================================================================================
 //! @bsiclass

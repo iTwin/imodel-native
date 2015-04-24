@@ -19,10 +19,10 @@ enum class InstanceUpdateOutcome{Nop, Inserted, Updated, Deleted};
 struct CachedInstance
     {
     InstanceChangeType  m_changeType;
-    ECN::IECInstancePtr m_instance;
+    IECInstancePtr m_instance;
 
     CachedInstance() : m_changeType(InstanceChangeType::NoChange) {;}
-    CachedInstance(ECN::IECInstancePtr instance, InstanceChangeType ct = InstanceChangeType::NoChange) : m_instance(instance), m_changeType(ct) {;}
+    CachedInstance(IECInstancePtr instance, InstanceChangeType ct = InstanceChangeType::NoChange) : m_instance(instance), m_changeType(ct) {;}
     void Clear() {m_changeType = InstanceChangeType::NoChange; m_instance = nullptr;}
 
     BentleyStatus ApplyScheduledDelete(DgnDbR);
@@ -51,7 +51,7 @@ struct CachedInstances : DgnElementAppData
     CachedInstances() : m_itemChecked(false) {;}
     void Clear() {m_element.Clear(); m_item.Clear(); m_otherAspects.clear(); m_itemChecked=false;}
 
-    CachedInstance* FindAspectInstanceAccessor(ECN::ECClassId classId, WStringCR instanceId);
+    CachedInstance* FindAspectInstanceAccessor(ECClassId classId, WStringCR instanceId);
 
     static CachedInstances* Find(DgnElementCR);
     static CachedInstances& Get(DgnElementCR);
@@ -462,6 +462,7 @@ DgnModelStatus DgnElement::AddToModel()
     _ClearScheduledChangesToInstances();
 
     m_dgnModel._OnAddedElement(*this);
+
     _OnAdded();
 
     return DGNMODEL_STATUS_Success;
@@ -474,6 +475,7 @@ DgnClassId DgnElement::GetClassId(DgnDbR db)
     {
     return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -487,11 +489,11 @@ ECClassCP DgnElement::GetElementClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_GenerateDefaultCode()
     {
-    if (m_elementId.IsValid())
-        {
-        Utf8String className(GetElementClass()->GetName());
-        m_code = Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
-        }
+    if (!m_elementId.IsValid())
+        return;
+
+    Utf8String className(GetElementClass()->GetName());
+    m_code = Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -499,7 +501,7 @@ void DgnElement::_GenerateDefaultCode()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_LoadFromDb(DgnElementPool& pool)
     {
-    // Note: DgnElementPool::FindOrLoadElement takes care of populating DgnElement's member variables by calling the handler's _CreateInstance method with CreateParams set up from a DB query
+    // Note: Constructor has already initialized member variables
     pool.AddDgnElement(*this);
     return DGNMODEL_STATUS_Success;
     }
@@ -616,8 +618,8 @@ DgnModelStatus GeometricElement::_InsertInDb(DgnElementPool& pool)
         return stat;
 
     CachedStatementPtr stmt;
-    pool.GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Range,Box,Origin,Rotation,ElementId) VALUES(?,?,?,?,?,?)");
-    stmt->BindId(6, m_elementId);
+    pool.GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId) VALUES(?,?,?)");
+    stmt->BindId(3, m_elementId);
 
     stat = _BindInsertGeom(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
@@ -639,8 +641,8 @@ DgnModelStatus GeometricElement::_UpdateInDb(DgnElementPool& pool)
         return stat;
 
     CachedStatementPtr stmt;
-    pool.GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Range=?,Box=?,Origin=?,Rotation=? WHERE ElementId=?");
-    stmt->BindId(6, m_elementId);
+    pool.GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=? WHERE ElementId=?");
+    stmt->BindId(3, m_elementId);
 
     stat = _BindInsertGeom(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
@@ -694,11 +696,7 @@ DgnModelStatus DgnElement3d::_BindInsertGeom(Statement& stmt)
     if (!m_placement.IsValid())
         DGNMODEL_STATUS_NoGeometry;
 
-    int col=2;
-    stmt.BindBlob(col++, &m_placement.GetRange(), sizeof(DRange3d), Statement::MakeCopy::No);
-    stmt.BindBlob(col++, &m_placement.GetElementBox(), sizeof(DRange3d), Statement::MakeCopy::No);
-    stmt.BindBlob(col++, &m_placement.GetOrigin(), sizeof(DPoint3d), Statement::MakeCopy::No);
-    stmt.BindBlob(col++, &m_placement.GetAngles(), sizeof(YawPitchRollAngles), Statement::MakeCopy::No);
+    stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
     return DGNMODEL_STATUS_Success;
     }
 
@@ -715,7 +713,7 @@ DgnModelStatus DgnElement3d::_LoadFromDb(DgnElementPool& pool)
         return DGNMODEL_STATUS_Success;
 
     CachedStatementPtr stmt;
-    pool.GetStatement(stmt, "SELECT Range,Box,Origin,Rotation FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
+    pool.GetStatement(stmt, "SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -724,20 +722,13 @@ DgnModelStatus DgnElement3d::_LoadFromDb(DgnElementPool& pool)
         return DGNMODEL_STATUS_ElementReadError;
         }
 
-    if (stmt->GetColumnBytes(0) != sizeof(DRange3d) ||
-        stmt->GetColumnBytes(1) != sizeof(DRange3d) ||
-        stmt->GetColumnBytes(2) != sizeof(DPoint3d) ||
-        stmt->GetColumnBytes(3) != sizeof(YawPitchRollAngles))
+    if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
         BeAssert(false);
         return DGNMODEL_STATUS_ElementReadError;
         }
 
-    memcpy(&m_placement.GetRangeR(), stmt->GetValueBlob(0), sizeof(DRange3d));
-    memcpy(&m_placement.GetElementBoxR(), stmt->GetValueBlob(1), sizeof(DRange3d));
-    memcpy(&m_placement.GetOriginR(), stmt->GetValueBlob(2), sizeof(DPoint3d));
-    memcpy(&m_placement.GetAnglesR(), stmt->GetValueBlob(3), sizeof(YawPitchRollAngles));
-
+    memcpy(&m_placement, stmt->GetValueBlob(0), sizeof(m_placement));
     return DGNMODEL_STATUS_Success;
     }
 
@@ -781,7 +772,7 @@ DgnModelStatus PhysicalElement::_InsertInDb(DgnElementPool& pool)
     pool.GetStatement(stmt, "INSERT INTO " DGN_VTABLE_PrjRTree " (ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ) VALUES (?,?,?,?,?,?,?)");
 
     stmt->BindId(1, m_elementId);
-    AxisAlignedBox3dCR range = m_placement.GetRange();
+    AxisAlignedBox3dCR range = m_placement.CalculateRange();
     stmt->BindDouble(2, range.low.x);
     stmt->BindDouble(3, range.high.x);
     stmt->BindDouble(4, range.low.y);
@@ -807,7 +798,7 @@ DgnModelStatus PhysicalElement::_UpdateInDb(DgnElementPool& pool)
     CachedStatementPtr stmt;
     pool.GetStatement(stmt, "UPDATE " DGN_VTABLE_PrjRTree " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
 
-    AxisAlignedBox3dCR range = m_placement.GetRange();
+    AxisAlignedBox3dCR range = m_placement.CalculateRange();
     stmt->BindDouble(1, range.low.x);
     stmt->BindDouble(2, range.high.x);
     stmt->BindDouble(3, range.low.y);
@@ -824,8 +815,10 @@ DgnModelStatus PhysicalElement::_UpdateInDb(DgnElementPool& pool)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement2d::_BindInsertGeom(Statement& stmt)
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-#endif
+    if (!m_placement.IsValid())
+        DGNMODEL_STATUS_NoGeometry;
+
+    stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
     return DGNMODEL_STATUS_Success;
     }
 
@@ -834,8 +827,30 @@ DgnModelStatus DgnElement2d::_BindInsertGeom(Statement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement2d::_LoadFromDb(DgnElementPool& pool)
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-#endif
+    DgnModelStatus stat = T_Super::_LoadFromDb(pool);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    if (IsUndisplayed()) // has no geometry, and therefore no placement
+        return DGNMODEL_STATUS_Success;
+
+    CachedStatementPtr stmt;
+    pool.GetStatement(stmt, "SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
+    stmt->BindId(1, m_elementId);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return DGNMODEL_STATUS_ElementReadError;
+        }
+
+    if (stmt->GetColumnBytes(0) != sizeof(m_placement))
+        {
+        BeAssert(false);
+        return DGNMODEL_STATUS_ElementReadError;
+        }
+
+    memcpy(&m_placement, stmt->GetValueBlob(0), sizeof(m_placement));
     return DGNMODEL_STATUS_Success;
     }
 
@@ -1070,13 +1085,14 @@ void DgnElements::DropListener(Listener* listener)
     if (nullptr != m_listeners)
         m_listeners->DropHandler(listener);
     }
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
+// @bsimethod                                                   Sam.Wilson      04/2015
 //---------------------------------------------------------------------------------------
-static BentleyStatus deleteInstance(DgnDbR db, ECN::IECInstanceCR instance)
+static BentleyStatus deleteInstance(DgnDbR db, IECInstanceCR instance)
     {
     BeAssert(!instance.GetInstanceId().empty());
-    BeSQLite::EC::ECInstanceDeleter deleter(db, instance.GetClass());
+    ECInstanceDeleter deleter(db, instance.GetClass());
     return deleter.Delete(instance);
     }
 
@@ -1105,7 +1121,7 @@ BentleyStatus CachedInstance::ApplyScheduledReplace(DgnDbR db)
         return BSIERROR;
         }
     
-    BeSQLite::EC::ECInstanceUpdater updater(db, *m_instance);
+    ECInstanceUpdater updater(db, *m_instance);
     return updater.Update(*m_instance);
     }
 
@@ -1117,13 +1133,13 @@ BentleyStatus CachedInstance::ApplyScheduledInsert(DgnDbR db)
     ECInstanceId newId;
     ECInstanceId* useNewId = ECInstanceIdHelper::FromString(newId, m_instance->GetInstanceId().c_str())? &newId: nullptr;
 
-    BeSQLite::EC::ECInstanceKey newkey;
-    BeSQLite::EC::ECInstanceInserter inserter(db, m_instance->GetClass());
+    ECInstanceKey newkey;
+    ECInstanceInserter inserter(db, m_instance->GetClass());
     return inserter.Insert(newkey, *m_instance, (useNewId == nullptr), useNewId);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
+// @bsimethod                                                   Sam.Wilson      04/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus CachedInstance::ApplyScheduledChange(InstanceUpdateOutcome& outcome, DgnDbR db)
     {
@@ -1161,7 +1177,7 @@ BentleyStatus CachedInstance::ApplyScheduledChange(InstanceUpdateOutcome& outcom
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-static Utf8String getPropertiesList(ECN::ECClassCR ecclass, bset<Utf8String> const& ignoreList)
+static Utf8String getPropertiesList(ECClassCR ecclass, bset<Utf8String> const& ignoreList)
     {
     Utf8String props;
 
@@ -1185,7 +1201,7 @@ static Utf8String getPropertiesList(ECN::ECClassCR ecclass, bset<Utf8String> con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-static void setInstanceId(ECN::IECInstanceR instance, EC::ECInstanceId id)
+static void setInstanceId(IECInstanceR instance, EC::ECInstanceId id)
     {
     wchar_t buf[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     ECInstanceIdHelper::ToString(buf, _countof(buf), id);
@@ -1195,7 +1211,7 @@ static void setInstanceId(ECN::IECInstanceR instance, EC::ECInstanceId id)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-static void setInstanceId(ECN::IECInstanceR instance, DgnElementId elementId)
+static void setInstanceId(IECInstanceR instance, DgnElementId elementId)
     {
     setInstanceId(instance, EC::ECInstanceId(elementId.GetValue()));
     }
@@ -1203,7 +1219,7 @@ static void setInstanceId(ECN::IECInstanceR instance, DgnElementId elementId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-static ECN::IECInstancePtr queryInstance(DgnDbR db, ECN::ECClassCP ecclass, EC::ECInstanceId instanceId, bset<Utf8String> const& ignoreList = bset<Utf8String>())
+static IECInstancePtr queryInstance(DgnDbR db, ECClassCP ecclass, EC::ECInstanceId instanceId, bset<Utf8String> const& ignoreList = bset<Utf8String>())
     {
     if (nullptr == ecclass)
         return nullptr;
@@ -1217,7 +1233,7 @@ static ECN::IECInstancePtr queryInstance(DgnDbR db, ECN::ECClassCP ecclass, EC::
     stmt.BindId(1, instanceId);
     stmt.Step();
     ECInstanceECSqlSelectAdapter selector(stmt);
-    ECN::IECInstancePtr instance = selector.GetInstance();
+    IECInstancePtr instance = selector.GetInstance();
     if (!instance.IsValid())
         return nullptr;
 
@@ -1229,7 +1245,7 @@ static ECN::IECInstancePtr queryInstance(DgnDbR db, ECN::ECClassCP ecclass, EC::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-static ECN::IECInstancePtr getDirectlyLinkedInstance(DgnDbR db, ECN::ECClassCP ecclass, DgnElementId elementId, bset<Utf8String> const& ignoreList)
+static IECInstancePtr getDirectlyLinkedInstance(DgnDbR db, ECClassCP ecclass, DgnElementId elementId, bset<Utf8String> const& ignoreList)
     {
     return queryInstance(db, ecclass, EC::ECInstanceId(elementId.GetValue()), ignoreList);
     }
@@ -1237,7 +1253,7 @@ static ECN::IECInstancePtr getDirectlyLinkedInstance(DgnDbR db, ECN::ECClassCP e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-ECN::IECInstanceR DgnElement::GetSubclassProperties(bool setModified) const
+IECInstanceR DgnElement::GetSubclassProperties(bool setModified) const
     {
     CachedInstances& instances = CachedInstances::Get(*this);
     if (!instances.m_element.m_instance.IsValid())
@@ -1265,8 +1281,8 @@ ECN::IECInstanceR DgnElement::GetSubclassProperties(bool setModified) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-ECN::IECInstanceCR DgnElement::GetSubclassProperties()  const {return GetSubclassProperties(false);}
-ECN::IECInstanceR  DgnElement::GetSubclassPropertiesR()       {return GetSubclassProperties(true);}
+IECInstanceCR DgnElement::GetSubclassProperties() const {return GetSubclassProperties(false);}
+IECInstanceR DgnElement::GetSubclassPropertiesR() {return GetSubclassProperties(true);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
@@ -1282,7 +1298,7 @@ void DgnElement::CancelSubclassPropertiesChange()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-ECN::IECInstanceP GeometricElement::GetItem(bool setModified) const
+IECInstanceP GeometricElement::GetItem(bool setModified) const
     {
     if (!GetElementId().IsValid())
         return nullptr;
@@ -1308,13 +1324,13 @@ ECN::IECInstanceP GeometricElement::GetItem(bool setModified) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-ECN::IECInstanceCP GeometricElement::GetItem() const {return GetItem(false);}
-ECN::IECInstanceP  GeometricElement::GetItemP()        {return GetItem(true);}
+IECInstanceCP GeometricElement::GetItem() const {return GetItem(false);}
+IECInstanceP  GeometricElement::GetItemP()        {return GetItem(true);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void GeometricElement::SetItem(ECN::IECInstanceR instance)
+void GeometricElement::SetItem(IECInstanceR instance)
     {
     CachedInstances& instances = CachedInstances::Get(*this);
     instances.m_itemChecked = true;
@@ -1348,14 +1364,14 @@ void GeometricElement::CancelItemChange()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-bvector<ECN::IECInstancePtr> GeometricElement::GetAspects(ECN::ECClassCP aspectClass) const
+bvector<IECInstancePtr> GeometricElement::GetAspects(ECClassCP aspectClass) const
     {
-    bvector<ECN::IECInstancePtr> instances;
+    bvector<IECInstancePtr> instances;
 
     if (nullptr == aspectClass)
         return instances;
 
-    ECN::ECRelationshipClassCP elementOwnsAspectRelationship = (ECN::ECRelationshipClassCP)GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsAspects);
+    ECRelationshipClassCP elementOwnsAspectRelationship = (ECRelationshipClassCP)GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsAspects);
     if (nullptr == elementOwnsAspectRelationship)
         {
         BeAssert(false && "missing or invalid dgn schema");
@@ -1372,7 +1388,7 @@ bvector<ECN::IECInstancePtr> GeometricElement::GetAspects(ECN::ECClassCP aspectC
     while (stmt.Step() == ECSqlStepStatus::HasRow)
         {
         ECInstanceECSqlSelectAdapter selector(stmt);
-        ECN::IECInstancePtr instance = selector.GetInstance();
+        IECInstancePtr instance = selector.GetInstance();
         if (!instance.IsValid())
             {
             BeAssert(false);
@@ -1380,7 +1396,7 @@ bvector<ECN::IECInstancePtr> GeometricElement::GetAspects(ECN::ECClassCP aspectC
             }
 
         // ***WIP - how to find ECInstanceId of selected instance??
-        ECN::ECValue idValue;
+        ECValue idValue;
         instance->GetValue(idValue, L"ECInstanceId");
         setInstanceId(*instance, EC::ECInstanceId(idValue.GetLong()));
 
@@ -1423,13 +1439,13 @@ bvector<RTYPE> GeometricElement::GetAspects(DgnClassId aspectClassId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-bvector<ECN::IECInstanceCP> GeometricElement::GetAspects(DgnClassId aspectClassId) const {return GetAspects<IECInstanceCP,false>(aspectClassId);}
-bvector<ECN::IECInstanceP>  GeometricElement::GetAspectsP(DgnClassId aspectClassId)      {return GetAspects<IECInstanceP, true> (aspectClassId);}
+bvector<IECInstanceCP> GeometricElement::GetAspects(DgnClassId aspectClassId) const {return GetAspects<IECInstanceCP,false>(aspectClassId);}
+bvector<IECInstanceP>  GeometricElement::GetAspectsP(DgnClassId aspectClassId)      {return GetAspects<IECInstanceP, true> (aspectClassId);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void GeometricElement::SetAspect(ECN::IECInstanceR aspectInstance)
+void GeometricElement::SetAspect(IECInstanceR aspectInstance)
     {
     DgnClassId aspectClassId(aspectInstance.GetClass().GetId());
 
@@ -1519,7 +1535,7 @@ BentleyStatus CachedInstance::ApplyScheduledChangeToElementInstance(DgnElementR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                    03/2015
 //---------------------------------------------------------------------------------------
-static BentleyStatus insertRelationship(DgnDbR db, DgnElementKeyCR sourceElement, Utf8CP relName, ECN::IECInstanceR targetInstance)
+static BentleyStatus insertRelationship(DgnDbR db, DgnElementKeyCR sourceElement, Utf8CP relName, IECInstanceR targetInstance)
     {
     if (!sourceElement.IsValid() || targetInstance.GetInstanceId().empty())
         return BentleyStatus::ERROR;
@@ -1585,7 +1601,7 @@ BentleyStatus CachedInstance::ApplyScheduledChangesToItem(GeometricElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedInstance* CachedInstances::FindAspectInstanceAccessor(ECN::ECClassId classId, WStringCR instanceId)
+CachedInstance* CachedInstances::FindAspectInstanceAccessor(ECClassId classId, WStringCR instanceId)
     {
     CachedInstance originalAspectAccessor;
     auto ioriginal = m_otherAspects.find(DgnClassId(classId));
@@ -1682,57 +1698,42 @@ BentleyStatus GeometricElement::_ApplyScheduledChangesToInstances(DgnElement& mo
     }
 
 static const double s_smallVal = .0005;
+inline static void fixRange(double& low, double& high) {if (low==high) {low-=s_smallVal; high+=s_smallVal;}}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Placement3d::Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box) : m_origin(origin), m_angles(angles), m_boundingBox(box)
+AxisAlignedBox3d Placement3d::CalculateRange() const
     {
-    angles.ToTransform(origin).Multiply(m_range, box);
+    if (!IsValid())
+        return AxisAlignedBox3d();
 
-    // low and high are no longer allowed to be equal...
-    if (m_range.low.x == m_range.high.x)
-        {
-        m_range.low.x -= s_smallVal;
-        m_range.high.x += s_smallVal;
-        }
+    AxisAlignedBox3d range;
+    GetTransform().Multiply(range, m_boundingBox);
 
-    if (m_range.low.y == m_range.high.y)
-        {
-        m_range.low.y -= s_smallVal;
-        m_range.high.y += s_smallVal;
-        }
+    // low and high are not allowed to be equal
+    fixRange(range.low.x, range.high.x);
+    fixRange(range.low.y, range.high.y);
+    fixRange(range.low.z, range.high.z);
 
-    if (m_range.low.z == m_range.high.z)
-        {
-        m_range.low.z -= s_smallVal;
-        m_range.high.z += s_smallVal;
-        }
+    return range;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Placement2d::Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box)
+AxisAlignedBox3d Placement2d::CalculateRange() const
     {
-    Transform t;
-    t.InitFromOriginAngleAndLengths(origin, angle, 1.0, 1.0);
+    if (!IsValid())
+        return AxisAlignedBox3d();
 
-    DRange3d box3d = DRange3d::From(&box.low, 2, 0.0);
-    DRange3d range3d;
-    t.Multiply(range3d, box3d);
+    AxisAlignedBox3d range;
+    GetTransform().Multiply(range, DRange3d::From(&m_boundingBox.low, 2, 0.0));
 
-    m_range.From(&range3d.low,2);
+    // low and high are not allowed to be equal
+    fixRange(range.low.x, range.high.x);
+    fixRange(range.low.y, range.high.y);
+    range.low.z = range.high.z = 0.0;
 
-    // low and high are no longer allowed to be equal...
-    if (m_range.low.x == m_range.high.x)
-        {
-        m_range.low.x -= s_smallVal;
-        m_range.high.x += s_smallVal;
-        }
-
-    if (m_range.low.y == m_range.high.y)
-        {
-        m_range.low.y -= s_smallVal;
-        m_range.high.y += s_smallVal;
-        }
+    return range;
     }

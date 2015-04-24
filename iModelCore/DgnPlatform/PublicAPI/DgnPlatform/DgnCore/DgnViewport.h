@@ -13,6 +13,7 @@
 #include "IViewOutput.h"
 #include "ColorUtil.h"
 #include "ViewController.h"
+#include <BeSQLite/RTreeMatch.h>
 
 //__PUBLISH_SECTION_END__
 DGNPLATFORM_TYPEDEFS(QvOutput)
@@ -109,7 +110,32 @@ struct FitViewParams
     DGNPLATFORM_EXPORT void SetupFitMode (FitModes fitModes);
 };
 
-//__PUBLISH_SECTION_END__
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct OcclusionScorer
+{
+    DMatrix4d   m_localToNpc;
+    DPoint3d    m_cameraPosition;
+    double      m_lodFilterNPCArea;
+    uint32_t    m_orthogonalProjectionIndex;
+    bool        m_cameraOn;
+    void InitForViewport(DgnViewportCR viewport, double minimumSizePixels);
+    bool ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners, bool doFrustumCull);
+    bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
+    bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, bool& eliminatedByLOD, DPoint3dCP localCorners, bool doFrustumCull);
+};
+
+//=======================================================================================
+// @bsiclass                                                    John.Gooding    10/13
+//=======================================================================================
+struct OverlapScorer
+{
+    BeSQLite::RTree3dVal m_boundingRange;
+    void Initialize(DRange3dCR boundingRange);
+    bool ComputeScore(double* score, BeSQLite::RTree3dValCR range);
+};
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
@@ -119,7 +145,123 @@ struct IProgressiveDisplay : IRefCounted
     virtual Completion _Process(ViewContextR) = 0;   // if this returns Finished, it is removed from the viewport
     virtual bool _WantTimeoutSet(uint32_t& limit) = 0;  // set limit and returns true to cause caller to call EnableStopAfterTimout
 };
-//__PUBLISH_SECTION_START__
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/14
+//=======================================================================================
+struct RtreeViewFilter : BeSQLite::RTreeMatch
+    {
+    bool                    m_doSkewtest;
+    Frustum                 m_frustum;
+    double                  m_minimumSizePixels;
+    BeSQLite::RTree3dVal    m_boundingRange;    // only return entries whose range intersects this cube.
+    BeSQLite::RTree3dVal    m_frontFaceRange;
+    OcclusionScorer         m_scorer;
+    uint32_t                m_nCalls;
+    uint32_t                m_nScores;
+    uint32_t                m_nSkipped;
+    DVec3d                  m_viewVec;  // vector from front face to back face
+    ClipVectorPtr           m_clips;
+    DgnElementIdSet const*  m_exclude;
+
+    bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
+    void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
+    bool SkewTest(BeSQLite::RTree3dValCP);
+    DGNPLATFORM_EXPORT RtreeViewFilter(DgnViewportCR, BeSQLiteDbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/14
+//=======================================================================================
+struct ProgressiveViewFilter : RefCounted<IProgressiveDisplay>, RtreeViewFilter
+{
+    friend struct QueryViewController;
+
+    ViewContextP                 m_context;
+    uint32_t                     m_nThisPass;
+    uint32_t                     m_nLastPass;
+    bool                         m_drewElementThisPass;
+    bool                         m_setTimeout;
+    DgnModelR                    m_existing;
+    DgnDbR                       m_dgndb;
+    uint64_t                     m_elementReleaseTrigger;
+    uint64_t                     m_purgeTrigger;
+    BeSQLite::CachedStatementPtr m_rangeStmt;
+    static const double          s_purgeFactor ;
+    ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, DgnModelR existing, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
+         : RtreeViewFilter (vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_existing(existing), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
+        {
+        m_nThisPass = m_nLastPass = 0;
+        m_drewElementThisPass = m_setTimeout = false;
+        m_context=NULL;
+        }  
+    ~ProgressiveViewFilter();
+
+    virtual int _TestRange (BeSQLite::RTreeMatch::QueryInfo const&) override;
+    virtual void _StepAggregate(BeSQLite::DbFunction::Context*, int nArgs, BeSQLite::DbValue* args) override;
+    virtual bool _WantTimeoutSet(uint32_t& limit) override;
+    virtual Completion _Process(ViewContextR context) override;
+};
+
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
+    {
+    typedef bmultimap<double, int64_t> T_OcclusionScoreMap;
+
+    struct SecondaryFilter
+        {
+        OverlapScorer       m_scorer;
+        uint32_t            m_hitLimit;
+        uint32_t            m_occlusionMapCount;
+        double              m_occlusionMapMinimum;
+        T_OcclusionScoreMap m_occlusionScoreMap;
+        double              m_lastScore;
+        };
+
+    bool                    m_passedPrimaryTest;
+    bool                    m_passedSecondaryTest;
+    bool                    m_useSecondary;
+    bool                    m_eliminatedByLOD;
+    uint32_t                m_hitLimit;
+    uint32_t                m_occlusionMapCount;
+    int64_t                 m_lastId;
+    T_OcclusionScoreMap     m_occlusionScoreMap;
+    double                  m_occlusionMapMinimum;
+    double                  m_lastScore;
+    SecondaryFilter         m_secondaryFilter;
+    ICheckStopP             m_checkStop;
+    DgnElementIdSet const*  m_alwaysDraw;
+
+    virtual int _TestRange(BeSQLite::RTreeMatch::QueryInfo const&) override;
+    virtual void _StepAggregate(BeSQLite::DbFunction::Context*, int nArgs, BeSQLite::DbValue* args) override {RangeAccept(args[0].GetValueInt64());}
+    void RangeAccept(int64_t elementId) ;
+    double MaxOcclusionScore();
+
+public:
+    DGNPLATFORM_EXPORT DgnDbRTree3dViewFilter(DgnViewportCR, ICheckStopP, BeSQLiteDbR db, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
+    void SetChceckStop(ICheckStopP checkStop) {m_checkStop = checkStop;}
+    void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
+    void GetStats(uint32_t& nAcceptCalls, uint32_t&nScores) { nAcceptCalls = m_nCalls; nScores = m_nScores; }
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct DgnDbRTreeFitFilter : BeSQLite::RTreeMatch
+    {
+    DRange3d m_fitRange;
+    DRange3d m_lastRange;
+
+    DGNPLATFORM_EXPORT virtual int _TestRange(BeSQLite::RTreeMatch::QueryInfo const&) override;
+    virtual void _StepAggregate(BeSQLite::DbFunction::Context*, int nArgs, BeSQLite::DbValue* args) override {m_fitRange.Extend(m_lastRange);}
+
+public:
+    DgnDbRTreeFitFilter(BeSQLiteDbR db) : RTreeMatch(db) {m_fitRange = DRange3d::NullRange();}
+    DRange3dCR GetRange() const {return m_fitRange;}
+    };
 
 //=======================================================================================
 //! Interface to draw information into a viewport while a tool is active.
@@ -897,8 +1039,8 @@ public:
 
 When you build infrastructure, you work with two kinds of data: 
 modelled data and reality data. Modelled data is what you are working on. It is typically vector data, and it is always stored in your dgndb. 
-Reality data is pre-existing information about the world around you. It’s normally acquired from servers. It lives outside your project, and 
-it is cached external to the local dgndb. While there’s virtually no limit to the amount of reality data available, it is acquired and stored in chunks, 
+Reality data is pre-existing information about the world around you. It's normally acquired from servers. It lives outside your dgndb, and 
+it is cached external to the local dgndb. While there's virtually no limit to the amount of reality data available, it is acquired and stored in chunks, 
 typically in a very compact format. For example, instead of having millions of line elements representing a map, you have various tiles of a 
 multi-resolution raster giving you a picture of the visible portions of the map. You probably need only a few tens of megabytes of data to hold that. 
 Even though it’s displayed as raster, it may still be possible to snap to it and get information about it, depending on the reality data handler and other factors.
