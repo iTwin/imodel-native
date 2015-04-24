@@ -97,29 +97,6 @@ public:
     bool IsEraseMode() const {return (m_drawMode == DgnDrawMode::Erase);}
 };
 
-enum NpcCorners     /// The 8 corners of the NPC cube.
-{
-    NPC_000           = 0,  //!< Left bottom rear
-    NPC_100           = 1,  //!< Right bottom rear
-    NPC_010           = 2,  //!< Left top rear
-    NPC_110           = 3,  //!< Right top rear
-    NPC_001           = 4,  //!< Left bottom front
-    NPC_101           = 5,  //!< Right bottom front
-    NPC_011           = 6,  //!< Left top front
-    NPC_111           = 7,  //!< Right top front
-
-    NPC_LeftBottomRear    = 0,
-    NPC_RightBottomRear   = 1,
-    NPC_LeftTopRear       = 2,
-    NPC_RightTopRear      = 3,
-    NPC_LeftBottomFront   = 4,
-    NPC_RightBottomFront  = 5,
-    NPC_LeftTopFront      = 6,
-    NPC_RightTopFront     = 7,
-
-    NPC_CORNER_COUNT  = 8
-};
-
 //! Status Values for DgnViewport methods
 enum class ViewportStatus   
 {

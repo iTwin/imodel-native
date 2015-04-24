@@ -26,15 +26,16 @@ SchemaVersion s_currentVersion (2, 0, 0, 0);
 struct SyncInfoChangeSet : ChangeSet
 {
     Db& m_db;
+    bool m_isPatchSet;
 
-    SyncInfoChangeSet(Db& db) : m_db(db) {}
+    SyncInfoChangeSet(Db& db, bool ispatch) : m_db(db), m_isPatchSet(ispatch) {}
 
     virtual ConflictResolution _OnConflict (ConflictCause cause, Changes::Change iter) override 
         {
         LOG.tracev ("Conflict \"%s\"\n", ChangeSet::InterpretConflictCause(cause).c_str());
         
         if (s_traceUpdate)
-            iter.Dump (m_db);
+            iter.Dump (m_db, m_isPatchSet);
         
         // The "data" conflict indicates that the current state of the row to be updated is different from 
         //  the row's state before this change was applied. That can only happen if:
@@ -449,11 +450,11 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets(uint32_t& nChangesApplied, Db
             if (!info.IsValid())
                 break;
 
-            SyncInfoChangeSet changeSet(db);
+            SyncInfoChangeSet changeSet(db, (ChangeSetType::Patch==info.m_type));
             csfile.ExtractChangeSetBySequenceNumber (changeSet, info.m_sequenceNumber);
 
             if (s_traceUpdate)
-                changeSet.Dump(db);
+                changeSet.Dump(db, (ChangeSetType::Patch==info.m_type));
 
             DbResult applyResult = changeSet.ApplyChanges(db);
             if (applyResult != BE_SQLITE_OK)
@@ -516,7 +517,7 @@ BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db)
         if (!info.IsValid())
             break;
 
-        SyncInfoChangeSet changeSet(db);
+        SyncInfoChangeSet changeSet(db, (ChangeSetType::Patch==info.m_type));
         extractChangeSetBySequenceNumberDirect (changeSet, csfile, info.m_sequenceNumber);
 
         printf ("--No=%llu type=%d desc=[%s] time=%ls---\n", info.m_sequenceNumber, info.m_type, info.m_description.c_str(), info.m_time.ToString().c_str());

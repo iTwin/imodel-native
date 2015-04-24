@@ -13,6 +13,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
+#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman      05/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -43,6 +44,7 @@ StatusInt AddElementToModel (EditElementHandleR eeh)
 
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman      05/09
