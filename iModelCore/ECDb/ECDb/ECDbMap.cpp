@@ -260,7 +260,6 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
     {
     BeMutexHolder lock (m_criticalSection);
     BeAssert (GetClassMap (ecClass, false) == nullptr);
-
     MapStatus mapStatus;
     if (!GetSQLManagerR ().IsLoaded ())
         {

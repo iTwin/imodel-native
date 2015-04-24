@@ -190,6 +190,7 @@ bool isSupplemental (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECDiffPtr>&  diffs, bvector<ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache) const
     {
+    StopWatch timer (true);
     //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
     bvector<ECSchemaP> schemasToImport;
     for (auto primarySchema : schemas)
@@ -281,6 +282,8 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 
     if (!diffs.empty ())
         ClearCache ();
+    timer.Stop ();
+    LOG.infov ("ECSchema Batch Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
 
     return SUCCESS;
     }

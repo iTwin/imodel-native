@@ -564,6 +564,8 @@ void ImportCommand::RunImportSchema (ECSqlConsoleSession& session, BeFileNameCR 
             return;
             }
         }
+    Console::WriteLine ("Preparing to import ecschema. Press any key to continue ...");
+
 
     Savepoint savepoint (session.GetECDbR (), "import ecschema");
     ECDbSchemaManager::ImportOptions options (true, true);
