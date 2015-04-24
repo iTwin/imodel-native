@@ -973,8 +973,8 @@ StatusInt _VisitElement (GeometricElementCR element) override
 
     // NOTE: Can just draw bounding box instead of drawing element geometry...
     DPoint3d  corners[8];
-    DRange3d  range = element._GetElementBox3d();
-    Transform placementTrans = element._GetPlacementTrans();
+    DRange3d  range = (element.Is3d() ? element.ToElement3d()->GetPlacement().GetElementBox() : ElementAlignedBox3d(element.ToElement2d()->GetPlacement().GetElementBox()));
+    Transform placementTrans = (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform());
 
     range.Get8Corners(corners);
     placementTrans.Multiply(corners, 8);

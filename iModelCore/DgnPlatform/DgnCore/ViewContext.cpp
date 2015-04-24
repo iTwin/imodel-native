@@ -1154,8 +1154,8 @@ StatusInt ViewContext::_VisitElement (GeometricElementCR element)
                 break;
 
             DPoint3d  p[8];
-            DRange3d  range = (2 == s_drawRange ? DRange3d(element._GetRange3d()) : element._GetElementBox3d());
-            Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : element._GetPlacementTrans());
+            DRange3d  range = (2 == s_drawRange ? DRange3d(element._GetRange3d()) : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetElementBox() : ElementAlignedBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
+            Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform()));
 
             p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
             p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
@@ -1171,7 +1171,7 @@ StatusInt ViewContext::_VisitElement (GeometricElementCR element)
             m_IDrawGeom->ActivateOverrideMatSymb(&m_ovrMatSymb);
 
             PushTransform(placementTrans);
-            DrawBox(p, element.GetDgnModel().Is3d());
+            DrawBox(p, element.Is3d());
             PopTransformClip();
 
             ResetContextOverrides();
