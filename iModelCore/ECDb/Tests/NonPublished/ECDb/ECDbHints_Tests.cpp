@@ -435,4 +435,185 @@ TEST_F (ECDbHintTests, AbstractClassWithTablePerHierarchyAndSharedTableForThisCl
     ASSERT_EQ (s5.Step (), ECSqlStepStatus::Done);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbHintTests, TablePerHierarchy_WithReuseColumns)
+    {
+    auto const schema =
+        L"<?xml version='1.0' encoding='utf-8'?>"
+        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECClass typeName='BaseClass' isDomainClass='True'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>TablePerHierarchy | ReuseColumns</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P1' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ChildDomainClassA' isDomainClass='True'>"
+        L"        <BaseClass>BaseClass</BaseClass>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>TablePerHierarchy | ReuseColumns</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P2' typeName='double' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ChildDomainClassB' isDomainClass='True'>"
+        L"        <BaseClass>BaseClass</BaseClass>"
+        L"        <ECProperty propertyName='P3' typeName='int' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='DerivedA' isDomainClass='True'>"
+        L"        <BaseClass>ChildDomainClassA</BaseClass>"
+        L"        <ECProperty propertyName='P4' typeName='double' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='DerivedB' isDomainClass='True'>"
+        L"        <BaseClass>ChildDomainClassA</BaseClass>"
+        L"        <ECProperty propertyName='P5' typeName='string' />"
+        L"    </ECClass>"
+        L"</ECSchema>";
+
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create ("columnReuseTest.ecdb");
+    ECSchemaPtr testSchema;
+    auto readContext = ECSchemaReadContext::CreateContext ();
+    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
+    ASSERT_TRUE (testSchema != nullptr);
+    auto importStatus = db.Schemas ().ImportECSchemas (readContext->GetCache ());
+    ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
+
+    //verify tables
+    ASSERT_TRUE (db.TableExists ("rc_BaseClass"));
+    ASSERT_FALSE (db.TableExists ("rc_ChildDomainClassA"));
+    ASSERT_FALSE (db.TableExists ("rc_ChildDomainClassB"));
+    ASSERT_FALSE (db.TableExists ("rc_DerivedA"));
+    ASSERT_FALSE (db.TableExists ("rc_DerivedB"));
+
+    //verify ECSqlStatments
+    ECSqlStatement s1, s2, s3, s4, s5;
+    ASSERT_EQ (s1.Prepare (db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"), ECSqlStatus::Success);
+    ASSERT_EQ (s1.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s2.Prepare (db, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"), ECSqlStatus::Success);
+    ASSERT_EQ (s2.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s3.Prepare (db, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"), ECSqlStatus::Success);
+    ASSERT_EQ (s3.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s4.Prepare (db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"), ECSqlStatus::Success);
+    ASSERT_EQ (s4.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s5.Prepare (db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
+    ASSERT_EQ (s5.Step (), ECSqlStepStatus::Done);
+
+    //verify No of Columns in BaseClass
+    Statement statement;
+    ASSERT_EQ (statement.Prepare(db, "SELECT * FROM rc_BaseClass"), DbResult::BE_SQLITE_OK);
+    ASSERT_EQ (statement.Step(), DbResult::BE_SQLITE_ROW);
+    size_t columnCount = statement.GetColumnCount ();
+    ASSERT_EQ (columnCount, 5);
+
+    //verify that the columns generated are same as expected
+    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1x01x02";
+    Utf8String actualColumnNames;
+    for (int i = 0; i < 5; i++)
+        {
+        actualColumnNames.append (statement.GetColumnName (i));
+        }
+    ASSERT_EQ (expectedColumnNames, actualColumnNames);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbHintTests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThisClass)
+    {
+    auto const schema =
+        L"<?xml version='1.0' encoding='utf-8'?>"
+        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECClass typeName='BaseClass' isDomainClass='True'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>TablePerHierarchy | ReuseColumns</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P1' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ChildDomainClassA' isDomainClass='True'>"
+        L"        <BaseClass>BaseClass</BaseClass>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>DisableReuseColumnsForThisClass</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P2' typeName='double' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ChildDomainClassB' isDomainClass='True'>"
+        L"        <BaseClass>BaseClass</BaseClass>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>DisableReuseColumnsForThisClass</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P3' typeName='int' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='DerivedA' isDomainClass='True'>"
+        L"        <BaseClass>ChildDomainClassA</BaseClass>"
+        L"        <ECProperty propertyName='P4' typeName='double' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='DerivedB' isDomainClass='True'>"
+        L"        <BaseClass>ChildDomainClassA</BaseClass>"
+        L"        <ECProperty propertyName='P5' typeName='string' />"
+        L"    </ECClass>"
+        L"</ECSchema>";
+
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create ("columnReuseTest.ecdb");
+    ECSchemaPtr testSchema;
+    auto readContext = ECSchemaReadContext::CreateContext ();
+    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
+    ASSERT_TRUE (testSchema != nullptr);
+    auto importStatus = db.Schemas ().ImportECSchemas (readContext->GetCache ());
+    ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
+
+    //verify tables
+    ASSERT_TRUE (db.TableExists ("rc_BaseClass"));
+    ASSERT_FALSE (db.TableExists ("rc_ChildDomainClassA"));
+    ASSERT_FALSE (db.TableExists ("rc_ChildDomainClassB"));
+    ASSERT_FALSE (db.TableExists ("rc_DerivedA"));
+    ASSERT_FALSE (db.TableExists ("rc_DerivedB"));
+
+    //verify ECSqlStatments
+    ECSqlStatement s1, s2, s3, s4, s5;
+    ASSERT_EQ (s1.Prepare (db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"), ECSqlStatus::Success);
+    ASSERT_EQ (s1.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s2.Prepare (db, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"), ECSqlStatus::Success);
+    ASSERT_EQ (s2.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s3.Prepare (db, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"), ECSqlStatus::Success);
+    ASSERT_EQ (s3.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s4.Prepare (db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"), ECSqlStatus::Success);
+    ASSERT_EQ (s4.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s5.Prepare (db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
+    ASSERT_EQ (s5.Step (), ECSqlStepStatus::Done);
+
+    //verify No of Columns in BaseClass
+    Statement statement;
+    ASSERT_EQ (statement.Prepare (db, "SELECT * FROM rc_BaseClass"), DbResult::BE_SQLITE_OK);
+    ASSERT_EQ (statement.Step (), DbResult::BE_SQLITE_ROW);
+    size_t columnCount = statement.GetColumnCount ();
+    ASSERT_EQ (columnCount, 6);
+
+    //verify that the columns generated are same as expected
+    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1P2x01P3";
+    Utf8String actualColumnNames;
+    for (int i = 0; i < 6; i++)
+        {
+        actualColumnNames.append (statement.GetColumnName (i));
+        }
+    ASSERT_EQ (expectedColumnNames, actualColumnNames);
+    }
 END_ECDBUNITTESTS_NAMESPACE
