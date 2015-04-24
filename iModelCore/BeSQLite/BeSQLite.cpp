@@ -2253,21 +2253,16 @@ DbResult ChangeSet::PatchSetFromChangeTrack(ChangeTracker& session)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int diffFilter(void* tracker, Utf8CP tableName) 
+static int diffFilter(void* filterPtr, Utf8CP tableName) 
     {
-    // Don't diff these tables:
-    //  *** WIP_DIFF - take list of excluded tables as an argument
-    if (0 == strncmp(tableName, "dgn_PrjRTree", 12))
-        return 0;
-
-    return 1;
+    return !((ChangeSet::IgnoreTablesForDiff*)filterPtr)->_ShouldIgnoreTable(tableName);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 // *** WIP_DIFF - take list of excluded tables as an argument
-DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile)
+DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile, IgnoreTablesForDiff const& filter)
     {
     DbResult result =  db.AttachDb(Utf8String(baseFile).c_str(), "base");
     if (BE_SQLITE_OK != result)
@@ -2286,7 +2281,7 @@ DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR
         return result;
         }
 
-    sqlite3session_table_filter(session, diffFilter, this); // set up auto-attach for most tables
+    sqlite3session_table_filter(session, diffFilter, (void*)&filter); // set up auto-attach for most tables
 
     BeSQLite::Statement tables;
     tables.Prepare(db, "SELECT name FROM main.sqlite_master WHERE type='table'");

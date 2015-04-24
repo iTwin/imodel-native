@@ -1328,6 +1328,11 @@ struct ChangeSet : NonCopyableClass
     enum class ConflictCause : int {Data=1, NotFound=2, Conflict=3, Constraint=4, ForeignKey=5};
     enum class ConflictResolution : int {Skip=0, Replace=1, Abort=2};
 
+    struct IgnoreTablesForDiff
+        {
+        virtual bool _ShouldIgnoreTable(Utf8CP) = 0;
+        };
+
 private:
     int     m_size;
     void*   m_changeset;
@@ -1357,9 +1362,10 @@ public:
     //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
     //! @param[in] db       The db
     //! @param[in] baseFile A different version of the same db
+    //! @param[in] filter   Caller's filter to ignore tables for purposes of the diff
     //! @param BE_SQLITE_OK if the patchset was generated; else BE_SQLITE_ERROR
     // *** WIP_DIFF - take list of excluded tables as an argument
-    BE_SQLITE_EXPORT DbResult PatchSetFromDiff(Utf8StringP errMsg, Db& db, BeFileNameCR baseFile);
+    BE_SQLITE_EXPORT DbResult PatchSetFromDiff(Utf8StringP errMsg, Db& db, BeFileNameCR baseFile, IgnoreTablesForDiff const& filter);
 
     //! Apply all of the changes in a ChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
