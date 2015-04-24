@@ -229,6 +229,15 @@ public:
     //! @remarks This is only to be used by DgnPlatform internally to avoid misuse and unexpected caching behavior.
     //! Therefore it is not inlined.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement (Utf8CP ecsql) const;
+
+    //! Create a "PatchSet" by comparing db with a different version if itself. 
+    //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
+    //! @param[out] cset The generated ChangeSet
+    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
+    //! @param[in] baseFile A different version of the same db
+    //! @return BE_SQLITE_OK if patchset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult CreatePatchSetFromDiff(BeSQLite::ChangeSet& cset, Utf8StringP errMsg, BeFileNameCR baseFile);
+
 };
 
 #if !defined (DOCUMENTATION_GENERATOR)
