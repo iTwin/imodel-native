@@ -370,13 +370,13 @@ public:
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct DgnSchemaDomain : DgnDomain
-    {
+{
     DOMAIN_DECLARE_MEMBERS(DgnSchemaDomain,DGNPLATFORM_EXPORT)
 
     void RegisterDefaultDependencyHandlers(); 
 
 public:
     DgnSchemaDomain();
-    };
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -10,17 +10,15 @@
 /** @cond BENTLEY_SDK_Internal */
 
 #include "DgnModel.h"
-
-BEGIN_BENTLEY_API_NAMESPACE
-typedef int (*PFScanElementCallback) (DgnElementCR, void *callbackArg, ScanCriteriaR sc);
-END_BENTLEY_API_NAMESPACE
-
+#include "DgnRangeTree.h"
 
 DGNPLATFORM_TYPEDEFS (ElemRangeIndex)
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 DGNPLATFORM_TYPEDEFS (IRangeNodeCheck)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+typedef int (*PFScanElementCallback) (DgnElementCR, void *callbackArg, ScanCriteriaR sc);
 
 enum class ScanTestResult
 {
@@ -41,44 +39,25 @@ enum ScanCriteriaConstants
     BUFF_FULL       = 11,
 };
 
-struct RangeTreeProgressMonitor  { virtual bool _MonitorProgress (double fractionComplete) = 0; };
-
-enum RangeMatchStatus
-{
-    RANGEMATCH_Ok           = 0,
-    RANGEMATCH_Aborted      = 1,
-    RANGEMATCH_TooManyHits  = 2,
-};
 
 //=======================================================================================
 // @bsiclass                                                      Keith.Bentley   05/07
 //=======================================================================================
 struct  ElemRangeIndex
 {
-    struct  Traverser
-        {
-        virtual bool _CheckRangeIndexNode (DRange3dCR, bool is3d, bool isElement) const = 0;   // true == process node
-        virtual RangeMatchStatus _VisitRangeIndexElem (GeometricElementCP) = 0;    // true == keep going, false == stop traversal
-        };
-
 private:
     int             m_stamp;      // Useful to tell if the range has changed.
-    DgnModelCR      m_dgnModel;
-    DgnRangeTreeP   m_rangeTree;
+    DgnRangeTree   m_rangeTree;
 
 public:
-    DGNPLATFORM_EXPORT ElemRangeIndex (DgnModelCR);
-    DGNPLATFORM_EXPORT ~ElemRangeIndex ();
-
+    ElemRangeIndex(DgnModelCR model) : m_rangeTree(model.Is3d(), 20) {m_stamp=0;}
     int GetStamp () const {return m_stamp;}
 
     DGNPLATFORM_EXPORT void AddRangeElement(GeometricElementCR);
-    StatusInt RemoveElement(GeometricElementCR, DRange3d oldRange);
-    DGNPLATFORM_EXPORT RangeMatchStatus FindMatches (Traverser&);
-    DGNPLATFORM_EXPORT DgnRangeTreeR GetDgnRangeTree();
-    DgnRangeTreeP GetDgnRangeTreeP() {return m_rangeTree;}
+    StatusInt RemoveElement(GeometricElementCR element, DRange3d oldRange) {return m_rangeTree.RemoveElement(DRTEntry(oldRange, element), m_stamp);}
+    DGNPLATFORM_EXPORT RangeMatch FindMatches(RangeTreeTraverser&);
+    DgnRangeTreeR GetDgnRangeTree() {return m_rangeTree;}
     DGNPLATFORM_EXPORT DRange3dCP GetRange();
-    StatusInt   GetRangeIfKnown (DRange3dR range);
 };
 
 enum
@@ -105,7 +84,7 @@ struct ScanType
 //! on your own, unless you need the range-based criteria supported by the mdlScanCriteria methods.
 // @bsiclass                                                      Keith.Bentley   05/07
 //=======================================================================================
-struct ScanCriteria: ElemRangeIndex::Traverser
+struct ScanCriteria: RangeTreeTraverser
 {
     struct ElemFilter
         {
@@ -191,11 +170,11 @@ private:
     bool      TransferElement (int* scanStatus);
     void      ResetState ();
     void      Empty ();
-    RangeMatchStatus FindRangeHits (ElemRangeIndexP);
+    RangeMatch FindRangeHits (ElemRangeIndexP);
     StatusInt ProcessElemRefRangeList ();
 
     virtual bool _CheckRangeIndexNode (DRange3dCR, bool, bool) const override;
-    virtual RangeMatchStatus _VisitRangeIndexElem (GeometricElementCP) override;
+    virtual RangeMatch _VisitRangeTreeElem (GeometricElementCP) override;
 
 public:
     DGNPLATFORM_EXPORT ScanCriteria ();

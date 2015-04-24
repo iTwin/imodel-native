@@ -219,7 +219,7 @@ PatternSymbol (DgnElementId cellId, DgnDbR project)
         }
 
     BeAssert (edP.IsValid());
-    m_eeh.SetElementDescr(edP.get(), true);
+    m_eeh.SetDgnElement(edP.get());
 
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     // Match dimension of modelRef; otherwise pattern in 3D reference to 2D ends up at z=0, which may be outside of the range of the reference file.

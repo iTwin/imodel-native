@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/QueryView.h>
-#include <DgnPlatform/DgnCore/DgnRangeTree.h>
 #include <Bentley/BeSystemInfo.h>
 
 #include "UpdateLogging.h"

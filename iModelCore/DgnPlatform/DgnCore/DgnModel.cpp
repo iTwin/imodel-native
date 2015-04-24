@@ -450,17 +450,6 @@ void DgnModel::AllocateRangeIndex() const
         m_rangeIndex = new ElemRangeIndex(*this);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Get the range of this model if the DgnRangeTree has previously been loaded. Otherwise, return ERROR.
-* @bsimethod                                                    KeithBentley    02/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt  DgnModel::GetRangeIfKnown(DRange3dR range)
-    {
-    ElemRangeIndexP index = GetRangeIndexP(false);
-
-    return (nullptr == index) ? ERROR : index->GetRangeIfKnown(range);
-    }
-
 struct FilledCaller
     {
     DgnModelR m_model;

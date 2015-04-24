@@ -40,8 +40,6 @@ StatusInt ITxn::DeleteElement (DgnElementP elRef)
 
     ClearReversedTxns (elRef->GetDgnDb());
 
-    // Assume that cascading delete will clean up aspects.
-
     // delete from cache, remove from range tree
     return elRef->_DeleteInDb(elRef->GetDgnDb().Elements().GetPool());
     }
@@ -66,11 +64,6 @@ StatusInt ITxn::ReplaceElement(EditElementHandleR eeh)
         }
 
     ClearReversedTxns(original->GetDgnDb());
-
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    if (ElementHandler::PRE_ACTION_Block == original->GetElementHandler()._OnElementModify(eeh))
-        return DGNHANDLERS_STATUS_UserAbort;
-#endif
 
     DgnModelStatus status = original->GetDgnModel().ReplaceElement(*original, *modified);
     if (DGNMODEL_STATUS_Success != status)

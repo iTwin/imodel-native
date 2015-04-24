@@ -1235,9 +1235,9 @@ RedlineModelP RedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP
             {
             //  Note: We don't need CopyContext or any style ID remapping, since we created the DgnMarkupProject as a copy of the template model's project, and we created this redline model as a copy (same dimensionality, etc.) as the template model.
             EditElementHandle eeh (ref);
-            eeh.GetElementDescrP();
+            eeh.GetWriteableElement();
             eeh.SetDgnModel (*rdlModel);
-            eeh.GetElementDescrP()->ClearElementIds();
+            eeh.GetWriteableElement()->ClearElementIds();
             eeh.AddToModel ();
             }
 #endif

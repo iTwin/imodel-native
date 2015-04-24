@@ -1298,7 +1298,7 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR e
                 if (SUCCESS != CreateRegionElement (tmpEeh, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
                     return ERROR;
 
-                solidAgenda.InsertElemDescr (tmpEeh.ExtractElementDescr().get());
+                solidAgenda.InsertElemDescr (tmpEeh.ExtractWriteableElement().get());
                 }
 
             RegionParams    params;
@@ -1336,7 +1336,7 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR e
                     if (SUCCESS != CreateRegionElement (tmpEeh, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
                         return ERROR;
 
-                    holeAgenda.InsertElemDescr (tmpEeh.ExtractElementDescr().get());
+                    holeAgenda.InsertElemDescr (tmpEeh.ExtractWriteableElement().get());
                     }
                 }
 
@@ -1473,7 +1473,7 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElements (ElementAgendaR out,
             if (SUCCESS != CreateRegionElement (tmpEeh, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
                 return ERROR;
 
-            out.InsertElemDescr (tmpEeh.ExtractElementDescr().get());
+            out.InsertElemDescr (tmpEeh.ExtractWriteableElement().get());
             }
         }
     else
@@ -1483,7 +1483,7 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElements (ElementAgendaR out,
         if (SUCCESS != CreateRegionElement (tmpEeh, region, regionRoots, is3d))
             return ERROR;
 
-        out.InsertElemDescr (tmpEeh.ExtractElementDescr().get());
+        out.InsertElemDescr (tmpEeh.ExtractWriteableElement().get());
         }
 
     return SUCCESS;
