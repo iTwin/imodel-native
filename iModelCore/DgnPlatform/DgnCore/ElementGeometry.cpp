@@ -1822,8 +1822,7 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement (GeometricElemen
         if (nullptr == (element3d = element.ToElement3dP()))
             return ERROR;
 
-        // NEEDSWORK: A method to update the axis aligned box might be nicer...
-        element3d->SetPlacement(Placement3d(m_placement3d.GetOrigin(), m_placement3d.GetAngles(), m_placement3d.GetElementBox()));
+        element3d->SetPlacement(m_placement3d);
         }
     else
         {
@@ -1832,8 +1831,7 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement (GeometricElemen
         if (nullptr == (element2d = element.ToElement2dP()))
             return ERROR;
 
-        // NEEDSWORK: A method to update the axis aligned box might be nicer...
-        element2d->SetPlacement(Placement2d(m_placement2d.GetOrigin(), m_placement2d.GetAngle(), m_placement2d.GetElementBox()));
+        element2d->SetPlacement(m_placement2d);
         }
 
     element.GetGeomStreamR().SaveData (&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
