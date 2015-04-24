@@ -121,7 +121,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
 
         geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
 
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*model, categoryId);
+        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
 
         builder->Append(*computeShape());
 
@@ -601,7 +601,7 @@ TEST_F (TransactionManagerTests, ElementItem)
         newItem->SetValue(TMTEST_TEST_ITEM_TestItemProperty, ECN::ECValue(initialTestPropValue));
 
         EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetElementDescrP()->ToGeometricElement());
+        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetWriteableElement()->ToGeometricElement());
         ASSERT_TRUE( modifiedEl != nullptr );
 
         modifiedEl->SetItem(*newItem);
@@ -617,7 +617,7 @@ TEST_F (TransactionManagerTests, ElementItem)
     if (true)
         {
         EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetElementDescrP()->ToGeometricElement());
+        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetWriteableElement()->ToGeometricElement());
 
         ECN::IECInstanceP existingItem = modifiedEl->GetItemP();
         ASSERT_NE( existingItem , nullptr );
@@ -635,7 +635,7 @@ TEST_F (TransactionManagerTests, ElementItem)
     if (true)
         {
         EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetElementDescrP()->_ToGeometricElement());
+        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetWriteableElement()->_ToGeometricElement());
 
         ECN::IECInstanceP existingItem = modifiedEl->GetItemP();
         ASSERT_NE( existingItem , nullptr );

@@ -941,14 +941,14 @@ bool ViewContext::ValidateScanRange()
 * mark the scan range and range planes as invalid (out-of-synch with current polyhedron).
 * @bsimethod                                                    KeithBentley    08/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::InvalidateScanRange()     { m_scanRangeValid = false; }
+void ViewContext::InvalidateScanRange()     { m_scanRangeValid = false; }
 
 /*---------------------------------------------------------------------------------**//**
 * Test an element against the current scan range using the range planes.
 * @return true if the element is outside the range and should be ignored.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool         ViewContext::_FilterRangeIntersection (GeometricElementCR element)
+bool ViewContext::_FilterRangeIntersection (GeometricElementCR element)
     {
     if (RangeResult::Inside == m_parentRangeResult)
         return false;

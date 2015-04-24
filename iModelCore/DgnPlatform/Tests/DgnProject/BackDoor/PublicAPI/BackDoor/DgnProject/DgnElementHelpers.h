@@ -23,7 +23,9 @@ double const EPSILON = 0.000000001;
 *
 * @return SUCCESS if it worked, BSIERROR otherwise.
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
 StatusInt AddElementToModel (EditElementHandleR eeh);
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman      05/09

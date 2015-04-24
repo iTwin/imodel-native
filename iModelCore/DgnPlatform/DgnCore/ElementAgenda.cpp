@@ -56,7 +56,7 @@ EditElementHandleP ElementAgenda::InsertElemDescr(DgnElementP edP, bool atHead)
     ElemAgendaEntry blank;
     EditElementHandleP newAgendum = &*insert (atHead ? begin() : end(), blank);
 
-    newAgendum->SetElementDescr (edP, false);
+    newAgendum->SetDgnElement(edP);
     return newAgendum;
     }
 
@@ -65,8 +65,8 @@ EditElementHandleP ElementAgenda::InsertElemDescr(DgnElementP edP, bool atHead)
 +---------------+---------------+---------------+---------------+---------------+------*/
 EditElementHandleP ElementAgenda::Insert (EditElementHandleR eeh, bool atHead)
     {
-    if (NULL != eeh.PeekElementDescrCP ())
-        return InsertElemDescr (eeh.ExtractElementDescr().get(), atHead);
+    if (NULL != eeh.PeekWriteableElement ())
+        return InsertElemDescr (eeh.ExtractWriteableElement().get(), atHead);
 
     DgnElementCP elRef = eeh.GetDgnElement ();
     if (NULL == elRef)

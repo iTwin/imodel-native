@@ -496,31 +496,31 @@ typedef int  (*PFScanElementNodeCallback) (GeometricElementCP, void* callbackArg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatchStatus ScanCriteria::_VisitRangeIndexElem (GeometricElementCP element)
+RangeMatch ScanCriteria::_VisitRangeTreeElem (GeometricElementCP element)
     {
     if (!CheckElementRange (*element))
-        return RANGEMATCH_Ok;
+        return RangeMatch::Ok;
 
     if (ScanTestResult::Fail == CheckElement (*element, false))
-        return RANGEMATCH_Ok;
+        return RangeMatch::Ok;
 
     if (UseRangeTreeOrdering())
         {
         PFScanElementNodeCallback   cbFunc = (PFScanElementNodeCallback) m_callbackFunc;
-        return (SUCCESS == cbFunc (element, m_callbackArg, this)) ? RANGEMATCH_Ok : RANGEMATCH_Aborted;
+        return (SUCCESS == cbFunc (element, m_callbackArg, this)) ? RangeMatch::Ok : RangeMatch::Aborted;
         }
 
     if (m_rangeHits->size() > MAX_ORDERED_HITS)
-        return  RANGEMATCH_TooManyHits;
+        return  RangeMatch::TooManyHits;
 
     m_rangeHits->push_back(element);
-    return  RANGEMATCH_Ok;
+    return  RangeMatch::Ok;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatchStatus ScanCriteria::FindRangeHits(ElemRangeIndexP rangeIndex)
+RangeMatch ScanCriteria::FindRangeHits(ElemRangeIndexP rangeIndex)
     {
     if (NULL == m_rangeHits)
         m_rangeHits = new T_RangeHits;
@@ -528,14 +528,14 @@ RangeMatchStatus ScanCriteria::FindRangeHits(ElemRangeIndexP rangeIndex)
         m_rangeHits->clear();
 
     m_currRangeHit = 0;
-    RangeMatchStatus stat = rangeIndex->FindMatches (*this);
-    if (RANGEMATCH_Ok != stat)
+    RangeMatch stat = rangeIndex->FindMatches (*this);
+    if (RangeMatch::Ok != stat)
         {
         ResetState(); // aborted - throw away hits
         return stat;
         }
 
-    return RANGEMATCH_Ok;
+    return RangeMatch::Ok;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,10 +580,10 @@ StatusInt ScanCriteria::Scan (ViewContextP context)
             {
             switch (FindRangeHits (rangeIndex))
                 {
-                case RANGEMATCH_TooManyHits:
+                case RangeMatch::TooManyHits:
                     goto linearScan;
 
-                case RANGEMATCH_Aborted:
+                case RangeMatch::Aborted:
                     return  BUFF_FULL;
                 }
             }

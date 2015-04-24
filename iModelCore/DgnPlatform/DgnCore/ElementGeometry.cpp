@@ -1408,15 +1408,6 @@ void SetElemDisplayParams (DgnSubCategoryId subCategory)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ResetElemDisplayParams (DgnSubCategoryId subCategory)
-    {
-    m_symbologyInitialized = false;
-    SetElemDisplayParams (subCategory);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ChangedElemDisplayParams()
     {
     m_symbologyChanged = true;
@@ -1476,12 +1467,6 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                     }
 
                 state.Begin (subCategory, geomToWorld);
-                break;
-                }
-
-            case ElementGeomIO::OpCode::ResetSubCategory:
-                {
-                state.ResetElemDisplayParams (context.GetCurrentDisplayParams()->GetSubCategoryId());
                 break;
                 }
 
@@ -1861,78 +1846,145 @@ bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCP geomT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ElementGeometryCR elemGeom, TransformCP geomToElement)
+void ElementGeometryBuilder::OnNewGeom (DRange3dCR localRange, TransformCP geomToElement)
     {
-    // NEEDSWORK: Make sure geometry is suitable for 2d/3d...use m_placement2d, etc.
-    ElementGeometryPtr elemGeomPtr;
+    // NEEDSWORK: Extend m_placement2d...
+    m_placement3d.GetElementBoxR().Extend(localRange);
 
+    Transform elementToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
+    Transform geomToWorld = (nullptr == geomToElement ? elementToWorld : Transform::FromProduct(elementToWorld, *geomToElement));
+
+    // Only establish "geometry group" boundaries at sub-category or transform changes...
+    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToWorld.IsEqual(geomToWorld)))
+        {
+        m_writer.Append(m_elParams.GetSubCategoryId(), geomToWorld);
+
+        m_prevSubCategory = m_elParams.GetSubCategoryId();
+        m_prevGeomToWorld = geomToWorld;
+        }
+
+    if (m_appearanceChanged)
+        {
+        m_writer.Append(m_elParams);
+        m_appearanceChanged = false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
+    {
+    Transform   localToWorld;
+
+    // NEEDSWORK: Setup m_placement2d...
     if (!m_havePlacement)
         {
-        Transform   localToWorld;
-
-        if (!elemGeom.GetLocalCoordinateFrame(localToWorld))
+        if (!geom.GetLocalCoordinateFrame(localToWorld))
             return false;
-
-        if (!localToWorld.IsIdentity())
-            {
-            // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
-            if (ElementGeometry::GeometryType::SolidKernelEntity == elemGeom.GetGeometryType())
-                {
-                ISolidKernelEntityPtr clone;
-
-                if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (clone, *elemGeom.GetAsISolidKernelEntity()))
-                    return false;
-
-                elemGeomPtr = ElementGeometry::Create (clone);
-                }
-            else
-                {
-                elemGeomPtr = elemGeom.Clone ();
-                }
-
-            Transform   worldToLocal;
-
-            worldToLocal.InverseOf(localToWorld);
-
-            if (!elemGeomPtr->TransformInPlace(worldToLocal))
-                return false;
-            }
 
         RotMatrix   rMatrix;
 
         localToWorld.GetMatrix(rMatrix);
         localToWorld.GetTranslation(m_placement3d.GetOriginR());
         YawPitchRollAngles::TryFromRotMatrix(m_placement3d.GetAnglesR(), rMatrix);
-
-        BeAssert (nullptr == geomToElement); // Doesn't make sense to specify this with world coordinate geometry...
-        geomToElement = nullptr;
+    
         m_havePlacement = true;
         }
-
-    ElementAlignedBox3d geomBox;
-
-    if (elemGeomPtr.IsValid() ? elemGeomPtr->GetRange(geomBox, geomToElement) : elemGeom.GetRange(geomBox, geomToElement))
-        m_placement3d.GetElementBoxR().Extend(geomBox);
-
-    Transform elementToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
-    Transform geomToWorld = (nullptr == geomToElement ? elementToWorld : Transform::FromProduct(elementToWorld, *geomToElement));
-
-    // NEEDSWORK: Should transform and sub-category be separated to avoid extra op-codes
-    //            as well as extra push/pop of transforms?!?
-    //            Would then handle sub-category from elParams and have to explicity
-    //            push/pop transforms...geomToAspect should typically be null/identity...
-    m_writer.Append(m_elParams.GetSubCategoryId(), geomToWorld);
-
-    if (!m_appearanceSet || m_appearanceChanged)
+    else
         {
-        m_writer.Append(m_elParams);
-        m_appearanceChanged = false;
-        m_appearanceSet = true;
+        localToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
         }
 
-    m_writer.Append(elemGeomPtr.IsValid() ? *elemGeomPtr : elemGeom);
+    if (localToWorld.IsIdentity())
+        return true;
 
-    return false;
+    Transform worldToLocal;
+
+    worldToLocal.InverseOf(localToWorld);
+
+    return geom.TransformInPlace(worldToLocal);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom)
+    {
+    if (!ConvertToLocal (geom))
+        return false;
+
+    DRange3d localRange;
+
+    if (!geom.GetRange(localRange))
+        return false;
+
+    OnNewGeom (localRange, nullptr);
+    m_writer.Append(geom);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::Append (ElementGeometryCR geom, TransformCP geomToElement)
+    {
+    if (m_haveLocalGeom)
+        {
+        DRange3d localRange;
+
+        if (!geom.GetRange(localRange, geomToElement))
+            return false;
+
+        OnNewGeom (localRange, geomToElement);
+        m_writer.Append(geom);
+
+        return true;
+        }
+
+    ElementGeometryPtr geomPtr;
+
+    // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
+    if (ElementGeometry::GeometryType::SolidKernelEntity == geom.GetGeometryType())
+        {
+        ISolidKernelEntityPtr clone;
+
+        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (clone, *geom.GetAsISolidKernelEntity()))
+            return false;
+
+        geomPtr = ElementGeometry::Create (clone);
+        }
+    else
+        {
+        geomPtr = geom.Clone ();
+        }
+
+    return AppendWorld (*geomPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::Append (ICurvePrimitiveCR geom, TransformCP geomToElement)
+    {
+    if (m_haveLocalGeom)
+        {
+        DRange3d localRange;
+
+        if (!(nullptr != geomToElement ? geom.GetRange(localRange, *geomToElement) : geom.GetRange(localRange)))
+            return false;
+
+        OnNewGeom (localRange, geomToElement);
+        m_writer.Append(geom);
+
+        return true;
+        }
+
+    ICurvePrimitivePtr clone = geom.Clone();
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+
+    return AppendWorld (*geomPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1940,10 +1992,23 @@ bool ElementGeometryBuilder::Append (ElementGeometryCR elemGeom, TransformCP geo
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append (CurveVectorCR geom, TransformCP geomToElement)
     {
-    CurveVectorPtr      clone = geom.Clone();
-    ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
+    if (m_haveLocalGeom)
+        {
+        DRange3d localRange;
 
-    return Append (*geomPtr, geomToElement);
+        if (!(nullptr != geomToElement ? geom.GetRange(localRange, *geomToElement) : geom.GetRange(localRange)))
+            return false;
+
+        OnNewGeom (localRange, geomToElement);
+        m_writer.Append(geom);
+
+        return true;
+        }
+
+    CurveVectorPtr clone = geom.Clone();
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+
+    return AppendWorld (*geomPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1951,10 +2016,102 @@ bool ElementGeometryBuilder::Append (CurveVectorCR geom, TransformCP geomToEleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom, TransformCP geomToElement)
     {
-    ISolidPrimitivePtr  clone = geom.Clone();
-    ElementGeometryPtr  geomPtr = ElementGeometry::Create(clone);
+    if (m_haveLocalGeom)
+        {
+        DRange3d localRange;
 
-    return Append (*geomPtr, geomToElement);
+        if (!(nullptr != geomToElement ? geom.GetRange(localRange, *geomToElement) : geom.GetRange(localRange)))
+            return false;
+
+        OnNewGeom (localRange, geomToElement);
+        m_writer.Append(geom);
+
+        return true;
+        }
+
+    ISolidPrimitivePtr clone = geom.Clone();
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+
+    return AppendWorld (*geomPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::Append (MSBsplineSurfaceCR geom, TransformCP geomToElement)
+    {
+    if (m_haveLocalGeom)
+        {
+        IFacetOptionsPtr facetOpt = IFacetOptions::Create ();
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*facetOpt);
+
+        builder->Add (geom);
+        
+        DRange3d localRange = builder->GetClientMeshR ().PointRange ();
+
+        if (NULL != geomToElement)
+            geomToElement->Multiply (localRange, localRange);
+
+        OnNewGeom (localRange, geomToElement);
+        m_writer.Append(geom);
+
+        return true;
+        }
+
+    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
+
+    clone->CopyFrom (geom);
+
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+
+    return AppendWorld (*geomPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom, TransformCP geomToElement)
+    {
+    if (m_haveLocalGeom)
+        {
+        DRange3d localRange = geom.PointRange ();
+
+        if (NULL != geomToElement)
+            geomToElement->Multiply (localRange, localRange);
+
+        OnNewGeom (localRange, geomToElement);
+        m_writer.Append(geom);
+
+        return true;
+        }
+
+    PolyfaceHeaderPtr clone = PolyfaceHeader::New();
+        
+    clone->CopyFrom (geom);
+
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+
+    return AppendWorld (*geomPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, TransformCP geomToElement)
+    {
+    ISolidKernelEntityPtr clone;
+
+    // NOTE: Avoid un-necessary copy of BRep. We may just need to change entity transform...
+    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(clone, geom))
+        return false;
+
+    // Always create ElementGeomentry to have brep+mesh+edges saved instead of just brep...
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+
+    if (m_haveLocalGeom)
+        return Append (*geomPtr, geomToElement);
+
+    return AppendWorld (*geomPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1963,9 +2120,9 @@ bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom, TransformCP geomToE
 ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement3dCR placement) : m_model (model)
     {
     m_elParams.SetCategoryId(categoryId);
-    m_appearanceSet = m_appearanceChanged = false;
+    m_appearanceChanged = false;
     m_placement3d = placement;
-    m_havePlacement = true;
+    m_haveLocalGeom = m_havePlacement = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1974,9 +2131,9 @@ ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId c
 ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement2dCR placement) : m_model (model)
     {
     m_elParams.SetCategoryId(categoryId);
-    m_appearanceSet = m_appearanceChanged = false;
+    m_appearanceChanged = false;
     m_placement2d = placement;
-    m_havePlacement = true;
+    m_haveLocalGeom = m_havePlacement = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1985,14 +2142,14 @@ ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId c
 ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId) : m_model (model)
     {
     m_elParams.SetCategoryId(categoryId);
-    m_appearanceSet = m_appearanceChanged = false;
-    m_havePlacement = false;
+    m_appearanceChanged = false;
+    m_haveLocalGeom = m_havePlacement = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create3d (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles)
     {
     if (!categoryId.IsValid() || !model.Is3d())
         return nullptr;
@@ -2008,7 +2165,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create3d (DgnModelR model, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create2d (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle)
     {
     if (!categoryId.IsValid() || model.Is3d())
         return nullptr;
@@ -2030,4 +2187,28 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld (DgnModelR model, 
         return nullptr;
 
     return new ElementGeometryBuilder(model, categoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element, DPoint3dCR origin, YawPitchRollAngles angles)
+    {
+    return ElementGeometryBuilder::Create(element.GetDgnModel(), element.GetCategoryId(), origin, angles);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement2dCR element, DPoint2dCR origin, double angle)
+    {
+    return ElementGeometryBuilder::Create(element.GetDgnModel(), element.GetCategoryId(), origin, angle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld (GeometricElementCR element)
+    {
+    return ElementGeometryBuilder::CreateWorld(element.GetDgnModel(), element.GetCategoryId());
     }

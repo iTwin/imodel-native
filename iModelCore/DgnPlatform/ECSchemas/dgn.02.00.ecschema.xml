@@ -411,10 +411,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <ECIdColumn>ElementId</ECIdColumn>
             </ECDbClassHint>
         </ECCustomAttributes>
-        <ECProperty propertyName="Range" typeName="binary"/>
-        <ECProperty propertyName="Box" typeName="binary"/>
-        <ECProperty propertyName="Origin" typeName="binary"/>
-        <ECProperty propertyName="Rotation" typeName="binary"/>
+        <ECProperty propertyName="Placement" typeName="binary"/>
         <ECProperty propertyName="Geom" typeName="binary"/>
     </ECClass>
 

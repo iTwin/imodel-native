@@ -306,17 +306,17 @@ public:
     //! Get the DgnDb of this element.
     DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
 
-    //! Get the DgnElementId for this instance of DgnElement
+    //! Get the DgnElementId for this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
 
-    //! Get the DgnClassId for this instance of DgnElement
+    //! Get the DgnClassId for this DgnElement
     //! @see DgnElement::GetClassId
     DgnClassId GetElementClassId() const {return m_classId;}
 
-    //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this instance of DgnElement
+    //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this DgnElement
     DgnElementKey GetElementKey() const {return DgnElementKey(GetElementClassId(), GetElementId());}
 
-    //! Get the ECClass for this instance of DgnElement
+    //! Get the ECClass for this DgnElement
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Get the DgnClassId for the dgn.Element ECClass in the specified DgnDb.
@@ -329,11 +329,11 @@ public:
     //! Get the code (business key) of the element held by this element.
     Utf8CP GetCode() const {return m_code.c_str();}
 
-    //! Increment the reference count of this element
+    //! Increment the reference count of this DgnElement
     //! @note This call should always be paired with a corresponding subsequent call to #Release when the element is no longer referenced.
     uint32_t AddRef() const {return _AddRef();}
 
-    //! Decrement the reference count of this element. When the reference count goes to zero, the element becomes "garbage" and may be reclaimed later.
+    //! Decrement the reference count of this DgnElement. When the reference count goes to zero, the element becomes "garbage" and may be reclaimed later.
     //! @note This call must always follow a previous call to #AddRef.
     uint32_t Release() const {return _Release();}
 
@@ -415,41 +415,37 @@ protected:
     DPoint3d            m_origin;
     YawPitchRollAngles  m_angles;
     ElementAlignedBox3d m_boundingBox;
-    AxisAlignedBox3d    m_range;
 
 public:
     Placement3d() : m_origin(DPoint3d::FromZero())  {}
-    DGNPLATFORM_EXPORT Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box);
-    Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
-    Placement3d(Placement3d&& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
-    Placement3d& operator=(Placement3d&& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; m_range=rhs.m_range; return *this;}
-    Placement3d& operator=(Placement3d const& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; m_range=rhs.m_range; return *this;}
+    Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box): m_origin(origin), m_angles(angles), m_boundingBox(box) {}
+    Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
+    Placement3d(Placement3d&& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
+    Placement3d& operator=(Placement3d&& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; return *this;}
+    Placement3d& operator=(Placement3d const& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; return *this;}
 
-    //! Get the placement origin of the element
+    //! Get the placement origin
     DPoint3dCR GetOrigin() const {return m_origin;}
-    //! Get a writeable reference to the placement origin of the element
+    //! Get a writeable reference to the placement origin
     DPoint3dR GetOriginR() {return m_origin;}
 
-    //! Get the placement angles of the element
+    //! Get the placement angles
     YawPitchRollAnglesCR GetAngles() const {return m_angles;}
-    //! Get a writeable reference to the placement angles of the element
+    //! Get a writeable reference to the placement angles
     YawPitchRollAnglesR GetAnglesR() {return m_angles;}
 
-    //! Get the element-aligned bounding box of the element
+    //! Get the element-aligned bounding box 
     ElementAlignedBox3d const& GetElementBox() const {return m_boundingBox;}
 
-    //! Get a writeable reference to the element-aligned bounding box of the element
+    //! Get a writeable reference to the element-aligned bounding box 
     ElementAlignedBox3d& GetElementBoxR() {return m_boundingBox;}
 
-    //! Get the range of the element
-    AxisAlignedBox3dCR GetRange() const {return m_range;}
-    //! Get a writeable reference to the range of the element
-    AxisAlignedBox3dR GetRangeR() {return m_range;}
+    Transform GetTransform() const {return m_angles.ToTransform(m_origin);}
 
-    //! Change the range of the element
-    void SetRange(AxisAlignedBox3dCR val) {m_range=val;}
+    //! Calculate the axis-aligned range of this placement
+    DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
     
-    //! Determine whether the range of the element is valid 
+    //! Determine whether the range of this placement is valid 
     bool IsValid() const {return m_boundingBox.IsValid();}
 };
 
@@ -462,42 +458,39 @@ protected:
     DPoint2d            m_origin;
     double              m_angle;
     ElementAlignedBox2d m_boundingBox;
-    AxisAlignedBox2d    m_range;
 
 public:
     Placement2d() : m_origin(DPoint2d::FromZero()), m_angle(0.0)  {}
-    DGNPLATFORM_EXPORT Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box);
-    Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
-    Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox), m_range(rhs.m_range) {}
-    Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; m_range=rhs.m_range; return *this;}
-    Placement2d& operator=(Placement2d const& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; m_range=rhs.m_range; return *this;}
+    Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
+    Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
+    Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
+    Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
+    Placement2d& operator=(Placement2d const& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
 
-    //! Get the placement origin of the element
+    //! Get the placement origin 
     DPoint2dCR GetOrigin() const {return m_origin;}
-    //! Get a writeable reference to the placement origin of the element
+    //! Get a writeable reference to the placement origin 
     DPoint2dR GetOriginR() {return m_origin;}
 
     //! Get the placement angle of the element
     double GetAngle() const {return m_angle;}
-    //! Get a writeable reference to the placement angle of the element
+    //! Get a writeable reference to the placement angle 
     double& GetAngleR() {return m_angle;}
 
-    //! Get the element-aligned bounding box of the element
+    //! Get the element-aligned bounding box 
     ElementAlignedBox2d const& GetElementBox() const {return m_boundingBox;}
 
-    //! Get a writeable reference to the element-aligned bounding box of the element
+    //! Get a writeable reference to the element-aligned bounding box 
     ElementAlignedBox2d& GetElementBoxR() {return m_boundingBox;}
 
-    //! Get the range of the element
-    AxisAlignedBox2dCR GetRange() const {return m_range;}
-    //! Get a writeable reference to the range of the element
-    AxisAlignedBox2dR GetRangeR() {return m_range;}
+    Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle, 1.0, 1.0); return t;}
 
-    //! Change the range of the element
-    void SetRange(DRange2dCR val) {m_range=val;}
+    //! Calculate the axis-aligned range of this placement
+    DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
     
-    //! Determine whether the range of the element is valid 
+    //! Determine whether the range of this placement is valid 
     bool IsValid() const {return m_boundingBox.IsValid();}
+
 };
 
 //=======================================================================================
@@ -668,11 +661,10 @@ protected:
 
 public:
     DgnElement3dCP _ToElement3d() const override {return this;}
-    AxisAlignedBox3d _GetRange3d() const override {return GetRange();}
+    AxisAlignedBox3d _GetRange3d() const override {return m_placement.CalculateRange();}
     DPoint3d _GetOrigin3d() const override {return m_placement.GetOrigin();}
     Placement3dCR GetPlacement() const {return m_placement;}
     void SetPlacement(Placement3dCR placement) {m_placement=placement;}
-    AxisAlignedBox3dCR GetRange() const {return m_placement.GetRange();}
     ElementAlignedBox3d GetElementBox() const {return m_placement.GetElementBox();}
     ElementAlignedBox3d _GetElementBox3d() const override {return GetElementBox();}
     Transform _GetPlacementTrans() const override {return m_placement.GetAngles().ToTransform(m_placement.GetOrigin());}
@@ -730,10 +722,9 @@ protected:
 
 public:
     DgnElement2dCP _ToElement2d() const override {return this;}
-    AxisAlignedBox3d _GetRange3d() const override {return AxisAlignedBox3d(GetRange());}
+    AxisAlignedBox3d _GetRange3d() const override {return m_placement.CalculateRange();}
     DPoint3d _GetOrigin3d() const override {return DPoint3d::From(m_placement.GetOrigin());}
     void SetPlacement(Placement2dCR placement) {m_placement=placement;}
-    AxisAlignedBox2dCR GetRange() const {return m_placement.GetRange();}
     ElementAlignedBox2d GetElementBox() const {return m_placement.GetElementBox();}
     ElementAlignedBox3d _GetElementBox3d() const override {return ElementAlignedBox3d(GetElementBox());}
     Transform _GetPlacementTrans() const override {Transform t; t.InitFromOriginAngleAndLengths(m_placement.GetOrigin(), m_placement.GetAngle(), 1.0, 1.0); return t;}
@@ -751,6 +742,5 @@ protected:
 
     DrawingElementCP _ToDrawingElement() const override {return this;}
 };
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

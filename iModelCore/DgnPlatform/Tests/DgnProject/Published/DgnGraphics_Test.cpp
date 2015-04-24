@@ -874,7 +874,7 @@ TEST_F(DgnGraphicsTest3d, CreateWithLevel)
 
     PhysicalGraphicsPtr graphics = GetPhysicalModel()->CreatePhysicalGraphics (level.GetLevelId());
     ASSERT_TRUE (graphics.IsValid());
-    ASSERT_TRUE (graphics->GetElementHandleR().GetElementDescrP()->Element().GetLevel() == level.GetLevelId());
+    ASSERT_TRUE (graphics->GetElementHandleR().GetWriteableElement()->Element().GetLevel() == level.GetLevelId());
 
     DPoint3d linePoints[4];
     linePoints[0].Init (0.0, 0.0, 0.0);
@@ -888,7 +888,7 @@ TEST_F(DgnGraphicsTest3d, CreateWithLevel)
 
     PhysicalGraphicsPtr loadedGraphics = GetPhysicalModel()->ReadPhysicalGraphics (graphicsId);
     ASSERT_TRUE (loadedGraphics.IsValid());
-    ASSERT_TRUE (loadedGraphics->GetElementHandleR().GetElementDescrP()->Element().GetLevel() == level.GetLevelId());
+    ASSERT_TRUE (loadedGraphics->GetElementHandleR().GetWriteableElement()->Element().GetLevel() == level.GetLevelId());
 
     GetDgnProjectP()->SaveChanges(); // just so we can verify what's happened in another process for debugging
     }

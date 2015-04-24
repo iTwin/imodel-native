@@ -397,7 +397,7 @@ void LsSymbolComponent::FreeGraphics (bool freeDescr, bool freeXGraphics)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsSymbolComponent::AddGraphics (EditElementHandleR eeh)
     {
-    m_elements.push_back(eeh.ExtractElementDescr());
+    m_elements.push_back(eeh.ExtractWriteableElement());
     }
 
 //---------------------------------------------------------------------------------------
