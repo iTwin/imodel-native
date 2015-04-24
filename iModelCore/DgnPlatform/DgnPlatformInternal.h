@@ -92,7 +92,6 @@
 #include <Logging/bentleylogging.h>
 #include "DgnHandlers/Icons.h"
 #include <DgnPlatformInternal/DgnHandlers/DgnHandlersMessage.h>
-#include <DgnPlatform/Tools/MultiStateMask.h>
 #include <DgnPlatform/Tools/ostime.fdf>
 #include <DgnPlatform/Tools/stringop.h>
 #include <RmgrTools/Tools/toolsubsStdio.h>

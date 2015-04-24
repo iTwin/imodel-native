@@ -74,6 +74,7 @@ struct ViewFlags
     {
 private:
     DgnRenderMode m_renderMode;
+
 public:
     uint32_t    fast_text:1;
     uint32_t    line_wghts:1;               //!< Controls whether line weights are used (e.g. control whether elements with non-zero line weights draw normally, or as weight 0).

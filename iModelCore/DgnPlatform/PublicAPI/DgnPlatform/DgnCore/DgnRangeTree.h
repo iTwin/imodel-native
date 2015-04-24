@@ -148,23 +148,26 @@ private:
     size_t      m_internalNodeSize;
     size_t      m_leafNodeSize;
 
-    void LoadTree(DgnModelCR);
     DRTInternalNodeP AllocateInternalNode() {return new (m_internalNodes.AllocateNode()) DRTInternalNode(m_is3d);}
     DRTLeafNodeP AllocateLeafNode(DRTNode::NodeType nodeType = DRTNode::NodeType::Leaf) {return new (m_leafNodes.AllocateNode()) DRTLeafNode(m_is3d, nodeType);}
     void FreeInternalNode(DRTInternalNodeP node) {m_internalNodes.FreeNode(node);}
     void FreeLeafNode(DRTLeafNodeP node) {m_leafNodes.FreeNode(node);}
 
-    void AddElement(DRTEntry const&, int& stamp);
-    StatusInt RemoveElement(DRTEntry const&, int& stamp);
-    DRange3dCP GetDgnModelRange();
+    void AddElement(DRTEntry const&);
 
 public:
+    void LoadTree(DgnModelCR);
+    DRange3dCP GetFullRange() {return  m_root ? &m_root->GetRange() : nullptr;}
+
     DgnRangeTree(bool is3d, size_t leafSize);
     DRTNodeP GetRoot(){return m_root;}
     size_t GetInternalNodeSize() {return m_internalNodeSize;}
     size_t GetLeafNodeSize() {return m_leafNodeSize;}
     void SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize);
     bool Is3d() const {return m_is3d;}
+    RangeMatch FindMatches(RangeTreeTraverser&);
+    void AddGeomElement(GeometricElementCR geom){AddElement(DRTEntry(geom._GetRange3d(), geom));}
+    StatusInt RemoveElement(DRTEntry const&);
 
     DGNPLATFORM_EXPORT void ProcessOcclusionSorted(ViewContextR, DgnModelP, RangeTreeProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);
 };

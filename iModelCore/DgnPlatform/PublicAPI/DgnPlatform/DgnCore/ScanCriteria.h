@@ -12,7 +12,6 @@
 #include "DgnModel.h"
 #include "DgnRangeTree.h"
 
-DGNPLATFORM_TYPEDEFS (ElemRangeIndex)
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 DGNPLATFORM_TYPEDEFS (IRangeNodeCheck)
 
@@ -39,26 +38,6 @@ enum ScanCriteriaConstants
     BUFF_FULL       = 11,
 };
 
-
-//=======================================================================================
-// @bsiclass                                                      Keith.Bentley   05/07
-//=======================================================================================
-struct  ElemRangeIndex
-{
-private:
-    int             m_stamp;      // Useful to tell if the range has changed.
-    DgnRangeTree   m_rangeTree;
-
-public:
-    ElemRangeIndex(DgnModelCR model) : m_rangeTree(model.Is3d(), 20) {m_stamp=0;}
-    int GetStamp () const {return m_stamp;}
-
-    DGNPLATFORM_EXPORT void AddRangeElement(GeometricElementCR);
-    StatusInt RemoveElement(GeometricElementCR element, DRange3d oldRange) {return m_rangeTree.RemoveElement(DRTEntry(oldRange, element), m_stamp);}
-    DGNPLATFORM_EXPORT RangeMatch FindMatches(RangeTreeTraverser&);
-    DgnRangeTreeR GetDgnRangeTree() {return m_rangeTree;}
-    DGNPLATFORM_EXPORT DRange3dCP GetRange();
-};
 
 enum
 {
@@ -161,16 +140,16 @@ private:
 
     StatusInt CallElementFunc (DgnElementCP el);
     StatusInt ProcessRangeIndexResults ();
-    bool      UseRangeTree (ElemRangeIndexP);
+    bool      UseRangeTree(DgnRangeTree&);
     bool      UseRangeTreeOrdering () {return 3 == m_type.iteration;}
     bool      IsElemRefIter () {return 3 == m_type.iteration || 2 == m_type.iteration;}
     bool      IsElemDescrIter () {return 1 == m_type.iteration;}
     bool      CheckElementRange (DgnElementCR) const;
     StatusInt DoElementCallback ();
     bool      TransferElement (int* scanStatus);
-    void      ResetState ();
-    void      Empty ();
-    RangeMatch FindRangeHits (ElemRangeIndexP);
+    void      ResetState();
+    void      Empty();
+    RangeMatch FindRangeHits(DgnRangeTree*);
     StatusInt ProcessElemRefRangeList ();
 
     virtual bool _CheckRangeIndexNode (DRange3dCR, bool, bool) const override;
