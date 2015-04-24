@@ -816,7 +816,7 @@ DgnModelStatus PhysicalElement::_UpdateInDb(DgnElementPool& pool)
 DgnModelStatus DgnElement2d::_BindInsertGeom(Statement& stmt)
     {
     if (!m_placement.IsValid())
-        DGNMODEL_STATUS_NoGeometry;
+        return DGNMODEL_STATUS_NoGeometry;
 
     stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
     return DGNMODEL_STATUS_Success;
