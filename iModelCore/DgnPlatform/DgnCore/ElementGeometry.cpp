@@ -167,7 +167,7 @@ bool ElementGeometry::GetLocalRange (DRange3dR localRange, TransformR localToWor
         }
     else
         {
-        clone = Clone ();
+        clone = Clone();
         }
 
     Transform   worldToLocal;
@@ -176,6 +176,73 @@ bool ElementGeometry::GetLocalRange (DRange3dR localRange, TransformR localToWor
     clone->TransformInPlace (worldToLocal);
 
     return clone->GetRange (localRange);
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getRange (ICurvePrimitiveCR geom, DRange3dR range, TransformCP transform)
+    {
+    return (nullptr != transform ? geom.GetRange(range, *transform) : geom.GetRange(range));
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getRange (CurveVectorCR geom, DRange3dR range, TransformCP transform)
+    {
+    return (nullptr != transform ? geom.GetRange(range, *transform) : geom.GetRange(range));
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getRange (ISolidPrimitiveCR geom, DRange3dR range, TransformCP transform)
+    {
+    return (nullptr != transform ? geom.GetRange(range, *transform) : geom.GetRange(range));
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getRange (PolyfaceQueryCR geom, DRange3dR range, TransformCP transform)
+    {
+    range = geom.PointRange();
+
+    if (nullptr != transform)
+        transform->Multiply(range, range);
+
+    return true;
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getRange (MSBsplineSurfaceCR geom, DRange3dR range, TransformCP transform)
+    {
+    // NOTE: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...
+    IFacetOptionsPtr          facetOpt = IFacetOptions::Create();
+    IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::Create(*facetOpt);
+
+    builder->Add (geom);
+
+    return getRange(builder->GetClientMeshR(), range, transform);
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getRange (ISolidKernelEntityCR geom, DRange3dR range, TransformCP transform)
+    {
+    if (SUCCESS != DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._GetEntityRange(range, geom))
+        return false;
+
+    geom.GetEntityTransform().Multiply(range, range);
+
+    if (NULL != transform)
+        transform->Multiply(range, range);
+
+    return true;
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -189,67 +256,44 @@ bool ElementGeometry::GetRange (DRange3dR range, TransformCP transform) const
         {
         case GeometryType::CurvePrimitive:
             {
-            ICurvePrimitivePtr curve = GetAsICurvePrimitive ();
+            ICurvePrimitivePtr geom = GetAsICurvePrimitive ();
 
-            return (NULL != transform ? curve->GetRange (range, *transform) : curve->GetRange (range));
+            return getRange(*geom, range, transform);
             }
 
         case GeometryType::CurveVector:
             {
-            CurveVectorPtr curves = GetAsCurveVector ();
+            CurveVectorPtr geom = GetAsCurveVector ();
 
-            return (NULL != transform ? curves->GetRange (range, *transform) : curves->GetRange (range));
+            return getRange(*geom, range, transform);
             }
 
         case GeometryType::SolidPrimitive:
             {
-            ISolidPrimitivePtr solidPrimitive = GetAsISolidPrimitive ();
+            ISolidPrimitivePtr geom = GetAsISolidPrimitive ();
 
-            return (NULL != transform ? solidPrimitive->GetRange (range, *transform) : solidPrimitive->GetRange (range));
+            return getRange(*geom, range, transform);
             }
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr polyface = GetAsPolyfaceHeader ();
+            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader ();
 
-            range = polyface->PointRange ();
-
-            if (NULL != transform)
-                transform->Multiply (range, range);
-
-            return true;
+            return getRange(*geom, range, transform);
             }
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr surface = GetAsMSBsplineSurface ();
+            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface ();
 
-            // NOTE: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...
-            IFacetOptionsPtr          facetOpt = IFacetOptions::Create ();
-            IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::Create (*facetOpt);
-
-            builder->Add (*surface);
-            range = builder->GetClientMeshR ().PointRange ();
-
-            if (NULL != transform)
-                transform->Multiply (range, range);
-
-            return true;
+            return getRange(*geom, range, transform);
             }
         
         case GeometryType::SolidKernelEntity:
             {
-            ISolidKernelEntityPtr entity = GetAsISolidKernelEntity ();
+            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity ();
 
-            if (SUCCESS != DgnPlatformLib::QueryHost ()->GetSolidsKernelAdmin ()._GetEntityRange (range, *entity))
-                return false;
-
-            entity->GetEntityTransform ().Multiply (range, range);
-
-            if (NULL != transform)
-                transform->Multiply (range, range);
-
-            return true;
+            return getRange(*geom, range, transform);
             }
 
         default:
@@ -269,46 +313,46 @@ bool ElementGeometry::TransformInPlace (TransformCR transform)
         {
         case GeometryType::CurvePrimitive:
             {
-            ICurvePrimitivePtr curve = GetAsICurvePrimitive ();
+            ICurvePrimitivePtr geom = GetAsICurvePrimitive ();
 
-            return curve->TransformInPlace (transform);
+            return geom->TransformInPlace (transform);
             }
 
         case GeometryType::CurveVector:
             {
-            CurveVectorPtr curves = GetAsCurveVector ();
+            CurveVectorPtr geom = GetAsCurveVector ();
 
-            return curves->TransformInPlace (transform);
+            return geom->TransformInPlace (transform);
             }
 
         case GeometryType::SolidPrimitive:
             {
-            ISolidPrimitivePtr solidPrimitive = GetAsISolidPrimitive ();
+            ISolidPrimitivePtr geom = GetAsISolidPrimitive ();
 
-            return solidPrimitive->TransformInPlace (transform);
+            return geom->TransformInPlace (transform);
             }
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr polyface = GetAsPolyfaceHeader ();
+            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader ();
 
-            polyface->Transform (transform);
+            geom->Transform (transform);
 
             return true;
             }
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr surface = GetAsMSBsplineSurface ();
+            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface ();
 
-            return (SUCCESS == surface->TransformSurface (transform) ? true : false);
+            return (SUCCESS == geom->TransformSurface (transform) ? true : false);
             }
         
         case GeometryType::SolidKernelEntity:
             {
-            ISolidKernelEntityPtr entity = GetAsISolidKernelEntity ();
+            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity ();
 
-            entity->PreMultiplyEntityTransformInPlace (transform); // Just change entity transform...
+            geom->PreMultiplyEntityTransformInPlace (transform); // Just change entity transform...
 
             return true;
             }
@@ -326,32 +370,27 @@ bool ElementGeometry::TransformInPlace (TransformCR transform)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometryPtr ElementGeometry::Clone () const
     {
-    ElementGeometry* clone = nullptr;
-
     switch (GetGeometryType ())
         {
         case GeometryType::CurvePrimitive:
             {
             ICurvePrimitivePtr geom = GetAsICurvePrimitive()->Clone();
 
-            clone = new ElementGeometry (geom);
-            break;
+            return new ElementGeometry (geom);
             }
 
         case GeometryType::CurveVector:
             {
             CurveVectorPtr geom = GetAsCurveVector()->Clone();
 
-            clone = new ElementGeometry (geom);
-            break;
+            return new ElementGeometry (geom);
             }
 
         case GeometryType::SolidPrimitive:
             {
             ISolidPrimitivePtr geom = GetAsISolidPrimitive()->Clone();
 
-            clone = new ElementGeometry (geom);
-            break;
+            return new ElementGeometry (geom);
             }
 
         case GeometryType::Polyface:
@@ -359,8 +398,8 @@ ElementGeometryPtr ElementGeometry::Clone () const
             PolyfaceHeaderPtr geom = BentleyApi::PolyfaceHeader::New();
 
             geom->CopyFrom (*GetAsPolyfaceHeader());
-            clone = new ElementGeometry (geom);
-            break;
+
+            return new ElementGeometry (geom);
             }
 
         case GeometryType::BsplineSurface:
@@ -368,19 +407,15 @@ ElementGeometryPtr ElementGeometry::Clone () const
             MSBsplineSurfacePtr geom = BentleyApi::MSBsplineSurface::CreatePtr();
 
             geom->CopyFrom (*GetAsMSBsplineSurface());
-            clone = new ElementGeometry (geom);
-            break;
+
+            return new ElementGeometry (geom);
             }
         
         case GeometryType::SolidKernelEntity:
             {
-            ISolidKernelEntityPtr geom;
+            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity()->Clone();
 
-            if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._CopyEntity (geom, *GetAsISolidKernelEntity()))
-                return nullptr;
-
-            clone = new ElementGeometry (geom);
-            break;
+            return new ElementGeometry (geom);
             }
 
         default:
@@ -389,8 +424,6 @@ ElementGeometryPtr ElementGeometry::Clone () const
             return nullptr;
             }
         }
-
-    return clone;
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -406,12 +439,22 @@ ElementGeometry::ElementGeometry (ISolidKernelEntityPtr const& source) {m_type =
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryPtr ElementGeometry::Create (ICurvePrimitivePtr const& source) {return (source.IsValid () ? new ElementGeometry (source) : nullptr);}
-ElementGeometryPtr ElementGeometry::Create (CurveVectorPtr const& source) {return (source.IsValid () ? new ElementGeometry (source) : nullptr);}
-ElementGeometryPtr ElementGeometry::Create (ISolidPrimitivePtr const& source) {return (source.IsValid () ? new ElementGeometry (source) : nullptr);}
-ElementGeometryPtr ElementGeometry::Create (MSBsplineSurfacePtr const& source) {return (source.IsValid () ? new ElementGeometry (source) : nullptr);}
-ElementGeometryPtr ElementGeometry::Create (PolyfaceHeaderPtr const& source) {return (source.IsValid () ? new ElementGeometry (source) : nullptr);}
-ElementGeometryPtr ElementGeometry::Create (ISolidKernelEntityPtr const& source) {return (source.IsValid () ? new ElementGeometry (source) : nullptr);}
+ElementGeometryPtr ElementGeometry::Create (ICurvePrimitivePtr const& source) {return (source.IsValid() ? new ElementGeometry(source) : nullptr);}
+ElementGeometryPtr ElementGeometry::Create (CurveVectorPtr const& source) {return (source.IsValid() ? new ElementGeometry(source) : nullptr);}
+ElementGeometryPtr ElementGeometry::Create (ISolidPrimitivePtr const& source) {return (source.IsValid() ? new ElementGeometry(source) : nullptr);}
+ElementGeometryPtr ElementGeometry::Create (MSBsplineSurfacePtr const& source) {return (source.IsValid() ? new ElementGeometry(source) : nullptr);}
+ElementGeometryPtr ElementGeometry::Create (PolyfaceHeaderPtr const& source) {return (source.IsValid() ? new ElementGeometry(source) : nullptr);}
+ElementGeometryPtr ElementGeometry::Create (ISolidKernelEntityPtr const& source) {return (source.IsValid() ? new ElementGeometry(source) : nullptr);}
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  02/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryPtr ElementGeometry::Create (ICurvePrimitiveCR source) {ICurvePrimitivePtr clone = source.Clone(); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create (CurveVectorCR source) {CurveVectorPtr clone = source.Clone(); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create (ISolidPrimitiveCR source) {ISolidPrimitivePtr clone = source.Clone(); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create (MSBsplineSurfaceCR source) {MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr(); clone->CopyFrom(source); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create (PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = PolyfaceHeader::New(); clone->CopyFrom(source); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create (ISolidKernelEntityCR source) {ISolidKernelEntityPtr clone = source.Clone(); return Create(clone);}
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
@@ -671,32 +714,122 @@ void ElementGeomIO::Writer::Append (MSBsplineSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity)
+void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments, bool saveBRepOnly)
     {
-    size_t      bufferSize = 0;
-    uint8_t*    buffer = NULL;
+    bool        saveBRep = saveBRepOnly, saveFacets = false, saveEdges = false, saveFaceIso = false;
 
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._SaveEntityToMemory (&buffer, bufferSize, entity))
+    if (!saveBRepOnly)
         {
-        BeAssert (false);
-        return;
+        switch (entity.GetEntityType())
+            {
+            case ISolidKernelEntity::EntityType_Sheet:
+            case ISolidKernelEntity::EntityType_Solid:
+                {
+                saveBRep = saveFacets = true;
+                                            
+                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasOnlyPlanarFaces))
+                    saveFaceIso = true;
+                    
+                if (saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge))
+                    saveEdges = true;
+                break;
+                }
+                    
+            case ISolidKernelEntity::EntityType_Wire:
+                {
+                saveEdges = true; // Just save wire body as CurveVector...very in-efficent and un-necessary to persist these as BReps...
+                break;
+                }
+            }
         }
 
-    FlatBufferBuilder fbb;
+    if (saveBRep)
+        {
+        // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
+        size_t      bufferSize = 0;
+        uint8_t*    buffer = NULL;
 
-//    auto faceAttachments = fbb.CreateVectorOfStructs ((FB::FaceSymbology*) ?, n?); // NEEDSWORK
-    auto entityData = fbb.CreateVector (buffer, bufferSize);
+        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._SaveEntityToMemory (&buffer, bufferSize, entity))
+            {
+            BeAssert (false);
+            return;
+            }
 
-    FB::BRepDataBuilder builder (fbb);
+        FlatBufferBuilder fbb;
 
-    builder.add_entityTransform ((FB::Transform*) &entity.GetEntityTransform());
-    builder.add_entityData (entityData);
-//    builder.add_faceAttachments (faceAttachments);
+    //    auto faceAttachments = fbb.CreateVectorOfStructs ((FB::FaceSymbology*) ?, n?); // NEEDSWORK
+        auto entityData = fbb.CreateVector (buffer, bufferSize);
 
-    auto mloc = builder.Finish();
+        FB::BRepDataBuilder builder (fbb);
 
-    fbb.Finish (mloc);
-    Append (Operation (OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        builder.add_entityTransform ((FB::Transform*) &entity.GetEntityTransform());
+        builder.add_entityData (entityData);
+    //    builder.add_faceAttachments (faceAttachments);
+
+        auto mloc = builder.Finish();
+
+        fbb.Finish (mloc);
+        Append (Operation (OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        }
+
+    if (saveFacets)
+        {
+        // Store mesh representation for quick display or when parasolid isn't available...
+        IFacetOptionsPtr       facetOpt = IFacetOptions::CreateForCurves();
+        IFacetTopologyTablePtr facetsPtr;
+
+        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt, NULL))
+            {
+            PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+
+            if (SUCCESS == IFacetTopologyTable::ConvertToPolyface (*polyface, *facetsPtr, *facetOpt))
+                {
+                polyface->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
+                polyface->Transform (entity.GetEntityTransform());
+
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer);
+
+                if (0 != buffer.size())
+                    Append (Operation (saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact, (uint32_t) buffer.size(), &buffer.front()));
+                }
+            }
+        }
+
+    if (saveEdges)
+        {
+        // When facetted representation is an approximation, we need to store the edge curvcs for snapping...
+        // NEEDSWORK: Face attachments affect color...
+        CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, true, false);
+
+        if (edgeCurves.IsValid ())
+            {
+            bvector<Byte> buffer;
+
+            BentleyGeometryFlatBuffer::GeometryToBytes (*edgeCurves, buffer);
+
+            if (0 != buffer.size())
+                Append (Operation (OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+            }
+        }
+
+    if (saveFaceIso)
+        {
+        // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
+        // NEEDSWORK: Face attachments affect color...
+        CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves (entity, false, true);
+
+        if (faceCurves.IsValid ())
+            {
+            bvector<Byte> buffer;
+
+            BentleyGeometryFlatBuffer::GeometryToBytes (*faceCurves, buffer);
+
+            if (0 != buffer.size())
+                Append (Operation (OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -847,93 +980,7 @@ void ElementGeomIO::Writer::Append (ElementGeometryCR elemGeom)
 
         case ElementGeometry::GeometryType::SolidKernelEntity:
             {
-            bool                  saveBRep = false, saveEdges = false, saveFaceIso = false;
-            ISolidKernelEntityPtr entity = elemGeom.GetAsISolidKernelEntity();
-
-            switch (entity->GetEntityType())
-                {
-                case ISolidKernelEntity::EntityType_Sheet:
-                case ISolidKernelEntity::EntityType_Solid:
-                    {
-                    saveBRep = true;
-                                            
-                    if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (*entity, ISolidKernelEntity::EntityQuery_HasOnlyPlanarFaces))
-                        saveFaceIso = true;
-                    
-                    if (saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (*entity, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge))
-                        saveEdges = true;
-                    break;
-                    }
-                    
-                case ISolidKernelEntity::EntityType_Wire:
-                    {
-                    saveEdges = true; // Just save wire body as CurveVector...very in-efficent and un-necessary to persist these as BReps...
-                    break;
-                    }
-                }
-
-            if (saveBRep)
-                {
-                // Make the parasolid data available for platforms that can support it...MUST GET ADDED FIRST!!!
-                Append (*elemGeom.GetAsISolidKernelEntity());
-
-                // Store mesh representation for quick display or when parasolid isn't available...
-                IFacetOptionsPtr       facetOpt = IFacetOptions::CreateForCurves();
-                IFacetTopologyTablePtr facetsPtr;
-
-                if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, *entity, *facetOpt, NULL))
-                    {
-                    PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
-
-                    if (SUCCESS == IFacetTopologyTable::ConvertToPolyface (*polyface, *facetsPtr, *facetOpt))
-                        {
-                        polyface->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity->GetEntityType());
-                        polyface->Transform (entity->GetEntityTransform());
-
-                        bvector<Byte> buffer;
-
-                        BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer);
-
-                        if (0 != buffer.size())
-                            Append (Operation (saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact, (uint32_t) buffer.size(), &buffer.front()));
-                        }
-                    }
-                }
-
-            if (saveEdges)
-                {
-                // When facetted representation is an approximation, we need to store the edge curvcs for snapping...
-                // NEEDSWORK: Face attachments affect color...
-                CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (*entity, true, false);
-
-                if (edgeCurves.IsValid ())
-                    {
-                    bvector<Byte> buffer;
-
-                    BentleyGeometryFlatBuffer::GeometryToBytes (*edgeCurves, buffer);
-
-                    if (0 != buffer.size())
-                        Append (Operation (OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
-                    }
-                }
-
-            if (saveFaceIso)
-                {
-                // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
-                // NEEDSWORK: Face attachments affect color...
-                CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves (*entity, false, true);
-
-                if (faceCurves.IsValid ())
-                    {
-                    bvector<Byte> buffer;
-
-                    BentleyGeometryFlatBuffer::GeometryToBytes (*faceCurves, buffer);
-
-                    if (0 != buffer.size())
-                        Append (Operation (OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
-                    }
-                }
-
+            Append (*elemGeom.GetAsISolidKernelEntity());
             break;
             }
         }
@@ -1775,8 +1822,7 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement (GeometricElemen
         if (nullptr == (element3d = element.ToElement3dP()))
             return ERROR;
 
-        // NEEDSWORK: A method to update the axis aligned box might be nicer...
-        element3d->SetPlacement(Placement3d(m_placement3d.GetOrigin(), m_placement3d.GetAngles(), m_placement3d.GetElementBox()));
+        element3d->SetPlacement(m_placement3d);
         }
     else
         {
@@ -1785,8 +1831,7 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement (GeometricElemen
         if (nullptr == (element2d = element.ToElement2dP()))
             return ERROR;
 
-        // NEEDSWORK: A method to update the axis aligned box might be nicer...
-        element2d->SetPlacement(Placement2d(m_placement2d.GetOrigin(), m_placement2d.GetAngle(), m_placement2d.GetElementBox()));
+        element2d->SetPlacement(m_placement2d);
         }
 
     element.GetGeomStreamR().SaveData (&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
@@ -1848,10 +1893,19 @@ bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCP geomT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeometryBuilder::OnNewGeom (DRange3dCR localRange, TransformCP geomToElement)
     {
-    // NEEDSWORK: Extend m_placement2d...
-    m_placement3d.GetElementBoxR().Extend(localRange);
+    Transform elementToWorld;
+    
+    if (m_model.Is3d())
+        {
+        m_placement3d.GetElementBoxR().Extend(localRange);
+        elementToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
+        }
+    else
+        {
+        m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
+        elementToWorld.InitFromOriginAngleAndLengths(m_placement2d.GetOrigin(), m_placement2d.GetAngle(), 1.0, 1.0);
+        }
 
-    Transform elementToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
     Transform geomToWorld = (nullptr == geomToElement ? elementToWorld : Transform::FromProduct(elementToWorld, *geomToElement));
 
     // Only establish "geometry group" boundaries at sub-category or transform changes...
@@ -1877,23 +1931,39 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
     {
     Transform   localToWorld;
 
-    // NEEDSWORK: Setup m_placement2d...
     if (!m_havePlacement)
         {
         if (!geom.GetLocalCoordinateFrame(localToWorld))
             return false;
 
-        RotMatrix   rMatrix;
+        DPoint3d            origin;
+        RotMatrix           rMatrix;
+        YawPitchRollAngles  angles;
 
+        localToWorld.GetTranslation(origin);
         localToWorld.GetMatrix(rMatrix);
-        localToWorld.GetTranslation(m_placement3d.GetOriginR());
-        YawPitchRollAngles::TryFromRotMatrix(m_placement3d.GetAnglesR(), rMatrix);
+        YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix);
+
+        if (m_model.Is3d())
+            {
+            m_placement3d.GetOriginR() = origin;
+            m_placement3d.GetAnglesR() = angles;
+            }
+        else
+            {
+            m_placement2d.GetOriginR() = DPoint2d::From(origin);
+            m_placement2d.GetAngleR() = angles.GetRoll().Degrees();
+            }
     
         m_havePlacement = true;
         }
-    else
+    else if (m_model.Is3d())
         {
         localToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
+        }
+    else
+        {
+        localToWorld.InitFromOriginAngleAndLengths(m_placement2d.GetOrigin(), m_placement2d.GetAngle(), 1.0, 1.0);
         }
 
     if (localToWorld.IsIdentity())
@@ -1909,20 +1979,30 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom)
+bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP geomToElement, bool deferWrite)
     {
-    if (!ConvertToLocal (geom))
-        return false;
-
     DRange3d localRange;
 
-    if (!geom.GetRange(localRange))
+    if (!geom.GetRange(localRange, geomToElement))
         return false;
 
-    OnNewGeom (localRange, nullptr);
-    m_writer.Append(geom);
+    OnNewGeom(localRange, geomToElement);
+
+    if (!deferWrite)
+        m_writer.Append(geom);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom, bool deferWrite)
+    {
+    if (!ConvertToLocal(geom))
+        return false;
+
+    return AppendLocal(geom, nullptr, deferWrite);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1931,17 +2011,7 @@ bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom)
 bool ElementGeometryBuilder::Append (ElementGeometryCR geom, TransformCP geomToElement)
     {
     if (m_haveLocalGeom)
-        {
-        DRange3d localRange;
-
-        if (!geom.GetRange(localRange, geomToElement))
-            return false;
-
-        OnNewGeom (localRange, geomToElement);
-        m_writer.Append(geom);
-
-        return true;
-        }
+        return AppendLocal(geom, geomToElement);
 
     ElementGeometryPtr geomPtr;
 
@@ -1972,7 +2042,7 @@ bool ElementGeometryBuilder::Append (ICurvePrimitiveCR geom, TransformCP geomToE
         {
         DRange3d localRange;
 
-        if (!(nullptr != geomToElement ? geom.GetRange(localRange, *geomToElement) : geom.GetRange(localRange)))
+        if (!getRange(geom, localRange, geomToElement))
             return false;
 
         OnNewGeom (localRange, geomToElement);
@@ -1981,8 +2051,7 @@ bool ElementGeometryBuilder::Append (ICurvePrimitiveCR geom, TransformCP geomToE
         return true;
         }
 
-    ICurvePrimitivePtr clone = geom.Clone();
-    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(geom);
 
     return AppendWorld (*geomPtr);
     }
@@ -1996,7 +2065,7 @@ bool ElementGeometryBuilder::Append (CurveVectorCR geom, TransformCP geomToEleme
         {
         DRange3d localRange;
 
-        if (!(nullptr != geomToElement ? geom.GetRange(localRange, *geomToElement) : geom.GetRange(localRange)))
+        if (!getRange(geom, localRange, geomToElement))
             return false;
 
         OnNewGeom (localRange, geomToElement);
@@ -2005,8 +2074,7 @@ bool ElementGeometryBuilder::Append (CurveVectorCR geom, TransformCP geomToEleme
         return true;
         }
 
-    CurveVectorPtr clone = geom.Clone();
-    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(geom);
 
     return AppendWorld (*geomPtr);
     }
@@ -2020,7 +2088,7 @@ bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom, TransformCP geomToE
         {
         DRange3d localRange;
 
-        if (!(nullptr != geomToElement ? geom.GetRange(localRange, *geomToElement) : geom.GetRange(localRange)))
+        if (!getRange(geom, localRange, geomToElement))
             return false;
 
         OnNewGeom (localRange, geomToElement);
@@ -2029,8 +2097,7 @@ bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom, TransformCP geomToE
         return true;
         }
 
-    ISolidPrimitivePtr clone = geom.Clone();
-    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(geom);
 
     return AppendWorld (*geomPtr);
     }
@@ -2042,15 +2109,10 @@ bool ElementGeometryBuilder::Append (MSBsplineSurfaceCR geom, TransformCP geomTo
     {
     if (m_haveLocalGeom)
         {
-        IFacetOptionsPtr facetOpt = IFacetOptions::Create ();
-        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*facetOpt);
+        DRange3d localRange;
 
-        builder->Add (geom);
-        
-        DRange3d localRange = builder->GetClientMeshR ().PointRange ();
-
-        if (NULL != geomToElement)
-            geomToElement->Multiply (localRange, localRange);
+        if (!getRange(geom, localRange, geomToElement))
+            return false;
 
         OnNewGeom (localRange, geomToElement);
         m_writer.Append(geom);
@@ -2058,11 +2120,7 @@ bool ElementGeometryBuilder::Append (MSBsplineSurfaceCR geom, TransformCP geomTo
         return true;
         }
 
-    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
-
-    clone->CopyFrom (geom);
-
-    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(geom);
 
     return AppendWorld (*geomPtr);
     }
@@ -2074,10 +2132,10 @@ bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom, TransformCP geomToEle
     {
     if (m_haveLocalGeom)
         {
-        DRange3d localRange = geom.PointRange ();
+        DRange3d localRange;
 
-        if (NULL != geomToElement)
-            geomToElement->Multiply (localRange, localRange);
+        if (!getRange(geom, localRange, geomToElement))
+            return false;
 
         OnNewGeom (localRange, geomToElement);
         m_writer.Append(geom);
@@ -2085,11 +2143,7 @@ bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom, TransformCP geomToEle
         return true;
         }
 
-    PolyfaceHeaderPtr clone = PolyfaceHeader::New();
-        
-    clone->CopyFrom (geom);
-
-    ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
+    ElementGeometryPtr geomPtr = ElementGeometry::Create(geom);
 
     return AppendWorld (*geomPtr);
     }
@@ -2097,21 +2151,35 @@ bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom, TransformCP geomToEle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, TransformCP geomToElement)
+bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, TransformCP geomToElement, IFaceMaterialAttachmentsCP attachments)
     {
+    if (m_haveLocalGeom)
+        {
+        DRange3d localRange;
+
+        if (!getRange(geom, localRange, geomToElement))
+            return false;
+
+        OnNewGeom (localRange, geomToElement);
+        m_writer.Append(geom, attachments);
+
+        return true;
+        }
+
     ISolidKernelEntityPtr clone;
 
-    // NOTE: Avoid un-necessary copy of BRep. We may just need to change entity transform...
+    // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(clone, geom))
         return false;
 
-    // Always create ElementGeomentry to have brep+mesh+edges saved instead of just brep...
     ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
 
-    if (m_haveLocalGeom)
-        return Append (*geomPtr, geomToElement);
+    if (!AppendWorld (*geomPtr, true)) // Don't Append as ElementGeomentry for faceAttachments...
+        return false;
 
-    return AppendWorld (*geomPtr);
+    m_writer.Append(*geomPtr->GetAsISolidKernelEntity (), attachments);
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

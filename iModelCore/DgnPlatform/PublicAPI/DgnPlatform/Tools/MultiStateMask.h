@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Tools/MultiStateMask.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,7 +45,7 @@ private:
 public:
     DGNPLATFORM_EXPORT MultiStateMask (uint16_t numBitsPerStateIn, uint16_t defaultStateValueIn);
     DGNPLATFORM_EXPORT MultiStateMask (uint16_t numBitsPerStateIn, uint32_t numStatesIn, uint16_t const * stateArrayIn, uint16_t defaultStateValueIn);
-    DGNPLATFORM_EXPORT MultiStateMask (MultiStateMaskCP copyMaskIn);
+    DGNPLATFORM_EXPORT MultiStateMask (MultiStateMask const* copyMaskIn);
 
     inline uint16_t         GetNumBitsPerState () const { return m_numBitsPerState; }
     inline uint16_t         GetDefaultStateValue () const { return m_defaultStateValue; }
@@ -60,7 +60,7 @@ public:
     DGNPLATFORM_EXPORT void                    SetState (uint32_t stateIndexIn, uint16_t stateValueIn);
 
     DGNPLATFORM_EXPORT bool                    IsEqual (MultiStateMask * maskIn);
-    DGNPLATFORM_EXPORT bool                    IsEquivalent (MultiStateMaskCP maskIn, uint16_t dontCareState) const;
+    DGNPLATFORM_EXPORT bool                    IsEquivalent (MultiStateMask const* maskIn, uint16_t dontCareState) const;
 
     DGNPLATFORM_EXPORT void                    Dump (FILE * fileIn);
     DGNPLATFORM_EXPORT void                    CopyTo (uint16_t *pArrayOut);

@@ -15,6 +15,8 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference counted type to manage the life-cycle of the ISolidKernelEntity.
+
 //=======================================================================================
 //! ISolidKernelEntity represents a boundary representation body (BRep). A BRep is
 //! defined by it's topology and geometry. The geometry is the surfaces, curves, and points.
@@ -106,9 +108,12 @@ DGNPLATFORM_EXPORT void PreMultiplyEntityTransformInPlace (TransformCR uorTransf
 //! @param[in] solidTransform The transform to post-multiply.
 DGNPLATFORM_EXPORT void PostMultiplyEntityTransformInPlace (TransformCR solidTransform);
 
+//! Create deep copy of this ISolidKernelEntity.
+DGNPLATFORM_EXPORT ISolidKernelEntityPtr Clone () const;
+
 }; // ISolidKernelEntity
 
-typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference counted type to manage the life-cycle of the ISolidKernelEntity.
+typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to manage the life-cycle of the ISubEntity.
 
 //=======================================================================================
 //! ISubEntity represents a topological BRep entity. The ISubEntity can refer to a
@@ -161,8 +166,6 @@ DGNPLATFORM_EXPORT bool IsEqual (ISubEntityCR) const;
 DGNPLATFORM_EXPORT SubEntityType GetSubEntityType () const;
 
 }; // ISubEntity
-
-typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to manage the life-cycle of the ISubEntity.
 
 //__PUBLISH_SECTION_END__
 //=======================================================================================

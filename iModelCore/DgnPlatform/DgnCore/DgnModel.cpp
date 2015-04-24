@@ -447,7 +447,11 @@ BeSQLite::DbResult DgnModel::SaveProperties()
 void DgnModel::AllocateRangeIndex() const
     {
     if (nullptr == m_rangeIndex)
-        m_rangeIndex = new ElemRangeIndex(*this);
+        {
+        m_rangeIndex = new DgnRangeTree(Is3d(), 20);
+        m_rangeIndex->LoadTree(*this);
+        }
+
     }
 
 struct FilledCaller
@@ -498,7 +502,7 @@ void DgnModel::RegisterElement(DgnElementR element)
 
     GeometricElementCP geom = element._ToGeometricElement();
     if (nullptr != m_rangeIndex && nullptr != geom)
-        m_rangeIndex->AddRangeElement(*geom);
+        m_rangeIndex->AddGeomElement(*geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -559,7 +563,7 @@ void DgnModel::_OnDeletedElement(DgnElementR element, bool canceled)
 
     GeometricElementCP geom = element._ToGeometricElement();
     if (nullptr != geom)
-        m_rangeIndex->RemoveElement(*geom, geom->_GetRange3d());
+        m_rangeIndex->RemoveElement(DRTEntry(geom->_GetRange3d(), *geom));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -571,8 +575,8 @@ void DgnModel::_OnReplacedElement(DgnElementR element, DgnElementR replacement)
     if (nullptr != m_rangeIndex && nullptr != geom)
         {
         GeometricElementCP replaceGeom = replacement._ToGeometricElement();
-        m_rangeIndex->RemoveElement(*geom, replaceGeom->_GetRange3d());
-        m_rangeIndex->AddRangeElement(*geom);
+        m_rangeIndex->RemoveElement(DRTEntry(replaceGeom->_GetRange3d(), *geom));
+        m_rangeIndex->AddGeomElement(*geom);
         }
     }
 
@@ -627,20 +631,12 @@ DgnModelStatus DgnModel::ReplaceElement(DgnElementR element, DgnElementR replace
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemRangeIndexP DgnModel::GetRangeIndexP(bool create) const
+DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const
     {
     if (nullptr == m_rangeIndex && create)
         AllocateRangeIndex();
 
     return m_rangeIndex;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-int DgnModel::GetRangeStamp()
-    {
-    return m_rangeIndex ? m_rangeIndex->GetStamp() : -1;
     }
 
 /*---------------------------------------------------------------------------------**//**

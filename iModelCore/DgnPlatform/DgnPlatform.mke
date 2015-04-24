@@ -29,8 +29,7 @@ DgnPlatformInternalDir = $(DgnCoreDir)../PrivateApi/DgnPlatformInternal/
 dimensionDir    = $(DgnHandlersDir)Dimension/
 markupDir       = $(DgnHandlersDir)Markup/
 
-contextDepends  =   $(DgnCoreAPISrc)ElementHandle.h         \
-                    $(DgnCoreAPISrc)ElementAgenda.h         \
+contextDepends  =   $(DgnCoreAPISrc)ElementAgenda.h         \
                     $(DgnCoreAPISrc)ViewContext.h           \
                     $(DgnCoreAPISrc)IViewOutput.h           \
                     $(DgnCoreAPISrc)IViewDraw.h             \
@@ -46,7 +45,6 @@ RealityDataHandlerDepends = $(DgnCoreAPISrc)DgnViewport.h $(DgnCoreAPISrc)Realit
 WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 
 
-AssocDepends    = $(DgnPlatformAPISrc)DgnHandlers/AssocGeom.h
 txnManagerDepends = $(DgnCoreAPISrc)ITxnManager.h
 RmgrToolsPublicApi=$(BuildContext)PublicAPI/RmgrTools/
 toolsHeaders   = $(DgnPlatformToolsPublicApiSrc)KeyTree.h
@@ -121,8 +119,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 $(coreObjs)DgnElement$(oext)      : $(DgnCoreDir)DgnElement.cpp ${MultiCompileDepends} $(DgnFileIOPubH)  $(toolsHeaders) 
 
 $(coreObjs)DgnModel$(oext)        : $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnCoreAPISrc)ScanCriteria.h 
-
-$(coreObjs)ElemRangeIndex$(oext)  : $(DgnCoreDir)ElemRangeIndex.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
 
 $(coreObjs)UnitDefinition$(oext): $(DgnCoreDir)UnitDefinition.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
 
@@ -284,25 +280,13 @@ $(coreObjs)DgnItem$(oext) : $(DgnCoreDir)DgnItem.cpp $(DgnCoreAPISrc)DgnItem.h $
 
 tools      = $(SrcRoot)DgnPlatform/Tools/ToolSubs/
 
-$(coreObjs)ostime$(oext)          : $(tools)ostime.cpp $(DgnPlatformToolsPublicAPISrc)ostime.fdf ${MultiCompileDepends} 
-
-$(coreObjs)BitMask$(oext)         : $(tools)bitmask/BitMask.cpp $(DgnPlatformToolsPublicAPISrc)BitMask.h  ${MultiCompileDepends} 
-
-$(coreObjs)multistatemask$(oext)  : $(tools)bitmask/multistatemask.cpp $(DgnPlatformToolsPublicAPISrc)MultiStateMask.h ${MultiCompileDepends} 
-
-$(coreObjs)PropMask$(oext)        : $(tools)bitmask/PropMask.cpp $(DgnPlatformToolsPublicAPISrc)PropMask.h ${MultiCompileDepends} 
-
-$(coreObjs)regex$(oext)           : $(tools)charutil/regex.cpp ${MultiCompileDepends} 
-
 $(coreObjs)stringop$(oext)        : $(tools)charutil/stringop.cpp ${MultiCompileDepends} 
-
-$(coreObjs)varichar$(oext)        : $(tools)charutil/varichar.cpp ${MultiCompileDepends} 
-
-$(coreObjs)vplist$(oext)          : $(tools)listutil/vplist.cpp      $(DgnPlatformToolsPublicAPISrc)vplist.h ${MultiCompileDepends} 
 
 $(coreObjs)DgnDb$(oext): $(DgnCoreDir)DgnDb.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)DgnDbSchema$(oext): $(DgnCoreDir)DgnDbSchema.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(coreObjs)DgnDbSqlFuncs$(oext): $(DgnCoreDir)DgnDbSqlFuncs.cpp ${MultiCompileDepends}
 
 $(coreObjs)DgnIModel$(oext) : $(DgnCoreDir)DgnIModel.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 

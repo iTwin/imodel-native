@@ -15,7 +15,7 @@
 
 DGNPLATFORM_TYPEDEFS (DgnModel2d)
 DGNPLATFORM_TYPEDEFS (DgnModel3d)
-DGNPLATFORM_TYPEDEFS (ElemRangeIndex)
+DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 DGNPLATFORM_TYPEDEFS (ICheckStop)
 DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
 DGNPLATFORM_TYPEDEFS (SectioningViewController)
@@ -227,7 +227,7 @@ protected:
     Utf8String      m_name;
     Properties      m_properties;
     DgnElementMap   m_elements;
-    mutable ElemRangeIndexP m_rangeIndex;
+    mutable DgnRangeTreeP m_rangeIndex;
     bool            m_wasFilled;    // true if the list was filled from db
     bool            m_readonly;     // true if this model is from a read-only file.
 
@@ -260,7 +260,6 @@ protected:
     void SetFilled() {m_wasFilled=true; AllocateRangeIndex();}
     void AllocateRangeIndex() const;
     void ClearRangeIndex();
-    int GetRangeStamp();
     void ReleaseAllElements();
 
 public:
@@ -278,7 +277,7 @@ public:
 
     void ModelFillComplete();
     void ElementChanged(DgnElement&, DgnElementChangeReason);
-    DGNPLATFORM_EXPORT ElemRangeIndexP GetRangeIndexP(bool create) const;
+    DGNPLATFORM_EXPORT DgnRangeTree* GetRangeIndexP(bool create) const;
     void ReadProperties();
     DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProperties();
 

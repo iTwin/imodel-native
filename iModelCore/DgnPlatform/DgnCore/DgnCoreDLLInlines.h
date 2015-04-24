@@ -200,6 +200,7 @@ DG_INLINE TransformCR ISolidKernelEntity::GetEntityTransform () const {return _G
 DG_INLINE void ISolidKernelEntity::SetEntityTransform (TransformCR transform) {return _SetEntityTransform (transform);}
 DG_INLINE void ISolidKernelEntity::PostMultiplyEntityTransformInPlace (TransformCR solidTransform)  { SetEntityTransform (Transform::FromProduct (_GetEntityTransform(), solidTransform)); }
 DG_INLINE void ISolidKernelEntity::PreMultiplyEntityTransformInPlace (TransformCR uorTransform) { SetEntityTransform (Transform::FromProduct (uorTransform,_GetEntityTransform())); }
+DG_INLINE ISolidKernelEntityPtr ISolidKernelEntity::Clone() const {ISolidKernelEntityPtr clone; return SUCCESS == T_HOST.GetSolidsKernelAdmin()._CopyEntity(clone, *this) ? clone : nullptr;}
 
 DG_INLINE BentleyStatus ISubEntity::ToString (WStringR subEntityStr) const {return _ToString (subEntityStr);}
 DG_INLINE bool ISubEntity::IsEqual (ISubEntityCR subEntity) const {return _IsEqual (subEntity);}

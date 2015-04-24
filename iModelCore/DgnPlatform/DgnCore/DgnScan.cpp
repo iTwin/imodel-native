@@ -130,12 +130,12 @@ static void intersectRanges (DRange3dR intsct, DRange3dCR range1, DRange3dCR ran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    08/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::UseRangeTree (ElemRangeIndexP rangeTree)
+bool ScanCriteria::UseRangeTree(DgnRangeTree& rangeTree)
     {
     if (NULL != m_appRangeNodeCheck)
         return  true;
 
-    DRange3dCP modelRange = rangeTree->GetRange();
+    DRange3dCP modelRange = rangeTree.GetFullRange();
     if (NULL == modelRange)
         return  false;
 
@@ -520,7 +520,7 @@ RangeMatch ScanCriteria::_VisitRangeTreeElem (GeometricElementCP element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatch ScanCriteria::FindRangeHits(ElemRangeIndexP rangeIndex)
+RangeMatch ScanCriteria::FindRangeHits(DgnRangeTree* rangeIndex)
     {
     if (NULL == m_rangeHits)
         m_rangeHits = new T_RangeHits;
@@ -570,10 +570,10 @@ StatusInt ScanCriteria::Scan (ViewContextP context)
     /* init input and output pointers, output buffer end, words returned */
     scanStatus = 0;
 
-    ElemRangeIndexP  rangeIndex;
+    DgnRangeTreeP rangeIndex;
     if (m_type.testRange && (NULL != (rangeIndex = m_model->GetRangeIndexP(true))))
         {
-        if (!UseRangeTreeOrdering() && !UseRangeTree(rangeIndex))
+        if (!UseRangeTreeOrdering() && !UseRangeTree(*rangeIndex))
             goto linearScan;
 
         if (wasNewCriteria)

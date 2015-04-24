@@ -6,16 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-// ------------------------------------------------------------
-//  This file is included by both .h/cpp and .r files
-// ------------------------------------------------------------
+
 //__PUBLISH_SECTION_START__
 
-#if !defined (resource)
 #include <Bentley/Bentley.h>
 #include <Bentley/BeFileName.h>
 #include "DgnPlatformBaseType.r.h"
-#endif
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -27,7 +23,6 @@ enum DgnErrorCategories
     {
     DGNMODEL_ERROR_BASE             = 0x11000,
     DGNOPEN_STATUS_BASE             = 0x12000,
-    DGNEMBED_ERROR_BASE             = 0x13000,
     DGNELEMENT_ERROR_BASE           = 0x14000,
     GEOCOORD_ATTACH_ERROR_BASE      = 0x15000,
     VIEW_INFO_ERROR_BASE            = 0x16000,
@@ -63,13 +58,11 @@ enum DgnFileStatus
     DGNOPEN_STATUS_TooManyOpenFiles             = DGNOPEN_STATUS_BASE + 0x10,
     DGNOPEN_STATUS_FileNotFound                 = DGNOPEN_STATUS_BASE + 0x11,
     DGNOPEN_STATUS_OpenCanceled                 = DGNOPEN_STATUS_BASE + 0x12,
-    DGNOPEN_STATUS_BAD_FILE                     = DGNOPEN_STATUS_BASE + 0x14,
     DWGOPEN_STATUS_InvalidSeed                  = DGNOPEN_STATUS_BASE + 0x18,
     DGNOPEN_STATUS_IsEncrypted                  = DGNOPEN_STATUS_BASE + 0x21,
     DGNOPEN_STATUS_CorruptFile                  = DGNOPEN_STATUS_BASE + 0x22,
     DGNOPEN_STATUS_FileHasNewFeatures           = DGNOPEN_STATUS_BASE + 0x23,
     DGNOPEN_STATUS_SaveToPerformed              = DGNOPEN_STATUS_BASE + 0x24,
-    DGNOPEN_STATUS_InsecureEnvironment          = DGNOPEN_STATUS_BASE + 0x26,
     DWGOPEN_STATUS_BadFile                      = DGNOPEN_STATUS_BASE + 0x27,
     DWGOPEN_STATUS_CannotOpenSeed               = DGNOPEN_STATUS_BASE + 0x28,
     DGNOPEN_STATUS_OperationComplete            = DGNOPEN_STATUS_BASE + 0x29,
@@ -77,7 +70,6 @@ enum DgnFileStatus
     DGNOPEN_STATUS_OutOfMemory                  = DGNOPEN_STATUS_BASE + 0x2b,
     DGNOPEN_STATUS_FileIsReadonly               = DGNOPEN_STATUS_BASE + 0x2c,
     DGNOPEN_STATUS_FileInUse                    = DGNOPEN_STATUS_BASE + 0x2d,
-    DGNOPEN_STATUS_NoExportRights               = DGNOPEN_STATUS_BASE + 0x2e,
 
     DGNFILE_ERROR_NotLoaded                     = DGNOPEN_STATUS_BASE + 0x30,
     DGNFILE_ERROR_NotOpen                       = DGNOPEN_STATUS_BASE + 0x31,
@@ -100,14 +92,12 @@ enum DgnFileStatus
     DGNFILE_ERROR_CopyError                     = DGNOPEN_STATUS_BASE + 0x42,
     DGNFILE_ERROR_ModelNotFilled                = DGNOPEN_STATUS_BASE + 0x43,
     DGNFILE_ERROR_NoModel                       = DGNOPEN_STATUS_BASE + 0x44,
-    DGNFILE_ERROR_InvalidOperationForNestedFile = DGNOPEN_STATUS_BASE + 0x45,
     DGNFILE_ERROR_RightNotGranted               = DGNOPEN_STATUS_BASE + 0x46,
     DGNFILE_ERROR_PasswordAlreadyUsed           = DGNOPEN_STATUS_BASE + 0x47,
     DGNFILE_ERROR_InvalidFileSchema             = DGNOPEN_STATUS_BASE + 0x48,
     DGNFILE_ERROR_TransactionActive             = DGNOPEN_STATUS_BASE + 0x49,
     DGNFILE_ERROR_SQLiteError                   = DGNOPEN_STATUS_BASE + 0x4a,
 
-    DGNDB_ERROR_MustBeInProjectDir         = DGNDB_ERROR_BASE + 0x01,
     DGNDB_ERROR_CorruptDatabase            = DGNDB_ERROR_BASE + 0x02,
     DGNDB_ERROR_CantCreateProjectFile      = DGNDB_ERROR_BASE + 0x04,
     DGNDB_ERROR_CantOpenSeedFile           = DGNDB_ERROR_BASE + 0x07,
@@ -153,9 +143,7 @@ enum DgnModelStatus
     DGNMODEL_STATUS_IdNotFound                  = DGNMODEL_ERROR_BASE + 0x08,
     DGNMODEL_STATUS_IdExists                    = DGNMODEL_ERROR_BASE + 0x09,
     DGNMODEL_STATUS_InvalidId                   = DGNMODEL_ERROR_BASE + 0x0a,
-    DGNMODEL_STATUS_CircularDependency          = DGNMODEL_ERROR_BASE + 0x0b,
     DGNMODEL_STATUS_NotEnabled                  = DGNMODEL_ERROR_BASE + 0x0c,
-    DGNMODEL_STATUS_WrongElemId                 = DGNMODEL_ERROR_BASE + 0x0e,       /* expected ID did not match actual ID */
     DGNMODEL_STATUS_IsInUse                     = DGNMODEL_ERROR_BASE + 0x0f,
     DGNMODEL_STATUS_NotFound                    = DGNMODEL_ERROR_BASE + 0x10,
     DGNMODEL_STATUS_2d3dMismatch                = DGNMODEL_ERROR_BASE + 0x13,
@@ -201,22 +189,6 @@ enum ViewFrustumStatus
 };
 
 /** @cond BENTLEY_SDK_Publisher */
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-enum DgnFileEmbedStatus
-    {
-    DGNEMBED_STATUS_Success                     = SUCCESS,
-    DGNEMBED_STATUS_InvalidContainerFormat      = DGNEMBED_ERROR_BASE + 1,
-    DGNEMBED_STATUS_InvalidDonor                = DGNEMBED_ERROR_BASE + 2,
-    DGNEMBED_STATUS_InvalidDonorFormat          = DGNEMBED_ERROR_BASE + 3,
-    DGNEMBED_STATUS_CopyError                   = DGNEMBED_ERROR_BASE + 4,
-    DGNEMBED_STATUS_NotFound                    = DGNEMBED_ERROR_BASE + 5,
-    DGNEMBED_STATUS_WriteError                  = DGNEMBED_ERROR_BASE + 6,
-    DGNEMBED_STATUS_ReadError                   = DGNEMBED_ERROR_BASE + 7,
-    DGNEMBED_STATUS_DuplicateFilename           = DGNEMBED_ERROR_BASE + 8,
-    DGNEMBED_STATUS_DuplicateAlias              = DGNEMBED_ERROR_BASE + 9,
-    };
 
 //=======================================================================================
 // @bsiclass
@@ -229,8 +201,6 @@ enum LineStyleStatus
     LINESTYLE_STATUS_UnknownResourceError       = LINESTYLE_ERROR_BASE + 0x02,
     LINESTYLE_STATUS_FileNotFound               = LINESTYLE_ERROR_BASE + 0x03,
     LINESTYLE_STATUS_NotSameFile                = LINESTYLE_ERROR_BASE + 0x04,
-    LINESTYLE_STATUS_InvalidForV7Symbol         = LINESTYLE_ERROR_BASE + 0x05,
-    LINESTYLE_STATUS_InvalidForV8Symbol         = LINESTYLE_ERROR_BASE + 0x06,
     LINESTYLE_STATUS_FileReadOnly               = LINESTYLE_ERROR_BASE + 0x07,
     LINESTYLE_STATUS_AlreadyExists              = LINESTYLE_ERROR_BASE + 0x08,
     LINESTYLE_STATUS_BadFormat                  = LINESTYLE_ERROR_BASE + 0x09,
@@ -250,14 +220,10 @@ enum DgnHandlersStatus
     DGNHANDLERS_STATUS_Success                   = SUCCESS,
     DGNHANDLERS_STATUS_BadElement                = (-105),       // these values match the equivalent MDLERR_ values
     DGNHANDLERS_STATUS_FileReadonly              = (-108),
-    DGNHANDLERS_STATUS_WriteInhibit              = (-110),
     DGNHANDLERS_STATUS_BadArg                    = (-126),
     DGNHANDLERS_STATUS_UserAbort                 = (-144),
-    DGNHANDLERS_STATUS_ElementTooLarge           = (-159),
-    DGNHANDLERS_STATUS_LinkageNotFound           = (-160),
     DGNHANDLERS_STATUS_AlreadyExists             = (-194),
     DGNHANDLERS_STATUS_NoModel                   = (-205),
-    DGNHANDLERS_STATUS_NotCmplxHdr               = (-220),
     };
 
 //=======================================================================================
@@ -269,10 +235,8 @@ enum DgnPlatformStatus
     DGNPLATFORM_STATUS_BadArg                    = (-126),          // these values match the equivalent MDLERR_ values
     DGNPLATFORM_STATUS_InsfMemory                = (-116),
     DGNPLATFORM_STATUS_TooLarge                  = (-148),
-    DGNPLATFORM_STATUS_LinkageNotFound           = (-160),
     DGNPLATFORM_STATUS_NoChange                  = (-163),
     DGNPLATFORM_STATUS_BadParameter              = (-509),
-    DGNPLATFORM_STATUS_ElemTooLarge              = (-750),
     };
 
 //=======================================================================================
@@ -342,46 +306,6 @@ enum DgnPlatformToolsStatus  // these values match the equivalent MDLERR_ values
 //=======================================================================================
 //! @private
 //=======================================================================================
-enum RscStatus  // Values from -900 to -1000; must match mdlerrs values
-    {
-    RSC_STATUS_Error                            = (-900),
-    RSC_STATUS_FileError                        = (-901),
-    RSC_STATUS_HandleInvalid                    = (-902),
-    RSC_STATUS_FileNotFound                     = (-903),
-    RSC_STATUS_InsufficientMemory               = (-904),
-    RSC_STATUS_WriteViolation                   = (-906),
-    RSC_STATUS_AddressInvalid                   = (-907),
-    RSC_STATUS_ResourceTypeInvalid              = (-908),
-    RSC_STATUS_AlreadyExists                    = (-909),
-    RSC_STATUS_InUse                            = (-911),
-    RSC_STATUS_NotFound                         = (-912),
-    RSC_STATUS_StringNotFound                   = (-913),
-    RSC_STATUS_QueryIdInvalid                   = (-914),
-    RSC_STATUS_DirectAddPending                 = (-915),
-    RSC_STATUS_BadRangeTree                     = (-916),
-    RSC_STATUS_FileNotOpen                      = (-917),
-    RSC_STATUS_BadResourceSize                  = (-918),
-    RSC_STATUS_InvalidFileHandle                = (-919),
-    RSC_STATUS_AliasRequired                    = (-920),
-    RSC_STATUS_ResourceFileCorrupt              = (-921),
-    RSC_STATUS_FileOpenFailure                  = (-922),
-    RSC_STATUS_FileHandleTableFull              = (-923),
-    RSC_STATUS_ConditionFalse                   = (-924),
-    };
-
-//=======================================================================================
-//! @private
-//=======================================================================================
-enum AkimaCurveStatus
-    {
-    AKIMACURVE_STATUS_Success                    = SUCCESS,
-    AKIMACURVE_STATUS_BadElement                 = ERROR,
-    AKIMACURVE_STATUS_NullSolution               = (-752),
-    };
-
-//=======================================================================================
-//! @private
-//=======================================================================================
 enum StyleTableErrors
     {
     STYLETABLE_ERROR_NoMatch                      = (-123),
@@ -391,27 +315,6 @@ enum StyleTableErrors
     STYLETABLE_ERROR_BadName                      = (-188),
     STYLETABLE_ERROR_StyleNotFound                = (-227),
     STYLETABLE_ERROR_StyleIsUsed                  = (-230),
-    };
-
-//=======================================================================================
-//! @private
-//=======================================================================================
-enum DgnAttachmentErrors
-    {
-    DGNATTACHMENT_ERROR_DuplicateLogical         = (-738),
-    DGNATTACHMENT_ERROR_CantRewriteNewAttachment = (-773),
-    };
-
-//=======================================================================================
-//! @private
-//=======================================================================================
-enum SignatureErrors
-    {
-    SIGNATURE_STATUS_NotFound           = (-2002),
-    SIGNATURE_STATUS_NotVerified        = (-2003),
-    SIGNATURE_STATUS_NotRecognized      = (-2004),
-    SIGNATURE_STATUS_RightNotGranted    = (-2005),
-    SIGNATURE_STATUS_Sileng             = (-2006),
     };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
