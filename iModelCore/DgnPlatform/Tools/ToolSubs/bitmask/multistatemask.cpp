@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/bitmask/multistatemask.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -12,12 +12,7 @@
 #include <RmgrTools/Tools/heapsig.h>
 #include <RmgrTools/Tools/toolsubsStdio.h>
 
-
-/*======================================================================+
-|                                                                       |
-|   Public Code Section                                                 |
-|                                                                       |
-+======================================================================*/
+BENTLEY_API_TYPEDEFS (MultiStateMask)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Deepak.Malkan                   06/2006
 +---------------+---------------+---------------+---------------+---------------+------*/

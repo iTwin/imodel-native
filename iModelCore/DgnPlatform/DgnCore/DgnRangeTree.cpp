@@ -335,9 +335,9 @@ inline void InitFromRange (DRange3dCR range, TransformCP trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline bool scanRangeIsValid (DRange3dCR scanRange, bool is3d)
+static inline bool rangeIsValid (DRange3dCR range, bool is3d)
     {
-    return (scanRange.low.x <= scanRange.high.x) && (scanRange.low.y <= scanRange.high.y) && (!is3d || (scanRange.low.z <= scanRange.high.z));
+    return (range.low.x <= range.high.x) && (range.low.y <= range.high.y) && (!is3d || (range.low.z <= range.high.z));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1069,7 +1069,7 @@ void DgnRangeTree::LoadTree (DgnModelCR dgnModel)
             continue;
 
         DRTEntry entry(geom->_GetRange3d(), *geom);
-        if (scanRangeIsValid (entry.m_range, m_is3d))
+        if (rangeIsValid (entry.m_range, m_is3d))
             {
             DRTLeafNodeP leaf = m_root->ToLeaf();
             if (leaf)
@@ -1089,52 +1089,38 @@ void DgnRangeTree::LoadTree (DgnModelCR dgnModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::AddElement(DRTEntry const& entry, int& stamp)
+void DgnRangeTree::AddElement(DRTEntry const& entry)
     {
+    if (!rangeIsValid(entry.m_range, m_is3d))
+        return;
+
     if (nullptr == m_root)
         m_root = AllocateLeafNode();
     
     BeAssert (!entry.m_elm->IsDeleted());
     BeAssert (!((DRTInternalNodeP)m_root)->DropElement(entry, *this));
 
-    DRange3d before = m_root->GetRange(); // compare range before and after to see whether to increment "stamp"
     DRTLeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
         leaf->AddElementToLeaf (entry, *this);
     else
         ((DRTInternalNodeP)m_root)->AddElement(entry, *this);
-
-    if (0 != memcmp (&before, &m_root->GetRange(), sizeof (DRange3d)))
-        ++stamp;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnRangeTree::RemoveElement(DRTEntry const& entry, int& stamp)
+StatusInt DgnRangeTree::RemoveElement(DRTEntry const& entry)
     {
     if (nullptr == m_root)
         return ERROR;
 
-    DRange3d before = m_root->GetRange(); // compare range before and after to see whether to increment "stamp"
     if (!((DRTInternalNodeP)m_root)->DropElement(entry, *this))
         {
         BeAssert (false);
         return  ERROR;
         }
-
-    if (0 != memcmp (&before, &m_root->GetRange(), sizeof (DRange3d)))
-        ++stamp;
-
     return  SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3dCP DgnRangeTree::GetDgnModelRange()
-    {
-    return  m_root ? &m_root->GetRange() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1152,25 +1138,16 @@ void DgnRangeTree::SetNodeSizes (size_t internalNodeSize, size_t leafNodeSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatch ElemRangeIndex::FindMatches (RangeTreeTraverser& traverser)
+RangeMatch DgnRangeTree::FindMatches(RangeTreeTraverser& traverser)
     {
-    DRTNodeP root = m_rangeTree.GetRoot();
-    if (root)
+    if (m_root)
         {
-        RangeMatch status = root->Traverse(traverser, m_rangeTree.Is3d());
+        RangeMatch status = m_root->Traverse(traverser, Is3d());
         if (RangeMatch::Ok != status)
             return  status;
         }
 
     return RangeMatch::Ok;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3dCP ElemRangeIndex::GetRange ()
-    {
-    return m_rangeTree.GetDgnModelRange();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1951,16 +1928,14 @@ void FindVisibleLeafs(DRTNodeR node, DgnModelR modelRef, bool testRange)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FindAllVisibleLeafs(DgnModelR model)
     {
-    ElemRangeIndexP rangeIndex = model.GetRangeIndexP(true);
-    if (nullptr == rangeIndex)
+    DgnRangeTreeP tree = model.GetRangeIndexP(true);
+    if (nullptr == tree)
         return;
-
-    DgnRangeTreeR tree = rangeIndex->GetDgnRangeTree();
 
     InitForDgnModel();
     m_viewContext.ValidateScanRange();
 
-    FindVisibleLeafs(*tree.GetRoot(), model, m_doFrustumCull);
+    FindVisibleLeafs(*tree->GetRoot(), model, m_doFrustumCull);
     }
 
 /*---------------------------------------------------------------------------------**//**

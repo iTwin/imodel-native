@@ -14,7 +14,6 @@
 
 #include <BentleyApi/BentleyApi.h>
 #include <Bentley/RefCounted.h>
-#include <Bentley/ScopedArray.h>
 #include <Bentley/BeFileName.h>
 #include "ExportMacros.h"
 #include <Geom/GeomApi.h>
@@ -96,7 +95,6 @@ BENTLEY_API_TYPEDEFS (BitMask)
 BENTLEY_API_TYPEDEFS (DataExternalizer)
 BENTLEY_API_TYPEDEFS (GPArray)
 BENTLEY_API_TYPEDEFS (GraphicsPointArray)
-BENTLEY_API_TYPEDEFS (MultiStateMask)
 /** @endcond */
 
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel);
@@ -268,7 +266,6 @@ DGNPLATFORM_TYPEDEFS (TxnSummary)
 DGNPLATFORM_TYPEDEFS (UpdateContext)
 DGNPLATFORM_TYPEDEFS (ViewHandler);
 DGNPLATFORM_TYPEDEFS (ViewManager)
-DGNPLATFORM_TYPEDEFS (ViewportApplyOptions)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
 /** @endcond */
 
@@ -452,7 +449,6 @@ struct BoundingBox3d : DRange3d
 //=======================================================================================
 struct AxisAlignedBox3d : BoundingBox3d
 {
-public:
     AxisAlignedBox3d() {}
     explicit AxisAlignedBox3d(DRange3dCR range) {DRange3d::InitFrom(range.low, range.high);}
     explicit AxisAlignedBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
@@ -465,7 +461,6 @@ public:
 //=======================================================================================
 struct ElementAlignedBox3d : BoundingBox3d
 {
-public:
     ElementAlignedBox3d() {}
     explicit ElementAlignedBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
     ElementAlignedBox3d(double left, double front, double bottom, double right, double back, double top) {DRange3d::InitFrom(left, front, bottom, right, back, top);}
@@ -502,7 +497,6 @@ struct BoundingBox2d : DRange2d
 //=======================================================================================
 struct AxisAlignedBox2d : BoundingBox2d
 {
-public:
     AxisAlignedBox2d() {}
     AxisAlignedBox2d(DRange2dCR range) {DRange2d::InitFrom(range.low, range.high);}
     AxisAlignedBox2d(DPoint2dCR low, DPoint2dCR high) {DRange2d::InitFrom(low, high);}
@@ -514,7 +508,6 @@ public:
 //=======================================================================================
 struct ElementAlignedBox2d : BoundingBox2d
 {
-public:
     ElementAlignedBox2d() {}
     ElementAlignedBox2d(double left, double bottom, double right, double top) {DRange2d::InitFrom(left, bottom, right, top);}
 
@@ -530,6 +523,9 @@ public:
     void SetTop(double top) {high.y = top;}
 };
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/14
+//=======================================================================================
 enum NpcCorners     /// The 8 corners of the NPC cube.
 {
     NPC_000           = 0,  //!< Left bottom rear
@@ -552,7 +548,6 @@ enum NpcCorners     /// The 8 corners of the NPC cube.
 
     NPC_CORNER_COUNT  = 8
 };
-
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/14
@@ -590,7 +585,7 @@ struct ElementIdSet : bset<DgnElementId>, BeSQLite::VirtualSet
 
 //! Types used to interface with native DgnDisplayKernel
 struct DgnDisplayCoreTypes
-    {
+{
     //! Platform-specific view window
     struct Window {};
     typedef Window* WindowP;
@@ -603,7 +598,7 @@ struct DgnDisplayCoreTypes
     //! Platform-specific handle to bitmap
     struct Bitmap {};
     typedef Bitmap* BitmapP;
-    };
+};
 
 /** @endcond */
 
@@ -612,7 +607,7 @@ struct DgnDisplayCoreTypes
 //! @private
 //=======================================================================================
 enum class ConfigurationVariableLevel
-    {
+{
     Predefined    = -2,        //!< predefined by the host
     SysEnv        = -1,        //!< defined in the Windows system environment variable table
     System        = 0,         //!< system defined
@@ -620,50 +615,49 @@ enum class ConfigurationVariableLevel
     Site          = 2,         //!< site defined
     Project       = 3,         //!< project defined
     User          = 4,         //!< user defined
-    };
+};
 
 /** @cond BENTLEY_SDK_Internal */
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum DgnPlatformConstants
-    {
+{
     MIN_LINECODE                    = 0,
     MAX_LINECODE                    = 7,
     MINIMUM_WINDOW_DEPTH            = -32767,
     MAXIMUM_WINDOW_DEPTH            = 32767,
-    };
+};
 
 enum DgnPlatformInvalidSymbology
-    {
-    INVALID_STYLE                   = 0x7fffff00,
-    INVALID_WEIGHT                  = 0xffffff00,
-    };
+{
+    INVALID_STYLE = 0x7fffff00,
+};
 
 /** @endcond */
 
 //! Enumeration of possible coordinate system types
 enum class DgnCoordSystem
-    {
+{
     Screen    = 0,     //!< Coordinates are relative to the origin of the screen
     View      = 1,     //!< Coordinates are relative to the origin of the view
     Npc       = 2,     //!< Coordinates are relative to normalized plane coordinates.
     World     = 3,     //!< Coordinates are relative to the <i>world</i> coordinate system for the physical elements in the DgnDb
-    };
+};
 
 /** @cond BENTLEY_SDK_Internal */
 enum class GradientFlags
-    {
+{
     None         = 0,
     Invert       = (1 << 0),
     Outline      = (1 << 1),
     AlwaysFilled = (1 << 2),
-    };
+};
 
 ENUM_IS_FLAGS(GradientFlags)
 
 enum class ClipMask
-    {
+{
     None       = 0,
     XLow       = (0x0001 << 0),
     XHigh      = (0x0001 << 1),
@@ -673,17 +667,17 @@ enum class ClipMask
     ZHigh      = (0x0001 << 5),
     XAndY      = (0x000f),         // (XLow | XHigh | YLow | YHigh) - set back to that when we compile everything with VS2012.
     All        = (0x003f),         // (XAndY | ZLow | ZHigh),       - "
-    };
+};
 
 ENUM_IS_FLAGS(ClipMask)
 
 enum
-    {
+{
     MAX_GRADIENT_KEYS =  8,
-    };
+};
 
 enum class SnapStatus
-    {
+{
     Success              = SUCCESS,
     Aborted              = 1,
     NoElements           = 2,
@@ -695,10 +689,10 @@ enum class SnapStatus
     FilteredByUser       = 500,
     FilteredByApp        = 600,
     FilteredByAppQuietly = 700,
-    };
+};
 
 enum class OutputMessagePriority
-    {
+{
     None           = 0,
     Error          = 10,
     Warning        = 11,
@@ -708,18 +702,18 @@ enum class OutputMessagePriority
     TempRight      = 15,
     TempLeft       = 16,
     Fatal          = 17,
-    };
+};
 
 /* Values for mdlOutput_messageCenter openAlertBox argument */
 enum class OutputMessageAlert
-    {
+{
     None     = 0,
     Dialog   = 1,
     Balloon  = 2,
-    };
+};
 
 enum TransformOptionValues
-    {
+{
     TRANSFORM_OPTIONS_ModelFromElmdscr          = (1 << 0),
     TRANSFORM_OPTIONS_DimValueMatchSource       = (1 << 1),     // Turn off if dimension value should be scaled
     TRANSFORM_OPTIONS_DimSizeMatchSource        = (1 << 2),     // Turn off if non-annotation dimension size should be scaled
@@ -732,64 +726,64 @@ enum TransformOptionValues
     TRANSFORM_OPTIONS_FromClone                 = (1 << 10),    // transforming for purposes of cloning between models.
     TRANSFORM_OPTIONS_NoteScaleSize             = (1 << 11),    // Apply scale to note's sizes. Used as an override when TRANSFORM_OPTIONS_DimSizeMatchSource == True.
     TRANSFORM_OPTIONS_DisableRotateCharacters   = (1 << 12)     // If a rotation is specified, only the text's origin will be transformed (i.e. the characters will retain their original visual orientation).
-    };
+};
 
 enum class GridOrientationType
-    {
+{
     View    = 0,
     WorldXY = 1,           // Top
     WorldYZ = 2,           // Right
     WorldXZ = 3,           // Front
     ACS     = 4,
     Maximum = 4,
-    };
+};
 
 enum AngleModeVals
-    {
+{
     ANGLE_PRECISION_Active   = -1,
     ANGLE_MODE_Active        = -1,
     ANGLE_MODE_Standard      = 0,
     ANGLE_MODE_Azimuth       = 1,
     ANGLE_MODE_Bearing       = 2,
-    };
+};
 
 enum class DisplayPathType
-    {
+{
     Display      = 0,
     Selection    = 1,
     Hit          = 2,
     Snap         = 3,
     Intersection = 4,
-    };
+};
 
 enum DitherModes
-    {
+{
     DITHERMODE_Pattern              = 0,
     DITHERMODE_ErrorDiffusion       = 1,
-    };
+};
 
 /*=================================================================================**//**
 * Influences how handler should apply annotation scale.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class AnnotationScaleAction
-    {
+{
     Update  = 0,
     Add     = 1,
     Remove  = 2,
-    };
+};
 
 /*=================================================================================**//**
 * Influences how handler should apply fence stretch.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class FenceStretchFlags
-    {
+{
     /*! no special options */
     None      = (0),
     /*! stretch user defined cell components */
     Cells     = (1<<0),
-    };
+};
 
 ENUM_IS_FLAGS (FenceStretchFlags)
 
@@ -798,17 +792,17 @@ ENUM_IS_FLAGS (FenceStretchFlags)
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class FenceClipFlags
-    {
+{
     /*! no special options */
     None         = (0),
     /*! maintain closed elements/solids/surfaces */
     Optimized    = (1<<0),
-    };
+};
 
 ENUM_IS_FLAGS (FenceClipFlags)
 
 enum class ClipVolumePass
-    {
+{
     None,
     InsideForward,
     InsideBackward,
@@ -816,30 +810,30 @@ enum class ClipVolumePass
     Inside,
     Cut,
     Maximum
-    };
+};
 
 /*=================================================================================**//**
 * Enums for tool agenda+handler cooperation
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class AgendaEvent
-    {
+{
     ModifyEntries           = 1,
     PreModify               = 2,
     PostModify              = 3,
     AddClipboardFormats     = 4,
-    };
+};
 
 enum class AgendaModify
-    {
+{
     Original                = 0,
     Copy                    = 1,
     ClipOriginal            = 2,
     ClipCopy                = 3,
-    };
+};
 
 enum class AgendaOperation
-    {
+{
     NotSpecified   = 0,
     Translate      = 1,
     Scale          = 2,
@@ -853,13 +847,13 @@ enum class AgendaOperation
     ChangeAttrib   = 10,
     FileFence      = 11,
     Drop           = 12,
-    };
+};
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class DrawPurpose
-    {
+{
     NotSpecified               = 0,
     Update                     = 1,
     UpdateDynamic              = 2,
@@ -883,7 +877,6 @@ enum class DrawPurpose
     RegionFlood                = 31, //! Collect graphics to find closed regions/flood...
     FitView                    = 32,
     XGraphicsCreate            = 34,
-    CaptureShadowList          = 35,
     ExportVisibleEdges         = 36,
     InterferenceDetection      = 37,
     CutXGraphicsCreate         = 38,
@@ -891,37 +884,37 @@ enum class DrawPurpose
     Measure                    = 40,
     VisibilityCalculation      = 41,
     ProxyHashExtraction        = 42,
-    };
+};
 
 /*=================================================================================**//**
 * Used to communicate the result of handling an event from a GPS.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class GeoLocationEventStatus
-    {
+{
     EventHandled                    = 0,    //!< LocationEvent was handled and modified the view
     EventIgnored                    = 1,    //!< LocationEvent was ignored and did not modify the view because of an unknown failure to convert
     NoGeoCoordinateSystem           = 2,    //!< LocationEvent was ignored and did not modify the view because the DgnDb does not have a geographic coordinate system defined
     PointOutsideGeoCoordinateSystem = 3,    //!< LocationEvent was ignored and did not modify the view because the LocationEvent's point is outside the bounds where the geographic coordinate system is accurate
-    };
+};
 
 /*=================================================================================**//**
 * Used to specify desired accuracy.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class GeoLocationServicesAccuracy
-    {
+{
     BestForNavigation       = 1,
     Best                    = 2,
     Coarse                  = 3
-    };
+};
 
 /*=================================================================================**//**
 * Used to describe status of a location provider.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class GeoLocationProviderStatus
-    {
+{
     NotDetermined           = 0,
     Disabled                = 1,
     Enabled                 = 2,
@@ -929,7 +922,7 @@ enum class GeoLocationProviderStatus
     Available               = 4,
     OutOfService            = 5,
     LocationUnavailable     = 6,
-    };
+};
 
 typedef bvector<double> T_DoubleVector;
 typedef T_DoubleVector*        T_DoubleVectorP, &T_DoubleVectorR;
@@ -940,12 +933,15 @@ typedef T_DoubleVector const&  T_DoubleVectorCR;
 #define   IMINI8      INT64_MIN
 #define   IMAXUI8     UINT64_MAX
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
 struct HsvColorDef
-    {
+{
     int32_t  hue;           /* red=0, yellow, green, cyan, blue, magenta */
     int32_t  saturation;    /* 0=white, 100=no white, tints */
     int32_t  value;         /* 0=black, 100=no black, shades */
-    };
+};
 
 //=======================================================================================
 //! RGBA values for a color
