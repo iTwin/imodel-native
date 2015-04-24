@@ -284,4 +284,20 @@ DgnAnnotationFrameStyles& DgnStyles::AnnotationFrameStyles() {if (NULL == m_anno
 DgnAnnotationLeaderStyles& DgnStyles::AnnotationLeaderStyles() {if (NULL == m_annotationLeaderStyles) m_annotationLeaderStyles = new DgnAnnotationLeaderStyles(m_dgndb); return *m_annotationLeaderStyles;}
 DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnnotationSeeds) m_textAnnotationSeeds = new DgnTextAnnotationSeeds(m_dgndb); return *m_textAnnotationSeeds;}
 
+//=======================================================================================
+// @bsiclass                                    Sam.Wilson                      04/15
+//=======================================================================================
+BEGIN_UNNAMED_NAMESPACE
+struct IgnoreTablesForDiff : ChangeSet::IgnoreTablesForDiff
+{
+    bool _ShouldIgnoreTable(Utf8CP tableName) override {return 0 == strncmp(tableName, "dgn_PrjRTree", 12);}
+};
+END_UNNAMED_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult DgnDb::CreatePatchSetFromDiff(BeSQLite::ChangeSet& cset, Utf8StringP errMsg, BeFileNameCR baseFile)
+    {
+    return cset.PatchSetFromDiff(errMsg, *this, baseFile, IgnoreTablesForDiff());
+    }

@@ -229,6 +229,15 @@ public:
     //! @remarks This is only to be used by DgnPlatform internally to avoid misuse and unexpected caching behavior.
     //! Therefore it is not inlined.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement (Utf8CP ecsql) const;
+
+    //! Create a "PatchSet" by comparing this db with baseFile
+    //! @param[out] cset The generated ChangeSet
+    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
+    //! @param[in] baseFile A different version of the same db
+    //! @param BE_SQLITE_OK if the patchset was generated; else BE_SQLITE_ERROR
+    // *** WIP_DIFF - take list of excluded tables as an argument
+    DGNPLATFORM_EXPORT BeSQLite::DbResult CreatePatchSetFromDiff(BeSQLite::ChangeSet& cset, Utf8StringP errMsg, BeFileNameCR baseFile);
+
 };
 
 #if !defined (DOCUMENTATION_GENERATOR)
