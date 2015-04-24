@@ -1898,12 +1898,12 @@ void ElementGeometryBuilder::OnNewGeom (DRange3dCR localRange, TransformCP geomT
     if (m_model.Is3d())
         {
         m_placement3d.GetElementBoxR().Extend(localRange);
-        elementToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
+        elementToWorld = m_placement3d.GetTransform();
         }
     else
         {
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
-        elementToWorld.InitFromOriginAngleAndLengths(m_placement2d.GetOrigin(), m_placement2d.GetAngle(), 1.0, 1.0);
+        elementToWorld = m_placement2d.GetTransform();
         }
 
     Transform geomToWorld = (nullptr == geomToElement ? elementToWorld : Transform::FromProduct(elementToWorld, *geomToElement));
@@ -1959,11 +1959,11 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
         }
     else if (m_model.Is3d())
         {
-        localToWorld = m_placement3d.GetAngles().ToTransform(m_placement3d.GetOrigin());
+        localToWorld = m_placement3d.GetTransform();
         }
     else
         {
-        localToWorld.InitFromOriginAngleAndLengths(m_placement2d.GetOrigin(), m_placement2d.GetAngle(), 1.0, 1.0);
+        localToWorld = m_placement2d.GetTransform();
         }
 
     if (localToWorld.IsIdentity())
