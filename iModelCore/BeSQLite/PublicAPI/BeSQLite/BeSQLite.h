@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <BentleyApi/BentleyApi.h>
+#include <Bentley/bset.h>
 
 /** @namespace BentleyApi::BeSQLite Classes used to access a SQLite database. */
 
@@ -1092,7 +1093,7 @@ struct DbValue
     BE_SQLITE_EXPORT void        GetValueGuid(BeGuidR) const; //!< get the value as a GUID
     template <class T_Id> T_Id   GetValueId() const {return T_Id (GetValueInt64());}
 
-    BE_SQLITE_EXPORT void Dump() const; //!< Dump to stdout for debugging purposes.
+    BE_SQLITE_EXPORT Utf8String Format() const; //!< for debugging purposes.
 };
 
 //=======================================================================================
@@ -1289,13 +1290,15 @@ public:
             bool operator==(Change const& rhs) const {return (m_iter == rhs.m_iter) && (m_isValid == rhs.m_isValid);}
 
             //! Dump to stdout for debugging purposes.
-            BE_SQLITE_EXPORT void Dump(Db const&) const;
+            BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet, bset<Utf8String>& tablesSeen) const;
+
+            void Dump(Db const& db, bool isPatchSet) const {bset<Utf8String> tablesSeen; Dump(db, isPatchSet, tablesSeen);}
 
             //! Dump one or more columns to stdout for debugging purposes.
             BE_SQLITE_EXPORT void DumpColumns(int startCol, int endCol, Changes::Change::Stage stage, bvector<Utf8String> const& columns) const;
 
             //! Format the primary key columns of this change for debugging purposes.
-            BE_SQLITE_EXPORT Utf8String FormatPrimarykeyColumns() const;
+            BE_SQLITE_EXPORT Utf8String FormatPrimarykeyColumns(bool isInsert) const;
         };
 
     typedef Change const_iterator;
@@ -1355,6 +1358,7 @@ public:
     //! @param[in] db       The db
     //! @param[in] baseFile A different version of the same db
     //! @param BE_SQLITE_OK if the patchset was generated; else BE_SQLITE_ERROR
+    // *** WIP_DIFF - take list of excluded tables as an argument
     BE_SQLITE_EXPORT DbResult PatchSetFromDiff(Utf8StringP errMsg, Db& db, BeFileNameCR baseFile);
 
     //! Apply all of the changes in a ChangeSet to the supplied database.
@@ -1371,7 +1375,7 @@ public:
     bool IsValid() {return 0 != m_changeset;}
 
     //! Dump to stdout for debugging purposes.
-    BE_SQLITE_EXPORT void Dump(Db const&) const;
+    BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet = true) const;
 
     //! Get a description of a conflict cause for debugging purposes.
     BE_SQLITE_EXPORT static Utf8String InterpretConflictCause(ChangeSet::ConflictCause);
