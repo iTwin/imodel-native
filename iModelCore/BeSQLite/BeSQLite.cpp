@@ -2247,22 +2247,36 @@ DbResult ChangeSet::PatchSetFromChangeTrack(ChangeTracker& session)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int diffFilter(void* tracker, Utf8CP tableName) 
+static int diffFilter(void* filterPtr, Utf8CP tableName) 
     {
-    // Don't diff these tables:
-    //  *** WIP_DIFF - take list of excluded tables as an argument
-    if (0 == strncmp(tableName, "dgn_PrjRTree", 12))
-        return 0;
-
-    return 1;
+    return !((ChangeSet::IgnoreTablesForDiff*)filterPtr)->_ShouldIgnoreTable(tableName);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 // *** WIP_DIFF - take list of excluded tables as an argument
-DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile)
+DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile, IgnoreTablesForDiff const& filter)
     {
+    // Check if Db GUIDs match
+    if (true)
+        {
+        Db baseDb;
+        DbResult result = baseDb.OpenBeSQLiteDb(baseFile, Db::OpenParams(Db::OPEN_Readonly));
+        if (BE_SQLITE_OK != result)
+            {
+            if (errMsgOut != nullptr)
+                *errMsgOut = db.GetLastError();
+            return result;
+            }
+        if (db.GetDbGuid() != baseDb.GetDbGuid())
+            {
+            if (errMsgOut != nullptr)
+                *errMsgOut = "DbGuids differ";
+            return BE_SQLITE_MISMATCH;
+            }
+        }
+
     DbResult result =  db.AttachDb(Utf8String(baseFile).c_str(), "base");
     if (BE_SQLITE_OK != result)
         {
@@ -2280,7 +2294,7 @@ DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR
         return result;
         }
 
-    sqlite3session_table_filter(session, diffFilter, this); // set up auto-attach for most tables
+    sqlite3session_table_filter(session, diffFilter, (void*)&filter); // set up auto-attach for most tables
 
     BeSQLite::Statement tables;
     tables.Prepare(db, "SELECT name FROM main.sqlite_master WHERE type='table'");
@@ -2563,7 +2577,7 @@ Utf8String hexDump(Byte* bytes, size_t nbytes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DbValue::Format() const
+Utf8String DbValue::Format(int detailLevel) const
     {
     if (!IsValid())
         return "<<INVALID>>";
@@ -2577,9 +2591,11 @@ Utf8String DbValue::Format() const
             return Utf8PrintfString("%lg", GetValueDouble());
 
         case DbValueType::TextVal:
-            return Utf8PrintfString("%s", GetValueText());
+            return Utf8PrintfString("\"%s\"", GetValueText());
 
         case DbValueType::BlobVal:
+            if (detailLevel < 1)
+                return "...";
             return Utf8PrintfString(hexDump((Byte*)GetValueBlob(), GetValueBytes()).c_str());
 
         case DbValueType::NullVal:
@@ -2593,7 +2609,7 @@ Utf8String DbValue::Format() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Changes::Change::DumpColumns(int startCol, int endCol, Changes::Change::Stage stage, bvector<Utf8String> const& columns) const
+void Changes::Change::DumpColumns(int startCol, int endCol, Changes::Change::Stage stage, bvector<Utf8String> const& columns, int detailLevel) const
     {
     Byte* pcols;
     int npcols;
@@ -2610,12 +2626,12 @@ void Changes::Change::DumpColumns(int startCol, int endCol, Changes::Change::Sta
             continue;
 
         if (nprinted != 0)
-            printf(", ");
+            printf(" ");
 
-        printf("[%s] ", columns[i].c_str());
+        printf("[%s]", columns[i].c_str());
 
         if (v.IsValid())
-            printf("%s", v.Format().c_str());
+            printf("%s", v.Format(detailLevel).c_str());
 
         ++nprinted;
         }
@@ -2624,7 +2640,7 @@ void Changes::Change::DumpColumns(int startCol, int endCol, Changes::Change::Sta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert) const
+Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert, int detailLevel) const
     {
     Byte* pcols;
     int npcols;
@@ -2645,7 +2661,7 @@ Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert) const
         if (!pcolstr.empty())
             pcolstr.append(", ");
 
-        pcolstr.append(pkv.Format());
+        pcolstr.append(pkv.Format(detailLevel));
         }
     return pcolstr;
     }
@@ -2653,7 +2669,7 @@ Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tablesSeen) const
+void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tablesSeen, int detailLevel) const
     {
     Utf8CP tableName;
     int nCols,indirect;
@@ -2664,11 +2680,13 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 
     if (tablesSeen.find(tableName) == tablesSeen.end())
         {
-        printf("\n\tTable: %s\n", tableName);
+        printf("\n\tTable: %s", tableName);
+        if (detailLevel > 0)
+            printf("\n");
         tablesSeen.insert (tableName);
         }
 
-    printf("\n[%s] ", FormatPrimarykeyColumns((DbOpcode::Insert==opcode)).c_str());
+    printf("\n[%s] ", FormatPrimarykeyColumns((DbOpcode::Insert==opcode), detailLevel).c_str());
 
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
@@ -2676,34 +2694,41 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
     switch (opcode)
         {
         case DbOpcode::Delete:
-            printf("DELETE\n");
-            DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames);
+            printf("DELETE ");
+            if (detailLevel > 0)
+                printf("\n");
+            DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames, detailLevel);
             break;
         case DbOpcode::Insert:
-            printf("INSERT\n");
-            DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames);
+            printf("INSERT ");
+            if (detailLevel > 0)
+                printf("\n");
+            DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames, detailLevel);
             break;
         case DbOpcode::Update:
-            printf("UPDATE\n");
+            printf("UPDATE ");
+            if (detailLevel > 0)
+                printf("\n");
             if (!isPatchSet)
                 {
                 printf("old: ");
-                DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames);
+                DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames, detailLevel);
                 printf("\nnew: ");
                 }
-            DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames);
+            DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames, detailLevel);
             break;
 
         default:
             BeAssert(false);
         }
-    printf("\n");
+    if (detailLevel > 0)
+        printf("\n");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeSet::Dump(Db const& db, bool isPatchSet) const
+void ChangeSet::Dump(Db const& db, bool isPatchSet, int detailLevel) const
     {
     bset<Utf8String> tablesSeen;
 
@@ -2711,7 +2736,7 @@ void ChangeSet::Dump(Db const& db, bool isPatchSet) const
     Changes changes(*const_cast<ChangeSet*>(this));
     for (auto& change : changes)
         {
-        change.Dump(db, isPatchSet, tablesSeen);
+        change.Dump(db, isPatchSet, tablesSeen, detailLevel);
         }
     }
 
