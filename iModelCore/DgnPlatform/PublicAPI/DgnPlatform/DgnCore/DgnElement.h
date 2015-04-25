@@ -525,9 +525,6 @@ protected:
 
 public:
     virtual AxisAlignedBox3d _GetRange3d() const = 0;
-    virtual DPoint3d _GetOrigin3d() const = 0;
-    virtual ElementAlignedBox3d _GetElementBox3d() const = 0;
-    virtual Transform _GetPlacementTrans() const = 0;
 
     DGNPLATFORM_EXPORT QvCache* GetMyQvCache() const;
     DGNPLATFORM_EXPORT QvElem* GetQvElem(uint32_t index) const;
@@ -662,12 +659,8 @@ protected:
 public:
     DgnElement3dCP _ToElement3d() const override {return this;}
     AxisAlignedBox3d _GetRange3d() const override {return m_placement.CalculateRange();}
-    DPoint3d _GetOrigin3d() const override {return m_placement.GetOrigin();}
     Placement3dCR GetPlacement() const {return m_placement;}
     void SetPlacement(Placement3dCR placement) {m_placement=placement;}
-    ElementAlignedBox3d GetElementBox() const {return m_placement.GetElementBox();}
-    ElementAlignedBox3d _GetElementBox3d() const override {return GetElementBox();}
-    Transform _GetPlacementTrans() const override {return m_placement.GetAngles().ToTransform(m_placement.GetOrigin());}
 };
 
 //=======================================================================================
@@ -723,11 +716,8 @@ protected:
 public:
     DgnElement2dCP _ToElement2d() const override {return this;}
     AxisAlignedBox3d _GetRange3d() const override {return m_placement.CalculateRange();}
-    DPoint3d _GetOrigin3d() const override {return DPoint3d::From(m_placement.GetOrigin());}
+    Placement2dCR GetPlacement() const {return m_placement;}
     void SetPlacement(Placement2dCR placement) {m_placement=placement;}
-    ElementAlignedBox2d GetElementBox() const {return m_placement.GetElementBox();}
-    ElementAlignedBox3d _GetElementBox3d() const override {return ElementAlignedBox3d(GetElementBox());}
-    Transform _GetPlacementTrans() const override {Transform t; t.InitFromOriginAngleAndLengths(m_placement.GetOrigin(), m_placement.GetAngle(), 1.0, 1.0); return t;}
 };
 
 //=======================================================================================

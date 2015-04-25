@@ -641,9 +641,8 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap (int snapPathIndex)
                     return SnapStatus::Success;
                 }
 
-            DPoint3d    hitPoint;
+            DPoint3d hitPoint = (eh.GetDgnElement()->Is3d() ? eh.GetDgnElement()->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(eh.GetDgnElement()->ToElement2d()->GetPlacement().GetOrigin()));
 
-            hitPoint = eh.GetGeometricElement()->_GetOrigin3d();
             ElmLocalToWorld (hitPoint);
             SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
@@ -725,7 +724,7 @@ KeypointType    SnapContext::GetSnapKeypointType (SnapMode snapMode)
 SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
     {
     SnapPathP       snap = GetSnapPath ();
-    SnapMode    snapMode = GetSnapMode ();
+    SnapMode        snapMode = GetSnapMode ();
     GeomDetailCR    detail = snap->GetGeomDetail ();
 
     switch (snapMode)
@@ -733,12 +732,10 @@ SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
         case SnapMode::Origin:
         case SnapMode::NearestKeypoint:
             {
-            ElementHandle   eh (snap->GetPathElem (snapPathIndex));
-            DPoint3d        hitPoint;
-
-            hitPoint = eh.GetGeometricElement()->_GetOrigin3d();
+            ElementHandle eh (snap->GetPathElem (snapPathIndex));
+            DPoint3d      hitPoint = (eh.GetDgnElement()->Is3d() ? eh.GetDgnElement()->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(eh.GetDgnElement()->ToElement2d()->GetPlacement().GetOrigin()));
+            
             ElmLocalToWorld (hitPoint);
-
             SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
             return SnapStatus::Success;
