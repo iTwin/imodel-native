@@ -8,75 +8,97 @@
 #include "DgnPlatformInternal.h"
 
 BEGIN_UNNAMED_NAMESPACE
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct AABB_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct PlacementFunc : ScalarFunction, ScalarFunction::IScalar
 {
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    AABB_From_Placement() : ScalarFunction("DGN_AABB", 1, DbValueType::BlobVal, this) {}
+    void SetInputError(Context* ctx)
+        {
+        Utf8PrintfString str("Illegal input to %s", GetName());
+        ctx->SetResultError(str.c_str());
+        }
+    Placement3d& ToPlacement3d(DbValue* args) {return *(Placement3d*)(args[0].GetValueBlob());}
+    Placement2d& ToPlacement2d(DbValue* args) {return *(Placement2d*)(args[0].GetValueBlob());}
+
+    PlacementFunc(Utf8CP name, DbValueType valType) : ScalarFunction(name, 1, valType, this) {}
 };
 
-struct Origin_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct AABB_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Origin_From_Placement() : ScalarFunction("DGN_Origin", 1, DbValueType::BlobVal, this) {}
+    AABB_From_Placement() : PlacementFunc("DGN_PLACEMENT_AABB", DbValueType::BlobVal) {}
 };
 
-struct Yaw_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Origin_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Yaw_From_Placement() : ScalarFunction("DGN_Yaw", 1, DbValueType::FloatVal, this) {}
+    Origin_From_Placement() : PlacementFunc("DGN_PLACEMENT_Origin", DbValueType::BlobVal) {}
 };
-struct Pitch_From_Placement : ScalarFunction, ScalarFunction::IScalar
+
+struct Yaw_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Pitch_From_Placement() : ScalarFunction("DGN_Pitch", 1, DbValueType::FloatVal, this) {}
+    Yaw_From_Placement() : PlacementFunc("DGN_PLACEMENT_Yaw", DbValueType::FloatVal) {}
 };
-struct Roll_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Pitch_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Roll_From_Placement() : ScalarFunction("DGN_Roll", 1, DbValueType::FloatVal, this) {}
+    Pitch_From_Placement() : PlacementFunc("DGN_PLACEMENT_Pitch", DbValueType::FloatVal) {}
 };
-struct Width_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Roll_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Width_From_Placement() : ScalarFunction("DGN_Width", 1, DbValueType::FloatVal, this) {}
+    Roll_From_Placement() : PlacementFunc("DGN_PLACEMENT_Roll", DbValueType::FloatVal) {}
 };
-struct Height_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Width_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Height_From_Placement() : ScalarFunction("DGN_Height", 1, DbValueType::FloatVal, this) {}
+    Width_From_Placement() : PlacementFunc("DGN_PLACEMENT_Width", DbValueType::FloatVal) {}
 };
-struct Left_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Height_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Left_From_Placement() : ScalarFunction("DGN_Left", 1, DbValueType::FloatVal, this) {}
+    Height_From_Placement() : PlacementFunc("DGN_PLACEMENT_Height", DbValueType::FloatVal) {}
 };
-struct Right_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Left_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Right_From_Placement() : ScalarFunction("DGN_Right", 1, DbValueType::FloatVal, this) {}
+    Left_From_Placement() : PlacementFunc("DGN_PLACEMENT_Left", DbValueType::FloatVal) {}
 };
-struct Bottom_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Right_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Bottom_From_Placement() : ScalarFunction("DGN_Bottom", 1, DbValueType::FloatVal, this) {}
+    Right_From_Placement() : PlacementFunc("DGN_PLACEMENT_Right", DbValueType::FloatVal) {}
 };
-struct Top_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Bottom_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Top_From_Placement() : ScalarFunction("DGN_Top", 1, DbValueType::FloatVal, this) {}
+    Bottom_From_Placement() : PlacementFunc("DGN_PLACEMENT_Bottom", DbValueType::FloatVal) {}
 };
-struct BoxVolume_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct Top_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    BoxVolume_From_Placement() : ScalarFunction("DGN_BoxVolume", 1, DbValueType::FloatVal, this) {}
+    Top_From_Placement() : PlacementFunc("DGN_PLACEMENT_Top", DbValueType::FloatVal) {}
 };
-struct BoxArea_From_Placement : ScalarFunction, ScalarFunction::IScalar
+struct BoxVolume_From_Placement : PlacementFunc
 {
     void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    BoxArea_From_Placement() : ScalarFunction("DGN_BoxArea2d", 1, DbValueType::FloatVal, this) {}
+    BoxVolume_From_Placement() : PlacementFunc("DGN_PLACEMENT_Volume", DbValueType::FloatVal) {}
+};
+struct BoxArea_From_Placement : PlacementFunc
+{
+    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
+    BoxArea_From_Placement() : PlacementFunc("DGN_PLACEMENT_Area2d", DbValueType::FloatVal) {}
+};
+
+struct AABB_Union : AggregateFunction, AggregateFunction::IAggregate
+{
+    void _StepAggregate(Context*, int nArgs, DbValue* args) override;
+    void _FinishAggregate(Context*) override;
+
+    AABB_Union() : AggregateFunction("DGN_AABB_UNION", 1, DbValueType::BlobVal, this) {}
 };
 
 END_UNNAMED_NAMESPACE
@@ -86,20 +108,102 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AABB_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-   if (!CheckArgs(ctx, nArgs))
-        return;
+    AxisAlignedBox3d aabb;
+    switch (args[0].GetValueBytes())
+        {
+        case sizeof(Placement3d):
+            aabb = ToPlacement3d(args).CalculateRange();
+            break;
+        case sizeof(Placement2d):
+            aabb = ToPlacement2d(args).CalculateRange();
+            break;
 
-    const void* blob = nullptr;
-            int blobSize = 0;
-            if (!args[0].IsNull())
-                {
-                int64_t i = args[0].GetValueInt64();
-                blob = &i;
-                blobSize = (int) sizeof(i);
-                }
+        default:
+            SetInputError(ctx);
+            return;
+        }
 
-            ctx->SetResultBlob(blob, blobSize, DbFunction::Context::CopyData::Yes);
-#endif
+    ctx->SetResultBlob(&aabb, sizeof(aabb), DbFunction::Context::CopyData::Yes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Origin_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
+    {
+    DPoint3d org;
+    switch (args[0].GetValueBytes())
+        {
+        case sizeof(Placement3d):
+            org = ToPlacement3d(args).GetOrigin();
+            break;
+
+        case sizeof(Placement2d):
+            org = DPoint3d::From(ToPlacement2d(args).GetOrigin());
+            break;
+
+        default:
+            SetInputError(ctx);
+            return;
+        }
+
+    ctx->SetResultBlob(&org, sizeof(org), DbFunction::Context::CopyData::Yes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Yaw_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
+    {
+    switch (args[0].GetValueBytes())
+        {
+        case sizeof(Placement3d):
+            ctx->SetResultDouble(ToPlacement3d(args).GetAngles().GetYaw().Degrees());
+            return;
+
+        case sizeof(Placement2d):
+            ctx->SetResultDouble(ToPlacement2d(args).GetAngle());
+            return;
+        }
+
+    SetInputError(ctx);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pitch_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
+    {
+    switch (args[0].GetValueBytes())
+        {
+        case sizeof(Placement3d):
+            ctx->SetResultDouble(ToPlacement3d(args).GetAngles().GetPitch().Degrees());
+            return;
+
+        case sizeof(Placement2d):
+            ctx->SetResultDouble(0.0);
+            return;
+        }
+
+    SetInputError(ctx);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Roll_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
+    {
+    switch (args[0].GetValueBytes())
+        {
+        case sizeof(Placement3d):
+            ctx->SetResultDouble(ToPlacement3d(args).GetAngles().GetRoll().Degrees());
+            return;
+
+        case sizeof(Placement2d):
+            ctx->SetResultDouble(0.0);
+            return;
+        }
+
+    SetInputError(ctx);
     }
 

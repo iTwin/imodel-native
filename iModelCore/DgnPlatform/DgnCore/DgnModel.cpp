@@ -451,7 +451,6 @@ void DgnModel::AllocateRangeIndex() const
         m_rangeIndex = new DgnRangeTree(Is3d(), 20);
         m_rangeIndex->LoadTree(*this);
         }
-
     }
 
 struct FilledCaller

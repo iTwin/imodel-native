@@ -317,8 +317,8 @@ public:
     //! Query if this is a 3D model
     bool Is3d() const {return _Is3d();}
 
-    //! Get the range of all graphical elements in the model.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryModelRange (DRange3dR range);
+    //! Get the range of all visible elements in the model.
+    BeSQLite::DbResult QueryModelRange(DRange3dR range) {return _QueryModelRange(range);}
 
     //! Get the Properties for this model.
     Properties& GetPropertiesR() {return m_properties;}

@@ -139,8 +139,8 @@ private:
     friend struct DRTLeafNode;
     friend struct ElemRangeIndex;
 
-    DgnMemoryPool<DRTLeafNode,512>        m_leafNodes;
-    DgnMemoryPool<DRTInternalNode,512>    m_internalNodes;
+    DgnMemoryPool<DRTLeafNode,128>     m_leafNodes;
+    DgnMemoryPool<DRTInternalNode,512> m_internalNodes;
 
     double      m_elementsPerSecond;
     DRTNodeP    m_root;
