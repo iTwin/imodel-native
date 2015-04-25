@@ -1113,7 +1113,7 @@ public:
         enum class CopyData : int { No = 0, Yes = -1 };                                     //!< see sqlite3_destructor_type
         BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData); //!< see sqlite3_result_blob
         BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
-        BE_SQLITE_EXPORT void SetResultError(Utf8CP, int);                            //!< see sqlite3_result_error
+        BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see sqlite3_result_error
         BE_SQLITE_EXPORT void SetResultError_toobig();                                //!< see sqlite3_result_error_toobig
         BE_SQLITE_EXPORT void SetResultError_nomem();                                 //!< see sqlite3_result_error_nomem
         BE_SQLITE_EXPORT void SetResultError_code(int);                               //!< see sqlite3_result_error_code
@@ -1123,6 +1123,7 @@ public:
         BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see sqlite3_result_text
         BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
         BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
+        BE_SQLITE_EXPORT void* AggregateContext(int nbytes);
         };
 
 private:
