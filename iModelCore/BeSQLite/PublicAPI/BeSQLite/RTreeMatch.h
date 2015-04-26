@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/RTreeMatch.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -89,7 +89,7 @@ struct RTree3dBoundsTest : RTreeMatch
     RTree3dVal  m_bounds;
 
     RTree3dBoundsTest (BeSQLiteDbR db) : RTreeMatch(db) {}
-    virtual void _StepAggregate(DbFunction::Context*, int nArgs, DbValue* args) override {}
+    virtual void _StepAggregate(DbFunction::Context&, int nArgs, DbValue* args) override {}
     virtual int _TestRange(QueryInfo const& info) override
         {
 //__PUBLISH_SECTION_END__

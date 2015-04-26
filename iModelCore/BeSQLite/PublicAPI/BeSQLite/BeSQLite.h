@@ -1111,7 +1111,7 @@ public:
     struct Context
         {
         enum class CopyData : int { No = 0, Yes = -1 };                                     //!< see sqlite3_destructor_type
-        BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData); //!< see sqlite3_result_blob
+        BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes); //!< see sqlite3_result_blob
         BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
         BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see sqlite3_result_error
         BE_SQLITE_EXPORT void SetResultError_toobig();                                //!< see sqlite3_result_error_toobig
@@ -1123,12 +1123,12 @@ public:
         BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see sqlite3_result_text
         BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
         BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
-        BE_SQLITE_EXPORT void* AggregateContext(int nbytes);
+        BE_SQLITE_EXPORT void* GetAggregateContext(int nbytes);
         };
 
 private:
-    Utf8String m_name;
-    int m_nArgs;
+    Utf8String  m_name;
+    int         m_nArgs;
     DbValueType m_returnType;
 
 protected:
@@ -1139,14 +1139,14 @@ protected:
     DbFunction(Utf8CP name, int nArgs, DbValueType returnType) : m_name(name), m_nArgs(nArgs), m_returnType(returnType) {}
 
 public:
+    virtual bool _IsAggregate() = 0;
     virtual ~DbFunction() {}
-    Utf8CP GetName() const { return m_name.c_str(); }
-    int GetNumArgs() const {return m_nArgs;}
-    //! Gets the return type of the function.
-    //! @remarks DbValueType::NullVal means that the return type is not specified and callers
-    //! have to rely on SQLite's auto type conversion.
-    //! @return Function return type
-    DbValueType GetReturnType() const { return m_returnType; }
+    Utf8CP GetName() const {return m_name.c_str();} //!< Get the name of this function
+    int GetNumArgs() const {return m_nArgs;}    //!< Get the number of arguments to this function
+    DbValueType GetReturnType() const {return m_returnType;}//!< Gets the return type of the function.
+
+    //! Set the result of this function to: error due to illegal input.
+    void SetInputError(Context& ctx) {ctx.SetResultError(Utf8PrintfString("Illegal input to %s", GetName()).c_str());}
 };
 
 //=======================================================================================
@@ -1160,12 +1160,13 @@ struct AggregateFunction : DbFunction
 public:
     struct IAggregate
     {
-        virtual void _StepAggregate(Context*, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
-        virtual void _FinishAggregate(Context*) = 0;                         //<! see "xFinal" in sqlite3_create_function
+        virtual void _StepAggregate(Context&, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
+        virtual void _FinishAggregate(Context&) = 0;                         //<! see "xFinal" in sqlite3_create_function
     };
 
 private:
     IAggregate* m_aggregate;
+    bool _IsAggregate() override {return true;}
 
 public:
     //! Initializes a new AggregateFunction instance
@@ -1190,11 +1191,12 @@ struct ScalarFunction : DbFunction
 public:
     struct IScalar
     {
-        virtual void _ComputeScalar(Context*, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
+        virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
     };
 
 private:
     IScalar* m_scalar;
+    bool _IsAggregate() override {return false;}
 
 public:
     //! Initializes a new ScalarFunction instance
@@ -2211,8 +2213,7 @@ protected:
     BE_SQLITE_EXPORT void SaveSettings();
     BE_SQLITE_EXPORT DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId);
-    BE_SQLITE_EXPORT int AddAggregateFunction(AggregateFunction& function) const;
-    BE_SQLITE_EXPORT int AddScalarFunction(ScalarFunction& function) const;
+    BE_SQLITE_EXPORT int AddFunction(DbFunction& function) const;
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction&) const;
     BE_SQLITE_EXPORT RepositoryLocalValueCache& GetRLVCache();
 };
@@ -2802,13 +2803,9 @@ public:
     //! Set one of the internal SQLite limits for this database. See documentation at sqlite3_limit for argument details.
     BE_SQLITE_EXPORT int SetLimit(int id, int newVal);
 
-    //! Add an AggreateFunction to this Db for use in SQL. See sqlite3_create_function for return values. The AggregateFunction object must remain valid
+    //! Add a DbFunction to this Db for use in SQL. See sqlite3_create_function for return values. The DbFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.
-    BE_SQLITE_EXPORT int AddAggregateFunction(AggregateFunction& func) const;
-
-    //! Add a ScalarFunction to this Db for use in SQL. See sqlite3_create_function for return values. The ScalarFunction object must remain valid
-    //! while this Db is valid, or until it is removed via #RemoveFunction.
-    BE_SQLITE_EXPORT int AddScalarFunction(ScalarFunction& func) const;
+    BE_SQLITE_EXPORT int AddFunction(DbFunction& func) const;
 
     //! Remove a previously added DbFunction from this Db. See sqlite3_create_function for return values.
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction& func) const;
@@ -3267,7 +3264,7 @@ public:
     //! this method is called for every internal and leaf node in an sqlite rtree vtable.
     //! @see sqlite3_rtree_query_callback.
     virtual int _TestRange(QueryInfo const&) = 0;
-    virtual void _FinishAggregate(DbFunction::Context*) override {}
+    virtual void _FinishAggregate(DbFunction::Context&) override {}
 
     //! Perform the RTree search by calling "Step" on the supplied statement. This object becomes the callback function for the "rTreeMatch(1)" sql function
     //! (e.g. "SELECT id FROM rtree_vtable WHERE id MATCH rTreeMatch(1)"
