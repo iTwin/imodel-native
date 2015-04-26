@@ -904,17 +904,11 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
         {
         private:
 
-            virtual void _ComputeScalar(BeSQLite::ScalarFunction::Context* ctx, int nArgs, BeSQLite::DbValue* args) override
+            virtual void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override
                 {
-                if (nArgs != GetNumArgs())
-                    {
-                    ctx->SetResultError("Function POW expects 2 arguments.", -1);
-                    return;
-                    }
-
                 if (args[0].IsNull() || args[1].IsNull())
                     {
-                    ctx->SetResultError("Arguments to POW must not be NULL", -1);
+                    ctx.SetResultError("Arguments to POW must not be NULL", -1);
                     return;
                     }
 
@@ -922,7 +916,7 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
                 double exp = args[1].GetValueDouble();
 
                 double res = std::pow(base, exp);
-                ctx->SetResultDouble(res);
+                ctx.SetResultDouble(res);
                 }
 
         public:
@@ -932,7 +926,7 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
 
     //instantiate the function object. Must remain valid until it is unregistered or the ECDb file is closed.
     PowSqlFunction powFunc;
-    if (ecdb.AddScalarFunction(powFunc) != 0)
+    if (ecdb.AddFunction(powFunc) != 0)
         return ERROR;
 
     // ECSQL that computes the area of round tables based on the table radius
@@ -947,6 +941,8 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
         // do something with the retrieved data of this row
         printf("Radius: %f cm - Area: %f cm^2\n", radius, area);
         }
+
+    ecdb.RemoveFunction(powFunc);
 
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;

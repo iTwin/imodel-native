@@ -18,17 +18,11 @@ struct PowSqlFunction : ScalarFunction, ScalarFunction::IScalar
     {
 private:
 
-    virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
-        if (nArgs != GetNumArgs ())
-            {
-            ctx->SetResultError("Function POW expects 2 arguments.", -1);
-            return;
-            }
-
         if (args[0].IsNull() || args[1].IsNull())
             {
-            ctx->SetResultError("Arguments to POW must not be NULL", -1);
+            ctx.SetResultError("Arguments to POW must not be NULL", -1);
             return;
             }
 
@@ -36,7 +30,7 @@ private:
         double exp = args[1].GetValueDouble();
 
         double res = std::pow(base, exp);
-        ctx->SetResultDouble(res);
+        ctx.SetResultDouble(res);
         }
 
 public:
@@ -50,14 +44,8 @@ struct IntegerToBlobSqlFunction : ScalarFunction, ScalarFunction::IScalar
     {
     private:
 
-        virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
             {
-            if (nArgs != GetNumArgs())
-                {
-                ctx->SetResultError("Function INTEGERTOBLOB expects 1 argument.", -1);
-                return;
-                }
-
             const void* blob = nullptr;
             int blobSize = 0;
             if (!args[0].IsNull())
@@ -67,7 +55,7 @@ struct IntegerToBlobSqlFunction : ScalarFunction, ScalarFunction::IScalar
                 blobSize = (int) sizeof(i);
                 }
 
-            ctx->SetResultBlob(blob, blobSize, DbFunction::Context::CopyData::Yes);
+            ctx.SetResultBlob(blob, blobSize, DbFunction::Context::CopyData::Yes);
             }
 
     public:
@@ -84,10 +72,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterUnregisterCustomSqlFunction)
     auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), perClassRowCount);
 
     PowSqlFunction func;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(func));
+    ASSERT_EQ(0, ecdb.AddFunction(func));
 
     PowSqlFunction func2;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(func2)) << "Adding same ECSQL function twice is expected to succeed.";
+    ASSERT_EQ(0, ecdb.AddFunction(func2)) << "Adding same ECSQL function twice is expected to succeed.";
 
     ASSERT_EQ(0, ecdb.RemoveFunction(func));
     ASSERT_EQ(0, ecdb.RemoveFunction(func)) << "Removing an unregistered ECSQL function is expected to succeeed";
@@ -108,9 +96,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredSqlFunction)
     ASSERT_EQ((int) ECSqlStatus::InvalidECSql, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to fail with unregistered custom ECSQL function";
 
     PowSqlFunction func;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(func));
+    ASSERT_EQ(0, ecdb.AddFunction(func));
 
     ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+    ASSERT_EQ(0, ecdb.RemoveFunction(func));
     }
 
 
@@ -132,7 +121,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
         }
 
     PowSqlFunction func;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(func));
+    ASSERT_EQ(0, ecdb.AddFunction(func));
 
         {
         ECSqlStatement stmt;
@@ -198,7 +187,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
 
         ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
-
+    ASSERT_EQ(0, ecdb.RemoveFunction(func));
     }
 
 //---------------------------------------------------------------------------------------
@@ -219,7 +208,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
         }
 
         IntegerToBlobSqlFunction func;
-        ASSERT_EQ(0, ecdb.AddScalarFunction(func));
+        ASSERT_EQ(0, ecdb.AddFunction(func));
 
         {
         ECSqlStatement stmt;
@@ -259,6 +248,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
 
         ASSERT_TRUE(rowCount > 0);
         }
+    ASSERT_EQ(0, ecdb.RemoveFunction(func));
     }
 
 /*
