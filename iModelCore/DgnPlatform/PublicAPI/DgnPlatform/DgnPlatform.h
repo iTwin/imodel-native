@@ -440,6 +440,7 @@ typedef ElementItemKey const& ElementItemKeyCR;
 struct BoundingBox3d : DRange3d
 {
     BoundingBox3d() {DRange3d::Init();}
+    explicit BoundingBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
     bool IsValid() const {return !IsEmpty();}
 };
 

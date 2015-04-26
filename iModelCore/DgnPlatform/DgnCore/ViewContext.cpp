@@ -1154,7 +1154,7 @@ StatusInt ViewContext::_VisitElement (GeometricElementCR element)
                 break;
 
             DPoint3d  p[8];
-            DRange3d  range = (2 == s_drawRange ? DRange3d(element._GetRange3d()) : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetElementBox() : ElementAlignedBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
+            BoundingBox3d  range = (2 == s_drawRange ? element._GetRange3d() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetElementBox() : BoundingBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
             Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform()));
 
             p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;

@@ -562,7 +562,7 @@ void DgnModel::_OnDeletedElement(DgnElementR element, bool canceled)
 
     GeometricElementCP geom = element._ToGeometricElement();
     if (nullptr != geom)
-        m_rangeIndex->RemoveElement(DRTEntry(geom->_GetRange3d(), *geom));
+        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->_GetRange3d(), *geom));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -574,7 +574,7 @@ void DgnModel::_OnReplacedElement(DgnElementR element, DgnElementR replacement)
     if (nullptr != m_rangeIndex && nullptr != geom)
         {
         GeometricElementCP replaceGeom = replacement._ToGeometricElement();
-        m_rangeIndex->RemoveElement(DRTEntry(replaceGeom->_GetRange3d(), *geom));
+        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(replaceGeom->_GetRange3d(), *geom));
         m_rangeIndex->AddGeomElement(*geom);
         }
     }

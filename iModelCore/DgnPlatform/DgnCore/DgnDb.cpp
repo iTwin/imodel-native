@@ -81,6 +81,8 @@ DbResult DgnDb::_OnDbOpened()
         return rc;
 
     m_units.Load();
+
+    RegisterSQLFuncs();
     return BE_SQLITE_OK;
     }
 

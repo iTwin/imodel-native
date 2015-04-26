@@ -198,7 +198,7 @@ struct ProgressiveViewFilter : RefCounted<IProgressiveDisplay>, RtreeViewFilter
     ~ProgressiveViewFilter();
 
     virtual int _TestRange (BeSQLite::RTreeMatch::QueryInfo const&) override;
-    virtual void _StepAggregate(BeSQLite::DbFunction::Context*, int nArgs, BeSQLite::DbValue* args) override;
+    virtual void _StepAggregate(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override;
     virtual bool _WantTimeoutSet(uint32_t& limit) override;
     virtual Completion _Process(ViewContextR context) override;
 };
@@ -236,7 +236,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
     DgnElementIdSet const*  m_alwaysDraw;
 
     virtual int _TestRange(BeSQLite::RTreeMatch::QueryInfo const&) override;
-    virtual void _StepAggregate(BeSQLite::DbFunction::Context*, int nArgs, BeSQLite::DbValue* args) override {RangeAccept(args[0].GetValueInt64());}
+    virtual void _StepAggregate(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {RangeAccept(args[0].GetValueInt64());}
     void RangeAccept(int64_t elementId) ;
     double MaxOcclusionScore();
 
@@ -256,7 +256,7 @@ struct DgnDbRTreeFitFilter : BeSQLite::RTreeMatch
     DRange3d m_lastRange;
 
     DGNPLATFORM_EXPORT virtual int _TestRange(BeSQLite::RTreeMatch::QueryInfo const&) override;
-    virtual void _StepAggregate(BeSQLite::DbFunction::Context*, int nArgs, BeSQLite::DbValue* args) override {m_fitRange.Extend(m_lastRange);}
+    virtual void _StepAggregate(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {m_fitRange.Extend(m_lastRange);}
 
 public:
     DgnDbRTreeFitFilter(BeSQLiteDbR db) : RTreeMatch(db) {m_fitRange = DRange3d::NullRange();}

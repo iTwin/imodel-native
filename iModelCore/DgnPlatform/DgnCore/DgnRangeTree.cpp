@@ -7,7 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-typedef DRTNodeP* DRTNodeH;
+typedef DgnRangeTree::Node&         DRTNodeR;
+typedef DgnRangeTree::Node*         DRTNodeP;
+typedef DRTNodeP*                   DRTNodeH;
+typedef DgnRangeTree::LeafNode*     DRTLeafNodeP;
+typedef DgnRangeTree::InternalNode* DRTInternalNodeP;
+
 static const double   s_cameraLimit      = 1.0E-5;
 enum
     {
@@ -280,19 +285,10 @@ void DRTStatistics::DumpCreate (DgnRangeTreeR tree)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline size_t DRTNode::GetEntryCount()
+inline size_t DgnRangeTree::Node::GetEntryCount()
     {
     DRTLeafNodeP leaf = ToLeaf();
     return leaf ? leaf->GetEntryCount() : ((DRTInternalNodeP) this)->GetEntryCount();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline void DRTNode::ClearRange()
-    {
-    m_sloppy = false;
-    m_nodeRange.Init();
     }
 
 /*=================================================================================**//**
@@ -302,23 +298,23 @@ struct DRTRangeCorners
 {
     DPoint3d m_points[8];
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline void InitFromRange(DRange3dCR range, TransformCP trans)
-    {
-    // Note we don't allow the box to degenerate in any direction as this makes it impossible to extract expansion direction.
-    m_points[0].x = m_points[3].x = m_points[4].x = m_points[7].x = (double) range.low.x;
-    m_points[1].x = m_points[2].x = m_points[5].x = m_points[6].x = (double) ((range.high.x == range.low.x) ? (range.low.x + 1) : range.high.x);
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    RayBentley      01/07
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    inline void InitFromRange(DRange3dCR range, TransformCP trans)
+        {
+        // Note we don't allow the box to degenerate in any direction as this makes it impossible to extract expansion direction.
+        m_points[0].x = m_points[3].x = m_points[4].x = m_points[7].x = (double) range.low.x;
+        m_points[1].x = m_points[2].x = m_points[5].x = m_points[6].x = (double) ((range.high.x == range.low.x) ? (range.low.x + 1) : range.high.x);
 
-    m_points[0].y = m_points[1].y = m_points[4].y = m_points[5].y = (double) range.low.y;
-    m_points[2].y = m_points[3].y = m_points[6].y = m_points[7].y = (double) ((range.high.y == range.low.y) ? (range.low.y + 1) : range.high.y);
+        m_points[0].y = m_points[1].y = m_points[4].y = m_points[5].y = (double) range.low.y;
+        m_points[2].y = m_points[3].y = m_points[6].y = m_points[7].y = (double) ((range.high.y == range.low.y) ? (range.low.y + 1) : range.high.y);
 
-    m_points[0].z = m_points[1].z = m_points[2].z = m_points[3].z = (double) range.low.z;
-    m_points[4].z = m_points[5].z = m_points[6].z = m_points[7].z = (double) ((range.high.z == range.low.z) ? (range.low.z + 1) : range.high.z);
+        m_points[0].z = m_points[1].z = m_points[2].z = m_points[3].z = (double) range.low.z;
+        m_points[4].z = m_points[5].z = m_points[6].z = m_points[7].z = (double) ((range.high.z == range.low.z) ? (range.low.z + 1) : range.high.z);
 
-    if (trans)
-        trans->Multiply(m_points, 8);
+        if (trans)
+            trans->Multiply(m_points, 8);
     }
 };
 
@@ -404,9 +400,9 @@ static inline void extendRange(DRange3dR thisRange, DRange3dCR range)
     }
 
 
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
 struct DRTSplitEntry
 {
     DRange3d    m_range;
@@ -415,7 +411,7 @@ struct DRTSplitEntry
 };
 
 GLOBAL_TYPEDEF (DRTSplitEntry,DRTSplitEntry)
-typedef RangeTreeProgressMonitor* ProgressMonitorP;
+typedef DgnRangeTree::ProgressMonitor* ProgressMonitorP;
 
 static inline bool compareX(DRTSplitEntryCR entry1, DRTSplitEntryCR entry2) {return entry1.m_range.low.x < entry2.m_range.low.x;}
 static inline bool compareY(DRTSplitEntryCR entry1, DRTSplitEntryCR entry2) {return entry1.m_range.low.y < entry2.m_range.low.y;}
@@ -539,7 +535,7 @@ static double checkSeparation(DRTSplitEntryP entries, size_t count, SplitAxis ax
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void DRTNode::ValidateRange()
+inline void DgnRangeTree::Node::ValidateRange()
     {
     if (!m_sloppy)
         return;
@@ -554,19 +550,16 @@ inline void DRTNode::ValidateRange()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatch DRTNode::Traverse(RangeTreeTraverser& traverser, bool is3d)
+DgnRangeTree::Match DgnRangeTree::Node::Traverse(Traverser& traverser, bool is3d)
     {
     DRTLeafNodeP leaf = ToLeaf();
-    if (leaf)
-        return leaf->Traverse(traverser, is3d);
-
-    return ((DRTInternalNodeP) this)->Traverse(traverser, is3d);
+    return leaf ? leaf->Traverse(traverser, is3d) : ((DRTInternalNodeP) this)->Traverse(traverser, is3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void DRTInternalNode::ValidateInternalRange()
+inline void DgnRangeTree::InternalNode::ValidateInternalRange()
     {
     if (!m_sloppy)
         return;
@@ -580,7 +573,7 @@ inline void DRTInternalNode::ValidateInternalRange()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void DRTLeafNode::ValidateLeafRange()
+inline void DgnRangeTree::LeafNode::ValidateLeafRange()
     {
     if (!m_sloppy)
         return;
@@ -588,14 +581,14 @@ inline void DRTLeafNode::ValidateLeafRange()
     m_sloppy = false;
     ClearRange();
 
-    for (DRTEntry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+    for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         extendRange(m_nodeRange, curr->m_range);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DRTNode::Overlaps(DRange3dCR range) const
+bool DgnRangeTree::Node::Overlaps(DRange3dCR range) const
     {
     if (m_nodeRange.low.x > range.high.x || m_nodeRange.high.x < range.low.x ||
         m_nodeRange.low.y > range.high.y || m_nodeRange.high.y < range.low.y)
@@ -607,7 +600,7 @@ bool DRTNode::Overlaps(DRange3dCR range) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DRTNode::CompletelyContains(DRange3dCR range) const
+bool DgnRangeTree::Node::CompletelyContains(DRange3dCR range) const
     {
     if (m_nodeRange.low.x >= range.low.x || m_nodeRange.high.x <= range.high.x ||
         m_nodeRange.low.y >= range.low.y || m_nodeRange.high.y <= range.high.y)
@@ -619,9 +612,9 @@ bool DRTNode::CompletelyContains(DRange3dCR range) const
 /*---------------------------------------------------------------------------------**//**
 * An InternalNode has become full, split into two nodes (a new one and this one) and determine an optimal division of the current
 * enteries between this node and the new one.
-* @bsimethod                                                    RayBentley      10/2009
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTInternalNode::SplitInternalNode(DgnRangeTreeR root)
+void DgnRangeTree::InternalNode::SplitInternalNode(DgnRangeTreeR root)
     {
     size_t  count = GetEntryCount();
     DRTSplitEntryP  splitEntries = (DRTSplitEntryP) _alloca(count * sizeof(DRTSplitEntry));
@@ -674,9 +667,9 @@ void DRTInternalNode::SplitInternalNode(DgnRangeTreeR root)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRTNodeP DRTInternalNode::ChooseBestNode(DRange3dCP pRange, DgnRangeTreeR root)
+DRTNodeP DgnRangeTree::InternalNode::ChooseBestNode(DRange3dCP pRange, DgnRangeTreeR root)
     {
     DRTNodeP best = nullptr;
     double   bestFit = 0.0;
@@ -713,7 +706,7 @@ DRTNodeP DRTInternalNode::ChooseBestNode(DRange3dCP pRange, DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTInternalNode::AddElement(DRTEntry const& entry, DgnRangeTreeR root)
+void DgnRangeTree::InternalNode::AddElement(Entry const& entry, DgnRangeTreeR root)
     {
     ValidateRange();
     extendRange(m_nodeRange, entry.m_range);
@@ -724,15 +717,14 @@ void DRTInternalNode::AddElement(DRTEntry const& entry, DgnRangeTreeR root)
         leaf->AddElementToLeaf(entry, root);
     else
         {
-        DRTInternalNodeP internalNode=(DRTInternalNodeP) node;
-        internalNode->AddElement(entry, root);
+        ((DRTInternalNodeP) node)->AddElement(entry, root);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTInternalNode::DropRange(DRange3dCR range)
+void DgnRangeTree::InternalNode::DropRange(DRange3dCR range)
     {
     if (CompletelyContains(range))
         return;
@@ -745,7 +737,7 @@ void DRTInternalNode::DropRange(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTInternalNode::DropNode(DRTNodeP entry, DgnRangeTreeR root)
+void DgnRangeTree::InternalNode::DropNode(DRTNodeP entry, DgnRangeTreeR root)
     {
     for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
@@ -778,7 +770,7 @@ void DRTInternalNode::DropNode(DRTNodeP entry, DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DRTInternalNode::DropElement(DRTEntry const& entry, DgnRangeTreeR root)
+bool DgnRangeTree::InternalNode::DropElement(Entry const& entry, DgnRangeTreeR root)
     {
     DRTLeafNodeP leaf = ToLeaf();
     if (leaf)
@@ -798,9 +790,9 @@ bool DRTInternalNode::DropElement(DRTEntry const& entry, DgnRangeTreeR root)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTInternalNode::AddInternalNode(DRTNodeP child, DgnRangeTreeR root)
+void DgnRangeTree::InternalNode::AddInternalNode(DRTNodeP child, DgnRangeTreeR root)
     {
     child->SetParent(this);
     ValidateInternalRange();
@@ -812,9 +804,9 @@ void DRTInternalNode::AddInternalNode(DRTNodeP child, DgnRangeTreeR root)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DRTInternalNode::GetLeafCount()
+size_t DgnRangeTree::InternalNode::GetLeafCount()
     {
     if (IsLeaf())
         return  1;
@@ -827,9 +819,9 @@ size_t DRTInternalNode::GetLeafCount()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DRTInternalNode::GetNodeCount()
+size_t DgnRangeTree::InternalNode::GetNodeCount()
     {
     size_t count = 1;
     if (!IsLeaf())
@@ -840,9 +832,9 @@ size_t DRTInternalNode::GetNodeCount()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DRTInternalNode::GetElementCount()
+size_t DgnRangeTree::InternalNode::GetElementCount()
     {
     DRTLeafNodeP leaf = ToLeaf();
     if (nullptr != leaf)
@@ -856,9 +848,9 @@ size_t DRTInternalNode::GetElementCount()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DRTInternalNode::GetMaxChildDepth()
+size_t DgnRangeTree::InternalNode::GetMaxChildDepth()
     {
     if (IsLeaf())
         return  1;
@@ -872,27 +864,27 @@ size_t DRTInternalNode::GetMaxChildDepth()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/10
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatch DRTInternalNode::Traverse(RangeTreeTraverser& traverser, bool is3d)
+DgnRangeTree::Match DgnRangeTree::InternalNode::Traverse(DgnRangeTree::Traverser& traverser, bool is3d)
     {
-    if (traverser._CheckRangeIndexNode(GetRange(), is3d, /*isElement*/true))   // WIP_VANCOUVER_MERGE rangeindex
+    if (traverser._CheckRangeTreeNode(GetRange(), is3d, /*isElement*/true))   // WIP_VANCOUVER_MERGE rangeindex
         {
         for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            RangeMatch status = (*curr)->Traverse(traverser, is3d);
-            if (RangeMatch::Ok != status)
+            DgnRangeTree::Match status = (*curr)->Traverse(traverser, is3d);
+            if (DgnRangeTree::Match::Ok != status)
                 return  status;
             }
         }
 
-    return  RangeMatch::Ok;
+    return  DgnRangeTree::Match::Ok;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
+* @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTLeafNode::AddElementToLeaf(DRTEntry const& entry, DgnRangeTreeR root)
+void DgnRangeTree::LeafNode::AddElementToLeaf(Entry const& entry, DgnRangeTreeR root)
     {
     ValidateRange();
     extendRange(m_nodeRange, entry.m_range);
@@ -906,9 +898,9 @@ void DRTLeafNode::AddElementToLeaf(DRTEntry const& entry, DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DRTLeafNode::DropElementFromLeaf(DRTEntry const& entry, DgnRangeTreeR root)
+bool DgnRangeTree::LeafNode::DropElementFromLeaf(Entry const& entry, DgnRangeTreeR root)
     {
-    for (DRTEntry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+    for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
         if (curr->m_elm != entry.m_elm)
             continue;
@@ -946,7 +938,7 @@ bool DRTLeafNode::DropElementFromLeaf(DRTEntry const& entry, DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTLeafNode::SplitLeafNode(DgnRangeTreeR root)
+void DgnRangeTree::LeafNode::SplitLeafNode(DgnRangeTreeR root)
     {
     size_t  count = GetEntryCount();
     DRTSplitEntryP  splitEntries = (DRTSplitEntryP) _alloca(count * sizeof(DRTSplitEntry));
@@ -954,7 +946,7 @@ void DRTLeafNode::SplitLeafNode(DgnRangeTreeR root)
     DRTSplitEntryP currEntry = splitEntries;
     DRTSplitEntryP endEntry = splitEntries + count;
 
-    for (DRTEntry* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
+    for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
         currEntry->m_entry = (void*) curr->m_elm;
         currEntry->m_range = curr->m_range;
@@ -970,7 +962,7 @@ void DRTLeafNode::SplitLeafNode(DgnRangeTreeR root)
     if (m_is3d && (zSep > ySep) && (zSep > xSep))
         optimalSplit = Z_AXIS;
 
-    DRTLeafNodeP newNode1 = root.AllocateLeafNode(m_type);
+    DRTLeafNodeP newNode1 = root.AllocateLeafNode();
     DRTLeafNodeP newNode2 = this;
     newNode2->m_type = newNode1->m_type;
 
@@ -979,9 +971,9 @@ void DRTLeafNode::SplitLeafNode(DgnRangeTreeR root)
     for (currEntry = splitEntries; currEntry < endEntry; ++currEntry)
         {
         if (0 == currEntry->m_groupNumber[optimalSplit])
-            newNode1->AddElementToLeaf(DRTEntry(currEntry->m_range, *(GeometricElementCP)currEntry->m_entry), root);
+            newNode1->AddElementToLeaf(Entry(currEntry->m_range, *(GeometricElementCP)currEntry->m_entry), root);
         else
-            newNode2->AddElementToLeaf(DRTEntry(currEntry->m_range, *(GeometricElementCP)currEntry->m_entry), root);
+            newNode2->AddElementToLeaf(Entry(currEntry->m_range, *(GeometricElementCP)currEntry->m_entry), root);
         }
 
     // if parent is nullptr, this node is currently the root of the tree (the only node in the tree). We need to allocate an InternalNode to
@@ -1002,19 +994,19 @@ void DRTLeafNode::SplitLeafNode(DgnRangeTreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatch DRTLeafNode::Traverse(RangeTreeTraverser& traverser, bool is3d)
+DgnRangeTree::Match DgnRangeTree::LeafNode::Traverse(DgnRangeTree::Traverser& traverser, bool is3d)
     {
-    if (traverser._CheckRangeIndexNode(GetRange(), is3d, /*isElement*/true))   // WIP_VANCOUVER_MERGE rangeindex
+    if (traverser._CheckRangeTreeNode(GetRange(), is3d, /*isElement*/true))   // WIP_VANCOUVER_MERGE rangeindex
         {
-        for (DRTEntry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+        for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            RangeMatch stat = traverser._VisitRangeTreeElem(curr->m_elm);
-            if (RangeMatch::Ok != stat)
+            DgnRangeTree::Match stat = traverser._VisitRangeTreeElem(curr->m_elm);
+            if (DgnRangeTree::Match::Ok != stat)
                 return  stat;
             }
         }
 
-    return  RangeMatch::Ok;
+    return  DgnRangeTree::Match::Ok;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1054,7 +1046,7 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
         {
         GeometricElementCP geom = element->ToGeometricElement();
         if (nullptr != geom)
-            AddElement(DRTEntry(geom->_GetRange3d(), *geom));
+            AddElement(Entry(geom->_GetRange3d(), *geom));
         }
 
 #ifdef DRT_DEBUGGING
@@ -1067,7 +1059,7 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::AddElement(DRTEntry const& entry)
+void DgnRangeTree::AddElement(Entry const& entry)
     {
     if (!rangeIsValid(entry.m_range, m_is3d))
         return;
@@ -1088,7 +1080,7 @@ void DgnRangeTree::AddElement(DRTEntry const& entry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnRangeTree::RemoveElement(DRTEntry const& entry)
+StatusInt DgnRangeTree::RemoveElement(Entry const& entry)
     {
     if (nullptr == m_root)
         return ERROR;
@@ -1109,16 +1101,16 @@ void DgnRangeTree::SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize)
     m_internalNodeSize = internalNodeSize;
     m_leafNodeSize = leafNodeSize;
 
-    m_leafNodes.SetEntrySize(sizeof(DRTLeafNode) + ((int) leafNodeSize*sizeof(DRTEntry)), 1);
-    m_internalNodes.SetEntrySize(sizeof(DRTInternalNode) + ((int) internalNodeSize*sizeof(DRTNodeP)), 1);
+    m_leafNodes.SetEntrySize(sizeof(DgnRangeTree::LeafNode) + ((int) leafNodeSize*sizeof(Entry)), 1);
+    m_internalNodes.SetEntrySize(sizeof(DgnRangeTree::InternalNode) + ((int) internalNodeSize*sizeof(DRTNodeP)), 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatch DgnRangeTree::FindMatches(RangeTreeTraverser& traverser)
+DgnRangeTree::Match DgnRangeTree::FindMatches(DgnRangeTree::Traverser& traverser)
     {
-    return (nullptr == m_root) ? RangeMatch::Ok : m_root->Traverse(traverser, Is3d());
+    return (nullptr == m_root) ? DgnRangeTree::Match::Ok : m_root->Traverse(traverser, Is3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1571,7 +1563,7 @@ struct OcclusionSortedProcessor : OcclusionScorer
     ViewContextR                m_viewContext;
     ScanCriteriaCP              m_scanCriteria;
     DgnViewportP                   m_viewport;
-    RangeTreeProgressMonitor*   m_progressMonitor;
+    DgnRangeTree::ProgressMonitor*   m_progressMonitor;
     uint32_t                    m_visitElementCount;
     DgnModelP                m_currDgnModel;
     DgnModelP                m_rootModel;
@@ -1625,11 +1617,6 @@ OcclusionSortedProcessor(ViewContextR viewContext, DgnModelP startModel, bool do
 #endif
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-~OcclusionSortedProcessor() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
@@ -1739,7 +1726,7 @@ bool ProcessViewNode(DRTViewNodeR viewNode)
 #endif
 
     bool testRange = viewNode.m_overlap;
-    for (DRTEntry* curr = &viewNode.m_leaf->m_firstChild[0]; curr < viewNode.m_leaf->m_endChild; ++curr)
+    for (DgnRangeTree::Entry* curr = &viewNode.m_leaf->m_firstChild[0]; curr < viewNode.m_leaf->m_endChild; ++curr)
         {
         if (VisitRangeElement(curr->m_elm, viewNode.m_modelRef, testRange, viewNode.m_score))
             return  true;
@@ -1967,7 +1954,7 @@ void ProcessEntries()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::ProcessOcclusionSorted(ViewContextR context, DgnModelP startDgnModel, RangeTreeProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeout)
+void DgnRangeTree::ProcessOcclusionSorted(ViewContextR context, DgnModelP startDgnModel, DgnRangeTree::ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeout)
     {
     uint32_t targetElementCount = 0;
     bool   doTimeout = nullptr != timeout && context.GetDrawPurpose() == DrawPurpose::UpdateDynamic;
@@ -2401,7 +2388,7 @@ const double ProgressiveViewFilter::s_purgeFactor = 1.3;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProgressiveViewFilter::_StepAggregate(DbFunction::Context*, int nArgs, DbValue* args) 
+void ProgressiveViewFilter::_StepAggregate(DbFunction::Context&, int nArgs, DbValue* args) 
     {
     if (m_context->WasAborted())
         return;
