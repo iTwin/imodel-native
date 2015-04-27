@@ -1045,9 +1045,7 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
                         }
                     }
                 }
-			printf("Removing Directory %ls", tempDirName);
-			WString tempCmd = L"rmdir /s /q " + tempDirName;
-			system(Utf8String(tempCmd).c_str());
+                BeFileName::EmptyAndRemoveDirectory(tempDirName.c_str());
             }
         }
     }
