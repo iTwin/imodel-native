@@ -245,9 +245,6 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
     if (m_needsCalculatedPropertyEvaluation)
         scope.Init (instance.GetECDBuffer ());
 
-    m_statement.Reset ();
-    m_statement.ClearBindings ();
-
     ECInstanceAdapterHelper::ECInstanceInfo instanceInfo (instance, actualUserProvidedInstanceId);
     //now add parameter values for regular properties
     for (auto const& bindingInfo : m_ecValueBindingInfos)
@@ -266,6 +263,11 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
 
     //now execute statement
     const ECSqlStepStatus stepStatus = m_statement.Step (newInstanceKey);
+
+    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+    m_statement.Reset();
+    m_statement.ClearBindings();
+
     return (stepStatus == ECSqlStepStatus::Done && newInstanceKey.IsValid ()) ? SUCCESS : ERROR;
     }
 

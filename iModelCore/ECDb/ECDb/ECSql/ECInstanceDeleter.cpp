@@ -86,11 +86,14 @@ ECInstanceId const& ecInstanceId
     if (!m_statement.IsPrepared())
         return ERROR;
 
-    m_statement.Reset();
-    m_statement.ClearBindings();
     m_statement.BindId (1, ecInstanceId);
 
     const ECSqlStepStatus stepStatus = m_statement.Step ();
+
+    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+    m_statement.Reset();
+    m_statement.ClearBindings();
+
     return (stepStatus == ECSqlStepStatus::Done && GetDefaultEventHandler().GetInstancesAffectedCount() > 0) ? SUCCESS : ERROR;
     }
 

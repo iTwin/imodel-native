@@ -125,8 +125,6 @@ public:
     //! Instantiates a new DefaultECSqlEventHandler
     DefaultECSqlEventHandler();
 
-    void Reset() const;
-
     //__PUBLISH_CLASS_VIRTUAL__
     //__PUBLISH_SECTION_START__
 public:

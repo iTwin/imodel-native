@@ -402,9 +402,6 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
     if (m_needsCalculatedPropertyEvaluation)
         scope.Init (instance.GetECDBuffer ());
 
-    m_statement.Reset ();
-    m_statement.ClearBindings ();
-
     ECInstanceAdapterHelper::ECInstanceInfo instanceInfo (instance);
     //now add parameter values for regular properties
     for (auto const& bindingInfo : m_ecValueBindingInfos)
@@ -436,6 +433,11 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
 
     //now execute statement
     ECSqlStepStatus stepStatus = m_statement.Step ();
+
+    //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
+    m_statement.Reset();
+    m_statement.ClearBindings();
+
     return (stepStatus == ECSqlStepStatus::Done && m_statement.GetDefaultEventHandler ()->GetInstancesAffectedCount () > 0) ? SUCCESS : ERROR;
     }
 

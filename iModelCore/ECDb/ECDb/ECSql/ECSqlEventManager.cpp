@@ -109,8 +109,6 @@ void ECSqlEventManager::FireEvent (ECSqlEventHandler::EventType eventType) const
 void ECSqlEventManager::Reset ()
     {
     m_eventArgs.GetInstanceKeysR ().clear ();
-    if (m_defaultHandler != nullptr)
-        m_defaultHandler->Reset();
     }
 
 
@@ -201,11 +199,4 @@ int DefaultECSqlEventHandler::GetInstancesAffectedCount() const
     return (int) m_args->GetInstanceKeys().size();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2015
-//---------------------------------------------------------------------------------------
-void DefaultECSqlEventHandler::Reset() const
-    {
-    m_args = nullptr;
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
