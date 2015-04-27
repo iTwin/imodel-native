@@ -315,16 +315,15 @@ bmap<Utf8String, double> results
     DbLogHelper logHelper;
     logHelper.LogResults(results);
     }
-
 //******* Test Helpers ***********
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Adeel.Shoukat          07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceTestFixture::OpenTestDb (ECDbR testDb, Db::OpenMode openMode, StartDefaultTransaction defaultTransactionMode) const
-    {
-    DbResult stat = testDb.OpenBeSQLiteDb (m_testDbPath.GetNameUtf8 ().c_str(), Db::OpenParams(openMode, defaultTransactionMode));
-    ASSERT_EQ (BE_SQLITE_OK, stat) << L"Opening DgnDb file with mode '" << openMode << L"' failed.";
-    }
+void PerformanceTestFixture::OpenTestDb(ECDbR testDb, Db::OpenMode openMode, StartDefaultTransaction defaultTransactionMode) const
+{
+    DbResult stat = testDb.OpenBeSQLiteDb(m_testDbPath.GetNameUtf8().c_str(), Db::OpenParams(openMode, defaultTransactionMode));
+    ASSERT_EQ(BE_SQLITE_OK, stat) << L"Opening DgnDb file with mode '" << openMode << L"' failed.";
+}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Adeel.Shoukat          07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -365,39 +364,52 @@ void PerformanceTestingFrameWork::openDb(WString dbName)
         }
     }
 }
-bool PerformanceTestingFrameWork::writeTodb(WString dbName,StopWatch &timerCount, Utf8String testName, Utf8String testDescription)
+/*---------------------------------------------------------------------------------**//**
+*@bsimethod                                            Adeel.Shoukat          07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PerformanceTestingFrameWork::writeTodb(WString dbName, StopWatch &timerCount, Utf8String testName, Utf8String testDescription)
 {
-    Statement TestStatement;
+    int performanceCount = 0;
+    int testRunCount = 0;
+    int lastRunCount = 0;
+    DbResult selectPreparetResult, insertPreparetResult;
+    Statement insertStatement, selectStatement;
     Utf8CP insertQuery = nullptr;
+    Utf8CP selectQuery = nullptr;
+    double timeInSecods;
+    Utf8CP testNameInDb;
+
     openDb(dbName);
-    double timeInSecods = timerCount.GetElapsedSeconds();
-    switch (performanceTestRunCount)
+    timeInSecods = timerCount.GetElapsedSeconds();
+
+    selectQuery = "Select * from PerformanceTestRun";
+    insertQuery = "INSERT INTO PerformanceTestRun(PerformanceTestRun,TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?,?)";
+    selectPreparetResult = selectStatement.Prepare(m_Db, selectQuery);
+    EXPECT_EQ(selectPreparetResult, DbResult::BE_SQLITE_OK);
+
+    while (selectStatement.Step() == DbResult::BE_SQLITE_ROW)
     {
-    case 1:
-        insertQuery = "INSERT INTO PerformanceTestRun1(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    case 2:
-        insertQuery = "INSERT INTO PerformanceTestRun2(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    case 3:
-        insertQuery = "INSERT INTO PerformanceTestRun3(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    case 4:
-        insertQuery = "INSERT INTO PerformanceTestRun4(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    case 5:
-        insertQuery = "INSERT INTO PerformanceTestRun5(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    default:
-        break;
+        lastRunCount = testRunCount;
+        testNameInDb = selectStatement.GetValueText(1);
+        if (testNameInDb == testName)
+        {
+            testRunCount = selectStatement.GetValueInt(0);
+            if (testRunCount >= lastRunCount)
+            {
+                performanceCount = testRunCount;
+
+            }
+        }
     }
-    DbResult preparetResult = TestStatement.Prepare(m_Db, insertQuery);
-    TestStatement.BindText(1, testName, Statement::MakeCopy::No);
-    TestStatement.BindDouble(2, timeInSecods);
-    TestStatement.BindText(3, testDescription, Statement::MakeCopy::No);
-    if (preparetResult == DbResult::BE_SQLITE_OK)
+    performanceCount = performanceCount + 1;
+    insertPreparetResult = insertStatement.Prepare(m_Db, insertQuery);
+    insertStatement.BindInt(1, performanceCount);
+    insertStatement.BindText(2, testName, Statement::MakeCopy::No);
+    insertStatement.BindDouble(3, timeInSecods);
+    insertStatement.BindText(4, testDescription, Statement::MakeCopy::No);
+    if (insertPreparetResult == DbResult::BE_SQLITE_OK)
     {
-        DbResult stepResult = TestStatement.Step();
+        DbResult stepResult = insertStatement.Step();
         if (stepResult == DbResult::BE_SQLITE_DONE)
         {
             DbResult ChangesResult = m_Db.SaveChanges();
@@ -411,45 +423,51 @@ bool PerformanceTestingFrameWork::writeTodb(WString dbName,StopWatch &timerCount
     return false;
 }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                            Adeel.Shoukat          07/2014
+*@bsimethod                                            Adeel.Shoukat          07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PerformanceTestingFrameWork::writeTodbForDouble(WString dbName, double timerCount, Utf8String testName, Utf8String testDescription, bool bTimeInMiliSecond)
 {
-    Statement TestStatement;
+    int performanceCount = 0;
+    int testRunCount = 0;
+    int lastRunCount = 0;
+    DbResult selectPreparetResult, insertPreparetResult;
+    Statement insertStatement, selectStatement;
     Utf8CP insertQuery = nullptr;
+    Utf8CP selectQuery = nullptr;
     double timeInSecods;
+    Utf8CP testNameInDb;
     openDb(dbName);
     if (bTimeInMiliSecond)
         timeInSecods = timerCount*1000.0;
     else
         timeInSecods = timerCount;
-    switch (performanceTestRunCount)
+    selectQuery = "Select * from PerformanceTestRun";
+    insertQuery = "INSERT INTO PerformanceTestRun(PerformanceTestRun,TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?,?)";
+    selectPreparetResult = selectStatement.Prepare(m_Db, selectQuery);
+    EXPECT_EQ(selectPreparetResult, DbResult::BE_SQLITE_OK);
+
+    while (selectStatement.Step() == DbResult::BE_SQLITE_ROW)
     {
-    case 1:
-        insertQuery = "INSERT INTO PerformanceTestRun1(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    case 2:
-        insertQuery = "INSERT INTO PerformanceTestRun2(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    case 3:
-        insertQuery = "INSERT INTO PerformanceTestRun3(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    case 4:
-        insertQuery = "INSERT INTO PerformanceTestRun4(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    case 5:
-        insertQuery = "INSERT INTO PerformanceTestRun5(TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?)";
-        break;
-    default:
-        break;
+        lastRunCount = testRunCount;
+        testNameInDb = selectStatement.GetValueText(1);
+        if (testNameInDb == testName)
+        {
+            testRunCount = selectStatement.GetValueInt(0);
+            if (testRunCount >= lastRunCount)
+            {
+                performanceCount = testRunCount;
+            }
+        }
     }
-    DbResult preparetResult = TestStatement.Prepare(m_Db, insertQuery);
-    TestStatement.BindText(1, testName, Statement::MakeCopy::No);
-    TestStatement.BindDouble(2, timeInSecods);
-    TestStatement.BindText(3, testDescription, Statement::MakeCopy::No);
-    if (preparetResult == DbResult::BE_SQLITE_OK)
+    performanceCount = performanceCount + 1;
+    insertPreparetResult = insertStatement.Prepare(m_Db, insertQuery);
+    insertStatement.BindInt(1, performanceCount);
+    insertStatement.BindText(2, testName, Statement::MakeCopy::No);
+    insertStatement.BindDouble(3, timeInSecods);
+    insertStatement.BindText(4, testDescription, Statement::MakeCopy::No);
+    if (insertPreparetResult == DbResult::BE_SQLITE_OK)
     {
-        DbResult stepResult = TestStatement.Step();
+        DbResult stepResult = insertStatement.Step();
         if (stepResult == DbResult::BE_SQLITE_DONE)
         {
             DbResult ChangesResult = m_Db.SaveChanges();
@@ -462,7 +480,5 @@ bool PerformanceTestingFrameWork::writeTodbForDouble(WString dbName, double time
     }
     return false;
 }
-
-
 END_ECDBUNITTESTS_NAMESPACE
 
