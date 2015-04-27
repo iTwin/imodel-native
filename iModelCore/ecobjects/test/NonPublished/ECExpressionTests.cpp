@@ -116,7 +116,7 @@ TEST_F (RoundtripExpressionTests, Roundtrip)
     Roundtrip (L"this.Property", L"this.Property");
     Roundtrip (L"this.Property *  this[\"Property\"]", L"this.Property*this[\"Property\"]");
     Roundtrip (L"Something.Method ( )", L"Something.Method()");
-    Roundtrip (L"Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", L"Something.Method(0,1.5,2,\"string\",this.Property)");
+    Roundtrip (L"Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", L"Something.Method(0,1.5,2.0,\"string\",this.Property)");
     Roundtrip (L"IIf (True,  Null, \t2 ^3  -3* 4)", L"IIf(True,Null,2^3-3*4)");
     Roundtrip (L"X = \"Thing\" OrElse X = \"Stuff\"", L"X=\"Thing\"OrElse X=\"Stuff\"");
 
