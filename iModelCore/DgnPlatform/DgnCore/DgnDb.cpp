@@ -65,7 +65,15 @@ DgnDb::~DgnDb()
     Destroy();
     }
 
-void DgnDb::_OnDbClose() {Destroy(); T_Super::_OnDbClose();}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::_OnDbClose() 
+    {
+    Domains().OnDbClose();
+    Destroy(); 
+    T_Super::_OnDbClose();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
@@ -76,12 +84,9 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    rc = Domains().SyncWithSchemas();
-    if (BE_SQLITE_OK != rc)
-        return rc;
-
     m_units.Load();
-    return BE_SQLITE_OK;
+
+    return Domains().OnDbOpened();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -152,11 +157,11 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params)
+DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const& params)
     {
-    BeFileName projectFile(boundFileName);
+    BeFileName projectFile(inFileName);
 
-    if (boundFileName.IsEmpty())
+    if (inFileName.IsEmpty())
         {
         projectFile.SetNameUtf8 (BEDB_MemoryDb);
         }
@@ -200,14 +205,14 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR projectFileName, CreateDgnDbParams const& params)
+DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDbParams const& params)
     {
     DbResult ALLOW_NULL_OUTPUT (stat, result);
 
-    DgnDbPtr project = new DgnDb();
-    stat = project->CreateNewDgnDb(projectFileName, params);
+    DgnDbPtr dgndb = new DgnDb();
+    stat = dgndb->CreateNewDgnDb(fileName, params);
 
-    return  (BE_SQLITE_OK==stat) ? project : nullptr;
+    return  (BE_SQLITE_OK==stat) ? dgndb : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -238,7 +238,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);
     virtual DgnModelType _GetModelType() const = 0;
     virtual DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const = 0;
-    virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) {return BeSQLite::BE_SQLITE_ERROR;}
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;
     virtual bool _Is3d() const = 0;
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);
@@ -318,7 +318,7 @@ public:
     bool Is3d() const {return _Is3d();}
 
     //! Get the range of all visible elements in the model.
-    BeSQLite::DbResult QueryModelRange(DRange3dR range) {return _QueryModelRange(range);}
+    AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
 
     //! Get the Properties for this model.
     Properties& GetPropertiesR() {return m_properties;}
@@ -350,10 +350,6 @@ public:
     //! Get the DgnDb that contains this model.
     //! @return the DgnDb that contains this model.
     DgnDbR GetDgnDb() const {return m_dgndb;}
-
-    //! Get the spatial extent of all elements in this model.
-    //! @param[out]     range      Filled with the union of all of the ranges of the elements in model.
-    DGNPLATFORM_EXPORT StatusInt GetRange(DRange3dR range);
 
     /** @name DgnModelAppData */
     /** @{ */
@@ -409,7 +405,6 @@ protected:
     DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _QueryModelRange (DRange3dR range) override;
 
 public:
     void SetGlobalOrigin(DPoint2dCR org) {m_globalOrigin = org;}
@@ -425,7 +420,6 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
     DEFINE_T_SUPER(DgnModel3d)
 protected:
     DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _QueryModelRange (DRange3dR range) override;
     PhysicalModelCP _ToPhysicalModel() const override {return this;}
     DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::World;}
 

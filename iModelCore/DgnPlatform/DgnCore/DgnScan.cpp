@@ -7,7 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-StatusInt ScanCriteria::CallElementFunc (DgnElementCP el)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/07
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ScanCriteria::CallElementFunc(DgnElementCP el)
     {
     PFScanElementCallback cbFunc = (PFScanElementCallback) m_callbackFunc;
     return cbFunc (*el, m_callbackArg, *this);
@@ -333,28 +336,28 @@ ScanTestResult  ScanCriteria::CheckRange (DRange3dCR elemRange, bool isElem3d) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::CheckElementRange (DgnElementCR element) const
+bool ScanCriteria::CheckElementRange(DgnElementCR element) const
     {
     GeometricElementCP geom = element.ToGeometricElement();
-    return geom ? _CheckRangeIndexNode(geom->_GetRange3d(), element.GetDgnModel().Is3d(), true) : false;
+    return geom ? _CheckRangeTreeNode(geom->_GetRange3d(), element.GetDgnModel().Is3d(), true) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::_CheckRangeIndexNode (DRange3dCR nodeRange, bool is3d, bool isElement) const
+bool ScanCriteria::_CheckRangeTreeNode(DRange3dCR nodeRange, bool is3d, bool isElement) const
     {
     if (ScanTestResult::Pass != CheckRange (nodeRange, is3d))
         return false;
 
-    return (NULL == m_appRangeNodeCheck) ? true : (ScanTestResult::Pass == m_appRangeNodeCheck->_CheckNodeRange (*this, nodeRange, is3d, isElement));
+    return (NULL == m_appRangeNodeCheck) ? true : (ScanTestResult::Pass == m_appRangeNodeCheck->_CheckNodeRange(*this, nodeRange, is3d, isElement));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @return false if the element is OK, true if it is rejected
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanTestResult ScanCriteria::CheckElement (DgnElementCR element, bool doRangeTest) const
+ScanTestResult ScanCriteria::CheckElement(DgnElementCR element, bool doRangeTest) const
     {
     if (m_type.testCategory)
         {
@@ -365,7 +368,7 @@ ScanTestResult ScanCriteria::CheckElement (DgnElementCR element, bool doRangeTes
     /* check the range */
     if (doRangeTest)
         {
-        if (!CheckElementRange (element))
+        if (!CheckElementRange(element))
             return  ScanTestResult::Fail;
         }
 
@@ -376,7 +379,7 @@ ScanTestResult ScanCriteria::CheckElement (DgnElementCR element, bool doRangeTes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ScanCriteria::ProcessElemRefRangeList()
+StatusInt ScanCriteria::ProcessElemRefRangeList()
     {
     for (T_RangeHits::iterator curr = m_rangeHits->begin(); curr < m_rangeHits->end(); curr++)
         {
@@ -396,7 +399,7 @@ StatusInt ScanCriteria::ProcessRangeIndexResults ()
     if (IsElemRefIter())
         return  ProcessElemRefRangeList ();
 
-    int             scanStatus = 0;
+    int  scanStatus = 0;
 
     for (T_RangeHits::iterator curr = m_rangeHits->begin() + m_currRangeHit; curr < m_rangeHits->end(); curr++, m_currRangeHit++)
         {
@@ -492,35 +495,35 @@ StatusInt ScanCriteria::ProcessRangeIndexResults ()
     return scanStatus;
     }
 
-typedef int  (*PFScanElementNodeCallback) (GeometricElementCP, void* callbackArg, ScanCriteriaP);
+typedef int (*PFScanElementNodeCallback) (GeometricElementCP, void* callbackArg, ScanCriteriaP);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatch ScanCriteria::_VisitRangeTreeElem (GeometricElementCP element)
+DgnRangeTree::Match ScanCriteria::_VisitRangeTreeElem(GeometricElementCP element)
     {
     if (!CheckElementRange (*element))
-        return RangeMatch::Ok;
+        return DgnRangeTree::Match::Ok;
 
     if (ScanTestResult::Fail == CheckElement (*element, false))
-        return RangeMatch::Ok;
+        return DgnRangeTree::Match::Ok;
 
     if (UseRangeTreeOrdering())
         {
         PFScanElementNodeCallback   cbFunc = (PFScanElementNodeCallback) m_callbackFunc;
-        return (SUCCESS == cbFunc (element, m_callbackArg, this)) ? RangeMatch::Ok : RangeMatch::Aborted;
+        return (SUCCESS == cbFunc (element, m_callbackArg, this)) ? DgnRangeTree::Match::Ok : DgnRangeTree::Match::Aborted;
         }
 
     if (m_rangeHits->size() > MAX_ORDERED_HITS)
-        return  RangeMatch::TooManyHits;
+        return  DgnRangeTree::Match::TooManyHits;
 
     m_rangeHits->push_back(element);
-    return  RangeMatch::Ok;
+    return  DgnRangeTree::Match::Ok;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-RangeMatch ScanCriteria::FindRangeHits(DgnRangeTree* rangeIndex)
+DgnRangeTree::Match ScanCriteria::FindRangeHits(DgnRangeTree* rangeIndex)
     {
     if (NULL == m_rangeHits)
         m_rangeHits = new T_RangeHits;
@@ -528,14 +531,14 @@ RangeMatch ScanCriteria::FindRangeHits(DgnRangeTree* rangeIndex)
         m_rangeHits->clear();
 
     m_currRangeHit = 0;
-    RangeMatch stat = rangeIndex->FindMatches (*this);
-    if (RangeMatch::Ok != stat)
+    DgnRangeTree::Match stat = rangeIndex->FindMatches (*this);
+    if (DgnRangeTree::Match::Ok != stat)
         {
         ResetState(); // aborted - throw away hits
         return stat;
         }
 
-    return RangeMatch::Ok;
+    return DgnRangeTree::Match::Ok;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,10 +583,10 @@ StatusInt ScanCriteria::Scan (ViewContextP context)
             {
             switch (FindRangeHits (rangeIndex))
                 {
-                case RangeMatch::TooManyHits:
+                case DgnRangeTree::Match::TooManyHits:
                     goto linearScan;
 
-                case RangeMatch::Aborted:
+                case DgnRangeTree::Match::Aborted:
                     return  BUFF_FULL;
                 }
             }

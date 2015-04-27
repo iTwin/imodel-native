@@ -17,7 +17,7 @@ DGNPLATFORM_TYPEDEFS (IRangeNodeCheck)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-typedef int (*PFScanElementCallback) (DgnElementCR, void *callbackArg, ScanCriteriaR sc);
+typedef int (*PFScanElementCallback)(DgnElementCR, void *callbackArg, ScanCriteriaR sc);
 
 enum class ScanTestResult
 {
@@ -63,7 +63,7 @@ struct ScanType
 //! on your own, unless you need the range-based criteria supported by the mdlScanCriteria methods.
 // @bsiclass                                                      Keith.Bentley   05/07
 //=======================================================================================
-struct ScanCriteria: RangeTreeTraverser
+struct ScanCriteria : DgnRangeTree::Traverser
 {
     struct ElemFilter
         {
@@ -149,11 +149,11 @@ private:
     bool      TransferElement (int* scanStatus);
     void      ResetState();
     void      Empty();
-    RangeMatch FindRangeHits(DgnRangeTree*);
+    DgnRangeTree::Match FindRangeHits(DgnRangeTree*);
     StatusInt ProcessElemRefRangeList ();
 
-    virtual bool _CheckRangeIndexNode (DRange3dCR, bool, bool) const override;
-    virtual RangeMatch _VisitRangeTreeElem (GeometricElementCP) override;
+    virtual bool _CheckRangeTreeNode (DRange3dCR, bool, bool) const override;
+    virtual DgnRangeTree::Match _VisitRangeTreeElem (GeometricElementCP) override;
 
 public:
     DGNPLATFORM_EXPORT ScanCriteria ();

@@ -271,10 +271,19 @@ protected:
 
     BeSQLite::DbResult LoadHandlers(DgnDbR) const;
 
-    //! Called after a DgnDomain schema has been imported.
+    //! Called after this DgnDomain's schema has been imported into the supplied DgnDb.
+    //! @param[in] db The DgnDb into which the schema was imported.
     //! @note Domains are expected to override this method and use it to create required domain objects (like categories, for example).
     //! @see ImportSchema
-    virtual void _OnSchemaImported(DgnDbR db) {}
+    virtual void _OnSchemaImported(DgnDbR db) const {}
+
+    //! Called after a DgnDb containing this schema is opened. Domains may register SQL functions in this method, for example.
+    //! @param[in] db The DgnDb that was just opened.
+    virtual void _OnDgnDbOpened(DgnDbR db) const {}
+
+    //! Called when a DgnDb is about to be closed. The DgnDb is still valid, but is about to be closed.
+    //! @param[in] db The DgnDb that is about to be closed.
+    virtual void _OnDgnDbClose(DgnDbR db) const {}
 
 public:
     //! Construct a new DgnDomain.
@@ -283,10 +292,10 @@ public:
     //! @param[in] version The version of this DgnDomain API.
     DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr) {m_version=version;}
 
-    //! Get the name for this DgnDomain.
+    //! Get the name of this DgnDomain.
     Utf8CP GetDomainName() const {return m_domainName.c_str();}
 
-    //! Get the description for this DgnDomain.
+    //! Get the description of this DgnDomain.
     Utf8CP GetDomainDescription() const {return m_domainDescr.c_str();}
 
     //! Get the version of this DgnDomain.
@@ -303,7 +312,7 @@ public:
     //! Import an ECSchema for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaFileName The domain ECSchema file to import
-    DGNPLATFORM_EXPORT BentleyStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName);
+    DGNPLATFORM_EXPORT BentleyStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
 };
 
 //=======================================================================================
@@ -329,13 +338,12 @@ private:
     BeSQLite::DbResult InsertHandler(DgnDomain::Handler& handler);
     BeSQLite::DbResult InsertDomain(DgnDomainCR);
     ECN::ECClassCP FindBaseOfType(DgnClassId subClassId, DgnClassId baseClassId);
+    BeSQLite::DbResult OnDbOpened();
+    void OnDbClose();
+    BeSQLite::DbResult SyncWithSchemas();
 
     explicit DgnDomains(DgnDbR db) : DgnDbTable(db) {}
     static DgnDomain::TableHandler* FindTableHandler(Utf8CP tableName);
-
-    //! Initialize the Domains for this DgnDb from its schemas and the the registered DgnDomain set.
-    //! @note This method must be called any time a new schema is imported to a DgnDb.  Now called automatically from DgnDomain::ImportSchema
-    BeSQLite::DbResult SyncWithSchemas();
 
 public:
     //! Look up a handler for a given DgnClassId. Does not check base classes.
@@ -373,6 +381,7 @@ struct DgnSchemaDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(DgnSchemaDomain,DGNPLATFORM_EXPORT)
 
+    void _OnDgnDbOpened(DgnDbR db) const override;
     void RegisterDefaultDependencyHandlers(); 
 
 public:

@@ -12,93 +12,386 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct PlacementFunc : ScalarFunction, ScalarFunction::IScalar
+struct PlacementFunc : ScalarFunction
 {
-    void SetInputError(Context* ctx)
-        {
-        Utf8PrintfString str("Illegal input to %s", GetName());
-        ctx->SetResultError(str.c_str());
-        }
     Placement3d& ToPlacement3d(DbValue* args) {return *(Placement3d*)(args[0].GetValueBlob());}
     Placement2d& ToPlacement2d(DbValue* args) {return *(Placement2d*)(args[0].GetValueBlob());}
 
-    PlacementFunc(Utf8CP name, DbValueType valType) : ScalarFunction(name, 1, valType, this) {}
+    PlacementFunc(Utf8CP name, DbValueType valType) : ScalarFunction(name, 1, valType) {}
 };
 
-struct AABB_From_Placement : PlacementFunc
+//=======================================================================================
+// Get the AxisAlignedBox3d from a Placement
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_PLACEMENT_AABB : PlacementFunc
 {
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    AABB_From_Placement() : PlacementFunc("DGN_PLACEMENT_AABB", DbValueType::BlobVal) {}
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        AxisAlignedBox3d bb;
+        switch (args[0].GetValueBytes())
+            {
+            case sizeof(Placement3d):
+                bb = ToPlacement3d(args).CalculateRange();
+                break;
+            case sizeof(Placement2d):
+                bb = ToPlacement2d(args).CalculateRange();
+                break;
+
+            default:
+                SetInputError(ctx);
+                return;
+            }
+
+        ctx.SetResultBlob(&bb, sizeof(bb));
+        }
+    DGN_PLACEMENT_AABB() : PlacementFunc("DGN_PLACEMENT_AABB", DbValueType::BlobVal) {}
 };
 
-struct Origin_From_Placement : PlacementFunc
+//=======================================================================================
+// Get the ElementAlignedBox3d from a Placement
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_PLACEMENT_EABB : PlacementFunc
 {
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Origin_From_Placement() : PlacementFunc("DGN_PLACEMENT_Origin", DbValueType::BlobVal) {}
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        ElementAlignedBox3d bb;
+        switch (args[0].GetValueBytes())
+            {
+            case sizeof(Placement3d):
+                bb = ToPlacement3d(args).GetElementBox();
+                break;
+            case sizeof(Placement2d):
+                bb = ElementAlignedBox3d(ToPlacement2d(args).GetElementBox());
+                break;
+
+            default:
+                SetInputError(ctx);
+                return;
+            }
+
+        ctx.SetResultBlob(&bb, sizeof(bb));
+        }
+    DGN_PLACEMENT_EABB() : PlacementFunc("DGN_PLACEMENT_EABB", DbValueType::BlobVal) {}
 };
 
-struct Yaw_From_Placement : PlacementFunc
+//=======================================================================================
+// Get the DPoint3d Origin fron a Placement
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_PLACEMENT_Origin : PlacementFunc
 {
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Yaw_From_Placement() : PlacementFunc("DGN_PLACEMENT_Yaw", DbValueType::FloatVal) {}
-};
-struct Pitch_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Pitch_From_Placement() : PlacementFunc("DGN_PLACEMENT_Pitch", DbValueType::FloatVal) {}
-};
-struct Roll_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Roll_From_Placement() : PlacementFunc("DGN_PLACEMENT_Roll", DbValueType::FloatVal) {}
-};
-struct Width_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Width_From_Placement() : PlacementFunc("DGN_PLACEMENT_Width", DbValueType::FloatVal) {}
-};
-struct Height_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Height_From_Placement() : PlacementFunc("DGN_PLACEMENT_Height", DbValueType::FloatVal) {}
-};
-struct Left_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Left_From_Placement() : PlacementFunc("DGN_PLACEMENT_Left", DbValueType::FloatVal) {}
-};
-struct Right_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Right_From_Placement() : PlacementFunc("DGN_PLACEMENT_Right", DbValueType::FloatVal) {}
-};
-struct Bottom_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Bottom_From_Placement() : PlacementFunc("DGN_PLACEMENT_Bottom", DbValueType::FloatVal) {}
-};
-struct Top_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    Top_From_Placement() : PlacementFunc("DGN_PLACEMENT_Top", DbValueType::FloatVal) {}
-};
-struct BoxVolume_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    BoxVolume_From_Placement() : PlacementFunc("DGN_PLACEMENT_Volume", DbValueType::FloatVal) {}
-};
-struct BoxArea_From_Placement : PlacementFunc
-{
-    void _ComputeScalar(Context*, int nArgs, DbValue* args) override;
-    BoxArea_From_Placement() : PlacementFunc("DGN_PLACEMENT_Area2d", DbValueType::FloatVal) {}
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        DPoint3d org;
+        switch (args[0].GetValueBytes())
+            {
+            case sizeof(Placement3d):
+                org = ToPlacement3d(args).GetOrigin();
+                break;
+
+            case sizeof(Placement2d):
+                org = DPoint3d::From(ToPlacement2d(args).GetOrigin());
+                break;
+
+            default:
+                SetInputError(ctx);
+                return;
+            }
+
+        ctx.SetResultBlob(&org, sizeof(org));
+        }
+    DGN_PLACEMENT_Origin() : PlacementFunc("DGN_PLACEMENT_Origin", DbValueType::BlobVal) {}
 };
 
-struct AABB_Union : AggregateFunction, AggregateFunction::IAggregate
+//=======================================================================================
+// Get the YawPitchRollAngles fron a Placement
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_PLACEMENT_Angles : PlacementFunc
 {
-    void _StepAggregate(Context*, int nArgs, DbValue* args) override;
-    void _FinishAggregate(Context*) override;
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        YawPitchRollAngles angles;
+        switch (args[0].GetValueBytes())
+            {
+            case sizeof(Placement3d):
+                angles = ToPlacement3d(args).GetAngles();
+                break;
 
-    AABB_Union() : AggregateFunction("DGN_AABB_UNION", 1, DbValueType::BlobVal, this) {}
+            case sizeof(Placement2d):
+                angles = YawPitchRollAngles::FromDegrees(ToPlacement2d(args).GetAngle(), 0.0, 0.0);
+                break;
+
+            default:
+                SetInputError(ctx);
+                return;
+            }
+
+        ctx.SetResultBlob(&angles, sizeof(angles));
+        }
+
+    DGN_PLACEMENT_Angles() : PlacementFunc("DGN_PLACEMENT_Angles", DbValueType::BlobVal) {}
+};
+
+//=======================================================================================
+// Create a YawPitchRollAngle from 3 values, in degrees {Yaw, Pitch, Roll}
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_Angles : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        YawPitchRollAngles angles = YawPitchRollAngles::FromDegrees(args[0].GetValueDouble(),args[1].GetValueDouble(),args[2].GetValueDouble());
+        ctx.SetResultBlob(&angles, sizeof(angles));
+        }
+    DGN_Angles() : ScalarFunction("DGN_Angles", 3, DbValueType::BlobVal) {}
+};
+
+//=======================================================================================
+// Get one of the values of a DPoint3d by index: {Yaw=0, Pitch=1, Roll=2}
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_ANGLES_Value : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        int member = args[1].GetValueInt();
+        if (args[0].GetValueBytes() != sizeof(YawPitchRollAngles) || member<0 || member>2)
+            return SetInputError(ctx);
+
+        double const* angles= (double const*)(args[0].GetValueBlob());
+        ctx.SetResultDouble(angles[member]);
+        }
+    DGN_ANGLES_Value() : ScalarFunction("DGN_ANGLES_Value", 2, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
+// Create a BoundingBox from 6 values in this order: {XLow, YLow, Zlow, XHigh, YHigh, ZHigh}
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBox : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        DRange3d box;
+        box.InitFrom(args[0].GetValueDouble(),
+                     args[1].GetValueDouble(),
+                     args[2].GetValueDouble(),
+                     args[3].GetValueDouble(),
+                     args[4].GetValueDouble(),
+                     args[5].GetValueDouble());
+
+        ctx.SetResultBlob(&box, sizeof(box));
+        }
+    DGN_BBox() : ScalarFunction("DGN_BBox", 6, DbValueType::BlobVal) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_Width : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
+            return SetInputError(ctx);
+
+        ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetWidth());
+        }
+    DGN_BBOX_Width() : ScalarFunction("DGN_BBOX_Width", 1, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_Height : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
+            return SetInputError(ctx);
+
+        ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetHeight());
+        }
+    DGN_BBOX_Height() : ScalarFunction("DGN_BBOX_Height", 1, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_Depth : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
+            return SetInputError(ctx);
+
+        ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetDepth());
+        }
+    DGN_BBOX_Depth() : ScalarFunction("DGN_BBOX_Depth", 1, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_Volume : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
+            return SetInputError(ctx);
+
+        ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->Volume());
+        }
+    DGN_BBOX_Volume() : ScalarFunction("DGN_BBOX_Volume", 1, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_AreaXY : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d))
+            return SetInputError(ctx);
+
+
+        ElementAlignedBox3d& box = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
+        ctx.SetResultDouble(box.GetWidth() * box.GetHeight());
+        }
+
+    DGN_BBOX_AreaXY() : ScalarFunction("DGN_BBOX_AreaXY", 1, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_Overlaps : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d) ||
+            args[1].GetValueBytes() != sizeof(ElementAlignedBox3d))
+            return SetInputError(ctx);
+
+        ElementAlignedBox3d& box1 = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
+        ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
+        ctx.SetResultInt(box1.IntersectsWith(box2));
+        }
+    DGN_BBOX_Overlaps() : ScalarFunction("DGN_BBOX_Overlaps", 2, DbValueType::IntegerVal) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_IsContained : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d) ||
+            args[1].GetValueBytes() != sizeof(ElementAlignedBox3d))
+            return SetInputError(ctx);
+
+        ElementAlignedBox3d& box1 = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
+        ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
+        ctx.SetResultInt(box2.IsContained(box1));
+        }
+    DGN_BBOX_IsContained() : ScalarFunction("DGN_BBOX_IsContained", 2, DbValueType::IntegerVal) {}
+};
+
+//=======================================================================================
+// Get one of the values of a BoundingBox by index: {XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5}
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_Value : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        int member = args[1].GetValueInt();
+        if (args[0].GetValueBytes() != sizeof(ElementAlignedBox3d) || member<0 || member>5)
+            return SetInputError(ctx);
+
+        double const* box = (double const*)(args[0].GetValueBlob());
+        ctx.SetResultDouble(box[member]);
+        }
+    DGN_BBOX_Value() : ScalarFunction("DGN_BBOX_Value", 2, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_BBOX_Union : AggregateFunction
+{
+    struct Result {bool m_valid; DRange3d m_range;};
+
+    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(DRange3d))
+            return SetInputError(ctx);
+        
+        DRange3d&  thisRange  = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
+        Result&    totalRange = *((Result*)ctx.GetAggregateContext(sizeof(Result)));
+        if (!totalRange.m_valid)
+            {
+            totalRange.m_range = thisRange;
+            totalRange.m_valid = true;
+            }
+        else
+            {
+            totalRange.m_range.Extend(thisRange);
+            }
+        }
+
+    void _FinishAggregate(Context& ctx) override
+        {
+        Result* totalRange = (Result*) ctx.GetAggregateContext(0);
+        if (totalRange && totalRange->m_valid)
+            ctx.SetResultBlob(&totalRange->m_range, sizeof(totalRange->m_range));
+        else
+            ctx.SetResultNull();
+        }
+
+    DGN_BBOX_Union() : AggregateFunction("DGN_BBOX_Union", 1, DbValueType::BlobVal) {}
+};
+
+//=======================================================================================
+// Get the distance between two points
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_POINT_Distance : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(DPoint3d) ||
+            args[1].GetValueBytes() != sizeof(DPoint3d))
+            return SetInputError(ctx);
+
+        DPoint3d& pt1 = *((DPoint3d*)(args[0].GetValueBlob()));
+        DPoint3d& pt2 = *((DPoint3d*)(args[1].GetValueBlob()));
+        ctx.SetResultDouble(pt1.Distance(pt2));
+        }
+    DGN_POINT_Distance() : ScalarFunction("DGN_POINT_Distance", 2, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
+// Get one of the values of a DPoint3d by index: {X=0, Y=1, Z=2}
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_POINT_Value : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        int member = args[1].GetValueInt();
+        if (args[0].GetValueBytes() != sizeof(DPoint3d) || member<0 || member>2)
+            return SetInputError(ctx);
+
+        double const* pt= (double const*)(args[0].GetValueBlob());
+        ctx.SetResultDouble(pt[member]);
+        }
+    DGN_POINT_Value() : ScalarFunction("DGN_POINT_Value", 2, DbValueType::FloatVal) {}
 };
 
 END_UNNAMED_NAMESPACE
@@ -106,104 +399,30 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AABB_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
+void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
     {
-    AxisAlignedBox3d aabb;
-    switch (args[0].GetValueBytes())
-        {
-        case sizeof(Placement3d):
-            aabb = ToPlacement3d(args).CalculateRange();
-            break;
-        case sizeof(Placement2d):
-            aabb = ToPlacement2d(args).CalculateRange();
-            break;
+    static DbFunction* s_funcs[] = 
+                          {
+                          new DGN_ANGLES_Value,
+                          new DGN_Angles,
+                          new DGN_BBOX_AreaXY,
+                          new DGN_BBOX_Depth,
+                          new DGN_BBOX_Height,
+                          new DGN_BBOX_IsContained,
+                          new DGN_BBOX_Overlaps,
+                          new DGN_BBOX_Union,
+                          new DGN_BBOX_Value,
+                          new DGN_BBOX_Volume,
+                          new DGN_BBOX_Width,
+                          new DGN_BBox,
+                          new DGN_PLACEMENT_AABB,
+                          new DGN_PLACEMENT_Angles,
+                          new DGN_PLACEMENT_EABB,
+                          new DGN_PLACEMENT_Origin,
+                          new DGN_POINT_Distance,
+                          new DGN_POINT_Value
+                          };
 
-        default:
-            SetInputError(ctx);
-            return;
-        }
-
-    ctx->SetResultBlob(&aabb, sizeof(aabb), DbFunction::Context::CopyData::Yes);
+    for (DbFunction* func : s_funcs)
+        db.AddFunction(*func);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Origin_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
-    {
-    DPoint3d org;
-    switch (args[0].GetValueBytes())
-        {
-        case sizeof(Placement3d):
-            org = ToPlacement3d(args).GetOrigin();
-            break;
-
-        case sizeof(Placement2d):
-            org = DPoint3d::From(ToPlacement2d(args).GetOrigin());
-            break;
-
-        default:
-            SetInputError(ctx);
-            return;
-        }
-
-    ctx->SetResultBlob(&org, sizeof(org), DbFunction::Context::CopyData::Yes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Yaw_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
-    {
-    switch (args[0].GetValueBytes())
-        {
-        case sizeof(Placement3d):
-            ctx->SetResultDouble(ToPlacement3d(args).GetAngles().GetYaw().Degrees());
-            return;
-
-        case sizeof(Placement2d):
-            ctx->SetResultDouble(ToPlacement2d(args).GetAngle());
-            return;
-        }
-
-    SetInputError(ctx);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Pitch_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
-    {
-    switch (args[0].GetValueBytes())
-        {
-        case sizeof(Placement3d):
-            ctx->SetResultDouble(ToPlacement3d(args).GetAngles().GetPitch().Degrees());
-            return;
-
-        case sizeof(Placement2d):
-            ctx->SetResultDouble(0.0);
-            return;
-        }
-
-    SetInputError(ctx);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Roll_From_Placement::_ComputeScalar(Context* ctx, int nArgs, DbValue* args) 
-    {
-    switch (args[0].GetValueBytes())
-        {
-        case sizeof(Placement3d):
-            ctx->SetResultDouble(ToPlacement3d(args).GetAngles().GetRoll().Degrees());
-            return;
-
-        case sizeof(Placement2d):
-            ctx->SetResultDouble(0.0);
-            return;
-        }
-
-    SetInputError(ctx);
-    }
-

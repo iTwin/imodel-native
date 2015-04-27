@@ -97,19 +97,19 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* load a Domain found in the Domain table of a DgnDb into that dgndb's DgnDomains 
+* load a Domain found in the Domain table of a DgnDb into that dgndb's DgnDomains
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDomains::LoadDomain(DgnDomainR domain)
     {
-    domain.LoadHandlers(m_dgndb);   // load all the handlers from this domain 
+    domain.LoadHandlers(m_dgndb);   // load all the handlers from this domain
     m_domains.push_back(&domain);   // save the fact that we are using this domain
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDomains::SyncWithSchemas()
+DbResult DgnDomains::SyncWithSchemas()
     {
     m_handlers.clear();
     m_domains.clear();
@@ -160,9 +160,33 @@ BeSQLite::DbResult DgnDomains::SyncWithSchemas()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomains::OnDbOpened()
+    {
+    auto rc = SyncWithSchemas();
+    if (BE_SQLITE_OK != rc)
+        return rc;
+
+    for (DgnDomainCP domain : m_domains)
+        domain->_OnDgnDbOpened(m_dgndb);
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDomains::OnDbClose()
+    {
+    for (DgnDomainCP domain : m_domains)
+        domain->_OnDgnDbClose(m_dgndb);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
+BentleyStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     {
     if (!schemaFile.DoesPathExist())
         {
@@ -196,7 +220,7 @@ BentleyStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
 
     if (BE_SQLITE_OK != db.Domains().SyncWithSchemas())
         return BentleyStatus::ERROR;
-        
+
     _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
     return BentleyStatus::SUCCESS;
     }
@@ -235,7 +259,7 @@ ECN::ECClassCP DgnDomains::FindBaseOfType(DgnClassId subClassId, DgnClassId base
     if (nullptr==subClass || nullptr==baseClass || subClass == baseClass) // can't be baseclass of yourself
         return nullptr;
 
-    // this loop is due to multiple inheritance. Look for the right baseclass 
+    // this loop is due to multiple inheritance. Look for the right baseclass
     for (auto* thisClass : subClass->GetBaseClasses())
         {
         if (thisClass->Is(baseClass))
@@ -374,19 +398,19 @@ ElementHandler::Extension* DgnDomain::Handler::FindExtension (Extension::Token& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDomain::Handler* DgnDomain::Handler::z_CreateInstance() 
+DgnDomain::Handler* DgnDomain::Handler::z_CreateInstance()
     {
-    DgnDomain::Handler* instance= new DgnDomain::Handler(); 
-    instance->SetSuperClass ((DgnDomain::Handler*) 0); 
+    DgnDomain::Handler* instance= new DgnDomain::Handler();
+    instance->SetSuperClass ((DgnDomain::Handler*) 0);
     return instance;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDomain::Handler*& DgnDomain::Handler::z_PeekInstance() 
+DgnDomain::Handler*& DgnDomain::Handler::z_PeekInstance()
     {
-    static DgnDomain::Handler* s_instance = 0; 
+    static DgnDomain::Handler* s_instance = 0;
     return s_instance;
     }
 
@@ -395,10 +419,10 @@ DgnDomain::Handler*& DgnDomain::Handler::z_PeekInstance()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDomain::Handler& DgnDomain::Handler::z_GetHandlerInstance()
     {
-    DgnDomain::Handler*& instance = z_PeekInstance(); 
+    DgnDomain::Handler*& instance = z_PeekInstance();
 
-    if (0 == instance) 
-        instance = z_CreateInstance(); 
-    
+    if (0 == instance)
+        instance = z_CreateInstance();
+
     return *instance;
     }

@@ -396,7 +396,7 @@ DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d ViewController::_GetProjectExtents() const
+AxisAlignedBox3d ViewController::_GetProjectExtents() const
     {
     return m_dgndb.Units().GetProjectExtents();
     }

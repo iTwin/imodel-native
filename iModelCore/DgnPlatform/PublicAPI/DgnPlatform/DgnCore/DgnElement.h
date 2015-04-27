@@ -188,7 +188,7 @@ protected:
     DgnModelStatus ReloadFromDb();
     ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
 
-    explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId), 
+    explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
              m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId)
         {
         m_appData  = nullptr;
@@ -337,7 +337,7 @@ public:
     //! @note This call must always follow a previous call to #AddRef.
     uint32_t Release() const {return _Release();}
 
-    //! Add this DgnElement to its DgnModel. 
+    //! Add this DgnElement to its DgnModel.
     //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
     //! @see EditElementHandle::ReplaceInModel for how to update an existing element in its DgnModel.
     DGNPLATFORM_EXPORT DgnModelStatus AddToModel();
@@ -395,7 +395,7 @@ public:
     uint32_t GetAllocSize() const {return m_allocSize;}
     //! Get a const pointer to the GeomStream
     uint8_t const* GetData() const {return m_data;}
-    //! Get a writeable pointer to the GeomStream
+    //! Get a writable pointer to the GeomStream
     uint8_t* GetDataR() const {return m_data;}
     //! Reserve memory for this GeomStream
     //! @param[in] size the number of bytes to reserve
@@ -426,26 +426,26 @@ public:
 
     //! Get the placement origin
     DPoint3dCR GetOrigin() const {return m_origin;}
-    //! Get a writeable reference to the placement origin
+    //! Get a writable reference to the placement origin
     DPoint3dR GetOriginR() {return m_origin;}
 
     //! Get the placement angles
     YawPitchRollAnglesCR GetAngles() const {return m_angles;}
-    //! Get a writeable reference to the placement angles
+    //! Get a writable reference to the placement angles
     YawPitchRollAnglesR GetAnglesR() {return m_angles;}
 
-    //! Get the element-aligned bounding box 
+    //! Get the element-aligned bounding box
     ElementAlignedBox3d const& GetElementBox() const {return m_boundingBox;}
 
-    //! Get a writeable reference to the element-aligned bounding box 
+    //! Get a writable reference to the element-aligned bounding box
     ElementAlignedBox3d& GetElementBoxR() {return m_boundingBox;}
 
     Transform GetTransform() const {return m_angles.ToTransform(m_origin);}
 
     //! Calculate the axis-aligned range of this placement
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
-    
-    //! Determine whether the range of this placement is valid 
+
+    //! Determine whether the range of this placement is valid
     bool IsValid() const {return m_boundingBox.IsValid();}
 };
 
@@ -467,28 +467,28 @@ public:
     Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
     Placement2d& operator=(Placement2d const& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
 
-    //! Get the placement origin 
+    //! Get the placement origin
     DPoint2dCR GetOrigin() const {return m_origin;}
-    //! Get a writeable reference to the placement origin 
+    //! Get a writable reference to the placement origin
     DPoint2dR GetOriginR() {return m_origin;}
 
     //! Get the placement angle of the element
     double GetAngle() const {return m_angle;}
-    //! Get a writeable reference to the placement angle 
+    //! Get a writable reference to the placement angle
     double& GetAngleR() {return m_angle;}
 
-    //! Get the element-aligned bounding box 
+    //! Get the element-aligned bounding box
     ElementAlignedBox2d const& GetElementBox() const {return m_boundingBox;}
 
-    //! Get a writeable reference to the element-aligned bounding box 
+    //! Get a writable reference to the element-aligned bounding box
     ElementAlignedBox2d& GetElementBoxR() {return m_boundingBox;}
 
     Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle, 1.0, 1.0); return t;}
 
     //! Calculate the axis-aligned range of this placement
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
-    
-    //! Determine whether the range of this placement is valid 
+
+    //! Determine whether the range of this placement is valid
     bool IsValid() const {return m_boundingBox.IsValid();}
 
 };
@@ -514,10 +514,10 @@ protected:
     virtual DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) = 0;
     DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR) override;
     GeometricElementCP _ToGeometricElement() const override {return this;}
-    explicit GeometricElement(CreateParams const& params) : T_Super(params) {m_itemHandler=nullptr;} 
-    
+    explicit GeometricElement(CreateParams const& params) : T_Super(params) {m_itemHandler=nullptr;}
+
     DgnModelStatus DoInsertOrUpdate(BeSQLite::Statement&, DgnElementPool&);
-     
+
     bvector<ECN::IECInstancePtr> GetAspects(ECN::ECClassCP ecclass) const;
     template<typename RTYPE, bool SETMODIFIED>
     bvector<RTYPE> GetAspects(DgnClassId aspectClass) const;
@@ -537,7 +537,7 @@ public:
     //! Get the GeomStream for this element.
     GeomStreamCR GetGeomStream() const {return m_geom;}
 
-    //! Get a writeable reference to the GeomStream for this element.
+    //! Get a writable reference to the GeomStream for this element.
     GeomStreamR GetGeomStreamR() {return m_geom;}
 
     //! Get the ElementGeom's DgnClassId (the form/geometry of the element)
@@ -650,9 +650,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
 protected:
     Placement3d m_placement;
 
-    explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {} 
+    explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override; // This injects DgnElement3d's members into both _InsertInDb and _UpdateInDb 
+    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
 
@@ -676,7 +676,7 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
 
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
-    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {} 
+    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
 public:
     //! Factory method that creates an instance of a PhysicalElement
@@ -707,9 +707,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
 
 protected:
     Placement2d m_placement;
-    explicit DgnElement2d(CreateParams const& params) : T_Super(params) {} 
+    explicit DgnElement2d(CreateParams const& params) : T_Super(params) {}
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override; // This injects DgnElement2d's members into both _InsertInDb and _UpdateInDb 
+    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
 
@@ -728,7 +728,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
     DEFINE_T_SUPER(DgnElement2d);
 protected:
     friend struct DrawingElementHandler;
-    explicit DrawingElement(CreateParams const& params) : T_Super(params) {} 
+    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
 
     DrawingElementCP _ToDrawingElement() const override {return this;}
 };

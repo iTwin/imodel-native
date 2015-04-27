@@ -192,13 +192,6 @@ public:
     //! to it is released. There is no way to hold a pointer to a "closed project".
     DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb (BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    //! Create the 3D range tree. This needs to be called once at tail end of creating a DgnDb file.
-    //! Creating the range tree too early will slow down inserts.
-    //! @private
-    DGNPLATFORM_EXPORT void Create3dRTree();
-#endif
-
     //! Get the next available (unused) value for a BeServerIssuedId for the supplied Table/Column.
     //! @param [in,out] value
     //! @param [in] tableName
@@ -217,8 +210,9 @@ public:
     DGNPLATFORM_EXPORT DgnGeomParts& GeomParts() const;             //!< Information about the geometry parts for this DgnDb
     DGNPLATFORM_EXPORT DgnFonts& Fonts() const;                     //!< Information about fonts for this DgnDb
     DGNPLATFORM_EXPORT DgnLinks& Links() const;                     //!< Information about DgnLinks for this DgnDb
-    DGNPLATFORM_EXPORT DgnFileStatus CompactFile ();
     DGNPLATFORM_EXPORT DgnDomains& Domains() const;           //!< The DgnDomains associated with this DgnDb.
+
+    DGNPLATFORM_EXPORT DgnFileStatus CompactFile ();
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT DgnMaterials& Materials() const;       //!< Information about materials for this DgnDb

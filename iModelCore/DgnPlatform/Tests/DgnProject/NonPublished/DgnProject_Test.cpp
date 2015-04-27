@@ -284,6 +284,30 @@ TEST(DgnDb, ProjectSchemaVersions)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Schema Version can be accessed and it is correct
+* @bsimethod                                    Majd.Uddin                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DgnDb, DgnDbSQLFuncs)
+    {
+    ScopedDgnHost autoDgnHost;
+
+    DgnDbTestDgnManager tdm (L"04_Plant.i.idgndb", __FILE__, Db::OPEN_ReadWrite, TestDgnManager::DGNINITIALIZEMODE_None);
+    DgnDbP dgndb = tdm.GetDgnProjectP();
+
+    Statement stmt;
+    stmt.Prepare(*dgndb, "SELECT DGN_BBOX_Union(DGN_PLACEMENT_AABB(g.Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
+                    " AS g WHERE e.ModelId=2 AND e.id=g.ElementId");
+    auto rc = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, rc);
+
+    int resultSize = stmt.GetColumnBytes(0);
+    ASSERT_EQ(sizeof(DRange3d), resultSize);
+    BoundingBox3dCR result = *(BoundingBox3dCP)stmt.GetValueBlob(0);
+    ASSERT_TRUE(result.IsValid());
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Getting the list of Dgn Models in a project and see if they work
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -310,7 +334,7 @@ TEST(DgnDb, WorkWithDgnModelTable)
 
     //Iterate through the model and verify it's contents. TODO: Add more checks
     int i = 0;
-    FOR_EACH (DgnModels::Iterator::Entry const& entry, iter)
+    for (DgnModels::Iterator::Entry const& entry : iter)
         {
         ASSERT_TRUE (entry.GetModelId().IsValid()) << "Model Id is not Valid";
         WString entryNameW (entry.GetName(), true);               // string conversion

@@ -99,6 +99,8 @@ BENTLEY_API_TYPEDEFS (GraphicsPointArray)
 
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel);
 DGNPLATFORM_TYPEDEFS (ColorDef)
+DGNPLATFORM_TYPEDEFS (BoundingBox2d)
+DGNPLATFORM_TYPEDEFS (BoundingBox3d)
 DGNPLATFORM_TYPEDEFS (DgnDb)
 DGNPLATFORM_TYPEDEFS (DgnElement)
 DGNPLATFORM_TYPEDEFS (DgnElement2d)
@@ -440,6 +442,7 @@ typedef ElementItemKey const& ElementItemKeyCR;
 struct BoundingBox3d : DRange3d
 {
     BoundingBox3d() {DRange3d::Init();}
+    explicit BoundingBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
     bool IsValid() const {return !IsEmpty();}
 };
 

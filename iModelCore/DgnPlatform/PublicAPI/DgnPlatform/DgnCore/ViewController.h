@@ -54,7 +54,7 @@ enum class UiOrientation
     };
 
 //=======================================================================================
-//! The current position, lens angle, and focus distance of a camera. 
+//! The current position, lens angle, and focus distance of a camera.
 //=======================================================================================
 struct CameraInfo
     {
@@ -81,12 +81,12 @@ public:
 
 //=======================================================================================
 //! @ingroup DgnViewGroup
-/** 
+/**
  A ViewController provides the behavior for a type of view. It also provides the persistent information
- about how the view relates to a \ref DgnProjectGroup (e.g. what models/categories are displayed, the ViewFlags that control how graphics 
- are represented, etc.) 
+ about how the view relates to a \ref DgnProjectGroup (e.g. what models/categories are displayed, the ViewFlags that control how graphics
+ are represented, etc.)
  <p>
- When a ViewController is paired with a DgnViewport, it then controls the operation of that view. Generally there will 
+ When a ViewController is paired with a DgnViewport, it then controls the operation of that view. Generally there will
  be a 1-1 relationship between ViewControllers and Viewports and a DgnViewport holds a reference-counted-pointer to its \
  ViewController. See discussion at #DgnViewport about synchronizing Viewports and ViewControllers.
  <p>
@@ -95,13 +95,13 @@ public:
      - customize the set of elements that are displayed in the view
      - customize the way the graphics for an individual element appear
      - draw non-persistent graphics into the view
-     - draw "decorations" on top of the normal graphics 
+     - draw "decorations" on top of the normal graphics
      - etc.
 
 <h3>View Controller types and sub-types</h3>
 A ViewController has a DgnViewType, indicating in broad terms what kind of view it is. There are only a few different DgnViewTypes.
-There are many specific types of ViewController within each view type category. ViewController defines a number of convenience methods 
-to dynamic_cast a controller to a subclass. See ViewController::ToPhysicalViewController, ViewController::ToCameraViewController, 
+There are many specific types of ViewController within each view type category. ViewController defines a number of convenience methods
+to dynamic_cast a controller to a subclass. See ViewController::ToPhysicalViewController, ViewController::ToCameraViewController,
 ViewController::ToDrawingViewController.
 
 @verbatim
@@ -117,13 +117,13 @@ ViewController::ToDrawingViewController.
 
 <h3>Inserting a new view in the database</h3>
 
-To create a new view, you must insert a view in the Views table and store type-specific settings for it. To define and store 
-type-specific view data, you must create and save an instance of a subclass of ViewController. 
+To create a new view, you must insert a view in the Views table and store type-specific settings for it. To define and store
+type-specific view data, you must create and save an instance of a subclass of ViewController.
 
 <h3>Loading data for an existing view from the database</h3>
 
 To read the settings stored in the database for a particular view, you must create an instance of the ViewController sub-class
-that corresponds to the view and then load it. The simplest way to create the correct type of controller for a view is to call 
+that corresponds to the view and then load it. The simplest way to create the correct type of controller for a view is to call
 the DgnViews::LoadViewController method, like this:
 @verbatim
     auto viewController = project.Views().LoadViewController (project, viewId);
@@ -140,15 +140,15 @@ the DgnViews::LoadViewController method, like this:
 
 <h3>Defining a sub-class of ViewController</h3>
 
-1. An application can define and persist its own subclasses of ViewController. 
+1. An application can define and persist its own subclasses of ViewController.
 First, a subclass must override the ViewController::_GetViewSubType method and return a string that is globally unique. This is a tag
 that will be stored in the database with the persistent data of the subclass.
 
 The application must then implement the ViewController::Factory interface and call ViewController::Register to register it. This directs
-DgnViews::LoadViewController to call the _SupplyViewController method. Implementers can test the view type/subtype and return an instance 
+DgnViews::LoadViewController to call the _SupplyViewController method. Implementers can test the view type/subtype and return an instance
 of the appropriate ViewController subclass.
 
-2. If the subclass must store additional settings persistently, it must override the ViewController::_SaveToSettings and 
+2. If the subclass must store additional settings persistently, it must override the ViewController::_SaveToSettings and
 ViewController::_RestoreFromSettings methods. The subclass must add/load its settings to/from the supplied JsonValue object.
 
 */
@@ -183,7 +183,7 @@ protected:
 
 #if !defined (DOCUMENTATION_GENERATOR)
 public:
- 
+
 protected:
     DGNPLATFORM_EXPORT ViewController (DgnDbR, DgnViewId viewId);
     void LoadCategories(JsonValueCR);
@@ -224,10 +224,10 @@ protected:
     //!< Store settings in the supplied Json object. These values will be persisted in the database and in the undo stack
     //!< Note that if you override _SaveToSettings, you must call T_Super::_SaveToSettings!
     DGNPLATFORM_EXPORT virtual void _SaveToSettings (JsonValueR) const;
-    
+
     //!< Restore settings from the supplied Json object. These values were persisted in the database and in the undo stack
     //!< Note that if you override _RestoreFromSettings, you must call T_Super::_RestoreFromSettings!
-    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings (JsonValueCR); 
+    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings (JsonValueCR);
 #endif
 
     //! Decorators are not stored in the backing store and must therefore be drawn every frame. Overlay decorators are drawn with the z-buffer
@@ -243,7 +243,7 @@ protected:
     virtual bool _DrawZBufferedDecorations (IndexedViewportR viewport) {return false;}
 
     //! Background graphics are drawn whenever a view is "updated". Background graphics are drawn with the z-buffer turned off, so they will always
-    //! appear "behind" any other graphics that are drawn to the view. 
+    //! appear "behind" any other graphics that are drawn to the view.
     //! @param[in] context the ViewContext being used to display the view. Test DrawPurpose to tell the purpose of the call.
     virtual void _DrawBackgroundGraphics (ViewContextR context) {}
 
@@ -254,7 +254,7 @@ protected:
     virtual void _DrawZBufferedGraphics(ViewContextR context) {}
 
     //! Called when the display of a category is turned on or off.
-    //! @param[in] singleEnable true if just turned on one category; false if 
+    //! @param[in] singleEnable true if just turned on one category; false if
     //! turned off a category or made a group of changes.
     virtual void _OnCategoryChange(bool singleEnable) {}
 
@@ -312,7 +312,7 @@ protected:
     virtual bool _OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) {return false;}
 
     //! Returns the target model. Normally, this is the model at the m_targetIndex index of m_viewedModels.
-    //! Used as the writeable model in which new elements can be placed.
+    //! Used as the writable model in which new elements can be placed.
     //! A subclass can override this function to get the target model some other way.
     DGNPLATFORM_EXPORT virtual DgnModelP _GetTargetModel() const;
 
@@ -320,7 +320,7 @@ protected:
     virtual DgnDbR _GetDgnProject() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
-    DGNPLATFORM_EXPORT virtual DRange3d _GetProjectExtents() const;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetProjectExtents() const;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson (JsonValueR, DgnViews::DgnViewPropertySpecCR) const;
     DGNPLATFORM_EXPORT BentleyStatus CheckViewSubType() const;
@@ -378,7 +378,7 @@ public:
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
-    DGNPLATFORM_EXPORT DRange3d GetProjectExtents() const;
+    AxisAlignedBox3d GetProjectExtents() const {return _GetProjectExtents();}
 
     //! Load the settings of this view from persistent settings in the database.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Load();
@@ -392,7 +392,7 @@ public:
     //! @return BE_SQLITE_OK if the view was successfully saved, error code otherwise.
     DGNPLATFORM_EXPORT BeSQLite::DbResult SaveAs(Utf8CP newName);
 
-    //! Save the current state of this ViewController to a new view name. After this call succeeds, the new view will exist in the 
+    //! Save the current state of this ViewController to a new view name. After this call succeeds, the new view will exist in the
     //! database with this ViewController's state, but this ViewController remains directed at the existing view (future calls to Save
     //! will be written to the existing not new view). However, the current state will not have been saved.
     //! @param[in] newName The name for the new view. Must be unique.
@@ -447,20 +447,20 @@ public:
     //! Gets the background color used in the view.
     DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
 
-    //! Adjust the aspect ratio of this view so that it matches the aspect ratio (x/y) of the supplied rectangle. 
+    //! Adjust the aspect ratio of this view so that it matches the aspect ratio (x/y) of the supplied rectangle.
     //! @param[in] aspect The target aspect ratio.
-    //! @param[in] expandView When adjusting the view to correct the aspect ratio, the one axis (x or y) must either be lengthened or shortened. 
+    //! @param[in] expandView When adjusting the view to correct the aspect ratio, the one axis (x or y) must either be lengthened or shortened.
     //! if expandView is true, the shorter axis is lengthened. Otherwise the long axis is shortened.
     DGNPLATFORM_EXPORT void AdjustAspectRatio (double aspect, bool expandView);
 
-    //! Get the origin (lower, left, front) point of of the view in coordinates of the target 
+    //! Get the origin (lower, left, front) point of of the view in coordinates of the target
     //! model (physical coordinates for PhysicalViewController and drawing coordinates for DrawingViewController).
     DGNPLATFORM_EXPORT DPoint3d GetOrigin() const;
 
     //! Get the size of the X and Y axes of this view. The axes are in world coordinates units, aligned with the view.
     DGNPLATFORM_EXPORT DVec3d GetDelta() const;
 
-    //! Get the 3x3 orthonormal rotation matrix for this view. 
+    //! Get the 3x3 orthonormal rotation matrix for this view.
     DGNPLATFORM_EXPORT RotMatrix GetRotation() const;
 
     //! Change the origin (lower, left, front) point of this view.
@@ -537,17 +537,17 @@ public:
     //! @return SUCCESS if the view was changed.
     DGNPLATFORM_EXPORT BentleyStatus SetStandardViewRotation (StandardView standardView);
 
-    //! @return true if this view supports 3d viewing operations. Otherwise the z-axis of the view must remain aligned with the world z axis, even 
+    //! @return true if this view supports 3d viewing operations. Otherwise the z-axis of the view must remain aligned with the world z axis, even
     //! if the view is a physical view.
     DGNPLATFORM_EXPORT bool Allow3dManipulations() const;
 
     //! Establish the view parameters from an 8-point frustum.
-    //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController 
+    //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController
     //! @note The order of the points in the frustum is defined by the NpcCorners enum.
     DGNPLATFORM_EXPORT ViewFrustumStatus SetupFromFrustum (Frustum const& frustum);
 
-    //! Change the volume that this view displays, keeping its current rotation. 
-    //! @param[in] worldVolume The new volume, in world-coordinates, for the view. The resulting view will show all of worldVolume, by fitting a 
+    //! Change the volume that this view displays, keeping its current rotation.
+    //! @param[in] worldVolume The new volume, in world-coordinates, for the view. The resulting view will show all of worldVolume, by fitting a
     //! view-axis-aligned bounding box around it. For views that are not aligned with the world coordinate system, this will sometimes
     //! result in a much larger volume than worldVolume.
     //! @param[in] aspectRatio The X/Y aspect ratio of the view into which the result will be displayed. If the aspect ratio of the volume does not
@@ -571,7 +571,7 @@ public:
 };
 
 //=======================================================================================
-//! A PhysicalViewControllerBase controls views of PhysicalModels. 
+//! A PhysicalViewControllerBase controls views of PhysicalModels.
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
@@ -610,7 +610,7 @@ protected:
 
 public:
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation (DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
-    
+
     //! Construct a new PhysicalViewController from a View in the project.
     //! @param[in] project the project for which this PhysicalViewController applies.
     //! @param[in] viewId the id of the view in the project.
@@ -644,11 +644,11 @@ public:
 /** @addtogroup DgnViewGroup
 <h4>%PhysicalViewController Camera</h4>
 
- This is what the parameters to the camera methods, and the values stored by CameraViewController mean. 
+ This is what the parameters to the camera methods, and the values stored by CameraViewController mean.
 @verbatim
                v-- {origin}
           -----+-------------------------------------- -   [back plane]
-          ^\   .                                    /  ^        
+          ^\   .                                    /  ^
           | \  .                                   /   |        p
         d |  \ .                                  /    |        o
         e |   \.         {targetPoint}           /     |        i
@@ -671,9 +671,9 @@ public:
 
 @endverbatim
 
-   Notes: 
+   Notes:
          - Up vector (positiveY) points out of the screen towards you in this diagram. Likewise delta.y.
-         - The view origin is in world coordinates. It is the point at the lower left of the rectangle at the 
+         - The view origin is in world coordinates. It is the point at the lower left of the rectangle at the
            focus plane, projected onto the back plane.
          - [delta.x,delta.y] are on the focus plane and delta.z is from the back plane to the front plane.
          - The three view vectors come from:
@@ -684,16 +684,16 @@ public:
 @endverbatim
            these three vectors form the rows of the view's RotMatrix
          - Objects in space in front of the front plane or behind the back plane are not displayed.
-         - The focus plane is not necessarily centered between the front plane and back plane (though it often is). It should generally be 
+         - The focus plane is not necessarily centered between the front plane and back plane (though it often is). It should generally be
            between the front plane and the back plane.
          - targetPoint is not stored in the view parameters. Instead it may be derived from
            {origin},{eyePoint},[RotMatrix] and focusDist.
-         - The view volume is completely specified by: @verbatim {origin}<delta>[RotMatrix] @endverbatim 
-         - Perspective is determined by {eyePoint}, which is independent of the view volume. Sometimes the eyepoint is not centered 
+         - The view volume is completely specified by: @verbatim {origin}<delta>[RotMatrix] @endverbatim
+         - Perspective is determined by {eyePoint}, which is independent of the view volume. Sometimes the eyepoint is not centered
            on the rectangle on the focus plane (that is, a vector from the eyepoint along the viewZ does not hit the view center.)
            This creates a 1-point perspective, which can be disconcerting. It is usually best to keep the camera centered.
          - Cameras hold a "lens angle" value which is defines the field-of-view for the camera in radians.
-           The lens angle value is not used to compute the perspective transform for a view. Instead, the len angle value 
+           The lens angle value is not used to compute the perspective transform for a view. Instead, the len angle value
            can be used to reposition {eyePoint} when the view volume or target changes.
          - View volumes where one dimension is very small or large relative to the other dimensions (e.g. "long skinny telescope" views,
            or "wide and shallow slices", etc.) are problematic and disallowed based on ratio limits.
@@ -728,7 +728,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings (JsonValueCR) override;
 
 public:
-    //! Construct a new CameraViewController 
+    //! Construct a new CameraViewController
     //! @param[in] dgndb The DgnDb of this view
     //! @param[in] viewId the id of the view in the project.
     DGNPLATFORM_EXPORT CameraViewController(DgnDbR dgndb, DgnViewId viewId);
@@ -765,9 +765,9 @@ public:
     //! adjusted when the DgnViewport is synchronized from this view.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    DGNPLATFORM_EXPORT ViewFrustumStatus LookAt (DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector, 
+    DGNPLATFORM_EXPORT ViewFrustumStatus LookAt (DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector,
                                              DVec2dCP viewDelta=nullptr, double const* frontDistance=nullptr, double const* backDistance=nullptr);
-    
+
     //! Position the camera for this view and point it at a new target point, using a specified lens angle.
     //! @param[in] eyePoint The new location of the camera.
     //! @param[in] targetPoint The new location to which the camera should point. This becomes the center of the view on the focus plane.
@@ -779,7 +779,7 @@ public:
     //! @note The aspect ratio of the view remains unchanged.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    DGNPLATFORM_EXPORT ViewFrustumStatus LookAtUsingLensAngle (DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector, 
+    DGNPLATFORM_EXPORT ViewFrustumStatus LookAtUsingLensAngle (DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector,
                                              double fov, double const* frontDistance=nullptr, double const* backDistance=nullptr);
 
     //! Move the camera relative to its current location by a distance in camera coordinates.
@@ -809,7 +809,7 @@ public:
 
     //! Rotate the camera from its current location about an axis in world coordinates.
     //! @param[in] angle The angle to rotate the camera, in radians.
-    //! @param[in] axis The world-based axis (direction) about which to rotate the camera. 
+    //! @param[in] axis The world-based axis (direction) about which to rotate the camera.
     //! @param[in] aboutPt The point, in world coordinates, about which the camera is rotated. If aboutPt is nullptr, the camera rotates in place
     //! (i.e. about the current eyePoint).
     //! @return Status indicating whether the camera was successfully positioned. See values at #ViewFrustumStatus for possible errors.
@@ -820,26 +820,26 @@ public:
     //! Get the distance from the eyePoint to the back plane for this view.
     DGNPLATFORM_EXPORT double GetBackDistance() const;
 
-    //! Place the eyepoint of the camera so it is centered in the view. This removes any 1-point perspective skewing that may be 
-    //! present in the current view. 
-    //! @param[in] backDistance optional, If not nullptr, the new the distance from the eyepoint to the back plane. Otherwise the distance from the 
+    //! Place the eyepoint of the camera so it is centered in the view. This removes any 1-point perspective skewing that may be
+    //! present in the current view.
+    //! @param[in] backDistance optional, If not nullptr, the new the distance from the eyepoint to the back plane. Otherwise the distance from the
     //! current eyepoint is used.
     DGNPLATFORM_EXPORT void CenterEyePoint(double const* backDistance=nullptr);
 
-    //! Center the focus distance of the camera halfway between the front plane and the back plane, keeping the eyepont, 
-    //! lens angle, rotation, back distance, and front distance unchanged. 
+    //! Center the focus distance of the camera halfway between the front plane and the back plane, keeping the eyepont,
+    //! lens angle, rotation, back distance, and front distance unchanged.
     //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
     DGNPLATFORM_EXPORT void CenterFocusDistance();
 
     //! Get the distance from the eyePoint to the front plane for this view.
     double GetFrontDistance() const {return GetBackDistance() - GetDelta().z;}
 
-    //! Get the lens angle for this view. 
+    //! Get the lens angle for this view.
     double GetLensAngle() const {return GetCamera().GetLensAngle();}
 
     //! Set the lens angle for this view.
     //! @param[in] angle The new lens angle in radians. Must be greater than 0 and less than pi.
-    //! @note This does not change the view's current field-of-view. Instead, it changes the lens that will be used if the view 
+    //! @note This does not change the view's current field-of-view. Instead, it changes the lens that will be used if the view
     //! is subsequently modified and the lens angle is used to position the eyepoint.
     //! @note To change the field-of-view (i.e. "zoom") of a view, pass a new viewDelta to #LookAt
     void SetLensAngle(double angle) {GetCameraR().SetLensAngle(angle);}
@@ -847,7 +847,7 @@ public:
     //! Get the distance from the eyePoint to the focus plane for this view.
     double GetFocusDistance() const {return GetCamera().GetFocusDistance();}
 
-    //! Set the focus distance for this view. 
+    //! Set the focus distance for this view.
     //! @note Changing the focus distance changes the plane on which the delta.x and delta.y values lie. So, changing focus distance
     //! without making corresponding changes to delta.x and delta.y essentially changes the lens angle, causing a "zoom" effect.
     void SetFocusDistance(double dist) {GetCameraR().SetFocusDistance(dist);}
@@ -860,7 +860,7 @@ public:
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
     void SetEyePoint(DPoint3dCR pt) {GetCameraR().SetEyePoint(pt);}
-   
+
     //! @}
 
     //! @name ClipVector
@@ -903,8 +903,8 @@ protected:
 public:
     void SetClip (IViewClipObject& clip) {m_clip = &clip;}
 
-    //! Construct a new SectioningViewController. 
-    //! @remarks This constructor is normally used only as part of creating a new view in the project. 
+    //! Construct a new SectioningViewController.
+    //! @remarks This constructor is normally used only as part of creating a new view in the project.
     //! @remarks Use this constructor only to create a new camera view controller. To load an existing view controller,
     //! call PhysicalViewController::Create.
     //! @param[in] project the project for which this SectioningViewController applies.
@@ -988,10 +988,10 @@ public:
     SectionDrawingModel* GetSectionDrawing() const {return dynamic_cast<SectionDrawingModel*>(GetTargetModel());}
 
     //! Convenience method to get the flattening matrix from the drawing
-    DGNPLATFORM_EXPORT Transform GetFlatteningMatrix (double zdelta = 0.0) const; 
+    DGNPLATFORM_EXPORT Transform GetFlatteningMatrix (double zdelta = 0.0) const;
 
     //! Convenience method to get the flattening matrix from the drawing, but only if the viewport is 2-D
-    DGNPLATFORM_EXPORT Transform GetFlatteningMatrixIf2D (ViewContextR, double zdelta = 0.0) const; 
+    DGNPLATFORM_EXPORT Transform GetFlatteningMatrixIf2D (ViewContextR, double zdelta = 0.0) const;
 
     //! Convenience method to ask the drawing for the transform needed to display it in the context of a physical view.
     DGNPLATFORM_EXPORT Transform GetTransformToWorld() const;
@@ -1063,7 +1063,7 @@ private:
     virtual void _AdjustAspectRatio (double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint () const override;
     virtual bool _Allow3dManipulations () const override;
-    virtual DRange3d _GetProjectExtents() const override;
+    virtual AxisAlignedBox3d _GetProjectExtents() const override;
     virtual IAuxCoordSysP _GetAuxCoordinateSystem () const override;
     virtual ColorDef _GetBackgroundColor () const override;
     virtual ClipVectorPtr _GetClipVector() const override;
@@ -1119,10 +1119,10 @@ public:
 struct ViewHandler : DgnDomain::Handler
 {
     HANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_View, ViewHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
-    
+
 protected:
     virtual ViewHandlerP _ToViewHandler() {return this;}
-    
+
 public:
     //! Find an ViewHandler for a subclass of dgn.View. This is just a shortcut for FindHandler with the base class
     //! of "dgn.View".
