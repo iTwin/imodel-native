@@ -65,7 +65,15 @@ DgnDb::~DgnDb()
     Destroy();
     }
 
-void DgnDb::_OnDbClose() {Destroy(); T_Super::_OnDbClose();}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::_OnDbClose() 
+    {
+    Domains().OnDbClose();
+    Destroy(); 
+    T_Super::_OnDbClose();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
@@ -76,14 +84,10 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    rc = Domains().SyncWithSchemas();
-    if (BE_SQLITE_OK != rc)
-        return rc;
-
     m_units.Load();
-
     RegisterSQLFuncs();
-    return BE_SQLITE_OK;
+
+    return Domains().OnDbOpened();
     }
 
 /*---------------------------------------------------------------------------------**//**

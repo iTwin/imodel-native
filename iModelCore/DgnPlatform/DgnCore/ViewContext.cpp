@@ -71,7 +71,7 @@ ViewContext::ViewContext()
     m_edgeMaskState             = EdgeMaskState_None;
     m_currElemTopo              = NULL;
 
-    m_rasterDisplayParams.SetFlags (0);
+    m_rasterDisplayParams.SetFlags(0);
 
     m_scanRangeValid        = false;
     m_levelOfDetail         = 1.0;
@@ -88,9 +88,9 @@ ViewContext::ViewContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewContext::~ViewContext()
     {
-    BeAssert (!m_isAttached);
+    BeAssert(!m_isAttached);
 
-    DELETE_AND_CLEAR (m_scanCriteria);
+    DELETE_AND_CLEAR(m_scanCriteria);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,12 +112,12 @@ int             ViewContext::_GetViewNumber() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewContext::GetCurrLocalToWorldTrans (DMatrix4dR localToWorld) const
+BentleyStatus ViewContext::GetCurrLocalToWorldTrans(DMatrix4dR localToWorld) const
     {
     Transform       localToFrustum;
 
-    m_transformClipStack.GetTransform (localToFrustum); // NOTE: Returns ERROR if transform doesn't need to be pushed (identity)...so don't check status!
-    localToWorld = DMatrix4d::From (localToFrustum);
+    m_transformClipStack.GetTransform(localToFrustum); // NOTE: Returns ERROR if transform doesn't need to be pushed (identity)...so don't check status!
+    localToWorld = DMatrix4d::From(localToFrustum);
 
     return SUCCESS;
     }
@@ -125,27 +125,27 @@ BentleyStatus ViewContext::GetCurrLocalToWorldTrans (DMatrix4dR localToWorld) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ViewToNpc (DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
+void ViewContext::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
     {
-    ViewToFrustum (npcVec, screenVec, nPts);
-    m_frustumToNpc.M0.multiplyAndRenormalize (npcVec, npcVec, nPts);
+    ViewToFrustum(npcVec, screenVec, nPts);
+    m_frustumToNpc.M0.multiplyAndRenormalize(npcVec, npcVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::NpcToView (DPoint3dP viewVec, DPoint3dCP npcVec, int nPts) const
+void ViewContext::NpcToView(DPoint3dP viewVec, DPoint3dCP npcVec, int nPts) const
     {
-    NpcToFrustum (viewVec, npcVec, nPts);
-    FrustumToView (viewVec, viewVec, nPts);
+    NpcToFrustum(viewVec, npcVec, nPts);
+    FrustumToView(viewVec, viewVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::NpcToFrustum (DPoint3dP frustumPts, DPoint3dCP npcPts, int nPts) const
+void            ViewContext::NpcToFrustum(DPoint3dP frustumPts, DPoint3dCP npcPts, int nPts) const
     {
-    m_frustumToNpc.M1.multiplyAndRenormalize (frustumPts, npcPts, nPts);
+    m_frustumToNpc.M1.multiplyAndRenormalize(frustumPts, npcPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,7 +162,7 @@ void            ViewContext::InitDisplayPriorityRange()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ViewContext::_InitContextForView()
     {
-    BeAssert (0 == GetTransClipDepth());
+    BeAssert(0 == GetTransClipDepth());
 
     m_elemMatSymb.Init();
     m_ovrMatSymb.Clear();
@@ -184,11 +184,11 @@ StatusInt       ViewContext::_InitContextForView()
     // a proxy handler would be used if CVE proxy was last thing displayed.
     m_displayStyleStackMark = 0;
 
-    SetDgnDb (GetViewport()->GetViewController().GetDgnDb());
+    SetDgnDb(GetViewport()->GetViewController().GetDgnDb());
 
 #if defined (NEEDS_WORK_DGNITEM)
     if (NULL != m_currentDisplayStyle)
-        m_currentDisplayStyle->OnFrustumChange (*_GetViewTarget(), *this);
+        m_currentDisplayStyle->OnFrustumChange(*_GetViewTarget(), *this);
 #endif
 
     return SUCCESS;
@@ -204,17 +204,17 @@ Frustum ViewContext::GetFrustum()
 
     if (m_useNpcSubRange)
         {
-        m_npcSubRange.Get8Corners (frustPts);
+        m_npcSubRange.Get8Corners(frustPts);
         }
     else
         {
         if (NULL == m_viewport)
-            s_fullNpcRange.get8Corners (frustPts);
+            s_fullNpcRange.get8Corners(frustPts);
         else
             frustum = m_viewport->GetFrustum(DgnCoordSystem::Npc, true);
         }
 
-    m_frustumToNpc.M1.multiplyAndRenormalize (frustPts, frustPts, NPC_CORNER_COUNT);
+    m_frustumToNpc.M1.multiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
     DgnViewport::FixFrustumOrder(frustum);
     return frustum;
     }
@@ -234,7 +234,7 @@ void ViewContext::_PushFrustumClip()
     Frustum polyhedron = GetFrustum();
 
     if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), NULL != viewFlags && !viewFlags->noFrontClip, NULL != viewFlags && !viewFlags->noBackClip, 1.0E-6)))
-        m_transformClipStack.PushClipPlanes (frustumPlanes, nPlanes);
+        m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -250,21 +250,21 @@ void            ViewContext::_InitScanRangeAndPolyhedron()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::PushClipPlanes (ClipPlaneSetCR clipPlanes)
+void ViewContext::PushClipPlanes(ClipPlaneSetCR clipPlanes)
     {
-    _PushClip (*ClipVector::CreateFromPrimitive (ClipPrimitive::CreateFromClipPlanes (clipPlanes)));
+    _PushClip (*ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlanes)));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushClip (ClipVectorCR clip)
+void ViewContext::_PushClip(ClipVectorCR clip)
     {
-    m_transformClipStack.PushClip (clip);
+    m_transformClipStack.PushClip(clip);
 
     for (ClipPrimitivePtr const& primitive: clip)
         {
-        GetIDrawGeom()._PushTransClip (NULL, primitive->GetClipPlanes());
+        GetIDrawGeom()._PushTransClip(NULL, primitive->GetClipPlanes());
         m_transformClipStack.IncrementPushedToDrawGeom();
         }
     }
@@ -272,10 +272,10 @@ void ViewContext::_PushClip (ClipVectorCR clip)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushTransform (TransformCR trans)
+void ViewContext::_PushTransform(TransformCR trans)
     {
-    m_transformClipStack.PushTransform (trans);
-    GetIDrawGeom()._PushTransClip (&trans , NULL);
+    m_transformClipStack.PushTransform(trans);
+    GetIDrawGeom()._PushTransClip(&trans , NULL);
     m_transformClipStack.IncrementPushedToDrawGeom();
     InvalidateScanRange();
     }
@@ -283,40 +283,40 @@ void ViewContext::_PushTransform (TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_PushViewIndependentOrigin (DPoint3dCP origin)
+void ViewContext::_PushViewIndependentOrigin(DPoint3dCP origin)
     {
     Transform   viTrans;
-    GetViewIndTransform (&viTrans, origin);
-    _PushTransform (viTrans);
+    GetViewIndTransform(&viTrans, origin);
+    _PushTransform(viTrans);
     m_transformClipStack.SetViewIndependent();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_PopTransformClip()
+void ViewContext::_PopTransformClip()
     {
     if (m_transformClipStack.IsEmpty())
         {
-        BeAssert (false);
+        BeAssert(false);
         return;
         }
 
-    m_transformClipStack.Pop (*this);
+    m_transformClipStack.Pop(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::DirectPushTransClipOutput (IDrawGeomR drawGeom, TransformCP trans, ClipPlaneSetCP clip)
+void ViewContext::DirectPushTransClipOutput(IDrawGeomR drawGeom, TransformCP trans, ClipPlaneSetCP clip)
     {
-    drawGeom._PushTransClip (trans, clip);
+    drawGeom._PushTransClip(trans, clip);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::DirectPopTransClipOutput (IDrawGeomR drawGeom)
+void ViewContext::DirectPopTransClipOutput(IDrawGeomR drawGeom)
     {
     drawGeom._PopTransClip();
     }
@@ -324,7 +324,7 @@ void            ViewContext::DirectPopTransClipOutput (IDrawGeomR drawGeom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetCurrentElement (GeometricElementCP element)
+void ViewContext::_SetCurrentElement(GeometricElementCP element)
     {
     if (nullptr == element)
         GetIDrawGeom().PopMethodState();
@@ -338,7 +338,7 @@ void ViewContext::_SetCurrentElement (GeometricElementCP element)
 * Prepare this context to work on the given project when getting project from ViewController.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetDgnDb (DgnDbR dgnDb)
+void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     {
     m_dgnDb = &dgnDb;
     InitDisplayPriorityRange();
@@ -368,7 +368,7 @@ void ViewContext::_SetupScanCriteria()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_AllocateScanCriteria()
+void ViewContext::_AllocateScanCriteria()
     {
     if (NULL == m_scanCriteria)
         m_scanCriteria = new ScanCriteria;
@@ -377,7 +377,7 @@ void            ViewContext::_AllocateScanCriteria()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_Attach (DgnViewportP viewport, DrawPurpose purpose)
+StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     {
     if (NULL == viewport)
         return  ERROR;
@@ -404,7 +404,7 @@ StatusInt ViewContext::_Attach (DgnViewportP viewport, DrawPurpose purpose)
     m_is3dView = viewport->Is3dView();
     m_useCachedGraphics = true;
 
-    SetViewFlags (viewport->GetViewFlags());
+    SetViewFlags(viewport->GetViewFlags());
 
     m_arcTolerance = 0.1;
     m_parentRangeResult = RangeResult::Overlap;
@@ -415,9 +415,9 @@ StatusInt ViewContext::_Attach (DgnViewportP viewport, DrawPurpose purpose)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_Detach()
+void ViewContext::_Detach()
     {
-    BeAssert (IsAttached());
+    BeAssert(IsAttached());
 
     m_isAttached = false;
 
@@ -428,7 +428,7 @@ void            ViewContext::_Detach()
        However, there is a hack in SymbolContext::_Detach that NULLs them out specifically
        to prevent this method from modifying them */
     if (NULL != m_IDrawGeom)
-        m_IDrawGeom->ActivateOverrideMatSymb (NULL);     // clear any overrides
+        m_IDrawGeom->ActivateOverrideMatSymb(NULL);     // clear any overrides
 
     // _EmptySymbolCache(); not yet in Graphite
     UpdateLogging::RecordDetach();
@@ -437,7 +437,7 @@ void            ViewContext::_Detach()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::LocalToView (DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const
+void ViewContext::LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const
     {
     GetLocalToView().multiply (viewPts, localPts, NULL, nPts);
     }
@@ -445,7 +445,7 @@ void            ViewContext::LocalToView (DPoint4dP viewPts, DPoint3dCP localPts
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::LocalToView (DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const
+void ViewContext::LocalToView (DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const
     {
     DMatrix4dCR  localToView = GetLocalToView();
 
@@ -458,7 +458,7 @@ void            ViewContext::LocalToView (DPoint3dP viewPts, DPoint3dCP localPts
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::ViewToLocal (DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const
+void ViewContext::ViewToLocal (DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const
     {
     GetViewToLocal().MultiplyAndNormalize (localPts, viewPts, nPts);
     }
@@ -466,7 +466,7 @@ void            ViewContext::ViewToLocal (DPoint3dP localPts, DPoint4dCP viewPts
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::ViewToLocal (DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const
+void ViewContext::ViewToLocal (DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const
     {
     GetViewToLocal().multiplyAndRenormalize (localPts, viewPts, nPts);
     }
@@ -474,7 +474,7 @@ void            ViewContext::ViewToLocal (DPoint3dP localPts, DPoint3dCP viewPts
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::FrustumToView (DPoint4dP viewPts, DPoint3dCP frustumPts, int nPts) const
+void ViewContext::FrustumToView (DPoint4dP viewPts, DPoint3dCP frustumPts, int nPts) const
     {
     m_frustumToView.M0.multiply (viewPts, frustumPts, NULL, nPts);
     }
@@ -482,7 +482,7 @@ void            ViewContext::FrustumToView (DPoint4dP viewPts, DPoint3dCP frustu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::FrustumToView (DPoint3dP viewPts, DPoint3dCP frustumPts, int nPts) const
+void ViewContext::FrustumToView (DPoint3dP viewPts, DPoint3dCP frustumPts, int nPts) const
     {
     m_frustumToView.M0.multiplyAndRenormalize (viewPts, frustumPts, nPts);
     }
@@ -490,7 +490,7 @@ void            ViewContext::FrustumToView (DPoint3dP viewPts, DPoint3dCP frustu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::FrustumToView (Point2dP viewPts, DPoint3dCP frustumPts, int  nPts) const
+void ViewContext::FrustumToView (Point2dP viewPts, DPoint3dCP frustumPts, int nPts) const
     {
     DPoint3d  tPt;
     DPoint4d  t4dPt;
@@ -509,7 +509,7 @@ void            ViewContext::FrustumToView (Point2dP viewPts, DPoint3dCP frustum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint4dCP viewPts, int nPts) const
+void ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint4dCP viewPts, int nPts) const
     {
     m_frustumToView.M1.MultiplyAndNormalize (frustumPts, viewPts, nPts);
     }
@@ -517,7 +517,7 @@ void            ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint4dCP vie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint3dCP  viewPts, int nPts) const
+void ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint3dCP viewPts, int nPts) const
     {
     m_frustumToView.M1.multiplyAndRenormalize (frustumPts, viewPts, nPts);
     }
@@ -525,7 +525,7 @@ void            ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint3dCP  vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::LocalToFrustum (DPoint3dP frustumPts, DPoint3dCP localPts, int nPts) const
+void ViewContext::LocalToFrustum (DPoint3dP frustumPts, DPoint3dCP localPts, int nPts) const
     {
     Transform   localToFrustum;
 
@@ -538,7 +538,7 @@ void            ViewContext::LocalToFrustum (DPoint3dP frustumPts, DPoint3dCP lo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::FrustumToLocal (DPoint3dP localPts, DPoint3dCP frustumPts, int nPts) const
+void ViewContext::FrustumToLocal (DPoint3dP localPts, DPoint3dCP frustumPts, int nPts) const
     {
     Transform   frustumToLocal;
 
@@ -551,7 +551,7 @@ void            ViewContext::FrustumToLocal (DPoint3dP localPts, DPoint3dCP frus
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::GetViewIndTransform (TransformP trans, DPoint3dCP originLocal)
+void ViewContext::GetViewIndTransform (TransformP trans, DPoint3dCP originLocal)
     {
     RotMatrix   rMatrix;
     DgnViewportP vp = GetViewport();
@@ -596,7 +596,7 @@ void            ViewContext::GetViewIndTransform (TransformP trans, DPoint3dCP o
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BSI                             04/2006
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ViewContext::SetWantMaterials (bool wantMaterials)
+bool ViewContext::SetWantMaterials (bool wantMaterials)
     {
     bool    prevWantMaterials = m_wantMaterials;
 
@@ -780,7 +780,7 @@ TransientCachedGraphics::~TransientCachedGraphics() {if (nullptr != m_qvElem) IV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        ViewContext::GetIndexedLineWidth (int index)
+uint32_t ViewContext::GetIndexedLineWidth (int index)
     {
     DgnViewportP   viewport = GetViewport();
 
@@ -790,7 +790,7 @@ uint32_t        ViewContext::GetIndexedLineWidth (int index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        ViewContext::GetIndexedLinePattern (int index)
+uint32_t ViewContext::GetIndexedLinePattern (int index)
     {
     DgnViewportP   viewport = GetViewport();
 
@@ -800,7 +800,7 @@ uint32_t        ViewContext::GetIndexedLinePattern (int index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Andrew.Edge     03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::SetIndexedLineWidth (ElemMatSymbR elemMatSymb, int index)
+void ViewContext::SetIndexedLineWidth (ElemMatSymbR elemMatSymb, int index)
     {
     elemMatSymb.SetWidth (GetIndexedLineWidth (index));
     }
@@ -808,7 +808,7 @@ void            ViewContext::SetIndexedLineWidth (ElemMatSymbR elemMatSymb, int 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Andrew.Edge     03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::SetIndexedLinePattern (ElemMatSymbR elemMatSymb, int index)
+void ViewContext::SetIndexedLinePattern (ElemMatSymbR elemMatSymb, int index)
     {
     elemMatSymb.SetIndexedRasterPattern (index, GetIndexedLinePattern (index));
     }
@@ -816,7 +816,7 @@ void            ViewContext::SetIndexedLinePattern (ElemMatSymbR elemMatSymb, in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Andrew.Edge     03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::SetIndexedLineWidth (OvrMatSymbR ovrMatSymb, int index)
+void ViewContext::SetIndexedLineWidth (OvrMatSymbR ovrMatSymb, int index)
     {
     ovrMatSymb.SetWidth (GetIndexedLineWidth (index));
     }
@@ -824,7 +824,7 @@ void            ViewContext::SetIndexedLineWidth (OvrMatSymbR ovrMatSymb, int in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Andrew.Edge     03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::SetIndexedLinePattern (OvrMatSymbR ovrMatSymb, int index)
+void ViewContext::SetIndexedLinePattern (OvrMatSymbR ovrMatSymb, int index)
     {
     ovrMatSymb.SetIndexedRasterPattern (index, GetIndexedLinePattern (index));
     }
@@ -832,7 +832,7 @@ void            ViewContext::SetIndexedLinePattern (OvrMatSymbR ovrMatSymb, int 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILineStyleCP    ViewContext::_GetCurrLineStyle (LineStyleSymbP* symb)
+ILineStyleCP ViewContext::_GetCurrLineStyle (LineStyleSymbP* symb)
     {
     LineStyleSymbR  tSymb = (m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_Style) ? m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR() : m_elemMatSymb.GetLineStyleSymbR();
 
@@ -869,7 +869,7 @@ ColorDef ViewContext::GetCurrFillColor()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        ViewContext::GetCurrWidth()
+uint32_t ViewContext::GetCurrWidth()
     {
     return (m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_RastWidth) ? m_ovrMatSymb.GetWidth() : m_elemMatSymb.GetWidth();
     }
@@ -975,7 +975,7 @@ void ViewContext::_OutputElement (GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_AddViewOverrides (OvrMatSymbR ovrMatSymb)
+void ViewContext::_AddViewOverrides (OvrMatSymbR ovrMatSymb)
     {
     ViewFlagsCP viewFlags = GetViewFlags();
 
@@ -998,7 +998,7 @@ void            ViewContext::_AddViewOverrides (OvrMatSymbR ovrMatSymb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_AddContextOverrides (OvrMatSymbR ovrMatSymb)
+void ViewContext::_AddContextOverrides (OvrMatSymbR ovrMatSymb)
     {
     // Modify m_ovrMatSymb for view flags...
     _AddViewOverrides (ovrMatSymb); 
@@ -1007,7 +1007,7 @@ void            ViewContext::_AddContextOverrides (OvrMatSymbR ovrMatSymb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_CookDisplayParamsOverrides (ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb)
+void ViewContext::_CookDisplayParamsOverrides (ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb)
     {
     // if no overrides are set there is nothing to do...
     if (MATSYMB_OVERRIDE_None == ovrMatSymb.GetFlags())
@@ -1025,7 +1025,7 @@ void            ViewContext::_CookDisplayParamsOverrides (ElemDisplayParamsR elP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::CookDisplayParamsOverrides()
+void ViewContext::CookDisplayParamsOverrides()
     {
     _CookDisplayParamsOverrides (m_currDisplayParams, m_ovrMatSymb);
 
@@ -1036,7 +1036,7 @@ void            ViewContext::CookDisplayParamsOverrides()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_ModifyPreCook (ElemDisplayParamsR elParams)
+void ViewContext::_ModifyPreCook (ElemDisplayParamsR elParams)
     {
     elParams.Resolve (*this);
     }
@@ -1044,7 +1044,7 @@ void            ViewContext::_ModifyPreCook (ElemDisplayParamsR elParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_CookDisplayParams (ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb)
+void ViewContext::_CookDisplayParams (ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb)
     {
     _ModifyPreCook (elParams); // Allow context to modify elParams before cooking...
 
@@ -1055,7 +1055,7 @@ void            ViewContext::_CookDisplayParams (ElemDisplayParamsR elParams, El
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::CookDisplayParams()
+void ViewContext::CookDisplayParams()
     {
     _CookDisplayParams (m_currDisplayParams, m_elemMatSymb);
 
@@ -1154,7 +1154,8 @@ StatusInt ViewContext::_VisitElement (GeometricElementCR element)
                 break;
 
             DPoint3d  p[8];
-            BoundingBox3d  range = (2 == s_drawRange ? element._GetRange3d() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetElementBox() : BoundingBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
+            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(element._GetRange3d()) : 
+                                    (element.Is3d() ? element.ToElement3d()->GetPlacement().GetElementBox() : BoundingBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
             Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform()));
 
             p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;

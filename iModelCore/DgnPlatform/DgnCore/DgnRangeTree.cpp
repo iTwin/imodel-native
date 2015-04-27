@@ -2042,7 +2042,7 @@ void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, uint32_t
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, BeSQLiteDbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
-        : RTreeMatch(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
+        : Tester(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
     {
     m_nCalls = m_nScores = m_nSkipped = 0;
     m_scorer.InitForViewport(viewport, m_minimumSizePixels);
@@ -2388,7 +2388,7 @@ const double ProgressiveViewFilter::s_purgeFactor = 1.3;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProgressiveViewFilter::_StepAggregate(DbFunction::Context&, int nArgs, DbValue* args) 
+void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue* args) 
     {
     if (m_context->WasAborted())
         return;
