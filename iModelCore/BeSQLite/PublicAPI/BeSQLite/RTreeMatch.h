@@ -84,13 +84,13 @@ typedef RTree3dVal*       RTree3dValP;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct RTree3dBoundsTest : RTreeMatch
+struct RTree3dBoundsTest : RTreeMatchFunction::Tester
 {
     RTree3dVal  m_bounds;
 
-    RTree3dBoundsTest (BeSQLiteDbR db) : RTreeMatch(db) {}
-    virtual void _StepAggregate(DbFunction::Context&, int nArgs, DbValue* args) override {}
-    virtual int _TestRange(QueryInfo const& info) override
+    RTree3dBoundsTest (BeSQLiteDbR db) : Tester(db) {}
+    void _StepRange(DbFunction::Context&, int nArgs, DbValue* args) override {}
+    int _TestRange(QueryInfo const& info) override
         {
 //__PUBLISH_SECTION_END__
         BeAssert (6 == info.m_nCoord);

@@ -359,7 +359,7 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_rlvCache(*this),
-            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10), m_rtreeMatch("rTreeAccept", 1)
+            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10)
     {
     m_inCommit = false;
     m_allowImplicitTxns = m_settingsTableCreated = m_settingsDirty = false;
@@ -2138,9 +2138,9 @@ void* DbFunction::Context::GetAggregateContext(int nBytes) {return sqlite3_aggre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)sqlite3_user_data(context))->GetAggregate()->_StepAggregate((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
-static void aggregateFinal(sqlite3_context* context) { ((AggregateFunction*) sqlite3_user_data(context))->GetAggregate()->_FinishAggregate((DbFunction::Context&) *context); }
-static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->GetScalar()->_ComputeScalar((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
+static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)sqlite3_user_data(context))->_StepAggregate((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
+static void aggregateFinal(sqlite3_context* context) { ((AggregateFunction*) sqlite3_user_data(context))->_FinishAggregate((DbFunction::Context&) *context); }
+static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->_ComputeScalar((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
@@ -4550,10 +4550,10 @@ size_t DbEmbeddedFileTable::Iterator::QueryCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int rTreeMatch(RTreeMatch::QueryInfo* info)
+static int rTreeMatch(RTreeMatchFunction::Tester::QueryInfo* info)
     {
-    AggregateFunction* agg = (AggregateFunction*) info->m_context;
-    return ((RTreeMatch*) agg->GetAggregate ())->_TestRange(*info);
+    RTreeMatchFunction* agg = (RTreeMatchFunction*) info->m_context;
+    return agg->GetTester()->_TestRange(*info);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4575,18 +4575,18 @@ void DbFile::InitRTreeMatch() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SetRTreeMatch(RTreeMatch* tester) const
+void DbFile::SetRTreeMatch(RTreeMatchFunction::Tester* tester) const
     {
     BeAssert(m_flags.m_rtreeMatchValid);
-    BeAssert(nullptr == m_rtreeMatch.GetAggregate() || nullptr == tester);
-    m_rtreeMatch.SetAggregate(tester);
+    BeAssert(nullptr == m_rtreeMatch.GetTester() || nullptr == tester);
+    m_rtreeMatch.SetTester(tester);
     }
 
-RTreeMatch::RTreeMatch(BeSQLiteDbR db) : m_db(db){db.m_dbFile->InitRTreeMatch();}
+RTreeMatchFunction::Tester::Tester(BeSQLiteDbR db) : m_db(db){db.GetDbFile()->InitRTreeMatch();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult RTreeMatch::StepRTree(Statement& stmt)
+DbResult RTreeMatchFunction::Tester::StepRTree(Statement& stmt)
     {
     m_db.m_dbFile->SetRTreeMatch(this);
     DbResult rc = stmt.Step();

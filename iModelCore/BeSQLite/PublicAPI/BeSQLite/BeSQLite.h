@@ -1150,37 +1150,6 @@ public:
 };
 
 //=======================================================================================
-//! A user-defined aggregate function. See discussion of aggregate functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
-//! This object is must survive as long as the Db to which it is added survives, or until it is removed.
-//! It holds a pointer to an "IAggregate" implementation. That pointer may be changed via calls to #SetAggregate during the lifetime of the AggregateFunction.
-// @bsiclass                                                    Keith.Bentley   06/14
-//=======================================================================================
-struct AggregateFunction : DbFunction
-{
-public:
-    struct IAggregate
-    {
-        virtual void _StepAggregate(Context&, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
-        virtual void _FinishAggregate(Context&) = 0;                         //<! see "xFinal" in sqlite3_create_function
-    };
-
-private:
-    IAggregate* m_aggregate;
-    bool _IsAggregate() override {return true;}
-
-public:
-    //! Initializes a new AggregateFunction instance
-    //! @param[in] name Function name
-    //! @param[in] nArgs Number of function args
-    //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
-    //! @param[in] val IAggregate implementation
-    AggregateFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal, IAggregate* val = nullptr) : DbFunction(name, nArgs, returnType), m_aggregate(val) {}
-
-    void SetAggregate(IAggregate* val) {m_aggregate=val;}
-    IAggregate* GetAggregate() const {return m_aggregate;}
-};
-
-//=======================================================================================
 //! A user-defined scalar function. See discussion of scalar functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
 //! This object is must survive as long as the Db to which it is added survives, or until it is removed.
 //! It holds a pointer to an "IScalar" implementation. That pointer may be changed via calls to #SetScalar during the lifetime of the ScalarFunction.
@@ -1188,26 +1157,100 @@ public:
 //=======================================================================================
 struct ScalarFunction : DbFunction
 {
-public:
-    struct IScalar
-    {
-        virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
-    };
-
-private:
-    IScalar* m_scalar;
     bool _IsAggregate() override {return false;}
+    virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
 
-public:
     //! Initializes a new ScalarFunction instance
     //! @param[in] name Function name
     //! @param[in] nArgs Number of function args
     //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
     //! @param[in] val IScalar implementation
-    ScalarFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal, IScalar* val = nullptr) : DbFunction(name, nArgs, returnType), m_scalar(val) {}
-    virtual ~ScalarFunction() {}
-    void SetScalar(IScalar* val) { m_scalar = val; }
-    IScalar* GetScalar() const {return m_scalar;}
+    ScalarFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal) : DbFunction(name, nArgs, returnType) {}
+};
+//=======================================================================================
+//! A user-defined aggregate function. See discussion of aggregate functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
+//! This object is must survive as long as the Db to which it is added survives, or until it is removed.
+//! It holds a pointer to an "IAggregate" implementation. That pointer may be changed via calls to #SetAggregate during the lifetime of the AggregateFunction.
+// @bsiclass                                                    Keith.Bentley   06/14
+//=======================================================================================
+struct AggregateFunction : DbFunction
+{
+    bool _IsAggregate() override {return true;}
+    virtual void _StepAggregate(Context&, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
+    virtual void _FinishAggregate(Context&) = 0;                         //<! see "xFinal" in sqlite3_create_function
+
+    //! Initializes a new AggregateFunction instance
+    //! @param[in] name Function name
+    //! @param[in] nArgs Number of function args
+    //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
+    //! @param[in] val IAggregate implementation
+    AggregateFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal) : DbFunction(name, nArgs, returnType) {}
+};
+
+//=======================================================================================
+//! This class becomes the callback for an SQL statement that uses a RTree vtable via the "MATCH rTreeMatch(1)" syntax.
+//! It's constructor registers itself as the callback object and it's destructor unregisters itself.
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct RTreeMatchFunction : AggregateFunction
+{
+    struct Tester
+    {
+        enum class Within : int
+        {
+            Outside = 0,
+            Partly = 1,
+            Inside = 2,
+        };
+
+        //=======================================================================================
+        //! This is a copy of sqlite3_rtree_query_info
+        // @bsiclass                                                    Keith.Bentley   04/14
+        //=======================================================================================
+        struct QueryInfo
+        {
+            void*   m_context;
+            int     m_nParam;
+            double* m_param;
+            void*   m_user;
+            void    (*m_xDelUser)(void*);
+            double* m_coords;
+            unsigned int* m_nQueue;
+            int     m_nCoord;
+            int     m_level;
+            int     m_maxLevel;
+            int64_t m_rowid;
+            double  m_parentScore;
+            Within  m_parentWithin;
+            mutable Within m_within;
+            mutable double m_score;
+        };
+
+    BeSQLiteDbR m_db;
+
+    BE_SQLITE_EXPORT Tester(BeSQLiteDbR db);
+    //! this method is called for every internal and leaf node in an sqlite rtree vtable.
+    //! @see sqlite3_rtree_query_callback.
+    virtual int _TestRange(QueryInfo const&) = 0;
+    virtual void _StepRange(AggregateFunction::Context&, int nArgs, DbValue* args) = 0;
+
+    //! Perform the RTree search by calling "Step" on the supplied statement. This object becomes the callback function for the "rTreeMatch(1)" sql function
+    //! (e.g. "SELECT id FROM rtree_vtable WHERE id MATCH rTreeMatch(1)"
+    //! @note this method registers the rTreeMatch function with SQLite, so it is not possible to call Step directly.
+    BE_SQLITE_EXPORT DbResult StepRTree(Statement&);
+    };
+
+protected:
+    Tester* m_rangeTest;
+    void _FinishAggregate(DbFunction::Context&) override {}
+    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override {m_rangeTest->_StepRange(ctx, nArgs, args);}
+
+public:
+    RTreeMatchFunction() : AggregateFunction("rTreeAccept", 1) {m_rangeTest = nullptr;}
+
+    void SetTester(Tester* tester) {m_rangeTest=tester;}
+    Tester* GetTester() const {return m_rangeTest;}
+
 };
 
 //=======================================================================================
@@ -2146,7 +2189,7 @@ struct DbFile
     friend struct Db;
     friend struct Statement;
     friend struct Savepoint;
-    friend struct RTreeMatch;
+    friend struct RTreeMatchFunction::Tester;
 
 private:
     size_t  m_repositoryIdRlvIndex;
@@ -2172,7 +2215,7 @@ protected:
     typedef DbTxns::iterator DbTxnIter;
     DbTxns          m_txns;
 
-    mutable AggregateFunction m_rtreeMatch;
+    mutable RTreeMatchFunction m_rtreeMatch;
     mutable struct
         {
         bool m_readonly:1;
@@ -2183,7 +2226,7 @@ protected:
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode);
     ~DbFile();
     void InitRTreeMatch() const;
-    void SetRTreeMatch(struct RTreeMatch* tester) const;
+    void SetRTreeMatch(RTreeMatchFunction::Tester* tester) const;
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit);
     DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl, bool temp);
@@ -2441,7 +2484,7 @@ protected:
 
     friend struct Statement;
     friend struct Savepoint;
-    friend struct RTreeMatch;
+    friend struct RTreeMatchFunction::Tester;
     friend struct BeSQLiteProfileManager;
     DbResult QueryDbIds();
     DbResult SaveBeDbGuid();
@@ -3217,60 +3260,6 @@ struct LzmaDecoder
 #define SQLSNAPPY_FORMAT_SIGNATURE  "ZV-snappy"
 
 //__PUBLISH_SECTION_START__
-//=======================================================================================
-//! This class becomes the callback for an SQL statement that uses a RTree vtable via the "MATCH rTreeMatch(1)" syntax.
-//! It's constructor registers itself as the callback object and it's destructor unregisters itself.
-// @bsiclass                                                    Keith.Bentley   12/11
-//=======================================================================================
-struct RTreeMatch : AggregateFunction::IAggregate
-{
-    enum class Within : int
-    {
-        Outside = 0,
-        Partly = 1,
-        Inside = 2,
-    };
-
-    //=======================================================================================
-    //! This is a copy of sqlite3_rtree_query_info
-    // @bsiclass                                                    Keith.Bentley   04/14
-    //=======================================================================================
-    struct QueryInfo
-    {
-        void*   m_context;
-        int     m_nParam;
-        double* m_param;
-        void*   m_user;
-        void    (*m_xDelUser)(void*);
-        double* m_coords;
-        unsigned int* m_nQueue;
-        int     m_nCoord;
-        int     m_level;
-        int     m_maxLevel;
-        int64_t m_rowid;
-        double  m_parentScore;
-        Within  m_parentWithin;
-        mutable Within m_within;
-        mutable double m_score;
-    };
-
-protected:
-    BeSQLiteDbR m_db;
-
-public:
-    BE_SQLITE_EXPORT explicit RTreeMatch(BeSQLiteDbR db);
-    virtual ~RTreeMatch() {}
-
-    //! this method is called for every internal and leaf node in an sqlite rtree vtable.
-    //! @see sqlite3_rtree_query_callback.
-    virtual int _TestRange(QueryInfo const&) = 0;
-    virtual void _FinishAggregate(DbFunction::Context&) override {}
-
-    //! Perform the RTree search by calling "Step" on the supplied statement. This object becomes the callback function for the "rTreeMatch(1)" sql function
-    //! (e.g. "SELECT id FROM rtree_vtable WHERE id MATCH rTreeMatch(1)"
-    //! @note this method registers the rTreeMatch function with SQLite, so it is not possible to call Step directly.
-    BE_SQLITE_EXPORT DbResult StepRTree(Statement&) ;
-};
 
 #define BEDB_PROPSPEC_NAMESPACE "be_Db"
 #define BEDB_PROPSPEC_EMBEDBLOB_NAME "EmbdBlob"
