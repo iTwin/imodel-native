@@ -249,9 +249,7 @@ virtual ILineStyleCP _GetCurrLineStyle (LineStyleSymbP* symb) override
 virtual void _CookDisplayParams (ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) override
     {
     // Apply ignores, resolve effective, and cook ElemMatSymb...
-#if defined (NOT_NOW)
     elParams.Resolve (*this);
-#endif
     elMatSymb.FromResolvedElemDisplayParams (elParams, *this, m_startTangent, m_endTangent);
     }
 
