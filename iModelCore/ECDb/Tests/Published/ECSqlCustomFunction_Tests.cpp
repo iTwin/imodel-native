@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PowSqlFunction : ScalarFunction, ScalarFunction::IScalar
+struct PowSqlFunction : ScalarFunction
     {
 private:
 
@@ -34,13 +34,13 @@ private:
         }
 
 public:
-    PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal, this) {}
+    PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal) {}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct IntegerToBlobSqlFunction : ScalarFunction, ScalarFunction::IScalar
+struct IntegerToBlobSqlFunction : ScalarFunction
     {
     private:
 
@@ -59,7 +59,7 @@ struct IntegerToBlobSqlFunction : ScalarFunction, ScalarFunction::IScalar
             }
 
     public:
-        IntegerToBlobSqlFunction() : ScalarFunction("INTEGERTOBLOB", 1, DbValueType::BlobVal, this) {}
+        IntegerToBlobSqlFunction() : ScalarFunction("INTEGERTOBLOB", 1, DbValueType::BlobVal) {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -101,7 +101,6 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredSqlFunction)
     ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
     ASSERT_EQ(0, ecdb.RemoveFunction(func));
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15

@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/PerformanceJsonComparison.cpp $
+|  $Source: Tests/Performance/PerformanceJsonComparison.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
 #include <rapidjson/BeRapidJson.h>
-
+#include"PerformanceTestFixture.h"
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 void ReadJsonInputFromFile (Json::Value& jsonInput, BeFileName& jsonFilePath);
@@ -15,7 +15,7 @@ void ReadJsonInputFromFile (Json::Value& jsonInput, BeFileName& jsonFilePath);
 //---------------------------------------------------------------------------------------
 // @bsitest                                    Shaun.Sewall                     12/13
 //---------------------------------------------------------------------------------------
-TEST (PerformanceJsonComparison, ParseTest1)
+TEST(PerformanceJsonComparison, ParseJasonUsingStartupCompany)
     {
     //-----------------------------------------------------------------------------------
     //  Construct a test JSON object
@@ -24,7 +24,6 @@ TEST (PerformanceJsonComparison, ParseTest1)
     BeTest::GetHost().GetDocumentsRoot (inputFile);
     inputFile.AppendToPath (L"DgnDb");
     inputFile.AppendToPath (L"StartupCompany.json");
-
     Json::Value seedObj (Json::objectValue);
     ReadJsonInputFromFile (seedObj, inputFile);
 
@@ -61,11 +60,13 @@ TEST (PerformanceJsonComparison, ParseTest1)
 
     timer.Stop();
     printf ("Parsing large JSON object (%d rows) with JsonCpp took %.4f seconds\n", numRows, timer.GetElapsedSeconds());
-
+    Utf8String testDetailsParseCpp = "PerformanceJsonComparison,ParseJasonCppUsingStartupCompany";
+    PerformanceTestingFrameWork performanceObjRapidJason;
+    EXPECT_TRUE(performanceObjRapidJason.writeTodb(L"PerformanceTest.ecdb", timer, testDetailsParseCpp, "Parsing large JSON object  having 1000 rows with JsonCpp  using StartupCompany.json"));
     //-----------------------------------------------------------------------------------
     //  Parse using RapidJson
     //-----------------------------------------------------------------------------------
-    timer.Start();
+    StopWatch rapidJasonTimer(true);
 
     rapidjson::Document document;
     parseSuccessful = !document.Parse<0>(largeString.c_str()).HasParseError();
@@ -77,17 +78,19 @@ TEST (PerformanceJsonComparison, ParseTest1)
         ASSERT_EQ (i, intValue);
         }
 
-    timer.Stop();
+    rapidJasonTimer.Stop();
     printf ("Parsing large JSON object (%d rows) with RapidJson took %.4f seconds\n", numRows, timer.GetElapsedSeconds());
+    Utf8String testDetailsParseRapidJason = "PerformanceJsonComparison,ParseJasonCppUsingStartupCompany";
+    EXPECT_TRUE(performanceObjRapidJason.writeTodb(L"PerformanceTest.ecdb", rapidJasonTimer, testDetailsParseRapidJason, "Parsing large JSON object  having 1000 rows with RapidJson  using StartupCompany.json"));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (PerformanceJsonComparison, AddTest1)
+TEST(PerformanceJsonComparison, AddJason)
     {
     Json::ArrayIndex numEntries = 1000;
-
+    PerformanceTestingFrameWork performanceObjdJason;
     //-----------------------------------------------------------------------------------
     //  Add using JsonCpp
     //-----------------------------------------------------------------------------------
@@ -133,11 +136,12 @@ TEST (PerformanceJsonComparison, AddTest1)
 
     timer.Stop();
     printf ("Adding and verifying %d entries with JsonCpp took %.4f seconds\n", numEntries, timer.GetElapsedSeconds());
-
+    Utf8String testDetailsAddJasonCpp = "PerformanceJsonComparison,AddAndVerifyJasonCpp";
+    EXPECT_TRUE(performanceObjdJason.writeTodb(L"PerformanceTest.ecdb", timer, testDetailsAddJasonCpp, "Adding and Verifying 1000 enteries with JsonCpp"));
     //-----------------------------------------------------------------------------------
     //  Add using RapidJson
     //-----------------------------------------------------------------------------------
-    timer.Start();
+    StopWatch addRapidJasontimer(true);
 
     if (true)
         {
@@ -198,8 +202,10 @@ TEST (PerformanceJsonComparison, AddTest1)
             }
         }
 
-    timer.Stop();
+    addRapidJasontimer.Stop();
     printf ("Adding and verifying %d entries with RapidJson took %.4f seconds\n", numEntries, timer.GetElapsedSeconds());
+    Utf8String testDetailsAddRapidJason = "PerformanceJsonComparison,AddAndVerifyRapidJson";
+    EXPECT_TRUE(performanceObjdJason.writeTodb(L"PerformanceTest.ecdb", addRapidJasontimer, testDetailsAddRapidJason, "Adding and Verifying 1000 enteries with RapidJson"));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -900,7 +900,7 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlAndCustomSQLiteFunctions.sampleCode
 
     // SQLite custom function that computes the power of a given number
-    struct PowSqlFunction : BeSQLite::ScalarFunction, BeSQLite::ScalarFunction::IScalar
+    struct PowSqlFunction : BeSQLite::ScalarFunction
         {
         private:
 
@@ -920,7 +920,7 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
                 }
 
         public:
-            PowSqlFunction() : BeSQLite::ScalarFunction("POW", 2, BeSQLite::DbValueType::FloatVal, this) {}
+            PowSqlFunction() : BeSQLite::ScalarFunction("POW", 2, BeSQLite::DbValueType::FloatVal) {}
         };
 
 
