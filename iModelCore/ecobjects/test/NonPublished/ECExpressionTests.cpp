@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -133,7 +133,7 @@ TEST_F (RoundtripExpressionTests, Roundtrip)
     Roundtrip (L"0.00390625", L"0.00390625");
     Roundtrip (L"method (method (True, method (method (1.5), False)))", L"method(method(True,method(method(1.5),False)))");
 
-    Roundtrip (L"X => X < 5.0 AndAlso X > 1.5", L"X=>X<5 AndAlso X>1.5");
+    Roundtrip (L"X => X < 5.0 AndAlso X > 1.5", L"X=>X<5.0 AndAlso X>1.5");
     Roundtrip (L"this.Array.Any (X => X.Name = \"Chuck\" OrElse X.Name = \"Bob\")", L"this.Array.Any(X=>X.Name=\"Chuck\"OrElse X.Name=\"Bob\")");
     }
 
