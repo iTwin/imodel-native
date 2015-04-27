@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/ECSqlStatementPerformanceTests.cpp $
+|  $Source: Tests/Performance/ECSqlStatementPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceECSqlStatementTestFixture.h"
@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 TEST_F(PerformanceECSqlStatementTestFixture, GetValueIntegerWithIsNull)
     {
     StopWatch timer("",false);
-    Utf8String testDetails="PerformanceECSqlStatementTestFixture GetValueIntegerWithIsNull";
+    Utf8String testDetails="PerformanceECSqlStatementTestFixture,GetValueIntegerWithIsNull";
     PerformanceECSqlStatementTestFixture::GetIntegerValueAsserter asserter (1, L"IntegerMember");
     PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (asserter,timer,testDetails);
     }
@@ -25,7 +25,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValueIntegerWithIsNull)
 TEST_F(PerformanceECSqlStatementTestFixture, GetValueIntegerWithoutIsNull)
     {
     StopWatch timer("", false);
-    Utf8String testDetails = "PerformanceECSqlStatementTestFixture GetValueIntegerWithoutIsNull";
+    Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValueIntegerWithoutIsNull";
     PerformanceECSqlStatementTestFixture::GetIntegerValueAsserter asserter (1, L"IntegerMember");
     PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (asserter,timer,testDetails);
     }
@@ -36,7 +36,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValueIntegerWithoutIsNull)
 TEST_F(PerformanceECSqlStatementTestFixture, GetValueStringWithIsNull)
     {
     StopWatch timer("", false);
-    Utf8String testDetails = "PerformanceECSqlStatementTestFixture GetValueStringWithIsNull";
+    Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValueStringWithIsNull";
     PerformanceECSqlStatementTestFixture::GetStringValueAsserter asserter (2, L"StringMember");
     PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (asserter,timer,testDetails);
     }
@@ -47,7 +47,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValueStringWithIsNull)
 TEST_F(PerformanceECSqlStatementTestFixture, GetValueStringWithoutIsNull)
     {
     StopWatch timer("", false);
-    Utf8String testDetails = "PerformanceECSqlStatementTestFixture GetValueStringWithoutIsNull";
+    Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValueStringWithoutIsNull";
     PerformanceECSqlStatementTestFixture::GetStringValueAsserter asserter (2, L"StringMember");
     PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (asserter,timer,testDetails);
     }
@@ -58,7 +58,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValueStringWithoutIsNull)
 TEST_F(PerformanceECSqlStatementTestFixture, GetValuePoint3DWithIsNull)
     {
     StopWatch timer("", false);
-    Utf8String testDetails = "PerformanceECSqlStatementTestFixture GetValuePoint3DWithIsNull";
+    Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValuePoint3DWithIsNull";
     PerformanceECSqlStatementTestFixture::GetPoint3DValueAsserter asserter (4, L"StartPoint");
     PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (asserter,timer,testDetails);
     }
@@ -69,7 +69,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValuePoint3DWithIsNull)
 TEST_F(PerformanceECSqlStatementTestFixture, GetValuePoint3DWithoutIsNull)
     {
     StopWatch timer("", false);
-    Utf8String testDetails = "PerformanceECSqlStatementTestFixture GetValuePoint3DWithoutIsNull";
+    Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValuePoint3DWithoutIsNull";
     PerformanceECSqlStatementTestFixture::GetPoint3DValueAsserter asserter (4, L"StartPoint");
     PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (asserter,timer,testDetails);
     }
