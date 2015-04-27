@@ -694,7 +694,7 @@ public:
     //! This method MUST be called once per process before any other SQLite methods are called, and should never be called again.
     //! @param[in] tempDir The path for BeSQLite to use to store temporary files. Must be an existing directory.
     //! @param[in] wantLogging If Yes, then SQLite error messages are logged. Note that some SQLite errors are expected and are handled, so they do not necessarily indicate a problem.
-    //! Turn this option on only for limited debuging purposes.
+    //! Turn this option on only for limited debugging purposes.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise, e.g. if @p tempDir does not exist
     //! @see sqlite3_initialize
     BE_SQLITE_EXPORT static DbResult Initialize(BeFileNameCR tempDir, LogErrors wantLogging=LogErrors::No);
@@ -1188,12 +1188,13 @@ struct AggregateFunction : DbFunction
 };
 
 //=======================================================================================
-//! This class becomes the callback for an SQL statement that uses a RTree vtable via the "MATCH rTreeMatch(1)" syntax.
-//! It's constructor registers itself as the callback object and it's destructor unregisters itself.
+//! An aggregate function for queries using the range tree.
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
 struct RTreeMatchFunction : AggregateFunction
 {
+    //! This class becomes the callback for an SQL statement that uses a RTree vtable via the "MATCH rTreeMatch(1)" syntax.
+    //! It's constructor registers itself as the callback object and it's destructor unregisters itself.
     struct Tester
     {
         enum class Within : int
@@ -1404,7 +1405,7 @@ public:
     //! Create a "PatchSet" from a ChangeTracker. The PatchSet can then be saved persistently.
     BE_SQLITE_EXPORT DbResult PatchSetFromChangeTrack(ChangeTracker&);
 
-    //! Create a "PatchSet" by comparing db with a different version if itself. 
+    //! Create a "PatchSet" by comparing db with a different version if itself.
     //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
     //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
     //! @param[in] db       The db
@@ -1763,7 +1764,7 @@ public:
     //!     - BE_SQLITE_NOTADB if the input file is not an SQLite database file.
     //!     - BE_SQLITE_CORRUPT_VTAB if the input file appears to be an SQLite database file but fails some consistency check.
     //!     - BE_SQLITE_CONSTRAINT_BASE if the database already contains an entry of the same name.
-    //!     - BE_SQLITE_BUSY if the file to be embedded has a pending write or is open in DefaultTxn_Immediate or DefaultTxn_Exclusive transaction mode.  This conflict can be caused by 
+    //!     - BE_SQLITE_BUSY if the file to be embedded has a pending write or is open in DefaultTxn_Immediate or DefaultTxn_Exclusive transaction mode.  This conflict can be caused by
     //!       any process on the system.
     //!     - BE_SQLITE_IOERR if ImportDbFile failed to read the proper number of bytes from the file.
     //!     - BE_SQLITE_IOERR_WRITE if a write failed.
@@ -1953,10 +1954,10 @@ public:
     //! Get the default transaction mode for this SavePoint
     BeSQLiteTxnMode GetTxnMode() const {return m_txnMode;}
 
-    //! Sets the default transaction mode for this Savepoint. 
+    //! Sets the default transaction mode for this Savepoint.
     void SetTxnMode(BeSQLiteTxnMode mode) {m_txnMode = mode;}
 
-    //! Begin a transaction against the database. Fails if this Savepoint is already active. 
+    //! Begin a transaction against the database. Fails if this Savepoint is already active.
     //! See SQLite "BEGIN" and "SAVEPOINT" documentation for other conditions.
     //! @param[in] mode The transaction mode for this transaction
     BE_SQLITE_EXPORT DbResult Begin(BeSQLiteTxnMode mode);
@@ -2122,8 +2123,8 @@ public:
     };
 
 //=======================================================================================
-// Cache for int64_t RepositoryLocalValues. This is for RLV's that are of type int64_t and are frequently 
-// accessed and/or modified. The RLVs are identified in the cache by "registering" their name are thereafter 
+// Cache for int64_t RepositoryLocalValues. This is for RLV's that are of type int64_t and are frequently
+// accessed and/or modified. The RLVs are identified in the cache by "registering" their name are thereafter
 // accessed by index. The cache is held in memory for performance. It is automatically saved whenever a transaction is committed.
 // @bsiclass                                                    Krischan.Eberle     07/14
 //=======================================================================================
