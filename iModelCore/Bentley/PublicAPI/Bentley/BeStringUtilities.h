@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeStringUtilities.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -255,6 +255,10 @@ public:
     BENTLEYDLL_EXPORT static bool IsValidCodePage (LangCodePage codePage);
 
 //__PUBLISH_SECTION_END__
+    //! This is meant to allow advanced usage of ICU to transcode odd encodings that are not worth writing high-level wrappers for (e.g. reasing strings from TrueType font metadata).
+    //! @note outStringBuff will effectively be NULL-terminated only if inString (up to inStringNumBytes) is also NULL-terminated; otherwise it will not.
+    BENTLEYDLL_EXPORT static BentleyStatus TranscodeStringDirect(bvector<Byte>& outStringBuff, CharCP outEncoding, Byte const* inString, size_t inStringNumBytes, CharCP inEncoding);
+    
     //! Computes the number of logical characters in the span. Remember that on some platforms, WChar can be a multi-byte sequence.
     BENTLEYDLL_EXPORT static size_t ComputeNumLogicalChars(WCharCP, size_t numUnits);
 

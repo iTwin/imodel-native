@@ -91,8 +91,6 @@ size_t utf16len (Utf16CP utf16, size_t bufSizeIncludingTerminator=BeStringUtilit
     return count;
     }
 
-#if !defined(BENTLEY_WIN32) && !defined(BENTLEY_WINRT)
-
 #include "utf8.h"
 
 #ifndef CP_UTF8
@@ -102,7 +100,7 @@ size_t utf16len (Utf16CP utf16, size_t bufSizeIncludingTerminator=BeStringUtilit
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static BentleyStatus directUtf16ToUtf8(bvector<char>& outStringBuff, CharCP inString, size_t inStringNumBytes)
+static BentleyStatus directUtf16ToUtf8(bvector<Byte>& outStringBuff, Byte const* inString, size_t inStringNumBytes)
     {
     // UTF-16 is 2 or 4 bytes per-character; UTF-8 is 1-6... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     outStringBuff.reserve(inStringNumBytes);
@@ -116,7 +114,7 @@ static BentleyStatus directUtf16ToUtf8(bvector<char>& outStringBuff, CharCP inSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static BentleyStatus directUtf32ToUtf8(bvector<char>& outStringBuff, CharCP inString, size_t inStringNumBytes)
+static BentleyStatus directUtf32ToUtf8(bvector<Byte>& outStringBuff, Byte const* inString, size_t inStringNumBytes)
     {
     // UTF-32 is 4 bytes per-character; UTF-8 is 1-6 bytes... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     outStringBuff.reserve(inStringNumBytes / 2);
@@ -130,7 +128,7 @@ static BentleyStatus directUtf32ToUtf8(bvector<char>& outStringBuff, CharCP inSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static BentleyStatus directUtf8ToUtf16(bvector<char>& outStringBuff, CharCP inString, size_t inStringNumBytes)
+static BentleyStatus directUtf8ToUtf16(bvector<Byte>& outStringBuff, Byte const* inString, size_t inStringNumBytes)
     {
     // UTF-8 is 1-6 bytes per-character; UTF-16 is 2 or 4... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     bvector<char16_t> utf16;
@@ -149,7 +147,7 @@ static BentleyStatus directUtf8ToUtf16(bvector<char>& outStringBuff, CharCP inSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static BentleyStatus directUtf8ToUtf32(bvector<char>& outStringBuff, CharCP inString, size_t inStringNumBytes)
+static BentleyStatus directUtf8ToUtf32(bvector<Byte>& outStringBuff, Byte const* inString, size_t inStringNumBytes)
     {
     // UTF-8 is 1-6 bytes per-character; UTF-32 is 4... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     bvector<char32_t> utf32;
@@ -176,7 +174,7 @@ static bool isEncodingUtf8(CharCP encoding)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static bool handleDirectUtfConversion(BentleyStatus& status, bvector<char>& outStringBuff, CharCP outEncoding, CharCP inString, size_t inStringNumBytes, CharCP inEncoding)
+static bool handleDirectUtfConversion(BentleyStatus& status, bvector<Byte>& outStringBuff, CharCP outEncoding, Byte const* inString, size_t inStringNumBytes, CharCP inEncoding)
     {
     // We're on non-Win32, so I feel we're most likely to get UTF-32-based requests, so strcmp those first.
 
@@ -194,7 +192,7 @@ static bool handleDirectUtfConversion(BentleyStatus& status, bvector<char>& outS
         
     if ((0 == strcmp("UTF-32LE", inEncoding)) && (0 == strcmp("UTF-16LE", outEncoding)))
         {
-        bvector<char> utf8;
+        bvector<Byte> utf8;
         if (SUCCESS != directUtf32ToUtf8(utf8, inString, inStringNumBytes))
             status = ERROR;
         else
@@ -205,7 +203,7 @@ static bool handleDirectUtfConversion(BentleyStatus& status, bvector<char>& outS
 
     if ((0 == strcmp("UTF-16LE", inEncoding)) && (0 == strcmp("UTF-32LE", outEncoding)))
         {
-        bvector<char> utf8;
+        bvector<Byte> utf8;
         if (SUCCESS != directUtf16ToUtf8(utf8, inString, inStringNumBytes))
             status = ERROR;
         else
@@ -233,7 +231,7 @@ static bool handleDirectUtfConversion(BentleyStatus& status, bvector<char>& outS
 // outStringBuff will effectively be NULL-terminated only if inString (up to inStringNumBytes) is also NULL-terminated; otherwise it will not.
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-static BentleyStatus transcodeString (bvector<char>& outStringBuff, CharCP outEncoding, CharCP inString, size_t inStringNumBytes, CharCP inEncoding)
+BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringBuff, CharCP outEncoding, Byte const* inString, size_t inStringNumBytes, CharCP inEncoding)
     {
     // All callers (local to this file) allocate a new bvector<char> to pass to us; don't bother calling clear().
     // We cannot do an empty check on inString here because we do not know its original encoding (or rather, we don't want to have rules to handle it; let the caller do it).
@@ -270,7 +268,7 @@ static BentleyStatus transcodeString (bvector<char>& outStringBuff, CharCP outEn
     
     for (;;)
         {
-        unicodeBufferLength = ucnv_toUChars(toUnicodeConverter.getAlias(), &unicodeBuffer[0], (int32_t)unicodeBuffer.size(), inString, inStringNumBytes, &icuError);
+        unicodeBufferLength = ucnv_toUChars(toUnicodeConverter.getAlias(), &unicodeBuffer[0], (int32_t)unicodeBuffer.size(), (CharCP)inString, (int32_t)inStringNumBytes, &icuError);
         if (U_BUFFER_OVERFLOW_ERROR == icuError)
             {
             unicodeBuffer.resize(unicodeBuffer.size() * 2);
@@ -295,7 +293,7 @@ static BentleyStatus transcodeString (bvector<char>& outStringBuff, CharCP outEn
 
     for (;;)
         {
-        outStringBufferLength = ucnv_fromUChars(fromUnicodeConverter.getAlias(), &outStringBuff[0], (int32_t)outStringBuff.size(), &unicodeBuffer[0], unicodeBufferLength, &icuError);
+        outStringBufferLength = ucnv_fromUChars(fromUnicodeConverter.getAlias(), (CharP)&outStringBuff[0], (int32_t)outStringBuff.size(), &unicodeBuffer[0], (int32_t)unicodeBufferLength, &icuError);
         if (U_BUFFER_OVERFLOW_ERROR == icuError)
             {
             outStringBuff.resize(outStringBuff.size() * 2);
@@ -311,8 +309,6 @@ static BentleyStatus transcodeString (bvector<char>& outStringBuff, CharCP outEn
 
     return SUCCESS;
     }
-
-#endif //ndef BENTLEY_WIN32 && ndef BENTLEY_WINRT
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      11/2011
@@ -359,8 +355,8 @@ BentleyStatus BeStringUtilities::Utf16ToWChar (WStringR outStr, Utf16CP inStr, s
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
-    bvector<char> resultBytes;
-    if (SUCCESS != transcodeString (resultBytes, "UTF-32LE", (CharCP)inStr, (sizeof (uint16_t) * inStrCount), "UTF-16LE"))
+    bvector<Byte> resultBytes;
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (ByteCP)inStr, (sizeof (uint16_t) * inStrCount), "UTF-16LE"))
         {
         BeAssert (false && L"Unicode to Unicode should never fail.");
         return ERROR;
@@ -385,14 +381,14 @@ static BentleyStatus unixUtf16ToWChar (WCharP wbuf, size_t wbufSizeInChars, Utf1
     {
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
-    bvector<char> resultBytes;
+    bvector<Byte> resultBytes;
     if ((NULL != inStr) && (0 != _count))
         {
         // Note: 'inStrCount' does NOT include the NULL-terminator
         size_t inStrLen = utf16len (inStr, _count);
         int inStrCount = (int)( (_count == BeStringUtilities::NPOS)? inStrLen: std::min (_count, inStrLen) );
 
-        if (SUCCESS != transcodeString (resultBytes, "UTF-32LE", (CharCP)inStr, (sizeof (Utf16Char) * inStrCount), "UTF-16LE"))
+        if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (ByteCP)inStr, (sizeof (Utf16Char) * inStrCount), "UTF-16LE"))
             {
             BeAssert (false && L"Unicode to Unicode should never fail.");
             return ERROR;
@@ -413,14 +409,14 @@ static BentleyStatus unixWCharToUtf16 (Utf16P ubuf, size_t ubufSizeInChars, WCha
     {
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
-    bvector<char> resultBytes;
+    bvector<Byte> resultBytes;
     if ((NULL != inStr) && (0 != _count))
         {
         // Note: 'inStrCount' does NOT include the NULL-terminator
         size_t inStrLen = wcslen (inStr);
         int inStrCount = (int)( (_count == BeStringUtilities::NPOS)? inStrLen: std::min (_count, inStrLen) );
 
-        if (SUCCESS != transcodeString (resultBytes, "UTF-16LE", (CharCP)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
+        if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (ByteCP)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
             {
             BeAssert (false && L"Unicode to Unicode should never fail.");
             return ERROR;
@@ -462,8 +458,8 @@ BentleyStatus BeStringUtilities::WCharToUtf16 (Utf16BufferR outStr, WCharCP inSt
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
-    bvector<char> resultBytes;
-    if (SUCCESS != transcodeString (resultBytes, "UTF-16LE", (CharCP)inStr, (sizeof (uint32_t) * inStrCount), "UTF-32LE"))
+    bvector<Byte> resultBytes;
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (ByteCP)inStr, (sizeof (uint32_t) * inStrCount), "UTF-32LE"))
         {
         BeAssert (false && L"Unicode to Unicode should never fail.");
 
@@ -535,9 +531,8 @@ BentleyStatus BeStringUtilities::Utf8ToUtf16 (Utf16BufferR outStr, Utf8CP inStr,
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
-    bvector<char> resultBytes;
-
-    if (SUCCESS != transcodeString (resultBytes, "UTF-16LE", inStr, (sizeof (char) * inStrCount), "UTF-8"))
+    bvector<Byte> resultBytes;
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (ByteCP)inStr, (sizeof (char) * inStrCount), "UTF-8"))
         return ERROR;
 
     size_t outStrCount = (resultBytes.size () / sizeof (Utf16Char));
@@ -575,9 +570,8 @@ BentleyStatus BeStringUtilities::Utf16ToUtf8 (Utf8StringR utf8Buffer, Utf16CP ut
 
 #elif defined (__unix__)
 
-    bvector<char> resultBytes;
-
-    if (SUCCESS != transcodeString (resultBytes, "UTF-8", (CharCP)utf16Buffer, (sizeof (*utf16Buffer) * inStrCount), "UTF-16LE"))
+    bvector<Byte> resultBytes;
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-8", (ByteCP)utf16Buffer, (sizeof (*utf16Buffer) * inStrCount), "UTF-16LE"))
         return ERROR;
 
     size_t outStrCount = (resultBytes.size () / sizeof (Utf8Char));
@@ -665,9 +659,8 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar (AStringR outStr, LangCodePag
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
-    bvector<char> resultBytes;
-
-    if (SUCCESS != transcodeString (resultBytes, cpStr, (CharCP)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
+    bvector<Byte> resultBytes;
+    if (SUCCESS != TranscodeStringDirect (resultBytes, cpStr, (ByteCP)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
         return ERROR;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
@@ -791,9 +784,8 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar (WStringR outStr, CharCP inSt
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
-    bvector<char> resultBytes;
-
-    if (SUCCESS != transcodeString (resultBytes, "UTF-32LE", (CharCP)inStr, (sizeof (char) * inStrCount), cpStr))
+    bvector<Byte> resultBytes;
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (ByteCP)inStr, (sizeof (char) * inStrCount), cpStr))
         return ERROR;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
@@ -867,9 +859,8 @@ WCharP  BeStringUtilities::LocaleCharToWChar (WCharP outWChar, CharCP inChar, La
         }    
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
-    bvector<char> resultBytes;
-
-    if (SUCCESS != transcodeString (resultBytes, "UTF-32LE", inChar, (sizeof (char) * inStrLen), cpStr))
+    bvector<Byte> resultBytes;
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (ByteCP)inChar, (sizeof (char) * inStrLen), cpStr))
         return outWChar;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
