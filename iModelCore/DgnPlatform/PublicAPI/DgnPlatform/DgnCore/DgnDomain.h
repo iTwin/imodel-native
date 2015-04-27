@@ -292,10 +292,10 @@ public:
     //! @param[in] version The version of this DgnDomain API.
     DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr) {m_version=version;}
 
-    //! Get the name for this DgnDomain.
+    //! Get the name of this DgnDomain.
     Utf8CP GetDomainName() const {return m_domainName.c_str();}
 
-    //! Get the description for this DgnDomain.
+    //! Get the description of this DgnDomain.
     Utf8CP GetDomainDescription() const {return m_domainDescr.c_str();}
 
     //! Get the version of this DgnDomain.
@@ -381,6 +381,7 @@ struct DgnSchemaDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(DgnSchemaDomain,DGNPLATFORM_EXPORT)
 
+    void _OnDgnDbOpened(DgnDbR db) const override;
     void RegisterDefaultDependencyHandlers(); 
 
 public:

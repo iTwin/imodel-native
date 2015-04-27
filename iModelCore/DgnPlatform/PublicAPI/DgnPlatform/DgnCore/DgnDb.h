@@ -147,7 +147,6 @@ protected:
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion (BeSQLite::Db::OpenParams const& params) override;
     BeSQLite::DbResult CreateNewDgnDb (BeFileNameCR boundFileName, CreateDgnDbParams const& params);
-    void RegisterSQLFuncs();
 
 public:
     BeSQLite::DbResult InitializeDgnDb (CreateDgnDbParams const& params);

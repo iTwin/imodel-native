@@ -320,7 +320,7 @@ protected:
     virtual DgnDbR _GetDgnProject() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
-    DGNPLATFORM_EXPORT virtual DRange3d _GetProjectExtents() const;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetProjectExtents() const;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson (JsonValueR, DgnViews::DgnViewPropertySpecCR) const;
     DGNPLATFORM_EXPORT BentleyStatus CheckViewSubType() const;
@@ -378,7 +378,7 @@ public:
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
-    DGNPLATFORM_EXPORT DRange3d GetProjectExtents() const;
+    AxisAlignedBox3d GetProjectExtents() const {return _GetProjectExtents();}
 
     //! Load the settings of this view from persistent settings in the database.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Load();
@@ -1063,7 +1063,7 @@ private:
     virtual void _AdjustAspectRatio (double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint () const override;
     virtual bool _Allow3dManipulations () const override;
-    virtual DRange3d _GetProjectExtents() const override;
+    virtual AxisAlignedBox3d _GetProjectExtents() const override;
     virtual IAuxCoordSysP _GetAuxCoordinateSystem () const override;
     virtual ColorDef _GetBackgroundColor () const override;
     virtual ClipVectorPtr _GetClipVector() const override;

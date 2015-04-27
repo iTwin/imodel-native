@@ -1353,7 +1353,7 @@ private:
     double          m_azimuth;
     double          m_latitude;
     double          m_longitude;
-    DRange3d        m_extent;
+    AxisAlignedBox3d m_extent;
     DPoint3d        m_globalOrigin;      //!< in meters
     DPoint2d        m_geoOriginBasis;
     bool            m_hasCheckedForGCS;
@@ -1374,13 +1374,13 @@ public:
     void SetGlobalOrigin(DPoint3dCR origin) {m_globalOrigin=origin;}
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProjectExtents(DRange3dCR newExtents);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProjectExtents(AxisAlignedBox3dCR newExtents);
 
     //! (Re-)compute the project extents by looking at the range tree.
-    DGNPLATFORM_EXPORT DRange3d ComputeProjectExtents();
+    DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents();
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in this DgnDb
-    DGNPLATFORM_EXPORT DRange3d GetProjectExtents();
+    DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents();
 
     //! Convert a GeoPoint to an XYZ point
     //! @param[out] outUors     The output XYZ point

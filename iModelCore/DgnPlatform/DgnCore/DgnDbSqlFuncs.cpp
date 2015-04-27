@@ -325,8 +325,34 @@ struct DGN_BBOX_Value : ScalarFunction
 //=======================================================================================
 struct DGN_BBOX_Union : AggregateFunction
 {
-    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override;
-    void _FinishAggregate(Context& ctx) override;
+    struct Result {bool m_valid; DRange3d m_range;};
+
+    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(DRange3d))
+            return SetInputError(ctx);
+        
+        DRange3d&  thisRange  = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
+        Result&    totalRange = *((Result*)ctx.GetAggregateContext(sizeof(Result)));
+        if (!totalRange.m_valid)
+            {
+            totalRange.m_range = thisRange;
+            totalRange.m_valid = true;
+            }
+        else
+            {
+            totalRange.m_range.Extend(thisRange);
+            }
+        }
+
+    void _FinishAggregate(Context& ctx) override
+        {
+        Result* totalRange = (Result*) ctx.GetAggregateContext(0);
+        if (totalRange && totalRange->m_valid)
+            ctx.SetResultBlob(&totalRange->m_range, sizeof(totalRange->m_range));
+        else
+            ctx.SetResultNull();
+        }
 
     DGN_BBOX_Union() : AggregateFunction("DGN_BBOX_Union", 1, DbValueType::BlobVal) {}
 };
@@ -373,9 +399,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::RegisterSQLFuncs()
+void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
     {
-    static DbFunction* s_funcs[] = {
+    static DbFunction* s_funcs[] = 
+                          {
                           new DGN_ANGLES_Value,
                           new DGN_Angles,
                           new DGN_BBOX_AreaXY,
@@ -383,7 +410,7 @@ void DgnDb::RegisterSQLFuncs()
                           new DGN_BBOX_Height,
                           new DGN_BBOX_IsContained,
                           new DGN_BBOX_Overlaps,
-//                          new DGN_BBOX_Union,
+                          new DGN_BBOX_Union,
                           new DGN_BBOX_Value,
                           new DGN_BBOX_Volume,
                           new DGN_BBOX_Width,
@@ -393,8 +420,9 @@ void DgnDb::RegisterSQLFuncs()
                           new DGN_PLACEMENT_EABB,
                           new DGN_PLACEMENT_Origin,
                           new DGN_POINT_Distance,
-                          new DGN_POINT_Value};
+                          new DGN_POINT_Value
+                          };
 
     for (DbFunction* func : s_funcs)
-        AddFunction(*func);
+        db.AddFunction(*func);
     }

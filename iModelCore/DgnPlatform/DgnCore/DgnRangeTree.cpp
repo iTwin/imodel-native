@@ -1113,23 +1113,6 @@ DgnRangeTree::Match DgnRangeTree::FindMatches(DgnRangeTree::Traverser& traverser
     return (nullptr == m_root) ? DgnRangeTree::Match::Ok : m_root->Traverse(traverser, Is3d());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    11/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnModel::GetRange(DRange3dR range)
-    {
-    range = GetDgnDb().Units().GetProjectExtents();
-
-#ifdef DGNV10FORMAT_CHANGES_WIP
-    DRange3d scanRange;
-    if (SUCCESS != GetRange(scanRange))
-        return  ERROR;
-
-    DataConvert::ScanRangeToDRange3d(range, scanRange);
-#endif
-    return  SUCCESS;
-    }
-
 //=======================================================================================
 // "Occlusion" order based traversal of the tree (front of view to back, most significant nodes first). Optionally, test for
 // occulsion culling periodically.
