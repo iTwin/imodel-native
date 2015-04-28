@@ -16,24 +16,24 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define DGN_CLASSNAME_Color                         "Color"
-#define DGN_CLASSNAME_DrawingElement                "DrawingElement"
-#define DGN_CLASSNAME_Element                       "Element"
-#define DGN_CLASSNAME_ElementAspect                 "ElementAspect"
-#define DGN_CLASSNAME_ElementGeom                   "ElementGeom"
-#define DGN_CLASSNAME_ElementItem                   "ElementItem"
-#define DGN_CLASSNAME_GeomPart                      "GeomPart"
-#define DGN_CLASSNAME_Category                      "Category"
-#define DGN_CLASSNAME_Link                          "Link"
-#define DGN_CLASSNAME_Model                         "Model"
-#define DGN_CLASSNAME_PhysicalModel                 "PhysicalModel"
-#define DGN_CLASSNAME_DrawingModel                  "DrawingModel"
-#define DGN_CLASSNAME_SheetModel                    "SheetModel"
-#define DGN_CLASSNAME_ComponentModel                "ComponentModel"
-#define DGN_CLASSNAME_PhysicalElement               "PhysicalElement"
-#define DGN_CLASSNAME_SubCategory                   "SubCategory"
-#define DGN_CLASSNAME_Style                         "Style"
-#define DGN_CLASSNAME_View                          "View"
+#define DGN_CLASSNAME_Color               "Color"
+#define DGN_CLASSNAME_DrawingElement      "DrawingElement"
+#define DGN_CLASSNAME_Element             "Element"
+#define DGN_CLASSNAME_ElementAspect       "ElementAspect"
+#define DGN_CLASSNAME_ElementGeom         "ElementGeom"
+#define DGN_CLASSNAME_ElementItem         "ElementItem"
+#define DGN_CLASSNAME_GeomPart            "GeomPart"
+#define DGN_CLASSNAME_Category            "Category"
+#define DGN_CLASSNAME_Link                "Link"
+#define DGN_CLASSNAME_Model               "Model"
+#define DGN_CLASSNAME_PhysicalModel       "PhysicalModel"
+#define DGN_CLASSNAME_DrawingModel        "DrawingModel"
+#define DGN_CLASSNAME_SheetModel          "SheetModel"
+#define DGN_CLASSNAME_ComponentModel      "ComponentModel"
+#define DGN_CLASSNAME_PhysicalElement     "PhysicalElement"
+#define DGN_CLASSNAME_SubCategory         "SubCategory"
+#define DGN_CLASSNAME_Style               "Style"
+#define DGN_CLASSNAME_View                "View"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
@@ -49,14 +49,14 @@
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define DGN_RELNAME_CategoryOwnsSubCategories       "CategoryOwnsSubCategories"
-#define DGN_RELNAME_ElementDrivesElement            "ElementDrivesElement"
-#define DGN_RELNAME_ElementHasLinks                 "ElementHasLinks"
-#define DGN_RELNAME_ElementGeomUsesParts            "ElementGeomUsesParts"
-#define DGN_RELNAME_ElementGroupsElements           "ElementGroupsElements"
-#define DGN_RELNAME_ElementOwnsAspects              "ElementOwnsAspects"
-#define DGN_RELNAME_ElementOwnsItem                 "ElementOwnsItem"
-#define DGN_RELNAME_ModelDrivesModel                "ModelDrivesModel"
+#define DGN_RELNAME_CategoryOwnsSubCategories  "CategoryOwnsSubCategories"
+#define DGN_RELNAME_ElementDrivesElement       "ElementDrivesElement"
+#define DGN_RELNAME_ElementHasLinks            "ElementHasLinks"
+#define DGN_RELNAME_ElementGeomUsesParts       "ElementGeomUsesParts"
+#define DGN_RELNAME_ElementGroupsElements      "ElementGroupsElements"
+#define DGN_RELNAME_ElementOwnsAspects         "ElementOwnsAspects"
+#define DGN_RELNAME_ElementOwnsItem            "ElementOwnsItem"
+#define DGN_RELNAME_ModelDrivesModel           "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
 #include "DgnFontManager.h"
@@ -342,16 +342,9 @@ struct DgnCategories : DgnDbTable
         const_iterator end() const {return Entry(nullptr, false);}
     }; // SubCategoryIterator
 
-//__PUBLISH_SECTION_END__
 private:
     friend struct DgnDb;
     explicit DgnCategories(DgnDbR db) : DgnDbTable(db) {}
-
-public:
-//__PUBLISH_SECTION_START__
-private:
-    DgnCategories(); // internal only
-    DgnCategories(DgnCategories const&); // no copying
 
 public:
     ///@name Querying and manipulating categories
@@ -530,8 +523,7 @@ public:
             }
 
         DgnViewId GetId() const {return m_viewId;} //!< The DgnViewId of this view.
-        //! Get the DgnModelId of the base model for this view. Every view has one DgnModel designated its "base" model.
-        DgnModelId GetBaseModelId() const {return m_baseModelId;}
+        DgnModelId GetBaseModelId() const {return m_baseModelId;}//!< Get the DgnModelId of the base model for this view. Every view has one DgnModel designated its "base" model.
         DgnViewType GetDgnViewType() const {return m_viewType;} //!< Get the DgnViewType for this view.
         DgnClassId GetClassId() const {return m_classId;} //!< Get the DgnClassId of this View
         DgnViewSource GetDgnViewSource() const {return m_viewSource;} //!< Get the DgnViewSource for this view.
@@ -860,18 +852,7 @@ public:
 
     //! Delete the item associated with the specified geometry aspect ID
     DGNPLATFORM_EXPORT BentleyStatus DeleteItem(DgnElementId);
-
-    //! Query the DgnDb for the physical geometry of the specified geometry aspect
-    //! @param[in] geomKey the specified geometry aspect
-    DGNPLATFORM_EXPORT PhysicalGeometryPtr QueryPhysicalGeometry(ElementItemKeyCR itemKey);
-
-    //! Query the DgnDb for the placement of the specified geometry aspect
-    //! @param[out] origin the item's origin (world coordinates)
-    //! @param[out] angles the item's rotation (world coordinates)
-    //! @param[in] geomKey the specified geometry aspect
-    DGNPLATFORM_EXPORT BentleyStatus QueryItemPlacement(DPoint3dR origin, YawPitchRollAnglesR angles, ElementItemKeyCR geomKey);
 };
-
 
 //=======================================================================================
 //! The DgnElements for a DgnDb.
@@ -927,7 +908,6 @@ private:
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
-    void OnDestroying();
     void AddDgnElement(DgnElementR);
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
@@ -1018,7 +998,6 @@ public:
 //=======================================================================================
 struct DgnGeomParts : DgnDbTable
 {
-//__PUBLISH_SECTION_END__
     friend struct DgnDb;
 
 private:
@@ -1029,7 +1008,6 @@ public:
     DgnGeomPartId GetHighestGeomPartId();
     DgnGeomPartId MakeNewGeomPartId();
 
-//__PUBLISH_SECTION_START__
 public:
     // WIP: waiting for IGeometryExt deserialization to be hooked up!
     //! Query for a geometry part by ID.
@@ -1089,14 +1067,12 @@ public:
 //=======================================================================================
 struct DgnColors : DgnDbTable
 {
-//__PUBLISH_SECTION_END__
 private:
     friend struct DgnDb;
     mutable DgnTrueColorId m_nextColorId;
 
     explicit DgnColors(DgnDbR db) : DgnDbTable(db){}
 
-//__PUBLISH_SECTION_START__
 public:
     //! Add a new entry to this DgnColors.
     //! @param[in] color The RGB values for the new entry.
@@ -1160,7 +1136,6 @@ public:
 //=======================================================================================
 struct DgnFonts : DgnDbTable
 {
-//__PUBLISH_SECTION_END__
 private:
     mutable T_FontNumberMap     m_fontNumberMap;
     mutable bool                m_fontNumberMapLoaded;
@@ -1174,7 +1149,6 @@ private:
     T_FontNumberMap const& FontNumberMap() const;
     explicit DgnFonts(DgnDbR db);
 
-//__PUBLISH_SECTION_START__
 private:
     DgnFonts();
     DgnFonts(DgnFonts const&); // no copying
@@ -1435,7 +1409,6 @@ public:
 //=======================================================================================
 struct DgnStyles : DgnDbTable
 {
-//__PUBLISH_SECTION_END__
 private:
     friend struct DgnDb;
 
@@ -1449,7 +1422,6 @@ private:
     ~DgnStyles();
 
 public:
-//__PUBLISH_SECTION_START__
     //! Provides accessors for line styles.
     DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
 
@@ -1472,7 +1444,6 @@ public:
 //=======================================================================================
 struct DgnLinks : public DgnDbTable
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(DgnDbTable);
     friend struct DgnDb;
@@ -1480,7 +1451,6 @@ private:
     DgnLinks(DgnDbR db) : T_Super(db) {}
 
 public:
-//__PUBLISH_SECTION_START__
     //=======================================================================================
     // @bsiclass
     //=======================================================================================
