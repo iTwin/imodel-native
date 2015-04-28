@@ -544,7 +544,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             break;
 
 #if !defined (_X64_)
-        DgnElements& pool = m_queryModel.GetDgnDb().Elements().GetPool();
+        DgnElements& pool = m_queryModel.GetDgnDb().Elements();
         if (numDrawn > results->m_drawnBeforePurge && pool.GetTotalAllocated() > purgeTrigger)
             {
             QueryModel::Selector& selector = m_queryModel.GetSelector();
