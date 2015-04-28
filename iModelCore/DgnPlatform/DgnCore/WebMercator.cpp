@@ -1063,16 +1063,6 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult WebMercatorModel::_QueryModelRange (DRange3dR range)
-    {
-    // *** WIP_WEBMERCATORMODEL - range
-    range = m_mercator.m_range;
-    return BE_SQLITE_ROW;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorDisplay::DrawView (ViewContextR context)

@@ -85,7 +85,6 @@ DbResult DgnDb::_OnDbOpened()
         return rc;
 
     m_units.Load();
-    RegisterSQLFuncs();
 
     return Domains().OnDbOpened();
     }
@@ -158,11 +157,11 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params)
+DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const& params)
     {
-    BeFileName projectFile(boundFileName);
+    BeFileName projectFile(inFileName);
 
-    if (boundFileName.IsEmpty())
+    if (inFileName.IsEmpty())
         {
         projectFile.SetNameUtf8 (BEDB_MemoryDb);
         }
@@ -206,14 +205,14 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR projectFileName, CreateDgnDbParams const& params)
+DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDbParams const& params)
     {
     DbResult ALLOW_NULL_OUTPUT (stat, result);
 
-    DgnDbPtr project = new DgnDb();
-    stat = project->CreateNewDgnDb(projectFileName, params);
+    DgnDbPtr dgndb = new DgnDb();
+    stat = dgndb->CreateNewDgnDb(fileName, params);
 
-    return  (BE_SQLITE_OK==stat) ? project : nullptr;
+    return  (BE_SQLITE_OK==stat) ? dgndb : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

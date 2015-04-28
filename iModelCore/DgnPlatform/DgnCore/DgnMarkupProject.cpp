@@ -308,11 +308,11 @@ BitMaskCR  PhysicalRedlineViewController::_GetCategoryDisplayMask () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d PhysicalRedlineViewController::_GetProjectExtents() const
+AxisAlignedBox3d PhysicalRedlineViewController::_GetProjectExtents() const
     {
-    DRange3d subjectRange = m_subjectView.GetProjectExtents();
-    DRange3d rdlRange = T_Super::_GetProjectExtents();
-    DRange3d fullRange;
+    AxisAlignedBox3d subjectRange = m_subjectView.GetProjectExtents();
+    AxisAlignedBox3d rdlRange = T_Super::_GetProjectExtents();
+    AxisAlignedBox3d fullRange;
     fullRange.UnionOf (rdlRange, subjectRange);
     return fullRange;
     }

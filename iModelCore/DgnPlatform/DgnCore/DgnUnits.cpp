@@ -13,7 +13,7 @@
 DgnUnits::DgnUnits(DgnDbR project) : m_dgndb(project)
     {
     m_globalOrigin.Zero();
-    m_extent = DRange3d::NullRange();
+    m_extent = AxisAlignedBox3d();
     m_azimuth = m_latitude = m_longitude = 0.0;
     m_geoOriginBasis.Zero();
     m_hasGeoOriginBasis = false;
@@ -115,7 +115,7 @@ void DgnUnits::Save()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnUnits::SaveProjectExtents(DRange3dCR newExtents)
+DbResult DgnUnits::SaveProjectExtents(AxisAlignedBox3dCR newExtents)
     {
     m_extent = newExtents;
     Json::Value jsonObj;
@@ -126,7 +126,7 @@ DbResult DgnUnits::SaveProjectExtents(DRange3dCR newExtents)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d DgnUnits::ComputeProjectExtents()
+AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
     {
     RTree3dBoundsTest bounds(m_dgndb);
     Statement stmt;
@@ -160,7 +160,7 @@ void DgnUnits::LoadProjectExtents()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d DgnUnits::GetProjectExtents()
+AxisAlignedBox3d DgnUnits::GetProjectExtents()
     {
     if (m_extent.IsEmpty())
         LoadProjectExtents();

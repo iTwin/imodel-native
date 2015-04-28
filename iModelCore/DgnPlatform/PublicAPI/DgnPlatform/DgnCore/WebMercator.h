@@ -282,7 +282,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : PhysicalModel
 public:
     struct Mercator
         {
-        DRange3d   m_range;             //! The range covered by this map -- typically the project's extents -- could be the whole world
+        AxisAlignedBox3d m_range;             //! The range covered by this map -- typically the project's extents -- could be the whole world
         Utf8String m_mapService;        //! Identifies the source of the tiled map data. This is a token that is supplied by the 
                                         //! subclass of WebMercatorModelHandler and stored on a WebMercatorModel instande in the DgnDb, 
                                         //! in order to associate it with a map server. The WebMercatorModelHandler subclass looks at this string
@@ -308,7 +308,7 @@ public:
     DGNPLATFORM_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _QueryModelRange (DRange3dR) override;
+    virtual AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}
 
     //! Call this after creating a new model, in order to set up subclass-specific properties.
     void SetMercator(Mercator const&);
