@@ -326,7 +326,7 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
-        LOG.errorv(L"Invalid ECSchemaXML: %ls element must contain a %ls attribute", WString(propertyNode.GetName(), BentleyCharEncoding::Utf8).c_str(), WString(TYPE_NAME_ATTRIBUTE, BentleyCharEncoding::Utf8).c_str());
+        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
     else if (ECOBJECTS_STATUS_ParseError == this->SetTypeName (value.c_str()))

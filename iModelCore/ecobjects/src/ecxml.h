@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -104,7 +104,7 @@
 #define READ_REQUIRED_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))   \
         {   \
-        LOG.errorv (L"Invalid ECSchemaXML: %ls element must contain a %ls  attribute", WString(_xmlAttributeName, BentleyCharEncoding::Utf8).c_str(), WString(_elementName, BentleyCharEncoding::Utf8).c_str());     \
+        LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", _xmlAttributeName, _elementName);     \
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName (value.c_str())) \
@@ -113,7 +113,7 @@
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_nodeVar,_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))     \
         {   \
-        LOG.errorv (L"Invalid ECSchemaXML: %ls element must contain a %ls attribute",  WString(_xmlAttributeName, BentleyCharEncoding::Utf8).c_str(), WString(_elementName, BentleyCharEncoding::Utf8).c_str());     \
+        LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", _xmlAttributeName, _elementName);     \
         status = SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName (value.c_str())) \
