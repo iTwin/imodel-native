@@ -195,7 +195,7 @@ void ConnectSpaces::Cancel()
     {
     // Note: m_cancelToken is a ref-counted pointer, but it is created in the constructor,
     // so there's no need to check if it's non-null.
-    m_cancelToken->SetCanceled();
+    m_cancelToken->SetCanceled(true);
     }
 
 /*--------------------------------------------------------------------------------------+
