@@ -32,6 +32,8 @@ struct UrlProvider
         static const Utf8String s_connectWsgUrl[3];
         static const Utf8String s_connectEulaUrl[3];
         static const Utf8String s_connectLearnStsAuthUri[3];
+        static const Utf8String s_usageTrackingUrl[3];
+        static const Utf8String s_passportUrl[3];
 
         static bool s_isInitialized;
 
@@ -43,6 +45,8 @@ struct UrlProvider
         WSCLIENT_EXPORT static Utf8StringCR GetConnectWsgUrl ();
         WSCLIENT_EXPORT static Utf8StringCR GetConnectEulaUrl ();
         WSCLIENT_EXPORT static Utf8StringCR GetConnectLearnStsAuthUri ();
+        WSCLIENT_EXPORT static Utf8StringCR GetUsageTrackingUrl();
+        WSCLIENT_EXPORT static Utf8StringCR GetPassportUrl();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
