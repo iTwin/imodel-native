@@ -1,12 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/Utils/UsageTrackingTests.cpp $
+|     $Source: Tests/Published/WebServices/UsageTrackingTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UsageTrackingTests.h"
-#include "Http/WebTestsHelper.h"
 #include <WebServices/Client/UsageTracking.h>
 #include <WebServices/Client/MobileTracking.h>
 #include <Bentley/Base64Utilities.h>

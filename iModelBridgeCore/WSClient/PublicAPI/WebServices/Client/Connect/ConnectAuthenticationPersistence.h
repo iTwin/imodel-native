@@ -18,9 +18,9 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnectAuthenticationPersistence
     {
-    public:
+    private:
+        static bvector<std::function<void ()>> s_onUserChangedCallbacks;
         MobileDgn::ILocalState& m_localState;
-
         mutable SamlTokenPtr m_token;
 
     public:
@@ -32,6 +32,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
 
         WSCLIENT_EXPORT void SetToken (SamlTokenPtr token) override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken () const override;
+
+        //! Chould only be called when app initializes.
+        //! Callback is executed when new user successfully logins thus replacing old user if there was one.
+        WSCLIENT_EXPORT static void RegisterUserChangedListener (std::function<void ()> onUserChangedCallback);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
