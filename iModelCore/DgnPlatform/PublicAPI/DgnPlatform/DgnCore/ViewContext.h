@@ -1011,10 +1011,10 @@ DGNPLATFORM_EXPORT IElemTopologyP GetElemTopology ();
 //! @param topo  An object that holds additional information about the graphics that are currently being drawn or nullptr to clear the current topology pointer.
 DGNPLATFORM_EXPORT void SetElemTopology (IElemTopologyP topo);
 
-//! Query the current DgnGeomPartId. Only valid when drawing PhysicalGeometry or element graphics created from PhysicalGeometry.
+//! Query the current DgnGeomPartId. Only valid when drawing instanced geometry.
 DGNPLATFORM_EXPORT DgnGeomPartId GetDgnGeomPartId ();
 
-//! Set the current DgnGeomPartId. Only valid when drawing PhysicalGeometry or element graphics created from PhysicalGeometry.
+//! Set the current DgnGeomPartId. Only valid when drawing instanced geometry.
 DGNPLATFORM_EXPORT void SetDgnGeomPartId (DgnGeomPartId partId);
 
 //@}

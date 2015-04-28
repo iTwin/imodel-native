@@ -272,7 +272,7 @@ $(coreObjs)Sprites$(oext): $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
 
 $(coreObjs)ImageUtilities$(oext): $(DgnCoreDir)ImageUtilities.cpp $(DgnCoreAPISrc)ImageUtilities.h ${MultiCompileDepends}
 
-$(coreObjs)PhysicalGeometry$(oext) : $(DgnCoreDir)PhysicalGeometry.cpp $(DgnCoreAPISrc)PhysicalGeometry.h ${MultiCompileDepends}
+$(coreObjs)GeomPart$(oext) : $(DgnCoreDir)GeomPart.cpp $(DgnCoreAPISrc)GeomPart.h ${MultiCompileDepends}
 
 $(coreObjs)DgnEntity$(oext) : $(DgnCoreDir)DgnEntity.cpp $(DgnCoreAPISrc)DgnEntity.h ${MultiCompileDepends}
 

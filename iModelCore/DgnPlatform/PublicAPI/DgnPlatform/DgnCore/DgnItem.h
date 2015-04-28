@@ -26,10 +26,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementItemHandler : DgnDomain::Handler
     friend struct ElementGeomTableHandler;
 
 //__PUBLISH_SECTION_START__
-protected:
-    //! @note Called from InsertGeom and AssignGeometry
-    BentleyStatus InsertElementGeomUsesParts(DgnDbR, DgnElementId, PhysicalGeometryCR);
-
 public:
 
     virtual ElementItemHandlerP _ToElementItemHandler() override {return this;}     //!< dynamic_cast this Handler to a ElementItemHandler

@@ -25,20 +25,6 @@ ElementItemHandler* ElementItemHandler::GetItemHandler(DgnDbR db, DgnClassId ite
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Brien.Bastings                  01/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ElementItemHandler::InsertElementGeomUsesParts(DgnDbR db, DgnElementId elementId, PhysicalGeometryCR physicalGeometry)
-    {
-    for (PlacedGeomPart part : physicalGeometry)
-        {
-        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(elementId, part.GetPartPtr()->GetId()))
-            return BentleyStatus::ERROR;
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2014
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnItems::DeleteItem(DgnElementId elementId)
