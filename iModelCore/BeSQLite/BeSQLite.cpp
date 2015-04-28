@@ -2250,7 +2250,6 @@ static int diffFilter(void* filterPtr, Utf8CP tableName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-// *** WIP_DIFF - take list of excluded tables as an argument
 DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile, IgnoreTablesForDiff const& filter)
     {
     // Check if Db GUIDs match
