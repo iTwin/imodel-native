@@ -2401,7 +2401,7 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
             }
         }
 
-    DgnElementPool& pool = m_dgndb.Elements().GetPool();
+    DgnElements& pool = m_dgndb.Elements();
     if (pool.GetTotalAllocated() > (int64_t)m_elementReleaseTrigger)
         {
         pool.ReleaseAndCleanup(el);  //  This also clears the reference so el is not valid after this call.

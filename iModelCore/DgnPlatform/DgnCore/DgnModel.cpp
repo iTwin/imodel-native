@@ -112,9 +112,9 @@ BentleyStatus DgnModels::GetModelName(Utf8StringR name, DgnModelId id) const
 void DgnModels::ClearLoaded()
     {
     // Has to be called before model pointers are invalidated.
-    m_dgndb.Elements().GetPool().OnDestroying();
+    m_dgndb.Elements().OnDestroying();
     m_models.clear();
-    m_dgndb.Elements().GetPool().Destroy();
+    m_dgndb.Elements().Destroy();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -616,7 +616,7 @@ DgnModelStatus DgnModel::ReplaceElement(DgnElementR element, DgnElementR replace
         return status;
 
 
-    status = element._UpdateInDb(m_dgndb.Elements().GetPool());
+    status = element._UpdateInDb();
     if (DGNMODEL_STATUS_Success != status)
         return status;
 

@@ -128,7 +128,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct DgnModels;
     friend struct DgnElement;
     friend struct DgnElementIterator;
-    friend struct DgnElementPool;
+    friend struct DgnElements;
 
     //=======================================================================================
     //! The properties for a DgnModel.

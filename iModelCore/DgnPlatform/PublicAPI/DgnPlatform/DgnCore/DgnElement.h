@@ -112,7 +112,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
 {
 public:
     enum DirtyFlags {DIRTY_ElemData = 1<<0, DIRTY_Aspects = 1<<1, DIRTY_Both = (DIRTY_ElemData|DIRTY_Aspects)};
-    friend struct DgnElementPool;
+    friend struct DgnElements;
     friend struct DgnModel;
     friend struct ITxn;
     friend struct ElemIdTree;
@@ -184,7 +184,7 @@ protected:
     void MarkAsDeleted();
     void UnDeleteElement();
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
-    void DeallocateRef(struct DgnElementPool&, bool fileUnloading);
+    void DeallocateRef(bool fileUnloading);
     DgnModelStatus ReloadFromDb();
     ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
 
@@ -198,10 +198,10 @@ protected:
     DGNPLATFORM_EXPORT virtual uint32_t _AddRef() const;
     DGNPLATFORM_EXPORT virtual uint32_t _Release() const;
     DGNPLATFORM_EXPORT virtual void _GenerateDefaultCode();
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _LoadFromDb(DgnElementPool&);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb(DgnElementPool&);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb(DgnElementPool&);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb(DgnElementPool&);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _LoadFromDb();
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb();
     //! Virtual copy constructor. If your subclass has member variables, it \em must override _InitFrom. @see _SwapWithModified
     virtual void _InitFrom(DgnElementCR other) {}
     //! Virtual move assignment operator. If your subclass has member variables, it \em must override _SwapWithModified. @see _InitFrom
@@ -507,16 +507,16 @@ protected:
 
     uint32_t _GetMemSize() const override {return sizeof(*this) + m_geom.GetAllocSize();}
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR other) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb(DgnElementPool&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
+    DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     virtual DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) = 0;
     DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR) override;
     GeometricElementCP _ToGeometricElement() const override {return this;}
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {m_itemHandler=nullptr;}
 
-    DgnModelStatus DoInsertOrUpdate(BeSQLite::Statement&, DgnElementPool&);
+    DgnModelStatus DoInsertOrUpdate(BeSQLite::Statement&);
 
     bvector<ECN::IECInstancePtr> GetAspects(ECN::ECClassCP ecclass) const;
     template<typename RTYPE, bool SETMODIFIED>
@@ -651,7 +651,7 @@ protected:
     Placement3d m_placement;
 
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
-    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
@@ -672,8 +672,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 protected:
     friend struct PhysicalElementHandler;
 
-    DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb(DgnElementPool& pool) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb(DgnElementPool&) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb() override;
 
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
@@ -708,7 +708,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
 protected:
     Placement2d m_placement;
     explicit DgnElement2d(CreateParams const& params) : T_Super(params) {}
-    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb(DgnElementPool&) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;

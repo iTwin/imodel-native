@@ -672,7 +672,7 @@ public:
         Utf8String   m_description;
         DgnModelType m_modelType;
         CoordinateSpace  m_space;
-        bool         m_inGuiList; 
+        bool         m_inGuiList;
 
     public:
         Model()
@@ -872,24 +872,32 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus QueryItemPlacement(DPoint3dR origin, YawPitchRollAnglesR angles, ElementItemKeyCR geomKey);
 };
 
+
 //=======================================================================================
-//! A "pool" of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElementPool.
-//! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by the DgnElementPool
+//! The DgnElements for a DgnDb.
+//! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
+//! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
 //! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
-//! their reference count goes to 0 and the pool is subsequently purged.
-// @bsiclass                                                    Keith.Bentley   09/12
+//! their reference count goes to 0 and the cache is subsequently purged.
 //=======================================================================================
-struct DgnElementPool
+struct DgnElements : DgnDbTable
 {
-    //! these values reflect the current state of the elements in the pool
+    friend struct DgnDb;
+    friend struct DgnElement;
+    friend struct DgnModel;
+    friend struct DgnModels;
+    friend struct ElementHandler;
+    friend struct ITxnManager;
+
+    //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
     {
         uint32_t m_entries;        //! total number of elements (referenced and unreferenced) in the tree
         uint32_t m_unreferenced;   //! total number of unreferenced elements in the tree
-        int64_t m_allocedBytes;   //! total number of bytes of data held by elements in the tree
+        int64_t  m_allocedBytes;   //! total number of bytes of data held by elements in the tree
     };
 
-    //! these values can be reset at any point to gauge "element flux"
+    //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
     //! (note: the same element may become garbage and then be reclaimed, each such occurrence is reflected here.)
     struct Statistics
     {
@@ -899,42 +907,42 @@ struct DgnElementPool
         uint32_t m_purged;         //! number of garbage elements that were purged
     };
 
+    //! Interface to track element loading.
+    struct Listener
+    {
+        virtual ~Listener() {}
+        virtual void _OnElementLoaded(DgnElementR) = 0;
+    };
+
 private:
-    DgnElementPool(DgnDbR);
-
-    friend struct ElementHandler;
-    friend struct DgnElement;
-    friend struct DgnModels;
-    friend struct DgnModel;
-    friend struct DgnElements;
-
-    DgnDbR              m_dgndb;
-    struct ElemIdTree*  m_tree;
-    HeapZone            m_heapZone;
-    BeSQLite::StatementCache m_stmts;
-    BeSQLite::SnappyFromBlob m_snappyFrom;
-    BeSQLite::SnappyToBlob   m_snappyTo;
+    DgnElementId                m_highestElementId;
+    EventHandlerList<Listener>* m_listeners;
+    struct ElemIdTree*          m_tree;
+    HeapZone                    m_heapZone;
+    BeSQLite::StatementCache    m_stmts;
+    BeSQLite::SnappyFromBlob    m_snappyFrom;
+    BeSQLite::SnappyToBlob      m_snappyTo;
     mutable BeSQLite::BeDbMutex m_mutex;
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
-    ~DgnElementPool();
     void Destroy();
     void OnDestroying();
     void AddDgnElement(DgnElementR);
-
-public:
-    DgnDbR GetDgnDb() {return m_dgndb;}
-    BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
-    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql);
-    DGNPLATFORM_EXPORT DgnElementPtr FindOrLoadElement(DgnElementId elementId);
-    void AllocatedMemory(int32_t);
-    void ReturnedMemory(int32_t);
+    void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
-    HeapZone& GetHeapZone() {return m_heapZone;}
-    void ReleaseAndCleanup(DgnElementPtr& element);
+
+    explicit DgnElements(DgnDbR db);
+    ~DgnElements();
+
+public:
+    DGNPLATFORM_EXPORT void ReleaseAndCleanup(DgnElementPtr& element);
+    BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
+    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
+    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql);
+    DGNPLATFORM_EXPORT void AllocatedMemory(int32_t);
+    DGNPLATFORM_EXPORT void ReturnedMemory(int32_t);
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -956,51 +964,19 @@ public:
     //! Reset the statistics for the pool.
     DGNPLATFORM_EXPORT void ResetStatistics();
 
-    //! Attempt to look up an element in the pool by DgnElementId.
-    //! @param[in] id The Id of the element of interest.
-    //! @return the DgnElement of the element or nullptr.
-    DGNPLATFORM_EXPORT DgnElementP FindElement(DgnElementId id) const;
-};
-
-//=======================================================================================
-//! Each graphic element has a row in the DgnElements table
-//=======================================================================================
-struct DgnElements : DgnDbTable
-{
-    friend struct DgnDb;
-
-    struct Listener
-    {
-        virtual ~Listener() {}
-        virtual void _OnElementLoaded(DgnElementR) = 0;
-    };
-
-private:
-    mutable DgnElementPool   m_elementPool;
-    DgnElementId             m_highestElementId;         // 0 means not yet valid. Highest DgnElementId (for current repositoryId)
-    EventHandlerList<Listener>* m_listeners;
-
-    explicit DgnElements(DgnDbR db) : DgnDbTable(db), m_elementPool(db) {m_listeners=nullptr;}
-
-public:
-    void SendOnLoadedEvent(DgnElementR elRef) const;
-
     DGNPLATFORM_EXPORT bool IsElementIdUsed(DgnElementId id) const;
     DGNPLATFORM_EXPORT DgnElementId GetHighestElementId();
     DGNPLATFORM_EXPORT DgnElementId MakeNewElementId();
 
-    //! Get the DgnElementPool for this DgnDb.
-    DgnElementPool& GetPool() const {return m_elementPool;}
-
     //! Load an element within this DgnDb by its Id. @remarks The element is loaded if necessary.
     //! @return nullptr if the element does not exist.
-    DgnElementPtr GetElementById(DgnElementId id) const {return m_elementPool.FindOrLoadElement(id);}
+    DGNPLATFORM_EXPORT DgnElementPtr GetElementById(DgnElementId id);
 
     //! Look up an element within this DgnDb by its Id.
     //! @return nullptr if the element does not exist or is not currently loaded.
-    DgnElementP FindElementById(DgnElementId id) const {return m_elementPool.FindElement(id);}
+    DGNPLATFORM_EXPORT DgnElementP FindElementById(DgnElementId id) const;
 
-    HeapZone& GetHeapZone() {return m_elementPool.GetHeapZone();}
+    HeapZone& GetHeapZone() {return m_heapZone;}
 
         //! Return the key of the element from its ID.
     //! @note used when you know the DgnElementId, but need a DgnElementKey which also contains the ECClassId.
