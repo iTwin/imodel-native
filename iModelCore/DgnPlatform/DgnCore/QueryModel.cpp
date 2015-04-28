@@ -250,7 +250,7 @@ void QueryModel::Selector::qt_NotifyCompletion ()
 //---------------------------------------------------------------------------------------
 void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dViewFilter& filter)
     {
-    DgnElementPool& pool = m_dgndb.Elements().GetPool();
+    DgnElements& pool = m_dgndb.Elements();
 
     for (auto const& curr : idSet)
         {
@@ -260,22 +260,22 @@ void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dVi
             break;
             }
 
-        DgnElementPtr elRef = pool.FindOrLoadElement(curr);
+        DgnElementPtr elRef = pool.GetElementById(curr);
         RTree3dVal rtreeRange;
         if (!elRef.IsValid())
             continue; // id is in the list but not in the file
 
         rtreeRange.FromRange(elRef->ToGeometricElement()->_GetRange3d());
 
-        RTreeMatch::QueryInfo info;
+        RTreeMatchFunction::Tester::QueryInfo info;
         info.m_nCoord = 6;
         info.m_coords = &rtreeRange.m_minx;
-        info.m_parentWithin = info.m_within = RTreeMatch::Within::Partly;
+        info.m_parentWithin = info.m_within = RTreeMatchFunction::Tester::Within::Partly;
         info.m_parentScore  = info.m_score  = 1.0;
         info.m_rowid = curr.GetValue();
         info.m_level = 0;
         filter._TestRange(info);
-        if (RTreeMatch::Within::Outside != info.m_within)
+        if (RTreeMatchFunction::Tester::Within::Outside != info.m_within)
             filter.RangeAccept(curr.GetValueUnchecked());
         }
     }
@@ -392,7 +392,7 @@ void QueryModel::Selector::qt_ProcessRequest()
     uint32_t elapsed1 = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
 #endif
 
-    DgnElementPool& pool = m_dgndb.Elements().GetPool();
+    DgnElements& pool = m_dgndb.Elements();
 
     for (auto curr = filter.m_secondaryFilter.m_occlusionScoreMap.rbegin(); curr != filter.m_secondaryFilter.m_occlusionScoreMap.rend(); ++curr)
         {
@@ -405,9 +405,9 @@ void QueryModel::Selector::qt_ProcessRequest()
         bool hitLimit = pool.GetTotalAllocated() > (int64_t) (2 * m_maxMemory);
         DgnElementPtr el;
         if (!hitLimit)
-            el = pool.FindOrLoadElement(DgnElementId(curr->second));
+            el = pool.GetElementById(DgnElementId(curr->second));
         else
-            el = pool.FindElement(DgnElementId(curr->second));
+            el = pool.FindElementById(DgnElementId(curr->second));
 
         if (el.IsValid())
             m_results->m_closeElements.push_back(el.get());
@@ -424,9 +424,9 @@ void QueryModel::Selector::qt_ProcessRequest()
         bool hitLimit = pool.GetTotalAllocated() > (int64_t) (2 * m_maxMemory);
         DgnElementPtr el;
         if (!hitLimit)
-            el = pool.FindOrLoadElement(DgnElementId(curr->second));
+            el = pool.GetElementById(DgnElementId(curr->second));
         else
-            el = pool.FindElement(DgnElementId(curr->second));
+            el = pool.FindElementById(DgnElementId(curr->second));
 
         if (el.IsValid())
             m_results->m_elements.push_back(el.get());

@@ -97,91 +97,25 @@ TEST_F(DgnModelTests, GetRange)
     DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OPEN_ReadWrite);
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("RangeTest");
-    //Use first function to get range
-    DRange3d firstRange;
-    StatusInt status = m_modelP->GetRange(firstRange);
-    ASSERT_EQ(0, status)<<"Failed to get range";
-    //Use second function to get range
-    DRange3d secondRange;
-    status = m_modelP->GetRange(secondRange);
-    ASSERT_EQ(0, status)<<"Failed to get range";
-    //Use third function to get range
-    DRange3d thirdRange;
-    EXPECT_EQ(BE_SQLITE_OK , m_modelP->QueryModelRange(thirdRange))<<"BE_SQLITE_OK is expected to be returned for successfull function results";
-    
-    //Verify ranges returned by second and third function
-    EXPECT_TRUE(secondRange.IsEqual(thirdRange))<<"Diffrent ranges are returned for the same model.";
-    //Verify first function results with second function results
-    EXPECT_EQ(firstRange.low.x, secondRange.low.x)<<"x low does not match";
-    EXPECT_EQ(firstRange.low.y, secondRange.low.y)<<"y low does not match";
-    EXPECT_EQ(firstRange.low.z, secondRange.low.z)<<"z low does not match";
-    EXPECT_EQ(firstRange.high.x, secondRange.high.x)<<"x high does not match";
-    EXPECT_EQ(firstRange.high.y, secondRange.high.y)<<"y high does not match";
-    EXPECT_EQ(firstRange.high.z, secondRange.high.z)<<"z high does not match";
+
+    AxisAlignedBox3d range = m_modelP->QueryModelRange();
+    EXPECT_TRUE(range.IsValid());
+    DPoint3d low; low.Init(-1.4011580427821895, 0.11538461538461531, -0.00050000000000000001);
+    DPoint3d high; high.Init(-0.59795039550813156, 0.60280769230769227, 0.00050000000000000001);
+    AxisAlignedBox3d box(low,high);
+
+    EXPECT_TRUE(box.IsEqual(range,.00000001));
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Julija Suboc     07/13
 //---------------------------------------------------------------------------------------
-TEST_F(DgnModelTests, GetRangeOfEmptyModelFromFileWithElementsInAnotherModel)
-    {
-    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OPEN_ReadWrite);
-    m_dgndb = tdm.GetDgnProjectP();
-    LoadModel("Default");
-    //Use first function to get range
-    DRange3d firstRange;
-    StatusInt status = m_modelP->GetRange(firstRange);
-    ASSERT_EQ(0, status)<<"Failed to get range";
-    //Use second function to get range
-    DRange3d secondRange;
-    status = m_modelP->GetRange(secondRange);
-    ASSERT_EQ(0, status)<<"Failed to get range";
-    //Use third function to get range
-    DRange3d thirdRange;
-    EXPECT_EQ(BE_SQLITE_OK , m_modelP->QueryModelRange(thirdRange))<<"BE_SQLITE_OK is expected to be returned for successfull function results";
-    
-    //Verify ranges returned by second and third function
-    DRange3d emptyRange;
-    emptyRange.InitFrom(0, 0, 0, 0, 0, 0);
-    EXPECT_TRUE(thirdRange.IsEqual(emptyRange))<<"Diffrent ranges are returned for the same model.";
-    EXPECT_TRUE(secondRange.IsEqual(emptyRange))<<"Diffrent ranges are returned for the same model.";
-    //Verify first function results with second function results
-    EXPECT_EQ(firstRange.low.x, emptyRange.low.x)<<"x low does not match";
-    EXPECT_EQ(firstRange.low.y, emptyRange.low.y)<<"y low does not match";
-    EXPECT_EQ(firstRange.low.z, emptyRange.low.z)<<"z low does not match";
-    EXPECT_EQ(firstRange.high.x, emptyRange.high.x)<<"x high does not match";
-    EXPECT_EQ(firstRange.high.y, emptyRange.high.y)<<"y high does not match";
-    EXPECT_EQ(firstRange.high.z, emptyRange.high.z)<<"z high does not match";
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Julija Suboc     07/13
-//---------------------------------------------------------------------------------------
-TEST_F(DgnModelTests, GetRangeOfEmptyModelFromFileWithNoElements)
+TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     {
     DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
-    //Use first function to get range
-    DRange3d firstRange;
-    StatusInt status = m_modelP->GetRange(firstRange);
-    ASSERT_EQ(0, status)<<"Failed to get range";
-    //Use second function to get range
-    DRange3d secondRange;
-    status = m_modelP->GetRange(secondRange);
-    ASSERT_EQ(0, status)<<"Failed to get range";
-    //Use third function to get range
-    DRange3d thirdRange;
-    EXPECT_EQ(BE_SQLITE_OK , m_modelP->QueryModelRange(thirdRange))<<"BE_SQLITE_OK is expected to be returned for successfull function results";
-    
-    //Verify ranges returned by second and third function
-    DRange3d emptyRange;
-    emptyRange.InitFrom(0, 0, 0, 0, 0, 0);
-    EXPECT_TRUE(thirdRange.IsEqual(emptyRange))<<"Diffrent ranges are returned for the same model.";
-    EXPECT_TRUE(secondRange.IsEqual(emptyRange))<<"Diffrent ranges are returned for the same model.";
-    //Verify first function results with second function results
-    EXPECT_EQ(firstRange.low.x, emptyRange.low.x)<<"x low does not match";
-    EXPECT_EQ(firstRange.low.y, emptyRange.low.y)<<"y low does not match";
-    EXPECT_EQ(firstRange.low.z, emptyRange.low.z)<<"z low does not match";
-    EXPECT_EQ(firstRange.high.x, emptyRange.high.x)<<"x high does not match";
-    EXPECT_EQ(firstRange.high.y, emptyRange.high.y)<<"y high does not match";
-    EXPECT_EQ(firstRange.high.z, emptyRange.high.z)<<"z high does not match";
+
+    AxisAlignedBox3d thirdRange = m_modelP->QueryModelRange();
+    EXPECT_FALSE(thirdRange.IsValid());
     }

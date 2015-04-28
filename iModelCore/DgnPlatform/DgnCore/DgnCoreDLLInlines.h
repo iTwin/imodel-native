@@ -125,7 +125,6 @@ DG_INLINE void            ViewController::ChangeCategoryDisplay (DgnCategoryId c
 DG_INLINE void            ViewController::ChangeModelDisplay (DgnModelId modelId, bool onOff) {_ChangeModelDisplay (modelId, onOff);}
 DG_INLINE bool            ViewController::Allow3dManipulations() const {return _Allow3dManipulations();}
 DG_INLINE DgnModelP       ViewController::GetTargetModel() const {return _GetTargetModel();}
-DG_INLINE DRange3d        ViewController::GetProjectExtents() const {return _GetProjectExtents();}
 DG_INLINE bool            ViewController::OnGeoLocationEvent (GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent (status, point);}
 DG_INLINE void            ViewController::OnViewOpened (DgnViewportR vp) {_OnViewOpened (vp);}
 

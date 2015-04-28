@@ -1113,23 +1113,6 @@ DgnRangeTree::Match DgnRangeTree::FindMatches(DgnRangeTree::Traverser& traverser
     return (nullptr == m_root) ? DgnRangeTree::Match::Ok : m_root->Traverse(traverser, Is3d());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    11/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnModel::GetRange(DRange3dR range)
-    {
-    range = GetDgnDb().Units().GetProjectExtents();
-
-#ifdef DGNV10FORMAT_CHANGES_WIP
-    DRange3d scanRange;
-    if (SUCCESS != GetRange(scanRange))
-        return  ERROR;
-
-    DataConvert::ScanRangeToDRange3d(range, scanRange);
-#endif
-    return  SUCCESS;
-    }
-
 //=======================================================================================
 // "Occlusion" order based traversal of the tree (front of view to back, most significant nodes first). Optionally, test for
 // occulsion culling periodically.
@@ -2042,7 +2025,7 @@ void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, uint32_t
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, BeSQLiteDbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
-        : RTreeMatch(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
+        : Tester(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
     {
     m_nCalls = m_nScores = m_nSkipped = 0;
     m_scorer.InitForViewport(viewport, m_minimumSizePixels);
@@ -2388,7 +2371,7 @@ const double ProgressiveViewFilter::s_purgeFactor = 1.3;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProgressiveViewFilter::_StepAggregate(DbFunction::Context&, int nArgs, DbValue* args) 
+void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue* args) 
     {
     if (m_context->WasAborted())
         return;
@@ -2418,7 +2401,7 @@ void ProgressiveViewFilter::_StepAggregate(DbFunction::Context&, int nArgs, DbVa
             }
         }
 
-    DgnElementPool& pool = m_dgndb.Elements().GetPool();
+    DgnElements& pool = m_dgndb.Elements();
     if (pool.GetTotalAllocated() > (int64_t)m_elementReleaseTrigger)
         {
         pool.ReleaseAndCleanup(el);  //  This also clears the reference so el is not valid after this call.

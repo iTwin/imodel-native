@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/DgnDbSqlFuncs.cpp $
+|     $Source: DgnCore/DgnSqlFuncs.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,27 +12,19 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct SelfScalar : ScalarFunction, ScalarFunction::IScalar
-{
-    SelfScalar(Utf8CP name, int nArgs, DbValueType valType) : ScalarFunction(name, nArgs, valType, this) {}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/15
-//=======================================================================================
-struct PlacementFunc : SelfScalar
+struct PlacementFunc : ScalarFunction
 {
     Placement3d& ToPlacement3d(DbValue* args) {return *(Placement3d*)(args[0].GetValueBlob());}
     Placement2d& ToPlacement2d(DbValue* args) {return *(Placement2d*)(args[0].GetValueBlob());}
 
-    PlacementFunc(Utf8CP name, DbValueType valType) : SelfScalar(name, 1, valType) {}
+    PlacementFunc(Utf8CP name, DbValueType valType) : ScalarFunction(name, 1, valType) {}
 };
 
 //=======================================================================================
 // Get the AxisAlignedBox3d from a Placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_PLACEMENT_AABB : PlacementFunc
+struct DGN_placement_aabb : PlacementFunc
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -53,14 +45,14 @@ struct DGN_PLACEMENT_AABB : PlacementFunc
 
         ctx.SetResultBlob(&bb, sizeof(bb));
         }
-    DGN_PLACEMENT_AABB() : PlacementFunc("DGN_PLACEMENT_AABB", DbValueType::BlobVal) {}
+    DGN_placement_aabb() : PlacementFunc("DGN_placement_aabb", DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
 // Get the ElementAlignedBox3d from a Placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_PLACEMENT_EABB : PlacementFunc
+struct DGN_placement_eabb : PlacementFunc
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -81,14 +73,14 @@ struct DGN_PLACEMENT_EABB : PlacementFunc
 
         ctx.SetResultBlob(&bb, sizeof(bb));
         }
-    DGN_PLACEMENT_EABB() : PlacementFunc("DGN_PLACEMENT_EABB", DbValueType::BlobVal) {}
+    DGN_placement_eabb() : PlacementFunc("DGN_placement_eabb", DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
 // Get the DPoint3d Origin fron a Placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_PLACEMENT_Origin : PlacementFunc
+struct DGN_placement_origin : PlacementFunc
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -110,14 +102,14 @@ struct DGN_PLACEMENT_Origin : PlacementFunc
 
         ctx.SetResultBlob(&org, sizeof(org));
         }
-    DGN_PLACEMENT_Origin() : PlacementFunc("DGN_PLACEMENT_Origin", DbValueType::BlobVal) {}
+    DGN_placement_origin() : PlacementFunc("DGN_placement_origin", DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
 // Get the YawPitchRollAngles fron a Placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_PLACEMENT_Angles : PlacementFunc
+struct DGN_placement_angles : PlacementFunc
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -140,28 +132,28 @@ struct DGN_PLACEMENT_Angles : PlacementFunc
         ctx.SetResultBlob(&angles, sizeof(angles));
         }
 
-    DGN_PLACEMENT_Angles() : PlacementFunc("DGN_PLACEMENT_Angles", DbValueType::BlobVal) {}
+    DGN_placement_angles() : PlacementFunc("DGN_placement_angles", DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
 // Create a YawPitchRollAngle from 3 values, in degrees {Yaw, Pitch, Roll}
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_Angles : SelfScalar
+struct DGN_angles : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
         YawPitchRollAngles angles = YawPitchRollAngles::FromDegrees(args[0].GetValueDouble(),args[1].GetValueDouble(),args[2].GetValueDouble());
         ctx.SetResultBlob(&angles, sizeof(angles));
         }
-    DGN_Angles() : SelfScalar("DGN_Angles", 3, DbValueType::BlobVal) {}
+    DGN_angles() : ScalarFunction("DGN_angles", 3, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
 // Get one of the values of a DPoint3d by index: {Yaw=0, Pitch=1, Roll=2}
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_ANGLES_Value : SelfScalar
+struct DGN_angles_value : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -172,14 +164,35 @@ struct DGN_ANGLES_Value : SelfScalar
         double const* angles= (double const*)(args[0].GetValueBlob());
         ctx.SetResultDouble(angles[member]);
         }
-    DGN_ANGLES_Value() : SelfScalar("DGN_ANGLES_Value", 2, DbValueType::FloatVal) {}
+    DGN_angles_value() : ScalarFunction("DGN_angles_value", 2, DbValueType::FloatVal) {}
 };
+
+//=======================================================================================
+// Get one of the values of a DPoint3d by index: {Yaw=0, Pitch=1, Roll=2}
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct DGN_angles_maxdiff : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(YawPitchRollAngles) ||
+            args[1].GetValueBytes() != sizeof(YawPitchRollAngles))
+            return SetInputError(ctx);
+
+        YawPitchRollAngles& angle1 = *((YawPitchRollAngles*)(args[0].GetValueBlob()));
+        YawPitchRollAngles& angle2 = *((YawPitchRollAngles*)(args[1].GetValueBlob()));
+
+        ctx.SetResultDouble(angle1.MaxDiffDegrees(angle2));
+        }
+    DGN_angles_maxdiff() : ScalarFunction("DGN_angles_maxdiff", 2, DbValueType::FloatVal) {}
+};
+
 
 //=======================================================================================
 // Create a BoundingBox from 6 values in this order: {XLow, YLow, Zlow, XHigh, YHigh, ZHigh}
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBox : SelfScalar
+struct DGN_bbox : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -193,13 +206,13 @@ struct DGN_BBox : SelfScalar
 
         ctx.SetResultBlob(&box, sizeof(box));
         }
-    DGN_BBox() : SelfScalar("DGN_BBox", 6, DbValueType::BlobVal) {}
+    DGN_bbox() : ScalarFunction("DGN_bbox", 6, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_Width : SelfScalar
+struct DGN_bbox_width : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -208,13 +221,13 @@ struct DGN_BBOX_Width : SelfScalar
 
         ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetWidth());
         }
-    DGN_BBOX_Width() : SelfScalar("DGN_BBOX_Width", 1, DbValueType::FloatVal) {}
+    DGN_bbox_width() : ScalarFunction("DGN_bbox_width", 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_Height : SelfScalar
+struct DGN_bbox_height : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -223,13 +236,13 @@ struct DGN_BBOX_Height : SelfScalar
 
         ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetHeight());
         }
-    DGN_BBOX_Height() : SelfScalar("DGN_BBOX_Height", 1, DbValueType::FloatVal) {}
+    DGN_bbox_height() : ScalarFunction("DGN_bbox_height", 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_Depth : SelfScalar
+struct DGN_bbox_depth : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -238,13 +251,13 @@ struct DGN_BBOX_Depth : SelfScalar
 
         ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetDepth());
         }
-    DGN_BBOX_Depth() : SelfScalar("DGN_BBOX_Depth", 1, DbValueType::FloatVal) {}
+    DGN_bbox_depth() : ScalarFunction("DGN_bbox_depth", 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_Volume : SelfScalar
+struct DGN_bbox_volume : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -253,13 +266,13 @@ struct DGN_BBOX_Volume : SelfScalar
 
         ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->Volume());
         }
-    DGN_BBOX_Volume() : SelfScalar("DGN_BBOX_Volume", 1, DbValueType::FloatVal) {}
+    DGN_bbox_volume() : ScalarFunction("DGN_bbox_volume", 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_AreaXY : SelfScalar
+struct DGN_bbox_areaxy : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -271,13 +284,13 @@ struct DGN_BBOX_AreaXY : SelfScalar
         ctx.SetResultDouble(box.GetWidth() * box.GetHeight());
         }
 
-    DGN_BBOX_AreaXY() : SelfScalar("DGN_BBOX_AreaXY", 1, DbValueType::FloatVal) {}
+    DGN_bbox_areaxy() : ScalarFunction("DGN_bbox_areaxy", 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_Overlaps : SelfScalar
+struct DGN_bbox_overlaps : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -289,13 +302,13 @@ struct DGN_BBOX_Overlaps : SelfScalar
         ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
         ctx.SetResultInt(box1.IntersectsWith(box2));
         }
-    DGN_BBOX_Overlaps() : SelfScalar("DGN_BBOX_Overlaps", 2, DbValueType::IntegerVal) {}
+    DGN_bbox_overlaps() : ScalarFunction("DGN_bbox_overlaps", 2, DbValueType::IntegerVal) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_IsContained : SelfScalar
+struct DGN_bbox_contained : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -307,14 +320,14 @@ struct DGN_BBOX_IsContained : SelfScalar
         ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
         ctx.SetResultInt(box2.IsContained(box1));
         }
-    DGN_BBOX_IsContained() : SelfScalar("DGN_BBOX_IsContained", 2, DbValueType::IntegerVal) {}
+    DGN_bbox_contained() : ScalarFunction("DGN_bbox_contained", 2, DbValueType::IntegerVal) {}
 };
 
 //=======================================================================================
 // Get one of the values of a BoundingBox by index: {XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5}
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_Value : SelfScalar
+struct DGN_bbox_value : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -325,25 +338,51 @@ struct DGN_BBOX_Value : SelfScalar
         double const* box = (double const*)(args[0].GetValueBlob());
         ctx.SetResultDouble(box[member]);
         }
-    DGN_BBOX_Value() : SelfScalar("DGN_BBOX_Value", 2, DbValueType::FloatVal) {}
+    DGN_bbox_value() : ScalarFunction("DGN_bbox_value", 2, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_BBOX_Union : AggregateFunction, AggregateFunction::IAggregate
+struct DGN_bbox_union : AggregateFunction
 {
-    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override;
-    void _FinishAggregate(Context& ctx) override;
+    struct Result {bool m_valid; DRange3d m_range;};
 
-    DGN_BBOX_Union() : AggregateFunction("DGN_BBOX_Union", 1, DbValueType::BlobVal, this) {}
+    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(DRange3d))
+            return SetInputError(ctx);
+        
+        DRange3d&  thisRange  = *((ElementAlignedBox3d*)(args[0].GetValueBlob()));
+        Result&    totalRange = *((Result*)ctx.GetAggregateContext(sizeof(Result)));
+        if (!totalRange.m_valid)
+            {
+            totalRange.m_range = thisRange;
+            totalRange.m_valid = true;
+            }
+        else
+            {
+            totalRange.m_range.Extend(thisRange);
+            }
+        }
+
+    void _FinishAggregate(Context& ctx) override
+        {
+        Result* totalRange = (Result*) ctx.GetAggregateContext(0);
+        if (totalRange && totalRange->m_valid)
+            ctx.SetResultBlob(&totalRange->m_range, sizeof(totalRange->m_range));
+        else
+            ctx.SetResultNull();
+        }
+
+    DGN_bbox_union() : AggregateFunction("DGN_bbox_union", 1, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
 // Get the distance between two points
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_POINT_Distance : SelfScalar
+struct DGN_point_distance : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -355,14 +394,14 @@ struct DGN_POINT_Distance : SelfScalar
         DPoint3d& pt2 = *((DPoint3d*)(args[1].GetValueBlob()));
         ctx.SetResultDouble(pt1.Distance(pt2));
         }
-    DGN_POINT_Distance() : SelfScalar("DGN_POINT_Distance", 2, DbValueType::FloatVal) {}
+    DGN_point_distance() : ScalarFunction("DGN_point_distance", 2, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
 // Get one of the values of a DPoint3d by index: {X=0, Y=1, Z=2}
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_POINT_Value : SelfScalar
+struct DGN_point_value : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -373,7 +412,7 @@ struct DGN_POINT_Value : SelfScalar
         double const* pt= (double const*)(args[0].GetValueBlob());
         ctx.SetResultDouble(pt[member]);
         }
-    DGN_POINT_Value() : SelfScalar("DGN_POINT_Value", 2, DbValueType::FloatVal) {}
+    DGN_point_value() : ScalarFunction("DGN_point_value", 2, DbValueType::FloatVal) {}
 };
 
 END_UNNAMED_NAMESPACE
@@ -381,28 +420,31 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::RegisterSQLFuncs()
+void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
     {
-    static DbFunction* s_funcs[] = {
-                          new DGN_ANGLES_Value,
-                          new DGN_Angles,
-                          new DGN_BBOX_AreaXY,
-                          new DGN_BBOX_Depth,
-                          new DGN_BBOX_Height,
-                          new DGN_BBOX_IsContained,
-                          new DGN_BBOX_Overlaps,
-//                          new DGN_BBOX_Union,
-                          new DGN_BBOX_Value,
-                          new DGN_BBOX_Volume,
-                          new DGN_BBOX_Width,
-                          new DGN_BBox,
-                          new DGN_PLACEMENT_AABB,
-                          new DGN_PLACEMENT_Angles,
-                          new DGN_PLACEMENT_EABB,
-                          new DGN_PLACEMENT_Origin,
-                          new DGN_POINT_Distance,
-                          new DGN_POINT_Value};
+    static DbFunction* s_funcs[] = 
+                          {
+                          new DGN_angles_value,
+                          new DGN_angles,
+                          new DGN_angles_maxdiff,
+                          new DGN_bbox_areaxy,
+                          new DGN_bbox_depth,
+                          new DGN_bbox_height,
+                          new DGN_bbox_contained,
+                          new DGN_bbox_overlaps,
+                          new DGN_bbox_union,
+                          new DGN_bbox_value,
+                          new DGN_bbox_volume,
+                          new DGN_bbox_width,
+                          new DGN_bbox,
+                          new DGN_placement_aabb,
+                          new DGN_placement_angles,
+                          new DGN_placement_eabb,
+                          new DGN_placement_origin,
+                          new DGN_point_distance,
+                          new DGN_point_value
+                          };
 
     for (DbFunction* func : s_funcs)
-        AddFunction(*func);
+        db.AddFunction(*func);
     }

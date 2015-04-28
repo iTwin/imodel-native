@@ -75,30 +75,3 @@ ElementItemKey DgnItems::QueryItemKey(DgnElementId elementId)
 
     return ElementItemKey(statementPtr->GetValueInt64(0), elementId);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2015
-//---------------------------------------------------------------------------------------
-PhysicalGeometryPtr DgnItems::QueryPhysicalGeometry(ElementItemKeyCR itemKey)
-    {
-    // WIP_ELEMENTGEOM_REFACTOR : Need to read from ElementGeom.Geom stream to load PhysicalGeometry
-    BeAssert(false);
-    return nullptr;
-    }
-
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnItems::QueryItemPlacement(DPoint3dR origin, YawPitchRollAnglesR angles, ElementItemKeyCR itemKey)
-    {
-    CachedStatementPtr statementPtr;
-    GetDgnDb().GetCachedStatement(statementPtr, "SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " WHERE ElementId=?");
-    statementPtr->BindId(1, itemKey.GetElementId());
-        
-    if (BE_SQLITE_ROW != statementPtr->Step())
-        return BentleyStatus::ERROR;
-
-    return DbElementAndGeomReader::GetPlacement(origin, angles, *statementPtr, 0);
-    }
-#endif

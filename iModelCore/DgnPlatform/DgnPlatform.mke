@@ -286,7 +286,7 @@ $(coreObjs)DgnDb$(oext): $(DgnCoreDir)DgnDb.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCor
 
 $(coreObjs)DgnDbSchema$(oext): $(DgnCoreDir)DgnDbSchema.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
-$(coreObjs)DgnDbSqlFuncs$(oext): $(DgnCoreDir)DgnDbSqlFuncs.cpp ${MultiCompileDepends}
+$(coreObjs)DgnSqlFuncs$(oext): $(DgnCoreDir)DgnSqlFuncs.cpp ${MultiCompileDepends}
 
 $(coreObjs)DgnIModel$(oext) : $(DgnCoreDir)DgnIModel.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 

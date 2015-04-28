@@ -41,7 +41,7 @@ StatusInt ITxn::DeleteElement (DgnElementP elRef)
     ClearReversedTxns (elRef->GetDgnDb());
 
     // delete from cache, remove from range tree
-    return elRef->_DeleteInDb(elRef->GetDgnDb().Elements().GetPool());
+    return elRef->_DeleteInDb();
     }
 
 /*---------------------------------------------------------------------------------**//**

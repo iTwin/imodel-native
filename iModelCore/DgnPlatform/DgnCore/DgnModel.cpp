@@ -111,10 +111,8 @@ BentleyStatus DgnModels::GetModelName(Utf8StringR name, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::ClearLoaded()
     {
-    // Has to be called before model pointers are invalidated.
-    m_dgndb.Elements().GetPool().OnDestroying();
+    m_dgndb.Elements().Destroy(); // Has to be called before model pointers are invalidated.
     m_models.clear();
-    m_dgndb.Elements().GetPool().Destroy();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -616,7 +614,7 @@ DgnModelStatus DgnModel::ReplaceElement(DgnElementR element, DgnElementR replace
         return status;
 
 
-    status = element._UpdateInDb(m_dgndb.Elements().GetPool());
+    status = element._UpdateInDb();
     if (DGNMODEL_STATUS_Success != status)
         return status;
 
@@ -1075,57 +1073,23 @@ ModelHandlerP ModelHandler::FindHandler(DgnDb const& db, DgnClassId handlerId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PhysicalModel::_QueryModelRange(DRange3dR range)
+AxisAlignedBox3d DgnModel::_QueryModelRange() const
     {
     Statement stmt;
-    DbResult rc = stmt.Prepare (m_dgndb, "SELECT min(t.MinX),max(t.MaxX),min(t.MinY),max(t.MaxY),min(t.MinZ),max(t.MaxZ) FROM " 
-                                            DGN_VTABLE_PrjRTree " AS t,"
-                                            DGN_TABLE(DGN_CLASSNAME_Element) " AS e"
-                                            " WHERE e.Id=t.ElementId AND e.ModelId=?");
-    if (rc!=BE_SQLITE_OK)
-        {
-        BeAssert(false);
-        return  rc;
-        }
+    stmt.Prepare(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
+                           DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
+                           DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g"
+                          " WHERE e.ModelId=? AND e.Id=g.ElementId");
 
     stmt.BindId(1, GetModelId());
-    rc = stmt.Step();
-    BeAssert(rc==BE_SQLITE_ROW);
-    range.low.x  = stmt.GetValueDouble(0);
-    range.high.x = stmt.GetValueDouble(1);
-    range.low.y  = stmt.GetValueDouble(2);
-    range.high.y = stmt.GetValueDouble(3);
-    range.low.z  = stmt.GetValueDouble(4);
-    range.high.z = stmt.GetValueDouble(5);
-    return rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnModel2d::_QueryModelRange(DRange3dR range)
-    {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    Statement stmt;
-    DbResult rc = stmt.Prepare (m_dgndb, "SELECT min(g.Min_X),max(g.Max_X),min(g.Min_Y),max(g.Max_Y) FROM " 
-                                            DGN_TABLE(DGN_CLASSNAME_Element) " AS e,"
-                                            DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g"
-                                            " WHERE e.Id=g.ElementId AND e.ModelId=? AND g.Min_X IS NOT nullptr");
-    if (rc!=BE_SQLITE_OK)
+    auto rc = stmt.Step();
+    if (rc!=BE_SQLITE_ROW)
         {
         BeAssert(false);
-        return  rc;
+        return AxisAlignedBox3d();
         }
 
-    stmt.BindId(1, GetModelId());
-    rc = stmt.Step();
-    BeAssert(rc==BE_SQLITE_ROW);
-    range.low.x  = stmt.GetValueDouble(0);
-    range.high.x = stmt.GetValueDouble(1);
-    range.low.y  = stmt.GetValueDouble(2);
-    range.high.y = stmt.GetValueDouble(3);
-    range.low.z = range.high.z = 0.0;
-    return rc;
-#endif
-    return BE_SQLITE_ERROR;
+    int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
+    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
     }
+

@@ -17,17 +17,17 @@ bool DgnDbTable::IsValidName(Utf8StringCR name, Utf8CP invalidChars)
     {
     // empty names, names that start or end with space, or contain an invalid character are illegal.
     // NOTE: don't use isspace for test below - it is locale specific and finds the non-breaking-space (0xA0) when using Latin-8 locale.
-    return !name.empty() && ' ' != *name.begin() && ' ' != *name.rbegin() && (Utf8String::npos == name.find_first_of(invalidChars));
+    return !name.empty() && ' ' != *name.begin() && ' ' != *name.rbegin() &&(Utf8String::npos == name.find_first_of(invalidChars));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * replace invalid characters in a string with a substitute character
 * @bsimethod                                    Keith.Bentley                   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTable::ReplaceInvalidCharacters (Utf8StringR str, Utf8CP invalidChars, Utf8Char r)
+void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, Utf8Char r)
     {
     size_t i, iprev = 0;
-    while ((i = str.find_first_of (invalidChars, iprev)) != Utf8String::npos)
+    while ((i = str.find_first_of(invalidChars, iprev)) != Utf8String::npos)
         {
         str[i] = r;
         iprev = i+1;
@@ -54,7 +54,7 @@ void DgnDb::Destroy()
 
     DELETE_AND_CLEAR(m_txnManager);
 
-    m_ecsqlCache.Empty ();
+    m_ecsqlCache.Empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -65,7 +65,15 @@ DgnDb::~DgnDb()
     Destroy();
     }
 
-void DgnDb::_OnDbClose() {Destroy(); T_Super::_OnDbClose();}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::_OnDbClose() 
+    {
+    Domains().OnDbClose();
+    Destroy(); 
+    T_Super::_OnDbClose();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
@@ -76,14 +84,9 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    rc = Domains().SyncWithSchemas();
-    if (BE_SQLITE_OK != rc)
-        return rc;
-
     m_units.Load();
 
-    RegisterSQLFuncs();
-    return BE_SQLITE_OK;
+    return Domains().OnDbOpened();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,20 +103,20 @@ ITxnManagerR DgnDb::GetTxnManager()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   02/15
 //+---------------+---------------+---------------+---------------+---------------+------
-CachedECSqlStatementPtr DgnDb::GetPreparedECSqlStatement (Utf8CP ecsql) const
+CachedECSqlStatementPtr DgnDb::GetPreparedECSqlStatement(Utf8CP ecsql) const
     {
-    return m_ecsqlCache.GetPreparedStatement (*this, ecsql);
+    return m_ecsqlCache.GetPreparedStatement(*this, ecsql);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::DoOpenDgnDb (BeFileNameCR projectNameIn, OpenParams const& params)
+DbResult DgnDb::DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const& params)
     {
     m_fileName.SetName(projectNameIn);
-    m_fileName.SupplyDefaultNameParts (s_dgndbExt);
+    m_fileName.SupplyDefaultNameParts(s_dgndbExt);
 
-    DbResult stat = OpenBeSQLiteDb (m_fileName, params);
+    DbResult stat = OpenBeSQLiteDb(m_fileName, params);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.GetNameUtf8().c_str());
@@ -127,7 +130,7 @@ DbResult DgnDb::DoOpenDgnDb (BeFileNameCR projectNameIn, OpenParams const& param
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams const& openParams)
     {
-    DbResult ALLOW_NULL_OUTPUT (status, outResult);
+    DbResult ALLOW_NULL_OUTPUT(status, outResult);
     bool wantReadonly = openParams.IsReadonly();
 
     BeFileName dbFileName(fileName);
@@ -154,20 +157,20 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params)
+DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const& params)
     {
-    BeFileName projectFile(boundFileName);
+    BeFileName projectFile(inFileName);
 
-    if (boundFileName.IsEmpty())
+    if (inFileName.IsEmpty())
         {
-        projectFile.SetNameUtf8 (BEDB_MemoryDb);
+        projectFile.SetNameUtf8(BEDB_MemoryDb);
         }
     else
         {
-        projectFile.SupplyDefaultNameParts (s_dgndbExt);
+        projectFile.SupplyDefaultNameParts(s_dgndbExt);
         if (params.m_overwriteExisting && BeFileName::DoesPathExist(projectFile))
             {
-            if (BeFileNameStatus::Success != BeFileName::BeDeleteFile (projectFile))
+            if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(projectFile))
                 {
                 LOG.errorv(L"Unable to create DgnDb because '%ls' cannot be deleted.", projectFile.GetName());
                 return BE_SQLITE_ERROR_FileExists;
@@ -179,16 +182,16 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams con
 
     if (useSeedDb)
         {
-        BeFileNameStatus status = BeFileName::BeCopyFile (params.m_seedDb.c_str(), projectFile);
+        BeFileNameStatus status = BeFileName::BeCopyFile(params.m_seedDb.c_str(), projectFile);
         if (BeFileNameStatus::Success != status)
             return BE_SQLITE_ERROR_FileExists;
         }
 
-    DbResult rc = CreateNewDb (projectFile, params.GetGuid(), params);
+    DbResult rc = CreateNewDb(projectFile, params.GetGuid(), params);
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    m_fileName.SetName (projectFile);
+    m_fileName.SetName(projectFile);
 
     rc = CreateProjectTables();
     if (BE_SQLITE_OK != rc)
@@ -202,14 +205,14 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR projectFileName, CreateDgnDbParams const& params)
+DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDbParams const& params)
     {
-    DbResult ALLOW_NULL_OUTPUT (stat, result);
+    DbResult ALLOW_NULL_OUTPUT(stat, result);
 
-    DgnDbPtr project = new DgnDb();
-    stat = project->CreateNewDgnDb(projectFileName, params);
+    DgnDbPtr dgndb = new DgnDb();
+    stat = dgndb->CreateNewDgnDb(fileName, params);
 
-    return  (BE_SQLITE_OK==stat) ? project : nullptr;
+    return (BE_SQLITE_OK==stat) ? dgndb : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,17 +241,17 @@ DgnFileStatus DgnDb::CompactFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::GetNextServerIssuedId (BeServerIssuedId& value, Utf8CP tableName, Utf8CP colName, uint32_t minimumId)
+DbResult DgnDb::GetNextServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP colName, uint32_t minimumId)
     {
     // WIP - In the future, this should coordinate with a central authority to compute an ID.
     Statement stmt;
-    stmt.Prepare (*this, SqlPrintfString ("SELECT max(%s) FROM %s", colName, tableName));
+    stmt.Prepare(*this, SqlPrintfString("SELECT max(%s) FROM %s", colName, tableName));
 
     DbResult result = stmt.Step();
     if (BE_SQLITE_ROW != result)
         {
         value.Invalidate();
-        BeAssert (false);
+        BeAssert(false);
         return result;
         }
 
@@ -256,7 +259,7 @@ DbResult DgnDb::GetNextServerIssuedId (BeServerIssuedId& value, Utf8CP tableName
     if (newId < minimumId)
         newId = minimumId;
 
-    value = BeServerIssuedId (newId);
+    value = BeServerIssuedId(newId);
     return BE_SQLITE_OK;
     }
 

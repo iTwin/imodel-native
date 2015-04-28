@@ -733,14 +733,14 @@ BeSQLite::DbResult ITxnManager::ApplyChangeSetInternal(BeSQLite::ChangeSet& chan
         IllegalTxnMark _v_v_v(*this);      // don't allow any database changes
 
         if (cleanup == HowToCleanUpElements::CallApplied)
-            m_dgndb.Elements().GetPool().OnChangesetApplied(summary);
+            m_dgndb.Elements().OnChangesetApplied(summary);
 
         // At this point, all of the changes to all tables have been applied.
         T_HOST.GetTxnAdmin()._OnTxnReversed(summary, isUndo);
         }
 
     if (cleanup == HowToCleanUpElements::CallCancelled)
-        m_dgndb.Elements().GetPool().OnChangesetCanceled(summary);
+        m_dgndb.Elements().OnChangesetCanceled(summary);
 
     return rc;
     }
@@ -786,7 +786,7 @@ void ITxnManager::CancelChanges (TxnId txnId)
         entry.GetChangeSet(changeset, TxnDirection::Undo);
 
         TxnSummary summary (m_dgndb, txnId, txnDescr, txnSource, changeset);
-        m_dgndb.Elements().GetPool().OnChangesetCanceled(summary);
+        m_dgndb.Elements().OnChangesetCanceled(summary);
         }
     }
 

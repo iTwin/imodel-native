@@ -26,7 +26,6 @@ TextBlockTest.EnforcingAtomicEdfsOnInsert               # Jeff - We'll need this
 TextBlockTest.RoundTripMultiFormat                      # Jeff - We'll need this for markups in Graphite04
 TextBlockTest.TextBlockEqualsNegativeUnitTest           # Jeff - We'll need this for markups in Graphite04
 XGraphicsTests.SplitLargeMeshes #TFS 19411
-DgnModelTests.GetRange* TFS #23260
 DgnProjectImporterTestsWithHosts.ConfigFile TFS #36135, TFS #35741, TFS #33694
 DgnGraphicsTest3d.AddWithSymbology                      # John -- no longer works because XGraphics cooks when dumping XGraphicsContainer
 

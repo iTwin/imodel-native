@@ -115,7 +115,7 @@ DbResult DgnDb::InitializeDgnDb (CreateDgnDbParams const& params)
     SaveDgnDbSchemaVersion();
     SaveCreationDate();
 
-    Domains().SyncWithSchemas();
+    Domains().OnDbOpened();
 
     SavePropertyString(DgnProjectProperty::LastEditor(), Utf8String(T_HOST.GetProductName()));
     SavePropertyString(DgnProjectProperty::Name(), params.m_name);
@@ -125,6 +125,7 @@ DbResult DgnDb::InitializeDgnDb (CreateDgnDbParams const& params)
     m_units.Save();
 
     SaveChanges();
+
     return  BE_SQLITE_OK;
     }
 
