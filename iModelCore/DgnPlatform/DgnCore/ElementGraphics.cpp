@@ -188,20 +188,15 @@ struct ElementGraphicsContext : public NullContext
 protected:
 
 ElementGraphicsDrawGeom&    m_output;
-DgnModelP                m_targetModel;
-bool                        m_wantUndisplayed;
-
-virtual bool                _WantUndisplayed() { return m_wantUndisplayed; }      // Temporary for SmartFeatures - Add option to graphics processor to collect undisplayed??
 
 virtual void _SetupOutputs() override {SetIViewDraw (m_output);}
 
 public:
 
-ElementGraphicsContext (IElementGraphicsProcessor* dropObj, ElementGraphicsDrawGeom& output, bool wantUndisplayed = false) : m_output (output), m_wantUndisplayed (wantUndisplayed)
+ElementGraphicsContext (IElementGraphicsProcessor* dropObj, ElementGraphicsDrawGeom& output) : m_output (output)
     {
     m_purpose = dropObj->_GetDrawPurpose();
     m_wantMaterials = true; // Setup material in ElemDisplayParams in case IElementGraphicsProcessor needs it...
-    m_targetModel = NULL;
 
     SetBlockAsynchs (true);
     m_output.Init (this, dropObj);

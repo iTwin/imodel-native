@@ -397,8 +397,10 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
 
     DgnGeomPartPtr geomPartPtr = new DgnGeomPart(code.c_str());
 
-    if (BentleyStatus::SUCCESS != ElementGeomIO::Collection(&geometryBlob.front(), geometryBlob.size()).ToGeometry(geomPartPtr->GetGeometryR()))
-        return nullptr;
+    ElementGeometryCollection collection(&geometryBlob.front(), geometryBlob.size());
+
+    for (ElementGeometryPtr geom : collection)
+        geomPartPtr->GetGeometryR().push_back (geom);
 
     geomPartPtr->SetId(geomPartId);
     return geomPartPtr;
