@@ -24,6 +24,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 #define LOCALSTATE_Key_Username             "Username"
 #define LOCALSTATE_Key_Token                "Token"
 
+bvector<std::function<void ()>> ConnectAuthenticationPersistence::s_onUserChangedCallbacks;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -37,6 +39,16 @@ m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App (
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials)
     {
+    if (!s_onUserChangedCallbacks.empty ())
+        {
+        auto oldCreds = GetCredentials ();
+        if (!oldCreds.GetUsername ().empty () && oldCreds.GetUsername () != credentials.GetUsername ())
+            {
+            for (auto& listener : s_onUserChangedCallbacks)
+                listener ();
+            }
+        }
+
     m_localState.SaveValue (LocalStateNameSpace_Connect, LocalStateKey_Username, credentials.GetUsername ());
     SecureStore (&m_localState).SaveValue (SecureStoreNameSpace_ConnectLogin, credentials.GetUsername ().c_str (), credentials.GetPassword ().c_str ());
     }
@@ -76,4 +88,12 @@ SamlTokenPtr ConnectAuthenticationPersistence::GetToken () const
         }
 
     return m_token;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectAuthenticationPersistence::RegisterUserChangedListener (std::function<void ()> onUserChangedCallback)
+    {
+    s_onUserChangedCallbacks.push_back (onUserChangedCallback);
     }

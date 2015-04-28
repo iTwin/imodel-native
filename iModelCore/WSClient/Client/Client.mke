@@ -20,8 +20,11 @@ always:
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
 ClientHeaders            = $(ClientPublicApiDirectory)ChunkedUploadRequest.h              \
+                           $(ClientPublicApiDirectory)MobileTracking.h                    \
                            $(ClientPublicApiDirectory)ObjectId.h                          \
+                           $(ClientPublicApiDirectory)Passport.h                          \
                            $(ClientPublicApiDirectory)UrlProvider.h                       \
+                           $(ClientPublicApiDirectory)UsageTracking.h                     \
                            $(ClientPublicApiDirectory)WSClient.h                          \
                            $(ClientPublicApiDirectory)WSError.h                           \
                            $(ClientPublicApiDirectory)WSInfo.h                            \
@@ -92,7 +95,13 @@ $(o)WSRepository$(oext)                     : $(ClientSourceDirectory)WSReposito
 
 $(o)ChunkedUploadRequest$(oext)             : $(ClientSourceDirectory)ChunkedUploadRequest.cpp $(ClientHeaders) ${MultiCompileDepends}
 
+$(o)MobileTracking$(oext)                    : $(ClientSourceDirectory)MobileTracking.cpp $(ClientHeaders) ${MultiCompileDepends}
+
+$(o)Passport$(oext)                         : $(ClientSourceDirectory)Passport.cpp $(ClientHeaders) ${MultiCompileDepends}
+
 $(o)ServerInfoProvider$(oext)               : $(ClientSourceDirectory)ServerInfoProvider.cpp $(ClientHeaders) ${MultiCompileDepends}
+
+$(o)UsageTracking$(oext)                    : $(ClientSourceDirectory)UsageTracking.cpp $(ClientHeaders) ${MultiCompileDepends}
 
 $(o)Utils$(oext)                            : $(ClientSourceDirectory)Utils.cpp $(ClientHeaders) ${MultiCompileDepends}
 

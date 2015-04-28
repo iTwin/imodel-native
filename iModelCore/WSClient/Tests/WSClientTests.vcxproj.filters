@@ -100,6 +100,9 @@
     <ClInclude Include="Published\Connect\StubLocalState.h" />
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
     <ClInclude Include="Published\StubInstances.h" />
+    <ClInclude Include="Published\WebServices\MobileTrackingTests.h" />
+    <ClInclude Include="Published\WebServices\PassportTests.h" />
+    <ClInclude Include="Published\WebServices\UsageTrackingTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -232,5 +235,8 @@
     <ClCompile Include="Published\Connect\SamlTokenTests.cpp" />
     <ClCompile Include="Published\Connect\SecureStoreTests.cpp" />
     <ClCompile Include="Published\StubInstances.cpp" />
+    <ClCompile Include="Published\WebServices\MobileTrackingTests.cpp" />
+    <ClCompile Include="Published\WebServices\PassportTests.cpp" />
+    <ClCompile Include="Published\WebServices\UsageTrackingTests.cpp" />
   </ItemGroup>
 </Project>
