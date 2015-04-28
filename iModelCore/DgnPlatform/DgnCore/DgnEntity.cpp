@@ -16,7 +16,7 @@ BentleyStatus DgnElements::DeleteElement(DgnElementId elementId)
         return BentleyStatus::ERROR;
 
     CachedStatementPtr statementPtr;
-    GetDgnDb().GetCachedStatement(statementPtr, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    m_dgndb.GetCachedStatement(statementPtr, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
 
     statementPtr->BindId(1, elementId);
     return (BE_SQLITE_DONE == statementPtr->Step()) ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
@@ -31,7 +31,7 @@ BentleyStatus DgnElements::UpdateLastModifiedTime(DgnElementId elementId)
         return BentleyStatus::ERROR;
 
     CachedStatementPtr statementPtr;
-    GetDgnDb().GetCachedStatement(statementPtr, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET Id=Id WHERE Id=?"); // Minimal SQL to cause trigger to run
+    m_dgndb.GetCachedStatement(statementPtr, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET Id=Id WHERE Id=?"); // Minimal SQL to cause trigger to run
 
     statementPtr->BindId(1, elementId);
     return (BE_SQLITE_DONE == statementPtr->Step()) ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
@@ -45,7 +45,7 @@ DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
     if (!elementId.IsValid())
         return DateTime();
 
-    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT [LastMod] FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT LastMod FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
     if (!statementPtr.IsValid())
         return DateTime();
 
@@ -65,15 +65,12 @@ DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
     if (!elementId.IsValid())
         return DgnElementKey();
 
-    CachedStatementPtr statementPtr = nullptr;
+    CachedStatementPtr statementPtr;
     m_dgndb.GetCachedStatement(statementPtr, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
 
     statementPtr->BindId(1, elementId);
     
-    if (BE_SQLITE_ROW != statementPtr->Step()) 
-        return DgnElementKey();
-    
-    return DgnElementKey(statementPtr->GetValueInt64(0), elementId);
+    return (BE_SQLITE_ROW != statementPtr->Step()) ? DgnElementKey() : DgnElementKey(statementPtr->GetValueInt64(0), elementId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -85,7 +82,7 @@ BentleyStatus DgnElements::UpdateParentElementId(DgnElementId parentElementId, D
         return BentleyStatus::ERROR;
 
     CachedStatementPtr statementPtr;
-    GetDgnDb().GetCachedStatement(statementPtr, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET ParentId=? WHERE Id=?");
+    m_dgndb.GetCachedStatement(statementPtr, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET ParentId=? WHERE Id=?");
 
     statementPtr->BindId(1, parentElementId);
     statementPtr->BindId(2, childElementId);
@@ -113,10 +110,7 @@ BentleyStatus DgnElements::InsertElementGroupsElements(DgnElementKeyCR groupElem
     statementPtr->BindInt64(3, memberElementKey.GetECClassId());
     statementPtr->BindId   (4, memberElementKey.GetECInstanceId());
 
-    if (ECSqlStepStatus::Done != statementPtr->Step())
-        return BentleyStatus::ERROR;
-
-    return BentleyStatus::SUCCESS;
+    return (ECSqlStepStatus::Done != statementPtr->Step()) ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -132,8 +126,5 @@ DgnElementId DgnElements::QueryParentElementId(DgnElementId childElementId) cons
 
     statementPtr->BindId(1, childElementId);
 
-    if (BE_SQLITE_ROW != statementPtr->Step())
-        return DgnElementId();
-
-    return statementPtr->GetValueId<DgnElementId>(0);
+    return (BE_SQLITE_ROW != statementPtr->Step()) ? DgnElementId() : statementPtr->GetValueId<DgnElementId>(0);
     }

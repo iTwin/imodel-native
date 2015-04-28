@@ -269,11 +269,11 @@ void QueryViewController::SaveSelectResults()
     m_queryModel.SaveQueryResults();
     m_lastQueryTime = BeTimeUtilities::QuerySecondsCounter();
 
-    DgnElementPool& pool = m_queryModel.GetDgnDb().Elements().GetPool();
+    DgnElements& pool = m_queryModel.GetDgnDb().Elements();
 
 #if defined (TRACE_ELEMENT_POOL_USE)
-    DgnElementPool::Totals totals = pool.GetTotals();
-    DgnElementPool::Statistics stats = pool.GetStatistics();
+    DgnElements::Totals totals = pool.GetTotals();
+    DgnElements::Statistics stats = pool.GetStatistics();
     uint64_t start = BeTimeUtilities::QueryMillisecondsCounter();
 #endif
 
@@ -282,7 +282,7 @@ void QueryViewController::SaveSelectResults()
 
 #if defined (TRACE_ELEMENT_POOL_USE)
     uint32_t elapsed = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
-    DgnElementPool::Statistics postStats = pool.GetStatistics();
+    DgnElements::Statistics postStats = pool.GetStatistics();
     NotificationManager::OutputPrompt (WPrintfString(L"Elms=%u,Free=%u,Mem=%.3f",totals.m_entries,totals.m_unreferenced,(double)totals.m_allocedBytes/(1024.*1024.)));
     NotificationManager::OutputMessage (NotifyMessageDetails(OutputMessagePriority::Info, WPrintfString(L"purge time %d viewed=%u,new=%u,purged=%u",elapsed, m_queryModel.GetElementCount(),stats.m_newElements,postStats.m_purged)));
 #endif
@@ -544,7 +544,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             break;
 
 #if !defined (_X64_)
-        DgnElementPool& pool = m_queryModel.GetDgnDb().Elements().GetPool();
+        DgnElements& pool = m_queryModel.GetDgnDb().Elements().GetPool();
         if (numDrawn > results->m_drawnBeforePurge && pool.GetTotalAllocated() > purgeTrigger)
             {
             QueryModel::Selector& selector = m_queryModel.GetSelector();
