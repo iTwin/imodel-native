@@ -593,7 +593,7 @@ ECObjectsStatus ECSchema::AddClass (ECClassP& pClass, bool deleteClassIfDuplicat
     resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
-        LOG.warningv (L"Can not create class '%ls' because it already exists in the schema", pClass->GetName().c_str());
+        LOG.warningv (L"Cannot create class '%ls' because it already exists in the schema", pClass->GetName().c_str());
         if (deleteClassIfDuplicate)
             {
             // preserving weird existing behavior, added option to not do this...
@@ -713,7 +713,7 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
         {
         delete pClass;
         pClass = NULL;
-        LOG.warningv (L"Can not create relationship class '%ls' because it already exists in the schema", name.c_str());
+        LOG.warningv (L"Cannot create relationship class '%ls' because it already exists in the schema", name.c_str());
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
@@ -1300,14 +1300,14 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
         SchemaKey key;
         if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue (key.m_schemaName, SCHEMAREF_NAME_ATTRIBUTE))
             {
-            LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute", schemaReferenceNode->GetName(), SCHEMAREF_NAME_ATTRIBUTE);
+            LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", schemaReferenceNode->GetName(), SCHEMAREF_NAME_ATTRIBUTE);
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
         WString prefix;
         if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue (prefix, SCHEMAREF_PREFIX_ATTRIBUTE))
             {
-            LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute", schemaReferenceNode->GetName(), SCHEMAREF_PREFIX_ATTRIBUTE);
+            LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", schemaReferenceNode->GetName(), SCHEMAREF_PREFIX_ATTRIBUTE);
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
@@ -1315,7 +1315,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
         WString versionString;
         if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue (versionString, SCHEMAREF_VERSION_ATTRIBUTE))
             {
-            LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute", schemaReferenceNode->GetName(), SCHEMAREF_VERSION_ATTRIBUTE);
+            LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", schemaReferenceNode->GetName(), SCHEMAREF_VERSION_ATTRIBUTE);
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
@@ -1608,7 +1608,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, ui
     if ( (BEXML_Success != xmlDom.SelectNode (schemaNode, "/" EC_NAMESPACE_PREFIX ":" EC_SCHEMA_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == schemaNode) )
         {
         BeAssert (s_noAssert);
-        LOG.errorv(L"Invalid ECSchemaXML: Missing a top-level %ls node in the %ls namespace", WString(EC_SCHEMA_ELEMENT, BentleyCharEncoding::Utf8).c_str(), WString(ECXML_URI_2_0, BentleyCharEncoding::Utf8).c_str());
+        LOG.errorv("Invalid ECSchemaXML: Missing a top-level %s node in the %s namespace", EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
@@ -1617,7 +1617,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, ui
     if (BEXML_Success != schemaNode->GetAttributeStringValue (schemaName, SCHEMA_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
-        LOG.errorv(L"Invalid ECSchemaXML: %ls element must contain a schemaName attribute", WString(EC_SCHEMA_ELEMENT, BentleyCharEncoding::Utf8).c_str());
+        LOG.errorv("Invalid ECSchemaXML: %s element must contain a schemaName attribute", EC_SCHEMA_ELEMENT);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
@@ -2122,7 +2122,7 @@ ECSchemaReadContextR schemaContext
 
         BeStringUtilities::Strncpy (first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
-        LOG.errorv (L"Failed to read XML from string (1st 200 characters approx.): %hs", first200Bytes);
+        LOG.errorv ("Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
         }
     else
         {

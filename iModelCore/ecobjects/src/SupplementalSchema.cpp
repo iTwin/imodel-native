@@ -2,7 +2,7 @@
 |
 |     $Source: src/SupplementalSchema.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -375,7 +375,7 @@ bool createCopyOfSupplementalCustomAttribute
 
     timer.Stop();
     WString primarySchemaName = primarySchema.GetFullSchemaName();
-    LOG.infov ("Supplemented (in %.4f seconds) %ls with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
+    LOG.infov (L"Supplemented (in %.4f seconds) %ls with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
         primarySchemaName.c_str(), supplementalSchemaList.size());
 
     return status;
