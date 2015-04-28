@@ -509,6 +509,71 @@ TEST (ECDbSchemaManager, ImportSchemaWithUnsupportedECRelationships)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
+    {
+    ECDbTestProject::Initialize();
+
+    ECDb ecdb;
+    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"RelationshipConstraintHintOnSubclasses.ecdb");
+    ASSERT_TRUE(stat == BE_SQLITE_OK);
+
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
+        "  <ECClass typeName='MyElement' >"
+        "    <BaseClass>dgn:Element</BaseClass>"
+        "    <ECProperty propertyName='MyName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='YourElement' >"
+        "    <BaseClass>dgn:Element</BaseClass>"
+        "    <ECProperty propertyName='YourName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='MyElementHasYourElements' isDomainClass='True' strength='embedding'>"
+        "   <BaseClass>dgn:ElementOwnsChildElements</BaseClass>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "       <ECCustomAttributes>"
+        "           <ECDbRelationshipConstraintHint xmlns='Bentley_Standard_CustomAttributes.01.12'>"
+        "               <ECIdColumn>ParentId</ECIdColumn>"
+        "           </ECDbRelationshipConstraintHint>"
+        "        </ECCustomAttributes>"
+        "      <Class class = 'MyElement' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "       <ECCustomAttributes>"
+        "           <ECDbRelationshipConstraintHint xmlns='Bentley_Standard_CustomAttributes.01.12'>"
+        "               <ECIdColumn>Id</ECIdColumn>"
+        "           </ECDbRelationshipConstraintHint>"
+        "        </ECCustomAttributes>"
+        "      <Class class = 'YourElement' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    BeFileName searchPath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchPath);
+    searchPath.AppendToPath(L"ECSchemas");
+    searchPath.AppendToPath(L"Dgn");
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(ecdb.GetSchemaLocater());
+    schemaContext->AddSchemaPath(searchPath.GetName());
+
+    ECDbTestUtility::ReadECSchemaFromString(schemaContext, testSchemaXml);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemaContext->GetCache()));
+
+    bvector<Utf8String> columns;
+    ASSERT_TRUE (ecdb.GetColumns(columns, "dgn_element"));
+    ASSERT_EQ(9, columns.size()) << "dgn_element table should not contain an extra foreign key columns as the relationship constraint hint specifies to use the ParentId column";
+    
+    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+    ASSERT_TRUE(it == columns.end()) << "dgn_element table should not contain an extra foreign key columns as the relationship constraint hint specifies to use the ParentId column";
+    }
+
+//---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //Importing a schema containing all the possible combinations of class properties and relationship classes having built-in and user defined cardinalities 
@@ -686,7 +751,7 @@ TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, SchemaCacheManager)
+TEST(ECDbSchemaManager, SchemaCache)
 {
     ECDbTestProject::Initialize();
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();

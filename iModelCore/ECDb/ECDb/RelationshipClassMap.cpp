@@ -39,15 +39,9 @@ RelationshipClassMap::RelationshipClassMap (ECRelationshipClassCR ecRelClass, EC
 //---------------------------------------------------------------------------------------
 ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn (Utf8CP columnName, bool addToTable)
     {
-    ECDbSqlColumn* column = nullptr;
-    if (GetMapStrategy().IsSharedTableForThisClass() && (column = GetTable ().FindColumnP(columnName)) != nullptr)
+    ECDbSqlColumn* column = GetTable ().FindColumnP (columnName);
+    if (column != nullptr)
         return column;
-
-    column = GetTable ().FindColumnP (columnName);
-    if (column)
-        {
-        return column;
-        }
 
     if (GetTable ().GetOwnerType () == OwnerType::ECDb)
         {
