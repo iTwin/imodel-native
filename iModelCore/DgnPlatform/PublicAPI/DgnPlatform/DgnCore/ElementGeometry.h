@@ -195,24 +195,22 @@ struct Reader
 
     }; // Reader
 
-typedef uint8_t const* UInt8CP;
-
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct Iterator : std::iterator<std::forward_iterator_tag, UInt8CP const>
+struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
     private:
 
-    Operation       m_egOp;
-    UInt8CP         m_data;
+    uint8_t const*  m_data;
     size_t          m_dataOffset;
     size_t          m_totalDataSize;
+    Operation       m_egOp;
 
     DGNPLATFORM_EXPORT void ToNext ();
 
-    Iterator (uint8_t const* data, size_t totalDataSize) {m_dataOffset = 0; m_data = data; m_totalDataSize = totalDataSize; ToNext ();}
-    Iterator () {m_dataOffset = 0; m_data = NULL; m_totalDataSize = 0;}
+    Iterator (uint8_t const* data, size_t totalDataSize) : m_data (data), m_totalDataSize (totalDataSize), m_dataOffset (0) {ToNext();}
+    Iterator () : m_data (nullptr), m_totalDataSize (0), m_dataOffset (0) {}
 
     friend struct ElementGeomIO;
 
@@ -230,6 +228,8 @@ struct Iterator : std::iterator<std::forward_iterator_tag, UInt8CP const>
 //=======================================================================================
 struct Collection
     {
+    private:
+
     uint8_t const*  m_data;
     size_t          m_dataSize;
 
@@ -244,13 +244,74 @@ struct Collection
     const_iterator end   () const {return const_iterator ();}
 
     DGNPLATFORM_EXPORT void Draw (ViewContextR, DgnCategoryId, bool isQVis, bool isQVWireframe, bool isPick, bool useBRep) const; // NEEDSWORK: Simplify...
-    DGNPLATFORM_EXPORT BentleyStatus ToGeometry (bvector<ElementGeometryPtr>&) const;
 
     }; // Collection
 
 }; // ElementGeomIO
 
 //__PUBLISH_SECTION_START__
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ElementGeometryCollection
+{
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
+    {
+    private:
+
+    uint8_t const*      m_data;
+    size_t              m_dataOffset;
+    size_t              m_totalDataSize;
+    ViewContextP        m_context;
+    ElementGeometryPtr  m_elementGeometry;
+
+    DGNPLATFORM_EXPORT void ToNext ();
+
+    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context) : m_data (data), m_totalDataSize (totalDataSize), m_dataOffset (0), m_context (context) {ToNext();}
+    Iterator () : m_data (nullptr), m_totalDataSize (0), m_dataOffset (0), m_context (nullptr) {}
+
+    friend struct ElementGeometryCollection;
+
+    public:
+
+    Iterator&           operator++() {ToNext (); return *this;}
+    bool                operator==(Iterator const& rhs) const {return m_dataOffset == rhs.m_dataOffset;}
+    bool                operator!=(Iterator const& rhs) const {return !(*this == rhs);}
+    ElementGeometryPtr  operator*() const {return m_elementGeometry;}
+
+    }; // Iterator
+
+private:
+
+uint8_t const*      m_data;
+size_t              m_dataSize;
+ViewContextP        m_context;
+Transform           m_elemToWorld;
+Transform           m_geomToElem;
+Transform           m_geomToWorld;
+
+public:
+
+typedef Iterator const_iterator;
+typedef const_iterator iterator; //!< only const iteration is possible
+    
+const_iterator begin () const {return const_iterator (m_data, m_dataSize, m_context);}
+const_iterator end   () const {return const_iterator ();}
+
+DGNPLATFORM_EXPORT ElemDisplayParamsCR GetElemDisplayParams();
+DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
+DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
+DGNPLATFORM_EXPORT TransformCR GetGeometryToElement();
+
+DGNPLATFORM_EXPORT ElementGeometryCollection (uint8_t const* data, size_t dataSize);
+DGNPLATFORM_EXPORT ElementGeometryCollection (GeometricElementCR element);
+DGNPLATFORM_EXPORT ~ElementGeometryCollection ();
+
+}; // ElementGeometryCollection
+
 typedef RefCountedPtr<ElementGeometryBuilder> ElementGeometryBuilderPtr;
 
 //=======================================================================================

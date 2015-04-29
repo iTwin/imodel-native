@@ -276,8 +276,8 @@ public:
 
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
-    /// @name DgnElementAppData Management
-    //@{
+/** @name DgnElementAppData Management */
+/** @{ */
     //! Get the HeapZone for the this element.
     DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
 
@@ -298,7 +298,7 @@ public:
     //! @param[in] key The key for the DgnElementAppData of interest.
     //! @return the DgnElementAppData for key \a key, or NULL.
     DGNPLATFORM_EXPORT DgnElementAppData* FindAppData(DgnElementAppData::Key const& key) const;
-    //@}
+/** @} */
 
     //! Get the DgnModel of this element.
     DgnModelR GetDgnModel() const {return m_dgnModel;}
@@ -310,7 +310,7 @@ public:
     DgnElementId GetElementId() const {return m_elementId;}
 
     //! Get the DgnClassId for this DgnElement
-    //! @see DgnElement::GetClassId
+    //! @see DgnElement::QueryClassId
     DgnClassId GetElementClassId() const {return m_classId;}
 
     //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this DgnElement
@@ -319,9 +319,13 @@ public:
     //! Get the ECClass for this DgnElement
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
-    //! Get the DgnClassId for the dgn.Element ECClass in the specified DgnDb.
+    //! Query the DgnClassId for the dgn.Element ECClass in the specified DgnDb.
     //! @see DgnElement::GetElementClassId
-    DGNPLATFORM_EXPORT static DgnClassId GetClassId(DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
+
+    //! Get the DgnElementId for the parent of this element
+    //! @return Id will be invalid if this element does not have a parent element
+    DgnElementId GetParentId() const {return m_parentId;}
 
     //! Get the category of the element held by this element.
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
@@ -684,8 +688,8 @@ public:
     //! @param[in] categoryId specifies the category for the PhysicalElement.
     DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
 
-    //! Get the DgnClassId for the dgn.PhysicalElement ECClass in the specified DgnDb.
-    DGNPLATFORM_EXPORT static DgnClassId GetClassId(DgnDbR db);
+    //! Query the DgnClassId for the dgn.PhysicalElement ECClass in the specified DgnDb.
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 };
 
 //=======================================================================================

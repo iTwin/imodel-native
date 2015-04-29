@@ -85,7 +85,6 @@ public:
     virtual ElemPurge _Purge(int64_t memTarget) = 0;
     virtual ElemPurge _ReleaseAndCleanup(uint64_t key) = 0;
     virtual void _Empty() = 0;
-    virtual void _OnDestroying() = 0;
 
     bool ContainsKey(uint64_t key) const {CheckSloppy(); return m_range.Contains(key);}
     void SetParent(ElemIdParent* newParent) {m_parent = newParent;}
@@ -123,7 +122,6 @@ private:
     virtual ElemPurge _Purge(int64_t) override;
     virtual ElemPurge _ReleaseAndCleanup(uint64_t key) override;
     virtual void _Empty() override;
-    virtual void _OnDestroying() override;
 
 public:
     DgnElementP GetEntry(int index) const {return m_elems[index];}
@@ -152,7 +150,6 @@ protected:
     virtual ElemPurge _Purge(int64_t) override;
     virtual ElemPurge _ReleaseAndCleanup(uint64_t key) override;
     virtual void _Empty() override;
-    virtual void _OnDestroying() override;
 
     void AccessedNode(int i);
     void SortInto(ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc);
@@ -235,7 +232,6 @@ public:
     void ReleaseAndCleanup(DgnElementP element);
     void Purge(int64_t memTarget);
     void Destroy();
-    void OnDestroying();
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -856,33 +852,6 @@ void ElemIdInternalNode::_Empty()
     m_nEntries = 0;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     06/13
-//---------------------------------------------------------------------------------------
-void ElemIdLeafNode::_OnDestroying()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     06/13
-//---------------------------------------------------------------------------------------
-void ElemIdInternalNode::_OnDestroying()
-    {
-    ElemIdRangeNodeH end = m_children + m_nEntries;
-
-    for (ElemIdRangeNodeH curr = m_children; curr < end; ++curr)
-       (*curr)->_OnDestroying();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     06/13
-//---------------------------------------------------------------------------------------
-void ElemIdTree::OnDestroying()
-    {
-    if (m_root)
-        m_root->_OnDestroying();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -914,18 +883,6 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_heapZone.EmptyAll();
     m_stmts.Empty();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     06/13
-//---------------------------------------------------------------------------------------
-void DgnElements::OnDestroying()
-    {
-    if (nullptr == m_tree)
-        return;
-
-    BeDbMutexHolder _v_v(m_mutex);
-    m_tree->OnDestroying();
     }
 
 /*---------------------------------------------------------------------------------**//**

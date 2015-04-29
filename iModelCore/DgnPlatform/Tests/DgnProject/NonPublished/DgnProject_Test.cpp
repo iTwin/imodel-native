@@ -287,7 +287,7 @@ TEST(DgnDb, ProjectSchemaVersions)
 * Schema Version can be accessed and it is correct
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, DgnDbSQLFuncs)
+TEST(DgnDb, DgnSqlFuncs)
     {
     ScopedDgnHost autoDgnHost;
 
@@ -295,7 +295,7 @@ TEST(DgnDb, DgnDbSQLFuncs)
     DgnDbP dgndb = tdm.GetDgnProjectP();
 
     Statement stmt;
-    stmt.Prepare(*dgndb, "SELECT DGN_BBOX_Union(DGN_PLACEMENT_AABB(g.Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
+    stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
                     " AS g WHERE e.ModelId=2 AND e.id=g.ElementId");
     auto rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);
@@ -305,6 +305,23 @@ TEST(DgnDb, DgnDbSQLFuncs)
     BoundingBox3dCR result = *(BoundingBox3dCP)stmt.GetValueBlob(0);
     ASSERT_TRUE(result.IsValid());
 
+    stmt.Finalize();
+    stmt.Prepare(*dgndb, "SELECT count(*) FROM "
+                         DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(0,0,90)) < 1.0");
+
+    rc = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, rc);
+    int count = stmt.GetValueInt(0);
+    ASSERT_NE(count, 0);
+
+    stmt.Finalize();
+    stmt.Prepare(*dgndb, "SELECT count(*) FROM "
+                         DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_value(DGN_placement_angles(g.Placement),2) < 90");
+
+    rc = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, rc);
+    count = stmt.GetValueInt(0);
+    ASSERT_NE(count, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -323,7 +340,7 @@ TEST(DgnDb, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = project->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ (3, iter.QueryCount()) << "The expected model count is 2 for ElementsSymbologyByLevel.dgn. Where as it is: " << iter.QueryCount();
+    ASSERT_EQ (3, iter.QueryCount());
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[4], testModel;
