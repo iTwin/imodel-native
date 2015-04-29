@@ -2674,7 +2674,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 
     if (tablesSeen.find(tableName) == tablesSeen.end())
         {
-        printf("\n\tTable: %s", tableName);
+        printf("\nTable: %s", tableName);
         if (detailLevel > 0)
             printf("\n");
         tablesSeen.insert (tableName);
@@ -2726,7 +2726,6 @@ void ChangeSet::Dump(Db const& db, bool isPatchSet, int detailLevel) const
     {
     bset<Utf8String> tablesSeen;
 
-    printf("\nChangeSet:\n");
     Changes changes(*const_cast<ChangeSet*>(this));
     for (auto& change : changes)
         {
