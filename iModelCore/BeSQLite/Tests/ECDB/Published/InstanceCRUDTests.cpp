@@ -966,10 +966,12 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
     productSchemas.AppendToPath (L"BeTestDocuments\\DgnDb\\BentleyProductSchema");
     if (BeFileName::DoesPathExist (productSchemas.GetName ()))
         {
+		WString tempDirName;
         BeFileName entryName;
         bool isDir;
         for (BeDirectoryIterator dir (productSchemas); dir.GetCurrentEntry (entryName, isDir) == SUCCESS; dir.ToNext ())
             {
+			tempDirName = entryName;
             if (isDir)
                 {
                 WString schemaPath;
@@ -1043,6 +1045,7 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
                         }
                     }
                 }
+                BeFileName::EmptyAndRemoveDirectory(tempDirName.c_str());
             }
         }
     }
