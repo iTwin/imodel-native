@@ -471,7 +471,7 @@ DgnModelStatus DgnElement::AddToModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId DgnElement::GetClassId(DgnDbR db)
+DgnClassId DgnElement::QueryClassId(DgnDbR db)
     {
     return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
     }
@@ -744,7 +744,7 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
         return nullptr;
         }
 
-    PhysicalElementPtr elementPtr = new PhysicalElement(CreateParams(model, PhysicalElement::GetClassId(model.GetDgnDb()), categoryId));
+    PhysicalElementPtr elementPtr = new PhysicalElement(CreateParams(model, PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
     elementPtr->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(model.GetDgnDb()));
     return elementPtr;
     }
@@ -752,7 +752,7 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId PhysicalElement::GetClassId(DgnDbR db)
+DgnClassId PhysicalElement::QueryClassId(DgnDbR db)
     {
     return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
     }
