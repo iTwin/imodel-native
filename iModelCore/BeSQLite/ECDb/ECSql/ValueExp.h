@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ValueExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -151,6 +151,12 @@ public:
     bool GetValueAsBoolean() const;
 
     virtual Utf8String ToECSql() const override;
+    static Utf8String EscapeStringLiteral (Utf8StringCR constantStringLiteral)
+        {
+        Utf8String tmp = constantStringLiteral;
+        tmp.ReplaceAll ("'", "''");
+        return tmp;
+        }
     };
 
 //=======================================================================================

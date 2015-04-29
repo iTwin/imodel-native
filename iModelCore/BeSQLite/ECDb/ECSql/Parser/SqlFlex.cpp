@@ -1,4 +1,4 @@
-#line 3 "E:\\dev\\Working\\Graphite0502\\src\\BeSQLite\\ECDb\\ECSql\\parser\\SQLflex.l"
+#line 3 "E:\\dev\\Working\\Graphite0502\\src\\BeSqlite\\ECDb\\ECSql\\parser\\SQLflex.l"
 //------------------------------------------------------------
 // 
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -43,7 +43,7 @@
 
 
 
-#line 47 "E:\\dev\\Working\\Graphite0502\\src\\BeSQLite\\ECDb\\ECSql\\parser\\SqlFlex.cpp"
+#line 47 "E:\\dev\\Working\\Graphite0502\\src\\BeSqlite\\ECDb\\ECSql\\parser\\SqlFlex.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -6469,6 +6469,7 @@ sal_Int32 parseString ()
                 }
             else if (ch == delim)
                 {
+                sBuffer.append (delim);
                 continue;
                 }
             else

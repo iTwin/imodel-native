@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ValueExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -394,7 +394,9 @@ Utf8String ConstantValueExp::ToECSql () const
         {
         auto primType = typeInfo.GetPrimitiveType ();
         if (primType == PRIMITIVETYPE_String)
+            {
             return "'" + m_value + "'";
+            }
 
         if (primType == PRIMITIVETYPE_DateTime)
             {

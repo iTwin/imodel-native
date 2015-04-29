@@ -529,6 +529,7 @@ sal_Int32 parseString ()
                 }
             else if (ch == delim)
                 {
+                sBuffer.append (delim);
                 continue;
                 }
             else
