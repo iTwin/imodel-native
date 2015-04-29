@@ -9,6 +9,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <BentleyApi/BentleyApi.h>
+#include <Bentley/bset.h>
 
 /** @namespace BentleyApi::BeSQLite Classes used to access a SQLite database. */
 
@@ -1110,7 +1111,7 @@ struct DbValue
     template <class T_Id> T_Id   GetValueId() const {return T_Id (GetValueInt64());}
 
 //__PUBLISH_SECTION_END__
-    BE_SQLITE_EXPORT void        Dump() const; //!< Dump to stdout for debugging purposes.
+    BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const; //!< for debugging purposes.
 //__PUBLISH_SECTION_START__
 };
 
@@ -1310,13 +1311,15 @@ public:
             bool operator==(Change const& rhs) const {return (m_iter == rhs.m_iter) && (m_isValid == rhs.m_isValid);}
 
             //! Dump to stdout for debugging purposes.
-            BE_SQLITE_EXPORT void Dump (Db const&) const;
+            BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet, bset<Utf8String>& tablesSeen, int detailLevel) const;
+
+            void Dump(Db const& db, bool isPatchSet, int detailLevel) const {bset<Utf8String> tablesSeen; Dump(db, isPatchSet, tablesSeen, detailLevel);}
 
             //! Dump one or more columns to stdout for debugging purposes.
-            BE_SQLITE_EXPORT void DumpColumns (int startCol, int endCol, Changes::Change::ValueStage stage, bvector<Utf8String> const& columns) const;
+            BE_SQLITE_EXPORT void DumpColumns (int startCol, int endCol, Changes::Change::ValueStage stage, bvector<Utf8String> const& columns, int detailLevel) const;
 
             //! Format the primary key columns of this change for debugging purposes.
-            BE_SQLITE_EXPORT Utf8String FormatPrimarykeyColumns() const;
+            BE_SQLITE_EXPORT Utf8String FormatPrimarykeyColumns(bool isInsert, int detailLevel) const;
         };
 
     typedef Change const_iterator;
@@ -1384,7 +1387,7 @@ public:
     bool IsValid () {return 0 != m_changeset;}
 
     //! Dump to stdout for debugging purposes.
-    BE_SQLITE_EXPORT void Dump (Db const&) const;
+    BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet = true, int detailLevel = 0) const;
 
     //! Get a description of a conflict cause for debugging purposes.
     BE_SQLITE_EXPORT static Utf8String InterpretConflictCause (ChangeSet::ConflictCause);
