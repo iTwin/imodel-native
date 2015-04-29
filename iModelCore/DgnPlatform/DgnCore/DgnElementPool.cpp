@@ -1082,6 +1082,32 @@ void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnElements::LoadElement(DgnElement::CreateParams const& params)
+    {
+    ElementHandlerP elHandler = ElementHandler::FindHandler(m_dgndb, params.m_classId);
+    if (nullptr == elHandler)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnElementPtr elRef = elHandler->Create(params);
+    if (!elRef.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    if (DGNMODEL_STATUS_Success != elRef->_LoadFromDb())
+        return nullptr;
+
+    params.m_model._OnLoadedElement(*elRef);
+    return elRef;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElements::GetElementById(DgnElementId elementId) 
@@ -1113,26 +1139,12 @@ DgnElementPtr DgnElements::GetElementById(DgnElementId elementId)
         return nullptr;
         }
 
-    DgnClassId classId = stmt->GetValueId<DgnClassId>(Column::ClassId);
-    ElementHandlerP elHandler = ElementHandler::FindHandler(m_dgndb, classId);
-    if (nullptr == elHandler)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    DgnCategoryId categoryId = stmt->GetValueId<DgnCategoryId>(Column::CategoryId);
-    Utf8String code = stmt->GetValueText(Column::Code);
-
-    DgnElement::CreateParams params(*dgnModel, classId, categoryId, code.c_str(), elementId, stmt->GetValueId<DgnElementId>(Column::ParentId));
-    elRef = elHandler->Create(params);
-    if (!elRef.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return DGNMODEL_STATUS_Success == elRef->_LoadFromDb() ? elRef : nullptr;
+    return LoadElement(DgnElement::CreateParams(*dgnModel, 
+                    stmt->GetValueId<DgnClassId>(Column::ClassId), 
+                    stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
+                    stmt->GetValueText(Column::Code), 
+                    elementId, 
+                    stmt->GetValueId<DgnElementId>(Column::ParentId)));
     }
 
 /*---------------------------------------------------------------------------------**//**
