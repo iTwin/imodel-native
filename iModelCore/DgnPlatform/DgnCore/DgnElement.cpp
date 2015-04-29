@@ -21,8 +21,8 @@ struct CachedInstance
     InstanceChangeType  m_changeType;
     IECInstancePtr m_instance;
 
-    CachedInstance() : m_changeType(InstanceChangeType::NoChange) {;}
-    CachedInstance(IECInstancePtr instance, InstanceChangeType ct = InstanceChangeType::NoChange) : m_instance(instance), m_changeType(ct) {;}
+    CachedInstance() : m_changeType(InstanceChangeType::NoChange) {}
+    CachedInstance(IECInstancePtr instance, InstanceChangeType ct = InstanceChangeType::NoChange) : m_instance(instance), m_changeType(ct) {}
     void Clear() {m_changeType = InstanceChangeType::NoChange; m_instance = nullptr;}
 
     BentleyStatus ApplyScheduledDelete(DgnDbR);
@@ -48,7 +48,7 @@ struct CachedInstances : DgnElementAppData
 
     virtual void _OnCleanup(DgnElementCP host, bool unloadingModel, HeapZoneR zone) override;
 
-    CachedInstances() : m_itemChecked(false) {;}
+    CachedInstances() : m_itemChecked(false) {}
     void Clear() {m_element.Clear(); m_item.Clear(); m_otherAspects.clear(); m_itemChecked=false;}
 
     CachedInstance* FindAspectInstanceAccessor(ECClassId classId, WStringCR instanceId);
@@ -178,7 +178,7 @@ DgnElementAppData* DgnElement::FindAppData(DgnElementAppData::Key const& key) co
         if (thisEntry->m_key < &key) // entries are sorted by key
             continue;
 
-        return (thisEntry->m_key == &key) ? thisEntry->m_obj : NULL;
+        return(thisEntry->m_key == &key) ? thisEntry->m_obj : NULL;
         }
 
     return  NULL;
@@ -187,11 +187,11 @@ DgnElementAppData* DgnElement::FindAppData(DgnElementAppData::Key const& key) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnElement::AddAppData (DgnElementAppData::Key const& key, DgnElementAppData* obj, HeapZone& zone, bool allowOnDeleted) const
+StatusInt DgnElement::AddAppData(DgnElementAppData::Key const& key, DgnElementAppData* obj, HeapZone& zone, bool allowOnDeleted) const
     {
     if (!allowOnDeleted && IsDeleted())
         {
-        BeAssert (0);
+        BeAssert(0);
         return ERROR;
         }
 
@@ -205,12 +205,12 @@ StatusInt DgnElement::AddAppData (DgnElementAppData::Key const& key, DgnElementA
         if (nextEntry->m_key != &key)
             break;
 
-        nextEntry->SetEntry (obj, this, zone);      // already exists, just change it
+        nextEntry->SetEntry(obj, this, zone);      // already exists, just change it
         return SUCCESS;
         }
 
-    AppDataEntry* newEntry = (AppDataEntry*) zone.Alloc (sizeof(AppDataEntry));
-    newEntry->Init (key, obj, nextEntry);
+    AppDataEntry* newEntry = (AppDataEntry*) zone.Alloc(sizeof(AppDataEntry));
+    newEntry->Init(key, obj, nextEntry);
 
     if (prevEntry)
         prevEntry->m_next = newEntry;
@@ -223,7 +223,7 @@ StatusInt DgnElement::AddAppData (DgnElementAppData::Key const& key, DgnElementA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnElement::DropAppData (DgnElementAppData::Key const& key) const
+StatusInt DgnElement::DropAppData(DgnElementAppData::Key const& key) const
     {
     for (AppDataEntry* prev=NULL, *thisEntry=m_appData; thisEntry; prev=thisEntry, thisEntry=thisEntry->m_next)
         {
@@ -233,7 +233,7 @@ StatusInt DgnElement::DropAppData (DgnElementAppData::Key const& key) const
         if (thisEntry->m_key != &key)
             break;
 
-        FreeAppDataEntry (prev, *thisEntry, GetHeapZone(), false);
+        FreeAppDataEntry(prev, *thisEntry, GetHeapZone(), false);
         return  SUCCESS;
         }
 
@@ -243,10 +243,10 @@ StatusInt DgnElement::DropAppData (DgnElementAppData::Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::ClearAllAppData (HeapZone& zone, bool cacheUnloading)
+void DgnElement::ClearAllAppData(HeapZone& zone, bool cacheUnloading)
     {
     for (AppDataEntry* thisEntry=m_appData; thisEntry; )
-        thisEntry = FreeAppDataEntry (NULL, *thisEntry, zone, cacheUnloading);
+        thisEntry = FreeAppDataEntry(NULL, *thisEntry, zone, cacheUnloading);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -313,7 +313,7 @@ DgnModelStatus DgnElement::_DeleteInDb()
 
     if (rc != BE_SQLITE_DONE)
         {
-        BeAssert (false);
+        BeAssert(false);
         return ERROR;
         }
 
@@ -345,12 +345,12 @@ void DgnElement::UnDeleteElement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::ReloadFromDb ()
+DgnModelStatus DgnElement::ReloadFromDb()
     {
 #if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    m_dgnModel.ElementChanged (*this, ELEMREF_CHANGE_REASON_Modify);
+    m_dgnModel.ElementChanged(*this, ELEMREF_CHANGE_REASON_Modify);
 
-    DbElementReloader reloader (*this);
+    DbElementReloader reloader(*this);
     DgnModelStatus stat = reloader.ReloadElement();
 
     if (DGNMODEL_STATUS_Success == stat)
@@ -364,14 +364,14 @@ DgnModelStatus DgnElement::ReloadFromDb ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::ForceElemChanged (bool qvCacheCleared, DgnElementChangeReason reason)
+void DgnElement::ForceElemChanged(bool qvCacheCleared, DgnElementChangeReason reason)
     {
     HeapZone& zone = GetHeapZone();
     for (AppDataEntry* prev=NULL, *next, *thisEntry=m_appData; thisEntry; thisEntry=next)
         {
         next = thisEntry->m_next;
-        if (thisEntry->m_obj->_OnElemChanged (this, qvCacheCleared, reason))
-            FreeAppDataEntry (prev, *thisEntry, zone, false);
+        if (thisEntry->m_obj->_OnElemChanged(this, qvCacheCleared, reason))
+            FreeAppDataEntry(prev, *thisEntry, zone, false);
         else
             prev = thisEntry;
         }
@@ -380,16 +380,16 @@ void DgnElement::ForceElemChanged (bool qvCacheCleared, DgnElementChangeReason r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometricElement::SetQvElem (QvElem* qvElem, uint32_t index)
+bool GeometricElement::SetQvElem(QvElem* qvElem, uint32_t index)
     {
-    GetQvElems(true)->Add (index, qvElem);
+    GetQvElems(true)->Add(index, qvElem);
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QvKey32::DeleteQvElem (QvElem* qvElem)
+void QvKey32::DeleteQvElem(QvElem* qvElem)
     {
     if (qvElem && qvElem != INVALID_QvElem)
         T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
@@ -398,10 +398,10 @@ void QvKey32::DeleteQvElem (QvElem* qvElem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-T_QvElemSet* GeometricElement::GetQvElems (bool createIfNotPresent) const
+T_QvElemSet* GeometricElement::GetQvElems(bool createIfNotPresent) const
     {
     static DgnElementAppData::Key s_qvElemsKey;
-    T_QvElemSet* qvElems = (T_QvElemSet*) FindAppData (s_qvElemsKey);
+    T_QvElemSet* qvElems = (T_QvElemSet*) FindAppData(s_qvElemsKey);
     if (qvElems)
         return  qvElems;
 
@@ -409,19 +409,19 @@ T_QvElemSet* GeometricElement::GetQvElems (bool createIfNotPresent) const
         return  NULL;
 
     HeapZone& zone = GetHeapZone();
-    qvElems = new ((T_QvElemSet*) zone.Alloc (sizeof(T_QvElemSet))) T_QvElemSet (zone);
+    qvElems = new((T_QvElemSet*) zone.Alloc(sizeof(T_QvElemSet))) T_QvElemSet(zone);
 
-    AddAppData (s_qvElemsKey, qvElems, zone);
+    AddAppData(s_qvElemsKey, qvElems, zone);
     return  qvElems;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::SetInSelectionSet (bool yesNo)
+void DgnElement::SetInSelectionSet(bool yesNo)
     {
     m_flags.m_inSelectionSet = yesNo;
-    SetHilited (yesNo ? HILITED_Normal : HILITED_None);
+    SetHilited(yesNo ? HILITED_Normal : HILITED_None);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -429,8 +429,9 @@ void DgnElement::SetInSelectionSet (bool yesNo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::DeallocateRef(bool dbUnloading)
     {
-    ClearAllAppData (GetDgnDb().Elements().GetHeapZone(), dbUnloading);
-    GetDgnDb().Elements().ReturnedMemory(_GetMemSize());
+    auto& pool = GetDgnDb().Elements();
+    ClearAllAppData(pool.GetHeapZone(), dbUnloading);
+    pool.ReturnedMemory(_GetMemSize());
 
     delete this;
     }
@@ -562,7 +563,7 @@ struct GeomBlobHeader
     uint32_t m_signature;    // write this so we can detect errors on read
     uint32_t m_size;
     GeomBlobHeader(GeomStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
-    GeomBlobHeader(BeSQLite::SnappyReader& in) {uint32_t actuallyRead; in._Read ((Byte*) this, sizeof(*this), actuallyRead);}
+    GeomBlobHeader(BeSQLite::SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
 static Utf8CP GEOM_Column = "Geom";
@@ -583,10 +584,10 @@ DgnModelStatus GeometricElement::_LoadFromDb()
         return DGNMODEL_STATUS_Success; // this element has no geometry
         }
 
-    GeomBlobHeader header (snappy);
+    GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
         {
-        BeAssert (false);
+        BeAssert(false);
         return DGNMODEL_STATUS_ElementReadError;
         }
 
@@ -598,7 +599,7 @@ DgnModelStatus GeometricElement::_LoadFromDb()
         pool.AllocatedMemory(sizeChange);
 
     uint32_t actuallyRead;
-    snappy._Read (m_geom.GetDataR(), m_geom.GetSize(), actuallyRead);
+    snappy._Read(m_geom.GetDataR(), m_geom.GetSize(), actuallyRead);
 
     if (actuallyRead != m_geom.GetSize())
         {
@@ -666,7 +667,7 @@ DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt)
     if (0 < m_geom.GetSize())
         {
         GeomBlobHeader header(m_geom);
-        snappy.Write((ByteCP) &header, sizeof (header));
+        snappy.Write((ByteCP) &header, sizeof(header));
         snappy.Write(m_geom.GetData(), m_geom.GetSize());
         }
 
@@ -686,7 +687,7 @@ DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt)
         return DGNMODEL_STATUS_Success;
 
     StatusInt status = snappy.SaveToRow(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
-    return (SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
+    return(SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -858,10 +859,10 @@ DgnModelStatus DgnElement2d::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* GeometricElement::GetQvElem (uint32_t id) const
+QvElem* GeometricElement::GetQvElem(uint32_t id) const
     {
     T_QvElemSet* qvElems = GetQvElems(false);
-    return qvElems ? qvElems->Find (id) : NULL;
+    return qvElems ? qvElems->Find(id) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1015,7 +1016,7 @@ void GeomStream::ReserveMemory(uint32_t size)
     if (size<=m_allocSize)
         return;
 
-    m_data = (uint8_t*) realloc (m_data, size);
+    m_data = (uint8_t*) realloc(m_data, size);
     m_allocSize = size;
     }
 
@@ -1054,7 +1055,7 @@ void GeomStream::SaveData(uint8_t const* data, uint32_t size)
 struct ElementLoadedEventCaller
 {
     DgnElementR m_elRef;
-    ElementLoadedEventCaller (DgnElementR elRef) : m_elRef (elRef) {}
+    ElementLoadedEventCaller(DgnElementR elRef) : m_elRef(elRef) {}
     void CallHandler(DgnElements::Listener& handler) const {handler._OnElementLoaded(m_elRef);}
 };
 
@@ -1136,7 +1137,7 @@ BentleyStatus CachedInstance::ApplyScheduledInsert(DgnDbR db)
 
     ECInstanceKey newkey;
     ECInstanceInserter inserter(db, m_instance->GetClass());
-    return inserter.Insert(newkey, *m_instance, (useNewId == nullptr), useNewId);
+    return inserter.Insert(newkey, *m_instance,(useNewId == nullptr), useNewId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1386,7 +1387,7 @@ bvector<IECInstancePtr> GeometricElement::GetAspects(ECClassCP aspectClass) cons
     ECSqlStatement stmt;
     stmt.Prepare(GetDgnDb(), b.ToString().c_str());
     stmt.BindId(1, GetElementId());
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while(stmt.Step() == ECSqlStepStatus::HasRow)
         {
         ECInstanceECSqlSelectAdapter selector(stmt);
         IECInstancePtr instance = selector.GetInstance();
@@ -1441,7 +1442,7 @@ bvector<RTYPE> GeometricElement::GetAspects(DgnClassId aspectClassId) const
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
 bvector<IECInstanceCP> GeometricElement::GetAspects(DgnClassId aspectClassId) const {return GetAspects<IECInstanceCP,false>(aspectClassId);}
-bvector<IECInstanceP>  GeometricElement::GetAspectsP(DgnClassId aspectClassId)      {return GetAspects<IECInstanceP, true> (aspectClassId);}
+bvector<IECInstanceP>  GeometricElement::GetAspectsP(DgnClassId aspectClassId)      {return GetAspects<IECInstanceP, true>(aspectClassId);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
@@ -1549,9 +1550,9 @@ static BentleyStatus insertRelationship(DgnDbR db, DgnElementKeyCR sourceElement
         return BentleyStatus::ERROR;
 
     statementPtr->BindInt64(1, sourceElement.GetECClassId());
-    statementPtr->BindId   (2, sourceElement.GetECInstanceId());
+    statementPtr->BindId  (2, sourceElement.GetECInstanceId());
     statementPtr->BindInt64(3, targetInstance.GetClass().GetId());
-    statementPtr->BindText (4, Utf8String(targetInstance.GetInstanceId()).c_str(), EC::IECSqlBinder::MakeCopy::Yes);
+    statementPtr->BindText(4, Utf8String(targetInstance.GetInstanceId()).c_str(), EC::IECSqlBinder::MakeCopy::Yes);
 
     if (ECSqlStepStatus::Done != statementPtr->Step())
         return BentleyStatus::ERROR;

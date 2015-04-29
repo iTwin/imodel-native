@@ -482,7 +482,7 @@ void ElementGeomIO::Iterator::ToNext()
 
     uint32_t        opCode = *((uint32_t *) (m_data));
     uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
-    uint8_t const*    data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : NULL);
+    uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : NULL);
     size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
 
     m_egOp = Operation ((OpCode) (opCode), dataSize, data);
@@ -1734,30 +1734,6 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementGeomIO::Collection::ToGeometry (bvector<ElementGeometryPtr>& geometry) const
-    {
-    // NEEDSWORK: Just want this method for DgnGeomParts::LoadGeomPart where we 
-    //            don't have transforms or symbology. Need to special case
-    //            brep vs. facets...returning ERROR isn't right for mobile platforms...
-    for (auto const& egOp : *this)
-        {
-        ElementGeometryPtr  geom;
-        
-        if (!ElementGeomIO::Reader::Get (egOp, geom))
-            continue; // Ignore non-geometry opCode, it's not an error...
-
-        if (!geom.IsValid())
-            return ERROR; // Failed to create geometry (ex. ISolidKernelEntity).
-
-        geometry.push_back (geom);
-        }
-
-    return SUCCESS;
-    }
-
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  04/2015
 +===============+===============+===============+===============+===============+======*/
@@ -1799,6 +1775,217 @@ void GeometricElement::_Draw (ViewContextR context) const
     DrawGeomStream stroker(*this, isQVis, isQVWireframe, isPick, useBRep);
 
     context.DrawCached(stroker);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeometryCollection::Iterator::ToNext()
+    {
+    do
+        {
+        if (m_dataOffset >= m_totalDataSize)
+            {
+            m_data = NULL;
+            m_dataOffset = 0;
+
+            return;
+            }
+
+        uint32_t        opCode = *((uint32_t *) (m_data));
+        uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
+        uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : NULL);
+        size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
+
+        ElementGeomIO::Operation egOp = ElementGeomIO::Operation ((ElementGeomIO::OpCode) (opCode), dataSize, data);
+
+        m_data += egOpSize;
+        m_dataOffset += egOpSize;
+
+        switch (egOp.m_opCode)
+            {
+            case ElementGeomIO::OpCode::Header:
+                break;
+
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                {
+#if defined (NEEDSWORK)
+                if (nullptr == m_context)
+                    m_context->SetDgnGeomPartId (m_geomPart); // Announce geom part id for picking, etc.
+
+                // DRAW PART...NEEDSWORK...
+
+                if (nullptr == m_context)
+                    m_context->SetDgnGeomPartId (DgnGeomPartId());
+#endif
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BeginSubCategory:
+                {
+                Transform        geomToWorld;
+                DgnSubCategoryId subCategory;
+
+                if (!ElementGeomIO::Reader::Get (egOp, subCategory, geomToWorld))
+                    break;
+
+                if (nullptr == m_context)
+                    break; // ElemDisplayParams not required...
+
+                if (nullptr != m_context->GetCurrLocalToFrustumTransformCP())
+                    m_context->PopTransformClip(); // Pop previous sub-category/transform...
+
+                m_context->PushTransform(geomToWorld);
+
+                ElemDisplayParamsR  elParams = *m_context->GetCurrentDisplayParams();
+                DgnCategoryId       category = elParams.GetCategoryId();
+
+                if (!category.IsValid())
+                    category = m_context->GetDgnDb().Categories().QueryCategoryId(subCategory);
+
+                elParams.Init();
+                elParams.SetCategoryId (category);
+                elParams.SetSubCategoryId (subCategory);
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BasicSymbology:
+            case ElementGeomIO::OpCode::LineStyle:
+            case ElementGeomIO::OpCode::AreaFill:
+            case ElementGeomIO::OpCode::Pattern:
+            case ElementGeomIO::OpCode::Material:
+                {
+                if (nullptr != m_context)
+                    ElementGeomIO::Reader::Get (egOp, *m_context->GetCurrentDisplayParams()); // Update active ElemDisplayParams...
+                break;
+                }
+
+            default:
+                {
+                if (!ElementGeomIO::Reader::Get (egOp, m_elementGeometry))
+                    break; // Ignore non-geometry opCode, it's not an error...
+
+                if (m_elementGeometry.IsValid())
+                    {
+                    if (nullptr != m_context)
+                        m_context->GetCurrentDisplayParams()->Resolve (*m_context); // Resolve sub-category appearance...
+                    return;
+                    }
+
+                m_data = NULL;
+                m_dataOffset = 0;
+
+                return; // Failed to create geometry (ex. ISolidKernelEntity).
+                }
+            }
+
+        } while (true);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  04/2015
++===============+===============+===============+===============+===============+======*/
+struct ElementGeometryCollectionContext : public NullContext
+{
+    DEFINE_T_SUPER(NullContext)
+protected:
+
+SimplifyViewDrawGeom* m_output;
+
+virtual void _SetupOutputs() override {SetIViewDraw (*m_output);}
+
+public:
+
+virtual ~ElementGeometryCollectionContext () {delete (m_output);}
+
+ElementGeometryCollectionContext (DgnDbR db)
+    {
+    m_output = new SimplifyViewDrawGeom();
+    m_purpose = DrawPurpose::CaptureGeometry;
+    m_wantMaterials = true; // Setup material in ElemDisplayParams...
+
+    SetBlockAsynchs (true);
+    m_output->SetViewContext (this);
+    _SetupOutputs();
+
+    m_currDisplayParams.Init();
+    SetDgnDb (db);
+    }
+
+}; // ElementGeometryCollectionContext
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElemDisplayParamsCR ElementGeometryCollection::GetElemDisplayParams()
+    {
+    return *m_context->GetCurrentDisplayParams();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TransformCR ElementGeometryCollection::GetElementToWorld()
+    {
+    return m_elemToWorld;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TransformCR ElementGeometryCollection::GetGeometryToWorld()
+    {
+    TransformCP currentTrans = m_context->GetCurrLocalToFrustumTransformCP();
+
+    if (nullptr != currentTrans)
+        m_geomToWorld = *currentTrans;
+    else
+        m_geomToWorld.InitIdentity();
+
+    return m_geomToWorld;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TransformCR ElementGeometryCollection::GetGeometryToElement()
+    {
+    Transform   worldToElem;
+                
+    worldToElem.InverseOf(m_elemToWorld);
+    m_geomToElem = Transform::FromProduct(worldToElem, GetGeometryToWorld());
+
+    return m_geomToElem;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryCollection::ElementGeometryCollection (uint8_t const* data, size_t dataSize)
+    {
+    m_data = data;
+    m_dataSize = dataSize;
+    m_elemToWorld.InitIdentity();
+    m_context = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryCollection::ElementGeometryCollection (GeometricElementCR element)
+    {
+    m_data = element.GetGeomStream().GetData();
+    m_dataSize = element.GetGeomStream().GetSize();
+    m_elemToWorld = (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform());
+    m_context = new ElementGeometryCollectionContext(element.GetDgnDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryCollection::~ElementGeometryCollection ()
+    {
+    delete((ElementGeometryCollectionContext*) m_context);
     }
 
 /*---------------------------------------------------------------------------------**//**
