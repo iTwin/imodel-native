@@ -268,14 +268,15 @@ public:
     //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
     //! can override this method to do add graphics that QueryViewController would normally exclude.
     //! Currently, only QueryViewController calls this method.
+    //! <h2>Coordinate Systems</h2>
+    //! A DgnDb defines a single physical coordinate system. The original is at (0,0,0) and distances are always in meters.
+    //! A DgnDb is associated with a single Geographic Coordinate System (GCS). See DgnUnits::GetDgnGCS.
+    //! Graphics in the scene must be defined in the DgnDb's coordinate system.
+    //! The implementation must transform external data into the coordinate system of the DgnDb as necessary before adding graphics to the scene.
     //! <h2>Displaying external data using progressive display</h2>
-    //! An implementation of _AddGraphicsToScene is required to be very fast. If any external data is not immediately available, then the implementation should 
-    //! a) make arrangements to obtain the data in the background and then b) schedule itself for callbacks later during progressive display. 
+    //! An implementation of _AddGraphicsToScene is required to be very fast. If some external data is not immediately available, then the implementation should 
+    //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
     //! See DgnViewport::ScheduleProgressiveDisplay for how to register for progressive display. 
-    //! See WebMercatorModel for an example. WebMercatorModel obtains and displays satellite imagery and street maps in a view. 
-    //! WebMercatorModel obtains its tile data from a server and caches it locally. WebMercatorModel overrides _AddGraphicsToScene to display 
-    //! relevant tiles are are immediately available from the cache. It handles missing tiles by requesting them from a server and then 
-    //! registering a progressive display agent to check on the download status of the requested tiles and to displays them as they arrive over time.
     virtual void _AddGraphicsToScene(ViewContextR) {}
 
     bool NotifyOnEmpty();
