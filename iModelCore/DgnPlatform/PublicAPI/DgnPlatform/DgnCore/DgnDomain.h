@@ -234,7 +234,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual ElementHandlerP _ToElementHandler() {return nullptr;} //!< dynamic_cast this Handler to an ElementHandler
         virtual ModelHandlerP _ToModelHandler() {return nullptr;}     //!< dynamic_cast this Handler to a ModelHandler
         virtual ViewHandlerP _ToViewHandler() {return nullptr;}       //!< dynamic_cast this Handler to a ViewHandler
+#ifdef WIP_ITEM_HANDLER
         virtual ElementItemHandlerP _ToElementItemHandler() {return nullptr;}     //!< dynamic_cast this Handler to a ElementItemHandler
+#endif
 
         #if !defined (DOCUMENTATION_GENERATOR)
         static Handler& z_GetHandlerInstance();

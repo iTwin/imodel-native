@@ -268,6 +268,15 @@ public:
     //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
     //! can override this method to do add graphics that QueryViewController would normally exclude.
     //! Currently, only QueryViewController calls this method.
+    //! <h2>Coordinate Systems</h2>
+    //! A DgnDb defines a single physical coordinate system. The original is at (0,0,0) and distances are always in meters.
+    //! A DgnDb is associated with a single Geographic Coordinate System (GCS). See DgnUnits::GetDgnGCS.
+    //! Graphics in the scene must be defined in the DgnDb's coordinate system.
+    //! The implementation must transform external data into the coordinate system of the DgnDb as necessary before adding graphics to the scene.
+    //! <h2>Displaying external data using progressive display</h2>
+    //! An implementation of _AddGraphicsToScene is required to be very fast. If some external data is not immediately available, then the implementation should 
+    //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
+    //! See DgnViewport::ScheduleProgressiveDisplay for how to register for progressive display. 
     virtual void _AddGraphicsToScene(ViewContextR) {}
 
     bool NotifyOnEmpty();
