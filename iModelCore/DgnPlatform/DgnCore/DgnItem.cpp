@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#ifdef WIP_ITEM_HANDLER
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      05/2015
 //---------------------------------------------------------------------------------------
@@ -23,6 +25,7 @@ ElementItemHandler* ElementItemHandler::GetItemHandler(DgnDbR db, DgnClassId ite
     DgnDomain::Handler* handler = db.Domains().FindHandler(itemClassId, GetItemClassId(db));
     return handler ? handler->_ToElementItemHandler() : nullptr;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2014
@@ -61,3 +64,4 @@ ElementItemKey DgnItems::QueryItemKey(DgnElementId elementId)
 
     return ElementItemKey(statementPtr->GetValueInt64(0), elementId);
     }
+

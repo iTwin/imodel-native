@@ -12,6 +12,7 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+#ifdef WIP_ITEM_HANDLER
 //=======================================================================================
 //! Base class for ElementItem handlers (which follow the singleton pattern).
 //! Many handler methods take the ElementItemKey type so as not to require the loading
@@ -34,5 +35,6 @@ public:
 
     DGNPLATFORM_EXPORT ElementItemHandler* GetItemHandler(DgnDbR db, DgnClassId itemClassId);
 };
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

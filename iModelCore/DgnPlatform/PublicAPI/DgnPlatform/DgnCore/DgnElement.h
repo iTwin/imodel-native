@@ -172,6 +172,7 @@ protected:
     DgnClassId      m_classId;
     DgnCategoryId   m_categoryId;
     Utf8String      m_code;
+    mutable DgnClassId m_itemClassId;   // Optional
     mutable Flags   m_flags;
     mutable AppDataEntry* m_appData;
 
@@ -213,6 +214,11 @@ protected:
     virtual DgnElement2dCP _ToElement2d() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
+
+    bvector<ECN::IECInstancePtr> GetAspects(ECN::ECClassCP ecclass) const;
+    template<typename RTYPE, bool SETMODIFIED>
+    bvector<RTYPE> GetAspects(DgnClassId aspectClass) const;
+    ECN::IECInstanceP GetItem(bool setModifiedFlag) const;
 
 public:
     void InitFrom(DgnElementCR rhs) {_InitFrom(rhs);}
@@ -365,9 +371,91 @@ public:
     //! @see GetSubclassProperties, CancelSubclassPropertiesChange
     DGNPLATFORM_EXPORT ECN::IECInstanceR GetSubclassPropertiesR();
 
-    //! Discard all scheduled changes to subclass properties.
-    //! @note This method invalidates the object returned by GetSubclassPropertiesR and GetSubclassProperties
-    DGNPLATFORM_EXPORT void CancelSubclassPropertiesChange();
+    //@}
+
+    /// @name Element Aspects
+    //@{
+
+    //! Specify the element's item class. @see SetItem for the preferred way to define an item for an element.
+    void SetItemClassId(DgnClassId classId) {m_itemClassId = classId;}
+
+    //! Get the ElementGeom's DgnClassId (the form/geometry of the element)
+    //! @note The result may be invalid, since the item class is optional
+    DGNPLATFORM_EXPORT DgnClassId GetItemClassId() const;
+
+    //! Convenience method to get the Element's class and id as an ElementItemKey. 
+    //! @note The result may be invalid, since the item class is optional
+    ElementItemKey GetItemKey() const {return GetItemClassId().IsValid()? ElementItemKey(GetItemClassId(), GetElementId()): ElementItemKey(ECN::ECClassId(), GetElementId());}
+
+    //! Get the handler that generated the ElementGeom
+#ifdef WIP_ITEM_HANDLER
+    DGNPLATFORM_EXPORT ElementItemHandler& GetItemHandler() const;
+#endif
+
+    //! Get a copy of the ElementItem associated with this element, if any.
+    //! @return a pointer to a read-only instance that holds the ElementItem's properties, or nullptr if the element has no Item.
+    //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
+    //! @see GetItemP, SetItem, RemoveItem
+    DGNPLATFORM_EXPORT ECN::IECInstanceCP GetItem() const;
+
+    //! Get a writable copy of the ElementItem associated with this element, if any.
+    //! @return a pointer to a read-write instance that holds the ElementItem's properties, or nullptr if the element has no Item.
+    //! @note The returned instance can be used to read and/or modify the ElementItem's properties.
+    //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
+    //! @see GetItem, SetItem, RemoveItem, CancelItemChange
+    DGNPLATFORM_EXPORT ECN::IECInstanceP GetItemP();
+
+    //! Get copies of all existing or pending ElementAspects of the specified class that are associated with this element.
+    //! @param[in] aspectClass      The ECClass of the ElementAspect to query
+    //! @return zero or more ElementAspect instances. The vector will be empty if the element has no ElementAspect of the specified class. The vector
+    //! will hold multiple instances if the element has more than aspect of the specified class.
+    //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
+    //! @see GetItemcp for a direct way to access the ElementItem.
+    //! @see GetAspectsP, SetAspect, RemoveAspect
+    DGNPLATFORM_EXPORT bvector<ECN::IECInstanceCP> GetAspects(DgnClassId aspectClass) const;
+
+    //! Get writable copies of all existing or pending ElementAspects of the specified class that are associated with this element.
+    //! @param[in] aspectClass      The ECClass of the ElementAspect to query
+    //! @return zero or more ElementAspect instances. The vector will be empty if the element has no ElementAspect of the specified class. The vector
+    //! will hold multiple instances if the element has more than aspect of the specified class.
+    //! @note GetAspectsP returns instances that can be used to read and/or modify the aspects' properties.
+    //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
+    //! @see GetItemP for a direct way to access the ElementItem.
+    //! @see GetAspects, SetAspect, RemoveAspect, CancelAspectChange
+    DGNPLATFORM_EXPORT bvector<ECN::IECInstanceP> GetAspectsP(DgnClassId aspectClass);
+
+    //! Set the ElementItem associated with this element.
+    //! If the element does not currently have an ElementItem, then the supplied instance will be used to insert one.
+    //! Otherwise, the supplied instance will be used to update the existing ElementItem.
+    //! The change is buffered in memory and is applied to the database when the element itself is inserted or replaced.
+    //! @note DgnElement will increment the reference count on the supplied instance and then hold onto it.
+    //! @note This method invalidates pointers returned by GetItemP and GetItem
+    //! @see GetItemP, CancelItemChange
+    DGNPLATFORM_EXPORT void SetItem(ECN::IECInstanceR itemInstance);
+
+    //! Specify that the element's ElementItem should be deleted.
+    //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.
+    //! @note This DgnElement will release its reference to the ElementItem instance that it is currently holding, if any.
+    //! @note This method invalidates pointers returned by GetItemP and GetItem
+    DGNPLATFORM_EXPORT void RemoveItem();
+
+    //! Add or update an aspect of this element.
+    //! The change is buffered in memory and is applied to the database when the element itself is inserted or replaced.
+    //! @param[in] instance      The new state of the aspect
+    //! @note DgnElement will increment the reference count on the supplied instance and then hold onto it.
+    //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
+    //! @see SetItem for a direct way to insert or update the ElementItem.
+    //! @see GetAspectsP, CancelAspectChange, RemoveAspect
+    DGNPLATFORM_EXPORT void SetAspect(ECN::IECInstanceR instance);
+
+    //! Specify that an aspect of this element should be deleted.
+    //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.
+    //! @param[in] aspectClass      The ECClass of the ElementAspect to be deleted
+    //! @param[in] aspectId         The ID of the ElementAspect to be deleted
+    //! @note This DgnElement will release its reference to the ElementAspect instance that it is currently holding, if any.
+    //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
+    //! @see RemoveItem for a direct way to delete the ElementItem.
+    DGNPLATFORM_EXPORT void RemoveAspect(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
 
     //@}
 };
@@ -506,9 +594,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
 protected:
     GeomStream m_geom;
-    mutable DgnClassId m_itemClassId;
-    mutable ElementItemHandler* m_itemHandler;
-
+    
     uint32_t _GetMemSize() const override {return sizeof(*this) + m_geom.GetAllocSize();}
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR other) override;
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
@@ -516,16 +602,10 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     virtual DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) = 0;
-    DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR) override;
     GeometricElementCP _ToGeometricElement() const override {return this;}
-    explicit GeometricElement(CreateParams const& params) : T_Super(params) {m_itemHandler=nullptr;}
+    explicit GeometricElement(CreateParams const& params) : T_Super(params) {;}
 
     DgnModelStatus DoInsertOrUpdate(BeSQLite::Statement&);
-
-    bvector<ECN::IECInstancePtr> GetAspects(ECN::ECClassCP ecclass) const;
-    template<typename RTYPE, bool SETMODIFIED>
-    bvector<RTYPE> GetAspects(DgnClassId aspectClass) const;
-    ECN::IECInstanceP GetItem(bool setModifiedFlag) const;
 
 public:
     virtual AxisAlignedBox3d _GetRange3d() const = 0;
@@ -534,7 +614,6 @@ public:
     DGNPLATFORM_EXPORT QvElem* GetQvElem(uint32_t index) const;
     DGNPLATFORM_EXPORT bool SetQvElem(QvElem* qvElem, uint32_t index);
     T_QvElemSet* GetQvElems(bool createIfNotPresent) const;
-    void SetItemClassId(DgnClassId classId) {m_itemClassId = classId;}
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
 
@@ -543,94 +622,6 @@ public:
 
     //! Get a writable reference to the GeomStream for this element.
     GeomStreamR GetGeomStreamR() {return m_geom;}
-
-    //! Get the ElementGeom's DgnClassId (the form/geometry of the element)
-    DGNPLATFORM_EXPORT DgnClassId GetItemClassId() const;
-
-    ElementItemKey GetItemKey() const {return ElementItemKey(GetItemClassId(), GetElementId());}
-
-    //! Get the handler that generated the ElementGeom
-    DGNPLATFORM_EXPORT ElementItemHandler& GetItemHandler() const;
-
-    /// @name Element Aspects
-    //@{
-
-    //! Get a copy of the ElementItem associated with this element, if any.
-    //! @return a pointer to a read-only instance that holds the ElementItem's properties, or nullptr if the element has no Item.
-    //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
-    //! @see GetItemP, SetItem, RemoveItem
-    DGNPLATFORM_EXPORT ECN::IECInstanceCP GetItem() const;
-
-    //! Get a writable copy of the ElementItem associated with this element, if any.
-    //! @return a pointer to a read-write instance that holds the ElementItem's properties, or nullptr if the element has no Item.
-    //! @note The returned instance can be used to read and/or modify the ElementItem's properties.
-    //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
-    //! @see GetItem, SetItem, RemoveItem, CancelItemChange
-    DGNPLATFORM_EXPORT ECN::IECInstanceP GetItemP();
-
-    //! Get copies of all existing or pending ElementAspects of the specified class that are associated with this element.
-    //! @param[in] aspectClass      The ECClass of the ElementAspect to query
-    //! @return zero or more ElementAspect instances. The vector will be empty if the element has no ElementAspect of the specified class. The vector
-    //! will hold multiple instances if the element has more than aspect of the specified class.
-    //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
-    //! @see GetItemcp for a direct way to access the ElementItem.
-    //! @see GetAspectsP, SetAspect, RemoveAspect
-    DGNPLATFORM_EXPORT bvector<ECN::IECInstanceCP> GetAspects(DgnClassId aspectClass) const;
-
-    //! Get writable copies of all existing or pending ElementAspects of the specified class that are associated with this element.
-    //! @param[in] aspectClass      The ECClass of the ElementAspect to query
-    //! @return zero or more ElementAspect instances. The vector will be empty if the element has no ElementAspect of the specified class. The vector
-    //! will hold multiple instances if the element has more than aspect of the specified class.
-    //! @note GetAspectsP returns instances that can be used to read and/or modify the aspects' properties.
-    //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
-    //! @see GetItemP for a direct way to access the ElementItem.
-    //! @see GetAspects, SetAspect, RemoveAspect, CancelAspectChange
-    DGNPLATFORM_EXPORT bvector<ECN::IECInstanceP> GetAspectsP(DgnClassId aspectClass);
-
-    //! Set the ElementItem associated with this element.
-    //! If the element does not currently have an ElementItem, then the supplied instance will be used to insert one.
-    //! Otherwise, the supplied instance will be used to update the existing ElementItem.
-    //! The change is buffered in memory and is applied to the database when the element itself is inserted or replaced.
-    //! @note DgnElement will increment the reference count on the supplied instance and then hold onto it.
-    //! @note This method invalidates pointers returned by GetItemP and GetItem
-    //! @see GetItemP, CancelItemChange
-    DGNPLATFORM_EXPORT void SetItem(ECN::IECInstanceR itemInstance);
-
-    //! Specify that the element's ElementItem should be deleted.
-    //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.
-    //! @note This DgnElement will release its reference to the ElementItem instance that it is currently holding, if any.
-    //! @note This method invalidates pointers returned by GetItemP and GetItem
-    DGNPLATFORM_EXPORT void RemoveItem();
-
-    //! Cancel a pending request to insert, update, or delete the ElementItem.
-    //! @note This method invalidates pointers returned by GetItemP and GetItem
-    //! @see GetItemP, SetItem, RemoveItem
-    DGNPLATFORM_EXPORT void CancelItemChange();
-
-    //! Add or update an aspect of this element.
-    //! The change is buffered in memory and is applied to the database when the element itself is inserted or replaced.
-    //! @param[in] instance      The new state of the aspect
-    //! @note DgnElement will increment the reference count on the supplied instance and then hold onto it.
-    //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
-    //! @see SetItem for a direct way to insert or update the ElementItem.
-    //! @see GetAspectsP, CancelAspectChange, RemoveAspect
-    DGNPLATFORM_EXPORT void SetAspect(ECN::IECInstanceR instance);
-
-    //! Specify that an aspect of this element should be deleted.
-    //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.
-    //! @param[in] aspectClass      The ECClass of the ElementAspect to be deleted
-    //! @param[in] aspectId         The ID of the ElementAspect to be deleted
-    //! @note This DgnElement will release its reference to the ElementAspect instance that it is currently holding, if any.
-    //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
-    //! @see RemoveItem for a direct way to delete the ElementItem.
-    DGNPLATFORM_EXPORT void RemoveAspect(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
-
-    //! Cancel a pending request to insert, update, or delete the aspects of this element.
-    //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
-    //! @see RemoveAspect, SetAspect, GetAspectsP
-    DGNPLATFORM_EXPORT void CancelAspectChange(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
-
-    //@}
 };
 
 //=======================================================================================
