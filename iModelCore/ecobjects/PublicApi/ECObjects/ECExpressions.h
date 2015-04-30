@@ -888,6 +888,9 @@ public:
 
     // Parses and evaluate a value expression and returns the result
     ECOBJECTS_EXPORT static ExpressionStatus  EvaluateExpression(EvaluationResult& result, WCharCP expr, ExpressionContextR context);
+    
+    // Parses and evaluate a value expression and returns the result
+    ECOBJECTS_EXPORT static ExpressionStatus  EvaluateExpression(EvaluationResult& result, Utf8CP expr, ExpressionContextR context);
 };  // End of ECEvaluator class
 
 /*=================================================================================**//**

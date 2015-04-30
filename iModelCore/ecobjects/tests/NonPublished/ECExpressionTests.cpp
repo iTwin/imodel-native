@@ -291,6 +291,28 @@ TEST_F (LiteralExpressionTests, FloatComparisons)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LiteralExpressionTests, Utf8Expressions)
+    {
+    ECValue expectVal(true);
+
+    // when a symbolset is passed in - published symbol providers will add their symbols to the context.
+    SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create(NULL);
+
+    Utf8String expr("12.1 > 12");
+
+    EvaluationResult result;
+    ExpressionStatus status = ECEvaluator::EvaluateExpression(result, expr.c_str(), *symbolContext);
+    EXPECT_SUCCESS(status);
+
+    status = ECEvaluator::EvaluateExpression(result, "12.0 = 12.0", *symbolContext);
+    EXPECT_SUCCESS(status);
+    EXPECT_TRUE(result.IsECValue());
+    EXPECT_TRUE(expectVal.Equals(*result.GetECValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LiteralExpressionTests, EmptySymbolSet)
     {
     TestExpressionEquals (L"12.1 = 12", ECValue (false));
@@ -853,6 +875,7 @@ TEST_F (MethodsReturningInstancesTests, InstanceMethods)
     EXPECT_TRUE (result.IsECValue());
     EXPECT_EQ (result.GetECValue()->GetInteger(), 2);
     }
+
 
 END_BENTLEY_ECN_TEST_NAMESPACE
 

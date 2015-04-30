@@ -1491,6 +1491,18 @@ ExpressionStatus  ECEvaluator::EvaluateExpression (EvaluationResult& result, WCh
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus  ECEvaluator::EvaluateExpression(EvaluationResult& result, Utf8CP expr, ExpressionContextR context)
+    {
+    WString wideExpression;
+    if (nullptr != expr)
+        wideExpression.AssignUtf8(expr);
+
+    return EvaluateExpression(result, wideExpression.c_str(), context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
                 ECEvaluator::ECEvaluator
