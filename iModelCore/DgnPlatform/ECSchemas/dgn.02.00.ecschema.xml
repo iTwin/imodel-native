@@ -483,7 +483,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
     </ECClass>
 
-
     <ECRelationshipClass typeName="ElementOwnsAspect" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <Source cardinality="(1,1)" polymorphic="True">
             <ECCustomAttributes>
@@ -506,7 +505,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <ECIdColumn>ElementId</ECIdColumn>
                 </ECDbRelationshipConstraintHint>
             </ECCustomAttributes>
-            <Class class="Element" />
+            <Class class="GeometricElement" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="False">
             <ECCustomAttributes>
@@ -517,7 +516,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     </ForeignKeyConstraint>
                 </ECDbRelationshipConstraintHint>
             </ECCustomAttributes>
-            
             <Class class="ElementGeom" >
                 <Key>
                     <Property name="ElementId" />

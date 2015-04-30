@@ -30,8 +30,8 @@ struct CachedInstance
     BentleyStatus ApplyScheduledInsert(DgnDbR);
     BentleyStatus ApplyScheduledChange(InstanceUpdateOutcome&, DgnDbR);
     BentleyStatus ApplyScheduledChangeToElementInstance(DgnElementR);
-    BentleyStatus ApplyScheduledChangesToItem(GeometricElementR);
-    BentleyStatus ApplyScheduledChangesToAspect(GeometricElementR);
+    BentleyStatus ApplyScheduledChangesToItem(DgnElementR);
+    BentleyStatus ApplyScheduledChangesToAspect(DgnElementR);
     };
 
 //=======================================================================================
@@ -95,7 +95,7 @@ void CachedInstances::_OnCleanup(DgnElementCP host, bool unloadingModel, HeapZon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId GeometricElement::GetItemClassId() const
+DgnClassId DgnElement::GetItemClassId() const
     {
     if (!m_itemClassId.IsValid())
         {
@@ -108,6 +108,7 @@ DgnClassId GeometricElement::GetItemClassId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ITEM_HANDLER
 ElementItemHandler& GeometricElement::GetItemHandler() const
     {
     if (nullptr == m_itemHandler)
@@ -115,6 +116,7 @@ ElementItemHandler& GeometricElement::GetItemHandler() const
 
     return *m_itemHandler;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
@@ -746,7 +748,9 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
         }
 
     PhysicalElementPtr elementPtr = new PhysicalElement(CreateParams(model, PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
+#ifdef WIP_ITEM_HANDLER // item class id is optional, so there is no need to set it to the default dgn.ElementItem classid
     elementPtr->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(model.GetDgnDb()));
+#endif
     return elementPtr;
     }
 
@@ -893,7 +897,9 @@ void GeometricElement::_InitFrom(DgnElementCR other)
 
     SaveGeomStream(&otherGeom->m_geom);
     m_itemClassId = otherGeom->m_itemClassId;
+#ifdef WIP_ITEM_HANDLER
     m_itemHandler = otherGeom->m_itemHandler;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -939,8 +945,9 @@ DgnModelStatus GeometricElement::_SwapWithModified(DgnElementR other)
 
     std::swap(m_geom, geom->m_geom);
     std::swap(m_itemClassId, geom->m_itemClassId);
+#ifdef WIP_ITEM_HANDLER
     std::swap(m_itemHandler, geom->m_itemHandler);
-
+#endif
     return DGNMODEL_STATUS_Success;
     }
 
@@ -1289,18 +1296,7 @@ IECInstanceR DgnElement::GetSubclassPropertiesR() {return GetSubclassProperties(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void DgnElement::CancelSubclassPropertiesChange()
-    {
-    CachedInstances* instances = CachedInstances::Find(*this);
-    if (nullptr == instances)
-        return;
-    instances->m_element.Clear();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson  04/2015
-//---------------------------------------------------------------------------------------
-IECInstanceP GeometricElement::GetItem(bool setModified) const
+IECInstanceP DgnElement::GetItem(bool setModified) const
     {
     if (!GetElementId().IsValid())
         return nullptr;
@@ -1308,10 +1304,13 @@ IECInstanceP GeometricElement::GetItem(bool setModified) const
     CachedInstances& instances = CachedInstances::Get(*this);
     if (!instances.m_itemChecked)
         {
-        ECClassCP itemClass = GetDgnDb().Schemas().GetECClass(GetItemClassId().GetValue());
-
         instances.m_itemChecked = true;
-        instances.m_item = CachedInstance(getDirectlyLinkedInstance(GetDgnDb(), itemClass, GetElementId(), bset<Utf8String>()));
+
+        if (GetItemClassId().IsValid())
+            {
+            ECClassCP itemClass = GetDgnDb().Schemas().GetECClass(GetItemClassId().GetValue());
+            instances.m_item = CachedInstance(getDirectlyLinkedInstance(GetDgnDb(), itemClass, GetElementId(), bset<Utf8String>()));
+            }
         }
 
     if (instances.m_item.m_changeType == InstanceChangeType::Delete)
@@ -1326,13 +1325,13 @@ IECInstanceP GeometricElement::GetItem(bool setModified) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-IECInstanceCP GeometricElement::GetItem() const {return GetItem(false);}
-IECInstanceP  GeometricElement::GetItemP()        {return GetItem(true);}
+IECInstanceCP DgnElement::GetItem() const {return GetItem(false);}
+IECInstanceP  DgnElement::GetItemP()      {return GetItem(true);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void GeometricElement::SetItem(IECInstanceR instance)
+void DgnElement::SetItem(IECInstanceR instance)
     {
     CachedInstances& instances = CachedInstances::Get(*this);
     instances.m_itemChecked = true;
@@ -1342,7 +1341,7 @@ void GeometricElement::SetItem(IECInstanceR instance)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void GeometricElement::RemoveItem()
+void DgnElement::RemoveItem()
     {
     if (nullptr == GetItem()) // make sure we have the existing item cached.
         return; // no item => nop
@@ -1354,19 +1353,7 @@ void GeometricElement::RemoveItem()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void GeometricElement::CancelItemChange()
-    {
-    CachedInstances* instances = CachedInstances::Find(*this);
-    if (nullptr == instances)
-        return;
-    instances->m_item.Clear();
-    instances->m_itemChecked = false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson  04/2015
-//---------------------------------------------------------------------------------------
-bvector<IECInstancePtr> GeometricElement::GetAspects(ECClassCP aspectClass) const
+bvector<IECInstancePtr> DgnElement::GetAspects(ECClassCP aspectClass) const
     {
     bvector<IECInstancePtr> instances;
 
@@ -1412,7 +1399,7 @@ bvector<IECInstancePtr> GeometricElement::GetAspects(ECClassCP aspectClass) cons
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
 template<typename RTYPE, bool SETMODIFIED>
-bvector<RTYPE> GeometricElement::GetAspects(DgnClassId aspectClassId) const
+bvector<RTYPE> DgnElement::GetAspects(DgnClassId aspectClassId) const
     {
     CachedInstances& instances = CachedInstances::Get(*this);
     if (instances.m_otherAspects.find(aspectClassId) == instances.m_otherAspects.end())
@@ -1441,13 +1428,13 @@ bvector<RTYPE> GeometricElement::GetAspects(DgnClassId aspectClassId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-bvector<IECInstanceCP> GeometricElement::GetAspects(DgnClassId aspectClassId) const {return GetAspects<IECInstanceCP,false>(aspectClassId);}
-bvector<IECInstanceP>  GeometricElement::GetAspectsP(DgnClassId aspectClassId)      {return GetAspects<IECInstanceP, true>(aspectClassId);}
+bvector<IECInstanceCP> DgnElement::GetAspects(DgnClassId aspectClassId) const {return GetAspects<IECInstanceCP,false>(aspectClassId);}
+bvector<IECInstanceP>  DgnElement::GetAspectsP(DgnClassId aspectClassId)      {return GetAspects<IECInstanceP, true>(aspectClassId);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void GeometricElement::SetAspect(IECInstanceR aspectInstance)
+void DgnElement::SetAspect(IECInstanceR aspectInstance)
     {
     DgnClassId aspectClassId(aspectInstance.GetClass().GetId());
 
@@ -1469,7 +1456,7 @@ void GeometricElement::SetAspect(IECInstanceR aspectInstance)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void GeometricElement::RemoveAspect(DgnClassId aspectClassId, ECInstanceId aspectId)
+void DgnElement::RemoveAspect(DgnClassId aspectClassId, ECInstanceId aspectId)
     {
     GetAspects(aspectClassId); // make sure we have read the aspects that are there.
 
@@ -1481,25 +1468,6 @@ void GeometricElement::RemoveAspect(DgnClassId aspectClassId, ECInstanceId aspec
     CachedInstance* aspect = instances.FindAspectInstanceAccessor(aspectClassId.GetValue(), aspectIdStr);
     if (nullptr != aspect)
         aspect->m_changeType = InstanceChangeType::Delete;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson  04/2015
-//---------------------------------------------------------------------------------------
-void GeometricElement::CancelAspectChange(DgnClassId aspectClass, EC::ECInstanceId aspectId)
-    {
-    CachedInstances* instances = CachedInstances::Find(*this);
-    if (nullptr == instances)
-        return;
-
-    wchar_t aspectIdString[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ECInstanceIdHelper::ToString(aspectIdString, _countof(aspectIdString), aspectId);
-    CachedInstance* aspect = instances->FindAspectInstanceAccessor(aspectClass.GetValue(), aspectIdString);
-    if (nullptr == aspect)
-        return;
-
-    aspect->m_changeType = InstanceChangeType::NoChange;
-    aspect->m_instance = queryInstance(GetDgnDb(), GetDgnDb().Schemas().GetECClass(aspectClass.GetValue()), aspectId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1563,7 +1531,7 @@ static BentleyStatus insertRelationship(DgnDbR db, DgnElementKeyCR sourceElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedInstance::ApplyScheduledChangesToItem(GeometricElementR el)
+BentleyStatus CachedInstance::ApplyScheduledChangesToItem(DgnElementR el)
     {
     if (m_changeType == InstanceChangeType::NoChange)
         return BSISUCCESS;
@@ -1580,7 +1548,7 @@ BentleyStatus CachedInstance::ApplyScheduledChangesToItem(GeometricElementR el)
     if (m_changeType == InstanceChangeType::Write)
         {
         //  There is 1 item. If we want to change its class, we must delete the existing one.
-        if (el.GetItemClassId().GetValue() != m_instance->GetClass().GetId())
+        if (el.GetItemClassId().IsValid() && el.GetItemClassId().GetValue() != m_instance->GetClass().GetId())
             el.GetDgnDb().Items().DeleteItem(el.GetElementId());
         }
 
@@ -1624,7 +1592,7 @@ CachedInstance* CachedInstances::FindAspectInstanceAccessor(ECClassId classId, W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedInstance::ApplyScheduledChangesToAspect(GeometricElementR el)
+BentleyStatus CachedInstance::ApplyScheduledChangesToAspect(DgnElementR el)
     {
     if (m_changeType == InstanceChangeType::NoChange)
         return BSISUCCESS;
@@ -1658,31 +1626,9 @@ BentleyStatus DgnElement::_ApplyScheduledChangesToInstances(DgnElement& modified
     if (nullptr == modifiedInstances)
         return BSISUCCESS;
 
-    return modifiedInstances->m_element.ApplyScheduledChangeToElementInstance(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_ClearScheduledChangesToInstances()
-    {
-    CachedInstances* thisInstances = CachedInstances::Find(*this);
-    if (nullptr != thisInstances)
-        thisInstances->Clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometricElement::_ApplyScheduledChangesToInstances(DgnElement& modified)
-    {
-    CachedInstances* modifiedInstances = CachedInstances::Find(modified);
-    if (nullptr == modifiedInstances)
-        return BSISUCCESS;
-
-    if (BSISUCCESS != T_Super::_ApplyScheduledChangesToInstances(modified))
+    if (BSISUCCESS != modifiedInstances->m_element.ApplyScheduledChangeToElementInstance(*this))
         return BSIERROR;
-
+    
     if (BSISUCCESS != modifiedInstances->m_item.ApplyScheduledChangesToItem(*this))
         return BSIERROR;
 
@@ -1697,6 +1643,16 @@ BentleyStatus GeometricElement::_ApplyScheduledChangesToInstances(DgnElement& mo
         }
 
     return BSISUCCESS;
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_ClearScheduledChangesToInstances()
+    {
+    CachedInstances* thisInstances = CachedInstances::Find(*this);
+    if (nullptr != thisInstances)
+        thisInstances->Clear();
     }
 
 static const double s_smallVal = .0005;
