@@ -396,6 +396,8 @@ $(coreObjs)ScopedDgnHost$(oext)          : $(DgnHandlersDir)ScopedDgnHost.cpp  $
 
 $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAPISrc)NamedVolume.h ${MultiCompileDepends}
 
+$(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 coreObjects =% $(MultiCompileObjectList)
