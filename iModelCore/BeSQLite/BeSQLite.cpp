@@ -22,6 +22,7 @@
 #include <string>
 #include <BeSQLite/DownloadAdmin.h>
 #include "BeSQLiteProfileManager.h"
+#include <prg.h>
 
 #include "seven/Types.h"
 #include "seven/Lzma2Enc.h"
@@ -1262,6 +1263,16 @@ DbResult Db::SaveRepositoryId()
         m_dbFile->m_repositoryId = BeRepositoryId(0);
 
     return SaveRepositoryLocalValue (m_dbFile->m_repositoryIdRlvIndex, m_dbFile->m_repositoryId.GetValue ());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+DbResult Db::SaveCreationBeSqliteBuildVersion()
+    {
+    static Utf8CP BUILD_VERSION = REL_V "." MAJ_V "." MIN_V "." SUBMIN_V;
+    
+    return SavePropertyString(Properties::CreationBeSqliteBuildVersion(), BUILD_VERSION);
     }
 
 /*---------------------------------------------------------------------------------**//**

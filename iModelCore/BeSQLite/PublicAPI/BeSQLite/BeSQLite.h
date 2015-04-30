@@ -2321,7 +2321,6 @@ protected:
     DbResult SaveBeDbGuid();
     DbResult SaveRepositoryId();
 
-
 private:
     void DoCloseDb();
     DbResult DoOpenDb (Utf8CP dbName, OpenParams const& params);
@@ -2464,6 +2463,10 @@ public:
     //! Saves the current date and time as the CreationDate property of this database.
     //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.
     BE_SQLITE_EXPORT DbResult SaveCreationDate();
+
+    //! Saves the build number of BeSqlite as the CreationBeSqliteBuildVersion property of this database.
+    //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.
+    BE_SQLITE_EXPORT DbResult SaveCreationBeSqliteBuildVersion();
 
     //! Query the CreationDate property of this database.
     //! @param[out] creationDate The date that the database was created.
@@ -3303,6 +3306,8 @@ struct Properties
     //! or obtain and apply recent changesets in order to update it.
     //! @note This property is optional.
     static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
+    //! Build version of BeSqlite (e.g. 00.00.00.00) used to create this database; useful for forensic diagnostics.
+    static PropSpec CreationBeSqliteBuildVersion() {return PropSpec("CreationBeSqliteBuildVersion");}
     };
 
 END_BENTLEY_SQLITE_NAMESPACE
