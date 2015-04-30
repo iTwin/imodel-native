@@ -555,7 +555,7 @@ void ElementGeomIO::Writer::Append (DEllipse3dCR arc, int8_t boundary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePrimitiveCR curvePrimitive, bool isClosed, bool isFilled)
+static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePrimitiveCR curvePrimitive, bool isClosed)
     {
     // Special case single/simple curve primitives to avoid having to call new during draw...
     switch (curvePrimitive.GetCurvePrimitiveType())
@@ -573,7 +573,7 @@ static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePri
             {
             bvector<DPoint3d> const*  points = curvePrimitive.GetLineStringCP();
 
-            writer.Append (&points->front(), points->size(), (int8_t) (isClosed ? (isFilled ? FB::BoundaryType_Filled : FB::BoundaryType_Closed) : FB::BoundaryType_Open));
+            writer.Append (&points->front(), points->size(), (int8_t) (isClosed ? FB::BoundaryType_Closed : FB::BoundaryType_Open));
 
             return true;
             }
@@ -591,7 +591,7 @@ static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePri
             {
             DEllipse3dCP  ellipse = curvePrimitive.GetArcCP();
 
-            writer.Append (*ellipse, (int8_t) (isClosed ? (isFilled ? FB::BoundaryType_Filled : FB::BoundaryType_Closed) : FB::BoundaryType_Open));
+            writer.Append (*ellipse, (int8_t) (isClosed ? FB::BoundaryType_Closed : FB::BoundaryType_Open));
 
             return true;
             }
@@ -604,10 +604,10 @@ static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (CurveVectorCR curves, bool isFilled)
+void ElementGeomIO::Writer::Append (CurveVectorCR curves)
     {
     // Special case to avoid having to call new during draw...
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive() && appendSimpleCurvePrimitive (*this, *curves.front(), curves.IsClosedPath(), isFilled))
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive() && appendSimpleCurvePrimitive (*this, *curves.front(), curves.IsClosedPath()))
         return;
 
     bvector<Byte> buffer;
@@ -620,16 +620,16 @@ void ElementGeomIO::Writer::Append (CurveVectorCR curves, bool isFilled)
         return;
         }
 
-    Append (Operation (isFilled ? OpCode::CurveVectorFilled : OpCode::CurveVector, (uint32_t) buffer.size(), &buffer.front()));
+    Append (Operation (OpCode::CurveVector, (uint32_t) buffer.size(), &buffer.front()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (ICurvePrimitiveCR curvePrimitive, bool isClosed, bool isFilled)
+void ElementGeomIO::Writer::Append (ICurvePrimitiveCR curvePrimitive, bool isClosed)
     {
     // Special case to avoid having to call new during draw...
-    if (appendSimpleCurvePrimitive (*this, curvePrimitive, isClosed, isFilled))
+    if (appendSimpleCurvePrimitive (*this, curvePrimitive, isClosed))
         return;
 
     OpCode        opCode;
@@ -640,7 +640,7 @@ void ElementGeomIO::Writer::Append (ICurvePrimitiveCR curvePrimitive, bool isClo
         CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, curvePrimitive.Clone());
 
         BentleyGeometryFlatBuffer::GeometryToBytes (*curve, buffer);
-        opCode = (isFilled ? OpCode::CurveVectorFilled : OpCode::CurveVector);
+        opCode = OpCode::CurveVector;
         }
     else
         {
@@ -660,7 +660,7 @@ void ElementGeomIO::Writer::Append (ICurvePrimitiveCR curvePrimitive, bool isClo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (PolyfaceQueryCR meshData, bool isFilled)
+void ElementGeomIO::Writer::Append (PolyfaceQueryCR meshData)
     {
     bvector<Byte> buffer;
 
@@ -672,7 +672,7 @@ void ElementGeomIO::Writer::Append (PolyfaceQueryCR meshData, bool isFilled)
         return;
         }
 
-    Append (Operation (isFilled ? OpCode::PolyfaceFilled : OpCode::Polyface, (uint32_t) buffer.size(), &buffer.front()));
+    Append (Operation (OpCode::Polyface, (uint32_t) buffer.size(), &buffer.front()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -922,8 +922,7 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
             auto colors = fbb.CreateVector (keyColors);
             auto values = fbb.CreateVector (keyValues);
 
-            // NEEDSWORK: Support independent gradient transparency so it doesn't have to be the same as the element...
-            auto mloc = FB::CreateAreaFill (fbb, (FB::FillDisplay) elParams.GetFillDisplay(), 0, 0.0,
+            auto mloc = FB::CreateAreaFill (fbb, (FB::FillDisplay) elParams.GetFillDisplay(), 0, elParams.GetFillTransparency(),
                                                       (FB::GradientMode) gradient.GetMode(), gradient.GetFlags(), 
                                                       gradient.GetAngle(), gradient.GetTint(), gradient.GetShift(), 
                                                       colors, values);
@@ -931,8 +930,9 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
             }
         else
             {
-            // NEEDSWORK: Support independent fill transparency so it doesn't have to be the same as the element...
-            auto mloc = FB::CreateAreaFill (fbb, (FB::FillDisplay) elParams.GetFillDisplay(), elParams.GetFillColor().GetValue(), 0.0);
+            bool useFillColor = !elParams.IsFillColorFromSubCategoryAppearance();
+
+            auto mloc = FB::CreateAreaFill (fbb, (FB::FillDisplay) elParams.GetFillDisplay(), useFillColor ? elParams.GetFillColor().GetValue() : 0, elParams.GetFillTransparency());
 
             fbb.Finish (mloc);
             }
@@ -1035,13 +1035,9 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ICurvePrimitivePtr& curv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeomIO::Reader::Get (Operation const& egOp, CurveVectorPtr& curves, bool& isFilled)
+bool ElementGeomIO::Reader::Get (Operation const& egOp, CurveVectorPtr& curves)
     {
-    if (OpCode::CurveVector == egOp.m_opCode)
-        isFilled = false;
-    else if (OpCode::CurveVectorFilled == egOp.m_opCode)
-        isFilled = true;
-    else
+    if (OpCode::CurveVector != egOp.m_opCode)
         return false;
 
     curves = BentleyGeometryFlatBuffer::BytesToCurveVector (egOp.m_data);
@@ -1052,13 +1048,9 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, CurveVectorPtr& curves, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeomIO::Reader::Get (Operation const& egOp, PolyfaceQueryCarrier& meshData, bool& isFilled)
+bool ElementGeomIO::Reader::Get (Operation const& egOp, PolyfaceQueryCarrier& meshData)
     {
-    if (OpCode::Polyface == egOp.m_opCode)
-        isFilled = false;
-    else if (OpCode::PolyfaceFilled == egOp.m_opCode)
-        isFilled = true;
-    else
+    if (OpCode::Polyface != egOp.m_opCode)
         return false;
 
     return BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (egOp.m_data, meshData);
@@ -1206,10 +1198,59 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElemDisplayParamsR elPar
 
         case OpCode::AreaFill:
             {
-            // NEEDSWORK...
-//            auto ppfb = flatbuffers::GetRoot<FB::AreaFill>(egOp.m_data);
+            auto ppfb = flatbuffers::GetRoot<FB::AreaFill>(egOp.m_data);
 
-            return false;
+            FillDisplay fillDisplay = (FillDisplay) ppfb->fill();
+
+            if (fillDisplay != elParams.GetFillDisplay())
+                {
+                elParams.SetFillDisplay(fillDisplay);
+                changed = true;
+                }
+
+            if (FillDisplay::Never != fillDisplay)
+                {
+                double        transparency = ppfb->transparency();
+                GradientMode  mode = (GradientMode) ppfb->mode();
+
+                if (transparency != elParams.GetFillTransparency())
+                    {
+                    elParams.SetFillTransparency(transparency);
+                    changed = true;
+                    }
+
+                if (GradientMode::None == mode)
+                    {
+                    ColorDef fillColor(ppfb->color());
+
+                    if (elParams.IsFillColorFromSubCategoryAppearance() || fillColor != elParams.GetFillColor())
+                        {
+                        elParams.SetFillColor(fillColor);
+                        changed = true;
+                        }
+                    }
+                else
+                    {
+                    GradientSymbPtr gradientPtr = GradientSymb::Create();
+
+                    gradientPtr->SetMode(mode);
+                    gradientPtr->SetFlags(ppfb->flags());
+                    gradientPtr->SetShift(ppfb->shift());
+                    gradientPtr->SetTint(ppfb->tint());
+                    gradientPtr->SetAngle(ppfb->angle());
+
+                    uint32_t nColors = ppfb->colors()->Length();
+                    uint32_t* colors = (uint32_t*) ppfb->colors()->Data();
+                    bvector<ColorDef> keyColors;
+
+                    for (uint32_t iColor=0; iColor < nColors; iColor++)
+                        keyColors.push_back (ColorDef(colors[iColor]));
+
+                    gradientPtr->SetKeys ((uint16_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
+                    elParams.SetGradient(gradientPtr.get());
+                    }
+                }
+            break;
             }
 
         default:
@@ -1246,7 +1287,6 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
                     break;
 
                 case FB::BoundaryType_Closed:
-                case FB::BoundaryType_Filled:
                     elemGeom = ElementGeometry::Create (CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString (pts, nPts)));
                     break;
                 }
@@ -1270,7 +1310,6 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
                     break;
 
                 case FB::BoundaryType_Closed:
-                case FB::BoundaryType_Filled:
                     elemGeom = ElementGeometry::Create (CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc (arc)));
                     break;
                 }
@@ -1290,12 +1329,10 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
             }
 
         case ElementGeomIO::OpCode::CurveVector:
-        case ElementGeomIO::OpCode::CurveVectorFilled:
             {
-            bool           isFilled;
             CurveVectorPtr curvePtr;
                 
-            if (!ElementGeomIO::Reader::Get (egOp, curvePtr, isFilled))
+            if (!ElementGeomIO::Reader::Get (egOp, curvePtr))
                 break;
 
             elemGeom = ElementGeometry::Create (curvePtr);
@@ -1303,19 +1340,13 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
             }
 
         case ElementGeomIO::OpCode::Polyface:
-        case ElementGeomIO::OpCode::PolyfaceFilled:
             {
-            bool                 isFilled;
             PolyfaceQueryCarrier meshData (0, false, 0, 0, NULL, NULL);
 
-            if (!ElementGeomIO::Reader::Get (egOp, meshData, isFilled))
+            if (!ElementGeomIO::Reader::Get (egOp, meshData))
                 break;
 
-            PolyfaceHeaderPtr polyface = PolyfaceHeader::New();                
-
-            polyface->CopyFrom (meshData);
-            
-            elemGeom = ElementGeometry::Create (polyface);
+            elemGeom = ElementGeometry::Create (meshData); // Copy...
             return true;
             }
 
@@ -1354,7 +1385,29 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
 
         case ElementGeomIO::OpCode::BRepPolyface:
         case ElementGeomIO::OpCode::BRepPolyfaceExact:
-            break; // NEEDSWORK: Get when Parasolid isn't available...
+            {
+            // NOTE: Caller is expected to filter opCode when they don't want these (Parasolid BRep was available)...
+            PolyfaceQueryCarrier meshData (0, false, 0, 0, NULL, NULL);
+
+            if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (egOp.m_data, meshData))
+                break;
+
+            elemGeom = ElementGeometry::Create (meshData);
+            return true;
+            }
+
+        case ElementGeomIO::OpCode::BRepEdges:
+        case ElementGeomIO::OpCode::BRepFaceIso:
+            {
+            // NOTE: Caller is expected to filter opCode when they don't want these...
+            CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector (egOp.m_data);
+
+            if (!curvePtr.IsValid())
+                break;
+
+            elemGeom = ElementGeometry::Create (curvePtr);
+            return true;
+            }
         }
 
     return false;
@@ -1368,11 +1421,12 @@ struct DrawState
 //DgnGeomPartId       m_geomPart;
 Transform           m_geomToWorld;
 ViewContextR        m_context;
+ViewFlagsCR         m_flags;
 bool                m_symbologyInitialized;
 bool                m_symbologyChanged;
 bool                m_geomToWorldPushed;
 
-DrawState (ViewContextR context) : m_context (context) {m_symbologyInitialized = false; m_symbologyChanged = false; m_geomToWorldPushed = false;}
+DrawState (ViewContextR context, ViewFlagsCR flags) : m_context(context), m_flags(flags) {m_symbologyInitialized = false; m_symbologyChanged = false; m_geomToWorldPushed = false;}
 ~DrawState() {End();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -1468,6 +1522,10 @@ void CookElemDisplayParams()
     if (!m_symbologyChanged)
         return;
 
+    // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change... 
+    if (FillDisplay::ByView == m_context.GetCurrentDisplayParams()->GetFillDisplay() && DgnRenderMode::Wireframe == m_flags.GetRenderMode() && !m_flags.fill)
+        m_context.GetCurrentDisplayParams()->SetFillDisplay(FillDisplay::Never);
+
     m_context.CookDisplayParams();
     m_symbologyChanged = false;
     }
@@ -1477,9 +1535,14 @@ void CookElemDisplayParams()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId category, bool isQVis, bool isQVWireframe, bool isPick, bool useBRep) const
+void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId category, ViewFlagsCR flags) const
     {
-    DrawState   state (context);
+    // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change... 
+    bool        isQVis = context.GetIViewDraw().IsOutputQuickVision() || context.CheckICachedDraw();
+    bool        isQVWireframe = (isQVis && DgnRenderMode::Wireframe == flags.GetRenderMode());
+    bool        isPick = (nullptr != context.GetIPickGeom());
+    bool        useBRep = !(isQVis || isPick);
+    DrawState   state (context, flags);
 
     for (auto const& egOp : *this)
         {
@@ -1552,11 +1615,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                         break;
 
                     case FB::BoundaryType_Closed:
-                        context.GetIDrawGeom().DrawShape3d (nPts, pts, false, NULL);
-                        break;
-
-                    case FB::BoundaryType_Filled:
-                        context.GetIDrawGeom().DrawShape3d (nPts, pts, true, NULL);
+                        context.GetIDrawGeom().DrawShape3d (nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), NULL);
                         break;
                     }
                 break;
@@ -1572,7 +1631,10 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawArc3d (arc, FB::BoundaryType_Closed == boundary, FB::BoundaryType_Filled == boundary, NULL);
+                if (FB::BoundaryType_Closed != boundary)
+                    context.GetIDrawGeom().DrawArc3d (arc, false, false, NULL);
+                else
+                    context.GetIDrawGeom().DrawArc3d (arc, true, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), NULL);
                 break;
                 }
 
@@ -1592,32 +1654,28 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 }
 
             case ElementGeomIO::OpCode::CurveVector:
-            case ElementGeomIO::OpCode::CurveVectorFilled:
                 {
-                bool           isFilled;
                 CurveVectorPtr curvePtr;
                 
-                if (!ElementGeomIO::Reader::Get (egOp, curvePtr, isFilled))
+                if (!ElementGeomIO::Reader::Get (egOp, curvePtr))
                     break;
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawCurveVector (*curvePtr, isFilled);
+                context.GetIDrawGeom().DrawCurveVector (*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay());
                 break;
                 }
 
             case ElementGeomIO::OpCode::Polyface:
-            case ElementGeomIO::OpCode::PolyfaceFilled:
                 {
-                bool                 isFilled;
                 PolyfaceQueryCarrier meshData (0, false, 0, 0, NULL, NULL);
 
-                if (!ElementGeomIO::Reader::Get (egOp, meshData, isFilled))
+                if (!ElementGeomIO::Reader::Get (egOp, meshData))
                     break;
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawPolyface (meshData, isFilled);
+                context.GetIDrawGeom().DrawPolyface (meshData, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay());
                 break;
                 };
 
@@ -1739,24 +1797,22 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 +===============+===============+===============+===============+===============+======*/
 struct DrawGeomStream : StrokeElementForCache
 {
-bool m_isQVis;
-bool m_isQVWireframe;
-bool m_isPick;
-bool m_useBRep;
+ViewFlags       m_flags;
 
-explicit DrawGeomStream (GeometricElementCR element, bool isQVis, bool isQVWireframe, bool isPick, bool useBRep) : StrokeElementForCache (element)
+explicit DrawGeomStream (GeometricElementCR element, ViewFlagsCR flags) : StrokeElementForCache (element)
     {
-    m_isQVis = isQVis;
-    m_isQVWireframe = isQVWireframe;
-    m_isPick = isPick;
-    m_useBRep = useBRep;
+    m_flags = flags; // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change... 
     }
 
-virtual int32_t _GetQvIndex () const override {return m_isQVWireframe ? 2 : 1;} // NEEDSWORK: Assumes QVElems are per-view...otherwise must setup WF only matsymb like Vancouver... 
+virtual int32_t _GetQvIndex () const override
+    {
+    // NEEDSWORK: Won't need this when QVElems are per-view...will just have QVElem per sub-category/transform...
+    return (DgnRenderMode::Wireframe != m_flags.GetRenderMode() ? 1 : (m_flags.fill ? 2 : 3));
+    }
 
 virtual void _StrokeForCache (ViewContextR context, double pixelSize) override
     {
-    ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), m_isQVis, m_isQVWireframe, m_isPick, m_useBRep);
+    ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), m_flags);
     }
 
 }; // DrawGeomStream
@@ -1766,13 +1822,16 @@ virtual void _StrokeForCache (ViewContextR context, double pixelSize) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_Draw (ViewContextR context) const
     {
-    bool        isQVis = context.GetIViewDraw().IsOutputQuickVision();
-    bool        isQVWireframe = (isQVis && DgnRenderMode::Wireframe == context.GetViewFlags()->GetRenderMode());
-    bool        isPick = (nullptr != context.GetIPickGeom());
-    bool        useBRep = !(isQVis || isPick);
+    // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver... 
+    ViewFlags   viewFlags;
+
+    if (nullptr != context.GetViewFlags())
+        viewFlags = *context.GetViewFlags();
+    else
+        viewFlags.InitDefaults();
 
     // NEEDSWORK: Want separate QvElems per-subCategory...
-    DrawGeomStream stroker(*this, isQVis, isQVWireframe, isPick, useBRep);
+    DrawGeomStream stroker(*this, viewFlags);
 
     context.DrawCached(stroker);
     }
@@ -1860,22 +1919,43 @@ void ElementGeometryCollection::Iterator::ToNext()
                 break;
                 }
 
-            default:
+            case ElementGeomIO::OpCode::ParasolidBRep:
                 {
-                if (!ElementGeomIO::Reader::Get (egOp, m_elementGeometry))
-                    break; // Ignore non-geometry opCode, it's not an error...
+                if (!m_useBRep)
+                    break;
 
-                if (m_elementGeometry.IsValid())
+                if (!ElementGeomIO::Reader::Get (egOp, m_elementGeometry) || !m_elementGeometry.IsValid())
                     {
-                    if (nullptr != m_context)
-                        m_context->GetCurrentDisplayParams()->Resolve (*m_context); // Resolve sub-category appearance...
-                    return;
+                    m_useBRep = false; // BRep unavailable - start returning BRepPolyface geometry...
+                    break;
                     }
 
-                m_data = NULL;
-                m_dataOffset = 0;
+                if (nullptr != m_context)
+                    m_context->GetCurrentDisplayParams()->Resolve (*m_context); // Resolve sub-category appearance...
+                return;
+                }
 
-                return; // Failed to create geometry (ex. ISolidKernelEntity).
+            case ElementGeomIO::OpCode::BRepEdges:
+            case ElementGeomIO::OpCode::BRepFaceIso:
+                break; // Skip - Iterator should never return wireframe geometry cache...
+
+            case ElementGeomIO::OpCode::BRepPolyface:
+            case ElementGeomIO::OpCode::BRepPolyfaceExact:
+                {
+                if (m_useBRep)
+                    break;
+
+                // Fall through...
+                }
+
+            default:
+                {
+                if (!ElementGeomIO::Reader::Get (egOp, m_elementGeometry) || !m_elementGeometry.IsValid())
+                    break; // Ignore non-geometry opCode (or failures)...
+
+                if (nullptr != m_context)
+                    m_context->GetCurrentDisplayParams()->Resolve (*m_context); // Resolve sub-category appearance...
+                return;
                 }
             }
 

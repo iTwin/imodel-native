@@ -9,7 +9,7 @@ namespace BentleyG06.DgnPlatform.FB;
 // @bsiclass                                                    
 //=======================================================================================
 enum GradientMode : byte {None, Linear, Curved, Cylindrical, Spherical, Hemispherical}
-enum BoundaryType : byte {None, Open, Closed, Filled}
+enum BoundaryType : byte {None, Open, Closed}
 enum FillDisplay : byte {None, ByView, Always, Blanking}
 
 //=======================================================================================
