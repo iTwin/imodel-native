@@ -386,4 +386,139 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     AssertCurrentTimeStamp (ecdb, key.GetECInstanceId (), false, "ECInstanceInserter INSERT");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ExecuteECSql (ECSqlStatement& stmt, ECInstanceKey& key, ECDbR ecdb, Utf8CP ecsql)
+    {
+    ASSERT_EQ (stmt.Prepare (ecdb, ecsql), ECSqlStatus::Success);
+    ASSERT_EQ (stmt.Step (key), ECSqlStepStatus::Done);
+    stmt.Finalize ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassIds)
+    {
+    auto const schema =
+        L"<?xml version='1.0' encoding='utf-8'?>"
+        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECClass typeName='ClassA' isDomainClass='True'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P1' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ClassAB' isDomainClass='True'>"
+        L"        <BaseClass>ClassA</BaseClass>"
+        L"        <ECProperty propertyName='P2' typeName='double' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ClassC' isDomainClass='True'>"
+        L"        <ECProperty propertyName='P3' typeName='int' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ClassD' isDomainClass='True'>"
+        L"        <ECProperty propertyName='P4' typeName='int' />"
+        L"    </ECClass>"
+        L"      <ECRelationshipClass typeName = 'RelationshipClassA' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        L"          <Source cardinality = '(0,1)' polymorphic = 'True'> "
+        L"              <Class class = 'ClassA'/> "
+        L"          </Source> "
+        L"          <Target cardinality = '(0,N)' polymorphic = 'True'> "
+        L"              <Class class = 'ClassC'/> "
+        L"          </Target> "
+        L"      </ECRelationshipClass> "
+        L"      <ECRelationshipClass typeName = 'RelationshipClassB' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        L"          <Source cardinality = '(0,1)' polymorphic = 'True'> "
+        L"              <Class class = 'ClassA'/> "
+        L"          </Source> "
+        L"          <Target cardinality = '(0,1)' polymorphic = 'True'> "
+        L"              <Class class = 'ClassC'/> "
+        L"          </Target> "
+        L"      </ECRelationshipClass> "
+        L"      <ECRelationshipClass typeName = 'RelationshipClassC' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "//relationship Constaining polymorphic Constraint
+        L"          <Source cardinality = '(0,N)' polymorphic = 'True'> "
+        L"              <Class class = 'ClassA'/> "
+        L"          </Source> "
+        L"          <Target cardinality = '(0,N)' polymorphic = 'True'> "
+        L"              <Class class = 'ClassC'/> "
+        L"          </Target> "
+        L"      </ECRelationshipClass> "
+        L"      <ECRelationshipClass typeName = 'RelationshipClassD' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        L"          <Source cardinality = '(0,N)' polymorphic = 'True'> "
+        L"              <Class class = 'ClassC'/> "
+        L"          </Source> "
+        L"          <Target cardinality = '(0,N)' polymorphic = 'True'> "
+        L"              <Class class = 'ClassD'/> "
+        L"          </Target> "
+        L"      </ECRelationshipClass> "
+        L"</ECSchema>";
+
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create ("InsertRelationshipInstances.ecdb");
+    ECSchemaPtr testSchema;
+    auto readContext = ECSchemaReadContext::CreateContext ();
+    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
+    ASSERT_TRUE (testSchema != nullptr);
+    auto importStatus = db.Schemas ().ImportECSchemas (readContext->GetCache ());
+    ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
+
+    ECSqlStatement stmt;
+    ECInstanceKey key1, key2, key3, key4, key5;
+    ExecuteECSql (stmt, key1, db, "INSERT INTO rc.ClassA (P1) VALUES('classA')");
+    ExecuteECSql (stmt, key2, db, "INSERT INTO rc.ClassAB (P1, P2) VALUES('ClassA', 1001.01)");
+    ExecuteECSql (stmt, key3, db, "INSERT INTO rc.ClassC (P3) VALUES(1)");
+    ExecuteECSql (stmt, key4, db, "INSERT INTO rc.ClassC (P3) VALUES(2)");
+    ExecuteECSql (stmt, key5, db, "INSERT INTO rc.ClassD (P4) VALUES(4)");
+
+    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
+    stmt.BindId (1, key1.GetECInstanceId ());
+    stmt.BindInt64 (2, key1.GetECClassId ());
+    stmt.BindId (3, key3.GetECInstanceId ());
+    stmt.BindInt64 (4, key3.GetECClassId ());
+    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    stmt.Finalize ();
+    //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:N, end tabler relationship
+    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassA (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
+    stmt.BindId (1, key1.GetECInstanceId ());
+    stmt.BindId (2, key4.GetECInstanceId ());
+    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    stmt.Finalize ();
+
+    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
+    stmt.BindId (1, key1.GetECInstanceId ());
+    stmt.BindInt64 (2, key1.GetECClassId ());
+    stmt.BindId (3, key3.GetECInstanceId ());
+    stmt.BindInt64 (4, key3.GetECClassId ());
+    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    stmt.Finalize ();
+    //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:1, end tabler relationship
+    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
+    stmt.BindId (1, key2.GetECInstanceId ());
+    stmt.BindId (2, key4.GetECInstanceId ());
+    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    stmt.Finalize ();
+
+    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassC (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
+    stmt.BindId (1, key1.GetECInstanceId ());
+    stmt.BindInt64 (2, key1.GetECClassId ());
+    stmt.BindId (3, key3.GetECInstanceId ());
+    stmt.BindInt64 (4, key3.GetECClassId ());
+    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    stmt.Finalize ();
+    //Instance insertion query without specifing Souce/TargetClassId's shouldn't work for a link table relationship if constraint isn't a single table or isn't polymorphic Constraint
+    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassC (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::InvalidECSql);
+    stmt.Finalize ();
+
+    //Instance insertion query without specifing Souce/TargetClassId's should work for a link table relationship if each constraint is a single table
+    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassD (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
+    stmt.BindId (1, key4.GetECInstanceId ());
+    stmt.BindId (2, key5.GetECInstanceId ());
+    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    stmt.Finalize ();
+    }
 END_ECDBUNITTESTS_NAMESPACE
