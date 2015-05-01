@@ -51,7 +51,6 @@ ViewContext::ViewContext()
     m_parentRangeResult         = RangeResult::Overlap;
 
     m_dgnDb = nullptr;
-    m_sourcePath = nullptr;
 
     m_ignoreScaleForDimensions  = false;
     m_ignoreScaleForMultilines  = false;
@@ -1417,14 +1416,12 @@ bool ViewContext::_VisitAllModelElements (bool includeTransients)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::VisitPath (DisplayPathCP path, void* arg)
+StatusInt ViewContext::VisitHit (HitPathCR hit)
     {
     ClearAborted();
-    AutoRestore <DisplayPathCP> savePath (&m_sourcePath, path);
-
     _InitScanRangeAndPolyhedron();
 
-    return m_viewport->GetViewController().VisitPath (path, arg, *this);
+    return m_viewport->GetViewController().VisitHit (hit, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

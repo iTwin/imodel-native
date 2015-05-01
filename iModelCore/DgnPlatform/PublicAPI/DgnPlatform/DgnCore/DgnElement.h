@@ -620,6 +620,7 @@ public:
     T_QvElemSet* GetQvElems(bool createIfNotPresent) const;
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitPathCR, ViewContextR) const;
 
     //! Get the GeomStream for this element.
     GeomStreamCR GetGeomStream() const {return m_geom;}

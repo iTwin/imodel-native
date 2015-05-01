@@ -1004,10 +1004,10 @@ bool SectionDrawingViewController::GetSectionHasDogLeg() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SectionDrawingViewController::_VisitPath (DisplayPathCP displayPath, void* arg, ViewContextR context) const
+StatusInt SectionDrawingViewController::_VisitHit(HitPathCR hit, ViewContextR context) const
     {
     context.PushTransform (GetFlatteningMatrixIf2D(context));
-    StatusInt status = T_Super::_VisitPath (displayPath, arg, context);
+    StatusInt status = T_Super::_VisitHit (hit, context);
     context.PopTransformClip();
     return status;
     }
