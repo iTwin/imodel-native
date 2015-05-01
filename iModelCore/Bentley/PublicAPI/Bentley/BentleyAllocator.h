@@ -11,6 +11,7 @@
 
 #include "Bentley.h"
 #include <memory>
+#include <memory.h>
 
 //! Convenience to declare Bentley overrides of new and delete to allow the operations to be inlined in header files. In this case, it should be included in a public: section.
 #define DEFINE_BENTLEY_NEW_DELETE_OPERATORS\
@@ -32,8 +33,9 @@
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_new (size_t);
 extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_delete (void*, size_t);
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_malloc (size_t);
+inline void* bentleyAllocator_calloc (size_t size) {void* p=bentleyAllocator_malloc(size); memset(p,0,size); return p;}
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_realloc (void*, size_t);
-extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_free (void*, size_t);
+extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_free (void*, size_t=0);
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_getNullRefBuffer ();
 extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_enableLowFragmentationCRTHeap ();
 

@@ -32,8 +32,6 @@
 
 #undef CreateFileW
 
-#define DELETE_AND_CLEAR(ptr)   {if(ptr){delete (ptr);ptr=NULL;}}
-
 #define AS_FDES(h)    ((int)(intptr_t)(h))
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFileName.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
@@ -52,7 +52,6 @@
 #include <Bentley/bmap.h>
 #include <Logging/bentleylogging.h>
 
-#define DELETE_AND_CLEAR(ptr)   {if(ptr){delete (ptr);ptr=NULL;}}
 #define TO_BOOL(x)              (0 != (x))
 
 USING_NAMESPACE_BENTLEY

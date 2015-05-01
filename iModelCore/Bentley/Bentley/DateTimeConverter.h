@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/DateTimeConverter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,20 +11,11 @@
 #include <Bentley/DateTime.h>
 #include <Bentley/WString.h>
 #include <Bentley/NonCopyableClass.h>
-#if !defined (NO_STD_REGEX)
 #include <regex>
-#else
-#include <Bentley/stdcxx/rw/bpair.h>
-#include <regex.h>
-#endif
 #include <time.h>
 #include <Bentley/bvector.h>
 
 BEGIN_BENTLEY_NAMESPACE
-
-#if defined (NO_STD_REGEX)
-using Bstdcxx::bpair;
-#endif
 
 //=======================================================================================    
 //! Utility to convert between DateTime and representations like Julian Day or Unix milliseconds
@@ -217,26 +208,7 @@ public:
 struct Iso8601Regex : NonCopyableClass
     {
 public:
-#if !defined (NO_STD_REGEX)
-    typedef STD_TR1::match_results<Utf8CP> Matches;
-#else
-    //RegexMatch together with bvector is used to mimick the API of the STD_TR1::match_results<Utf8CP> class
-    //Each match just stores the start and end index of the matching substring of the input string
-    struct RegexMatch : bpair<Utf8CP, Utf8CP>
-        {
-    public:
-        bool matched;
-
-        RegexMatch () : matched (false) {;}
-        void SetMatch (Utf8CP s, Utf8CP e) {first=s; second=e; matched=true;}
-
-        //str () and length () are as in STD_TR1::match_results
-        Utf8String str () const {return matched? Utf8String (first, second) : Utf8String ();}
-        size_t length () const {return matched? second - first : 0;}
-        };
-
-    typedef bvector<RegexMatch> Matches;
-#endif
+    typedef std::match_results<Utf8CP> Matches;
 
     static const size_t YEAR_GROUPINDEX = 1;
     static const size_t MONTH_GROUPINDEX = 2;
@@ -252,11 +224,7 @@ public:
 private:
     static Utf8CP const PATTERN;
 
-#if !defined (NO_STD_REGEX)
-    STD_TR1::regex m_regex;
-#else
-    regex_t m_regex;
-#endif
+    std::regex m_regex;
 
 public:
     Iso8601Regex ();

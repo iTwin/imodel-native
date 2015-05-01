@@ -46,8 +46,6 @@ using namespace std::placeholders; //for _1, _2, _3...
         #error Unkown compiler
     #elif (_MSC_VER >= 1800)
         #define IS_VC12 1
-    #elif (_MSC_VER >= 1700)
-        #define IS_VC11 1
     #else
         #error Unkown compiler
     #endif
@@ -253,9 +251,6 @@ Back in main(), data = Example data after processing
 //---------------------------------------------------------------------------------------
 static void test_regex()
     {
-#if IS_GCC
-    BeTest::Log ("TestRunner", BeTest::PRIORITY_INFO, "C++11 test - This platform does not support: std::regex");
-#else
     char const* str = "2012-12-05T23:44:59.500Z";
 
     // This regex is from DateTimeStringConverter::FromIso8601()
@@ -311,7 +306,6 @@ static void test_regex()
         }
 
     ASSERT_TRUE (hasMatches);
-#endif
     }
 
 //  ---------------------------------------------------------------------
@@ -491,7 +485,7 @@ void test_rvalueReferences ()
 
 //  ---------------------------------------------------------------------
 // constexpr
-#if IS_VC11 || IS_VC12
+#if IS_VC12
     REPORT_MISSING_FEATURE(Constexpr)
 #else
     constexpr int get_five() {return 5;}
@@ -501,81 +495,69 @@ void test_rvalueReferences ()
 
 //  ---------------------------------------------------------------------
 // initializer lists
-#if IS_VC11
-    REPORT_MISSING_FEATURE(initiailzerLists)
-#else
-    Object scalar = {0.43f, 10};
-    Object anArray[] = {{13.4f, 3}, {43.28f, 29}, {5.934f, 17}};
-    std::vector<int> vv = {1,2,3};
+Object scalar = {0.43f, 10};
+Object anArray[] = {{13.4f, 3}, {43.28f, 29}, {5.934f, 17}};
+std::vector<int> vv = {1,2,3};
 
-    struct SequenceClass 
+struct SequenceClass 
+    {
+    SequenceClass(std::initializer_list<int> list)
         {
-        SequenceClass(std::initializer_list<int> list)
-            {
-            BeAssert( std::find (list.begin(), list.end(), 1) != list.end() );
-            }
-        };
-
-    void function_name(std::initializer_list<float> list)
-        {
-        ASSERT_TRUE( std::find (list.begin(), list.end(), 1.0f) != list.end() );
-        } 
-
-    void test_initiailzerLists ()
-        {
-        SequenceClass some_var = {1, 4, 5, 6};
-        function_name ({1.0f, -3.45f, -0.4f});
+        BeAssert( std::find (list.begin(), list.end(), 1) != list.end() );
         }
-#endif
+    };
+
+void function_name(std::initializer_list<float> list)
+    {
+    ASSERT_TRUE( std::find (list.begin(), list.end(), 1.0f) != list.end() );
+    } 
+
+void test_initiailzerLists ()
+    {
+    SequenceClass some_var = {1, 4, 5, 6};
+    function_name ({1.0f, -3.45f, -0.4f});
+    }
 
 //  ---------------------------------------------------------------------
 // uniform initialization (part I)
-#if IS_VC11
-    REPORT_MISSING_FEATURE(uniformInitializationSyntax)
-#else
-    struct YourBasicStruct
-        {    
-        int x;    
-        double y; 
-        };
+struct YourBasicStruct
+    {    
+    int x;    
+    double y; 
+    };
 
-    struct AClassWithCtor 
-        {
-      private:
-        int     m_x;
-        double  m_y;
-      public:
-        AClassWithCtor(int x, double y) : m_x(x), m_y(y) {;} 
-        int     GetX() {return m_x;}
-        double  GetY() {return m_y;}
-        };
+struct AClassWithCtor 
+    {
+    private:
+    int     m_x;
+    double  m_y;
+    public:
+    AClassWithCtor(int x, double y) : m_x(x), m_y(y) {;} 
+    int     GetX() {return m_x;}
+    double  GetY() {return m_y;}
+    };
 
-    void test_uniformInitializationSyntax ()
-        {
-        YourBasicStruct b {1,1.1};
-        ASSERT_TRUE( b.x == 1 && b.y == 1.1 );
-        AClassWithCtor  c {1,1.1};
-        ASSERT_TRUE( c.GetX()==1 && c.GetY()==1.1 );
-        }
-#endif
+void test_uniformInitializationSyntax ()
+    {
+    YourBasicStruct b {1,1.1};
+    ASSERT_TRUE( b.x == 1 && b.y == 1.1 );
+    AClassWithCtor  c {1,1.1};
+    ASSERT_TRUE( c.GetX()==1 && c.GetY()==1.1 );
+    }
 
 //  ---------------------------------------------------------------------
 // Constructor improvements: delegation
-#if IS_VC11 || IS_GCC
-    REPORT_MISSING_FEATURE(delegatingConstructors)
-#else
-    struct SomeType  
-        {
-        int number;
-        SomeType(int new_number) : number(new_number) {}
-        SomeType() : SomeType(42) {}
-        };
-    void test_delegatingConstructors(){};
-#endif
+struct SomeType  
+    {
+    int number;
+    SomeType(int new_number) : number(new_number) {}
+    SomeType() : SomeType(42) {}
+    };
+void test_delegatingConstructors(){};
 
 //  ---------------------------------------------------------------------
 // Constructor improvements: inheriting
-#if IS_VC11 || IS_GCC || IS_VC12
+#if IS_VC12
     REPORT_MISSING_FEATURE(inheritingConstructors)
 #else
     struct BaseClass 
@@ -594,23 +576,19 @@ void test_rvalueReferences ()
 
 //  ---------------------------------------------------------------------
 // Constructor improvements: default member initialization
-#if IS_VC11 || IS_GCC
-    REPORT_MISSING_FEATURE(defaultMemberInitialization)
-#else
-    struct SomeClassWithDefaultMemberInitialization 
-        {
-        SomeClassWithDefaultMemberInitialization() {}
-        SomeClassWithDefaultMemberInitialization(int v) : value2(v) {}  // constructor takes precedence over default
-        int value = 5;
-        int value2= 2;
-        };
+struct SomeClassWithDefaultMemberInitialization 
+    {
+    SomeClassWithDefaultMemberInitialization() {}
+    SomeClassWithDefaultMemberInitialization(int v) : value2(v) {}  // constructor takes precedence over default
+    int value = 5;
+    int value2= 2;
+    };
 
-    void test_defaultMemberInitialization ()
-        {
-        SomeClassWithDefaultMemberInitialization sdmi;
-        ASSERT_TRUE( sdmi.value == 5 );
-        }
-#endif
+void test_defaultMemberInitialization ()
+    {
+    SomeClassWithDefaultMemberInitialization sdmi;
+    ASSERT_TRUE( sdmi.value == 5 );
+    }
 
 //  ---------------------------------------------------------------------
 // nullptr
@@ -618,52 +596,40 @@ void* p = nullptr;
 
 //  ---------------------------------------------------------------------
 // override
-#if IS_GCC
-    REPORT_MISSING_FEATURE(override)
-#else
-    struct Base             {virtual void Function (int x) {;}};
-    struct Derived  : Base  {virtual void Function (int x) override {;}};
-    //struct Derived2 : Base  {virtual void Function (double x) override {;}};  //Should not compile!
-    void test_override ()
-        {
-        }
-#endif
+struct Base             {virtual void Function (int x) {;}};
+struct Derived  : Base  {virtual void Function (int x) override {;}};
+//struct Derived2 : Base  {virtual void Function (double x) override {;}};  //Should not compile!
+void test_override ()
+    {
+    }
 
 //  ---------------------------------------------------------------------
 // final
-#if IS_GCC
-    REPORT_MISSING_FEATURE(final)
-#else
-    struct NoSubclassing final
-        {
-        int member;
-        };
-    void test_final() {;}
-#endif
+struct NoSubclassing final
+    {
+    int member;
+    };
+void test_final() {;}
 
 //  ---------------------------------------------------------------------
 //  explicit conversion operator
-#if IS_VC11
-    REPORT_MISSING_FEATURE(explicitConversionOperator)
-#else
-    struct MyString
-        {
-        std::string str;
-        MyString (char const* s) : str(s) {;}
-        explicit operator const char *() const {return str.c_str();}
-        };
+struct MyString
+    {
+    std::string str;
+    MyString (char const* s) : str(s) {;}
+    explicit operator const char *() const {return str.c_str();}
+    };
 
-    void test_explicitConversionOperator ()
-        {
-        MyString mystring ("abc");
-        //ASSERT_TRUE( 0==strcmp("abc", mystring) );   //should not compile!
-        ASSERT_TRUE( 0==strcmp("abc", (char const*)mystring) );
-        }
-#endif
+void test_explicitConversionOperator ()
+    {
+    MyString mystring ("abc");
+    //ASSERT_TRUE( 0==strcmp("abc", mystring) );   //should not compile!
+    ASSERT_TRUE( 0==strcmp("abc", (char const*)mystring) );
+    }
 
 //  ---------------------------------------------------------------------
 // Unrestricted unions
-#if IS_VC11 || IS_VC12
+#if IS_VC12
     REPORT_MISSING_FEATURE(unrestrictedUnions)
 #else
     #include <new> // Required for placement 'new'.
@@ -694,7 +660,7 @@ void* p = nullptr;
 
 //  ---------------------------------------------------------------------
 // Control and query object alignment
-#if IS_VC11 || IS_GCC || IS_CLANG || IS_VC12
+#if IS_GCC || IS_CLANG || IS_VC12
     REPORT_MISSING_FEATURE(alignas)
 #else
     struct AlignAsTest
@@ -712,7 +678,7 @@ void* p = nullptr;
 
 //  ---------------------------------------------------------------------
 // double literals
-#if IS_VC11 || IS_GCC || IS_VC12
+#if IS_GCC || IS_VC12
     REPORT_MISSING_FEATURE(doubleLiterals)
 #else
     std::complex<long double> operator "" i(long double d)   // imaginary literal
@@ -731,7 +697,7 @@ void* p = nullptr;
 
 //  ---------------------------------------------------------------------
 // u8 string literals
-#if IS_VC11 || IS_VC12
+#if IS_VC12
     REPORT_MISSING_FEATURE(u8StringLiterals)
 #else
     void test_u8StringLiterals ()
@@ -751,17 +717,13 @@ void* p = nullptr;
 
 //  ---------------------------------------------------------------------
 // raw string literals
-#if IS_VC11
-    REPORT_MISSING_FEATURE(rawStringLiterals)
-#else
-    void test_rawStringLiterals ()
-        {
-        char const* c1 = R"(The String Data \ Stuff " )";
-        printf ("%s\n", c1);
-        char const* c2 = R"delimiter(The String Data \ Stuff " )delimiter";
-        printf ("%s\n", c2);
-        }
-#endif
+void test_rawStringLiterals ()
+    {
+    char const* c1 = R"(The String Data \ Stuff " )";
+    printf ("%s\n", c1);
+    char const* c2 = R"delimiter(The String Data \ Stuff " )delimiter";
+    printf ("%s\n", c2);
+    }
 
 //  ---------------------------------------------------------------------
 // auto

@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/DateTimeConverter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DateTimeConverter.h"
@@ -550,7 +550,6 @@ uint16_t DateTimeConverter::ToMillisecond (uint32_t hectoNanosecond)
 
 //************************ Iso8601Regex ********************************
 //Regex taken from and modified: http://my.safaribooksonline.com/book/programming/regular-expressions/9780596802837/4dot-validation-and-formatting/id2983571
-#if !defined (NO_STD_REGEX)
 //---------------------------------------------------------------------------------------
 //! @remarks This pattern supports T and a space as delimiter of the date and time component, e.g.
 //! both <c>2013-09-15T12:05:39</> and <c>2013-09-15 12:05:39</> can be parsed correctly.
@@ -577,125 +576,24 @@ Utf8CP const Iso8601Regex::PATTERN =
     ")?"
     "(Z|[+-](?:2[0-3]|[0-1][\\d]):?[0-5][\\d])?" //Group 8: time zone (time zone delimiter ':' is optional)
     ")?$"; // string has to end here. This is necessary as the time component is optional and therefore invalid time components would match the regex which they must not however.
-#else
-//POSIX regex does not support non-capture groups. So we need a separate solution here.
-//---------------------------------------------------------------------------------------
-//! @remarks This pattern supports T and a space as delimiter of the date and time component, e.g.
-//! both <c>2013-09-15T12:05:39</> and <c>2013-09-15 12:05:39</> can be parsed correctly.
-//! This is a minor deviation from the ISO standard (specifies the T delimiter), but allows to parse 
-//! SQL-99 date time literals (specifies the space delimiter)
-// @bsimethod                                    Krischan.Eberle                  05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP const Iso8601Regex::PATTERN =  // no leading stuff is supported.
-    "^([+-]?[[:digit:]]{4})"             //[1] Group 1: Year ([0] Group 0 is entire match)
-    "-?" //date component delimiter '-' is optional
-    "(1[0-2]|0[1-9])"                   //[2] Group 2: Month
-    "-?" //date component delimiter '-' is optional
-    "(3[0-1]|0[1-9]|[1-2][[:digit:]])"  //[3] Group 3: Day
-    "("                                 //[4] Non-capture group Entire time component
-    "[T ]" //both T and space are supported as delimiters so that SQL-99 date time literals can be parsed, too. (see comment above)
-    "(2[0-3]|[0-1][[:digit:]])"         //[5] Group 4: Hour
-    ":?" //time component delimiter ':' is optional
-    "([0-5][[:digit:]])"                //[6] Group 5: Minute
-    "("                                 //[7] non-capture group: Second component is optional
-    ":?" //time component delimiter ':' is optional
-    "([0-5][[:digit:]])"                //[8] Group 6: Second
-    "(\\.[[:digit:]]+)?"                //[9] Group 7: Second fraction
-    ")?"
-    "(Z|[+-](2[0-3]|[0-1][[:digit:]]):?[0-5][[:digit:]])?" //[10] Group 8: time zone (time zone delimiter ':' is optional)
-    ")?$"; // string has to end here. This is necessary as the time component is optional and therefore invalid time components would match the regex which they must not however.
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //Characters in the ISO string have to be upper case, so not using case-insensitivity flag with regex
-Iso8601Regex::Iso8601Regex ()
-#if !defined (NO_STD_REGEX)
-    : m_regex (PATTERN)
-    {
-    }
-#else
-    : m_regex ()
-    {
-    if (regcomp (&m_regex, PATTERN, REG_EXTENDED) != 0)
-        {
-        BeAssert(false && "Parsing ISO 8601 Regex failed.");
-        }
-    }
-#endif
+Iso8601Regex::Iso8601Regex () : m_regex (PATTERN) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Iso8601Regex::~Iso8601Regex ()
-    {
-#if defined (NO_STD_REGEX)
-    //the non-std API requires regfree to be called on the regex object
-    regfree (&m_regex);
-#endif
-    }
+Iso8601Regex::~Iso8601Regex () {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Iso8601Regex::Match (Matches& matches, Utf8CP iso8601DateTime) const
     {
-#if !defined (NO_STD_REGEX)
-    return STD_TR1::regex_search (iso8601DateTime, matches, m_regex);
-
-#else
-    const size_t max_ere_group_count = 12;
-
-    struct Gmapping {int got, want;};
-    const Gmapping gmappings[] = // Posix regex does not support non-capture groups. Map the groups we get to the groups we want to capture.
-        {
-            {0,  0},
-            {1,  YEAR_GROUPINDEX},
-            {2,  MONTH_GROUPINDEX},
-            {3,  DAY_GROUPINDEX},
-            {5,  HOUR_GROUPINDEX},
-            {6,  MINUTE_GROUPINDEX},
-            {8,  SECOND_GROUPINDEX},
-            {9,  SECONDFRACTION_GROUPINDEX},
-            {10, TIMEZONE_GROUPINDEX}
-        };
-
-    regmatch_t ere_matches[max_ere_group_count];
-    memset (ere_matches, 0, sizeof(ere_matches));
-    const int stat = regexec (&m_regex, iso8601DateTime, _countof(ere_matches), ere_matches, 0);
-    if (stat != 0)
-        {
-        if (LOG.isSeverityEnabled (NativeLogging::LOG_TRACE))
-            {
-            //first call to regerror with buffer size 0 returns required buffer size.
-            char dummy[1];
-            size_t errorMessageLength = regerror (stat, &m_regex, dummy, 0);
-            if (errorMessageLength == 0)
-                //No error message available. (Don't know why though as stat indicates an error)
-                LOG.tracev ("Could not parse ISO 8601 date time string '%s'. Executing POSIX regex returned the error code %d. See regex.h for error code meaning.", iso8601DateTime, stat);
-            else
-                {
-                ScopedArray<Utf8Char> buffer (errorMessageLength);
-                regerror (stat, &m_regex, buffer.GetData (), errorMessageLength);
-                LOG.tracev ("Could not parse ISO 8601 date time string '%s'. Executing POSIX regex returned an error: %s", iso8601DateTime, buffer.GetData ());
-                }
-            }
-
-        return false;
-        }
-
-    matches.resize (EXPECTED_MATCH_COUNT);
-    for (Gmapping const& gmapping : gmappings)
-        {
-        regmatch_t const& regmatch = ere_matches[gmapping.got];
-        if (regmatch.rm_so != -1)
-            matches[gmapping.want].SetMatch (iso8601DateTime + regmatch.rm_so, iso8601DateTime + regmatch.rm_eo);
-        }
-
-    return true;
-#endif
+    return std::regex_search (iso8601DateTime, matches, m_regex);
     }
 
 //************************ DateTimeStringConverter ********************************

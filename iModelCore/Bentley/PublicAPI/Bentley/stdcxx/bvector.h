@@ -200,6 +200,8 @@ public:
         }
 
 // *** BENTLEY_CHANGE
+// Restrict use of std::initializer_list to VC12 or later.
+#if !defined(_MSC_VER) || (_MSC_VER >= 1800)      
     bvector(std::initializer_list<value_type> _Ilist,
                     const allocator_type& _Al = allocator_type())
                     : _C_alloc(_Al)
@@ -226,6 +228,7 @@ public:
                     {              // insert initializer_list
                     insert(_Where, _Ilist.begin(), _Ilist.end());
                     }
+#endif
 
     ~bvector () { 
         _C_destroy (begin ());
