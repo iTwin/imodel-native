@@ -209,7 +209,6 @@ DG_INLINE DgnDbR                  ViewContext::GetDgnDb () const {BeAssert (null
 DG_INLINE void                    ViewContext::SetDgnDb (DgnDbR dgnDb) {return _SetDgnDb (dgnDb);}
 DG_INLINE GeometricElementCP      ViewContext::GetCurrentElement () const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometricElement() : nullptr);}
 DG_INLINE void                    ViewContext::SetCurrentElement (GeometricElementCP element) {_SetCurrentElement (element);}
-DG_INLINE DisplayPathCP           ViewContext::GetSourceDisplayPath () const {return m_sourcePath;}
 
 DG_INLINE DrawPurpose             ViewContext::GetDrawPurpose() const {return m_purpose;}
 DG_INLINE bool                    ViewContext::IsCameraOn() const {return m_isCameraOn;}
@@ -533,7 +532,7 @@ DG_INLINE void            IPickGeom::AddHit (DPoint4dCR hitPtScreen, DPoint3dCP 
 DG_INLINE bool            IPickGeom::IsSnap () const {return _IsSnap();}
 DG_INLINE DRay3d          IPickGeom::GetBoresite () const { return _GetBoresite();}
 
-DG_INLINE StatusInt     ViewController::VisitPath (DisplayPathCP displayPath, void* arg, ViewContextR context) const{ return _VisitPath (displayPath, arg, context); }
+DG_INLINE StatusInt     ViewController::VisitHit (HitPathCR hit, ViewContextR context) const{return _VisitHit (hit, context);}
 DG_INLINE void          ViewController::DrawView (ViewContextR context) {return _DrawView(context);}
 DG_INLINE ITxn&         ITxnManager::GetCurrentTxn() {return *m_currTxn;}
 DG_INLINE DgnDbR        ITxnManager::GetDgnDb() {return m_dgndb;}
