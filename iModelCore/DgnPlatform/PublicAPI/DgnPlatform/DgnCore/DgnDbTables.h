@@ -63,6 +63,7 @@
 #include "UnitDefinition.h"
 #include "DgnLink.h"
 #include "DgnCoreEvent.h"
+#include "DgnElement.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -805,11 +806,6 @@ public:
 
     //! Make an iterator over the PhysicalRedline models in this DgnDb.
     Iterator MakePhysicalRedlineIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=12"); return it;}
-
-    //! Get the dictionary model for this file.
-    //! @see FillDictionaryModelSections
-    DGNPLATFORM_EXPORT struct DictionaryModel* GetDictionaryModel();
-
     //@}
 
     //! Insert a new model.
@@ -912,6 +908,7 @@ private:
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
+    DgnElementPtr LoadElement(DgnElement::CreateParams const& params);
 
     explicit DgnElements(DgnDbR db);
     ~DgnElements();

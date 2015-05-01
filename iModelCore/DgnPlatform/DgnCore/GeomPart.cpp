@@ -187,11 +187,10 @@ BentleyStatus DbGeomPartsWriter::UpdateGeomPart (DgnGeomPartId geomPartId, const
 struct DbGeomPartsReader
 {
 protected:
-    BeSQLite::SnappyFromBlob m_snappy;
     DgnDbCR m_dgndb;
     BeSQLite::CachedStatementPtr m_selectStmt;
 
-    Utf8CP GetSelectStatement();
+    Utf8CP GetSelectStmt();
 
 public:
     DbGeomPartsReader(DgnDbCR dgndb) : m_dgndb(dgndb) {}
@@ -205,13 +204,13 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP DbGeomPartsReader::GetSelectStatement()
+Utf8CP DbGeomPartsReader::GetSelectStmt()
     {
     // WIP: need to query [MaterialId] also
     return "SELECT "
                 "Code," // 0
                 "Geom"  // 1
-           " FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " ";
+           " FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,12 +218,9 @@ Utf8CP DbGeomPartsReader::GetSelectStatement()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DbGeomPartsReader::ReadGeomPart(bvector<Byte>& geometryBlob, Utf8StringR code, DgnGeomPartId geomPartId)
     {
-    Utf8String sql (GetSelectStatement());
-    sql.append ("WHERE Id=?");
-
     HighPriorityOperationBlock hpo;
 
-    m_dgndb.GetCachedStatement(m_selectStmt, sql.c_str());
+    m_dgndb.GetCachedStatement(m_selectStmt, GetSelectStmt());
     m_selectStmt->BindId(1, geomPartId);
 
     DbResult result = m_selectStmt->Step();
@@ -232,30 +228,23 @@ BentleyStatus DbGeomPartsReader::ReadGeomPart(bvector<Byte>& geometryBlob, Utf8S
         return ERROR;
 
     code.AssignOrClear(m_selectStmt->GetValueText(GetColumnIndexForCode()));
+    SnappyFromBlob& snappy = m_dgndb.Elements().GetSnappyFrom();
+    
+    if (ZIP_SUCCESS != snappy.Init (m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
+        return ERROR;
 
-    if (ZIP_SUCCESS == m_snappy.Init (m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
+    GeomBlobHeader header (snappy);
+    if ((GeomBlobHeader::DB_GeomSignature06 != header.m_signature) || 0 == header.m_size)
         {
-        GeomBlobHeader header (m_snappy);
-        if ((GeomBlobHeader::DB_GeomSignature06 != header.m_signature) || 0 == header.m_size)
-            {
-            BeAssert (false);
-            throw DbException(DGNOPEN_STATUS_CorruptFile, 0);
-            }
-
-        uint32_t actuallyRead;
-
-        geometryBlob.resize(header.m_size);
-        m_snappy._Read (&geometryBlob[0], header.m_size, actuallyRead);
-
-        if (actuallyRead != header.m_size)
-            {
-            BeAssert(false);
-            throw DbException(DGNOPEN_STATUS_CorruptFile, 0);
-            return ERROR;
-            }
+        BeAssert (false);
+        return ERROR;
         }
 
-    return SUCCESS;
+    geometryBlob.resize(header.m_size);
+    uint32_t actuallyRead;
+    snappy.ReadAndFinish(&geometryBlob[0], header.m_size, actuallyRead);
+
+    return (actuallyRead != header.m_size) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
