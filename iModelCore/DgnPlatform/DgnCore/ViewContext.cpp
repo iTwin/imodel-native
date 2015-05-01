@@ -2128,6 +2128,9 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
 
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 
+    double netElemTransparency = elParams.GetNetTransparency();
+    double netFillTransparency = elParams.GetNetFillTransparency();
+
     if (FillDisplay::Never != elParams.GetFillDisplay())
         {
         if (NULL != elParams.GetGradient())
@@ -2136,6 +2139,12 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
             m_gradient->CopyFrom (*elParams.GetGradient());
 
             m_fillColor = ColorDef::White(); // Fill should be set to opaque white for gradient texture...
+
+            if (0 == (m_gradient->GetFlags() & static_cast<int>(GradientFlags::Outline)))
+                {
+                m_lineColor.SetAlpha(0xff); // Qvis checks for this to disable auto-outline...
+                netElemTransparency = 0.0;  // Don't override the fully transparent outline below...
+                }
             }
         else
             {
@@ -2148,18 +2157,23 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
 
     SetMaterial (elParams.GetMaterial(), &context); // Call method so that geometry map is created as needed...
 
-    if (0.0 != elParams.GetNetTransparency())
+    if (0.0 != netElemTransparency)
         {
-        Byte netTransparency = (Byte) elParams.GetNetTransparency();
-        static const int MAX_Alpha = (250);
+        Byte netTransparency = (Byte) (netElemTransparency * 255.0);
 
-        if (netTransparency > MAX_Alpha)
-            netTransparency = MAX_Alpha; // Don't allow complete transparency.
-
-        // discard the lowest 24 bits, since we only have 8 bits to work with.
-        netTransparency = netTransparency & 0xff000000;
+        if (netTransparency > 250)
+            netTransparency = 250; // Don't allow complete transparency.
 
         m_lineColor.SetAlpha(netTransparency);
+        }
+
+    if (0.0 != netFillTransparency)
+        {
+        Byte netTransparency = (Byte) (netFillTransparency * 255.0);
+
+        if (netTransparency > 250)
+            netTransparency = 250; // Don't allow complete transparency.
+
         m_fillColor.SetAlpha(netTransparency);
         }
 
@@ -2321,7 +2335,9 @@ ElemDisplayParams::ElemDisplayParams (ElemDisplayParamsCR rhs)
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
     m_elmTransparency       = rhs.m_elmTransparency;
-    m_netTransparency       = rhs.m_netTransparency;
+    m_netElmTransparency    = rhs.m_netElmTransparency;
+    m_fillTransparency      = rhs.m_fillTransparency;
+    m_netFillTransparency   = rhs.m_netFillTransparency;
     m_material              = rhs.m_material;
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
@@ -2344,7 +2360,9 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
     m_elmTransparency       = rhs.m_elmTransparency;
-    m_netTransparency       = rhs.m_netTransparency;
+    m_netElmTransparency    = rhs.m_netElmTransparency;
+    m_fillTransparency      = rhs.m_fillTransparency;
+    m_netFillTransparency   = rhs.m_netFillTransparency;
     m_material              = rhs.m_material;
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
@@ -2385,10 +2403,12 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
         rhs.m_weight        != m_weight)
         return false;
 
-    if (rhs.m_fillColor         != m_fillColor ||
-        rhs.m_fillDisplay       != m_fillDisplay ||
-        rhs.m_elmTransparency   != m_elmTransparency ||
-        rhs.m_netTransparency   != m_netTransparency)
+    if (rhs.m_fillColor             != m_fillColor ||
+        rhs.m_fillDisplay           != m_fillDisplay ||
+        rhs.m_elmTransparency       != m_elmTransparency ||
+        rhs.m_netElmTransparency    != m_netElmTransparency ||
+        rhs.m_fillTransparency      != m_fillTransparency ||
+        rhs.m_netFillTransparency   != m_netFillTransparency)
         return false;
 
     if (0 != memcmp (&rhs.m_appearanceOverrides, &m_appearanceOverrides, sizeof (m_appearanceOverrides)))
@@ -2482,6 +2502,9 @@ void ElemDisplayParams::Resolve (ViewContextR context)
     if (!m_appearanceOverrides.m_color)
         m_lineColor = appearance.GetColor();
 
+    if (!m_appearanceOverrides.m_fill)
+        m_fillColor = appearance.GetColor();
+
     if (!m_appearanceOverrides.m_weight)
         m_weight = appearance.GetWeight();
 
@@ -2500,9 +2523,11 @@ void ElemDisplayParams::Resolve (ViewContextR context)
         // A 50% transparent element on a 50% transparent category should give a 75% transparent result.
         // (1 - ((1 - .5) * (1 - .5))
         double elementOpaque = 1.0 - m_elmTransparency;
+        double fillOpaque = 1.0 - m_fillTransparency;
         double categoryOpaque = 1.0 - appearance.GetTransparency();
 
-        m_netTransparency = (1.0 - (elementOpaque * categoryOpaque));
+        m_netElmTransparency = (1.0 - (elementOpaque * categoryOpaque));
+        m_netFillTransparency = (1.0 - (fillOpaque * categoryOpaque));
         }
 
     // SubCategory display priority is combined with element priority to compute net display priority. 

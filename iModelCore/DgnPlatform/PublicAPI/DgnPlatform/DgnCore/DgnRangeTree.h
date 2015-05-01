@@ -77,7 +77,7 @@ struct DgnRangeTree
         bool IsSloppy() const {return m_sloppy;}
         void ClearRange() {m_sloppy=false; m_nodeRange.Init();}
         DRange3dCR GetRange() {ValidateRange(); return m_nodeRange;}
-        void ValidateRange();
+        DGNPLATFORM_EXPORT void ValidateRange();
         size_t GetEntryCount();
         DRange3dCR GetRangeCR() {return m_nodeRange;}
         bool Overlaps(DRange3dCR range) const;

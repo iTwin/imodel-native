@@ -595,9 +595,17 @@ SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext (snapContext) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool DoSnapUsingClosestCurve (ElementHandleCR eh, SnapContextR snapContext, int snapPathIndex)
     {
+    if (!eh.IsValid())
+        return false;
+
+    GeometricElementCP geomElement = eh.GetGeometricElement();
+
+    if (nullptr == geomElement)
+        return false;
+
     SnapGraphicsProcessor processor (snapContext);
 
-    ElementGraphicsOutput::Process (processor, eh);
+    ElementGraphicsOutput::Process (processor, *geomElement);
 
     if (NULL == snapContext.GetSnapPath ()->GetGeomDetail ().GetCurvePrimitive ())
         return false; // No edge found...

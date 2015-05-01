@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MeasureGeom.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1197,9 +1197,9 @@ BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnDbR pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::Process (ElementHandleCR eh)
+BentleyStatus MeasureGeomCollector::Process (GeometricElementCR element)
     {
-    ElementGraphicsOutput::Process (*this, eh);
+    ElementGraphicsOutput::Process (*this, element);
     
     return GetOperationStatus ();
     }

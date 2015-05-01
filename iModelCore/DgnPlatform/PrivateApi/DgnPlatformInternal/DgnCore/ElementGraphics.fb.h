@@ -46,12 +46,11 @@ inline const char *EnumNameGradientMode(GradientMode e) { return EnumNamesGradie
 enum BoundaryType {
   BoundaryType_None = 0,
   BoundaryType_Open = 1,
-  BoundaryType_Closed = 2,
-  BoundaryType_Filled = 3
+  BoundaryType_Closed = 2
 };
 
 inline const char **EnumNamesBoundaryType() {
-  static const char *names[] = { "None", "Open", "Closed", "Filled", nullptr };
+  static const char *names[] = { "None", "Open", "Closed", nullptr };
   return names;
 }
 

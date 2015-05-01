@@ -111,7 +111,10 @@ BentleyStatus DgnModels::GetModelName(Utf8StringR name, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::ClearLoaded()
     {
-    m_dgndb.Elements().Destroy(); // Has to be called before model pointers are invalidated.
+    for (auto iter : m_models)
+        iter.second->Empty();
+
+    m_dgndb.Elements().Destroy(); // Has to be called before models are released.
     m_models.clear();
     }
 
@@ -257,7 +260,12 @@ struct EmptiedCaller
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::Empty()
     {
-    if (IsFilled())
+    bool wasFilled = m_wasFilled;
+
+    ReleaseAllElements();
+    ClearRangeIndex();
+
+    if (wasFilled)
         m_appData.CallAllDroppable(EmptiedCaller(*this), *this);
     }
 
@@ -277,8 +285,6 @@ DgnModel::~DgnModel()
     m_appData.CallAll(CleanupCaller(*this));
     m_appData.m_list.clear();  // (some handlers may have deleted themselves. Don't allow Empty to call handlers.)
 
-    ReleaseAllElements();
-    ClearRangeIndex();
     Empty();
     }
 
@@ -1018,17 +1024,26 @@ DgnFileStatus DgnModel::FillModel()
     if (IsFilled())
         return  DGNFILE_STATUS_Success;
 
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    try
+    Statement stmt;
+    enum Column : int            {Id=0,ClassId=1,CategoryId=2,Code=3,ParentId=4};
+    stmt.Prepare(m_dgndb, "SELECT Id,ECClassId,CategoryId,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    stmt.BindId(1, m_modelId);
+
+    SetFilled();
+
+    auto& elements = m_dgndb.Elements();
+    while (BE_SQLITE_ROW == stmt.Step())
         {
-        DbElementListReader reader(*this);
-        reader.ReadList();
+        DgnElementId id(stmt.GetValueId<DgnElementId>(Column::Id));
+        DgnElementPtr elRef = elements.FindElementById(id);
+        if (!elRef.IsValid())
+             elements.LoadElement(DgnElement::CreateParams(*this,
+                    stmt.GetValueId<DgnClassId>(Column::ClassId), 
+                    stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
+                    stmt.GetValueText(Column::Code), 
+                    id,
+                    stmt.GetValueId<DgnElementId>(Column::ParentId)));
         }
-    catch (DbException e)
-        {
-        return  e.m_status;
-        }
-#endif
 
     SetReadOnly(m_dgndb.IsReadonly());
     ModelFillComplete();

@@ -158,7 +158,7 @@ public:
     //! Save a changeset. Adds a record to this DB and also creates an external ".changes" file to hold the changeset data.
     //! @param[in] info The changeset record created 
     //! @param[in] data The data in the changeset
-    //! @param[in] size The number of bytes of data in the changeset. Note that this is a signed 32-bit number. That is the type returned by BeSQLite::ChangeSet::GetSize(), and it is the type accepted by BeSQLite::Statement::BindBlob.
+    //! @param[in] datasize The number of bytes of data in the changeset. Note that this is a signed 32-bit number. That is the type returned by BeSQLite::ChangeSet::GetSize(), and it is the type accepted by BeSQLite::Statement::BindBlob.
     //! @param[in] compressOption How or if to compress the changeset data
     //! @return non-zero error status if the changeset could not be saved.
     DGNPLATFORM_EXPORT BentleyStatus InsertChangeSet(ChangeSetInfo const& info, Compressed compressOption, void const* data, int32_t datasize);
@@ -180,9 +180,8 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus ExtractChangeSetBySequenceNumber(BeSQLite::ChangeSet& changeSet, uint64_t cid);
 
     //! Query a changeset by its SequenceNumber
-    //! @param[out] csinfo  the changeset information
     //! @param[in] cid The changeset's SequenceNumber
-    //! @return non-zero error status if the changeset could not be found.
+    //! @return the changeset information or an ChangeSetInfo if not found
     DGNPLATFORM_EXPORT ChangeSetInfo FindChangeSetBySequenceNumber(uint64_t cid);
 
     //! @}
@@ -208,7 +207,6 @@ public:
     //! @param[out] nChangesApplied The number of changes that were actually applied is returned here.
     //! @param[in] db               The DgnDb to be updated. Must already be open for read-write
     //! @param[in] csfiles          The changeset files to use
-    //! @param[in] applier          Delegate that actually applies the changeset.
     //! @return non-zero error status if the DgnDb is not open read-write or if the change sets could not be applied
     //! @see DetectChangeSets
     DGNPLATFORM_EXPORT static BentleyStatus ApplyChangeSets(uint32_t& nChangesApplied, BeSQLite::Db& db, bvector<BeFileName> const& csfiles);
@@ -219,7 +217,6 @@ public:
     //! @param[out] nChangesApplied The number of changes that were actually applied is returned here.
     //! @param[in] db               The DgnDb to be updated. Must already be open for read-write
     //! @param[in] csfiles          The changeset files to use
-    //! @param[in] applier          Delegate that actually applies the changeset.
     //! @return non-zero error status if the DgnDb is not open read-write or if the change sets could not be applied
     //! @see DetectChangeSets
     DGNPLATFORM_EXPORT static BentleyStatus ApplyChangeSets(uint32_t& nChangesApplied, BeSQLite::Db& db, T_ChangesFileDictionary const& csfiles);
