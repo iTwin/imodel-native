@@ -356,7 +356,7 @@ BentleyStatus BeStringUtilities::Utf16ToWChar (WStringR outStr, Utf16CP inStr, s
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (ByteCP)inStr, (sizeof (uint16_t) * inStrCount), "UTF-16LE"))
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (uint16_t) * inStrCount), "UTF-16LE"))
         {
         BeAssert (false && L"Unicode to Unicode should never fail.");
         return ERROR;
@@ -388,7 +388,7 @@ static BentleyStatus unixUtf16ToWChar (WCharP wbuf, size_t wbufSizeInChars, Utf1
         size_t inStrLen = utf16len (inStr, _count);
         int inStrCount = (int)( (_count == BeStringUtilities::NPOS)? inStrLen: std::min (_count, inStrLen) );
 
-        if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (ByteCP)inStr, (sizeof (Utf16Char) * inStrCount), "UTF-16LE"))
+        if (SUCCESS != BeStringUtilities::TranscodeStringDirect (resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (Utf16Char) * inStrCount), "UTF-16LE"))
             {
             BeAssert (false && L"Unicode to Unicode should never fail.");
             return ERROR;
@@ -416,7 +416,7 @@ static BentleyStatus unixWCharToUtf16 (Utf16P ubuf, size_t ubufSizeInChars, WCha
         size_t inStrLen = wcslen (inStr);
         int inStrCount = (int)( (_count == BeStringUtilities::NPOS)? inStrLen: std::min (_count, inStrLen) );
 
-        if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (ByteCP)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
+        if (SUCCESS != BeStringUtilities::TranscodeStringDirect (resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
             {
             BeAssert (false && L"Unicode to Unicode should never fail.");
             return ERROR;
@@ -459,7 +459,7 @@ BentleyStatus BeStringUtilities::WCharToUtf16 (Utf16BufferR outStr, WCharCP inSt
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (ByteCP)inStr, (sizeof (uint32_t) * inStrCount), "UTF-32LE"))
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (uint32_t) * inStrCount), "UTF-32LE"))
         {
         BeAssert (false && L"Unicode to Unicode should never fail.");
 
@@ -532,7 +532,7 @@ BentleyStatus BeStringUtilities::Utf8ToUtf16 (Utf16BufferR outStr, Utf8CP inStr,
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (ByteCP)inStr, (sizeof (char) * inStrCount), "UTF-8"))
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (char) * inStrCount), "UTF-8"))
         return ERROR;
 
     size_t outStrCount = (resultBytes.size () / sizeof (Utf16Char));
@@ -571,7 +571,7 @@ BentleyStatus BeStringUtilities::Utf16ToUtf8 (Utf8StringR utf8Buffer, Utf16CP ut
 #elif defined (__unix__)
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-8", (ByteCP)utf16Buffer, (sizeof (*utf16Buffer) * inStrCount), "UTF-16LE"))
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-8", (Byte const*)utf16Buffer, (sizeof (*utf16Buffer) * inStrCount), "UTF-16LE"))
         return ERROR;
 
     size_t outStrCount = (resultBytes.size () / sizeof (Utf8Char));
@@ -660,7 +660,7 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar (AStringR outStr, LangCodePag
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, cpStr, (ByteCP)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
+    if (SUCCESS != TranscodeStringDirect (resultBytes, cpStr, (Byte const*)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
         return ERROR;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
@@ -785,7 +785,7 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar (WStringR outStr, CharCP inSt
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (ByteCP)inStr, (sizeof (char) * inStrCount), cpStr))
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (char) * inStrCount), cpStr))
         return ERROR;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
@@ -860,7 +860,7 @@ WCharP  BeStringUtilities::LocaleCharToWChar (WCharP outWChar, CharCP inChar, La
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (ByteCP)inChar, (sizeof (char) * inStrLen), cpStr))
+    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (Byte const*)inChar, (sizeof (char) * inStrLen), cpStr))
         return outWChar;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
