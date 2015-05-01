@@ -958,7 +958,10 @@ public:
 
     HeapZone& GetHeapZone() {return m_heapZone;}
 
-        //! Return the key of the element from its ID.
+    //! Query for the Code for the specified DgnElement.
+    DGNPLATFORM_EXPORT Utf8String QueryElementCode(DgnElementId) const;
+
+    //! Return the key of the element from its ID.
     //! @note used when you know the DgnElementId, but need a DgnElementKey which also contains the ECClassId.
     //! @note an invalid key will be returned in the case of an error
     //! @see ECInstanceKey::IsValid
