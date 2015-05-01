@@ -2128,6 +2128,9 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
 
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 
+    double netElemTransparency = elParams.GetNetTransparency();
+    double netFillTransparency = elParams.GetNetFillTransparency();
+
     if (FillDisplay::Never != elParams.GetFillDisplay())
         {
         if (NULL != elParams.GetGradient())
@@ -2137,11 +2140,10 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
 
             m_fillColor = ColorDef::White(); // Fill should be set to opaque white for gradient texture...
 
-            if (0 == (m_gradient->GetFlags () & static_cast<int>(GradientFlags::Outline)))
+            if (0 == (m_gradient->GetFlags() & static_cast<int>(GradientFlags::Outline)))
                 {
-                m_lineColor.SetAlpha (0xff); // NEEDSWORK_QVis: Don't want outline to display...
-                m_rasterWidth = 1;
-                m_rasterPat = 0;
+                m_lineColor.SetAlpha(0xff); // Qvis checks for this to disable auto-outline...
+                netElemTransparency = 0.0;  // Don't override the fully transparent outline below...
                 }
             }
         else
@@ -2155,9 +2157,9 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
 
     SetMaterial (elParams.GetMaterial(), &context); // Call method so that geometry map is created as needed...
 
-    if (0.0 != elParams.GetNetTransparency())
+    if (0.0 != netElemTransparency)
         {
-        Byte netTransparency = (Byte) (elParams.GetNetTransparency() * 255.0);
+        Byte netTransparency = (Byte) (netElemTransparency * 255.0);
 
         if (netTransparency > 250)
             netTransparency = 250; // Don't allow complete transparency.
@@ -2165,9 +2167,9 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
         m_lineColor.SetAlpha(netTransparency);
         }
 
-    if (0.0 != elParams.GetNetFillTransparency())
+    if (0.0 != netFillTransparency)
         {
-        Byte netTransparency = (Byte) (elParams.GetNetFillTransparency() * 255.0);
+        Byte netTransparency = (Byte) (netFillTransparency * 255.0);
 
         if (netTransparency > 250)
             netTransparency = 250; // Don't allow complete transparency.
