@@ -243,20 +243,20 @@ class EachFontArg : public EachPropertyBaseArg
 {
 //__PUBLISH_SECTION_END__
 private:
-    uint32_t m_storedValue;
+    DgnFontId m_storedValue;
 
 public:
-    DGNPLATFORM_EXPORT EachFontArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext&);
+    DGNPLATFORM_EXPORT EachFontArg (DgnFontId stored, PropsCallbackFlags flags, PropertyContext&);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
 public:
 
     //! Get the value of the property that is stored in the element.
-    DGNPLATFORM_EXPORT uint32_t GetStoredValue ();
+    DGNPLATFORM_EXPORT DgnFontId GetStoredValue ();
 
     //! Assign a new value in place of the one passed to the callback.
-    DGNPLATFORM_EXPORT StatusInt SetStoredValue (uint32_t newVal);
+    DGNPLATFORM_EXPORT StatusInt SetStoredValue (DgnFontId newVal);
 };
 
 //=======================================================================================
@@ -720,8 +720,8 @@ DGNPLATFORM_EXPORT bool DoCategoryCallback (DgnCategoryId* pNewCategoryID, EachC
 DGNPLATFORM_EXPORT bool DoCategoryCallback (DgnCategoryId* pNewCategoryID, EachCategoryArg const& arg) {return DoCategoryCallback (pNewCategoryID, const_cast<EachCategoryArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
 DGNPLATFORM_EXPORT bool DoLineStyleCallback (int32_t* pNewStyleID, EachLineStyleArg& arg);
 DGNPLATFORM_EXPORT bool DoLineStyleCallback (int32_t* pNewStyleID, EachLineStyleArg const& arg) {return DoLineStyleCallback (pNewStyleID, const_cast<EachLineStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
-DGNPLATFORM_EXPORT bool DoFontCallback (uint32_t* pNewFontNo, EachFontArg& arg);
-DGNPLATFORM_EXPORT bool DoFontCallback (uint32_t* pNewFontNo, EachFontArg const& arg) {return DoFontCallback (pNewFontNo, const_cast<EachFontArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
+DGNPLATFORM_EXPORT bool DoFontCallback (DgnFontId* pNewFontNo, EachFontArg& arg);
+DGNPLATFORM_EXPORT bool DoFontCallback (DgnFontId* pNewFontNo, EachFontArg const& arg) {return DoFontCallback (pNewFontNo, const_cast<EachFontArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
 DGNPLATFORM_EXPORT bool DoDimStyleCallback (uint64_t* pNewStyleID, EachDimStyleArg& arg);
 DGNPLATFORM_EXPORT bool DoDimStyleCallback (uint64_t* pNewStyleID, EachDimStyleArg const& arg) {return DoDimStyleCallback (pNewStyleID, const_cast<EachDimStyleArg&>(arg));} // WIP_NONPORT - don't pass non-const ref to temporary object
 DGNPLATFORM_EXPORT bool DoMLineStyleCallback (DgnElementId* pNewStyleID, EachMLineStyleArg& arg);

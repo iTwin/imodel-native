@@ -259,7 +259,7 @@ StatusInt       EachLineStyleArg::SetParamsChanged ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-EachFontArg::EachFontArg (uint32_t stored, PropsCallbackFlags flags, PropertyContext& processor)
+EachFontArg::EachFontArg (DgnFontId stored, PropsCallbackFlags flags, PropertyContext& processor)
     :
     EachPropertyBaseArg (flags, processor)
     {
@@ -269,7 +269,7 @@ EachFontArg::EachFontArg (uint32_t stored, PropsCallbackFlags flags, PropertyCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        EachFontArg::GetStoredValue ()
+DgnFontId        EachFontArg::GetStoredValue ()
     {
     return m_storedValue;
     }
@@ -277,7 +277,7 @@ uint32_t        EachFontArg::GetStoredValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       EachFontArg::SetStoredValue (uint32_t newVal)
+StatusInt       EachFontArg::SetStoredValue (DgnFontId newVal)
     {
     m_storedValue = newVal;
 
@@ -970,7 +970,7 @@ bool            PropertyContext::DoLineStyleCallback (int32_t* pNewStyleID, Each
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContext::DoFontCallback (uint32_t* pNewFontNo, EachFontArg& arg)
+bool            PropertyContext::DoFontCallback (DgnFontId* pNewFontNo, EachFontArg& arg)
     {
     if (0 == (ELEMENT_PROPERTY_Font & GetElementPropertiesMask ()))
         return false;
@@ -983,11 +983,11 @@ bool            PropertyContext::DoFontCallback (uint32_t* pNewFontNo, EachFontA
 
     if (NULL != m_editObj)
         {
-        uint32_t fontNo = arg.GetStoredValue();
+        DgnFontId fontNo = arg.GetStoredValue();
 
         m_editObj->_EachFontCallback (arg);
 
-        uint32_t newFontNo = arg.GetStoredValue();
+        DgnFontId newFontNo = arg.GetStoredValue();
 
         if (NULL != pNewFontNo && newFontNo != fontNo)
             {

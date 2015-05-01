@@ -10,7 +10,6 @@
 #include <Bentley/BeStringUtilities.h>
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
-#include <DgnPlatform/DgnCore/DgnRscFont.h>
 
 // Republish API:           bb re DgnPlatform:PublishedApi
 // Rebuild API:             bb re DgnPlatformDll

@@ -150,7 +150,6 @@ void DgnPlatformLib::Initialize ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::LoadResources()
     {
-    GetDgnFontManager().Initialize();
     GetLineStyleManager().Initialize();
     }
 

@@ -20,7 +20,6 @@ DgnCoreDir      = $(baseDir)DgnCore/
 DgnHandlersDir  = $(baseDir)DgnHandlers/
 PrivateAPIDir   = $(baseDir)PrivateApi/
 
-fontMgrDir       = $(DgnCoreDir)DgnFontManager/
 dependencyDir    = $(DgnCoreDir)dependency/
 lineStyleDir     = $(DgnCoreDir)linestyle/
 
@@ -182,7 +181,7 @@ $(coreObjs)RealityDataCache$(oext) : $(DgnCoreDir)RealityDataCache.cpp $(Reality
 
 $(coreObjs)WebMercator$(oext):    $(DgnCoreDir)WebMercator.cpp $(contextDepends) $(WebMercatorDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
-$(coreObjs)TextString$(oext):    $(DgnCoreDir)TextString.cpp $(contextDepends) $(DgnCoreAPISrc)TextString.h $(DgnCoreAPISrc)DgnFontManager.h $(HandlerDepends) ${MultiCompileDepends}
+$(coreObjs)TextString$(oext):    $(DgnCoreDir)TextString.cpp $(contextDepends) $(DgnCoreAPISrc)TextString.h $(DgnCoreAPISrc)DgnFont.h $(HandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)TextStyleInterop$(oext): $(DgnCoreDir)TextStyleInterop.cpp $(DgnCoreAPISrc)TextString.h $(DgnCoreAPISrc)Annotations/AnnotationTextStyle.h ${MultiCompileDepends}
 
@@ -260,9 +259,15 @@ $(coreObjs)ValueParse$(oext): $(DgnCoreDir)ValueParse.cpp $(DgnCoreAPISrc)ValueP
 
 $(coreObjs)ACSManager$(oext): $(DgnCoreDir)ACSManager.cpp $(DgnCoreAPISrc)IAuxCoordSys.h $(DgnCoreAPISrc)ElementHandle.h ${MultiCompileDepends}
 
-$(coreObjs)DgnFontManager$(oext):  $(fontMgrDir)DgnFontManager.cpp $(DgnCoreAPISrc)DgnFontManager.h $(DgnCoreAPISrc)DgnShxFont.h $(DgnCoreAPISrc)DgnTrueTypeFont.h $(DgnCoreAPISrc)DgnRscFont.h $(contextDepends) ${MultiCompileDepends}
+$(coreObjs)DgnFont$(oext): $(DgnCoreDir)DgnFont.cpp $(DgnCoreAPISrc)DgnFont.h $(contextDepends) ${MultiCompileDepends}
 
-$(coreObjs)DgnShxFont$(oext):      $(fontMgrDir)DgnShxFont.cpp $(DgnCoreAPISrc)DgnShxFont.h $(DgnCoreAPISrc)DgnFontManager.h ${MultiCompileDepends}
+$(coreObjs)DgnRscFont$(oext): $(DgnCoreDir)DgnRscFont.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
+
+$(coreObjs)DgnRscFontData$(oext): $(DgnCoreDir)DgnRscFontData.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
+
+$(coreObjs)DgnShxFont$(oext): $(DgnCoreDir)DgnShxFont.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
+
+$(coreObjs)DgnShxFontData$(oext): $(DgnCoreDir)DgnShxFontData.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
 
 $(coreObjs)MaterialSettings$(oext): $(DgnCoreDir)MaterialSettings.cpp $(DgnCoreAPISrc)Material.h $(DgnCoreAPISrc)MaterialSettings.h ${MultiCompileDepends}
 
@@ -281,7 +286,6 @@ $(coreObjs)DgnItem$(oext) : $(DgnCoreDir)DgnItem.cpp $(DgnCoreAPISrc)DgnItem.h $
 tools      = $(SrcRoot)DgnPlatform/Tools/ToolSubs/
 
 $(coreObjs)stringop$(oext)        : $(tools)charutil/stringop.cpp ${MultiCompileDepends} 
-
 $(coreObjs)DgnDb$(oext): $(DgnCoreDir)DgnDb.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)DgnDbSchema$(oext): $(DgnCoreDir)DgnDbSchema.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
@@ -413,34 +417,34 @@ $(handlerObjs)GeneratedSource/GeneratedHeaders/WordBreakData.h : $(DgnHandlersDi
 dirToSearch = $(handlerObjs)GeneratedSource/
 %include cincapnd.mki
 
-FileTypeControl =
-CCPchOpts =
-CPchOpts =
-
 # -----------------------------------------------------------------------------------------------
-#   Non-port section -- these files cannot or need not be ported to Linux
+#   Non-port section
 # -----------------------------------------------------------------------------------------------
 MultiCompileDepends=$(_MakeFileSpec)
 o = $(coreObjs)
 
 %include MultiCppCompileRule.mki
 
-$(coreObjs)nonport_utilities$(oext):      $(DgnCoreDir)nonport_utilities.cpp ${MultiCompileDepends}
+$(coreObjs)nonport_utilities$(oext): $(DgnCoreDir)nonport_utilities.cpp ${MultiCompileDepends}
 
-$(coreObjs)DgnRscFont$(oext):      $(fontMgrDir)DgnRscFont.cpp $(DgnCoreAPISrc)DgnRscFont.h $(DgnCoreAPISrc)DgnFontManager.h $(DgnCoreAPISrc)GPArray.h ${MultiCompileDepends}
+$(coreObjs)DgnTrueTypeFont$(oext): $(DgnCoreDir)DgnTrueTypeFont.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
 
-$(coreObjs)DgnTrueTypeFont$(oext): $(fontMgrDir)DgnTrueTypeFont.cpp $(DgnCoreAPISrc)DgnTrueTypeFont.h $(DgnCoreAPISrc)DgnFontManager.h ${MultiCompileDepends}
-
-$(coreObjs)PlatformTextServices$(oext) : $(DgnHandlersDir)PlatformTextServices.cpp $(DgnPlatformInternalDir)DgnCore/PlatformTextServices.h ${MultiCompileDepends}
+$(coreObjs)DgnTrueTypeFontData$(oext): $(DgnCoreDir)DgnTrueTypeFontData.cpp $(DgnCoreAPISrc)DgnFont.h $(DgnCoreAPISrc)DgnFontData.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
-coreObjects +% $(MultiCompileObjectList)
+dgnCore_nonPortableObjects =% $(MultiCompileObjectList)
+coreObjects + $(dgnCore_nonPortableObjects)
 
+FileTypeControl =
 CCPchOpts =
 CPchOpts =
 
+# -----------------------------------------------------------------------------------------------
+#   cppObjects = Combine dgncore and dgnhandler obj lists
+# -----------------------------------------------------------------------------------------------
 cppObjects = $(coreObjects)
+cppObjects + $(handlerObjects)
 
 # -----------------------------------------------------------------------------------------------
 #   Portable inline handling (make sure that there is a non-inlined implementation when required)
@@ -476,17 +480,19 @@ DLM_NOMSBUILTINS        = 1
 DLM_NO_DEF              = 1
 DLM_NO_DLS              = 1
 DLM_NOENTRY             = 1
-LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib)                        \
-                            $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)       \
-                            $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)         \
-                            $(ContextSubpartsLibs)$(libprefix)BeZlib$(stlibext)         \
-                            $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext)          \
+LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
+                            $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeZlib$(stlibext) \
+                            $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
-                            $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)      \
-                            $(ContextSubpartsLibs)$(ECNativeObjectsLib)                 \
-                            $(ContextSubpartsLibs)$(BentleyGeomLib)                     \
+                            $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
+                            $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
+                            $(ContextSubpartsLibs)$(BentleyGeomLib) \
                             $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext) \
-                            $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
+                            $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)freetype2$(stlibext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext)
 
 %if $(TARGET_PLATFORM)!="WinRT"
     # The "Casablanca" library is used on WinRT instead
@@ -495,12 +501,9 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib)                
 
 %ifndef CREATE_STATIC_LIBRARIES
     %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-        #for uniscribeservices, used by nonport_DgnRscFont.cpp, DgnTrueTypeFont.cpp
-        LINKER_LIBRARIES + usp10.lib
-        
         LINKER_LIBRARIES + $(ContextSubpartsLibs)BeLibXml2.lib 
         
-        #For CoCreateInstance, RegOpenKey, SHGetPathFromIDListA - used (in Windows build) by DgnTrueTypeFont.obj and IntegrationManager.obj
+        #For CoCreateInstance, RegOpenKey, SHGetPathFromIDListA - used (in Windows build) for TrueType font support and by IntegrationManager.obj
         LINKER_LIBRARIES + $(oleLibs) $(guiLibs) kernel32.lib
         LINKER_LIBRARIES + wininet.lib
         
@@ -513,10 +516,6 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib)                
         # Add this to use the VTune API. It is a static library that finds the DLL's if they are on the system.
         # LINKER_LIBRARIES       + "C:\Program Files (x86)\Intel\VTune Amplifier XE\lib64\libittnotify.lib"
     %endif
-%endif
-
-%if $(TARGET_PLATFORM)!="Windows" && !defined(CREATE_STATIC_LIBRARIES)  # *** WIP_NONPORT
-DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)freetype2$(stlibext)
 %endif
 
 %include $(sharedMki)linkLibrary.mki

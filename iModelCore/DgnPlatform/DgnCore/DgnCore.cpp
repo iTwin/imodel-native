@@ -353,7 +353,6 @@ void DgnPlatformLib::Host::InitializeDgnCore ()
 
     BeAssert (NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
-    m_fontManager = new DgnFontManager ();
     m_lineStyleManager = new LineStyleManager ();
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
@@ -374,7 +373,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_txnAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_acsManager, onProgramExit);
     TERMINATE_HOST_OBJECT(m_sessionAdmin, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_fontManager, onProgramExit);
     TERMINATE_HOST_OBJECT(m_realityDataAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_lineStyleManager, onProgramExit);
 
@@ -401,7 +399,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert (NULL == m_geoCoordAdmin);
     BeAssert (NULL == m_sessionAdmin);
     BeAssert (NULL == m_txnAdmin);
-    BeAssert (NULL == m_fontManager);
     BeAssert (NULL == m_acsManager);
     BeAssert (NULL == m_lineStyleManager);
     BeAssert (NULL == m_formatterAdmin);
@@ -457,12 +454,6 @@ DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormat
 DgnPlatformLib::Host::RealityDataAdmin&      DgnPlatformLib::Host::_SupplyRealityDataAdmin()      {return *new RealityDataAdmin();}
 
 DgnPlatformLib::SessionAdmin&   DgnPlatformLib::InteractiveHost::_SupplySessionAdmin() {return *new SessionAdmin();}
-
-BeFileName DgnPlatformLib::Host::FontAdmin::_GetFontPath() 
-    {
-    BeFileName assets = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    return assets.AppendToPath(L"fonts");
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      07/14

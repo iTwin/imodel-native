@@ -39,7 +39,7 @@
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="ECObjectsNative"     PartFile="ecobjects"    Repository="ecobjects" />
-        <SubPart PartName="freetype2StaticLib"  PartFile="freetype2"    Repository="libsrc-freetype2" />
+        <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
         <SubPart PartName="LastResortFonts"     PartFile="MstnAppData"  Repository="miscdev-mstnappdata" />
         <SubPart PartName="FontConfigurationFile"   PartFile="MstnAppData"  Repository="miscdev-mstnappdata" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>

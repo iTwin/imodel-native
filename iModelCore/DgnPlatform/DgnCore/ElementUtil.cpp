@@ -647,8 +647,8 @@ void ElementPropertiesSetter::_EachFontCallback (EachFontArg& arg)
     if (!IsValidBaseID (arg))
         return;
     
-    uint32_t fontNumber;
-    if (SUCCESS != arg.GetPropertyContext().GetDestinationDgnModel()->GetDgnDb().Fonts().AcquireFontNumber (fontNumber, *m_font))
+    DgnFontId fontNumber = arg.GetPropertyContext().GetDestinationDgnModel()->GetDgnDb().Fonts().AcquireId(*m_font);
+    if (!fontNumber.IsValid())
         { BeAssert (false); return; }
     
     arg.SetStoredValue (fontNumber);

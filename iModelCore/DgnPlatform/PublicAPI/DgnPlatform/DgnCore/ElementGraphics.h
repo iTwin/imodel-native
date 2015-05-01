@@ -12,7 +12,6 @@
 #include "../DgnPlatform.h"
 #include "SolidKernel.h"
 #include "ViewContext.h"
-#include "DgnFontManager.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //__PUBLISH_SECTION_END__
