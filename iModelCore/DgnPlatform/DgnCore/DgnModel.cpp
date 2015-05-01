@@ -1034,11 +1034,14 @@ DgnFileStatus DgnModel::FillModel()
     auto& elements = m_dgndb.Elements();
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        elements.LoadElement(DgnElement::CreateParams(*this,
+        DgnElementId id(stmt.GetValueId<DgnElementId>(Column::Id));
+        DgnElementPtr elRef = elements.FindElementById(id);
+        if (!elRef.IsValid())
+             elements.LoadElement(DgnElement::CreateParams(*this,
                     stmt.GetValueId<DgnClassId>(Column::ClassId), 
                     stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
                     stmt.GetValueText(Column::Code), 
-                    stmt.GetValueId<DgnElementId>(Column::Id), 
+                    id,
                     stmt.GetValueId<DgnElementId>(Column::ParentId)));
         }
 
