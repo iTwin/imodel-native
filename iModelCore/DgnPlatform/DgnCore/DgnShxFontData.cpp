@@ -5,7 +5,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnFontData.h>
 
-#define LOG (*LoggingManager::GetLogger(L"DgnFont"))
+#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
@@ -54,16 +54,16 @@ DgnShxFont::ShxType IDgnShxFontData::GetShxType()
 struct DgnShxDbFontData : IDgnShxFontData
 {
 private:
-    DgnFonts& m_dbFonts;
+    DgnFonts::DbFaceDataDirect& m_dbFaceData;
     Utf8String m_familyName;
     size_t m_openCount;
     bvector<Byte> m_fontData;
     uint64_t m_dataPosition;
 
 public:
-    DgnShxDbFontData(DgnFonts& dbFonts, Utf8CP familyName) : m_dbFonts(dbFonts), m_familyName(familyName), m_openCount(0) {}
+    DgnShxDbFontData(DgnFonts::DbFaceDataDirect& dbFaceData, Utf8CP familyName) : m_dbFaceData(dbFaceData), m_familyName(familyName), m_openCount(0) {}
 
-    virtual IDgnFontData* _CloneWithoutData() override { return new DgnShxDbFontData(m_dbFonts, m_familyName.c_str()); }
+    virtual IDgnFontData* _CloneWithoutData() override { return new DgnShxDbFontData(m_dbFaceData, m_familyName.c_str()); }
     virtual BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
     virtual BentleyStatus _AddDataRef() override;
     virtual void _ReleaseDataRef() override;
@@ -84,7 +84,7 @@ BentleyStatus DgnShxDbFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData)
     DgnFonts::DbFaceDataDirect::FaceKey regularFace(DgnFontType::Shx, m_familyName.c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular);    
     if (faceData.Exists(regularFace))
         {
-        LOG.infov("Embedded data for SHX family '%s' already exists; it will not be automatically replaced.", regularFace.m_familyName.c_str());
+        FONT_LOG.infov("Embedded data for SHX family '%s' already exists; it will not be automatically replaced.", regularFace.m_familyName.c_str());
         return ERROR;
         }
     
@@ -92,7 +92,7 @@ BentleyStatus DgnShxDbFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData)
     faces[0] = regularFace;
     if (SUCCESS != faceData.Insert(&m_fontData[0], m_fontData.size(), faces))
         {
-        LOG.errorv("Unable to write embedded font data for SHX family '%s'.", regularFace.m_familyName.c_str());
+        FONT_LOG.errorv("Unable to write embedded font data for SHX family '%s'.", regularFace.m_familyName.c_str());
         return ERROR;
         }
     
@@ -111,9 +111,9 @@ BentleyStatus DgnShxDbFontData::_AddDataRef()
         }
     
     DgnFonts::DbFaceDataDirect::FaceSubId ignored;
-    if (SUCCESS != m_dbFonts.DbFaceData().QueryByFace(m_fontData, ignored, DgnFonts::DbFaceDataDirect::FaceKey(DgnFontType::Shx, m_familyName.c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular)))
+    if (SUCCESS != m_dbFaceData.QueryByFace(m_fontData, ignored, DgnFonts::DbFaceDataDirect::FaceKey(DgnFontType::Shx, m_familyName.c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular)))
         {
-        LOG.warningv("Could not load SHX font data from database with name '%s'. This font will be considered unresolved.", m_familyName.c_str());
+        FONT_LOG.warningv("Could not load SHX font data from database with name '%s'. This font will be considered unresolved.", m_familyName.c_str());
         return ERROR;
         }
 
@@ -232,14 +232,14 @@ BentleyStatus DgnShxFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData)
     bvector<Byte> fontData;
     if (BeFileStatus::Success != m_file.ReadEntireFile(fontData))
         {
-        LOG.warningv("Could not read SHX file data for embedding from file '%s'.", Utf8String(m_path).c_str());
+        FONT_LOG.warningv("Could not read SHX file data for embedding from file '%s'.", Utf8String(m_path).c_str());
         return ERROR;
         }
 
     DgnFonts::DbFaceDataDirect::FaceKey regularFace(DgnFontType::Shx, Utf8String(m_path.GetFileNameWithoutExtension().c_str()).c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular);
     if (faceData.Exists(regularFace))
         {
-        LOG.infov("Embedded data for SHX family '%s' already exists; it will not be automatically replaced.", regularFace.m_familyName.c_str());
+        FONT_LOG.infov("Embedded data for SHX family '%s' already exists; it will not be automatically replaced.", regularFace.m_familyName.c_str());
         return ERROR;
         }
 
@@ -247,7 +247,7 @@ BentleyStatus DgnShxFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData)
     faces[0] = regularFace;
     if (SUCCESS != faceData.Insert(&fontData[0], fontData.size(), faces))
         {
-        LOG.errorv("Unable to write embedded font data for SHX family '%s'.", regularFace.m_familyName.c_str());
+        FONT_LOG.errorv("Unable to write embedded font data for SHX family '%s'.", regularFace.m_familyName.c_str());
         return ERROR;
         }
 
@@ -267,7 +267,7 @@ BentleyStatus DgnShxFileFontData::_AddDataRef()
 
     if (BeFileStatus::Success != m_file.Open(m_path, BeFileAccess::Read))
         {
-        LOG.warningv("Could not open SHX font file '%s'. This font will be considered unresolved.", Utf8String(m_path).c_str());
+        FONT_LOG.warningv("Could not open SHX font file '%s'. This font will be considered unresolved.", Utf8String(m_path).c_str());
         return ERROR;
         }
 
@@ -291,7 +291,7 @@ void DgnShxFileFontData::_ReleaseDataRef()
         return;
 
     if (BeFileStatus::Success != m_file.Close())
-        LOG.warningv("Could not close SHX font file '%s'.", Utf8String(m_path).c_str());
+        FONT_LOG.warningv("Could not close SHX font file '%s'.", Utf8String(m_path).c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -388,10 +388,10 @@ static BentleyStatus metadataFromJsonBlob(DgnShxFont::Metadata& metadata, ByteCP
 //---------------------------------------------------------------------------------------
 DgnFontPtr DgnFontPersistence::Db::DgnShxFontFromDb(DgnFonts& dbFonts, DgnFontId id, Utf8CP name, ByteCP metadata, size_t metadataSize)
     {
-    DgnShxFontP font = new DgnShxFont(name, new DgnShxDbFontData(dbFonts, name));
+    DgnShxFontP font = new DgnShxFont(name, new DgnShxDbFontData(dbFonts.DbFaceData(), name));
     
     if (SUCCESS != metadataFromJsonBlob(font->GetMetadataR(), metadata, metadataSize))
-        LOG.warningv("Could not parse metadata for font of id/type/name %i/%i/'%s'.", (int)id.GetValue(), (int)font->GetType(), name);
+        FONT_LOG.warningv("Could not parse metadata for font of id/type/name %i/%i/'%s'.", (int)id.GetValue(), (int)font->GetType(), name);
 
     return font;
     }

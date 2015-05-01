@@ -5,7 +5,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnFontData.h>
 
-#define LOG (*LoggingManager::GetLogger(L"DgnFont"))
+#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
@@ -41,7 +41,7 @@ BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureFallbackFontDb()
     BeFileName path = _GetFallbackFontDbPath();
     if (path.empty())
         {
-        LOG.error("Could not determine the fallback font database path. Fallback fonts cannot be loaded.");
+        FONT_LOG.error("Could not determine the fallback font database path. Fallback fonts cannot be loaded.");
         BeAssert(false);
         return ERROR;
         }
@@ -50,14 +50,14 @@ BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureFallbackFontDb()
     DbResult openResult = fallbackFontDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_No, nullptr));
     if (BE_SQLITE_OK != openResult)
         {
-        LOG.errorv("Could not open the fallback font database '%s' with error code %i/'%s'.", Utf8String(path).c_str(), (int)openResult, Db::InterpretDbResult(openResult));
+        FONT_LOG.errorv("Could not open the fallback font database '%s' with error code %i/'%s'.", Utf8String(path).c_str(), (int)openResult, Db::InterpretDbResult(openResult));
         BeAssert(false);
         return ERROR;
         }
 
     m_fallbackFontDb = fallbackFontDb.release();
 
-    LOG.infov("Using fallback font database '%s'.", Utf8String(path).c_str());
+    FONT_LOG.infov("Using fallback font database '%s'.", Utf8String(path).c_str());
     
     m_dbFonts = new DgnFonts(*m_fallbackFontDb, "fallbackfont");
 
@@ -87,7 +87,7 @@ DgnFontPtr DgnPlatformLib::Host::FontAdmin::_CreateFallbackFont(DgnFontType type
     DgnFontPtr foundFont = m_dbFonts->DbFontMap().QueryByTypeAndName(type, name.c_str());
     if (!foundFont.IsValid())
         {
-        LOG.errorv("Could not find a fallback font with type/name %i/'%s'.", (int)type, name.c_str());
+        FONT_LOG.errorv("Could not find a fallback font with type/name %i/'%s'.", (int)type, name.c_str());
         BeAssert(false);
         return nullptr;
         }
@@ -187,7 +187,7 @@ BentleyStatus DgnFonts::DbFontMapDirect::CreateFontTable()
     
     if (BE_SQLITE_OK != createStatus)
         {
-        LOG.errorv("Failed to create font table with error code %i/'%s'.", (int)createStatus, Db::InterpretDbResult(createStatus));
+        FONT_LOG.errorv("Failed to create font table with error code %i/'%s'.", (int)createStatus, Db::InterpretDbResult(createStatus));
         return ERROR;
         }
 
@@ -290,7 +290,7 @@ BentleyStatus DgnFonts::DbFontMapDirect::Insert(DgnFontCR font, DgnFontId& id)
     bvector<Byte> metadata;
     if (SUCCESS != DgnFontPersistence::Db::MetadataToDb(metadata, font))
         {
-        LOG.errorv("Could not insert font of type/name %i/'%s' because its metadata could not be serialized.", (int)font.GetType(), font.GetName().c_str());
+        FONT_LOG.errorv("Could not insert font of type/name %i/'%s' because its metadata could not be serialized.", (int)font.GetType(), font.GetName().c_str());
         BeAssert(false);
         return ERROR;
         }
@@ -313,7 +313,7 @@ BentleyStatus DgnFonts::DbFontMapDirect::Insert(DgnFontCR font, DgnFontId& id)
     if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != insert.Step()))
         return ERROR;
 
-    LOG.infov("Inserted font of ID/type/name %i/%i/'%s'.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
+    FONT_LOG.infov("Inserted font of ID/type/name %i/%i/'%s'.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
 
     return SUCCESS;
     }
@@ -328,7 +328,7 @@ BentleyStatus DgnFonts::DbFontMapDirect::Update(DgnFontCR font, DgnFontId id)
     bvector<Byte> metadata;
     if (SUCCESS != DgnFontPersistence::Db::MetadataToDb(metadata, font))
         {
-        LOG.errorv("Could not update font of ID/type/name %i/%i/'%s' because its metadata could not be serialized.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
+        FONT_LOG.errorv("Could not update font of ID/type/name %i/%i/'%s' because its metadata could not be serialized.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
         BeAssert(false);
         return ERROR;
         }
@@ -344,7 +344,7 @@ BentleyStatus DgnFonts::DbFontMapDirect::Update(DgnFontCR font, DgnFontId id)
     if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != update.Step()))
         return ERROR;
 
-    LOG.infov("Updated font with ID %i to type/name %i/'%s'.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
+    FONT_LOG.infov("Updated font with ID %i to type/name %i/'%s'.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
 
     return SUCCESS;
     }
@@ -363,7 +363,7 @@ BentleyStatus DgnFonts::DbFontMapDirect::Delete(DgnFontId id)
     if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != del.Step()))
         return ERROR;
 
-    LOG.infov("Deleted font with ID %i.", (int)id.GetValue());
+    FONT_LOG.infov("Deleted font with ID %i.", (int)id.GetValue());
 
     return SUCCESS;
     }
@@ -430,7 +430,7 @@ static Json::Value jsonFromFaceMap(CharCP tocStart, CharCP tocEnd, DgnFonts::DbF
     Json::Value toc;
     Json::Reader reader;
     if (!reader.parse(tocStart, tocEnd, toc, false) || !toc.isArray())
-        LOG.warningv("Invalid embedded face data table of contents for ID %i. This face data record cannot be used.", (int)id);
+        FONT_LOG.warningv("Invalid embedded face data table of contents for ID %i. This face data record cannot be used.", (int)id);
 
     return toc;
     }
@@ -545,7 +545,7 @@ BentleyStatus DgnFonts::DbFaceDataDirect::QueryByFace(bvector<Byte>& data, FaceS
             data.resize(faceDataEntry.GetRawSize());
             if (BE_SQLITE_ROW != m_dbFonts.m_db.QueryProperty(&data[0], (uint32_t)data.size(), EMBEDDED_FACE_DATA_PROPERTY_SPEC, faceDataEntry.GetId(), 0))
                 {
-                LOG.warningv("Could not retrieve embedded face data data for ID %i via the property API. This face data record cannot be used.", (int)faceDataEntry.GetId());
+                FONT_LOG.warningv("Could not retrieve embedded face data data for ID %i via the property API. This face data record cannot be used.", (int)faceDataEntry.GetId());
                 return ERROR;
                 }
             
@@ -595,7 +595,7 @@ BentleyStatus DgnFonts::DbFaceDataDirect::Insert(ByteCP data, size_t size, T_Fac
     
     if (BE_SQLITE_OK != m_dbFonts.m_db.SaveProperty(EMBEDDED_FACE_DATA_PROPERTY_SPEC, data, (uint32_t)size, id, 0))
         {
-        LOG.warningv("Could not save embedded face data data for ID %i via the property API. This face data record cannot be saved.", (int)id);
+        FONT_LOG.warningv("Could not save embedded face data data for ID %i via the property API. This face data record cannot be saved.", (int)id);
         return ERROR;
         }
 
@@ -622,13 +622,13 @@ BentleyStatus DgnFonts::DbFaceDataDirect::Insert(ByteCP data, size_t size, T_Fac
 
     if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != update.Step()))
         {
-        LOG.warningv("Could not save embedded face data table of contents data for ID %i. This face data record cannot be saved.", (int)id);
+        FONT_LOG.warningv("Could not save embedded face data table of contents data for ID %i. This face data record cannot be saved.", (int)id);
         return ERROR;
         }
     
-    LOG.infov("Embedded font data with ID/size %i/%i bytes. It contains the following faces:", (int)id, (int)size);
+    FONT_LOG.infov("Embedded font data with ID/size %i/%i bytes. It contains the following faces:", (int)id, (int)size);
     for (T_FaceMap::value_type const& keyEntry : keys)
-        LOG.infov("    FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s'", (int)keyEntry.first, (int)keyEntry.second.m_type, keyEntry.second.m_familyName.c_str(), keyEntry.second.m_faceName.c_str());
+        FONT_LOG.infov("    FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s'", (int)keyEntry.first, (int)keyEntry.second.m_type, keyEntry.second.m_familyName.c_str(), keyEntry.second.m_faceName.c_str());
 
     return SUCCESS;
     }
@@ -662,11 +662,11 @@ BentleyStatus DgnFonts::DbFaceDataDirect::Delete(FaceKeyCR key)
             {
             if (BE_SQLITE_DONE != m_dbFonts.m_db.DeleteProperty(EMBEDDED_FACE_DATA_PROPERTY_SPEC, faceDataEntry.GetId(), 0))
                 {
-                LOG.warningv("Could not delete embedded face data for Type/FamilyName/FaceName %i/%i/'%s'/'%s' because the property could not be deleted.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
+                FONT_LOG.warningv("Could not delete embedded face data for Type/FamilyName/FaceName %i/%i/'%s'/'%s' because the property could not be deleted.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
                 return ERROR;
                 }
 
-            LOG.infov("Deleted entire record for embedded face data for Type/FamilyName/FaceName %i/%i/'%s'/'%s'; it was the last face in the record.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
+            FONT_LOG.infov("Deleted entire record for embedded face data for Type/FamilyName/FaceName %i/%i/'%s'/'%s'; it was the last face in the record.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
 
             return SUCCESS;
             }
@@ -681,18 +681,18 @@ BentleyStatus DgnFonts::DbFaceDataDirect::Delete(FaceKeyCR key)
 
         if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != update.Step()))
             {
-            LOG.warningv("Could not save trimmed embedded face data table of contents data for ID %i. This face data record cannot be saved.", (int)faceDataEntry.GetId());
+            FONT_LOG.warningv("Could not save trimmed embedded face data table of contents data for ID %i. This face data record cannot be saved.", (int)faceDataEntry.GetId());
             return ERROR;
             }
 
-        LOG.infov("Removed face FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s' from table of contents; these other faces are still in the record:", (int)faceDataEntry.GetId(), (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
+        FONT_LOG.infov("Removed face FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s' from table of contents; these other faces are still in the record:", (int)faceDataEntry.GetId(), (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
         for (Json::ValueConstIterator faceKeyIter = ((JsonValueCR)toc).begin(); ((JsonValueCR)toc).end() != faceKeyIter; ++faceKeyIter)
-            LOG.infov("    FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s'", (int)faceKeyIter.key().asUInt(), (int)(*faceKeyIter)["type"].asUInt(), (*faceKeyIter)["familyName"].asCString(), (*faceKeyIter)["faceName"].asCString());
+            FONT_LOG.infov("    FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s'", (int)faceKeyIter.key().asUInt(), (int)(*faceKeyIter)["type"].asUInt(), (*faceKeyIter)["familyName"].asCString(), (*faceKeyIter)["faceName"].asCString());
 
         return SUCCESS;
         }
     
-    LOG.infov("Attempted to delete embedded face data for type/family/face %i/'%s'/'%s', but it did not exist.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
+    FONT_LOG.infov("Attempted to delete embedded face data for type/family/face %i/'%s'/'%s', but it did not exist.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
     return ERROR;
     }
 
@@ -712,7 +712,7 @@ void DgnFonts::Update()
         DgnFontPtr font = DbFontMap().QueryById(id);
         if (!font.IsValid())
             {
-            LOG.errorv("Could not deserialize font with id/type/name %i/%i/'%s'; a fallback will be inserted into the font map.", (int)id.GetValue(), (int)entry.GetType(), entry.GetName());
+            FONT_LOG.errorv("Could not deserialize font with id/type/name %i/%i/'%s'; a fallback will be inserted into the font map.", (int)id.GetValue(), (int)entry.GetType(), entry.GetName());
             font = DgnFontManager::GetAnyFallbackFont().Clone();
             }
         
@@ -777,13 +777,13 @@ DgnFontId DgnFonts::AcquireId(DgnFontCR font)
     DgnFontId newId;
     if (SUCCESS != DbFontMap().Insert(font, newId))
         {
-        LOG.errorv("Could not insert a font map entry for font of type/name %i/'%s'; the font could not be inserted into the database.", (int)font.GetType(), font.GetName().c_str());
+        FONT_LOG.errorv("Could not insert a font map entry for font of type/name %i/'%s'; the font could not be inserted into the database.", (int)font.GetType(), font.GetName().c_str());
         return DgnFontId();
         }
 
     m_fontMap[newId] = DbFontMap().QueryById(newId);
 
-    LOG.infov("Created font map entry %i -> type/name %i/'%s'.", (int)newId.GetValue(), font.GetName().c_str());
+    FONT_LOG.infov("Created font map entry %i -> type/name %i/'%s'.", (int)newId.GetValue(), font.GetName().c_str());
 
     return newId;
     }

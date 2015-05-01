@@ -237,6 +237,7 @@ DgnFileStatus DgnDb::CompactFile()
     return DGNFILE_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::GetNextServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP colName, uint32_t minimumId)
