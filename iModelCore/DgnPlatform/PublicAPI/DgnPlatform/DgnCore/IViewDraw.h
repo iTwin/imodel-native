@@ -386,6 +386,7 @@ struct AppearanceOverrides
     bool m_weight:1;
     bool m_style:1;
     bool m_material:1;
+    bool m_fill:1; // If not set, fill is an opaque fill that matches sub-category appearance color...
     };
 
 // NOTE: Constructor uses memset (this, 0, offsetof (ElemDisplayParams, m_material));
@@ -401,7 +402,9 @@ ColorDef            m_lineColor;
 ColorDef            m_fillColor;                    //!< fill color (applicable only if filled)
 FillDisplay         m_fillDisplay;                  //!< whether or not the element should be displayed filled
 double              m_elmTransparency;              //!< transparency, 1.0 == completely transparent.
-double              m_netTransparency;              //!< net transparency for element/category.
+double              m_netElmTransparency;           //!< net transparency for element/category.
+double              m_fillTransparency;             //!< fill transparency, 1.0 == completely transparent.
+double              m_netFillTransparency;          //!< net transparency for fill/category.
 MaterialCP          m_material;                     //!< render material
 
 LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
@@ -426,8 +429,10 @@ DGNPLATFORM_EXPORT void     SetGradient (GradientSymbP gradient);
 DGNPLATFORM_EXPORT void     SetMaterial (MaterialCP material);
 DGNPLATFORM_EXPORT void     SetPatternParams (PatternParamsP patternParams);
 
-DGNPLATFORM_EXPORT void     SetTransparency (double transparency);
+DGNPLATFORM_EXPORT void     SetTransparency (double transparency); // NOTE: Sets BOTH element and fill transparency...
 DGNPLATFORM_EXPORT double   GetNetTransparency () const;
+DGNPLATFORM_EXPORT void     SetFillTransparency (double transparency);
+DGNPLATFORM_EXPORT double   GetNetFillTransparency () const;
 DGNPLATFORM_EXPORT void     SetDisplayPriority (int32_t priority); // Set display priority (2d only).
 DGNPLATFORM_EXPORT int32_t  GetNetDisplayPriority () const; // Get net display priority (2d only).
 DGNPLATFORM_EXPORT void     SetNetDisplayPriority (int32_t priority); // RASTER USE ONLY!!!
@@ -439,6 +444,7 @@ DGNPLATFORM_EXPORT bool IsLineColorFromSubCategoryAppearance () const;
 DGNPLATFORM_EXPORT bool IsWeightFromSubCategoryAppearance () const;
 DGNPLATFORM_EXPORT bool IsLineStyleFromSubCategoryAppearance () const;
 DGNPLATFORM_EXPORT bool IsMaterialFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool IsFillColorFromSubCategoryAppearance () const;
 
 DGNPLATFORM_EXPORT void     Resolve (ViewContextR); // Resolve effective values
 
@@ -474,6 +480,9 @@ DGNPLATFORM_EXPORT uint32_t GetWeight () const;
 
 //! Get element transparency.
 DGNPLATFORM_EXPORT double GetTransparency () const;
+
+//! Get fill/gradient transparency.
+DGNPLATFORM_EXPORT double GetFillTransparency () const;
 
 //! Get render material.
 DGNPLATFORM_EXPORT MaterialCP GetMaterial () const;

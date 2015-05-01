@@ -12,6 +12,7 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+#ifdef WIP_ITEM_HANDLER
 //=======================================================================================
 //! Base class for ElementItem handlers (which follow the singleton pattern).
 //! Many handler methods take the ElementItemKey type so as not to require the loading
@@ -26,10 +27,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementItemHandler : DgnDomain::Handler
     friend struct ElementGeomTableHandler;
 
 //__PUBLISH_SECTION_START__
-protected:
-    //! @note Called from InsertGeom and AssignGeometry
-    BentleyStatus InsertElementGeomUsesParts(DgnDbR, DgnElementId, PhysicalGeometryCR);
-
 public:
 
     virtual ElementItemHandlerP _ToElementItemHandler() override {return this;}     //!< dynamic_cast this Handler to a ElementItemHandler
@@ -38,5 +35,6 @@ public:
 
     DGNPLATFORM_EXPORT ElementItemHandler* GetItemHandler(DgnDbR db, DgnClassId itemClassId);
 };
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

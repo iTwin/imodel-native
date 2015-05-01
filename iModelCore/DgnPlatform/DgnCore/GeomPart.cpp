@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/PhysicalGeometry.cpp $
+|     $Source: DgnCore/GeomPart.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -397,8 +397,10 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
 
     DgnGeomPartPtr geomPartPtr = new DgnGeomPart(code.c_str());
 
-    if (BentleyStatus::SUCCESS != ElementGeomIO::Collection(&geometryBlob.front(), geometryBlob.size()).ToGeometry(geomPartPtr->GetGeometryR()))
-        return nullptr;
+    ElementGeometryCollection collection(&geometryBlob.front(), geometryBlob.size());
+
+    for (ElementGeometryPtr geom : collection)
+        geomPartPtr->GetGeometryR().push_back (geom);
 
     geomPartPtr->SetId(geomPartId);
     return geomPartPtr;
@@ -438,49 +440,7 @@ BentleyStatus DgnGeomParts::DeleteGeomPart(DgnGeomPartId geomPartId)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-PhysicalGeometryPtr PhysicalGeometry::Create()
-    {
-    return new PhysicalGeometry();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 DgnGeomPartPtr DgnGeomPart::Create(Utf8CP code)
     {
     return new DgnGeomPart(code);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2015
-//---------------------------------------------------------------------------------------
-PlacedGeomPart::PlacedGeomPart(DgnDbR db, DgnGeomPartId geomPartId, DPoint3dCR origin, YawPitchRollAnglesCR angles)
-    : m_origin(origin), m_angles(angles)
-    {
-    m_partPtr = db.GeomParts().LoadGeomPart(geomPartId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    10/2014
-//---------------------------------------------------------------------------------------
-ElementAlignedBox3d PhysicalGeometry::CalculateBoundingBox() const
-    {
-    ElementAlignedBox3d overallBoundingBox;
-    ElementAlignedBox3d partBoundingBox;
-
-    for (PlacedGeomPart part : *this)
-        {
-        Transform   partToAspect = part.GetGeomPartToGeomAspectTransform();
-
-        bvector<ElementGeometryPtr> const& partGeometry = part.GetPartPtr()->GetGeometry();
-
-        for (ElementGeometryPtr elemGeom : partGeometry)
-            {
-            if (elemGeom->GetRange(partBoundingBox, &partToAspect))
-                overallBoundingBox.Extend(partBoundingBox);
-            }
-        }
-
-    return overallBoundingBox;
-    }
-

@@ -50,7 +50,7 @@
 #include "ValueParse.h"
 #include "ViewContext.h"
 #include "ViewController.h"
-#include "PhysicalGeometry.h"
+#include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
 
 //__PUBLISH_SECTION_END__

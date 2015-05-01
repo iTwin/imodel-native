@@ -1047,8 +1047,8 @@ public:
     //! @private
     DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartId geomPartId, const void* geometryBlob, int geometryBlobSize, Utf8CP code=nullptr);
 
-    //! Insert the ElementGeomUsesParts relationship between an ElementGeom and the geom parts it uses.
-    //! @note Called from ElementItemHandler::InsertPhysicalGeometry, so most apps will not need to call directly.
+    //! Insert the ElementGeomUsesParts relationship between an element and the geom parts it uses.
+    //! @note Most apps will not need to call this directly.
     //! @private
     DGNPLATFORM_EXPORT BentleyStatus InsertElementGeomUsesParts(DgnElementId elementId, DgnGeomPartId geomPartId);
 
