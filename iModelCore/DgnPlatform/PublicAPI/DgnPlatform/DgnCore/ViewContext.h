@@ -439,7 +439,6 @@ protected:
     ICachedDrawP            m_ICachedDraw;
     DgnDbP                  m_dgnDb;
     DgnElementPtr           m_currentElement;
-    DisplayPathCP           m_sourcePath;
     ScanCriteriaP           m_scanCriteria;
     int32_t                 m_displayPriorityRange[2];
     ElemDisplayParams       m_currDisplayParams;
@@ -569,7 +568,7 @@ public:
     DGNPLATFORM_EXPORT void        Detach ();
     DGNPLATFORM_EXPORT bool        VisitAllModelElements (bool includeTransients); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
     DGNPLATFORM_EXPORT bool        VisitAllViewElements (bool includeTransients, BSIRectCP updateRect); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
-    DGNPLATFORM_EXPORT StatusInt   VisitPath (DisplayPathCP path, void* arg);
+    DGNPLATFORM_EXPORT StatusInt   VisitHit (HitPathCR hit);
     DGNPLATFORM_EXPORT void        VisitTransientGraphics (bool isPreUpdate);
     DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToWorldTrans (DMatrix4dR localToWorld) const;
     DGNPLATFORM_EXPORT void        DrawBox (DPoint3dP box, bool is3d);
@@ -583,8 +582,6 @@ public:
     DGNPLATFORM_EXPORT void        ClearZ ();
                        void        SetEdgeMaskState (EdgeMaskState state) {m_edgeMaskState = state;}
     EdgeMaskState                  GetEdgeMaskState () const {return m_edgeMaskState;}
-
-    DisplayPathCP                  GetSourcePath () const {return m_sourcePath;}
 
     DGNPLATFORM_EXPORT void        SetNpcSubRange(DRange3dCP pSubRange);
 

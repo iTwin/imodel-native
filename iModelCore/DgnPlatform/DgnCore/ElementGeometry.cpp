@@ -239,7 +239,7 @@ static bool getRange (ISolidKernelEntityCR geom, DRange3dR range, TransformCP tr
 
     geom.GetEntityTransform().Multiply(range, range);
 
-    if (NULL != transform)
+    if (nullptr != transform)
         transform->Multiply(range, range);
 
     return true;
@@ -460,12 +460,12 @@ ElementGeometryPtr ElementGeometry::Create (ISolidKernelEntityCR source) {ISolid
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometry::GeometryType ElementGeometry::GetGeometryType () const {return m_type;}
-ICurvePrimitivePtr ElementGeometry::GetAsICurvePrimitive () const {return (GeometryType::CurvePrimitive == m_type ? static_cast <ICurvePrimitiveP> (m_data.get ()) : NULL);}
-CurveVectorPtr ElementGeometry::GetAsCurveVector () const {return (GeometryType::CurveVector == m_type ? static_cast <CurveVectorP> (m_data.get ()) : NULL);}
-ISolidPrimitivePtr ElementGeometry::GetAsISolidPrimitive () const {return (GeometryType::SolidPrimitive == m_type ? static_cast <ISolidPrimitiveP> (m_data.get ()) : NULL);}
-MSBsplineSurfacePtr ElementGeometry::GetAsMSBsplineSurface () const {return (GeometryType::BsplineSurface == m_type ? static_cast <RefCountedMSBsplineSurface*> (m_data.get ()) : NULL);}
-PolyfaceHeaderPtr ElementGeometry::GetAsPolyfaceHeader () const {return (GeometryType::Polyface == m_type ? static_cast <PolyfaceHeaderP> (m_data.get ()) : NULL);}
-ISolidKernelEntityPtr ElementGeometry::GetAsISolidKernelEntity () const {return (GeometryType::SolidKernelEntity == m_type ? static_cast <ISolidKernelEntityP> (m_data.get ()) : NULL);}
+ICurvePrimitivePtr ElementGeometry::GetAsICurvePrimitive () const {return (GeometryType::CurvePrimitive == m_type ? static_cast <ICurvePrimitiveP> (m_data.get ()) : nullptr);}
+CurveVectorPtr ElementGeometry::GetAsCurveVector () const {return (GeometryType::CurveVector == m_type ? static_cast <CurveVectorP> (m_data.get ()) : nullptr);}
+ISolidPrimitivePtr ElementGeometry::GetAsISolidPrimitive () const {return (GeometryType::SolidPrimitive == m_type ? static_cast <ISolidPrimitiveP> (m_data.get ()) : nullptr);}
+MSBsplineSurfacePtr ElementGeometry::GetAsMSBsplineSurface () const {return (GeometryType::BsplineSurface == m_type ? static_cast <RefCountedMSBsplineSurface*> (m_data.get ()) : nullptr);}
+PolyfaceHeaderPtr ElementGeometry::GetAsPolyfaceHeader () const {return (GeometryType::Polyface == m_type ? static_cast <PolyfaceHeaderP> (m_data.get ()) : nullptr);}
+ISolidKernelEntityPtr ElementGeometry::GetAsISolidKernelEntity () const {return (GeometryType::SolidKernelEntity == m_type ? static_cast <ISolidKernelEntityP> (m_data.get ()) : nullptr);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/14
@@ -474,7 +474,7 @@ void ElementGeomIO::Iterator::ToNext()
     {
     if (m_dataOffset >= m_totalDataSize)
         {
-        m_data = NULL;
+        m_data = nullptr;
         m_dataOffset = 0;
 
         return;
@@ -482,7 +482,7 @@ void ElementGeomIO::Iterator::ToNext()
 
     uint32_t        opCode = *((uint32_t *) (m_data));
     uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
-    uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : NULL);
+    uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
     size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
 
     m_egOp = Operation ((OpCode) (opCode), dataSize, data);
@@ -747,7 +747,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
         {
         // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
         size_t      bufferSize = 0;
-        uint8_t*    buffer = NULL;
+        uint8_t*    buffer = nullptr;
 
         if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._SaveEntityToMemory (&buffer, bufferSize, entity))
             {
@@ -778,7 +778,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
         IFacetOptionsPtr       facetOpt = IFacetOptions::CreateForCurves();
         IFacetTopologyTablePtr facetsPtr;
 
-        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt, NULL))
+        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt, nullptr))
             {
             PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
 
@@ -1341,7 +1341,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
 
         case ElementGeomIO::OpCode::Polyface:
             {
-            PolyfaceQueryCarrier meshData (0, false, 0, 0, NULL, NULL);
+            PolyfaceQueryCarrier meshData (0, false, 0, 0, nullptr, nullptr);
 
             if (!ElementGeomIO::Reader::Get (egOp, meshData))
                 break;
@@ -1387,7 +1387,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
         case ElementGeomIO::OpCode::BRepPolyfaceExact:
             {
             // NOTE: Caller is expected to filter opCode when they don't want these (Parasolid BRep was available)...
-            PolyfaceQueryCarrier meshData (0, false, 0, 0, NULL, NULL);
+            PolyfaceQueryCarrier meshData (0, false, 0, 0, nullptr, nullptr);
 
             if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (egOp.m_data, meshData))
                 break;
@@ -1607,15 +1607,15 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        context.GetIDrawGeom().DrawPointString3d (nPts, pts, NULL);
+                        context.GetIDrawGeom().DrawPointString3d (nPts, pts, nullptr);
                         break;
 
                     case FB::BoundaryType_Open:
-                        context.GetIDrawGeom().DrawLineString3d (nPts, pts, NULL);
+                        context.GetIDrawGeom().DrawLineString3d (nPts, pts, nullptr);
                         break;
 
                     case FB::BoundaryType_Closed:
-                        context.GetIDrawGeom().DrawShape3d (nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), NULL);
+                        context.GetIDrawGeom().DrawShape3d (nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), nullptr);
                         break;
                     }
                 break;
@@ -1632,9 +1632,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 state.CookElemDisplayParams();
 
                 if (FB::BoundaryType_Closed != boundary)
-                    context.GetIDrawGeom().DrawArc3d (arc, false, false, NULL);
+                    context.GetIDrawGeom().DrawArc3d (arc, false, false, nullptr);
                 else
-                    context.GetIDrawGeom().DrawArc3d (arc, true, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), NULL);
+                    context.GetIDrawGeom().DrawArc3d (arc, true, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), nullptr);
                 break;
                 }
 
@@ -1668,7 +1668,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::Polyface:
                 {
-                PolyfaceQueryCarrier meshData (0, false, 0, 0, NULL, NULL);
+                PolyfaceQueryCarrier meshData (0, false, 0, 0, nullptr, nullptr);
 
                 if (!ElementGeomIO::Reader::Get (egOp, meshData))
                     break;
@@ -1730,7 +1730,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 if (useBRep)
                     break;
 
-                PolyfaceQueryCarrier meshData (0, false, 0, 0, NULL, NULL);
+                PolyfaceQueryCarrier meshData (0, false, 0, 0, nullptr, nullptr);
 
                 if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (egOp.m_data, meshData))
                     break;
@@ -1839,13 +1839,93 @@ void GeometricElement::_Draw (ViewContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometricElement::_DrawHit (HitPathCR hit, ViewContextR context) const
+    {
+    if (DrawPurpose::Flash != context.GetDrawPurpose())
+        return false;
+
+    if (!hit.GetComponentMode())
+        return false;
+
+    ICurvePrimitiveCP primitive = hit.GetGeomDetail().GetCurvePrimitive();
+
+    if (nullptr == primitive)
+        return false;
+
+    GeometricElementCP element = (nullptr != hit.GetHeadElem() ? hit.GetHeadElem()->ToGeometricElement() : nullptr);
+
+    if (nullptr == element)
+        return false;
+
+    context.SetCurrentElement(element);
+
+    bool        pushedtrans = false;
+    Transform   hitLocalToContextLocal;
+
+    // NOTE: GeomDetail::LocalToWorld includes pushed transforms...
+    if (SUCCESS == hit.GetHitLocalToContextLocal(hitLocalToContextLocal, context) && !hitLocalToContextLocal.IsIdentity())
+        {
+        context.PushTransform(hitLocalToContextLocal);
+        pushedtrans = true;
+        }
+
+    // NEEDSWORK: Store curve symbology in hit detail when cleaning up DisplayPath/HitPath...
+    ElemDisplayParamsR  dispParams = *context.GetCurrentDisplayParams();
+
+    dispParams.Init();
+    dispParams.SetCategoryId(element->GetCategoryId());
+
+    context.CookDisplayParams();
+    context.ResetContextOverrides();
+
+    DSegment3d      segment;
+    CurveVectorPtr  curve;
+    bool            doSegmentFlash = (hit.GetPathType() < DisplayPathType::Snap);
+
+    if (!doSegmentFlash)
+        {
+        switch (static_cast<SnapPathCR>(hit).GetSnapMode())
+            {
+            case SnapMode::Center:
+            case SnapMode::Origin:
+            case SnapMode::Bisector:
+                break; // Snap point for these is computed using entire linestring, not just the hit segment...
+
+            default:
+                doSegmentFlash = true;
+                break;
+            }
+        }
+
+    // Flash only the selected segment of linestrings/shapes based on snap mode...
+    if (doSegmentFlash && hit.GetGeomDetail().GetSegment(segment))
+        curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
+    else
+        curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive->Clone());
+
+    if (element->Is3d())
+        context.GetIDrawGeom().DrawCurveVector(*curve, false);
+    else
+        context.GetIDrawGeom().DrawCurveVector2d(*curve, false, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
+
+    if (pushedtrans)
+        context.PopTransformClip();
+
+    context.SetCurrentElement(nullptr);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeometryCollection::Iterator::ToNext()
     {
     do
         {
         if (m_dataOffset >= m_totalDataSize)
             {
-            m_data = NULL;
+            m_data = nullptr;
             m_dataOffset = 0;
 
             return;
@@ -1853,7 +1933,7 @@ void ElementGeometryCollection::Iterator::ToNext()
 
         uint32_t        opCode = *((uint32_t *) (m_data));
         uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
-        uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : NULL);
+        uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
         size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
 
         ElementGeomIO::Operation egOp = ElementGeomIO::Operation ((ElementGeomIO::OpCode) (opCode), dataSize, data);

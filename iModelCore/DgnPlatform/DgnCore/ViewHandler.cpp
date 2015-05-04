@@ -10,24 +10,20 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewController::_VisitPath (DisplayPathCP path, void* arg, ViewContextR context) const
+StatusInt ViewController::_VisitHit (HitPathCR hit, ViewContextR context) const
     {
-    // NEEDSWORK: _VisitPath with a DisplayPathCP is now un-necessary as you can just use VisitElement.
-    //            We do still need to be able to visit a "HitPath" for segment/sub-selection flash/hilite...
-    GeometricElementCP geomElement = (nullptr != path ? path->GetHeadElem ()->ToGeometricElement() : nullptr);
+    GeometricElementCP element = (nullptr != hit.GetHeadElem() ? hit.GetHeadElem()->ToGeometricElement() : nullptr);
 
-    if (nullptr == geomElement)
+    if (nullptr == element)
         return ERROR;
 
     ViewContext::ContextMark mark(&context);
 
-#if defined (V10_WIP_ELEMENTHANDLER)
-    // NEEDSWORK: Still want handler involvement for flashing single segments of linestrings, etc. for a "HitPath".
-    if (SUCCESS == ElementHandler::_DrawPath (path, context))
+    // Allow element sub-class involvement for flashing sub-entities...
+    if (element->_DrawHit (hit, context))
         return SUCCESS;
-#endif
 
-    return context.VisitElement(*geomElement);
+    return context.VisitElement(*element);
     }
 
 /*---------------------------------------------------------------------------------**//**

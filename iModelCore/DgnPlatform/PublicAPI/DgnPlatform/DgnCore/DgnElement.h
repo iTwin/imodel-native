@@ -339,6 +339,10 @@ public:
     //! Get the code (business key) of the element held by this element.
     Utf8CP GetCode() const {return m_code.c_str();}
 
+    //! Return a default code given a class name and a DgnElementId.
+    //! @note DgnElement::_GenerateDefaultCode calls this for its default implementation.
+    DGNPLATFORM_EXPORT static Utf8String GenerateDefaultCode(Utf8CP className, DgnElementId elementId);
+
     //! Increment the reference count of this DgnElement
     //! @note This call should always be paired with a corresponding subsequent call to #Release when the element is no longer referenced.
     uint32_t AddRef() const {return _AddRef();}
@@ -616,6 +620,7 @@ public:
     T_QvElemSet* GetQvElems(bool createIfNotPresent) const;
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitPathCR, ViewContextR) const;
 
     //! Get the GeomStream for this element.
     GeomStreamCR GetGeomStream() const {return m_geom;}

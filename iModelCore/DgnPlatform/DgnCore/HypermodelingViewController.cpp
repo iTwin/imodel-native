@@ -136,16 +136,16 @@ void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt HypermodelingViewController::_VisitPath (DisplayPathCP displayPath, void* arg, ViewContextR context) const
+StatusInt HypermodelingViewController::_VisitHit(HitPathCR hit, ViewContextR context) const
     {
     //  If the hit is in the drawing view, draw that view
     for (auto drawing : m_drawings)
         {
-        if (drawing->GetTargetModel() == displayPath->GetRoot())
+        if (drawing->GetTargetModel() == hit.GetRoot())
             {
             m_pass = PASS_ForPicking;
             PushClipsForInContextViewPass (context, *drawing);
-            StatusInt status = drawing->VisitPath (displayPath, arg, context);
+            StatusInt status = drawing->VisitHit (hit, context);
             PopClipsForInContextViewPass (context, *drawing);
             m_pass = PASS_None;
             return status;
@@ -154,7 +154,7 @@ StatusInt HypermodelingViewController::_VisitPath (DisplayPathCP displayPath, vo
 
     //  The hit must be in the physical view
     PushClipsForPhysicalView (context);
-    StatusInt status = m_currentViewController->VisitPath (displayPath, arg, context);
+    StatusInt status = m_currentViewController->VisitHit (hit, context);
     PopClipsForPhysicalView (context);
     return status;
     }

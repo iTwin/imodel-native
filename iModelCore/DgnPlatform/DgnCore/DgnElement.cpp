@@ -494,7 +494,18 @@ void DgnElement::_GenerateDefaultCode()
         return;
 
     Utf8String className(GetElementClass()->GetName());
-    m_code = Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
+    m_code = GenerateDefaultCode(className.c_str(), m_elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnElement::GenerateDefaultCode(Utf8CP className, DgnElementId elementId)
+    {
+    if (!elementId.IsValid())
+        return "";
+
+    return Utf8PrintfString("%s%lld", className, elementId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
