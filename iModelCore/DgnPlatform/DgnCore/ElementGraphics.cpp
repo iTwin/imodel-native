@@ -267,21 +267,13 @@ void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, IDispla
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, ElementHandleCR eh)
+void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, GeometricElementCR element)
     {
-    if (!eh.IsValid())
-        return;
-
-    GeometricElementCP geomElement = eh.GetGeometricElement();
-
-    if (nullptr == geomElement)
-        return;
-
     ElementGraphicsDrawGeom output;
     ElementGraphicsContext  context (&dropObj, output);
 
-    context.SetDgnDb (*eh.GetDgnDb());
-    context.VisitElement (*geomElement);
+    context.SetDgnDb (element.GetDgnDb());
+    context.VisitElement (element);
     }
 
 /*----------------------------------------------------------------------------------*//**

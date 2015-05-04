@@ -60,6 +60,22 @@ DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2014
 //---------------------------------------------------------------------------------------
+Utf8String DgnElements::QueryElementCode(DgnElementId elementId) const
+    {
+    if (!elementId.IsValid())
+        return "";
+
+    CachedStatementPtr statementPtr;
+    GetDgnDb().GetCachedStatement(statementPtr, "SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+
+    statementPtr->BindId(1, elementId);
+    
+    return (BE_SQLITE_ROW != statementPtr->Step()) ? "" : statementPtr->GetValueText(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2014
+//---------------------------------------------------------------------------------------
 DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
     {
     if (!elementId.IsValid())
