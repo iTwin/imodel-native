@@ -195,7 +195,7 @@ private:
     static ExpressionStatus     Execute (EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& args, bool target, bool ignoreErrors)
         {
         LambdaValueCP lambda;
-        if (!SystemSymbolProvider::ExtractArg (lambda, args, 0) || NULL == lambda)
+        if (!ExtractArg (lambda, args, 0) || NULL == lambda)
             return ExprStatus_UnknownError;
 
         PredicateProcessor proc (target, ignoreErrors, evalResult);
@@ -331,7 +331,7 @@ struct ClassVisitor
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus extractPropertyAccessor (WCharCP& schemaName, WCharCP& className, WCharCP& accessString, EvaluationResultVector& args)
     {
-    if (!SystemSymbolProvider::ExtractArg (schemaName, args, 0, false) || !SystemSymbolProvider::ExtractArg (className, args, 1, false) || !SystemSymbolProvider::ExtractArg (accessString, args, 2, false))
+    if (!ExtractArg (schemaName, args, 0, false) || !ExtractArg (className, args, 1, false) || !ExtractArg (accessString, args, 2, false))
         return ExprStatus_UnknownError;
     else
         return ExprStatus_Success;
