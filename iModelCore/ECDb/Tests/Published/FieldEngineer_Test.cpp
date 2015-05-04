@@ -441,6 +441,8 @@ TEST (FieldEngineer, Workflow)
     int afterDeleteCount = CountRows (ecDb, ecSqlWithoutSelect);
     ASSERT_EQ (0, afterDeleteCount);
 
+    statement.Reset();
+
     ecDb.SaveChanges();
 
     /* 
@@ -533,6 +535,8 @@ TEST (FieldEngineer, Workflow)
     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
     stepStatus = statement.Step();
     ASSERT_TRUE (stepStatus == ECSqlStepStatus::Done); // Validate that there aren't any rows for relationship!!
+
+    statement.Reset();
 
     ecDb.SaveChanges();
     }
