@@ -13,6 +13,26 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+// Extract a single argument from the list at the specified index
+template<typename T>
+static bool ExtractArg(T& str, ECN::EvaluationResultVector const& args, size_t index, bool allowNull)
+    {
+    return index < args.size() ? SystemSymbolProvider::ExtractArg(str, args[index], allowNull) : false;
+    }
+template<typename T>
+static bool ExtractArg(T& extractedValue, ECN::EvaluationResultVector const& args, size_t index)
+    {
+    return index < args.size() ? SystemSymbolProvider::ExtractArg(extractedValue, args[index]) : false;
+    }
+
+#ifdef NOT_USED
+// Extract a DPoint3d from 3 numeric arguments beginning at startIndex
+static bool ExtractArg(DPoint3d& p, ECN::EvaluationResultVector const& args, size_t startIndex)
+    {
+    return ExtractArg(p.x, args, startIndex) && ExtractArg(p.y, args, startIndex + 1) && ExtractArg(p.z, args, startIndex + 2);
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -116,7 +136,7 @@ struct StringMethods
     static ExpressionStatus compare(EvaluationResult& evalResult, EvaluationResultVector& args, bool ignoreCase)
         {
         WString a, b;
-        if (SystemSymbolProvider::ExtractArg(a, args, 0, true) && SystemSymbolProvider::ExtractArg(b, args, 1, true))
+        if (ExtractArg(a, args, 0, true) && ExtractArg(b, args, 1, true))
             {
             evalResult.InitECValue().SetBoolean(ignoreCase ? a.EqualsI(b) : a.Equals(b));
             return ExprStatus_Success;
@@ -138,7 +158,7 @@ struct StringMethods
     static ExpressionStatus convertCase(EvaluationResult& evalResult, EvaluationResultVector& args, void (WString::*transformFunc)())
         {
         WString str;
-        if (SystemSymbolProvider::ExtractArg(str, args, 0, true))
+        if (ExtractArg(str, args, 0, true))
             {
             (str.*transformFunc)();
             evalResult.InitECValue().SetString(str.c_str());
@@ -168,7 +188,7 @@ struct StringMethods
     static ExpressionStatus IndexOf(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         WCharCP str, token;
-        if (SystemSymbolProvider::ExtractArg(str, args, 0, true) && SystemSymbolProvider::ExtractArg(token, args, 1, true))
+        if (ExtractArg(str, args, 0, true) && ExtractArg(token, args, 1, true))
             {
             WCharCP found;
             int32_t index = (str && token && NULL != (found = wcsstr(str, token))) ? (int32_t)(found - str) : -1;
@@ -182,7 +202,7 @@ struct StringMethods
     static ExpressionStatus LastIndexOf(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         WCharCP str, token;
-        if (SystemSymbolProvider::ExtractArg(str, args, 0, true) && SystemSymbolProvider::ExtractArg(token, args, 1, true))
+        if (ExtractArg(str, args, 0, true) && ExtractArg(token, args, 1, true))
             {
             WCharCP found;
             int32_t index = (str && token && NULL != (found = findLastOccurrence(str, token))) ? (int32_t)(found - str) : -1;
@@ -205,7 +225,7 @@ struct StringMethods
     static ExpressionStatus ContainsI(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         WString str, token;
-        if (SystemSymbolProvider::ExtractArg(str, args, 0, true) && SystemSymbolProvider::ExtractArg(token, args, 1, true))
+        if (ExtractArg(str, args, 0, true) && ExtractArg(token, args, 1, true))
             {
             str.ToUpper();
             token.ToUpper();
@@ -230,7 +250,7 @@ struct StringMethods
     static ExpressionStatus Length(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         WCharCP str;
-        if (SystemSymbolProvider::ExtractArg(str, args, 0, true))
+        if (ExtractArg(str, args, 0, true))
             {
             evalResult.InitECValue().SetInteger(str ? (int32_t)wcslen(str) : 0);
             return ExprStatus_Success;
@@ -243,7 +263,7 @@ struct StringMethods
         {
         WString str;
         int32_t startIndex, length;
-        if (SystemSymbolProvider::ExtractArg(str, args, 0, true) && SystemSymbolProvider::ExtractArg(startIndex, args, 1) && SystemSymbolProvider::ExtractArg(length, args, 2))
+        if (ExtractArg(str, args, 0, true) && ExtractArg(startIndex, args, 1) && ExtractArg(length, args, 2))
             {
             if (str.empty() || startIndex < 0 || (size_t)startIndex >= str.length() || length < 0)
                 evalResult.InitECValue().SetString(L"");
@@ -286,7 +306,7 @@ struct StringMethods
     static ExpressionStatus Trim(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         WString str;
-        if (SystemSymbolProvider::ExtractArg(str, args, 0, true))
+        if (ExtractArg(str, args, 0, true))
             {
             str.Trim();
             evalResult.InitECValue().SetString(str.c_str());
@@ -357,7 +377,7 @@ struct PathMethods
     static ExpressionStatus getFileNamePart(EvaluationResult& evalResult, EvaluationResultVector& args, WString(*extractFunc)(WCharCP))
         {
         WCharCP arg;
-        if (SystemSymbolProvider::ExtractArg(arg, args, 0, false))
+        if (ExtractArg(arg, args, 0, false))
             {
             evalResult.InitECValue().SetString(extractFunc(arg).c_str());
             return ExprStatus_Success;
@@ -417,7 +437,7 @@ struct PathMethods
         {
         WCharCP arg;
         WString fullPath;
-        if (SystemSymbolProvider::ExtractArg(arg, args, 0, false) && BeFileNameStatus::Success == BeFileName::BeGetFullPathName(fullPath, arg))
+        if (ExtractArg(arg, args, 0, false) && BeFileNameStatus::Success == BeFileName::BeGetFullPathName(fullPath, arg))
             {
             evalResult.InitECValue().SetString(fullPath.c_str());
             return ExprStatus_Success;
@@ -429,13 +449,13 @@ struct PathMethods
     static ExpressionStatus Combine(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         WCharCP nextPart;
-        if (!SystemSymbolProvider::ExtractArg(nextPart, args, 0, false))
+        if (!ExtractArg(nextPart, args, 0, false))
             return ExprStatus_UnknownError;
 
         BeFileName filename(nextPart);
         for (size_t i = 1; i < args.size(); i++)
             {
-            if (!SystemSymbolProvider::ExtractArg(nextPart, args, i, false))
+            if (!ExtractArg(nextPart, args, i, false))
                 return ExprStatus_UnknownError;
 
             filename.AppendToPath(nextPart);
@@ -494,7 +514,7 @@ struct MathMethods
     static ExpressionStatus eval1(EvaluationResult& evalResult, EvaluationResultVector& args, double(*func)(double))
         {
         double arg;
-        if (SystemSymbolProvider::ExtractArg(arg, args, 0))
+        if (ExtractArg(arg, args, 0))
             {
             evalResult.InitECValue().SetDouble(func(arg));
             return ExprStatus_Success;
@@ -506,7 +526,7 @@ struct MathMethods
     static ExpressionStatus eval2(EvaluationResult& evalResult, EvaluationResultVector& args, double(*func)(double, double))
         {
         double arg1, arg2;
-        if (SystemSymbolProvider::ExtractArg(arg1, args, 0) && SystemSymbolProvider::ExtractArg(arg2, args, 1))
+        if (ExtractArg(arg1, args, 0) && ExtractArg(arg2, args, 1))
             {
             evalResult.InitECValue().SetDouble(func(arg1, arg2));
             return ExprStatus_Success;
@@ -556,7 +576,7 @@ struct MathMethods
     static ExpressionStatus minOrMax(EvaluationResult& evalResult, EvaluationResultVector& args, bool doMax)
         {
         double a, b;
-        if (SystemSymbolProvider::ExtractArg(a, args, 0) && SystemSymbolProvider::ExtractArg(b, args, 1))
+        if (ExtractArg(a, args, 0) && ExtractArg(b, args, 1))
             {
             double result = doMax ? (a > b ? a : b) : (a < b ? a : b);
             evalResult.InitECValue().SetDouble(result);
@@ -572,7 +592,7 @@ struct MathMethods
     static ExpressionStatus almostEqual(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         double a, b;
-        if (SystemSymbolProvider::ExtractArg(a, args, 0) && SystemSymbolProvider::ExtractArg(b, args, 1))
+        if (ExtractArg(a, args, 0) && ExtractArg(b, args, 1))
             {
             bool result = DoubleOps::AlmostEqual(a, b);
             evalResult.InitECValue().SetBoolean(result);
@@ -587,7 +607,7 @@ struct MathMethods
     static ExpressionStatus BigMul(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         int32_t a, b;
-        if (SystemSymbolProvider::ExtractArg(a, args, 0) && SystemSymbolProvider::ExtractArg(b, args, 1))
+        if (ExtractArg(a, args, 0) && ExtractArg(b, args, 1))
             {
             evalResult.InitECValue().SetLong((int64_t)a * (int64_t)b);
             return ExprStatus_Success;

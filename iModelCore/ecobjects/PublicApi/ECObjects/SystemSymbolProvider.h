@@ -32,25 +32,6 @@ public:
     ECOBJECTS_EXPORT static bool ExtractArg (double& d, ECN::EvaluationResultCR ev);
     ECOBJECTS_EXPORT static bool ExtractArg (int32_t& i, ECN::EvaluationResultCR ev);
     ECOBJECTS_EXPORT static bool ExtractArg (ECN::LambdaValueCP& lambda, ECN::EvaluationResultCR ev);
-
-    // Extract a single argument from the list at the specified index
-    template<typename T>
-    static bool ExtractArg (T& str, ECN::EvaluationResultVector const& args, size_t index, bool allowNull)
-        {
-        return index < args.size() ? ExtractArg (str, args[index], allowNull) : false;
-        }
-    template<typename T>
-    static bool ExtractArg (T& extractedValue, ECN::EvaluationResultVector const& args, size_t index)
-        {
-        return index < args.size() ? ExtractArg (extractedValue, args[index]) : false;
-        }
-
-    // Extract a DPoint3d from 3 numeric arguments beginning at startIndex
-    static bool ExtractArg (DPoint3d& p, ECN::EvaluationResultVector const& args, size_t startIndex)
-        {
-        return ExtractArg (p.x, args, startIndex) && ExtractArg (p.y, args, startIndex+1) && ExtractArg (p.z, args, startIndex+2);
-        }
-
     };
 
 

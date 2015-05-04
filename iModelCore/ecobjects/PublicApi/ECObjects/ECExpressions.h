@@ -573,14 +573,16 @@ public:
         }
 };
 
-/*__PUBLISH_SECTION_END__*/
 
 /*=================================================================================**//**
 * Provides a set of Symbols
 +===============+===============+===============+===============+===============+======*/
 struct      IECSymbolProvider
     {
-    typedef void (* ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<WString> const&);
+/*__PUBLISH_SECTION_END__*/
+    typedef void(*ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<WString> const&);
+
+/*__PUBLISH_SECTION_START__*/
 protected:
     virtual WCharCP                 _GetName() const = 0;
     virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const = 0;
@@ -589,13 +591,13 @@ public:
                                         { return _GetName(); }
     ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const
                                         { return _PublishSymbols (context, requestedSymbolSets); }
-
+/*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT static void    RegisterExternalSymbolPublisher (ExternalSymbolPublisher externalPublisher);
 
     ECOBJECTS_EXPORT static void    UnRegisterExternalSymbolPublisher ();
+/*__PUBLISH_SECTION_START__*/
     };
 
-/*__PUBLISH_SECTION_START__*/
 
 //! @ingroup ECObjectsGroup
 enum            ExpressionToken
