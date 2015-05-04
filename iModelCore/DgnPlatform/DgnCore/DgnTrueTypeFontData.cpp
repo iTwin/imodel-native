@@ -58,6 +58,21 @@ static Utf8String dgnFontStyleToStyleName(DgnFontStyle style)
     return styleName;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+static bool haveEmbeddingRights(FT_Face face)
+    {
+    if (NULL == face)
+        return false;
+
+    TT_OS2 const* os2Table = static_cast<TT_OS2 const*>(FT_Get_Sfnt_Table(face, ft_sfnt_os2));
+    if (NULL == os2Table)
+        return false;
+
+    return (0 == (0x1 & os2Table->fsType));
+    }
+
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     04/2015
 //=======================================================================================
@@ -190,6 +205,12 @@ BentleyStatus DgnTrueTypeFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceDa
             if (0 == iFace)
                 numFaces = face->num_faces;
 
+            if (!haveEmbeddingRights(face))
+                {
+                FONT_LOG.warningv("Could not embed face %i from path '%s'; it does not grant the right to embed.", (int)iFace, Utf8String(file.first).c_str());
+                continue;
+                }
+            
             Utf8String familyName;
             IDgnTrueTypeFontData::GetFamilyName(familyName, *face);
             
@@ -417,6 +438,8 @@ BentleyStatus DgnTrueTypeDbFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData
             continue;
             }
 
+        // Assume that if it was already embedded in one database, we have the right to embed it in another.
+        
         if (SUCCESS != faceData.Insert(&fontData[0], fontData.size(), facesToTransfer))
             {
             didAnyFail |= true;
@@ -749,6 +772,12 @@ BentleyStatus Win32TrueTypeFontData::EmbedFace(DgnFonts::DbFaceDataDirect& faceD
 
         if (0 == iFace)
             numFaces = face->num_faces;
+
+        if (!haveEmbeddingRights(face))
+            {
+            FONT_LOG.warningv("Could not embed face %i from Windows for DgnFontStyle %i for family '%s'; it does not grant the right to embed.", (int)iFace, (int)style, m_familyName.c_str());
+            continue;
+            }
 
         Utf8String familyName;
         IDgnTrueTypeFontData::GetFamilyName(familyName, *face);

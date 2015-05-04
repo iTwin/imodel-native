@@ -76,10 +76,6 @@ struct DgnFontPersistence : NonCopyableClass
         DGNPLATFORM_EXPORT static DgnFontPtr FromDb(struct DgnFonts&, DgnFontId, DgnFontType, Utf8CP name, ByteCP metadata, size_t metadataSize);
         DGNPLATFORM_EXPORT static BentleyStatus MetadataToDb(bvector<Byte>&, DgnFontCR);
         DGNPLATFORM_EXPORT static BentleyStatus Embed(DgnFonts::DbFaceDataDirect&, DgnFontCR);
-
-        DGNPLATFORM_EXPORT static IDgnTrueTypeFontData* CreateIDgnTrueTypeFontData(DgnFonts&, Utf8CP familyName);
-        DGNPLATFORM_EXPORT static IDgnRscFontData* CreateIDgnRscFontData(DgnFonts&, Utf8CP familyName);
-        DGNPLATFORM_EXPORT static IDgnShxFontData* CreateIDgnShxFontData(DgnFonts&, Utf8CP familyName);
     };
 
     struct File
@@ -96,11 +92,6 @@ struct DgnFontPersistence : NonCopyableClass
     struct Missing
     {
         DGNPLATFORM_EXPORT static DgnFontPtr CreateMissingFont(DgnFontType, Utf8CP name);
-    };
-
-    struct RawData
-    {
-        
     };
 };
 
