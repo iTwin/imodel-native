@@ -29,6 +29,7 @@
 #undef min
 #undef max
 
+
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
 #define RUNONCE_CHECK(var,stat) {if(var) return stat; var=true;}
@@ -38,6 +39,10 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 static Utf8CP loadZlibVfs();
 static Utf8CP loadSnappyVfs();
+
+#if !defined (NDEBUG)
+extern "C" int checkNoActiveStatements(SqlDbP db);
+#endif
 
 #if defined (NDEBUG)
     #define HPOS_CheckSQLiteOperationAllowed(queryDb)
@@ -499,7 +504,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
             }
         }
 
-    BeAssert((SQLITE_OK == bsi_checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
+    BeAssert((SQLITE_OK == checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
 
     // attempt the commit/release or rollback
     DbResult rc;
@@ -528,14 +533,6 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
 
     m_txns.erase(thisPos, m_txns.end());
     return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::CheckNoActiveStatements()
-    {
-    return (DbResult)bsi_checkNoActiveStatements(GetSqlDb());
     }
 
 /*---------------------------------------------------------------------------------**//**

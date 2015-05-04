@@ -82,3 +82,21 @@
 #include "test_sqllog.c"
 #endif
 
+#if !defined (NDEBUG)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int checkNoActiveStatements(sqlite3* db)
+    {
+    Vdbe* stmt;
+    for (stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
+        {
+        if (stmt->magic != VDBE_MAGIC_RUN)
+            {
+            sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
+            return SQLITE_ERROR;
+            }
+        }
+    return SQLITE_OK;
+    }
+#endif

@@ -337,9 +337,6 @@ typedef sqlite_uint64 sqlite3_uint64;
 SQLITE_API int SQLITE_STDCALL sqlite3_close(sqlite3*);
 SQLITE_API int SQLITE_STDCALL sqlite3_close_v2(sqlite3*);
 
-// *** BENTLEY CHANGE ***
-SQLITE_API int bsi_checkNoActiveStatements(sqlite3*);
-
 /*
 ** The type for a callback function.
 ** This is legacy and deprecated.  It is included for historical
@@ -8249,6 +8246,11 @@ int sqlite3session_changeset(
 **   <li> Has the same set of columns declared in the same order, and
 **   <li> Has the same PRIMARY KEY definition.
 ** </ul>
+**
+** If the tables are not compatible, SQLITE_SCHEMA is returned. If the tables
+** are compatible but do not have any PRIMARY KEY columns, it is not an error
+** but no changes are added to the session object. As with other session
+** APIs, tables without PRIMARY KEYs are simply ignored.
 **
 ** This function adds a set of changes to the session object that could be
 ** used to update the table in database zFrom (call this the "from-table") 

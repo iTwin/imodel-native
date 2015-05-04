@@ -2620,8 +2620,6 @@ public:
     //! therefore returns no status.
     BE_SQLITE_EXPORT void CloseDb();
 
-    BE_SQLITE_EXPORT DbResult CheckNoActiveStatements();
-
     //! @return The name of the physical file associated with this Db. NULL if Db is not opened.
     BE_SQLITE_EXPORT Utf8CP GetDbFileName() const;
 

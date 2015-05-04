@@ -18927,20 +18927,6 @@ static int xferOptimization(
 ** accessed by users of the library.
 */
 
-// *** BENTLEY CHANGE ***
-SQLITE_API int bsi_checkNoActiveStatements(sqlite3* db)
-    {
-    for (Vdbe* stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
-        {
-        if (stmt->magic != VDBE_MAGIC_RUN)
-            {
-            sqlite3_log(SQLITE_BUSY, "Active read statement: %s", stmt->zSql);
-            //assert(0);
-            return SQLITE_ERROR;
-            }
-        }
-    return SQLITE_OK;
-    }
 
 /*
 ** Execute SQL code.  Return one of the SQLITE_ success/failure
