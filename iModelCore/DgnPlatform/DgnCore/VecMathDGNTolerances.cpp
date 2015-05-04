@@ -483,9 +483,6 @@ TransformInfo::TransformInfo ()
     m_trans.initIdentity();
     m_options               = 0;
     m_haveMirrorPlane       = false;
-
-    m_annotationScale       = 1.0;
-    m_annotationScaleAction = AnnotationScaleAction::Update;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -497,9 +494,6 @@ TransformInfo::TransformInfo (TransformCR trans)
     m_trans                 = trans;
     m_options               = 0;
     m_haveMirrorPlane       = false;
-
-    m_annotationScale       = 1.0;
-    m_annotationScaleAction = AnnotationScaleAction::Update;
     }
 
 /*---------------------------------------------------------------------------------**//**

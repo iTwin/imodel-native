@@ -13,33 +13,6 @@ enum
     MAX_INFO_STRING_LEN = 4096,
     };
 
-/*=================================================================================**//**
-  @bsiclass                                                     Brien.Bastings  03/10
-+===============+===============+===============+===============+===============+======*/
-struct PathPropertyQuery : public IQueryProperties
-{
-DgnCategoryId m_category;
-
-PathPropertyQuery () {m_category.Invalidate();}
-
-DgnCategoryId GetEffectiveCategoryId () {return m_category;}
-
-virtual ElementProperties _GetQueryPropertiesMask () override {return ELEMENT_PROPERTY_Category;}
-
-virtual void    _EachCategoryCallback (EachCategoryArg& arg) override
-    {
-    // Get effective base category id for this path...
-    if (0 == (arg.GetPropertyFlags () & PROPSCALLBACK_FLAGS_IsBaseID))
-        return;
-
-    if (0 != ((PROPSCALLBACK_FLAGS_ElementIgnoresID | PROPSCALLBACK_FLAGS_UndisplayedID) & arg.GetPropertyFlags ()))
-        return;
-
-    m_category = arg.GetEffectiveValue ();
-    }
-
-}; // PathPropertyQuery
-
 /**
  * Category Display Name Format Defines
  */
@@ -133,15 +106,7 @@ static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCate
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void getCategoryString (Utf8StringR categoryStr, DisplayPathCP path)
     {
-    PathPropertyQuery   queryObj;
-
-    // NOTE: Should really always have a hit path from locate...
-    if (path->GetPathType () >= DisplayPathType::Hit)
-        PropertyContext::QueryPathProperties (toHitPath (path), &queryObj);
-    else
-        PropertyContext::QueryElementProperties (ElementHandle (path->GetTailElem ()), &queryObj);
-
-    DgnCategories::Category const& category = DGN_TABLE_LEVEL_FOR_MODEL(path->GetRoot()).QueryCategoryById (queryObj.GetEffectiveCategoryId ());
+    DgnCategories::Category const& category = DGN_TABLE_LEVEL_FOR_MODEL(path->GetRoot()).QueryCategoryById (path->GetHeadElem()->GetCategoryId());
 
     if (!category.IsValid ())
         return;

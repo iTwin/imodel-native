@@ -482,17 +482,21 @@ bool allowPartialOverlaps /*=true*/
 //+---------------+---------------+---------------+---------------+---------------+-----
 bool NamedVolume::ContainsElement
 (
-DgnElementR elementRef, 
+DgnElementR element, 
 bool allowPartialOverlaps /*=true*/
 ) const
     {
-    DgnDbR project = elementRef.GetDgnDb();
+    GeometricElementCP geomElement = element.ToGeometricElement();
+
+    if (nullptr == geomElement)
+        return false;
+
+    DgnDbR project = element.GetDgnDb();
 
     unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (project);
-
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
-    ElementHandle eh (&elementRef);
-    return fence->AcceptElement (eh);
+
+    return fence->AcceptElement (*geomElement);
     }
 
 //--------------------------------------------------------------------------------------

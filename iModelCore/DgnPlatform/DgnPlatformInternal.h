@@ -45,13 +45,10 @@
 #include <DgnPlatform/DgnCore/NullContext.h>
 #include <DgnPlatform/DgnCore/BSISerializable.h>
 #include <DgnPlatform/DgnCore/SimplifyViewDrawGeom.h>
-#include <DgnPlatform/DgnCore/AnnotationScale.h>
 #include <DgnPlatform/DgnCore/ClipPrimitive.h>
 #include <DgnPlatform/DgnCore/ClipVector.h>
 #include <DgnPlatform/DgnCore/SectionClip.h>
 #include <DgnPlatform/DgnCore/DgnCoreEvent.h>
-#include <DgnPlatform/DgnCore/DisplayFilter.h>
-#include <DgnPlatform/DgnCore/DisplayFilterManager.h>
 #include <DgnPlatform/DgnCore/GPArray.h>
 #include <DgnPlatform/DgnCore/GradientSettings.h>
 #include <DgnPlatform/DgnCore/LineStyleApi.h>
@@ -84,7 +81,6 @@
 #include <Mtg/MtgApi.h>
 #include <Regions/regionsAPI.h>
 #include <Regions/rimsbsAPI.h>
-#include <DgnPlatform/DgnHandlers/DetailingSymbol/DetailingSymbolHandlers.h>
 #include <DgnPlatform/DgnHandlers/IEditActionSource.h>
 #include <DgnPlatform/DgnHandlers/RasterResolutionSolver.h>
 #include <DgnPlatform/DgnHandlers/FlatteningCollection.h>

@@ -350,7 +350,7 @@ DG_INLINE void        IViewDraw::DrawQvElem (QvElem* qvElem, int subElemIndex){_
 DG_INLINE void        IViewDraw::ClearZ() {_ClearZ(); }
 DG_INLINE StatusInt   IViewDraw::TestOcclusion (int numVolumes, DPoint3dP verts, int* results){return _TestOcclusion (numVolumes, verts, results);}
 DG_INLINE uintptr_t   IViewDraw::DefineQVTexture (WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture (textureName, dgnFile);}
-DG_INLINE void        IViewDraw::DefineQVGeometryMap (MaterialCR material, ElementHandleCR eh, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap (material, eh, spacing,  useCellColors, seedContext, forAreaPattern);}
+DG_INLINE void        IViewDraw::DefineQVGeometryMap (MaterialCR material, IStrokeForCache& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap (material, stroker, spacing,  useCellColors, seedContext, forAreaPattern);}
 DG_INLINE void        IViewDraw::PushClipStencil (QvElem* qvElem) {_PushClipStencil (qvElem);}
 DG_INLINE void        IViewDraw::PopClipStencil () {_PopClipStencil (); }
 
@@ -538,11 +538,6 @@ DG_INLINE ITxn&         ITxnManager::GetCurrentTxn() {return *m_currTxn;}
 DG_INLINE DgnDbR        ITxnManager::GetDgnDb() {return m_dgndb;}
 DG_INLINE Utf8String    ITxnManager::IValidationError::GetDescription() const {return _GetDescription();}
 DG_INLINE               ITxnManager::ValidationErrorSeverity ITxnManager::IValidationError::GetSeverity() const {return _GetSeverity();}
-
-DG_INLINE bool          IAnnotationHandler::HasAnnotationScale (double* annotationScale, ElementHandleCR element) const { return _GetAnnotationScale (annotationScale, element); }
-DG_INLINE bool          IAnnotationHandler::GetAnnotationScale (double* annotationScale, ElementHandleCR element) const { return _GetAnnotationScale (annotationScale, element); }
-DG_INLINE StatusInt     IAnnotationHandler::AddAnnotationScale (EditElementHandleR eh, DgnModelP model) {return _AddAnnotationScale (eh, model);}
-DG_INLINE StatusInt     IAnnotationHandler::RemoveAnnotationScale (EditElementHandleR eh) {return _RemoveAnnotationScale (eh);}
 
 DG_INLINE SnapPathP     SnapContext::GetSnapPath() {return m_snapPath;}
 DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}

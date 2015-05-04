@@ -103,7 +103,6 @@ ACSFlags        m_flags;        // option flags
 DPoint3d        m_origin;       // origin of acs
 double          m_scale;        // scale of acs
 RotMatrix       m_rotation;     // rotation of acs
-DgnElementId    m_elementId;    // id of named acs element, 0 for unnamed
 ACSGrid         m_grid;         // New for Vancouver - ACS grid settings...
 
 ACSData () {Init ();}
@@ -1204,57 +1203,14 @@ void            IAuxCoordSys::_DisplayInView (DgnViewportP viewport, ACSDisplayO
     output->DeleteCacheElement (qvElem);
     }
 
-/*=================================================================================**//**
-* @bsiclass                                                     Barry.Bentley   01/07
-+===============+===============+===============+===============+===============+======*/
-struct          TraverseCaller
-    {
-    IACSTraversalHandler&   m_traverseHandler;
-    DgnModelP            m_modelRef;
-
-    TraverseCaller (IACSTraversalHandler& handler, DgnModelP modelRef) : m_traverseHandler(handler) {m_modelRef = modelRef;}
-    bool CallHandler (IAuxCoordSystemExtender& extender) {return extender._TraverseExtendedACS (m_traverseHandler, m_modelRef);}
-
-    }; // TraverseCaller
-
-/*=================================================================================**//**
-* @bsiclass                                                     Barry.Bentley   01/07
-+===============+===============+===============+===============+===============+======*/
-struct          GetByNameTraverser : IACSTraversalHandler
-{
-WCharCP         m_name;
-IAuxCoordSysPtr m_foundACS;
-
-GetByNameTraverser (WCharCP name)
-    {
-    if (NULL == name)
-        BeAssert (false);
-
-    m_name = name;
-    }
-
-virtual uint32_t _GetACSTraversalOptions () override {return 0;}
-
-virtual bool    _HandleACSTraversal (IAuxCoordSysR acs) override
-    {
-    if ( ! acs.GetName().EqualsI (m_name))
-        return false;
-
-    m_foundACS = &acs;
-
-    return true; // stop traversal
-    }
-
-}; // GetByNameTraverser
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 IACSManager::IACSManager ()
     {
     m_inhibitCurrentACSDisplay  = false;
-    m_extenders                 = NULL;
-    m_listeners                 = NULL;
+    m_extenders = nullptr;
+    m_listeners = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1318,43 +1274,14 @@ StatusInt       IACSManager::SetActive (IAuxCoordSysP auxCoordSys, DgnViewportR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IACSManager::Traverse (IACSTraversalHandler& handler, DgnModelP modelRef)
-    {
-#if defined (NEEDS_WORK_DGNITEM)
-    for (DgnElementP elRef: SavedACSCollection (*modelRef))
-        {
-        IAuxCoordSysPtr auxCoordPtr = AuxCoordSys::CreateNew (ElementHandle (elRef));
-
-        if (auxCoordPtr.IsNull ())
-            continue;
-
-        // if our traverser returns true, that means we want to stop the scan. Return ERROR to do so.
-        if (handler._HandleACSTraversal (*auxCoordPtr))
-            return true;
-        }
-
-    if (NULL != m_extenders)
-        {
-        TraverseCaller traverser (handler, modelRef);
-        return m_extenders->CallAllHandlers (traverser, true);
-        }
-#endif
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
 IAuxCoordSysPtr IACSManager::GetByName (WCharCP name, DgnModelP modelRef, uint32_t options)
     {
     if (NULL == name)
-        { BeAssert (false); return NULL; }
+        { BeAssert (false); return nullptr; }
 
-    GetByNameTraverser getByName (name);
-
-    Traverse (getByName, modelRef);
-
-    return getByName.m_foundACS;
+#if defined (NEEDS_WORK_DGNITEM)
+#endif
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1394,74 +1321,6 @@ void            IACSManager::DisplayCurrent (DgnViewportP viewport, bool isCurso
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            IACSManager::DisplayTransients (ViewContextR context, bool isPreUpdate)
-    {
-#if defined (NOT_NOW)
-    if (isPreUpdate)
-        return;
-
-    DgnViewportP   viewport = context.GetViewport ();
-
-    if (NULL == viewport)
-        return;
-
-    ViewFlagsCP viewFlags = context.GetViewFlags ();
-
-    if (NULL == viewFlags || !viewFlags->auxDisplay)
-        return;
-
-    FOR_EACH (DgnElementP elRef, SavedACSCollection (*context.GetCurrentModel ()->GetDgnModelP ()))
-        {
-        IAuxCoordSysPtr auxCoordPtr = AuxCoordSys::CreateNew (ElementHandle (elRef));
-
-        if (auxCoordPtr.IsNull ())
-            continue;
-
-        Point2d     gridReps, gridOffset;
-        DPoint2d    spacing;
-
-        if (SUCCESS != auxCoordPtr->GetGridSpacing (spacing, gridReps, gridOffset, *viewport))
-            continue;
-
-        DPoint3d    origin;
-        RotMatrix   rMatrix;
-
-        auxCoordPtr->GetOrigin (origin);
-        auxCoordPtr->GetRotation (rMatrix);
-
-        DVec3d      xVec, yVec;
-
-        rMatrix.GetRow (xVec, 0);
-        rMatrix.GetRow (yVec, 1);
-
-        xVec.Scale (spacing.x);
-        yVec.Scale (spacing.y);
-
-        origin.SumOf (origin, xVec, -gridOffset.x, yVec, -gridOffset.y);
-
-        DPoint3d    planePts[5];
-
-        planePts[0] = planePts[4] = origin;
-        planePts[1].SumOf (planePts[0], xVec, gridReps.x);
-        planePts[2].SumOf (planePts[0], xVec, gridReps.x, yVec, gridReps.y);
-        planePts[3].SumOf (planePts[0], yVec, gridReps.y);
-
-        uint32_t color      = viewport->GetContrastToBackgroundColor ();
-        uint32_t lineColor  = viewport->MakeColorTransparency (color, 190);
-        uint32_t planeColor = viewport->MakeColorTransparency (color, 225);
-
-        viewport->SetSymbologyRgb (lineColor, planeColor, 2, 0);
-
-        context.PushPath (elRef);
-        context.GetIDrawGeom ().DrawLineString3d (5, planePts, NULL);
-        context.PopPath ();
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 IAuxCoordSysPtr IACSManager::CreateACS ()
@@ -1478,8 +1337,8 @@ ACSType         type,
 DPoint3dCR      pOrigin,
 RotMatrixCR     pRot,
 double          scale,
-WCharCP       name,
-WCharCP       descr
+WCharCP         name,
+WCharCP         descr
 )
     {
     IAuxCoordSysPtr auxSys = AuxCoordSys::CreateNew ();
@@ -1580,7 +1439,17 @@ int             extenderData[1];
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IACSManager::SaveSettings (PhysicalViewControllerCP viewController, ElementHandleCR eh)
+void            IACSManager::ReadSettings (PhysicalViewControllerP viewController)
+    {
+#ifdef DGN_IMPORTER_REORG_WIP
+    // NEEDSWORK...
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+void IACSManager::SaveSettings (PhysicalViewControllerCP viewController)
     {
 #ifdef DGN_IMPORTER_REORG_WIP
     XAttributeChangeSet* changeSet;

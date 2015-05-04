@@ -75,39 +75,16 @@ enum class ACSFlags
 
 ENUM_IS_FLAGS (ACSFlags)
 
-
 typedef RefCountedPtr<IAuxCoordSys> IAuxCoordSysPtr;
 
 //! \ingroup auxCoords
-//! Callback object for IACSManager::Traverse
-struct     IACSTraversalHandler
-{
-virtual ~IACSTraversalHandler() {}
-
-//! Called to initialize the traversal logic.
-virtual uint32_t _GetACSTraversalOptions () = 0;
-
-//! This method is called for each ACS encountered by the traversal.
-//! @param[in]  acs         current object in the traversal.
-//! @return  true to halt the traversal, false to continue.
-//! @remarks  You can retain a reference to the IAuxCoordSys object, but you must remember
-//!           to call AddRef() and Release() at the appropriate time.  A simple way to do
-//!           this is to assign the address of the object to an IAuxCoordSysPtr.
-virtual bool _HandleACSTraversal (IAuxCoordSysR acs) = 0;
-};
-
 //__PUBLISH_SECTION_END__
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct     IAuxCoordSystemExtender
 {
-/*---------------------------------------------------------------------------------**//**
-* Return extended Coordinate Systems as long as StatusInt is nonzero.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _TraverseExtendedACS (IACSTraversalHandler& traverser, DgnModelP modelRef) = 0;
+
 virtual uint32_t _GetExtenderId () const = 0;
 virtual IAuxCoordSysP _Deserialize (void *persistentData, uint32_t dataSize, DgnModelP modelRef) = 0;
 }; 
@@ -150,19 +127,13 @@ DGNPLATFORM_EXPORT void AddExtender (IAuxCoordSystemExtender* extender);
 DGNPLATFORM_EXPORT void RemoveExtender (IAuxCoordSystemExtender* extender);
 DGNPLATFORM_EXPORT IAuxCoordSystemExtender* FindExtender (uint32_t extenderID);
 
-DGNPLATFORM_EXPORT void SaveSettings (PhysicalViewControllerCP viewController, ElementHandleCR eh);
-DGNPLATFORM_EXPORT void ReadSettings (PhysicalViewControllerP viewController, DgnElementP elementRef, DgnModelP modelRef);
-DGNPLATFORM_EXPORT IAuxCoordSysPtr ExtractACS (DgnElementP elementRef, DgnModelP modelRef);
+DGNPLATFORM_EXPORT void SaveSettings (PhysicalViewControllerCP viewController);
+DGNPLATFORM_EXPORT void ReadSettings (PhysicalViewControllerP viewController);
 
 DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, RotMatrixCR rot, double scale, WCharCP name, WCharCP descr);
-DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACSFromElement (ElementHandleCR eh);
-DGNPLATFORM_EXPORT StatusInt CreateElementFromACS (EditElementHandleR eeh, IAuxCoordSysP acs, DgnModelP modelRef);
-DGNPLATFORM_EXPORT StatusInt ElementFindByName (EditElementHandleR eeh, WCharCP inName, DgnModelP modelRef);
-DGNPLATFORM_EXPORT static bool ElementIsACS (ElementHandleCR eh);
 
 DGNPLATFORM_EXPORT void SendEvent (IAuxCoordSysP acs, ACSEventType eventType, DgnModelP modelRef);
 DGNPLATFORM_EXPORT void DisplayCurrent (DgnViewportP viewport, bool isCursorView);
-DGNPLATFORM_EXPORT void DisplayTransients (ViewContextR context, bool isPreUpdate);
 
 DGNVIEW_EXPORT bool GetStandardRotation (RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS, DgnCoordSystem coordSys);
 DGNVIEW_EXPORT bool GetCurrentOrientation (RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS, DgnCoordSystem coordSys);
@@ -204,12 +175,6 @@ DGNPLATFORM_EXPORT StatusInt SetActive (IAuxCoordSysP auxCoordSys, DgnViewportR 
 //! @param[in]      options     Options to control searching
 //! @return ACS if found, NULL otherwise.
 DGNPLATFORM_EXPORT IAuxCoordSysPtr GetByName (WCharCP name, DgnModelP modelRef, uint32_t options);
-
-//! Call a handler for each persistent named ACS in a model.
-//! @param[in]      handler     Object to handle the callback for each ACS.
-//! @param[in]      modelRef    The preferred model in which to traverse.
-//! @return   true if handler stopped traversal early by returning true, false if traversed all.
-DGNPLATFORM_EXPORT bool Traverse (IACSTraversalHandler& handler, DgnModelP modelRef);
 
 //! Save and ACS persistently in a model.
 //! @param[in]      auxCoordSys ACS to save.

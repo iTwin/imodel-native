@@ -2,23 +2,19 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/TransformClipStack.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include    "../DgnPlatform.h"
-#include    "ElementHandle.h"
 #include    "ClipVector.h"
 #include    <stack>
 #include    <Bentley/bvector.h>
 #include    "IViewDraw.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
-
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      02/07
 +===============+===============+===============+===============+===============+======*/

@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "../DgnPlatform.h"
-#include "ElementHandle.h"
 #include "ClipVector.h"
 #include "TransformClipStack.h"
 #include <stack>
@@ -20,8 +19,6 @@
 #include "DisplayPath.h"
 #include "ScanCriteria.h"
 #include "Material.h"
-#include "DisplayFilterManager.h"
-#include "ViewDisplayRules.h"
 
 #define FOCAL_LENGTH_RATIO 0.023584905
 
@@ -461,9 +458,6 @@ protected:
 
     bool                    m_scanRangeValid;
     double                  m_levelOfDetail;
-
-    ElementSymbologyExpressionContextPtr    m_displayRuleContext;
-    SymbologyRulesPtr                       m_symbologyRules;
 
     DGNPLATFORM_EXPORT void PopOneTransformClip ();
     void                    InvalidateScanRange ();
