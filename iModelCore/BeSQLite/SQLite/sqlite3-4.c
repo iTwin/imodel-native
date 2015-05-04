@@ -18930,6 +18930,8 @@ static int xferOptimization(
 // *** BENTLEY CHANGE ***
 SQLITE_API int bsi_checkNoActiveStatements(sqlite3* db)
     {
+    if (0 == db->nVdbeActive)
+        return SQLITE_OK;
     for (Vdbe* stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
         {
         if (stmt->magic != VDBE_MAGIC_RUN)
@@ -18939,7 +18941,8 @@ SQLITE_API int bsi_checkNoActiveStatements(sqlite3* db)
             return SQLITE_ERROR;
             }
         }
-    return SQLITE_OK;
+    sqlite3_log(SQLITE_BUSY, "nVdbeActive = %d but no active statements detected?!)", db->nVdbeActive);
+    return SQLITE_ERROR;
     }
 
 /*
