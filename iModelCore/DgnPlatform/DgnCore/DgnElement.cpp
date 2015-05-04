@@ -464,8 +464,6 @@ DgnModelStatus DgnElement::AddToModel()
     _ApplyScheduledChangesToInstances(*this);
     _ClearScheduledChangesToInstances();
 
-    m_dgnModel._OnAddedElement(*this);
-
     _OnAdded();
 
     return DGNMODEL_STATUS_Success;
@@ -496,7 +494,18 @@ void DgnElement::_GenerateDefaultCode()
         return;
 
     Utf8String className(GetElementClass()->GetName());
-    m_code = Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
+    m_code = GenerateDefaultCode(className.c_str(), m_elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnElement::GenerateDefaultCode(Utf8CP className, DgnElementId elementId)
+    {
+    if (!elementId.IsValid())
+        return "";
+
+    return Utf8PrintfString("%s%lld", className, elementId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -504,7 +513,6 @@ void DgnElement::_GenerateDefaultCode()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_LoadFromDb()
     {
-    // Note: Constructor has already initialized member variables
     GetDgnDb().Elements().AddDgnElement(*this);
     return DGNMODEL_STATUS_Success;
     }
@@ -531,6 +539,7 @@ DgnModelStatus DgnElement::_InsertInDb()
         return DGNMODEL_STATUS_ElementWriteError;
 
     GetDgnDb().Elements().AddDgnElement(*this);
+    m_dgnModel._OnAddedElement(*this);
     return DGNMODEL_STATUS_Success;
     }
 
@@ -582,9 +591,7 @@ DgnModelStatus GeometricElement::_LoadFromDb()
     SnappyFromBlob& snappy = pool.GetSnappyFrom();
 
     if (ZIP_SUCCESS != snappy.Init(pool.GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue()))
-        {
         return DGNMODEL_STATUS_Success; // this element has no geometry
-        }
 
     GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
@@ -601,7 +608,7 @@ DgnModelStatus GeometricElement::_LoadFromDb()
         pool.AllocatedMemory(sizeChange);
 
     uint32_t actuallyRead;
-    snappy._Read(m_geom.GetDataR(), m_geom.GetSize(), actuallyRead);
+    snappy.ReadAndFinish(m_geom.GetDataR(), m_geom.GetSize(), actuallyRead);
 
     if (actuallyRead != m_geom.GetSize())
         {

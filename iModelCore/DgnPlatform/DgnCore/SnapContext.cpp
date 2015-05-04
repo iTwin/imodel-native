@@ -79,7 +79,7 @@ static bool getCentroid (DPoint3dR centroid, ICurvePrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapMode)
+SnapStatus      SnapContext::DoSnapUsingCurve (SnapMode snapMode)
     {
     SnapPathCP         snap = GetSnapPath ();
     GeomDetailCR       detail = snap->GetGeomDetail ();
@@ -98,7 +98,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
                 return SnapStatus::NotSnappable;
 
             HitLocalToWorld (hitPoint);
-            SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+            SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
             return SnapStatus::Success;
             }
@@ -112,7 +112,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
                     DPoint3d    hitPoint = detail.GetClosestPointLocal ();
 
                     HitLocalToWorld (hitPoint);
-                    SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+                    SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
                     return SnapStatus::Success;
                     }
@@ -128,7 +128,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
 
                     hitPoint.Interpolate (segment.point[0], 0.5, segment.point[1]);
                     HitLocalToWorld (hitPoint);
-                    SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+                    SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
                     return SnapStatus::Success;
                     }
@@ -144,7 +144,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
 
                     ellipse->FractionParameterToPoint (hitPoint, 0.5);
                     HitLocalToWorld (hitPoint);
-                    SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+                    SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
                     return SnapStatus::Success;
                     }
@@ -166,7 +166,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
                 return SnapStatus::NotSnappable;
 
             HitLocalToWorld (location.point);
-            SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), location.point, false, false);
+            SetSnapInfo (snapMode, GetSnapSprite (snapMode), location.point, false, false);
 
             return SnapStatus::Success;
             }
@@ -179,7 +179,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
                 return SnapStatus::NotSnappable;
 
             HitLocalToWorld (centroid);
-            SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), centroid, true /* force hot */, false);
+            SetSnapInfo (snapMode, GetSnapSprite (snapMode), centroid, true /* force hot */, false);
 
             return SnapStatus::Success;
             }
@@ -189,7 +189,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
             DPoint3d    hitPoint = detail.GetClosestPointLocal (); // Current snap info is for nearest...just need to set snap using current point.
 
             HitLocalToWorld (hitPoint);
-            SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+            SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
             return SnapStatus::Success;
             }
@@ -203,7 +203,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
                     DPoint3d    hitPoint = detail.GetClosestPointLocal ();
 
                     HitLocalToWorld (hitPoint);
-                    SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+                    SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
                     return SnapStatus::Success;
                     }
@@ -220,7 +220,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
 
                     GetSegmentKeypoint (hitPoint, keyparam, GetSnapDivisor (), segment);
                     HitLocalToWorld (hitPoint);
-                    SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+                    SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
                     return SnapStatus::Success;
                     }
@@ -235,7 +235,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (int snapPathIndex, SnapMode snapM
                         return SnapStatus::NotSnappable;
 
                     HitLocalToWorld (hitPoint);
-                    SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+                    SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
                     return SnapStatus::Success;
                     }
@@ -324,7 +324,6 @@ void SnapContext::ElmLocalToWorld (DPoint3dR point) // WIP_V10_NO_SHARED_CELLS -
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            SnapContext::SetSnapInfo
 (
-int             cursorIndex,
 SnapMode        snapMode,
 ISpriteP        sprite,
 DPoint3dCR      snapPoint, // In active coords...
@@ -336,7 +335,7 @@ Byte*           customKeypointData
     {
     SnapPathP   snap = GetSnapPath ();
 
-    snap->SetCursorIndex (cursorIndex);
+    snap->SetCursorIndex (0);
     snap->SetSnapMode (snapMode);
     snap->SetSprite (sprite);
 
@@ -593,16 +592,16 @@ SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext (snapContext) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool DoSnapUsingClosestCurve (ElementHandleCR eh, SnapContextR snapContext, int snapPathIndex)
+static bool DoSnapUsingClosestCurve (GeometricElementCR element, SnapContextR snapContext)
     {
     SnapGraphicsProcessor processor (snapContext);
 
-    ElementGraphicsOutput::Process (processor, eh);
+    ElementGraphicsOutput::Process (processor, element);
 
     if (NULL == snapContext.GetSnapPath ()->GetGeomDetail ().GetCurvePrimitive ())
         return false; // No edge found...
 
-    return (SnapStatus::Success == snapContext.DoSnapUsingCurve (snapPathIndex, snapContext.GetSnapMode ()) ? true : false);
+    return (SnapStatus::Success == snapContext.DoSnapUsingCurve (snapContext.GetSnapMode ()) ? true : false);
     }
 
 }; // SnapEdgeProcessor
@@ -610,7 +609,7 @@ static bool DoSnapUsingClosestCurve (ElementHandleCR eh, SnapContextR snapContex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus      SnapContext::DoDefaultDisplayableSnap (int snapPathIndex)
+SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
     {
     SnapPathP       snap = GetSnapPath ();
     SnapMode        snapMode = GetSnapMode ();
@@ -622,7 +621,7 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap (int snapPathIndex)
         DPoint3d    hitPoint;
 
         snap->GetHitPoint (hitPoint);
-        SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+        SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
         return SnapStatus::Success;
         }
@@ -632,19 +631,22 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap (int snapPathIndex)
         // Surface w/o curve is interior hit...only nearest should "track" surface...
         if (HitGeomType::Surface == detail.GetGeomType ())
             {
-            ElementHandle eh (snap->GetPathElem (snapPathIndex));
+            GeometricElementCP element = (nullptr != snap->GetHeadElem() ? snap->GetHeadElem()->ToGeometricElement() : nullptr);
+
+            if (nullptr == element)
+                return SnapStatus::NotSnappable;
 
             if (SnapMode::Origin != snapMode)
                 {
                 // NOTE: This is a fairly expensive proposition...but snap to center of range is really useless, so...
-                if (SnapGraphicsProcessor::DoSnapUsingClosestCurve (eh, *this, snapPathIndex))
+                if (SnapGraphicsProcessor::DoSnapUsingClosestCurve (*element, *this))
                     return SnapStatus::Success;
                 }
 
-            DPoint3d hitPoint = (eh.GetDgnElement()->Is3d() ? eh.GetDgnElement()->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(eh.GetDgnElement()->ToElement2d()->GetPlacement().GetOrigin()));
+            DPoint3d hitPoint = (element->Is3d() ? element->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(element->ToElement2d()->GetPlacement().GetOrigin()));
 
             ElmLocalToWorld (hitPoint);
-            SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+            SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
             return SnapStatus::Success;
             }
@@ -652,7 +654,7 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap (int snapPathIndex)
         return SnapStatus::NotSnappable;
         }
 
-    return DoSnapUsingCurve (snapPathIndex, snapMode);
+    return DoSnapUsingCurve (snapMode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -721,7 +723,7 @@ KeypointType    SnapContext::GetSnapKeypointType (SnapMode snapMode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
+SnapStatus      SnapContext::DoTextSnap ()
     {
     SnapPathP       snap = GetSnapPath ();
     SnapMode        snapMode = GetSnapMode ();
@@ -732,11 +734,11 @@ SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
         case SnapMode::Origin:
         case SnapMode::NearestKeypoint:
             {
-            ElementHandle eh (snap->GetPathElem (snapPathIndex));
+            ElementHandle eh (snap->GetPathElem (0));
             DPoint3d      hitPoint = (eh.GetDgnElement()->Is3d() ? eh.GetDgnElement()->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(eh.GetDgnElement()->ToElement2d()->GetPlacement().GetOrigin()));
             
             ElmLocalToWorld (hitPoint);
-            SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+            SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
             return SnapStatus::Success;
             }
@@ -746,16 +748,15 @@ SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
         case SnapMode::Center:
             {
             if (NULL == detail.GetCurvePrimitive ())
-                return DoDefaultDisplayableSnap (snapPathIndex); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
+                return DoDefaultDisplayableSnap (); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
 
             DPoint3d    centroid;
 
             if (!getCentroid (centroid, *detail.GetCurvePrimitive ()))
                 return SnapStatus::NotSnappable;
 
-            // Leave cursor index at text element, not text node...
             HitLocalToWorld (centroid);
-            SetSnapInfo (snap->GetCursorIndex (), snapMode, GetSnapSprite (snapMode), centroid, false, false);
+            SetSnapInfo (snapMode, GetSnapSprite (snapMode), centroid, false, false);
 
             return SnapStatus::Success;
             }
@@ -763,7 +764,7 @@ SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
         case SnapMode::Nearest:
             {
             if (NULL == detail.GetCurvePrimitive ())
-                return DoDefaultDisplayableSnap (snapPathIndex); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
+                return DoDefaultDisplayableSnap (); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
 
             DSegment3d  segment;
 
@@ -776,10 +777,7 @@ SnapStatus      SnapContext::DoTextSnap (int snapPathIndex)
             GetSegmentKeypoint (hitPoint, keyparam, GetSnapDivisor (), segment);
             HitLocalToWorld (hitPoint);
 
-            // Leave cursor index at text element, not text node...
-            snapPathIndex = snap->GetCursorIndex ();
-
-            SetSnapInfo (snapPathIndex, snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+            SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
             return SnapStatus::Success;
             }

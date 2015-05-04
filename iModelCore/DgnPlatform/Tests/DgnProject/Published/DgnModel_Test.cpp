@@ -6,7 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+
 USING_NAMESPACE_BENTLEY_SQLITE
+
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Julija.Suboc     07/2013
 //----------------------------------------------------------------------------------------
@@ -33,7 +35,9 @@ struct DgnModelTests : public testing::Test
             {
             DgnModels& modelTable =  m_dgndb->Models();
             DgnModelId id = modelTable.QueryModelId(name);
-            m_modelP =  modelTable.GetModelById (id);
+            m_modelP =  modelTable.GetModelById(id);
+            if (m_modelP)
+                m_modelP->FillModel();
             }
     };
 
@@ -44,6 +48,7 @@ TEST_F(DgnModelTests, GetGraphicElements)
     {
     LoadModel("Splines");
     uint32_t graphicElementCount = m_modelP->CountElements();
+    ASSERT_NE(graphicElementCount, 0);
     ASSERT_TRUE(graphicElementCount > 0)<<"Please provide model with graphics elements, otherwise this test case makes no sense";
     int count = 0;
     for (DgnElementCP elm : *m_modelP)
@@ -52,9 +57,6 @@ TEST_F(DgnModelTests, GetGraphicElements)
         ++count;
         }
     EXPECT_EQ(graphicElementCount, count);
-    //Try to get elements from empty model
-    LoadModel("Default");
-    EXPECT_EQ(0, m_modelP->CountElements())<<"This model should be empty";
     }
 
 //---------------------------------------------------------------------------------------

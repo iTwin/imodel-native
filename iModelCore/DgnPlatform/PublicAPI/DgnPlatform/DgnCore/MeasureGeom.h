@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/MeasureGeom.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -174,7 +174,7 @@ DGNPLATFORM_EXPORT BentleyStatus Process (IGeomProvider&, DgnDbR);
 //__PUBLISH_SECTION_START__
 
 //! Visit the supplied element and accumulate the measure information.
-DGNPLATFORM_EXPORT BentleyStatus Process (ElementHandleCR eh);
+DGNPLATFORM_EXPORT BentleyStatus Process (GeometricElementCR);
 
 //! Create new instance of a measure geometry collector.
 DGNPLATFORM_EXPORT static MeasureGeomCollectorPtr Create (OperationType opType);

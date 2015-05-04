@@ -198,8 +198,6 @@ $(coreObjs)MeasureGeom$(oext): $(DgnCoreDir)MeasureGeom.cpp $(DgnCoreAPISrc)Meas
 
 $(coreObjs)DgnCore$(oext): $(DgnCoreDir)DgnCore.cpp $(DgnCoreDir)DgnCoreDLLInlines.h $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h  ${MultiCompileDepends}
 
-$(coreObjs)DisplayHandler$(oext): $(DgnCoreDir)DisplayHandler.cpp $(HandlerDepends) $(contextDepends) ${MultiCompileDepends}
-
 $(coreObjs)HandlerTypeInfo$(oext): $(DgnCoreDir)HandlerTypeInfo.cpp $(contextDepends) $(HandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)ViewHandler$(oext): $(DgnCoreDir)ViewHandler.cpp $(contextDepends) ${MultiCompileDepends} $(DgnCoreAPISrc)SimplifyViewDrawGeom.h
@@ -395,6 +393,8 @@ $(coreObjs)RegionUtil$(oext): $(DgnHandlersDir)RegionUtil.cpp $(contextDepends) 
 $(coreObjs)ScopedDgnHost$(oext)          : $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
 
 $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAPISrc)NamedVolume.h ${MultiCompileDepends}
+
+$(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/SnapContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -77,20 +77,17 @@ DGNPLATFORM_EXPORT void GetSegmentKeypoint (DPoint3dR hitPoint, double& keyParam
 DGNPLATFORM_EXPORT bool GetParameterKeypoint (DPoint3dR hitPoint, double& keyParam, int divisor);
 
 //! Define the current snap information for text using default processing.
-//! @param[in]    snapPathIndex         Cursor index to test in snap path.
 //! @bsimethod
-DGNPLATFORM_EXPORT SnapStatus DoTextSnap (int snapPathIndex);
+DGNPLATFORM_EXPORT SnapStatus DoTextSnap ();
 
 //! Define the current snap information for this hit using default processing.
-//! @param[in]    snapPathIndex         Cursor index to test in snap path.
 //! @bsimethod
-DGNPLATFORM_EXPORT SnapStatus DoDefaultDisplayableSnap (int snapPathIndex);
+DGNPLATFORM_EXPORT SnapStatus DoDefaultDisplayableSnap ();
 
 //! Define the current snap information for the path curve primitive using default processing.
-//! @param[in]    snapPathIndex         Cursor index to test in snap path.
 //! @param[in]    mode                  Snap mode to use.
 //! @bsimethod
-DGNPLATFORM_EXPORT SnapStatus DoSnapUsingCurve (int snapPathIndex, SnapMode mode);
+DGNPLATFORM_EXPORT SnapStatus DoSnapUsingCurve (SnapMode mode);
 
 //! Convert a point from the GeomDetail's local coordinate system (ex. GeomDetail::GetClosestPointLocal) to world coordinates.
 DGNPLATFORM_EXPORT void HitLocalToWorld (DPoint3dR);
@@ -99,7 +96,6 @@ DGNPLATFORM_EXPORT void HitLocalToWorld (DPoint3dR);
 DGNPLATFORM_EXPORT void ElmLocalToWorld (DPoint3dR); // WIP_V10_NO_SHARED_CELLS - Remove with shared cells.
 
 //! Define the current snap information for this hit.
-//! @param[in]    cursorIndex           Cursor index to set in snap path, this will be the element called to evaluate any customKeypointData.
 //! @param[in]    mode                  Snap mode used for this snap.
 //! @param[in]    sprite                Sprite to use to decorate snap.
 //! @param[in]    snapPoint             Location for snap in world model coordinates (use SnapContext::HitLocalToWorld or SnapContext::ElmLocalToWorld to convert "local" point).
@@ -108,7 +104,7 @@ DGNPLATFORM_EXPORT void ElmLocalToWorld (DPoint3dR); // WIP_V10_NO_SHARED_CELLS 
 //! @param[in]    nBytes                Size in bytes of customKeypointData, or 0 if none.
 //! @param[in]    customKeypointData    Pointer to customKeypointData to save for this snap or NULL.
 //! @bsimethod
-DGNPLATFORM_EXPORT void SetSnapInfo (int cursorIndex, SnapMode mode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = NULL);
+DGNPLATFORM_EXPORT void SetSnapInfo (SnapMode mode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = NULL);
 
 }; // SnapContext
 

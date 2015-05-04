@@ -95,27 +95,25 @@ enum class OpCode : uint32_t
     Invalid             = 0,
     Header              = 1,    //!< Required to be first opcode
     BeginSubCategory    = 2,    //!< Mark start of geometry having same sub-category and transform
-    GeomPartInstance    = 4,    //!< Draw referenced geometry part
-    BasicSymbology      = 5,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
-    PointPrimitive      = 6,    //!< Simple lines, line strings, shapes, point strings, etc.
-    PointPrimitive2d    = 7,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
-    ArcPrimitive        = 8,    //!< Single arc/ellipse
-    CurveVector         = 9,    //!< CurveVector
-    CurveVectorFilled   = 10,   //!< Region CurveVector with fill
-    Polyface            = 11,   //!< PolyfaceQueryCarrier
-    PolyfaceFilled      = 12,   //!< PolyfaceQueryCarrier with fill
-    CurvePrimitive      = 13,   //!< Single CurvePrimitive
-    SolidPrimitive      = 14,   //!< SolidPrimitive
-    BsplineSurface      = 15,   //!< BSpline surface
-    ParasolidBRep       = 16,   //!< Parasolid body
-    BRepPolyface        = 17,   //!< PolyfaceQueryCarrier from Parasolid BRep
-    BRepPolyfaceExact   = 18,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
-    BRepEdges           = 19,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
-    BRepFaceIso         = 20,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
-    LineStyle           = 21,   //!< Raster/vector line styles
-    AreaFill            = 22,   //!< Opaque and gradient fills
-    Pattern             = 23,   //!< Hatch, cross-hatch, and area pattern
-    Material            = 24,   //!< Render material
+    GeomPartInstance    = 3,    //!< Draw referenced geometry part
+    BasicSymbology      = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
+    PointPrimitive      = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
+    PointPrimitive2d    = 6,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
+    ArcPrimitive        = 7,    //!< Single arc/ellipse
+    CurveVector         = 8,    //!< CurveVector
+    Polyface            = 9,    //!< PolyfaceQueryCarrier
+    CurvePrimitive      = 10,   //!< Single CurvePrimitive
+    SolidPrimitive      = 11,   //!< SolidPrimitive
+    BsplineSurface      = 12,   //!< BSpline surface
+    ParasolidBRep       = 13,   //!< Parasolid body
+    BRepPolyface        = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
+    BRepPolyfaceExact   = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
+    BRepEdges           = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
+    BRepFaceIso         = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
+    LineStyle           = 18,   //!< Raster/vector line styles
+    AreaFill            = 19,   //!< Opaque and gradient fills
+    Pattern             = 20,   //!< Hatch, cross-hatch, and area pattern
+    Material            = 21,   //!< Render material
     };
 
 //=======================================================================================
@@ -160,9 +158,9 @@ struct Writer
     DGNPLATFORM_EXPORT void Append (Operation const& egOp);    
     DGNPLATFORM_EXPORT void Append (DPoint3dCP, size_t nPts, int8_t boundary);
     DGNPLATFORM_EXPORT void Append (DEllipse3dCR, int8_t boundary);
-    DGNPLATFORM_EXPORT void Append (ICurvePrimitiveCR, bool isClosed = false, bool isFilled = false);
-    DGNPLATFORM_EXPORT void Append (CurveVectorCR, bool isFilled = false);
-    DGNPLATFORM_EXPORT void Append (PolyfaceQueryCR, bool isFilled = false);
+    DGNPLATFORM_EXPORT void Append (ICurvePrimitiveCR, bool isClosed = false);
+    DGNPLATFORM_EXPORT void Append (CurveVectorCR);
+    DGNPLATFORM_EXPORT void Append (PolyfaceQueryCR);
     DGNPLATFORM_EXPORT void Append (ISolidPrimitiveCR);
     DGNPLATFORM_EXPORT void Append (MSBsplineSurfaceCR);
     DGNPLATFORM_EXPORT void Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
@@ -182,9 +180,9 @@ struct Reader
 
     DGNPLATFORM_EXPORT static bool Get (Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary);
     DGNPLATFORM_EXPORT static bool Get (Operation const&, DEllipse3dR, int8_t& boundary);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, PolyfaceQueryCarrier&, bool& isFilled);
+    DGNPLATFORM_EXPORT static bool Get (Operation const&, PolyfaceQueryCarrier&);
     DGNPLATFORM_EXPORT static bool Get (Operation const&, ICurvePrimitivePtr&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, CurveVectorPtr&, bool& isFilled);
+    DGNPLATFORM_EXPORT static bool Get (Operation const&, CurveVectorPtr&);
     DGNPLATFORM_EXPORT static bool Get (Operation const&, ISolidPrimitivePtr&);
     DGNPLATFORM_EXPORT static bool Get (Operation const&, MSBsplineSurfacePtr&);
     DGNPLATFORM_EXPORT static bool Get (Operation const&, ISolidKernelEntityPtr&);
@@ -209,8 +207,8 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
 
     DGNPLATFORM_EXPORT void ToNext ();
 
-    Iterator (uint8_t const* data, size_t totalDataSize) : m_data (data), m_totalDataSize (totalDataSize), m_dataOffset (0) {ToNext();}
-    Iterator () : m_data (nullptr), m_totalDataSize (0), m_dataOffset (0) {}
+    Iterator (uint8_t const* data, size_t totalDataSize) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0) {ToNext();}
+    Iterator () : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0) {}
 
     friend struct ElementGeomIO;
 
@@ -238,12 +236,12 @@ struct Collection
     typedef Iterator const_iterator;
     typedef const_iterator iterator; //!< only const iteration is possible
     
-    Collection (uint8_t const* data, size_t dataSize) : m_data (data), m_dataSize (dataSize) {}
+    Collection (uint8_t const* data, size_t dataSize) : m_data(data), m_dataSize(dataSize) {}
 
     const_iterator begin () const {return const_iterator (m_data, m_dataSize);}
     const_iterator end   () const {return const_iterator ();}
 
-    DGNPLATFORM_EXPORT void Draw (ViewContextR, DgnCategoryId, bool isQVis, bool isQVWireframe, bool isPick, bool useBRep) const; // NEEDSWORK: Simplify...
+    DGNPLATFORM_EXPORT void Draw (ViewContextR, DgnCategoryId, ViewFlagsCR) const;
 
     }; // Collection
 
@@ -267,11 +265,12 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     size_t              m_totalDataSize;
     ViewContextP        m_context;
     ElementGeometryPtr  m_elementGeometry;
+    bool                m_useBRep;
 
     DGNPLATFORM_EXPORT void ToNext ();
 
-    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context) : m_data (data), m_totalDataSize (totalDataSize), m_dataOffset (0), m_context (context) {ToNext();}
-    Iterator () : m_data (nullptr), m_totalDataSize (0), m_dataOffset (0), m_context (nullptr) {}
+    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_useBRep(true) {ToNext();}
+    Iterator () : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0), m_context(nullptr), m_useBRep(true) {}
 
     friend struct ElementGeometryCollection;
 

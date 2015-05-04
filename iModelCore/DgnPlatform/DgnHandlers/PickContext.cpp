@@ -1425,6 +1425,11 @@ bool PickContext::PickElements (DgnViewportR vp, DPoint3dCR pickPointWorld, doub
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestPathStatus PickContext::TestPath (DisplayPathCR path, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
     {
+    GeometricElementCP element = (nullptr != path.GetHeadElem() ? path.GetHeadElem()->ToGeometricElement() : nullptr);
+
+    if (nullptr == element)
+        return TESTPATH_NotOnPath;
+
     InitNpcSubRect (pickPointWorld, pickApertureScreen, vp); // Initialize prior to attach so frustum planes are set correctly.
 
     if (SUCCESS != Attach (&vp, DrawPurpose::Pick))
@@ -1434,7 +1439,7 @@ TestPathStatus PickContext::TestPath (DisplayPathCR path, DgnViewportR vp, DPoin
     m_options.SetHitSource (DisplayPathType::Hit <= path.GetPathType () ? ((HitPathCR) path).GetLocateSource () : HitSource::None);
 
     InitSearch (pickPointWorld, pickApertureScreen, hitList);
-    VisitPath (&path, NULL);
+    VisitElement (*element);
     _Detach ();
 
     return WasAborted() ? TESTPATH_TestAborted : ((m_output.GetHitList ()->GetCount () > 0) ? TESTPATH_IsOnPath : TESTPATH_NotOnPath);

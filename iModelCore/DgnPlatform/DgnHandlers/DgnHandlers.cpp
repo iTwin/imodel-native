@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/L10N.h>
+#include <DgnPlatform/DgnHandlers/DgnECSymbolProvider.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -16,6 +17,9 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 void DgnPlatformLib::Host::InitializeDgnHandlers()
     {
     InitializeDgnCore ();
+
+    // Register Symbol Provider for ECExpressions
+    IECSymbolProvider::RegisterExternalSymbolPublisher (&DgnECSymbolProvider::ExternalSymbolPublisher);
 
     BeAssert (NULL == m_fontAdmin);             m_fontAdmin             = &_SupplyFontAdmin();
     BeAssert (NULL == m_lineStyleAdmin);        m_lineStyleAdmin        = &_SupplyLineStyleAdmin();
@@ -51,6 +55,9 @@ void DgnPlatformLib::Host::Terminate (bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_solidsKernelAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_geoCoordAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_formatterAdmin, onProgramExit);
+
+    // UnRegister Symbol Provider for ECExpressions
+    IECSymbolProvider::UnRegisterExternalSymbolPublisher ();
 
     TerminateDgnCore (onProgramExit);
 

@@ -63,6 +63,7 @@
 #include "UnitDefinition.h"
 #include "DgnLink.h"
 #include "DgnCoreEvent.h"
+#include "DgnElement.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -805,11 +806,6 @@ public:
 
     //! Make an iterator over the PhysicalRedline models in this DgnDb.
     Iterator MakePhysicalRedlineIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=12"); return it;}
-
-    //! Get the dictionary model for this file.
-    //! @see FillDictionaryModelSections
-    DGNPLATFORM_EXPORT struct DictionaryModel* GetDictionaryModel();
-
     //@}
 
     //! Insert a new model.
@@ -912,6 +908,7 @@ private:
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
+    DgnElementPtr LoadElement(DgnElement::CreateParams const& params);
 
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
@@ -958,7 +955,10 @@ public:
 
     HeapZone& GetHeapZone() {return m_heapZone;}
 
-        //! Return the key of the element from its ID.
+    //! Query for the Code for the specified DgnElement.
+    DGNPLATFORM_EXPORT Utf8String QueryElementCode(DgnElementId) const;
+
+    //! Return the key of the element from its ID.
     //! @note used when you know the DgnElementId, but need a DgnElementKey which also contains the ECClassId.
     //! @note an invalid key will be returned in the case of an error
     //! @see ECInstanceKey::IsValid
@@ -1013,14 +1013,6 @@ public:
     //! Query for a geometry part by ID.
     //! @param[in] geomPartId the ID of the geometry part to load
     DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
-
-    //! Query for geometry part data by ID.
-    //! @param[out] geometryBlob the binary geometry data of the specified geometry part.
-    //! @param[out] code the optional code of the specified geometry part.
-    //! @param[in] geomPartId the ID of the geometry part to select/load
-    //! @note This method is intended for importers.  Most applications will query for a DgnGeomPart.
-    //! @private
-    DGNPLATFORM_EXPORT BentleyStatus QueryGeomPart(bvector<Byte>& geometryBlob, Utf8StringR code, DgnGeomPartId geomPartId);
 
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert
