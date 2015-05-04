@@ -1631,53 +1631,53 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (ClassMapCR forCl
 
     auto part = std::unique_ptr<StorageDescription> (new StorageDescription ());
     part->m_classId = forClassMap.GetClass ().GetId ();
-
+    std::vector<ECClassId> emptyFilter;
     for (auto cmP : classMapToPartition)
         {
         auto cmT = classMapToTable.find (cmP.first);
         if (cmP.second.size () > cmT->second.size ())
             {
-            part->m_hParts.push_back (HorizontalPartition (cmP.first, cmP.second, cmT->second, false));
+            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition>(new HorizontalPartition (cmP.first, cmP.second, cmT->second, false)));
             }
         else if (cmP.second.size () < cmT->second.size ())
             {
-            part->m_hParts.push_back (HorizontalPartition (cmP.first, cmP.second, cmP.second, true));
+            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition> (new HorizontalPartition (cmP.first, cmP.second, cmP.second, true)));
             }
         else if (cmP.second.size () == cmT->second.size ())
             {
-            part->m_hParts.push_back (HorizontalPartition (cmP.first, cmP.second, std::vector<ECClassId> (), true));
+            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition> (new HorizontalPartition (cmP.first, cmP.second, emptyFilter, true)));
             }
         }
-    return part;
+    return std::move(part);
     }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-Utf8StringCR HorizontalPartition::GetSQL () const
+Utf8String HorizontalPartition::GetSQL () const
     {
     if (m_filter.empty ())
-        return m_filterSql;
+        return "";
 
-    if (m_filterSql.empty ())
+    Utf8String filterSql;
         {
         if (m_includeFilter)
-            m_filterSql.append ("IN (");
+            filterSql.append ("IN (");
         else
-            m_filterSql.append ("NOT IN (");
+            filterSql.append ("NOT IN (");
 
         for (auto i : m_filter)
             {
             Utf8String tmp;
             tmp.Sprintf ("%lld", i);
-            m_filterSql.append (tmp);
+            filterSql.append (tmp);
             if (i != m_filter.back ())
-                m_filterSql.append (",");
+                filterSql.append (",");
             }
 
-        m_filterSql.append (")");
+        filterSql.append (")");
         }
 
-    return m_filterSql;
+    return filterSql;
     }
 
 StorageDescription const& ClassMap::GetStorageDescription () const

@@ -39,26 +39,21 @@ public:
 //! Hold detail about how table partition is described for this class
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct HorizontalPartition 
+struct HorizontalPartition : NonCopyableClass
     {
     private:
         ECDbTableId m_tableId;
         std::vector<ECN::ECClassId> m_classMapToParition;
         std::vector<ECN::ECClassId> m_filter;
         bool m_includeFilter;
-        mutable Utf8String m_filterSql;
+        //mutable Utf8String m_filterSql;
 
     public:
-        HorizontalPartition (ECDbTableId tableId, std::vector<ECN::ECClassId> const& classIds, std::vector<ECN::ECClassId> const& filter, bool includeFilter)
+        HorizontalPartition (ECDbTableId tableId, std::vector<ECN::ECClassId>& classIds, std::vector<ECN::ECClassId>& filter, bool includeFilter)
             : m_tableId (tableId), m_classMapToParition (std::move (classIds)), m_filter (std::move (filter)), m_includeFilter (includeFilter)
             {
             }
-        HorizontalPartition (const HorizontalPartition&& rhs)
-            : m_tableId (rhs.m_tableId), m_classMapToParition (std::move (rhs.m_classMapToParition)), m_filter (std::move (rhs.m_filter)), m_includeFilter (rhs.m_includeFilter)
-            {
-            }
-       HorizontalPartition ()
-            : m_tableId (0), m_includeFilter (false)
+        HorizontalPartition ()
             {}
         ~HorizontalPartition ()
             {}
@@ -67,7 +62,7 @@ struct HorizontalPartition
         std::vector<ECN::ECClassId> const& GetClassIds () const { return m_classMapToParition; }
         bool IsInclusionFilter () const { return m_includeFilter; }
         bool HasFilter () const { return !m_filter.empty (); }
-        Utf8StringCR GetSQL () const;
+        Utf8String GetSQL () const;
     };
 
 struct ClassMap;
@@ -78,25 +73,17 @@ struct ClassMap;
 struct StorageDescription : NonCopyableClass
     {
     private:      
-        std::vector<HorizontalPartition> m_hParts;
+        std::vector<std::unique_ptr<HorizontalPartition>> m_hParts;
         ECN::ECClassId m_classId;      
-        StorageDescription ()
-            : m_classId (0)
-            {
-            }
     public:
-        StorageDescription (const StorageDescription&& rhs)
-            :m_classId (rhs.m_classId), m_hParts (std::move (rhs.m_hParts))
-            {
-            }
         ~StorageDescription (){}
-        std::vector<HorizontalPartition> const& GetHorizontalPartitions () const { return m_hParts; }    
+        std::vector<std::unique_ptr<HorizontalPartition>> const& GetHorizontalPartitions () const { return m_hParts; }    
         HorizontalPartition const* GetPrimary () const
             {
             if (m_hParts.empty ())
                 return nullptr;
 
-            return &m_hParts.front ();
+            return m_hParts.front ().get();
             }
         ECN::ECClassId GetClassId () const { return m_classId; }
         static std::unique_ptr<StorageDescription> Create (ClassMapCR forClassMap);
