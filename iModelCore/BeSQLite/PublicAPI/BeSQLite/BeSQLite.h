@@ -3121,6 +3121,7 @@ public:
     BE_SQLITE_EXPORT ~SnappyFromBlob();
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;
     BE_SQLITE_EXPORT void Finish() ;
+    ZipErrors ReadAndFinish(Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead) {auto stat=_Read(data, bufSize, bytesActuallyRead); Finish(); return stat;}
 };
 
 //=======================================================================================
