@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlDeleteStatementCrudTestDataset.cpp $
+|     $Source: Tests/Published/ECSqlDeleteStatementCrudTestDataset.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlDeleteStatementCrudTestDataset.h"
@@ -161,7 +161,7 @@ ECSqlTestDataset ECSqlDeleteTestDataset::PolymorphicTests (int rowCountPerClass)
     ECSqlTestDataset dataset;
 
     Utf8CP ecsql = "DELETE FROM ecsql.P";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
 
     return dataset;
     }

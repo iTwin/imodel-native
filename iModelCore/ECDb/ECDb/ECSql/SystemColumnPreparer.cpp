@@ -53,9 +53,6 @@ SystemColumnPreparer const& SystemColumnPreparer::GetFor(IClassMap::Type classMa
         std::unique_ptr<SystemColumnPreparer> preparer = nullptr;
         switch (classMapType)
             {
-                case IClassMap::Type::Class:
-                    preparer = std::unique_ptr<SystemColumnPreparer>(new RegularClassSystemColumnPreparer());
-                    break;
                 case IClassMap::Type::RelationshipEndTable:
                     preparer = std::unique_ptr<SystemColumnPreparer>(new EndTableSystemColumnPreparer());
                     break;
@@ -63,14 +60,14 @@ SystemColumnPreparer const& SystemColumnPreparer::GetFor(IClassMap::Type classMa
                     preparer = std::unique_ptr<SystemColumnPreparer>(new SecondaryTableSystemColumnPreparer());
                     break;
                 default:
-                    BeAssert(false);
                     preparer = std::unique_ptr<SystemColumnPreparer>(new RegularClassSystemColumnPreparer());
                     break;
             }
 
+        SystemColumnPreparer const& preparerR = *preparer;
         s_flyweights[classMapType] = std::move(preparer);
 
-        return *preparer;
+        return preparerR;
         }
 
     return *it->second;
@@ -101,10 +98,11 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
             whereClauseBuilder.AppendParenLeft();
         else
             whereClauseBuilder.Append(" AND ");
+
+        whereClauseBuilder.Append(tableAlias, classIdColumn->GetName().c_str()).Append(" IN (");
+        whereClauseBuilder.Append(classMap.GetClass().GetId());
         }
 
-    whereClauseBuilder.Append(tableAlias, classIdColumn->GetName().c_str()).Append(" IN (");
-    whereClauseBuilder.Append(classMap.GetClass().GetId());
 
     if (isPolymorphicClassExp)
         {

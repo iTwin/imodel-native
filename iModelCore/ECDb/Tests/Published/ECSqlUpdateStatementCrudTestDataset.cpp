@@ -647,7 +647,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::PolymorphicTests (int rowCountPerClass)
     ECSqlTestDataset dataset;
 
     Utf8CP ecsql = "UPDATE ecsql.PSA SET I = 123";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
 
     return dataset;
     }
