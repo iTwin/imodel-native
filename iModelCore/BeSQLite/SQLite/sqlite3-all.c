@@ -89,14 +89,20 @@
 int checkNoActiveStatements(sqlite3* db)
     {
     Vdbe* stmt;
+    if (0 == db->nVdbeActive)
+        return SQLITE_OK;
+
     for (stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
         {
         if (stmt->magic != VDBE_MAGIC_RUN)
             {
             sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
+            //assert(0);
             return SQLITE_ERROR;
             }
         }
-    return SQLITE_OK;
+
+    sqlite3_log(SQLITE_BUSY, "nVdbeActive = %d but no active statements detected?!)", db->nVdbeActive);
+    return SQLITE_ERROR;
     }
 #endif
