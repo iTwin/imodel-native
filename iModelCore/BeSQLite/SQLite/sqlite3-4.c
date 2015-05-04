@@ -18930,9 +18930,10 @@ static int xferOptimization(
 // *** BENTLEY CHANGE ***
 SQLITE_API int bsi_checkNoActiveStatements(sqlite3* db)
     {
+    Vdbe* stmt;
     if (0 == db->nVdbeActive)
         return SQLITE_OK;
-    for (Vdbe* stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
+    for (stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
         {
         if (stmt->magic != VDBE_MAGIC_RUN)
             {
