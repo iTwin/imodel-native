@@ -21,9 +21,6 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
     ctx.PushScope (exp);
 
     auto classNameExp = exp.GetClassNameExp ();
-    if (classNameExp->IsPolymorphic ())
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "Polymorphism is not yet supported in ECSQL DELETE statements.");
-
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
 
     //if table is virtual, i.e. does not exist in db, the ECSQL is still valid, but will result

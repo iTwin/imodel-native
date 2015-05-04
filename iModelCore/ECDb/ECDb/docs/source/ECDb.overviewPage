@@ -363,9 +363,8 @@
         - <CODE>Bidirectional</CODE> : Optimize for source to target and target to source traversal. 
         - <CODE>TargetToSource</CODE> : Optimize for target to source traversal.
     - <b>AllowDuplicateRelationships</b>: By default relationships need to be unique. If true, duplicate values are allowed
-    How the duplication works depends on the mapping type:
-        - For EndTable mappings it will allow 1:N duplication.
-        - For LinkTable mappings it will allow all type of duplication.
+    The effect mapping as well. If duplication is allowed the relationship will always be mapped as LinkTable (will have its own table instead of using EndTable which use Foriegn Key).
+        - 1:N will be mapped as LinkTable instead of EndTable if duplication is allowed.
     - <b>SourceECIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
     - <b>SourceECClassIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
     - <b>TargetECIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.

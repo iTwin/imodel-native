@@ -1479,4 +1479,133 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications)
 //------------------------------------------------------------------------------------------
 ECDbSqlTable & ColumnFactory::GetTable ()  { return m_classMap.GetTable (); }
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+//static
+std::unique_ptr<StorageDescription> StorageDescription::Create (ClassMapCR forClassMap)
+    {
+    const auto sql1 =
+        " WITH RECURSIVE"
+        "     DerivedClassList(RootECClassId, CurrentECClassId, DerivedECClassId) AS ("
+        "     SELECT ECClassId, ECClassId, ECClassId  FROM ec_Class"
+        "     UNION"
+        "     SELECT RootECClassId,  BC.[BaseECClassId], BC.[ECClassId]"
+        "             FROM DerivedClassList DCL"
+        "     LEFT OUTER JOIN ec_BaseClass BC ON BC.[BaseECClassId] = DCL.DerivedECClassId"
+        "     ORDER BY 1"
+        "     ),"
+        "    TableMapInfo AS ("
+        "    SELECT DISTINCT"
+        "           ec_Class.ECClassId   [ECClassId],"
+        "           ec_Table.Id          [TableId] "
+        "    FROM ec_PropertyMap"
+        "      JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
+        "      JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId"
+        "      JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId"
+        "      JOIN ec_Class ON ec_Class.ECClassId = ec_ClassMap.[ECClassId]"
+        "      JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+        "      )"
+        " SELECT DCL.DerivedECClassId, TMI.TableId FROM DerivedClassList DCL"
+        "       INNER JOIN TableMapInfo TMI ON TMI.ECClassId = DCL.DerivedECClassId"
+        "       WHERE DCL.CurrentECClassId IS NOT NULL AND DCL.RootECClassId = ?";
+
+    const auto sql2 =
+        "    SELECT DISTINCT"
+        "           ec_Class.ECClassId   [ECClassId]"
+        "    FROM ec_PropertyMap"
+        "      JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
+        "      JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId"
+        "      JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId"
+        "      JOIN ec_Class ON ec_Class.ECClassId = ec_ClassMap.[ECClassId]"
+        "      JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+        "    WHERE ec_Table.Id = ?";
+
+    auto& ecdb = forClassMap.GetECDbMap ().GetECDbR ();
+    CachedStatementPtr stmt1;
+    ecdb.GetCachedStatement (stmt1, sql1);
+    stmt1->BindInt64 (1, forClassMap.GetClass ().GetId ());
+
+    CachedStatementPtr stmt2;
+    ecdb.GetCachedStatement (stmt2, sql2);
+
+    std::map<ECDbTableId, std::vector<ECClassId>> classMapToTable;
+    std::map<ECDbTableId, std::vector<ECClassId>> classMapToPartition;
+    while (stmt1->Step () == BE_SQLITE_ROW)
+        {
+        auto derivedECClassId = stmt1->GetValueInt64 (0);
+        auto tableId = stmt1->GetValueInt64 (1);
+        if (classMapToTable.find (tableId) == classMapToTable.end ())
+            {
+            stmt2->Reset ();
+            stmt2->ClearBindings ();
+            stmt2->BindInt64 (1, tableId);
+
+            while (stmt2->Step () == BE_SQLITE_ROW)
+                {
+                classMapToTable[tableId].push_back (stmt2->GetValueInt64 (0));
+                }
+            }
+
+        classMapToPartition[tableId].push_back (derivedECClassId);
+        }
+
+    auto part = std::unique_ptr<StorageDescription> (new StorageDescription ());
+    part->m_classId = forClassMap.GetClass ().GetId ();
+    std::vector<ECClassId> emptyFilter;
+    for (auto cmP : classMapToPartition)
+        {
+        auto cmT = classMapToTable.find (cmP.first);
+        if (cmP.second.size () > cmT->second.size ())
+            {
+            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition>(new HorizontalPartition (cmP.first, cmP.second, cmT->second, false)));
+            }
+        else if (cmP.second.size () < cmT->second.size ())
+            {
+            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition> (new HorizontalPartition (cmP.first, cmP.second, cmP.second, true)));
+            }
+        else if (cmP.second.size () == cmT->second.size ())
+            {
+            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition> (new HorizontalPartition (cmP.first, cmP.second, emptyFilter, true)));
+            }
+        }
+    return std::move(part);
+    }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+Utf8String HorizontalPartition::GetSQL () const
+    {
+    if (m_filter.empty ())
+        return "";
+
+    Utf8String filterSql;
+        {
+        if (m_includeFilter)
+            filterSql.append ("IN (");
+        else
+            filterSql.append ("NOT IN (");
+
+        for (auto i : m_filter)
+            {
+            Utf8String tmp;
+            tmp.Sprintf ("%lld", i);
+            filterSql.append (tmp);
+            if (i != m_filter.back ())
+                filterSql.append (",");
+            }
+
+        filterSql.append (")");
+        }
+
+    return filterSql;
+    }
+
+StorageDescription const& ClassMap::GetStorageDescription () const
+    {
+    if (m_storageDescrip == nullptr)
+        m_storageDescrip = StorageDescription::Create (*this);
+
+    return *m_storageDescrip;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

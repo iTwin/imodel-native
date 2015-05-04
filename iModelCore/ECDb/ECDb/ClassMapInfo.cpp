@@ -598,11 +598,12 @@ MapStatus RelationshipClassMapInfo::DetermineRelationshipMapStrategy ()
         GetMapStrategyR().SetDoNotMap();
         return MapStatus::Success;
         }
+    
     if (GetMapStrategy().IsTablePerHierarchy())
         {
         return MapStatus::Success;
         }
-		
+
     if (auto parentClassMap = GetParentClassMap())
         {
 
@@ -731,6 +732,11 @@ ECRelationshipConstraintR target,
 ECRelationshipClassCR relationshipClass
 ) const
     {
+    // Follow override other. Since if relation map to Source/Target table it cannot have duplicate values there for
+    // we forces it to use a link table for this relationship so duplicate relationships can be allowed.
+    if (GetAllowDuplicateRelationships () == TriState::True)
+        return Strategy::TableForThisClass;
+
     /* Note: At this point of the algorithm, map strategy can only be MapStrategy::RelationshipSourceTable,
      * or MapStrategy::RelationshipTargetTable */
 

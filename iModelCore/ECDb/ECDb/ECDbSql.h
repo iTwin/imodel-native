@@ -29,6 +29,7 @@ typedef int64_t ECDbConstraintId;
 typedef int64_t ECDbPropertyPathId;
 typedef int64_t ECDbClassMapId;
 
+//!TODO This should replace int in UserData in column
 enum class SystemColumnType 
     {
     DataColumn = 0x0U,
@@ -42,6 +43,8 @@ enum class SystemColumnType
     SourceECClassId = 0x80U,
     TargetECClassId = 0x100U,
     };
+
+
 enum class TriggerType
     {
     Create,

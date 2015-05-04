@@ -550,7 +550,7 @@ ECN::ECRelationshipEnd constraintEnd
         }
     //Sometime SourceECClassId/TargetECClassId  propertyMap is mapped to another table where ECClassId exist.
     //In this case if user did not specify it is not a error..
-    if (!constraintClassIdPropMap->IsMappedToPrimaryTable ())
+    if (!constraintClassIdPropMap->IsMappedToPrimaryTable () || constraintClassIdPropMap->GetFirstColumn()->GetUserFlags() == ECDbSystemColumnECClassId)
         {
         return ECSqlStatus::Success;
         }
