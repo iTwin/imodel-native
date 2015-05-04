@@ -145,8 +145,8 @@ DbResult SatelliteChangeSets::QueryProperty (Utf8StringR value, PropertySpecCR s
 +---------------+---------------+---------------+---------------+---------------+------*/
 SatelliteChangeSets::~SatelliteChangeSets() 
     {
-    //if (nullptr != m_dgndb)
-    //    m_dgndb->DetachDb(CHANGES_ATTACH_ALIAS);
+    if (nullptr != m_dgndb)
+        m_dgndb->DetachDb(CHANGES_ATTACH_ALIAS);
     }
 
 #define CHANGSETINFO_COLS "SequenceNumber,Type,Description,Time"
