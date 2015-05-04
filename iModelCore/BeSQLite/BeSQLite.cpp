@@ -499,6 +499,8 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
             }
         }
 
+    BeAssert((SQLITE_OK == bsi_checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
+
     // attempt the commit/release or rollback
     DbResult rc;
     if (0 == txn.GetDepth())
@@ -526,6 +528,14 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
 
     m_txns.erase(thisPos, m_txns.end());
     return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::CheckNoActiveStatements()
+    {
+    return (DbResult)bsi_checkNoActiveStatements(GetSqlDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4981,7 +4991,13 @@ static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_rou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg) {LOG.infov("SQLite error %d [%s]", iErrCode, zMsg);}
+static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg) 
+    {
+    NativeLogging::SEVERITY severity = (iErrCode == SQLITE_NOTICE)? NativeLogging::LOG_TRACE: 
+                                        (iErrCode == SQLITE_WARNING)? NativeLogging::LOG_WARNING:
+                                                                      NativeLogging::LOG_ERROR;  
+    LOG.messagev(severity, "SQLITE_ERROR %x [%s]", iErrCode, zMsg);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
