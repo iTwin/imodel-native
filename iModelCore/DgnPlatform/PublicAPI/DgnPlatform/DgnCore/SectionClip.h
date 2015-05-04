@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/SectionClip.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -117,19 +117,15 @@ protected:
     virtual void                                _SetPoints (size_t numPoints, DPoint3dCP points) = 0;
     virtual size_t                              _GetNumPoints () const = 0;
     virtual StatusInt                           _GetPoints (DPoint3dVector& points, size_t iFromPoint, size_t numPoints) const = 0;
-    //virtual StatusInt                           _FromElement (ElementHandleCR elem) = 0;
     virtual void                                _CopyCrops (IViewClipObject const* from) = 0;
-//    virtual StatusInt                           _ToElement (EditElementHandleR eeh, ElementHandleCP templateEH, DgnModelP modelRef) const = 0;
     virtual void                                _SetPreserveUp (bool) = 0;
     virtual bool                                _GetPreserveUp () const = 0;
-    virtual double                       _GetWidth ( ) const = 0;
-    virtual void                         _SetWidth (double newWidth ) = 0;
+    virtual double                              _GetWidth ( ) const = 0;
+    virtual void                                _SetWidth (double newWidth ) = 0;
 
-    //virtual bool      _HasClip                 (ElementHandleCR) const = 0; removed in graphite
     virtual StatusInt _GetClipBoundary         (ClipVectorPtr& clip, DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const = 0; // changed in graphite
     virtual bool      _IsClipVolumePassValid   (ClipVolumePass) const {return false;}
     virtual StatusInt _GetCuttingPlane         (DPlane3dR cutPlane, DVec3dR xDir, DVec3dR yDir, ClipMask& clipMask, DRange2dR clipRange, bool& forwardFacing, int index, ViewContextR) const {return ERROR;}
-    //virtual StatusInt _GetCuttingElement       (EditElementHandleR cutEeh, ViewContextR, DynamicViewSettingsCR) const{return ERROR;} removed in graphite
     virtual bool      _GetAuxTransform         (TransformR, ClipVolumePass) const {return false;}
     virtual StatusInt _GetTransform            (TransformR trans) const = 0;
     virtual size_t    _GetPrimaryCutPlaneCount () const = 0;

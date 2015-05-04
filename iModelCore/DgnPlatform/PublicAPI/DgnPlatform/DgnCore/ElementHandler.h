@@ -25,12 +25,10 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct TransformInfo
 {
 private:
-    Transform               m_trans;
-    uint32_t                m_options;
-    AnnotationScaleAction   m_annotationScaleAction;
-    bool                    m_haveMirrorPlane;
-    RotMatrix               m_mirrorPlane;
-    double                  m_annotationScale;
+    Transform   m_trans;
+    uint32_t    m_options;
+    bool        m_haveMirrorPlane;
+    RotMatrix   m_mirrorPlane;
 
 public:
     //! Initialize to the identity transform
@@ -57,18 +55,7 @@ public:
     //! Check element-specific transform options. @see TransformOptionValues
     uint32_t GetOptions() const {return m_options;}
 
-    //! Set annotation scale action
-    void SetAnnotationScaleAction(AnnotationScaleAction action) {m_annotationScaleAction = action;}
-
-    //! Get annotation scale action
-    AnnotationScaleAction GetAnnotationScaleAction() const {return m_annotationScaleAction;}
-
-    //! Set annotation scale
-    void SetAnnotationScale(double annotationScale) {m_annotationScale = annotationScale;}
-
-    //! Get annotation scale
-    double GetAnnotationScale() const {return m_annotationScale;}
-};
+}; // TransformInfo
 
 /*=================================================================================**//**
   @addtogroup ElementHandler

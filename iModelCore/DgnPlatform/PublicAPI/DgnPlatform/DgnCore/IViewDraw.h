@@ -8,16 +8,17 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include    "ColorUtil.h"
-#include    "LineStyleResource.r.h"
-#include    "AreaPattern.h"
-#include    "ElementHandle.h"
-#include    <Bentley/RefCounted.h>
+#include "ColorUtil.h"
+#include "LineStyleResource.r.h"
+#include "AreaPattern.h"
+#include <Bentley/RefCounted.h>
+#include "../DgnPlatform.h"
+#include "DgnDb.h"
+#include "DgnModel.h"
 
 //__PUBLISH_SECTION_END__
 DGNPLATFORM_TYPEDEFS (QvBaseMatSym)
 DGNPLATFORM_TYPEDEFS (Material)
-DGNPLATFORM_TYPEDEFS (Display_attribute_gradient)
 DGNPLATFORM_TYPEDEFS (DgnGraphics)
 DGNPLATFORM_TYPEDEFS (DgnGraphicsProcessor)
 //__PUBLISH_SECTION_START__
@@ -243,7 +244,6 @@ DPoint3d                m_origin;
 RotMatrix               m_rMatrix;
 DPoint3d                m_size;
 QVAliasMaterialIdPtr    m_appQvId;
-ElementHandle           m_eh;
 
 MaterialUVDetail ();
 
@@ -260,31 +260,26 @@ DGNPLATFORM_EXPORT void Copy (MaterialUVDetailCR rhs);
 DGNPLATFORM_EXPORT bool Equals (MaterialUVDetailCR rhs);
 
 //! Get the origin of the UV mapping. Only required for mapping non persistent elements
-DGNPLATFORM_EXPORT DPoint3dCR   GetOrigin () const;
+DGNPLATFORM_EXPORT DPoint3dCR GetOrigin () const;
 //! Set the origin on the UV mapping. Only required for mapping non persistent elements
-DGNPLATFORM_EXPORT void         SetOrigin (DPoint3dCR origin);
+DGNPLATFORM_EXPORT void SetOrigin (DPoint3dCR origin);
 
 //! Get the orientation of the UV mapping. Only required for mapping non persistent elements
-DGNPLATFORM_EXPORT RotMatrixCR  GetRMatrix () const;
+DGNPLATFORM_EXPORT RotMatrixCR GetRMatrix () const;
 //! Set the orientation of the UV mapping. Only required for mapping non persistent elements
-DGNPLATFORM_EXPORT void         SetRMatrix (RotMatrixCR rMatrix);
+DGNPLATFORM_EXPORT void SetRMatrix (RotMatrixCR rMatrix);
 
 //! Get the size of the UV mapping. Only required for mapping non persistent elements
-DGNPLATFORM_EXPORT DPoint3dCR   GetSize () const;
+DGNPLATFORM_EXPORT DPoint3dCR GetSize () const;
 //! Set the size of the UV mapping. Only required for mapping non persistent elements
-DGNPLATFORM_EXPORT void         SetSize (DPoint3dCR size);
+DGNPLATFORM_EXPORT void SetSize (DPoint3dCR size);
 
 //! Get the QV Material Id for the UV mapping to use. Only required for mapping non persistent elements
-DGNPLATFORM_EXPORT QVAliasMaterialIdCP  GetQVAliasMaterialId  () const;
+DGNPLATFORM_EXPORT QVAliasMaterialIdCP GetQVAliasMaterialId  () const;
 //! Set the QV Material Id for the UV mapping to use. This Id is ref counted and its lifecycle will need to exist past
 //! the draw of the temporary element. Then when the referece count is 0 the destructor of this object will
 //! remove the material definition from QuickVision. Only required for mapping non persistent elements
-DGNPLATFORM_EXPORT void                 SetQVAliasMaterialId  (QVAliasMaterialIdP qvId); 
-
-//! Get the element which requires UV mapping
-DGNPLATFORM_EXPORT ElementHandleCR  GetElementHandle () const;
-//! Set the element which requires UV mapping
-DGNPLATFORM_EXPORT void             SetElementHandle (ElementHandleCR eh);
+DGNPLATFORM_EXPORT void SetQVAliasMaterialId (QVAliasMaterialIdP qvId); 
 
 //! Create an instance of this class
 DGNPLATFORM_EXPORT static MaterialUVDetailPtr Create ();
@@ -1222,7 +1217,7 @@ virtual void        _DrawQvElem (QvElem* qvElem, int subElemIndex) = 0;
 virtual void        _ClearZ () = 0;
 
 virtual uintptr_t   _DefineQVTexture (WCharCP textureName, DgnDbP) {return 0;}
-virtual void        _DefineQVGeometryMap (MaterialCR material, ElementHandleCR eh, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
+virtual void        _DefineQVGeometryMap (MaterialCR material, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
 
 virtual bool        _IsOutputQuickVision () const = 0;
 virtual bool        _ApplyMonochromeOverrides (ViewFlagsCR) const = 0;
@@ -1299,7 +1294,7 @@ DGNPLATFORM_EXPORT StatusInt TestOcclusion (int numVolumes, DPoint3dP verts, int
 
 DGNPLATFORM_EXPORT void ClearZ ();
 DGNPLATFORM_EXPORT uintptr_t DefineQVTexture (WCharCP textureName, DgnDbP dgnFile);
-DGNPLATFORM_EXPORT void DefineQVGeometryMap (MaterialCR material, ElementHandleCR eh, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
+DGNPLATFORM_EXPORT void DefineQVGeometryMap (MaterialCR material, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
 DGNPLATFORM_EXPORT bool IsOutputQuickVision () const;
 bool ApplyMonochromeOverrides (ViewFlagsCR) const;
 

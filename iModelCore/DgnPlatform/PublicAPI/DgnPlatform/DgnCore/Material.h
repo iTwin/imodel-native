@@ -96,7 +96,6 @@ public:
 
     // Geometry map support
     DGNPLATFORM_EXPORT MaterialMapCP        GetGeometryMap() const;  
-    DGNPLATFORM_EXPORT StatusInt            GetGeometryMapDefinition (EditElementHandleR elemHandle, bool& useCellColors) const;
 
     DGNPLATFORM_EXPORT bool                 NeedsQvGeometryTexture () const;
     DGNPLATFORM_EXPORT void                 DefineQvGeometryTexture () const;
@@ -138,13 +137,9 @@ public:
 
     MaterialPtr CreateFromXml (Utf8CP xmlString, DgnDbR source);
 
-    DGNPLATFORM_EXPORT BentleyStatus SetMaterialAttachmentId (EditElementHandleR eeh, DgnMaterialId id);
-
 // __PUBLISH_SECTION_START__
     DGNPLATFORM_EXPORT MaterialCP FindMaterial (DgnMaterialId id, DgnDbR source);
     DGNPLATFORM_EXPORT BentleyStatus FindMaterial (MaterialList& materials, Utf8CP name, DgnDbR source);
-    DGNPLATFORM_EXPORT MaterialCP FindMaterialAttachment (ElementHandleCR eh);
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

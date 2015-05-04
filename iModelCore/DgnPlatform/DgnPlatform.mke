@@ -58,7 +58,6 @@ EnablerDepends =    $(HandlerDepends) \
 
 HandlerImplDepends = $(EnablerDepends)                          \
                     $(DgnPlatformAPISrc)DgnCore/ElementHandle.h \
-                    $(DgnPlatformAPISrc)DgnCore/PropertyProcessors.h
 
 #---------------------------------------------------------
 #  Set up for signing
@@ -170,8 +169,6 @@ $(coreObjs)HypermodelingViewController$(oext): $(DgnCoreDir)HypermodelingViewCon
 
 $(coreObjs)SectioningPhysicalViewController$(oext): $(DgnCoreDir)SectioningPhysicalViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
-$(coreObjs)SymbologyRuleSets$(oext):  $(DgnCoreDir)SymbologyRuleSets.cpp ${MultiCompileDepends} $(contextDepends)
-
 $(coreObjs)DgnElementPool$(oext): $(DgnCoreDir)DgnElementPool.cpp $(DgnCoreAPISrc)DgnDb.h ${MultiCompileDepends}
 
 $(coreObjs)DgnViewport$(oext):    $(DgnCoreDir)DgnViewport.cpp $(contextDepends) ${MultiCompileDepends}
@@ -202,8 +199,6 @@ $(coreObjs)HandlerTypeInfo$(oext): $(DgnCoreDir)HandlerTypeInfo.cpp $(contextDep
 
 $(coreObjs)ViewHandler$(oext): $(DgnCoreDir)ViewHandler.cpp $(contextDepends) ${MultiCompileDepends} $(DgnCoreAPISrc)SimplifyViewDrawGeom.h
 
-$(coreObjs)DisplayFilter$(oext): $(DgnCoreDir)DisplayFilter.cpp $(DgnCoreAPISrc)DisplayFilter.h $(DgnCoreAPISrc)DisplayFilterManager.h ${MultiCompileDepends}
-
 $(coreObjs)ViewContext$(oext): $(DgnCoreDir)ViewContext.cpp   $(DgnCoreAPISrc)DisplayPath.h $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h $(DgnCoreAPISrc)ScanCriteria.h $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
 
 $(coreObjs)SymbolContext$(oext): $(DgnCoreDir)SymbolContext.cpp   $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h  $(LevelApiDepends) ${MultiCompileDepends}
@@ -213,10 +208,6 @@ $(coreObjs)NullContext$(oext): $(DgnCoreDir)NullContext.cpp   $(contextDepends) 
 $(coreObjs)RangeContext$(oext): $(DgnCoreDir)RangeContext.cpp $(DgnCoreAPISrc)NullContext.h $(DgnCoreAPISrc)SimplifyViewDrawGeom.h $(HandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)SnapContext$(oext): $(DgnCoreDir)SnapContext.cpp $(HandlerDepends) ${MultiCompileDepends}
-
-$(coreObjs)PropertyProcessors$(oext): $(DgnCoreDir)PropertyProcessors.cpp $(DgnCoreAPISrc)PropertyProcessors.h $(HandlerDepends) ${MultiCompileDepends}
-
-$(coreObjs)PropertyContext$(oext): $(DgnCoreDir)PropertyContext.cpp $(DgnCoreAPISrc)PropertyContext.h $(HandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)SimplifyViewDrawGeom$(oext): $(DgnCoreDir)SimplifyViewDrawGeom.cpp $(contextDepends) $(DgnCoreAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
 

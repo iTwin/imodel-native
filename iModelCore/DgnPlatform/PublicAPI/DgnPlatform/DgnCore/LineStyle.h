@@ -664,6 +664,23 @@ DGNPLATFORM_EXPORT void AddCurveVector (CurveVectorCR curves, bool isFilled);
 }; // LsSymbolGraphicsCreator
 
 //=======================================================================================
+//! A list of DgnElement's.
+// @bsiclass                                                    Keith.Bentley   02/14
+//=======================================================================================
+struct DgnElementPtrVec : bvector<DgnElementPtr>
+{
+const_iterator Find(DgnElementCR val) const
+    {
+    for (auto it=begin(); it!=end(); ++it)
+        {
+        if (it->get() == &val)
+            return it;
+        }
+    return end(); // not found
+    }
+};
+
+//=======================================================================================
 //!  Represents a component that contains graphics.
 //!  @ingroup LineStyleManagerModule
 // @bsiclass

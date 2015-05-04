@@ -10,24 +10,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
-
-DGNPLATFORM_EXPORT void pattern_setOverrideCell (DgnElementCP cellEdP);
-DGNPLATFORM_EXPORT DgnElementCP pattern_getOverrideCell ();
-
-
-DGNPLATFORM_EXPORT bool      in_span
-(
-double          theta,
-double          start,
-double          sweep
-);
-
-
-END_BENTLEY_API_NAMESPACE
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
 //=======================================================================================
 //! These methods append and extract basic data types from byte streams,
 //! advancing the provided pointer when done.
@@ -60,84 +43,5 @@ DGNPLATFORM_EXPORT static void ExtractInt32 (int32_t& value, Byte const *& buffe
 DGNPLATFORM_EXPORT static void ExtractUShort (unsigned short& value, Byte const *& buffer);
 DGNPLATFORM_EXPORT static void ExtractULong (unsigned long& value, Byte const *& buffer);
 };
-
-struct      PointVector : bvector<DPoint3d> {};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  05/2010
-+===============+===============+===============+===============+===============+======*/
-struct          CurveVectorUtil
-{
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static BentleyStatus PartialDeleteElement
-(
-EditElementHandleR  outEeh1,
-EditElementHandleR  outEeh2,
-ElementHandleCR     eh,
-DPoint3dCP          pointF,             //  => first point
-DPoint3dCP          pointL,             //  => last point
-DPoint3dCP          pointD,             //  => direction point
-DgnViewportP           vp
-);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static BentleyStatus PartialDeleteElement
-(
-EditElementHandleR  outEeh1,
-EditElementHandleR  outEeh2,
-ElementHandleCR     eh,
-DPoint3dCP          pointF,             //  => first point
-DPoint3dCP          pointL,             //  => last point
-DVec3dP             dirVec,             // <=> Output when computeDirection
-bool                computeDirection,   //  => compute and return direction from first and last
-DgnViewportP           vp
-);
-
-}; // CurveVectorUtil
-
-/*=================================================================================**//**
-*
-* @bsiclass                                                     Sam.Wilson      10/2008
-+===============+===============+===============+===============+===============+======*/
-struct          ElementUtil
-{
-static void InitScanRangeForUnion (DRange3dR, bool is3d);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt    NonUniformScaleAsBsplineSurf
-(
-bool&           wasHandled,
-EditElementHandleR elemHandle,
-TransformInfoCR trans,
-RotMatrixP      pElementRMatrix = NULL  // Allow nonuniform scaling if only in Z of this matrix.
-);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt    GetIgnoreScaleDisplayTransforms
-(
-TransformP      newTopTransP,
-TransformP      newScTransP,
-ViewContextR    context
-);
-
-// keys for text style linkages
-#define KEY_TEXTSTYLE_DIMSTYLE      0
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void     GetSegment (EditElementHandleR eeh, ElementHandleCR eh, int segmentNo);
-
-}; // ElementUtil
-
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

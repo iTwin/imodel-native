@@ -101,7 +101,7 @@ DGNPLATFORM_EXPORT bool         AcceptCurve (MSBsplineCurveP);
 DGNPLATFORM_EXPORT bool         AcceptLineSegments (DPoint3dP,size_t numPoints, bool closed);
 DGNPLATFORM_EXPORT bool         AcceptDEllipse3d (DEllipse3dCR);
 
-DGNPLATFORM_EXPORT void         ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh);
+DGNPLATFORM_EXPORT void         ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP outside, GeometricElementCR);
 
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
@@ -165,7 +165,7 @@ DGNPLATFORM_EXPORT bool                 HasOverlaps () const;
 DGNPLATFORM_EXPORT bool                 AllowOverlaps () const;
 
 //! Return true if the given element satisfies the fence criteria.
-DGNPLATFORM_EXPORT bool                 AcceptElement (ElementHandleCR);
+DGNPLATFORM_EXPORT bool                 AcceptElement (GeometricElementCR);
 
 //! @param[out] agenda The list of elements that satisfied the fence criteria.
 //! @return SUCCESS If one or more elements were found that satisfied the fence criteria.

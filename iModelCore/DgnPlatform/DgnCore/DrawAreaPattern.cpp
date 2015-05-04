@@ -18,24 +18,293 @@
 #define     TOLERANCE_ChoordAngle   .4
 #define     TOLERANCE_ChoordLen     1000
 
-static      DgnElementCP        s_patternOverrideCell;
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
+* @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     BentleyApi::pattern_setOverrideCell (DgnElementCP cellEdP)
+void PatternParams::Init ()
     {
-    /* NOTE: The sole purpose of this is to support the published mdlPattern_area api
-             and still be able to use DropContext to create a non-associative pattern. */
-    s_patternOverrideCell = cellEdP;
+    rMatrix.InitIdentity ();
+    offset.Zero ();
+    space1 = 0.0;
+    angle1 = 0.0;
+    space2 = 0.0;
+    angle2 = 0.0;
+    scale = 1.0;
+    tolerance = 0.0;
+    annotationscale = 1.0;
+    memset (cellName, 0, sizeof (cellName));
+    cellId = 0;
+    modifiers = PatternParamsModifierFlags::None;
+    minLine = -1;
+    maxLine = -1;
+    color = ColorDef::Black();
+    weight = 0;
+    style = 0;
+    holeStyle = static_cast<int16_t>(PatternParamsHoleStyleType::Normal);
+    dwgHatchDef.pixelSize = 0.0;
+    dwgHatchDef.islandStyle = 0;
+    origin.Zero ();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
+* @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP BentleyApi::pattern_getOverrideCell ()
+PatternParams::PatternParams () {Init ();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+PatternParamsPtr PatternParams::Create () {return new PatternParams ();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PatternParamsPtr PatternParams::CreateFromExisting (PatternParamsCR params) 
     {
-    return s_patternOverrideCell;
+    PatternParamsP newParams = new PatternParams ();
+    newParams->Copy (params);
+    return newParams;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void PatternParams::Copy (PatternParamsCR params) 
+    {
+    rMatrix.copy (&params.rMatrix);
+    offset = params.offset;
+    space1 = params.space1;
+    angle1 = params.angle1;
+    space2 = params.space2;
+    angle2 = params.angle2;
+    scale = params.scale;
+    tolerance = params.tolerance;
+    annotationscale = params.annotationscale;
+    memcpy (cellName, params.cellName, sizeof (cellName));
+    cellId = params.cellId;
+    modifiers = params.modifiers;
+    minLine = params.minLine;
+    maxLine = params.maxLine;
+    color = params.color;
+    weight = params.weight;
+    style = params.style;
+    holeStyle = params.holeStyle;
+    dwgHatchDef.pixelSize = params.dwgHatchDef.pixelSize;
+    dwgHatchDef.islandStyle = params.dwgHatchDef.islandStyle;
+    dwgHatchDef.hatchLines = params.dwgHatchDef.hatchLines;
+    origin = params.origin;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PatternParams::IsEqual (PatternParamsCR params, PatternParamsCompareFlags compareFlags) 
+    {
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_RMatrix)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::RotMatrix) != (modifiers & PatternParamsModifierFlags::RotMatrix))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::RotMatrix))
+            {
+            if (!rMatrix.isEqual (&params.rMatrix))
+                return false;
+            }
+        }
+
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Offset)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::Offset) != (modifiers & PatternParamsModifierFlags::Offset))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Offset))
+            {
+            if (!offset.IsEqual(params.offset))
+                return false;
+            }
+        }
+
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Default)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::Space1) != (modifiers & PatternParamsModifierFlags::Space1))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Space1))
+            {
+            if (space1 != params.space1)
+                return false;
+            }
+
+        if ((params.modifiers & PatternParamsModifierFlags::Space2) != (modifiers & PatternParamsModifierFlags::Space2))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Space2))
+            {
+            if (space2 != params.space2)
+                return false;
+            }
+
+        if ((params.modifiers & PatternParamsModifierFlags::Angle1) != (modifiers & PatternParamsModifierFlags::Angle1))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Angle1))
+            {
+            if (angle1 != params.angle1)
+                return false;
+            }
+
+        if ((params.modifiers & PatternParamsModifierFlags::Angle2) != (modifiers & PatternParamsModifierFlags::Angle2))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Angle2))
+            {
+            if (angle2 != params.angle2)
+                return false;
+            }
+
+        if ((params.modifiers & PatternParamsModifierFlags::Scale) != (modifiers & PatternParamsModifierFlags::Scale))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Scale))
+            {
+            if (scale != params.scale)
+                return false;
+            }
+
+        if ((params.modifiers & PatternParamsModifierFlags::Cell) != (modifiers & PatternParamsModifierFlags::Cell))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Cell))
+            {
+            if (0 != wcscmp (cellName, params.cellName))
+                return false;
+
+            if (cellId != params.cellId)
+                return false;
+            }
+        }
+
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Symbology)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::Color) != (modifiers & PatternParamsModifierFlags::Color))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Color))
+            {
+            if (color != params.color)
+                return false;
+            }
+
+        if ((params.modifiers & PatternParamsModifierFlags::Weight) != (modifiers & PatternParamsModifierFlags::Weight))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Weight))
+            {
+            if (weight != params.weight)
+                return false;
+            }
+
+        if ((params.modifiers & PatternParamsModifierFlags::Style) != (modifiers & PatternParamsModifierFlags::Style))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Style))
+            {
+            if (style != params.style)
+                return false;
+            }
+        }
+  
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Mline)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::Multiline) != (modifiers & PatternParamsModifierFlags::Multiline))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Multiline))
+            {
+            if (minLine != params.minLine)
+                return false;
+
+            if (maxLine != params.maxLine)
+                return false;
+            }
+        }
+
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Tolerance)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::Tolerance) != (modifiers & PatternParamsModifierFlags::Tolerance))
+            return false;
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Tolerance))
+            {
+            if (tolerance != params.tolerance)
+                return false;
+            }
+        }
+
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_AnnotationScale)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::AnnotationScale) != (modifiers & PatternParamsModifierFlags::AnnotationScale))
+            return false;
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::AnnotationScale))
+            {
+            if (annotationscale != params.annotationscale)
+                return false;
+            }
+        }
+
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_HoleStyle)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::HoleStyle) != (modifiers & PatternParamsModifierFlags::HoleStyle))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::HoleStyle))
+            {
+            if (holeStyle != params.holeStyle)
+                return false;
+            }
+        }
+
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_DwgHatch)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::DwgHatchDef) != (modifiers & PatternParamsModifierFlags::DwgHatchDef))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::DwgHatchDef))
+            {
+            if (dwgHatchDef.pixelSize != params.dwgHatchDef.pixelSize)
+                return false;
+
+            if (dwgHatchDef.islandStyle != params.dwgHatchDef.islandStyle)
+                return false;
+
+            if (dwgHatchDef.hatchLines.size() != params.dwgHatchDef.hatchLines.size())
+                return false;
+
+            size_t  nHatchLines = dwgHatchDef.hatchLines.size();
+
+            for (size_t i=0; i<nHatchLines; ++i)
+                {
+                DwgHatchDefLine const* h1 = &dwgHatchDef.hatchLines.at(i);
+                DwgHatchDefLine const* h2 = &params.dwgHatchDef.hatchLines.at(i);
+
+                if (0 != memcmp (h1, h2, sizeof (*h1)))
+                    return false;
+                }
+            }
+        }
+
+    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Origin)
+        {
+        if ((params.modifiers & PatternParamsModifierFlags::Origin) != (modifiers & PatternParamsModifierFlags::Origin))
+            return false;
+
+        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Origin))
+            {
+            if (!origin.IsEqual(params.origin))
+                return false;
+            }
+        }
+
+    return true;
     }
 
 /*=================================================================================**//**
@@ -201,22 +470,14 @@ PatternSymbol (DgnElementId cellId, DgnDbR project)
     {
     DgnElementPtr edP;
 
-    if (!cellId.IsValid() && s_patternOverrideCell)
-        {
-        edP = s_patternOverrideCell->Duplicate(); 
-        m_elementRef = NULL;
-        }
-    else
-        {
-        // If pattern cell doesn't already exist in project...it should fail...
-        m_elementRef = project.Elements().FindElementById (cellId);
-        if (NULL == m_elementRef)
-            return;
+    // If pattern cell doesn't already exist in project...it should fail...
+    m_elementRef = project.Elements().FindElementById (cellId);
+    if (NULL == m_elementRef)
+        return;
 
-        edP = m_elementRef->Duplicate();
-        if (!edP.IsValid())
-            return;
-        }
+    edP = m_elementRef->Duplicate();
+    if (!edP.IsValid())
+        return;
 
     BeAssert (edP.IsValid());
     m_eeh.SetDgnElement(edP.get());
@@ -256,21 +517,21 @@ bool Is3dCellSymbol ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ApplyElemDisplayParams (ElemDisplayParamsCR elParams)
     {
+#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     ElementPropertiesSetter remapper;
 
     remapper.SetCategory (elParams.GetCategoryId ());
     remapper.SetTransparency (elParams.GetTransparency ());
 
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     if (IsPointCellSymbol ())
         {
         remapper.SetColor (elParams.GetLineColor ());
         remapper.SetWeight (elParams.GetWeight ());
         remapper.SetLinestyle (elParams.GetLineStyle (), elParams.GetLineStyleParams ());
         }
-#endif
 
     remapper.Apply (m_eeh);
+#endif
     }
 
 }; // PatternSymbol

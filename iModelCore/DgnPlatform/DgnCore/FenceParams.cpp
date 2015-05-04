@@ -861,22 +861,17 @@ virtual StatusInt _VisitDgnModel (DgnModelP inDgnModel) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            AcceptElement (ElementHandleCR eh, FenceParamsP fp)
+bool            AcceptElement (GeometricElementCR element, FenceParamsR fp)
     {
-    GeometricElementCP geomElement = eh.GetGeometricElement();
+    m_output.SetFenceParams (&fp);
 
-    if (nullptr == geomElement)
-        return false;
-
-    m_output.SetFenceParams (fp);
-
-    if (SUCCESS != _Attach (fp->GetViewport (), m_purpose))
+    if (SUCCESS != _Attach (fp.GetViewport (), m_purpose))
         return false;
 
     m_output.Init ();
     _Detach ();
 
-    return (SUCCESS == _VisitElement (*geomElement) && m_output.GetCurrentAccept ());
+    return (SUCCESS == _VisitElement (element) && m_output.GetCurrentAccept ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2680,7 +2675,7 @@ static void     calculateSegmentIntersections (FenceParamsR fp, ICurvePrimitive*
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     flushPartialCurve (ElementAgendaP inside, ElementAgendaP outside, CurveVectorR curveVector, ElementHandleCR eh, bool isInside)
+static void     flushPartialCurve (ElementAgendaP inside, ElementAgendaP outside, CurveVectorR curveVector, GeometricElementCR element, bool isInside)
     {
     if (curveVector.empty ())
         return;
@@ -2709,7 +2704,7 @@ static void     flushPartialCurve (ElementAgendaP inside, ElementAgendaP outside
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh)
+void FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP outside, GeometricElementCR element)
     {
     // TODO: Look into pushing the fence clip onto the output and having SimplifyViewDrawGeom do the clipping...
 #if defined (NEEDS_WORK_DGNITEM)
@@ -2737,7 +2732,7 @@ void FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP ou
         if (!context.AcceptCurveVector (*curveVector, &tmpFp))
             return;
 
-        inside->Insert(eh.GetDgnElement());
+        inside->Insert(&element);
         return;
         }
 
@@ -2800,7 +2795,7 @@ void FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP ou
                     }
                 else
                     {
-                    flushPartialCurve (inside, outside, *partialCurve, eh, lastInside);
+                    flushPartialCurve (inside, outside, *partialCurve, element, lastInside);
                     }
                 }
 
@@ -2832,21 +2827,21 @@ void FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP ou
             }
         else
             {
-            flushPartialCurve (inside, outside, *firstPartial, eh, firstInside);
+            flushPartialCurve (inside, outside, *firstPartial, element, firstInside);
             }
         }
 
-    flushPartialCurve (inside, outside, *partialCurve, eh, lastInside);
+    flushPartialCurve (inside, outside, *partialCurve, element, lastInside);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            FenceParams::AcceptElement (ElementHandleCR eh)
+bool            FenceParams::AcceptElement (GeometricElementCR element)
     {
     FenceAcceptContext context;
 
-    return context.AcceptElement (eh, this);
+    return context.AcceptElement (element, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -280,8 +280,6 @@ protected:
 #if !defined (DOCUMENTATION_GENERATOR)
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitPathCR hit, ViewContextR context) const;
 
-    virtual void _ApplySymbologyOverrides(ViewContextR context, ElementHandleCR eh) {}
-
     //! Used to notify derived classes when an update completes.
     //! <p>See QueryViewController::_OnUpdateComplete
     virtual void _OnUpdateComplete(DrawPurpose updateType) const {}

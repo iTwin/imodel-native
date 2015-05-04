@@ -9,17 +9,6 @@
 
 #define     MS_MLINESTYLE_TABLE_LEVEL                           6
 
-/*=================================================================================**//**
-* @bsiclass                                                     Jeff.Marker     03/09
-+===============+===============+===============+===============+===============+======*/
-struct PropertyCollector : IQueryProperties
-    {
-    public: virtual ElementProperties _GetQueryPropertiesMask () override { return ELEMENT_PROPERTY_Linestyle;}
-    public: virtual void _EachLineStyleCallback (EachLineStyleArg& arg) override
-        {
-        }
-    }; // PropertyCollector
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/01
 +---------------+---------------+---------------+---------------+---------------+------*/
