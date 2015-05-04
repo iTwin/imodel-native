@@ -245,7 +245,14 @@ struct ECDbHintTests : public ::testing::Test
         size_t count_OneFooHasOneGoo = 0;
         VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, oneFooHasOneGooResult, count_OneFooHasOneGoo);
         VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, reinsertResultError, count_OneFooHasOneGoo);
-        ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasOneGoo->GetId ()), MapStrategy_RelationshipTargetTable);
+        if (allowDuplicateRelationships)
+            {
+            ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasManyGoo->GetId ()), MapStrategy_TableForThisClass);
+            }
+        else
+            {
+            ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasManyGoo->GetId ()), MapStrategy_RelationshipTargetTable);
+            }
         ASSERT_EQ (count_OneFooHasOneGoo, GetRelationshipInstanceCount (ecdb, "ts.OneFooHasOneGoo"));
 
         //1:N--------------------------------
@@ -311,7 +318,7 @@ TEST_F (ECDbHintTests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_All
     ECDbR ecdb = test.Create ("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true);
     //when AllowDuplicate is turned on, OneFooHasManyGoo will also be mapped as linktable therefore ReferentialIntegrityCheck will not be performed for it, so there will be only one row in the ForeignKey table
-    ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
+    ASSERT_TRUE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
 
     BeSQLite::Statement sqlStatment;
@@ -322,7 +329,7 @@ TEST_F (ECDbHintTests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_All
         {
         rowCount++;
         }
-    ASSERT_EQ (1, rowCount);
+    ASSERT_EQ (0, rowCount);
 
     sqlStatment.Finalize ();
     ecdb.CloseDb ();
