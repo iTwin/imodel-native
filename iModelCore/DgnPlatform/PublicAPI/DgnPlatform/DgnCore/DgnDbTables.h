@@ -1011,14 +1011,6 @@ public:
     //! @param[in] geomPartId the ID of the geometry part to load
     DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
 
-    //! Query for geometry part data by ID.
-    //! @param[out] geometryBlob the binary geometry data of the specified geometry part.
-    //! @param[out] code the optional code of the specified geometry part.
-    //! @param[in] geomPartId the ID of the geometry part to select/load
-    //! @note This method is intended for importers.  Most applications will query for a DgnGeomPart.
-    //! @private
-    DGNPLATFORM_EXPORT BentleyStatus QueryGeomPart(bvector<Byte>& geometryBlob, Utf8StringR code, DgnGeomPartId geomPartId);
-
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert
     //! @return The DgnGeomPartId for the newly inserted part. Will be invalid if part could not be added.

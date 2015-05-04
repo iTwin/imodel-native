@@ -8,16 +8,6 @@
 #include <DgnPlatformInternal.h>
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/11
-//=======================================================================================
-struct DbException
-    {
-    DgnFileStatus m_status;
-    int           m_result;
-    DbException (DgnFileStatus s, int r){m_status = s; m_result=r;}
-    };
-
-//=======================================================================================
 // @bsiclass                                                    Brien.Bastings  03/15
 //=======================================================================================
 struct GeomBlobHeader
@@ -71,9 +61,7 @@ void DbGeomPartsWriter::PrepareInsertStatement()
                 "Geom"  // 3
             ")VALUES(?,?,?)";
 
-    DbResult status = m_dgndb.GetCachedStatement (m_stmt, insertSql);
-    if (BE_SQLITE_OK != status)
-        throw DbException(DGNDB_ERROR_SQLSchemaError, status);
+    m_dgndb.GetCachedStatement (m_stmt, insertSql);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,9 +75,7 @@ void DbGeomPartsWriter::PrepareUpdateStatement()
                 "Geom=?3,"
             " WHERE Id=?1";
 
-    DbResult status = m_dgndb.GetCachedStatement (m_stmt, updateSql);
-    if (BE_SQLITE_OK != status)
-        throw DbException(DGNDB_ERROR_SQLSchemaError, status);
+    m_dgndb.GetCachedStatement (m_stmt, updateSql);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,7 +87,7 @@ void DbGeomPartsWriter::ExecStatement()
     if (status != BE_SQLITE_DONE)
         {
         BeAssert(false);
-        throw DbException(DGNOPEN_STATUS_CorruptFile, status);
+        return;
         }
     m_stmt->Reset();
     m_stmt->ClearBindings();
@@ -143,14 +129,7 @@ StatusInt DbGeomPartsWriter::SaveGeomPartToRow(const void* geometryBlob, int geo
     m_stmt->BindZeroBlob(GetColumnIndexForGeom(), zipSize); // more than one chunk in graphics stream
     ExecStatement();
 
-    StatusInt status = m_snappy.SaveToRow (m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue());
-    if (SUCCESS != status)
-        {
-        BeAssert(false);
-        throw DbException(DGNOPEN_STATUS_CorruptFile, status);
-        }
-
-    return status;
+    return m_snappy.SaveToRow (m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -179,72 +158,6 @@ BentleyStatus DbGeomPartsWriter::UpdateGeomPart (DgnGeomPartId geomPartId, const
     PrepareUpdateStatement();
 
     return (SUCCESS == SaveGeomPartToRow(geometryBlob, geometryBlobSize, code, geomPartId) ? SUCCESS : ERROR);
-    }
-
-//=======================================================================================
-// @bsiclass                                                    Brien.Bastings  03/15
-//=======================================================================================
-struct DbGeomPartsReader
-{
-protected:
-    DgnDbCR m_dgndb;
-    BeSQLite::CachedStatementPtr m_selectStmt;
-
-    Utf8CP GetSelectStmt();
-
-public:
-    DbGeomPartsReader(DgnDbCR dgndb) : m_dgndb(dgndb) {}
-    virtual ~DbGeomPartsReader() {}
-    BentleyStatus ReadGeomPart (bvector<Byte>& geometryBlob, Utf8StringR code, DgnGeomPartId geomPartId);
-
-    static int GetColumnIndexForCode()          {return 0;}     // Must match columns in GetSelectStatement
-    static int GetColumnIndexForGeom()          {return 1;}     // Must match columns in GetSelectStatement
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP DbGeomPartsReader::GetSelectStmt()
-    {
-    // WIP: need to query [MaterialId] also
-    return "SELECT "
-                "Code," // 0
-                "Geom"  // 1
-           " FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DbGeomPartsReader::ReadGeomPart(bvector<Byte>& geometryBlob, Utf8StringR code, DgnGeomPartId geomPartId)
-    {
-    HighPriorityOperationBlock hpo;
-
-    m_dgndb.GetCachedStatement(m_selectStmt, GetSelectStmt());
-    m_selectStmt->BindId(1, geomPartId);
-
-    DbResult result = m_selectStmt->Step();
-    if (BE_SQLITE_ROW != result)
-        return ERROR;
-
-    code.AssignOrClear(m_selectStmt->GetValueText(GetColumnIndexForCode()));
-    SnappyFromBlob& snappy = m_dgndb.Elements().GetSnappyFrom();
-    
-    if (ZIP_SUCCESS != snappy.Init (m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
-        return ERROR;
-
-    GeomBlobHeader header (snappy);
-    if ((GeomBlobHeader::DB_GeomSignature06 != header.m_signature) || 0 == header.m_size)
-        {
-        BeAssert (false);
-        return ERROR;
-        }
-
-    geometryBlob.resize(header.m_size);
-    uint32_t actuallyRead;
-    snappy.ReadAndFinish(&geometryBlob[0], header.m_size, actuallyRead);
-
-    return (actuallyRead != header.m_size) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -378,15 +291,43 @@ BentleyStatus DgnGeomParts::InsertElementGeomUsesParts(DgnElementId elementId, D
 //---------------------------------------------------------------------------------------
 DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     {
-    bvector<Byte> geometryBlob;
-    Utf8String code;
-
-    if (BentleyStatus::SUCCESS != QueryGeomPart(geometryBlob, code, geomPartId))
+    if (!geomPartId.IsValid())
         return nullptr;
 
-    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(code.c_str());
+    HighPriorityOperationBlock hpo;
+   
+    auto& elements = m_dgndb.Elements();
 
-    ElementGeometryCollection collection(&geometryBlob.front(), geometryBlob.size());
+    BeSQLite::CachedStatementPtr selectStmt;
+    elements.GetStatement(selectStmt, "SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
+    selectStmt->BindId(1, geomPartId);
+
+    DbResult result = selectStmt->Step();
+    if (BE_SQLITE_ROW != result)
+        return nullptr;
+
+    SnappyFromBlob& snappy = elements.GetSnappyFrom();
+    
+    if (ZIP_SUCCESS != snappy.Init (m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
+        return nullptr;
+
+    GeomBlobHeader header (snappy);
+    if ((GeomBlobHeader::DB_GeomSignature06 != header.m_signature) || 0 == header.m_size)
+        {
+        BeAssert (false);
+        return nullptr;
+        }
+
+    ScopedArray<Byte, 8192> geometryBlob(header.m_size);
+    uint32_t actuallyRead;
+    snappy.ReadAndFinish(geometryBlob.GetData(), header.m_size, actuallyRead);
+
+    if (actuallyRead != header.m_size)
+        return nullptr;
+
+    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(selectStmt->GetValueText(0));
+
+    ElementGeometryCollection collection(geometryBlob.GetDataCP(), header.m_size);
 
     for (ElementGeometryPtr geom : collection)
         geomPartPtr->GetGeometryR().push_back (geom);
@@ -395,18 +336,6 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     return geomPartPtr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnGeomParts::QueryGeomPart(bvector<Byte>& geometryBlob, Utf8StringR code, DgnGeomPartId geomPartId)
-    {
-    if (!geomPartId.IsValid())
-        return BentleyStatus::ERROR;
-
-    DbGeomPartsReader reader (GetDgnDb());
-
-    return reader.ReadGeomPart(geometryBlob, code, geomPartId);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2015

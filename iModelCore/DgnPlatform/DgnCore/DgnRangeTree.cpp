@@ -535,7 +535,7 @@ static double checkSeparation(DRTSplitEntryP entries, size_t count, SplitAxis ax
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void DgnRangeTree::Node::ValidateRange()
+void DgnRangeTree::Node::ValidateRange()
     {
     if (!m_sloppy)
         return;
