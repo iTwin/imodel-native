@@ -45,6 +45,7 @@ private:
 protected:
     ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
 
+    void OnBeforeStep();
 
     ECSqlStepStatus DoStep ();
     ECSqlStatus DoReset ();

@@ -125,8 +125,6 @@ public:
     //! Instantiates a new DefaultECSqlEventHandler
     DefaultECSqlEventHandler();
 
-    void Reset() const;
-
     //__PUBLISH_CLASS_VIRTUAL__
     //__PUBLISH_SECTION_START__
 public:
@@ -640,8 +638,8 @@ typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 //! applications analyze how often statements get popped out of the cache and later readded again. To enable 
 //! ECSqlStatement cache diagnostics:
 //! - turn on the log4cxx based @ref Bentley::NativeLogging "Bentley logging"
-//! - in the <b>log4cxx configuration< / b> define a @b logger or a <b>logging category< / b> with the
-//!   name <b>Diagnostics.ECSqlStatement.Cache< / b> and assign it the log severity @c @b TRACE.
+//! - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the
+//!   name <b>Diagnostics.ECSqlStatement.Cache</b> and assign it the log severity @c @b TRACE.
 //! With that enabled, %ECDb logs when a new statement was added to the cache and an existing one was removed from it.
 // @bsiclass                                                    Krischan.Eberle   02/15
 //=======================================================================================
@@ -668,8 +666,8 @@ public:
     //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
     //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
     //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
-    //! @in ecdb ECDb file
-    //! @in ecsql ECSQL string for which to return a prepared statement
+    //! @param [in] ecdb ECDb file
+    //!  @param [in] ecsql ECSQL string for which to return a prepared statement
     //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
     ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement (ECDbCR ecdb, Utf8CP ecsql) const;
 

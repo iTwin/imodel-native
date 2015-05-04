@@ -106,8 +106,8 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DefaultEventHandler)
 
         stmt.Reset();
         stmt.ClearBindings();
-        ASSERT_EQ(-1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
-        ASSERT_TRUE (stmt.GetDefaultEventHandler()->GetArgs () == nullptr);
+        ASSERT_EQ(1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount()) << "Reset doesn't reset the default event handler";
+        ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() != nullptr) << "Reset doesn't reset the default event handler";
 
         stmt.BindInt(1, 3);
         stmt.BindInt(2, 4);
@@ -126,8 +126,6 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DefaultEventHandler)
 
         stmt.Reset();
         stmt.ClearBindings();
-        ASSERT_EQ(-1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
-        ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() == nullptr);
 
         stmt.BindInt(1, -10);
         stmt.BindInt(2, 10);

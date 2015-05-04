@@ -485,7 +485,7 @@ void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPer
         PerformanceTestingFrameWork performancePercentageEcii;
         LOG.infov("ECInstanceInserter Performance: Insertion: %.1f",
             eciiInsertTiming);
-        EXPECT_TRUE(performancePercentageEcii.writeTodbForDouble(L"PerformanceTest.ecdb", eciiInsertTiming, TestDetails+" Description ECInstanceInserter",
+        EXPECT_TRUE(performancePercentageEcii.writeTodbForDouble(L"PerformanceTest.ecdb", eciiInsertTiming, TestDetails+"ForECInstanceInserter",
             " ECInstanceInserter Performance: Insertion: for " + eciiTestInserterDetails + " Number of instances Per Class : " + eciiInsertNumberOfClasses, false));
     }
     if (ecsqlHasRun)
@@ -493,7 +493,7 @@ void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPer
         PerformanceTestingFrameWork performancePercentageEcSql;
         LOG.infov("ECSQL INSERT Performance: Insertion: %.1f",
             ecsqlinsertInsertTiming);
-        EXPECT_TRUE(performancePercentageEcSql.writeTodbForDouble(L"PerformanceTest.ecdb", ecsqlinsertInsertTiming, TestDetails +"Description ECSQL INSERT",
+        EXPECT_TRUE(performancePercentageEcSql.writeTodbForDouble(L"PerformanceTest.ecdb", ecsqlinsertInsertTiming, TestDetails+"ForECSQLInsert",
             " ECSQL INSERT Performance: Insertion: for " + ecsqlTestInserterDetails + " Number of instances Per Class : " + ecsqlTestInserterNumberOfClasses, false));
 
     }
@@ -504,7 +504,7 @@ void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPer
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(Performance_ECSQLVersusECInstanceInserter, AllPropertyTypes)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter AllPropertyTypes";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,AllPropertyTypes";
     RunPerformanceComparisonTest(nullptr, 1000,TestDetails);
 }
 
@@ -513,7 +513,7 @@ TEST(Performance_ECSQLVersusECInstanceInserter, AllPropertyTypes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, PrimitiveProperties)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter PrimitiveProperties";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,PrimitiveProperties";
     RunPerformanceComparisonTest("P", 1000,TestDetails);
 }
 
@@ -522,7 +522,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, PrimitiveProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, IntProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter IntProperty";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,IntProperty";
     RunPerformanceComparisonTest("Int", 1000, TestDetails);
 }
 
@@ -531,7 +531,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, IntProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter DateTimeProperty";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,DateTimeProperty";
     RunPerformanceComparisonTest("DateTime", 1000,TestDetails);
 }
 
@@ -540,7 +540,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, StringProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter StringProperty";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,StringProperty";
     RunPerformanceComparisonTest("String", 1000,TestDetails);
 }
 
@@ -549,7 +549,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, StringProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, StructProperties)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter StructProperties";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,StructProperties";
     RunPerformanceComparisonTest("S", 1000,TestDetails);
 }
 
@@ -558,7 +558,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, StructProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, IntArrayProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter IntArrayProperty";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,IntArrayProperty";
     RunPerformanceComparisonTest("IntA", 1000,TestDetails);
 }
 
@@ -567,7 +567,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, IntArrayProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeArrayProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter DateTimeArrayProperty";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,DateTimeArrayProperty";
     RunPerformanceComparisonTest("DateTimeA", 1000,TestDetails);
 }
 
@@ -576,7 +576,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeArrayProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, StringArrayProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter StringArrayProperty";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,StringArrayProperty";
     RunPerformanceComparisonTest("StringA", 1000,TestDetails);
 }
 
@@ -585,7 +585,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, StringArrayProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, StructArrayProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter StructArrayProperty";
+    Utf8String TestDetails = "PerformanceECSQLVersusECInstanceInserter,StructArrayProperty";
     RunPerformanceComparisonTest("SA", 1000,TestDetails);
 }
 END_ECDBUNITTESTS_NAMESPACE

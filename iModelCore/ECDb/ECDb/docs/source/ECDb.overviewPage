@@ -200,7 +200,7 @@
         - Relationship with cardinality N:N is always mapped using the @b LinkTable mapping.
         - A default index is created on the key columns in accordance with the cardinality. 
         - <em>ECDbRelationshipClassHint.AllowDuplicateRelationships</em> is set to false by default.
-        - No referential integrity constraints are added. (See @ref ECDbRelationshipConstraintHint for how to overwrite this)
+        - No referential integrity constraints are added. (See @ref ECDbRelationshipConstraintHintDescription for how to overwrite this)
 
     @section ECDbSchemaHintDescription Mapping Hints for ECSchemas
     
@@ -233,7 +233,7 @@
         - <CODE>DoNotMapHierarchy</CODE>: The whole hierarchy of classes is not mapped.
         - <CODE>TableForThisClass</CODE>: This class are mapped to its own table. This does not affect subclasses of this ECClass.
         - <CODE>TablePerClass</CODE>: This class and all its subclasses are mapped to its own table.
-        - <CODE>TablePerHierarchy</CODE>: This class and all its subclasses are mapped to a @i single table.
+        - <CODE>TablePerHierarchy</CODE>: This class and all its subclasses are mapped to a @em single table.
         - <CODE>MapToExistingTable</CODE>: This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty. 
         The table must have primary key column of type INTEGER. This does not affect subclasses of this ECClass.
         - <CODE>SharedTableForThisClass</CODE>: Allows multiple classes which are not inherited from each other to reuse the same table.
@@ -246,12 +246,12 @@
             - <CODE>WithExclusivelyStoredInThisTable</CODE> (not to combine with another MapStrategy): Apply this on a class where a base class specified WithReuseColumns. 
             It will exclude this ECClass' ECProperties from the colum reuse and therefore create separate columns for its 
             ECProperties.
-    - <b>TableName</b> (optional, required for MapStrategies @i MapToExistingTable and @i SharedTableForThisClass): 
+    - <b>TableName</b> (optional, required for MapStrategies @em MapToExistingTable and @em SharedTableForThisClass): 
     Specify a table name for this class (instead of letting ECDb choose a name)
     - <b>Indexes</b> (optional) : List of indexes to be created for properties of this class. 
     It can be use to improve query performance or to add a unique constraint.
         - <b>Name</b> (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
-        - <b>IsUnique</b> (optional): If true, the index will be a unique index. Default value is @i false.
+        - <b>IsUnique</b> (optional): If true, the index will be a unique index. Default value is @em false.
         - <b>Properties</b>: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
         in the ECClass or in the base classes.
         - <b>Where</b> (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which

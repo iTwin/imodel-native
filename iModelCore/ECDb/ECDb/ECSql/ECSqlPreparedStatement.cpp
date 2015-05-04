@@ -114,6 +114,14 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings ()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        04/15
+//---------------------------------------------------------------------------------------
+void ECSqlPreparedStatement::OnBeforeStep()
+    {
+    GetEventManagerR().Reset();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlPreparedStatement::DoStep ()
@@ -153,8 +161,6 @@ ECSqlStatus ECSqlPreparedStatement::DoReset ()
     auto nativeSqlStat = GetSqliteStatementR ().Reset ();
     if (nativeSqlStat != BE_SQLITE_OK)
         return GetStatusContextR ().SetError (&GetECDb (), nativeSqlStat);
-
-    m_eventManager.Reset();
 
     return ResetStatus ();
     }
@@ -210,6 +216,8 @@ ECSqlStatus ECSqlPreparedStatement::ResetStatus () const
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlSelectPreparedStatement::Step ()
     {
+    OnBeforeStep();
+
     const auto stat = DoStep ();
     if (stat == ECSqlStepStatus::HasRow)
         {
@@ -332,6 +340,8 @@ ECSqlInsertPreparedStatement::ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlEv
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlInsertPreparedStatement::Step (ECInstanceKey& instanceKey)
     {
+    OnBeforeStep();
+
     auto& eventManager = GetEventManagerR ();
     if (IsNoopInSqlite ())
         {
@@ -443,6 +453,8 @@ ECSqlUpdatePreparedStatement::ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlEv
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlUpdatePreparedStatement::Step ()
     {
+    OnBeforeStep();
+
     ECSqlStepStatus status = ECSqlStepStatus::Done;
     if (!IsNoopInSqlite ())
         {
@@ -489,6 +501,8 @@ ECSqlDeletePreparedStatement::ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlEv
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlDeletePreparedStatement::Step ()
     {
+    OnBeforeStep();
+
     ECSqlStepStatus status = ECSqlStepStatus::Done;
     if (!IsNoopInSqlite ())
         {

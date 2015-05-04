@@ -1071,7 +1071,7 @@ struct ECDbMapStorage
     private:
         ECDbPropertyPath* Set (std::unique_ptr<ECDbPropertyPath> propertyPath);
         ECDbClassMapInfo* Set (std::unique_ptr<ECDbClassMapInfo> classMap);
-        Statement* GetStatement (StatementType type);
+        CachedStatementPtr GetStatement (StatementType type);
         DbResult InsertOrReplace ();
         DbResult InsertPropertyMap (ECDbPropertyMapInfo const& o);
         DbResult InsertClassMap (ECDbClassMapInfo const& o);
@@ -1175,7 +1175,7 @@ struct ECDbSqlPersistence : NonCopyableClass
     private:
 
 
-        Statement* GetStatement (StatementType type);
+        CachedStatementPtr GetStatement (StatementType type);
 
         DbResult ReadTables (ECDbSqlDb& o);
         DbResult ReadTable (Statement& stmt, ECDbSqlDb& o);
