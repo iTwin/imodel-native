@@ -80,7 +80,7 @@ static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCate
                 {
                 Utf8Char     tmpStr[64];
 
-                BeStringUtilities::Snprintf (tmpStr, "%d", category.GetCategoryId());
+                BeStringUtilities::Snprintf (tmpStr, "%lld", category.GetCategoryId().GetValue());
                 displayNameStr.append (tmpStr);
                 break;
                 }
