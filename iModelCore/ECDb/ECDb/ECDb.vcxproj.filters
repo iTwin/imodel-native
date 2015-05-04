@@ -394,7 +394,6 @@
     <ClInclude Include="ECDbSql.h">
       <Filter>ECDbSql</Filter>
     </ClInclude>
-    <ClInclude Include="BeRepositoryBasedIdSequence.h" />
     <ClInclude Include="ColumnInfo.h">
       <Filter>ECDbMap\Db</Filter>
     </ClInclude>
@@ -448,6 +447,11 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="MapStrategy.h">
       <Filter>ECDbMap\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\BeRepositoryBasedIdSequence.h" />
+    <ClInclude Include="ECSql\SystemColumnPreparer.h">
+      <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -817,6 +821,9 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\SystemColumnPreparer.cpp">
+      <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

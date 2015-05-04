@@ -37,17 +37,6 @@ MapStatus SecondaryTableClassMap::_OnInitialized ()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-ClassMap::NativeSqlConverter const& SecondaryTableClassMap::_GetNativeSqlConverter () const
-    {
-    if (m_nativeSqlConverter == nullptr)
-        m_nativeSqlConverter = std::unique_ptr<NativeSqlConverter> (new SecondaryTableClassMap::NativeSqlConverterImpl (*this));
-
-    return *m_nativeSqlConverter;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
 IClassMap const& SecondaryTableClassMap::_GetView (View classView) const
@@ -58,37 +47,8 @@ IClassMap const& SecondaryTableClassMap::_GetView (View classView) const
     return ClassMap::_GetView (classView);
     }
 
-//************************** SecondaryTableClassMap::NativeSqlConverterImpl *******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2014
-//---------------------------------------------------------------------------------------
-SecondaryTableClassMap::NativeSqlConverterImpl::NativeSqlConverterImpl (ClassMapCR classMap)
-: ClassMap::NativeSqlConverterImpl (classMap)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2014
-// 
-// ECSQL_TODO  Remove this funtion. Each child ECSql statement must create ECSQL that add ECPropertyId and 
-// ECArrayIndex as they are now properties and have property may.
-// Preparing via type flag just add complication to code when the actully child statement 
-// what to use them in different way then this where statement - Affan(Added to do)
-//---------------------------------------------------------------------------------------
-ECSqlStatus SecondaryTableClassMap::NativeSqlConverterImpl::_GetWhereClause
-(
-NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias
-) const
-    {
-    BeAssert (whereClauseBuilder.IsEmpty ());
-    whereClauseBuilder.AppendParenLeft ().Append (tableAlias, ECDB_COL_ECPropertyPathId).Append (" IS NULL AND ");
-    whereClauseBuilder.Append (tableAlias, ECDB_COL_ECArrayIndex).Append (" IS NULL)");
-
-    return ClassMap::NativeSqlConverterImpl::_GetWhereClause (whereClauseBuilder, ecsqlType, isPolymorphicClassExp, tableAlias);
-    }
-
 
 //************************** SecondaryTableClassMap::EmbeddedClassMap *******************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
@@ -151,17 +111,6 @@ MapStatus UnmappedClassMap::_InitializePart1 (ClassMapInfoCR classMapInfo, IClas
 MapStatus UnmappedClassMap::_InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap)
     {
     return MapStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-ClassMap::NativeSqlConverter const& UnmappedClassMap::_GetNativeSqlConverter () const
-    {
-    if (m_nativeSqlConverter == nullptr)
-        m_nativeSqlConverter = std::unique_ptr<NativeSqlConverter> (new UnmappedClassMap::NativeSqlConverterImpl ());
-
-    return *m_nativeSqlConverter;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

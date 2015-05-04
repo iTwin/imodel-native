@@ -93,19 +93,6 @@ public:
 struct RelationshipClassEndTableMap : RelationshipClassMap
     {
 private:
-    //=======================================================================================
-    // @bsiclass                                                Krischan.Eberle      01/2014
-    //+===============+===============+===============+===============+===============+======
-    struct NativeSqlConverterImpl : ClassMap::NativeSqlConverterImpl
-        {
-    private:
-        virtual ECSqlStatus _GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const override;
-
-    public:
-        explicit NativeSqlConverterImpl (RelationshipClassEndTableMapCR classMap);
-        virtual ~NativeSqlConverterImpl () {}
-        };
-
     RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual Type _GetClassMapType () const override { return Type::RelationshipEndTable; };
 
@@ -123,7 +110,6 @@ private:
     ECDbSqlColumn* Configure_ForeignECClassIdKey (RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount);
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
-    virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
 public:
     ~RelationshipClassEndTableMap () {}

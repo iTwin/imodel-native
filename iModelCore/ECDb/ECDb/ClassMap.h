@@ -66,22 +66,7 @@ public:
         EmbeddedType //!<Class of the mapping is viewed as struct type embedded into another class
         };
 
-    //=======================================================================================
-    // @bsiclass                                                Krischan.Eberle      01/2014
-    //+===============+===============+===============+===============+===============+======
-    struct NativeSqlConverter : NonCopyableClass
-        {
-    private:
-        virtual ECSqlStatus _GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const = 0;
-
-    protected:
-        explicit NativeSqlConverter () {}
-
-    public:
-        virtual ~NativeSqlConverter () {}
-
-        ECSqlStatus GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const;
-        };
+    
 
 private:
     virtual IClassMap const& _GetView (View classView) const = 0;
@@ -92,7 +77,6 @@ private:
     virtual ECDbSqlTable& _GetTable () const = 0;
     virtual ECDbMapStrategy const& _GetMapStrategy () const = 0;
     virtual ECDbMapCR _GetECDbMap () const = 0;
-    virtual NativeSqlConverter const& _GetNativeSqlConverter () const = 0;
     virtual ClassDbView const& _GetDbView () const = 0;
 
 public:
@@ -123,7 +107,6 @@ public:
 
     ECDbMapStrategy const& GetMapStrategy () const;
     ECDbMapCR GetECDbMap () const;
-    NativeSqlConverter const& GetNativeSqlConverter () const;
     ClassDbView const& GetDbView () const;
     Type GetClassMapType () const;
 
@@ -262,25 +245,6 @@ struct  ColumnFactory : NonCopyableClass
 //+===============+===============+===============+===============+===============+======
 struct ClassMap : public IClassMap, RefCountedBase
 {
-protected:
-    //=======================================================================================
-    // @bsiclass                                                Krischan.Eberle      01/2014
-    //+===============+===============+===============+===============+===============+======
-    struct NativeSqlConverterImpl : NativeSqlConverter
-        {
-    private:
-        ClassMapCR m_classMap;
-       
-    protected:
-        virtual ECSqlStatus _GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const override;
-
-        ClassMapCR GetClassMap () const { return m_classMap; }
-    public:
-        explicit NativeSqlConverterImpl (ClassMapCR classMap);
-        virtual ~NativeSqlConverterImpl () {}
-        };
-
-
 private:
     ECDbMapCR                   m_ecDbMap;
     PropertyMapCollection       m_propertyMaps;
@@ -295,7 +259,6 @@ private:
 protected:
     ECN::ECClassCR              m_ecClass;
     ECN::ECClassId              m_parentMapClassId;
-    mutable std::unique_ptr<NativeSqlConverter> m_nativeSqlConverter;
     std::unique_ptr<ClassDbView> m_dbView;
     ColumnFactory               m_columnFactory;
 private:
@@ -324,7 +287,6 @@ protected:
     void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
     virtual PropertyMapCollection const& _GetPropertyMaps () const;
     virtual ECDbSqlTable& _GetTable () const override { return *m_table; }
-    virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
     virtual ECN::ECClassCR _GetClass () const override { return m_ecClass; }
     virtual ECDbMapStrategy const& _GetMapStrategy () const override { return m_mapStrategy; }
     virtual ECDbMapCR _GetECDbMap () const override { return m_ecDbMap; }

@@ -19,19 +19,6 @@ struct SecondaryTableClassMap : ClassMap
     {
 private:
     //=======================================================================================
-    // @bsiclass                                                Krischan.Eberle      01/2014
-    //+===============+===============+===============+===============+===============+======
-    struct NativeSqlConverterImpl : ClassMap::NativeSqlConverterImpl
-        {
-    private:
-        virtual ECSqlStatus _GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const override;
-
-    public:
-        explicit NativeSqlConverterImpl (ClassMapCR classMap);
-        ~NativeSqlConverterImpl () {}
-        };
-
-    //=======================================================================================
     //! ClassMap that represents the 'embedded type' view of the SecondaryTableClassMap
     // @bsiclass                                                    Krischan.Eberle   02/2014
     //+===============+===============+===============+===============+===============+======
@@ -44,7 +31,6 @@ private:
         virtual IClassMap const& _GetView (View classView) const override { return *this; };
         virtual PropertyMapCollection const& _GetPropertyMaps () const override { return m_embeddedClassViewPropMaps; }
         virtual ECDbSqlTable& _GetTable () const override { return m_secondaryTableClassMap.GetTable (); }
-        virtual NativeSqlConverter const& _GetNativeSqlConverter () const override { return m_secondaryTableClassMap.GetNativeSqlConverter (); }
         virtual ECN::ECClassCR _GetClass () const override { return m_secondaryTableClassMap.GetClass (); }
         virtual ECDbMapStrategy const& _GetMapStrategy () const override { return m_secondaryTableClassMap.GetMapStrategy (); }
         virtual ECDbMapCR _GetECDbMap () const override { return m_secondaryTableClassMap.GetECDbMap (); }
@@ -68,7 +54,6 @@ private:
 
     virtual MapStatus _OnInitialized () override;
     virtual Type _GetClassMapType () const override;
-    virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
     virtual IClassMap const& _GetView (View classView) const override;
     //virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
@@ -90,23 +75,9 @@ public:
 struct UnmappedClassMap : public ClassMap
     {
 private:
-    //=======================================================================================
-    // @bsiclass                                                Krischan.Eberle      01/2014
-    //+===============+===============+===============+===============+===============+======
-    struct NativeSqlConverterImpl : NativeSqlConverter
-        {
-        private:
-            virtual ECSqlStatus _GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const override { return ECSqlStatus::ProgrammerError; }
-
-        public:
-            explicit NativeSqlConverterImpl () {}
-            virtual ~NativeSqlConverterImpl () {}
-        };
-
-    virtual MapStatus _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
+     virtual MapStatus _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
     virtual Type _GetClassMapType () const override { return IClassMap::Type::Unmapped; }
-    virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
     UnmappedClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
         {

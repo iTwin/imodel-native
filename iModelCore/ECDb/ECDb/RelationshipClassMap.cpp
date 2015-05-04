@@ -240,56 +240,6 @@ void RelationshipClassMap::ConstraintMap::SetAnyClassMatches () const
     m_ecClassIdCache.clear ();
     }
 
-
-//************************ RelationshipClassEndTableMap::NativeSqlConverterImpl ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    01/2014
-//---------------------------------------------------------------------------------------
-RelationshipClassEndTableMap::NativeSqlConverterImpl::NativeSqlConverterImpl (RelationshipClassEndTableMapCR classMap)
-: ClassMap::NativeSqlConverterImpl (classMap)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    01/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus RelationshipClassEndTableMap::NativeSqlConverterImpl::_GetWhereClause 
-(
-NativeSqlBuilder& whereClauseBuilder, 
-ECSqlType ecsqlType, 
-bool isPolymorphicClassExp, 
-Utf8CP tableAlias
-) const
-    {
-    //Don't call base class method, as for end table mappings the table never has a column for the relationship's class id
-    //and the base class method would take the table's class id column and filter it by the relationship's class id which will not
-    //work as the table class id contains this end's constraint class id and not the relationship's class id.
-    if (!whereClauseBuilder.IsEmpty ())
-        whereClauseBuilder.Append (" AND ");
-
-    //Existence of an end table relationships is told by the fact whether the other end ecinstance id column is set or not.
-    //The following where expression tests for that.
-    BeAssert (dynamic_cast<RelationshipClassEndTableMapCP> (&GetClassMap ()) != nullptr);
-    auto const& relClassMap = static_cast<RelationshipClassEndTableMapCR> (GetClassMap ());
-    auto otherEndECInstanceIdColSqlSnippets = relClassMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (tableAlias, ecsqlType);
-    BeAssert (!otherEndECInstanceIdColSqlSnippets.empty ());
-    whereClauseBuilder.AppendParenLeft ();
-    bool isFirstItem = true;
-    for (auto const& sqlSnippet : otherEndECInstanceIdColSqlSnippets)
-        {
-        if (!isFirstItem)
-            whereClauseBuilder.Append (" AND ");
-
-        whereClauseBuilder.Append (sqlSnippet).Append (" IS NOT NULL");
-
-        isFirstItem = false;
-        }
-
-    whereClauseBuilder.AppendParenRight ();
-
-    return ECSqlStatus::Success;
-    }
-
-
 //************************ RelationshipClassEndTableMap **********************************
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
@@ -880,17 +830,6 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetThisEnd() const
 ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetOtherEnd () const
     {
     return GetThisEnd () == ECRelationshipEnd_Source ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-ClassMap::NativeSqlConverter const& RelationshipClassEndTableMap::_GetNativeSqlConverter () const
-    {
-    if (m_nativeSqlConverter == nullptr)
-        m_nativeSqlConverter = std::unique_ptr<NativeSqlConverter> (new NativeSqlConverterImpl (*this));
-
-    return *m_nativeSqlConverter;
     }
 
 

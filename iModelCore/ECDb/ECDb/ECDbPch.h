@@ -67,6 +67,7 @@
 #include "ECSql/ECSqlStepTask.h"
 #include "ECSql/EmbeddedECSqlStatement.h"
 #include "ECSql/ECSqlDeletePreparer.h"
+#include "ECSql/SystemColumnPreparer.h"
 #include "ECSql/ECInstanceAdapterHelper.h"
 #include "ECSql/ECSqlPrepareContext.h"
 #include "ECDbSql.h"

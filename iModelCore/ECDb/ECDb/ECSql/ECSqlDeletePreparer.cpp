@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlDeletePreparer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -162,13 +162,11 @@ ClassNameExp const& classNameExp
 
     if (!ctx.GetParentContext ())
         {
-        auto const& nativeSqlConverter = classNameExp.GetInfo ().GetMap ().GetNativeSqlConverter ();
+        IClassMap const& classMap = classNameExp.GetInfo().GetMap();
         NativeSqlBuilder systemWhereClause;
-        status = nativeSqlConverter.GetWhereClause (systemWhereClause, ECSqlType::Delete,
-            classNameExp.IsPolymorphic (),
-            nullptr); //SQLite DELETE does not allow table aliases
-
-
+        status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Delete,
+                                                                       classNameExp.IsPolymorphic(),
+                                                                       nullptr);
         if (status != ECSqlStatus::Success)
             return ctx.SetError (status, "Could not generate the system portion of the native SQL where clause.");
 

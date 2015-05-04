@@ -74,17 +74,6 @@ BentleyStatus ClassDbView::Generate (NativeSqlBuilder& viewSql, bool isPolymorph
     return ViewGenerator::CreateView (viewSql, m_classMap->GetECDbMap (), *m_classMap, isPolymorphic, preparedContext, true /*optimizeByIncludingOnlyRealTables*/);
     }
 
-
-//********************* IClassMap::NativeSqlConverter ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    01/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus IClassMap::NativeSqlConverter::GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const
-    {
-    return _GetWhereClause (whereClauseBuilder, ecsqlType, isPolymorphicClassExp, tableAlias);
-    }
-
-
 //********************* IClassMap ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2014
@@ -201,14 +190,6 @@ ECClassCR IClassMap::GetClass () const
 ECClassId IClassMap::GetParentMapClassId () const
     {
     return _GetParentMapClassId ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-IClassMap::NativeSqlConverter const& IClassMap::GetNativeSqlConverter () const
-    {
-    return _GetNativeSqlConverter ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -336,62 +317,13 @@ Utf8String IClassMap::ToString () const
     return str;
     }
 
-
-//********************* ClassMap::NativeSqlConverterImpl ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    01/2014
-//---------------------------------------------------------------------------------------
-ClassMap::NativeSqlConverterImpl::NativeSqlConverterImpl (ClassMapCR classMap)
-: NativeSqlConverter (), m_classMap (classMap)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    01/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus ClassMap::NativeSqlConverterImpl::_GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const
-    {
-    auto const& classMap = GetClassMap ();
-    BeAssert (!classMap.GetMapStrategy().IsUnmapped () && "ClassMap::NativeSqlConverterImpl::GetWhereClause not expected to be called by unmapped class map.");
-
-    bool wasEmpty = whereClauseBuilder.IsEmpty ();
-
-    //handle case where multiple classes are mapped to the table
-    auto const& table = classMap.GetTable ();
-    auto classIdColumn = table.FindColumnCP ("ECClassId");
-    if (classIdColumn != nullptr)
-        {
-        if (wasEmpty)
-            whereClauseBuilder.AppendParenLeft ();
-        else
-            whereClauseBuilder.Append (" AND ");
-
-        whereClauseBuilder.Append (tableAlias, classIdColumn->GetName ().c_str ()).Append (" IN (");
-        whereClauseBuilder.Append (classMap.GetClass ().GetId ());
-        if (isPolymorphicClassExp)
-            {
-            auto derivedClassMapList = classMap.GetDerivedClassMaps ();
-            for (auto derivedClassMap : derivedClassMapList)
-                {
-                whereClauseBuilder.AppendComma ().Append (derivedClassMap->GetClass ().GetId ());
-                }
-            }
-
-        whereClauseBuilder.AppendParenRight (); //right paren of IN
-
-        if (wasEmpty)
-            whereClauseBuilder.AppendParenRight (); //overall right paren
-        }
-
-    return ECSqlStatus::Success;
-    }
-
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap (ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : IClassMap (), m_ecDbMap (ecDbMap), m_table (nullptr), m_ecClass (ecClass), m_mapStrategy (mapStrategy),
-m_parentMapClassId (0LL), m_nativeSqlConverter (nullptr), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFactory (*this), /*clang says not used - m_useSharedColumnStrategy (false),*/ m_id(0LL)
+m_parentMapClassId (0LL), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFactory (*this), /*clang says not used - m_useSharedColumnStrategy (false),*/ m_id(0LL)
     {
     }
 
@@ -915,17 +847,6 @@ ECDbSchemaManagerCR ClassMap::Schemas () const
 IClassMap::Type ClassMap::_GetClassMapType () const
     {
     return Type::Class;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-ClassMap::NativeSqlConverter const& ClassMap::_GetNativeSqlConverter () const
-    {
-    if (m_nativeSqlConverter == nullptr)
-        m_nativeSqlConverter = std::unique_ptr<NativeSqlConverter> (new NativeSqlConverterImpl (*this));
-
-    return *m_nativeSqlConverter;
     }
 
 //---------------------------------------------------------------------------------------

@@ -23,8 +23,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     ctx.PushScope (exp);
 
     auto classNameExp = exp.GetClassNameExp ();
-    if (classNameExp->IsPolymorphic ())
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "Polymorphism is not yet supported in ECSQL UPDATE statements.");
 
     auto const& specialTokenExpIndexMap = exp.GetAssignmentListExp ()->GetSpecialTokenExpIndexMap ();
     if (!specialTokenExpIndexMap.IsUnset (ECSqlSystemProperty::ECInstanceId))
@@ -81,9 +79,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         }
 
     // WHERE clause
-    auto const& nativeSqlConverter = classMap.GetNativeSqlConverter ();
     NativeSqlBuilder systemWhereClause;
-    status = nativeSqlConverter.GetWhereClause (systemWhereClause, ECSqlType::Update,
+    status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Update,
                     classNameExp->IsPolymorphic (), nullptr); //SQLite UPDATE does not allow table aliases
 
     if (status != ECSqlStatus::Success)
