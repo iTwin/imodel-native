@@ -42,22 +42,20 @@ public:
 struct HorizontalPartition : NonCopyableClass
     {
     private:
-        ECDbTableId m_tableId;
+        ECDbSqlTable const& m_table;
         std::vector<ECN::ECClassId> m_classMapToParition;
         std::vector<ECN::ECClassId> m_filter;
         bool m_includeFilter;
         //mutable Utf8String m_filterSql;
 
     public:
-        HorizontalPartition (ECDbTableId tableId, std::vector<ECN::ECClassId>& classIds, std::vector<ECN::ECClassId>& filter, bool includeFilter)
-            : m_tableId (tableId), m_classMapToParition (std::move (classIds)), m_filter (std::move (filter)), m_includeFilter (includeFilter)
+        HorizontalPartition (ECDbSqlTable const& table, std::vector<ECN::ECClassId>& classIds, std::vector<ECN::ECClassId>& filter, bool includeFilter)
+            : m_table (table), m_classMapToParition (std::move (classIds)), m_filter (std::move (filter)), m_includeFilter (includeFilter)
             {
             }
-        HorizontalPartition ()
-            {}
         ~HorizontalPartition ()
             {}
-        ECDbTableId GetTableId () const { return m_tableId; }
+        ECDbSqlTable const& GetTable () const { return m_table; }
         std::vector<ECN::ECClassId> const& GetFilter () const { return m_filter; }
         std::vector<ECN::ECClassId> const& GetClassIds () const { return m_classMapToParition; }
         bool IsInclusionFilter () const { return m_includeFilter; }
