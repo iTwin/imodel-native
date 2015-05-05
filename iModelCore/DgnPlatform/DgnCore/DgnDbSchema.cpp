@@ -114,6 +114,7 @@ DbResult DgnDb::InitializeDgnDb (CreateDgnDbParams const& params)
 
     SaveDgnDbSchemaVersion();
     SaveCreationDate();
+    SaveCreationBeSqliteBuildVersion();
 
     Domains().OnDbOpened();
 
