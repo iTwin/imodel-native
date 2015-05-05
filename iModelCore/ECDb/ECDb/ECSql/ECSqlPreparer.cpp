@@ -557,7 +557,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareConstantValueExp (NativeSqlBuilder::List& n
                     }
 
                 case PRIMITIVETYPE_String:
-                    nativeSqlConstValueBuilder.AppendQuoted (expValue);
+                    nativeSqlConstValueBuilder.AppendQuoted (ConstantValueExp::EscapeStringLiteral(expValue).c_str());
                     break;
 
                 default:

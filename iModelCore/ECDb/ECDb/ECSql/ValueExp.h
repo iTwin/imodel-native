@@ -151,6 +151,12 @@ public:
     bool GetValueAsBoolean() const;
 
     virtual Utf8String ToECSql() const override;
+    static Utf8String EscapeStringLiteral (Utf8StringCR constantStringLiteral)
+        {
+        Utf8String tmp = constantStringLiteral;
+        tmp.ReplaceAll ("'", "''");
+        return tmp;
+        }
     };
 
 //=======================================================================================
