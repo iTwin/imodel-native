@@ -1492,7 +1492,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         "    TableMapInfo AS ("
         "    SELECT DISTINCT"
         "           ec_Class.ECClassId   [ECClassId],"
-        "           ec_Table.Id          [TableId] "
+        "           ec_Table.Name        [TableName] "
         "    FROM ec_PropertyMap"
         "      JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
         "      JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId"
@@ -1513,10 +1513,11 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         "      JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId"
         "      JOIN ec_Class ON ec_Class.ECClassId = ec_ClassMap.[ECClassId]"
         "      JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "    WHERE ec_Table.Id = ?";
+        "    WHERE ec_Table.Name = ?";
 
     auto& ecdb = classMap.GetECDbMap().GetECDbR();
     ECClassId classId = classMap.GetClass().GetId();
+    auto const& dbSchema = classMap.GetECDbMap ().GetSQLManager ().GetDbSchema ();
 
     CachedStatementPtr stmt1;
     ecdb.GetCachedStatement (stmt1, sql1);
@@ -1525,27 +1526,30 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
     CachedStatementPtr stmt2;
     ecdb.GetCachedStatement (stmt2, sql2);
 
-    std::map<ECDbTableId, std::vector<ECClassId>> classMapToTable;
-    std::map<ECDbTableId, std::vector<ECClassId>> classMapToPartition;
+    std::map<ECDbSqlTable const*, std::vector<ECClassId>> classMapToTable;
+    std::map<ECDbSqlTable const*, std::vector<ECClassId>> classMapToPartition;
     while (stmt1->Step () == BE_SQLITE_ROW)
         {
         auto derivedECClassId = stmt1->GetValueInt64 (0);
-        auto tableId = stmt1->GetValueInt64 (1);
-        if (classMapToTable.find (tableId) == classMapToTable.end ())
+        auto tableName = stmt1->GetValueText (1);
+        auto table = dbSchema.FindTable (tableName);
+        BeAssert (table != nullptr);
+
+        if (classMapToTable.find (table) == classMapToTable.end ())
             {
             stmt2->Reset ();
             stmt2->ClearBindings ();
-            stmt2->BindInt64 (1, tableId);
+            stmt2->BindText (1, table->GetName(), Statement::MakeCopy::No);
 
             while (stmt2->Step () == BE_SQLITE_ROW)
                 {
-                classMapToTable[tableId].push_back (stmt2->GetValueInt64 (0));
+                classMapToTable[table].push_back (stmt2->GetValueInt64 (0));
                 }
             }
 
-        classMapToPartition[tableId].push_back (derivedECClassId);
+        classMapToPartition[table].push_back (derivedECClassId);
         }
-
+    
     auto part = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
     std::vector<ECClassId> emptyFilter;
     for (auto cmP : classMapToPartition)
@@ -1553,15 +1557,15 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         auto cmT = classMapToTable.find (cmP.first);
         if (cmP.second.size () > cmT->second.size ())
             {
-            part->m_horizontalPartitions.push_back (HorizontalPartition (cmP.first, cmP.second, cmT->second, false));
+            part->m_horizontalPartitions.push_back (HorizontalPartition (*cmP.first, cmP.second, cmT->second, false));
             }
         else if (cmP.second.size () < cmT->second.size ())
             {
-            part->m_horizontalPartitions.push_back (HorizontalPartition (cmP.first, cmP.second, cmP.second, true));
+            part->m_horizontalPartitions.push_back (HorizontalPartition (*cmP.first, cmP.second, cmP.second, true));
             }
         else if (cmP.second.size () == cmT->second.size ())
             {
-            part->m_horizontalPartitions.push_back (HorizontalPartition (cmP.first, cmP.second, emptyFilter, true));
+            part->m_horizontalPartitions.push_back (HorizontalPartition (*cmP.first, cmP.second, emptyFilter, true));
             }
         }
     return std::move(part);

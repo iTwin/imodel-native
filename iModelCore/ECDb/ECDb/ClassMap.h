@@ -43,21 +43,21 @@ public:
 struct HorizontalPartition : NonCopyableClass
     {
 private:
-    ECDbTableId m_tableId;
+    ECDbSqlTable const& m_table;
     std::vector<ECN::ECClassId> m_classMapToPartition;
     std::vector<ECN::ECClassId> m_filter;
     bool m_includeFilter;
 
 public:
-    HorizontalPartition (ECDbTableId tableId, std::vector<ECN::ECClassId>& classIds, std::vector<ECN::ECClassId>& filter, bool includeFilter)
-        : m_tableId (tableId), m_classMapToPartition (std::move (classIds)), m_filter (std::move (filter)), m_includeFilter (includeFilter)
+        HorizontalPartition (ECDbSqlTable const& table, std::vector<ECN::ECClassId>& classIds, std::vector<ECN::ECClassId>& filter, bool includeFilter)
+            : m_table (table), m_classMapToParition (std::move (classIds)), m_filter (std::move (filter)), m_includeFilter (includeFilter)
         {}
  
     ~HorizontalPartition () {}
-    HorizontalPartition(HorizontalPartition&& rhs) : m_tableId(std::move(rhs.m_tableId)), m_classMapToPartition(std::move(rhs.m_classMapToPartition)), m_filter(std::move(rhs.m_filter)), m_includeFilter(std::move(rhs.m_includeFilter)) {}
+    HorizontalPartition(HorizontalPartition&& rhs) : m_table(std::move(rhs.m_table)), m_classMapToPartition(std::move(rhs.m_classMapToPartition)), m_filter(std::move(rhs.m_filter)), m_includeFilter(std::move(rhs.m_includeFilter)) {}
     HorizontalPartition& operator=(HorizontalPartition&& rhs);
 
-    ECDbTableId GetTableId () const { return m_tableId; }
+    ECDbSqlTable const& GetTable () const { return m_table; }
     std::vector<ECN::ECClassId> const& GetFilter () const { return m_filter; }
     std::vector<ECN::ECClassId> const& GetClassIds () const { return m_classMapToPartition; }
     bool IsInclusionFilter () const { return m_includeFilter; }
