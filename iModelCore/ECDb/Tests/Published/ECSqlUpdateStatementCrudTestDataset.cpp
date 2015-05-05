@@ -649,6 +649,36 @@ ECSqlTestDataset ECSqlUpdateTestDataset::PolymorphicTests (int rowCountPerClass)
     Utf8CP ecsql = "UPDATE ecsql.PSA SET I = 123";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
 
+    ecsql = "UPDATE ecsql.Abstract SET I = 123";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "UPDATE ONLY ecsql.Abstract SET I = 123";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
+
+    ecsql = "UPDATE ecsql.AbstractNoSubclasses SET I = 123";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
+
+    ecsql = "UPDATE ONLY ecsql.AbstractNoSubclasses SET I = 123";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
+
+    ecsql = "UPDATE ecsql.AbstractTablePerHierarchy SET I = 123";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass * 2, true);
+
+    ecsql = "UPDATE ONLY ecsql.AbstractTablePerHierarchy SET I = 123";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
+
+    ecsql = "UPDATE ecsql.THBase SET S = 'hello'";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 6 * rowCountPerClass, true);
+
+    ecsql = "UPDATE ONLY ecsql.THBase SET S = 'hello'";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
+
+    ecsql = "UPDATE ecsql.TCBase SET S = 'hello'";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "UPDATE ONLY ecsql.TCBase SET S = 'hello'";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
+
     return dataset;
     }
 //---------------------------------------------------------------------------------------

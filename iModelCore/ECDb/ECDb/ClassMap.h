@@ -43,25 +43,26 @@ public:
 struct HorizontalPartition : NonCopyableClass
     {
 private:
-    ECDbSqlTable const& m_table;
-    std::vector<ECN::ECClassId> m_classMapToPartition;
-    std::vector<ECN::ECClassId> m_filter;
-    bool m_includeFilter;
+    ECDbSqlTable const* m_table;
+    std::vector<ECN::ECClassId> m_partitionClassIds;
+    std::vector<ECN::ECClassId> m_inversedPartitionClassIds;
+    bool m_hasInversedPartitionClassIds;
 
 public:
-        HorizontalPartition (ECDbSqlTable const& table, std::vector<ECN::ECClassId>& classIds, std::vector<ECN::ECClassId>& filter, bool includeFilter)
-            : m_table (table), m_classMapToParition (std::move (classIds)), m_filter (std::move (filter)), m_includeFilter (includeFilter)
-        {}
+    explicit HorizontalPartition (ECDbSqlTable const& table) : m_table(&table) {}
  
     ~HorizontalPartition () {}
-    HorizontalPartition(HorizontalPartition&& rhs) : m_table(std::move(rhs.m_table)), m_classMapToPartition(std::move(rhs.m_classMapToPartition)), m_filter(std::move(rhs.m_filter)), m_includeFilter(std::move(rhs.m_includeFilter)) {}
+    
+    HorizontalPartition(HorizontalPartition&& rhs) : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)), m_inversedPartitionClassIds(std::move(rhs.m_inversedPartitionClassIds)), m_hasInversedPartitionClassIds(std::move(rhs.m_hasInversedPartitionClassIds)) {}
     HorizontalPartition& operator=(HorizontalPartition&& rhs);
 
-    ECDbSqlTable const& GetTable () const { return m_table; }
-    std::vector<ECN::ECClassId> const& GetFilter () const { return m_filter; }
-    std::vector<ECN::ECClassId> const& GetClassIds () const { return m_classMapToPartition; }
-    bool IsInclusionFilter () const { return m_includeFilter; }
-    bool HasFilter () const { return !m_filter.empty (); }
+    ECDbSqlTable const& GetTable () const { return *m_table; }
+    std::vector<ECN::ECClassId> const& GetClassIds() const { return m_partitionClassIds; }
+
+    void AddClassId(ECN::ECClassId classId) { m_partitionClassIds.push_back(classId); }
+    void GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds);
+
+    bool NeedsClassIdFilter() const;
     void AppendECClassIdFilterSql (NativeSqlBuilder&) const;
     };
 
@@ -76,13 +77,17 @@ struct StorageDescription : NonCopyableClass
 private:      
     ECN::ECClassId m_classId;
     std::vector<HorizontalPartition> m_horizontalPartitions;
+    std::vector<HorizontalPartition const*> m_nonVirtualHorizontalPartitions;
+    HorizontalPartition const* m_rootHorizontalPartition;
 
-    explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId) {}
+    explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId), m_rootHorizontalPartition(nullptr) {}
 
+    HorizontalPartition& AddHorizontalPartition(HorizontalPartition&&, bool isRootPartition);
 public:
     ~StorageDescription (){}
-    std::vector<HorizontalPartition> const& GetHorizontalPartitions () const { return m_horizontalPartitions; }    
-    HorizontalPartition const* GetPrimaryHorizontalPartition () const;
+    HorizontalPartition const& GetRootHorizontalPartition() const { BeAssert(m_rootHorizontalPartition != nullptr); return *m_rootHorizontalPartition; }
+    std::vector<HorizontalPartition> const& GetHorizontalPartitions () const { return m_horizontalPartitions; }   
+    std::vector<HorizontalPartition const*> const& GetNonVirtualHorizontalPartitions() const { return m_nonVirtualHorizontalPartitions; }
     ECN::ECClassId GetClassId () const { return m_classId; }
 
     static std::unique_ptr<StorageDescription> Create (IClassMap const& forClassMap);

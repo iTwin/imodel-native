@@ -38,16 +38,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
             return ctx.SetError (ECSqlStatus::InvalidECSql, "SourceECInstanceId, TargetECInstanceId, SourceECClassId, or TargetECClassId are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
         }
 
-
-    //if table is virtual, i.e. does not exist in db, and the ECSQL is not polymorphic the ECSQL is still valid, but will result
-    //in a no-op in SQLite. Continue preparation as clients must continue to be able to call the bind
-    //API, even if it is a no-op. If we stopped preparation, clients would see index out of range errors when 
-    //calling the bind API.
-    if (classMap.GetTable().GetPersistenceType() == PersistenceType::Virtual &&
-        (!classNameExp->IsPolymorphic() || classMap.GetStorageDescription().GetHorizontalPartitions().empty()))
-        ctx.SetNativeStatementIsNoop(true);
-
-
     NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR ();
     
     // UPDATE clause

@@ -149,17 +149,10 @@ ClassNameExp const& classNameExp
             return status;
         }
 
-    IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    //if table is virtual, i.e. does not exist in db, and the ECSQL is not polymorphic the ECSQL is still valid, but will result
-    //in a no-op in SQLite. Continue preparation as clients must continue to be able to call the bind
-    //API, even if it is a no-op. If we stopped preparation, clients would see index out of range errors when 
-    //calling the bind API.
-    if (classMap.GetTable().GetPersistenceType() == PersistenceType::Virtual && 
-        (!classNameExp.IsPolymorphic() || classMap.GetStorageDescription().GetHorizontalPartitions ().empty()))
-        ctx.SetNativeStatementIsNoop(true);
-
     if (ctx.GetParentContext() == nullptr)
         {
+        IClassMap const& classMap = classNameExp.GetInfo().GetMap();
+
         NativeSqlBuilder systemWhereClause;
         status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Delete,
                                                                        classNameExp.IsPolymorphic(), nullptr); //no table aliases allowed in SQLite DELETE statement

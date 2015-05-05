@@ -163,7 +163,8 @@ TEST(ECDbInstances, DeleteECInstances)
         ECClassCR ecClass = importedInstance->GetClass();
         ECInstanceDeleter deleter (ecdb, ecClass);
         ASSERT_TRUE (deleter.IsValid ());
-        ASSERT_EQ (SUCCESS, deleter.Delete (*importedInstance));
+        BentleyStatus stat = deleter.Delete (*importedInstance);
+        ASSERT_EQ(SUCCESS, stat);
         }
     }   
 

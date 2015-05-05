@@ -163,6 +163,36 @@ ECSqlTestDataset ECSqlDeleteTestDataset::PolymorphicTests (int rowCountPerClass)
     Utf8CP ecsql = "DELETE FROM ecsql.P";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
 
+    ecsql = "DELETE FROM ecsql.Abstract";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "DELETE FROM ONLY ecsql.Abstract";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
+
+    ecsql = "DELETE FROM ecsql.AbstractNoSubclasses";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
+
+    ecsql = "DELETE FROM ONLY ecsql.AbstractNoSubclasses";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
+
+    ecsql = "DELETE FROM ecsql.AbstractTablePerHierarchy";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass * 2, true);
+
+    ecsql = "DELETE FROM ONLY ecsql.AbstractTablePerHierarchy";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
+
+    ecsql = "DELETE FROM ecsql.THBase";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 6 * rowCountPerClass, true);
+
+    ecsql = "DELETE FROM ONLY ecsql.THBase";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
+
+    ecsql = "DELETE FROM ecsql.TCBase";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+
+    ecsql = "DELETE FROM ONLY ecsql.TCBase";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
+
     return dataset;
     }
 

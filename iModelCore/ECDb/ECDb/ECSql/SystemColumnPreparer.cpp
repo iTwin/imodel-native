@@ -85,29 +85,31 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
     {
     BeAssert(!classMap.GetMapStrategy().IsUnmapped() && "ClassMap::NativeSqlConverterImpl::GetWhereClause not expected to be called by unmapped class map.");
 
-    StorageDescription const& storageInfo = classMap.GetStorageDescription();
-    std::vector<HorizontalPartition> const& horizPartitions = storageInfo.GetHorizontalPartitions();
-    if (horizPartitions.empty())
+    HorizontalPartition const* horizPartition = nullptr;
+    std::vector<HorizontalPartition const*> nonVirtualPartitions = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitions();
+    if (!isPolymorphicClassExp || nonVirtualPartitions.empty())
+        horizPartition = &classMap.GetStorageDescription().GetRootHorizontalPartition();
+    else
         {
-        BeAssert(false && "No horizontal partitions for class map.");
-        return ECSqlStatus::Success;
+        BeAssert(nonVirtualPartitions.size() == 1 && "Check that class only maps to a single table should have been done during class name preparation");
+        horizPartition = nonVirtualPartitions[0];
         }
 
-    if (isPolymorphicClassExp && horizPartitions.size() > 1)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.",
-            ExpHelper::ToString(ecsqlType));
-        
-    HorizontalPartition const& horizPartition = horizPartitions[0];
-    if (horizPartition.HasFilter())
-        {
-        if (!whereClauseBuilder.IsEmpty())
-            whereClauseBuilder.Append(BooleanSqlOperator::AND);
+    ECDbSqlTable const& table = horizPartition->GetTable();
+    if (table.GetPersistenceType() == PersistenceType::Virtual)
+        return ECSqlStatus::Success; //table is virtual-> noop
 
-        whereClauseBuilder.AppendParenLeft();
-        horizPartition.AppendECClassIdFilterSql(whereClauseBuilder);
-        whereClauseBuilder.AppendParenRight();
-        }
+    ECDbSqlColumn const* classIdCol = table.GetFilteredColumnFirst(ECDbSystemColumnECClassId);
+    BeAssert(classIdCol != nullptr || horizPartition->GetClassIds().size() == 1 && "If table doesn't have class id column, only one class must map to it");
+    if (classIdCol == nullptr || !horizPartition->NeedsClassIdFilter ())
+        return ECSqlStatus::Success; //table doesn't have class id or all class ids need to be considered -> no filter needed
 
+    if (!whereClauseBuilder.IsEmpty())
+        whereClauseBuilder.Append(BooleanSqlOperator::AND);
+
+    whereClauseBuilder.AppendParenLeft().Append(classIdCol->GetName().c_str(), true);
+    horizPartition->AppendECClassIdFilterSql(whereClauseBuilder);
+    whereClauseBuilder.AppendParenRight();
     return ECSqlStatus::Success;
     }
 

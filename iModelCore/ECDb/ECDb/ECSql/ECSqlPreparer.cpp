@@ -418,14 +418,34 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         return ECSqlStatus::Success;
         }
 
-    if (currentScopeECSqlType == ECSqlType::Insert)
-        BeAssert(!exp->IsPolymorphic() && "ECSQL INSERT does not support polymorphism. This should have been caught by the parsing code already.");
-    
-    //WIP: For now this just takes the single table even if the statement is polymorphic. 
-    //Once we support polymorphism across multiple tables this needs to be modified
+    ECDbSqlTable const* table = nullptr;
+    std::vector<HorizontalPartition const*> nonVirtualPartitions = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitions();
+    if (!exp->IsPolymorphic() || nonVirtualPartitions.empty())
+        {
+        HorizontalPartition const& horizPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
+        table = &horizPartition.GetTable();
+        }
+    else
+        {
+        BeAssert(currentScopeECSqlType != ECSqlType::Insert && "ECSQL INSERT does not support polymorphism. This should have been caught by the parsing code already.");
+
+        if (nonVirtualPartitions.size() > 1)
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.", currentScopeECSqlType);
+
+        table = &nonVirtualPartitions[0]->GetTable();
+        }
+
+    BeAssert(table != nullptr);
+
+    //if table is virtual, i.e. does not exist in db, the ECSQL is still valid, but will result
+    //in a no-op in SQLite. Continue preparation as clients must continue to be able to call the bind
+    //API, even if it is a no-op. If we stopped preparation, clients would see index out of range errors when 
+    //calling the bind API.
+    if (table->GetPersistenceType() == PersistenceType::Virtual)
+        ctx.SetNativeStatementIsNoop(true);
+
     NativeSqlBuilder nativeSqlSnippet;
-    //SQLite does not support table aliases in insert 
-    nativeSqlSnippet.AppendEscaped(classMap.GetTable().GetName().c_str());
+    nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
     nativeSqlSnippets.push_back(move(nativeSqlSnippet));
     return ECSqlStatus::Success;
     }

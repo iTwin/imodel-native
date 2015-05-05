@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ClassMap.h"
+#include <algorithm>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -1459,19 +1460,7 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlTable & ColumnFactory::GetTable ()  { return m_classMap.GetTable (); }
-
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-HorizontalPartition const* StorageDescription::GetPrimaryHorizontalPartition() const
-    {
-    if (m_horizontalPartitions.empty())
-        return nullptr;
-
-    return &m_horizontalPartitions.front();
-    }
+ECDbSqlTable& ColumnFactory::GetTable ()  { return m_classMap.GetTable (); }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
@@ -1479,96 +1468,124 @@ HorizontalPartition const* StorageDescription::GetPrimaryHorizontalPartition() c
 //static
 std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const& classMap)
     {
-    const auto sql1 =
-        " WITH RECURSIVE"
-        "     DerivedClassList(RootECClassId, CurrentECClassId, DerivedECClassId) AS ("
-        "     SELECT ECClassId, ECClassId, ECClassId  FROM ec_Class"
-        "     UNION"
-        "     SELECT RootECClassId,  BC.[BaseECClassId], BC.[ECClassId]"
-        "             FROM DerivedClassList DCL"
-        "     LEFT OUTER JOIN ec_BaseClass BC ON BC.[BaseECClassId] = DCL.DerivedECClassId"
-        "     ORDER BY 1"
-        "     ),"
-        "    TableMapInfo AS ("
-        "    SELECT DISTINCT"
-        "           ec_Class.ECClassId   [ECClassId],"
-        "           ec_Table.Name        [TableName] "
-        "    FROM ec_PropertyMap"
-        "      JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
-        "      JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId"
-        "      JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId"
-        "      JOIN ec_Class ON ec_Class.ECClassId = ec_ClassMap.[ECClassId]"
-        "      JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "      )"
-        " SELECT DCL.DerivedECClassId, TMI.TableId FROM DerivedClassList DCL"
-        "       INNER JOIN TableMapInfo TMI ON TMI.ECClassId = DCL.DerivedECClassId"
-        "       WHERE DCL.CurrentECClassId IS NOT NULL AND DCL.RootECClassId = ?";
+    Utf8CP const findClassesMappedToPartitionSql =
+        "WITH RECURSIVE "
+        "DerivedClassList(RootECClassId, CurrentECClassId, DerivedECClassId) "
+        "AS ("
+        "SELECT ECClassId, ECClassId, ECClassId FROM ec_Class "
+        "UNION "
+        "SELECT RootECClassId,  BC.BaseECClassId, BC.ECClassId "
+        "FROM DerivedClassList DCL "
+        "LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseECClassId = DCL.DerivedECClassId"
+        "),"
+        "TableMapInfo "
+        "AS ("
+        "SELECT DISTINCT ec_Class.ECClassId ECClassId, ec_Table.Name TableName, ec_Table.Id TableId "
+        "FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.ECClassId = ec_ClassMap.ECClassId "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+        ") "
+        "SELECT DCL.DerivedECClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
+        "INNER JOIN TableMapInfo TMI ON TMI.ECClassId = DCL.DerivedECClassId "
+        "WHERE DCL.CurrentECClassId IS NOT NULL AND DCL.RootECClassId = ?";
 
-    const auto sql2 =
-        "    SELECT DISTINCT"
-        "           ec_Class.ECClassId   [ECClassId]"
-        "    FROM ec_PropertyMap"
-        "      JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
-        "      JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId"
-        "      JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId"
-        "      JOIN ec_Class ON ec_Class.ECClassId = ec_ClassMap.[ECClassId]"
-        "      JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "    WHERE ec_Table.Name = ?";
+    Utf8CP const findAllClassesMappedToTableSql =
+        "SELECT DISTINCT ec_Class.ECClassId "
+        "FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.ECClassId = ec_ClassMap.ECClassId "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_Table.Name = ? ORDER BY ec_Class.ECClassId";
 
     auto& ecdb = classMap.GetECDbMap().GetECDbR();
     ECClassId classId = classMap.GetClass().GetId();
     auto const& dbSchema = classMap.GetECDbMap ().GetSQLManager ().GetDbSchema ();
 
-    CachedStatementPtr stmt1;
-    ecdb.GetCachedStatement (stmt1, sql1);
-    stmt1->BindInt64(1, classId);
+    CachedStatementPtr classesMappedToPartitionStmt = nullptr;
+    ecdb.GetCachedStatement(classesMappedToPartitionStmt, findClassesMappedToPartitionSql);
+    classesMappedToPartitionStmt->BindInt64(1, classId);
 
-    CachedStatementPtr stmt2;
-    ecdb.GetCachedStatement (stmt2, sql2);
+    CachedStatementPtr allClassesMappedToTableStmt = nullptr;
+    ecdb.GetCachedStatement(allClassesMappedToTableStmt, findAllClassesMappedToTableSql);
 
-    std::map<ECDbSqlTable const*, std::vector<ECClassId>> classMapToTable;
-    std::map<ECDbSqlTable const*, std::vector<ECClassId>> classMapToPartition;
-    while (stmt1->Step () == BE_SQLITE_ROW)
+    if (classesMappedToPartitionStmt == nullptr || allClassesMappedToTableStmt == nullptr)
         {
-        auto derivedECClassId = stmt1->GetValueInt64 (0);
-        auto tableName = stmt1->GetValueText (1);
-        auto table = dbSchema.FindTable (tableName);
-        BeAssert (table != nullptr);
+        BeAssert(false && "Preparation of the StorageDescription SQL failed.");
+        return nullptr;
+        }
 
-        if (classMapToTable.find (table) == classMapToTable.end ())
+    auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
+
+    bmap<ECDbTableId, bpair<HorizontalPartition*, std::vector<ECClassId>>> cache;
+    while (classesMappedToPartitionStmt->Step() == BE_SQLITE_ROW)
+        {
+        ECClassId derivedECClassId = classesMappedToPartitionStmt->GetValueInt64(0);
+        ECDbTableId tableId = classesMappedToPartitionStmt->GetValueInt64(1);
+
+        HorizontalPartition* horizPartition = nullptr;
+        auto it = cache.find(tableId);
+        if (it != cache.end())
+            horizPartition = it->second.first;
+        else
             {
-            stmt2->Reset ();
-            stmt2->ClearBindings ();
-            stmt2->BindText (1, table->GetName(), Statement::MakeCopy::No);
+            Utf8CP tableName = classesMappedToPartitionStmt->GetValueText(2);
+            ECDbSqlTable const* table = dbSchema.FindTable(tableName);
+            BeAssert(table != nullptr);
 
-            while (stmt2->Step () == BE_SQLITE_ROW)
+            const bool isRootPartition = derivedECClassId == classId;
+            horizPartition = &storageDescription->AddHorizontalPartition(HorizontalPartition(*table), isRootPartition);
+
+
+            bpair<HorizontalPartition*, std::vector<ECClassId>>& cacheElement = cache[table->GetId()];
+            cacheElement.first = horizPartition;
+            allClassesMappedToTableStmt->BindText(1, table->GetName(), Statement::MakeCopy::No);
+
+            while (allClassesMappedToTableStmt->Step() == BE_SQLITE_ROW)
                 {
-                classMapToTable[table].push_back (stmt2->GetValueInt64 (0));
+                cacheElement.second.push_back(allClassesMappedToTableStmt->GetValueInt64(0));
                 }
+
+            allClassesMappedToTableStmt->Reset();
+            allClassesMappedToTableStmt->ClearBindings();
             }
 
-        classMapToPartition[table].push_back (derivedECClassId);
+        horizPartition->AddClassId(derivedECClassId);
         }
     
-    auto part = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
-    std::vector<ECClassId> emptyFilter;
-    for (auto cmP : classMapToPartition)
+    for (auto const& kvPair : cache)
         {
-        auto cmT = classMapToTable.find (cmP.first);
-        if (cmP.second.size () > cmT->second.size ())
-            {
-            part->m_horizontalPartitions.push_back (HorizontalPartition (*cmP.first, cmP.second, cmT->second, false));
-            }
-        else if (cmP.second.size () < cmT->second.size ())
-            {
-            part->m_horizontalPartitions.push_back (HorizontalPartition (*cmP.first, cmP.second, cmP.second, true));
-            }
-        else if (cmP.second.size () == cmT->second.size ())
-            {
-            part->m_horizontalPartitions.push_back (HorizontalPartition (*cmP.first, cmP.second, emptyFilter, true));
-            }
+        HorizontalPartition& partition = *kvPair.second.first;
+        std::vector<ECClassId> const& allClassesMappedToTable = kvPair.second.second;
+        partition.GenerateClassIdFilter(allClassesMappedToTable);
         }
-    return std::move(part);
+
+    return std::move(storageDescription);
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition& StorageDescription::AddHorizontalPartition(HorizontalPartition&& partition, bool isRootPartition)
+    {
+    const bool isVirtual = partition.GetTable().GetPersistenceType() == PersistenceType::Virtual;
+    m_horizontalPartitions.push_back(std::move(partition));
+    
+    HorizontalPartition& addedPartition = m_horizontalPartitions.back();
+    if (!isVirtual)
+        m_nonVirtualHorizontalPartitions.push_back(&addedPartition);
+
+    if (isRootPartition)
+        {
+        BeAssert(m_rootHorizontalPartition == nullptr && "Root partition should only be set once per StorageDescription");
+        m_rootHorizontalPartition = &addedPartition;
+        }
+
+    return addedPartition;
     }
 
 //------------------------------------------------------------------------------------------
@@ -1578,13 +1595,52 @@ HorizontalPartition& HorizontalPartition::operator=(HorizontalPartition&& rhs)
     {
     if (this != &rhs)
         {
-        m_tableId = std::move(rhs.m_tableId);
-        m_classMapToPartition = std::move(rhs.m_classMapToPartition);
-        m_filter = std::move(rhs.m_filter);
-        m_includeFilter = std::move(rhs.m_includeFilter);
+        m_table = std::move(rhs.m_table);
+        m_partitionClassIds = std::move(rhs.m_partitionClassIds);
+        m_inversedPartitionClassIds = std::move(rhs.m_inversedPartitionClassIds);
+        m_hasInversedPartitionClassIds = std::move(rhs.m_hasInversedPartitionClassIds);
+
+        //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
+        //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
+        //this method is safe.
+        rhs.m_table = nullptr;
         }
 
     return *this;
+    }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds)
+    {
+    BeAssert(!m_partitionClassIds.empty());
+    m_hasInversedPartitionClassIds = m_partitionClassIds.size() > tableClassIds.size() / 2;
+    if (!m_hasInversedPartitionClassIds || m_partitionClassIds.size() == tableClassIds.size())
+        return;
+    
+    //tableClassIds list is already sorted
+    std::sort(m_partitionClassIds.begin(), m_partitionClassIds.end());
+
+    auto partitionClassIdsIt = m_partitionClassIds.begin();
+    for (ECClassId candidateClassId : tableClassIds)
+        {
+        if (partitionClassIdsIt == m_partitionClassIds.end() || candidateClassId < *partitionClassIdsIt)
+            m_inversedPartitionClassIds.push_back(candidateClassId);
+        else
+            ++partitionClassIdsIt;
+        }
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+bool HorizontalPartition::NeedsClassIdFilter() const
+    {
+    BeAssert(!m_partitionClassIds.empty()); 
+    //If class ids are not inversed, we always have a non-empty partition class id list. So filtering is needed.
+    //if class ids are inversed, filtering is needed if the inversed list is not empty. If it is empty, it means
+    //don't filter at all -> consider all class ids
+    return !m_hasInversedPartitionClassIds || !m_inversedPartitionClassIds.empty();
     }
 
 //------------------------------------------------------------------------------------------
@@ -1592,20 +1648,28 @@ HorizontalPartition& HorizontalPartition::operator=(HorizontalPartition&& rhs)
 //------------------------------------------------------------------------------------------
 void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder) const
     {
-    if (m_filter.empty())
-        return;
+    BeAssert(!m_partitionClassIds.empty());
 
-    //WIP: Need to find the name of the class id column by API
-    sqlBuilder.Append("ECClassId ");
+    std::vector<ECClassId> const* classIds = nullptr;
+    BooleanSqlOperator inOperator;
+    if (m_hasInversedPartitionClassIds)
+        {
+        classIds = &m_inversedPartitionClassIds;
+        if (classIds->empty())
+            return; //no filter needed, as all class ids should be considered
 
-    if (m_includeFilter)
-        sqlBuilder.Append(BooleanSqlOperator::IN);
+        inOperator = BooleanSqlOperator::NOT_IN;
+        }
     else
-        sqlBuilder.Append(BooleanSqlOperator::NOT_IN);
+        {
+        classIds = &m_partitionClassIds;
+        inOperator = BooleanSqlOperator::IN;
+        }
 
+    sqlBuilder.Append(inOperator);
     sqlBuilder.AppendParenLeft();
     bool isFirstItem = true;
-    for (ECClassId const& classId : m_filter)
+    for (ECClassId const& classId : *classIds)
         {
         if (!isFirstItem)
             sqlBuilder.AppendComma();
