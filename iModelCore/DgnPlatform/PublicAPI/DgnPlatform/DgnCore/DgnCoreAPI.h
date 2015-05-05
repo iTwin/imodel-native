@@ -25,7 +25,6 @@
 #include "ElementGeometry.h"
 #include "ElementGraphics.h"
 #include "FenceParams.h"
-#include "DgnFontManager.h"
 #include "GPArray.h"
 #include "HitPath.h"
 #include "IAuxCoordSys.h"
@@ -49,6 +48,7 @@
 #include "ViewController.h"
 #include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
+#include "DgnFont.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"

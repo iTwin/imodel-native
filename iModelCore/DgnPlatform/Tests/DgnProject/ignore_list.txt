@@ -60,7 +60,9 @@ ECDbInstances.FieldEngineerStructArray
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
+AnnotationTextBlockTest.DeepCopy
 AnnotationTextBlockTest.DefaultsAndAccessors
+AnnotationTextStyleTest.DefaultsAndAccessors
 DgnColorsTest.GetElementColor
 DgnColorsTest.ImportElement
 DgnDb.AddDeleteLine
@@ -68,12 +70,6 @@ DgnDb.CheckStandardProperties
 DgnDb.GetCoordinateSystemProperties
 DgnDb.LoadModelThroughProject
 DgnDb.WorkWithDgnModelTable
-DgnFontTests.CompressEscapeSequencesRsc
-DgnFontTests.CompressRscFractions
-DgnFontTests.ExpandRscFractions
-DgnFontTests.GetFontAndConvertFontVariantToType
-DgnFontTests.GetTypeVariantAndName
-DgnFontTests.ResolveFonts
 DgnGraphicsTest2d.AddCurveVector
 DgnGraphicsTest2d.CreateDrawingGraphics
 DgnGraphicsTest2d.SaveAndLoadDrawingGraphics

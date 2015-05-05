@@ -55,11 +55,11 @@ struct TextAnnotationTest : public GenericDgnModelTestFixture
             }
 
         //.............................................................................................
-        DgnFontCR ttFont = DgnFontManager::GetDefaultTrueTypeFont();
-        ASSERT_TRUE(!ttFont.IsMissing());
+        DgnFontCR ttFont = DgnFontManager::GetFallbackTrueTypeFont();
+        ASSERT_TRUE(ttFont.IsResolved());
 
-        uint32_t ttFontId = 0;
-        ASSERT_TRUE(SUCCESS == project.Fonts().AcquireFontNumber(ttFontId, ttFont));
+        DgnFontId ttFontId = project.Fonts().AcquireId(ttFont);
+        ASSERT_TRUE(ttFontId.IsValid());
 
         //.............................................................................................
         AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);

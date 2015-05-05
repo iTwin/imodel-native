@@ -59,9 +59,9 @@
 #define DGN_RELNAME_ModelDrivesModel           "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
-#include "DgnFontManager.h"
 #include "UnitDefinition.h"
 #include "DgnLink.h"
+#include "DgnFont.h"
 #include "DgnCoreEvent.h"
 #include "DgnElement.h"
 #include <Bentley/HeapZone.h>
@@ -1124,87 +1124,152 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   09/13
+// @bsiclass                                                    Jeff.Marker     03/2015
 //=======================================================================================
-struct DgnFonts : DgnDbTable
+struct DgnFonts : NonCopyableClass
 {
-private:
-    mutable T_FontNumberMap     m_fontNumberMap;
-    mutable bool                m_fontNumberMapLoaded;
-    mutable bool                m_embeddedFontsLoaded;
-    mutable T_FontCatalogMap    m_embeddedFonts;
-    mutable T_FontCatalogMap    m_missingFonts;
+    typedef bmap<DgnFontId,DgnFontPtr> T_FontMap;
 
-    friend struct DgnDb;
-
-    // Ensures the font number map is loaded as a side effect.
-    T_FontNumberMap const& FontNumberMap() const;
-    explicit DgnFonts(DgnDbR db);
-
-private:
-    DgnFonts();
-    DgnFonts(DgnFonts const&); // no copying
-
-public:
-    struct Iterator : BeSQLite::DbTableIterator
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     03/2015
+    //=======================================================================================
+    struct DbFontMapDirect : NonCopyableClass
     {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db){}
+    private:
+        friend DgnFonts;
+        DgnFonts& m_dbFonts;
 
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        DbFontMapDirect(DgnFonts& dbFonts) : m_dbFonts(dbFonts) {}
+    
+    public:
+        struct Iterator : public BeSQLite::DbTableIterator
         {
         private:
-            friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            DgnFonts& m_dbFonts;
+
         public:
-            DGNPLATFORM_EXPORT uint32_t GetFontId() const;
-            DGNPLATFORM_EXPORT DgnFontType GetFontType() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            bool IsValid() const {return m_isValid && (nullptr!=m_sql->GetSqlStatementP());}
-            Entry const& operator*() const {return *this;}
+            Iterator(DgnFonts& dbFonts) : BeSQLite::DbTableIterator(dbFonts.m_db), m_dbFonts(dbFonts) {}
+
+            struct Entry : public DbTableIterator::Entry, public std::iterator<std::input_iterator_tag,Entry const>
+            {
+            private:
+                friend struct Iterator;
+                Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+
+            public:
+                DGNPLATFORM_EXPORT DgnFontId GetId() const;
+                DGNPLATFORM_EXPORT DgnFontType GetType() const;
+                DGNPLATFORM_EXPORT Utf8CP GetName() const;
+                Entry const& operator*() const { return *this; }
+            };
+
+            typedef Entry const_iterator;
+            DGNPLATFORM_EXPORT const_iterator begin() const;
+            const_iterator end() const { return Entry(NULL, false); }
+            DGNPLATFORM_EXPORT size_t QueryCount() const;
+        };
+        
+        bool DoesFontTableExist() const { return m_dbFonts.m_db.TableExists(m_dbFonts.m_tableName.c_str()); }
+        DGNPLATFORM_EXPORT BentleyStatus CreateFontTable();
+        DGNPLATFORM_EXPORT DgnFontPtr QueryById(DgnFontId) const;
+        DGNPLATFORM_EXPORT DgnFontPtr QueryByTypeAndName(DgnFontType, Utf8CP) const;
+        DGNPLATFORM_EXPORT DgnFontId QueryIdByTypeAndName(DgnFontType, Utf8CP) const;
+        DGNPLATFORM_EXPORT bool ExistsById(DgnFontId) const;
+        DGNPLATFORM_EXPORT bool ExistsByTypeAndName(DgnFontType, Utf8CP) const;
+        DGNPLATFORM_EXPORT BentleyStatus Insert(DgnFontCR, DgnFontId&);
+        DGNPLATFORM_EXPORT BentleyStatus Update(DgnFontCR, DgnFontId);
+        DGNPLATFORM_EXPORT BentleyStatus Delete(DgnFontId);
+        Iterator MakeIterator() const { return Iterator(m_dbFonts); }
         };
 
-    typedef Entry const_iterator;
-    typedef Entry iterator;
-    DGNPLATFORM_EXPORT size_t QueryCount() const;
-    DGNPLATFORM_EXPORT const_iterator begin() const;
-    const_iterator end() const {return Entry(nullptr, false);}
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     03/2015
+    //=======================================================================================
+    struct DbFaceDataDirect : NonCopyableClass
+    {
+        struct FaceKey
+        {
+            DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_Regular;
+            DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_Bold;
+            DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_Italic;
+            DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_BoldItalic;
+            
+            DgnFontType m_type;
+            Utf8String m_familyName;
+            Utf8String m_faceName;
+
+            FaceKey() : m_type((DgnFontType)0) {}
+            FaceKey(DgnFontType type, Utf8CP familyName, Utf8CP faceName) : m_type(type), m_familyName(familyName), m_faceName(faceName) {}
+            bool Equals(FaceKey const& rhs) const { return ((rhs.m_type == m_type) && m_familyName.EqualsI(rhs.m_familyName) && m_faceName.EqualsI(rhs.m_faceName)); }
+        };
+
+        typedef uint64_t DataId;
+        typedef FaceKey const& FaceKeyCR;
+        typedef uint32_t FaceSubId;
+        typedef bmap<FaceSubId, FaceKey> T_FaceMap;
+        typedef T_FaceMap const& T_FaceMapCR;
+        
+        struct Iterator : public BeSQLite::DbTableIterator
+        {
+        private:
+            DgnFonts& m_dbFonts;
+
+        public:
+            Iterator(DgnFonts& dbFonts) : BeSQLite::DbTableIterator(dbFonts.m_db), m_dbFonts(dbFonts) {}
+
+            struct Entry : public DbTableIterator::Entry, public std::iterator<std::input_iterator_tag,Entry const>
+            {
+            private:
+                friend struct Iterator;
+                Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+
+            public:
+                DGNPLATFORM_EXPORT uint64_t GetId() const;
+                DGNPLATFORM_EXPORT T_FaceMap GenerateFaceMap() const;
+                Entry const& operator*() const { return *this; }
+            };
+
+            typedef Entry const_iterator;
+            DGNPLATFORM_EXPORT const_iterator begin() const;
+            const_iterator end() const { return Entry(NULL, false); }
+            DGNPLATFORM_EXPORT size_t QueryCount() const;
+        };
+
+    private:
+        friend DgnFonts;
+        DgnFonts& m_dbFonts;
+
+        DbFaceDataDirect(DgnFonts& dbFonts) : m_dbFonts(dbFonts) {}
+
+    public:
+        DGNPLATFORM_EXPORT BentleyStatus QueryById(bvector<Byte>&, DataId);
+        DGNPLATFORM_EXPORT BentleyStatus QueryByFace(bvector<Byte>&, FaceSubId&, FaceKeyCR);
+        DGNPLATFORM_EXPORT bool Exists(FaceKeyCR);
+        DGNPLATFORM_EXPORT BentleyStatus Insert(ByteCP, size_t dataSize, T_FaceMapCR);
+        DGNPLATFORM_EXPORT BentleyStatus Delete(FaceKeyCR);
+        Iterator MakeIterator() const { return Iterator(m_dbFonts); }
     };
-//__PUBLISH_SECTION_END__
-    //! Attempts to find a missing font object by the given type and name.
-    DGNPLATFORM_EXPORT DgnFontCP GetMissingFont(DgnFontType fontType, Utf8CP fontName) const;
 
-    //! First attempts to get a missing font object by the given type and name; if it does not exist, one is created.
-    //! v8FontNumber is optional, and is only used with DgnFontType is RSC.
-    DGNPLATFORM_EXPORT DgnFontCP GetOrCreateMissingFont(DgnFontType, Utf8CP fontName, uint32_t v8FontNumber = (uint32_t)-1) const;
+private:
+    DbFontMapDirect m_dbFontMap;
+    DbFaceDataDirect m_dbFaceData;
+    BeSQLiteDbR m_db;
+    Utf8String m_tableName;
+    bool m_isFontMapLoaded;
+    T_FontMap m_fontMap;
 
-    // *** DO NOT USE *** Use AcquireFontNumber instead. This is a low-level method to support DgnV8ProjectImpoter.
-    DGNPLATFORM_EXPORT BentleyStatus InsertFontNumberMappingDirect(uint32_t id, DgnFontType, Utf8CP name);
+    void Update();
 
-    // *** DO NOT USE *** This is used to coordinate with the DgnV8 importer.
-    DGNPLATFORM_EXPORT bool IsFontNumberMapLoaded() const;
+public:
+    DgnFonts(BeSQLiteDbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
-//__PUBLISH_SECTION_START__
-
-/** @cond BENTLEY_SDK_Publisher */
-    //! Embeds the given font in this DgnDb.
-    DGNPLATFORM_EXPORT DgnFontCP EmbedFont(DgnFontCR);
-
-    //! Provides a DgnDb-specific font number for the given font. A new number is added if a mapping does not already exist.
-    DGNPLATFORM_EXPORT BentleyStatus AcquireFontNumber(uint32_t& acquiredID, DgnFontCR);
-
-    //! Queries the DgnDb font map to resolve a font to a number. If a mapping does not already exist, one is <b>not</b> added.
-    DGNPLATFORM_EXPORT BentleyStatus FindFontNumber(uint32_t* foundID, DgnFontCR) const;
-
-    //! Queries the DgnDb font map to resolve a number to a font. If a mapping does not already exist, one is <b>not</b> added.
-    DGNPLATFORM_EXPORT DgnFontCP FindFont(uint32_t fontNumber) const;
-
-    //! Gets a collection of this DgnDb's embedded fonts. This DgnDb owns these font objects.
-    DGNPLATFORM_EXPORT T_FontCatalogMap const& EmbeddedFonts() const;
-/** @endcond */
-
-    //! Get an iterator over the fonts in this DgnDb.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+    DbFontMapDirect& DbFontMap() { return m_dbFontMap; }
+    DbFaceDataDirect& DbFaceData() { return m_dbFaceData; }
+    void Invalidate() { m_isFontMapLoaded = false; m_fontMap.clear(); }
+    DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
+    DGNPLATFORM_EXPORT DgnFontCP FindFontByTypeAndName(DgnFontType, Utf8CP) const;
+    DGNPLATFORM_EXPORT DgnFontId FindId(DgnFontCR) const;
+    DGNPLATFORM_EXPORT DgnFontId AcquireId(DgnFontCR);
 };
 
 

@@ -13,7 +13,7 @@
 TextStringStylePtr TextStringStyle::Create() { return new TextStringStyle(); }
 TextStringStyle::TextStringStyle() :
     T_Super(),
-    m_font(&DgnFontManager::GetDefaultTrueTypeFont()),
+    m_font(&DgnFontManager::GetFallbackTrueTypeFont()),
     m_isBold(false),
     m_isItalic(false),
     m_isUnderlined(false),
@@ -43,7 +43,7 @@ void TextStringStyle::CopyFrom(TextStringStyleCR rhs)
 ColorDefCR TextStringStyle::GetColor() const { return m_color; }
 void TextStringStyle::SetColor(ColorDefCR value) { m_color = value; }
 DgnFontCR TextStringStyle::GetFont() const { return *m_font; }
-void TextStringStyle::SetFont(DgnFontCR value) { m_font = value.ResolveToRenderFont(); }
+void TextStringStyle::SetFont(DgnFontCR value) { m_font = &DgnFontManager::ResolveFont(&value); }
 bool TextStringStyle::IsBold() const { return m_isBold; }
 void TextStringStyle::SetIsBold(bool value) { m_isBold = value; }
 bool TextStringStyle::IsItalic() const { return m_isItalic; }
@@ -95,7 +95,7 @@ void TextString::CopyFrom(TextStringCR rhs)
     m_isValid = rhs.m_isValid;
     m_range = rhs.m_range;
     m_glyphs = rhs.m_glyphs;
-    m_glyphCodes = rhs.m_glyphCodes;
+    m_glyphIds = rhs.m_glyphIds;
     m_glyphOrigins = rhs.m_glyphOrigins;
     }
 
@@ -114,9 +114,9 @@ void TextString::SetOrientation(RotMatrixCR value) { m_orientation = value; }
 
 void TextString::Invalidate() { m_isValid = false; }
 DRange2dCR TextString::GetRange() const { Update(); return m_range; }
-size_t TextString::GetNumGlyphs() const { Update(); return m_glyphCodes.size(); }
+size_t TextString::GetNumGlyphs() const { Update(); return m_glyphIds.size(); }
 DgnGlyphCP const* TextString::GetGlyphs() const { Update(); return &m_glyphs[0]; }
-GlyphCodeCP TextString::GetGlyphCodes() const { Update(); return &m_glyphCodes[0]; }
+DgnGlyph::T_Id const* TextString::GetGlyphIds() const { Update(); return &m_glyphIds[0]; }
 DPoint3dCP TextString::GetGlyphOrigins() const { Update(); return &m_glyphOrigins[0]; }
 
 //---------------------------------------------------------------------------------------
@@ -259,35 +259,37 @@ void TextString::ComputeAndLayoutGlyphs()
     {
     m_range.Init();
     m_glyphs.clear();
-    m_glyphCodes.clear();
+    m_glyphIds.clear();
     m_glyphOrigins.clear();
 
     if (m_text.empty())
         return;
     
-    DgnGlyphLayoutContext layoutContext(m_style.GetFont(), m_text.c_str(), m_text.size());
-    layoutContext.SetSize(m_style.GetSize());
-    layoutContext.SetIsBold(m_style.IsBold());
-    layoutContext.SetShouldUseItalicTypeface(m_style.IsItalic() && DgnFontType::TrueType == m_style.GetFont().GetType());
+    DgnGlyphLayoutContext layoutContext;
+    layoutContext.m_string = m_text;
+    layoutContext.m_drawSize = m_style.GetSize();
+    layoutContext.m_isBold = m_style.IsBold();
+    layoutContext.m_isItalic = (m_style.IsItalic() && DgnFontType::TrueType == m_style.GetFont().GetType());
 
     DgnGlyphLayoutResult layoutResult;
-    if (SUCCESS != m_style.GetFont().LayoutGlyphs(layoutContext, layoutResult))
+    if (SUCCESS != m_style.GetFont().LayoutGlyphs(layoutResult, layoutContext))
         return;
 
-    auto numGlyphs = layoutResult.GetGlyphCodesR().size();
+    auto numGlyphs = layoutResult.m_glyphs.size();
     if (0 == numGlyphs)
         return;
     
-    m_range = layoutResult.GetRangeR();
+    m_range = layoutResult.m_justificationRange;
 
     m_glyphs.resize(numGlyphs);
-    memcpy(&m_glyphs[0], &layoutResult.GetGlyphsR()[0], sizeof(decltype(m_glyphs)::value_type) * numGlyphs);
+    memcpy(&m_glyphs[0], &layoutResult.m_glyphs[0], sizeof(decltype(m_glyphs)::value_type) * numGlyphs);
     
-    m_glyphCodes.resize(numGlyphs);
-    memcpy(&m_glyphCodes[0], &layoutResult.GetGlyphCodesR()[0], sizeof(decltype(m_glyphCodes)::value_type) * numGlyphs);
+    m_glyphIds.clear();
+    for (DgnGlyphCP glyph : layoutResult.m_glyphs)
+        m_glyphIds.push_back(glyph->GetId());
 
     m_glyphOrigins.resize(numGlyphs);
-    memcpy(&m_glyphOrigins[0], &layoutResult.GetGlyphOriginsR()[0], sizeof(decltype(m_glyphOrigins)::value_type) * numGlyphs);
+    memcpy(&m_glyphOrigins[0], &layoutResult.m_glyphOrigins[0], sizeof(decltype(m_glyphOrigins)::value_type) * numGlyphs);
     }
 
 //---------------------------------------------------------------------------------------

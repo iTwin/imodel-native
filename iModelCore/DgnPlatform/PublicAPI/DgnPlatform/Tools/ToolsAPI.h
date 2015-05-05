@@ -34,7 +34,6 @@
 #include <DgnPlatform/Tools/BitMask.h>
 #include <Bentley/RefCounted.h>
 
-#include <DgnPlatform/Tools/varichar.h>
 #include <DgnPlatform/Tools/FlexList.h>
 #include <DgnPlatform/Tools/KeyTree.h>
 #include <DgnPlatform/Tools/PropMask.h>

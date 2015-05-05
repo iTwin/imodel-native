@@ -1,0 +1,902 @@
+/*--------------------------------------------------------------------------------------+
+|     $Source: DgnCore/DgnFont.cpp $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
++--------------------------------------------------------------------------------------*/
+#include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnCore/DgnFontData.h>
+
+#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::FontAdmin::~FontAdmin()
+    {
+    DELETE_AND_CLEAR(m_dbFonts);
+    DELETE_AND_CLEAR(m_fallbackFontDb);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+BeFileName DgnPlatformLib::Host::FontAdmin::_GetFallbackFontDbPath()
+    {
+    BeFileName path = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    path.AppendToPath(L"fonts");
+    path.AppendToPath(L"fallbackfonts");
+
+    return path;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureFallbackFontDb()
+    {
+    if (m_isInitialized)
+        return ((nullptr != m_dbFonts) ? SUCCESS : ERROR);
+
+    m_isInitialized = true;
+    
+    BeFileName path = _GetFallbackFontDbPath();
+    if (path.empty())
+        {
+        FONT_LOG.error("Could not determine the fallback font database path. Fallback fonts cannot be loaded.");
+        BeAssert(false);
+        return ERROR;
+        }
+    
+    unique_ptr<Db> fallbackFontDb(new Db());
+    DbResult openResult = fallbackFontDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_No, nullptr));
+    if (BE_SQLITE_OK != openResult)
+        {
+        FONT_LOG.errorv("Could not open the fallback font database '%s' with error code %i/'%s'.", Utf8String(path).c_str(), (int)openResult, Db::InterpretDbResult(openResult));
+        BeAssert(false);
+        return ERROR;
+        }
+
+    m_fallbackFontDb = fallbackFontDb.release();
+
+    FONT_LOG.infov("Using fallback font database '%s'.", Utf8String(path).c_str());
+    
+    m_dbFonts = new DgnFonts(*m_fallbackFontDb, "fallbackfont");
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontPtr DgnPlatformLib::Host::FontAdmin::_CreateFallbackFont(DgnFontType type)
+    {
+    if (SUCCESS != _EnsureFallbackFontDb())
+        return nullptr;
+    
+    Utf8String name;
+    switch (type)
+        {
+        case DgnFontType::TrueType: name = "FallbackTrueTypeFont"; break;
+        case DgnFontType::Rsc: name = "FallbackRscFont"; break;
+        case DgnFontType::Shx: name = "FallbackShxFont"; break;
+
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
+    
+    DgnFontPtr foundFont = m_dbFonts->DbFontMap().QueryByTypeAndName(type, name.c_str());
+    if (!foundFont.IsValid())
+        {
+        FONT_LOG.errorv("Could not find a fallback font with type/name %i/'%s'.", (int)type, name.c_str());
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return foundFont;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontCR DgnPlatformLib::Host::FontAdmin::_ResolveFont(DgnFontCP font)
+    {
+    if ((nullptr != font) && font->IsResolved())
+        return *font;
+    
+    if (nullptr != font)
+        {
+        switch (font->GetType())
+            {
+            case DgnFontType::TrueType: return _GetFallbackTrueTypeFont();
+            case DgnFontType::Rsc: return _GetFallbackRscFont();
+            case DgnFontType::Shx: return _GetFallbackShxFont();
+        
+            default:
+                BeAssert(false);
+                // Fall through
+            }
+        }
+    
+    return DgnFontManager::GetAnyFallbackFont();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontCR DgnFontManager::GetFallbackTrueTypeFont() { return T_HOST.GetFontAdmin()._GetFallbackTrueTypeFont(); }
+DgnFontCR DgnFontManager::GetFallbackRscFont() { return T_HOST.GetFontAdmin()._GetFallbackRscFont(); }
+DgnFontCR DgnFontManager::GetFallbackShxFont() { return T_HOST.GetFontAdmin()._GetFallbackShxFont(); }
+DgnFontCR DgnFontManager::GetAnyFallbackFont() { return T_HOST.GetFontAdmin()._GetAnyFallbackFont(); }
+DgnFontCR DgnFontManager::GetDecoratorFont() { return T_HOST.GetFontAdmin()._GetDecoratorFont(); }
+DgnFontCR DgnFontManager::ResolveFont(DgnFontCP font) { return T_HOST.GetFontAdmin()._ResolveFont(font); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontId DgnFonts::DbFontMapDirect::Iterator::Entry::GetId() const { Verify(); return DgnFontId(m_sql->GetValueInt(0)); }
+DgnFontType DgnFonts::DbFontMapDirect::Iterator::Entry::GetType() const { Verify(); return (DgnFontType)m_sql->GetValueInt(1); }
+Utf8CP DgnFonts::DbFontMapDirect::Iterator::Entry::GetName() const { Verify(); return m_sql->GetValueText(2); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFonts::DbFontMapDirect::Iterator::const_iterator DgnFonts::DbFontMapDirect::Iterator::begin() const
+    {
+    if (!m_stmt.IsValid())
+        {
+        Utf8String sql = MakeSqlString(SqlPrintfString("SELECT Id,Type,Name FROM %s", m_dbFonts.m_tableName.c_str()), false);
+        m_db->GetCachedStatement(m_stmt, sql.c_str());
+        m_params.Bind(*m_stmt);
+        }
+    else
+        {
+        m_stmt->Reset();
+        }
+
+    return Entry(m_stmt.get(), (BE_SQLITE_ROW == m_stmt->Step()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+size_t DgnFonts::DbFontMapDirect::Iterator::QueryCount() const
+    {
+    Utf8String sql = MakeSqlString(SqlPrintfString("SELECT COUNT(*) FROM %s", m_dbFonts.m_tableName.c_str()), false);
+
+    Statement query;
+    query.Prepare(*m_db, sql.c_str());
+    m_params.Bind(query);
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_ROW != query.Step()))
+        return 0;
+
+    return (size_t)query.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::DbFontMapDirect::CreateFontTable()
+    {
+    DbResult createStatus = m_dbFonts.m_db.CreateTable(DGN_TABLE_Font,
+        "Id INTEGER PRIMARY KEY,"
+        "Type INT,"
+        "Name CHAR NOT NULL COLLATE NOCASE,"
+        "Metadata BLOB,"
+        "CONSTRAINT names UNIQUE(Type,Name)");
+    
+    if (BE_SQLITE_OK != createStatus)
+        {
+        FONT_LOG.errorv("Failed to create font table with error code %i/'%s'.", (int)createStatus, Db::InterpretDbResult(createStatus));
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontPtr DgnFonts::DbFontMapDirect::QueryById(DgnFontId id) const
+    {
+    PRECONDITION(id.IsValid(), nullptr);
+
+    Statement query;
+    query.Prepare(m_dbFonts.m_db, SqlPrintfString("SELECT Type,Name,Metadata FROM %s WHERE Id=?", m_dbFonts.m_tableName.c_str()));
+    query.BindId(1, id);
+
+    if (BE_SQLITE_ROW != query.Step())
+        return nullptr;
+
+    return DgnFontPersistence::Db::FromDb(m_dbFonts, id, (DgnFontType)query.GetValueInt(0), query.GetValueText(1), (ByteCP)query.GetValueBlob(2), (size_t)query.GetColumnBytes(2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontPtr DgnFonts::DbFontMapDirect::QueryByTypeAndName(DgnFontType type, Utf8CP name) const
+    {
+    PRECONDITION(!Utf8String::IsNullOrEmpty(name), nullptr);
+
+    Statement query;
+    query.Prepare(m_dbFonts.m_db, SqlPrintfString("SELECT Id,Metadata FROM %s WHERE Type=? AND Name=?", m_dbFonts.m_tableName.c_str()));
+    query.BindInt(1, (int)type);
+    query.BindText(2, name, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != query.Step())
+        return nullptr;
+
+    return DgnFontPersistence::Db::FromDb(m_dbFonts, DgnFontId((uint32_t)query.GetValueInt(0)), type, name, (ByteCP)query.GetValueBlob(1), (size_t)query.GetColumnBytes(1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontId DgnFonts::DbFontMapDirect::QueryIdByTypeAndName(DgnFontType type, Utf8CP name) const
+    {
+    PRECONDITION(!Utf8String::IsNullOrEmpty(name), DgnFontId());
+
+    Statement query;
+    query.Prepare(m_dbFonts.m_db, SqlPrintfString("SELECT Id FROM %s WHERE Type=? AND Name=?", m_dbFonts.m_tableName.c_str()));
+    query.BindInt(1, (int)type);
+    query.BindText(2, name, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != query.Step())
+        return DgnFontId();
+
+    return DgnFontId((uint32_t)query.GetValueInt(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+bool DgnFonts::DbFontMapDirect::ExistsById(DgnFontId id) const
+    {
+    PRECONDITION(id.IsValid(), false);
+
+    Statement query;
+    query.Prepare(m_dbFonts.m_db, SqlPrintfString("SELECT COUNT(*) FROM %s WHERE Id=?", m_dbFonts.m_tableName.c_str()));
+    query.BindId(1, id);
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_ROW != query.Step()))
+        return false;
+
+    return (query.GetValueInt(0) > 0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+bool DgnFonts::DbFontMapDirect::ExistsByTypeAndName(DgnFontType type, Utf8CP name) const
+    {
+    PRECONDITION(!Utf8String::IsNullOrEmpty(name), false);
+
+    Statement query;
+    query.Prepare(m_dbFonts.m_db, SqlPrintfString("SELECT COUNT(*) FROM %s WHERE Type=? AND Name=?", m_dbFonts.m_tableName.c_str()));
+    query.BindInt(1, (int)type);
+    query.BindText(2, name, Statement::MakeCopy::No);
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_ROW != query.Step()))
+        return false;
+
+    return (query.GetValueInt(0) > 0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::DbFontMapDirect::Insert(DgnFontCR font, DgnFontId& id)
+    {
+    bvector<Byte> metadata;
+    if (SUCCESS != DgnFontPersistence::Db::MetadataToDb(metadata, font))
+        {
+        FONT_LOG.errorv("Could not insert font of type/name %i/'%s' because its metadata could not be serialized.", (int)font.GetType(), font.GetName().c_str());
+        BeAssert(false);
+        return ERROR;
+        }
+    
+    Statement idQuery;
+    idQuery.Prepare(m_dbFonts.m_db, SqlPrintfString("SELECT MAX(Id) FROM %s", m_dbFonts.m_tableName.c_str()));
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_ROW != idQuery.Step()))
+        return ERROR;
+    
+    id = DgnFontId(idQuery.GetValueInt(0) + 1);
+
+    Statement insert;
+    insert.Prepare(m_dbFonts.m_db, SqlPrintfString("INSERT INTO %s (Id,Type,Name,Metadata) VALUES (?,?,?,?)", m_dbFonts.m_tableName.c_str()));
+    insert.BindInt(1, static_cast<int>(id.GetValue()));
+    insert.BindInt(2, static_cast<int>(font.GetType()));
+    insert.BindText(3, font.GetName(), Statement::MakeCopy::No);
+    insert.BindBlob(4, &metadata[0], (int)metadata.size(), Statement::MakeCopy::No);
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != insert.Step()))
+        return ERROR;
+
+    FONT_LOG.infov("Inserted font of ID/type/name %i/%i/'%s'.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::DbFontMapDirect::Update(DgnFontCR font, DgnFontId id)
+    {
+    PRECONDITION(id.IsValid(), ERROR);
+    
+    bvector<Byte> metadata;
+    if (SUCCESS != DgnFontPersistence::Db::MetadataToDb(metadata, font))
+        {
+        FONT_LOG.errorv("Could not update font of ID/type/name %i/%i/'%s' because its metadata could not be serialized.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
+        BeAssert(false);
+        return ERROR;
+        }
+
+    Statement update;
+    update.Prepare(m_dbFonts.m_db, SqlPrintfString("UPDATE %s SET Type=?,Name=?,Metadata=? WHERE Id=?", m_dbFonts.m_tableName.c_str()));
+    update.BindInt(1, static_cast<int>(font.GetType()));
+    update.BindText(2, font.GetName(), Statement::MakeCopy::No);
+    update.BindBlob(3, &metadata[0], (int)metadata.size(), Statement::MakeCopy::No);
+
+    update.BindInt(5, (int)id.GetValue());
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != update.Step()))
+        return ERROR;
+
+    FONT_LOG.infov("Updated font with ID %i to type/name %i/'%s'.", (int)id.GetValue(), (int)font.GetType(), font.GetName().c_str());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::DbFontMapDirect::Delete(DgnFontId id)
+    {
+    PRECONDITION(id.IsValid(), ERROR);
+
+    Statement del;
+    del.Prepare(m_dbFonts.m_db, SqlPrintfString("DELETE FROM %s WHERE Id=?", m_dbFonts.m_tableName.c_str()));
+    del.BindId(1, id);
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != del.Step()))
+        return ERROR;
+
+    FONT_LOG.infov("Deleted font with ID %i.", (int)id.GetValue());
+
+    return SUCCESS;
+    }
+
+const Utf8CP DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular = "regular";
+const Utf8CP DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Bold = "bold";
+const Utf8CP DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Italic = "italic";
+const Utf8CP DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_BoldItalic = "bolditalic";
+
+#define EMBEDDED_FACE_DATA_PROP_NS "dgn_Font"
+#define EMBEDDED_FACE_DATA_PROP_NAME "EmbeddedFaceData"
+static const PropertySpec EMBEDDED_FACE_DATA_PROPERTY_SPEC(EMBEDDED_FACE_DATA_PROP_NAME, EMBEDDED_FACE_DATA_PROP_NS);
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     04/2015
+//=======================================================================================
+struct EmbeddedFaceDataIterator : public BeSQLite::DbTableIterator
+{
+    EmbeddedFaceDataIterator(BeSQLiteDbR db) : BeSQLite::DbTableIterator(db) {}
+
+    struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+    {
+    private:
+        friend struct EmbeddedFaceDataIterator;
+        Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+
+    public:
+        DgnFonts::DbFaceDataDirect::DataId GetId() const { Verify(); return m_sql->GetValueInt64(0); }
+        Utf8CP GetToc() const { Verify(); return m_sql->GetValueText(1); }
+        size_t GetTocSize() const { Verify(); return (size_t)m_sql->GetColumnBytes(1); }
+        size_t GetRawSize() const { Verify(); return (size_t)m_sql->GetValueInt(2); }
+        Entry const& operator*() const { return *this; }
+    };
+
+    typedef Entry const_iterator;
+    const_iterator begin() const;
+    const_iterator end() const { return Entry(NULL, false); }
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+EmbeddedFaceDataIterator::const_iterator EmbeddedFaceDataIterator::begin() const
+    {
+    if (!m_stmt.IsValid())
+        {
+        Utf8String sql = MakeSqlString("SELECT Id,StrData,RawSize FROM " BEDB_TABLE_Property " WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "'", true);
+        m_db->GetCachedStatement(m_stmt, sql.c_str());
+        m_params.Bind(*m_stmt);
+        }
+    else
+        {
+        m_stmt->Reset();
+        }
+
+    return Entry(m_stmt.get(), (BE_SQLITE_ROW == m_stmt->Step()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+static Json::Value jsonFromFaceMap(CharCP tocStart, CharCP tocEnd, DgnFonts::DbFaceDataDirect::DataId id)
+    {
+    Json::Value toc;
+    Json::Reader reader;
+    if (!reader.parse(tocStart, tocEnd, toc, false) || !toc.isArray())
+        FONT_LOG.warningv("Invalid embedded face data table of contents for ID %i. This face data record cannot be used.", (int)id);
+
+    return toc;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+static Json::Value jsonFromFaceMap(EmbeddedFaceDataIterator::Entry const& faceDataEntry)
+    {
+    CharCP tocStart = faceDataEntry.GetToc();
+    CharCP tocEnd = (tocStart + faceDataEntry.GetTocSize());
+    return jsonFromFaceMap(tocStart, tocEnd, faceDataEntry.GetId());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+static DgnFonts::DbFaceDataDirect::FaceKey faceKeyFromJson(JsonValueCR json) { return DgnFonts::DbFaceDataDirect::FaceKey((DgnFontType)json["type"].asUInt(), json["familyName"].asCString(), json["faceName"].asCString()); }
+static DgnFonts::DbFaceDataDirect::FaceSubId faceSubIdFromJson(JsonValueCR json) { return (DgnFonts::DbFaceDataDirect::FaceSubId)json["subId"].asUInt(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+uint64_t DgnFonts::DbFaceDataDirect::Iterator::Entry::GetId() const { Verify(); return m_sql->GetValueInt64(0); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+DgnFonts::DbFaceDataDirect::T_FaceMap DgnFonts::DbFaceDataDirect::Iterator::Entry::GenerateFaceMap() const
+    {
+    Verify();
+    
+    T_FaceMap faces;
+    CharCP tocStart = m_sql->GetValueText(1);
+    CharCP tocEnd = (tocStart + m_sql->GetColumnBytes(1));
+    Json::Value toc = jsonFromFaceMap(tocStart, tocEnd, m_sql->GetValueInt64(0));
+    for (Json::Value::const_iterator faceKeyIter = ((JsonValueCR)toc).begin(); ((JsonValueCR)toc).end() != faceKeyIter; ++faceKeyIter)
+        faces[faceSubIdFromJson(*faceKeyIter)] = faceKeyFromJson(*faceKeyIter);
+    
+    return faces;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+DgnFonts::DbFaceDataDirect::Iterator::const_iterator DgnFonts::DbFaceDataDirect::Iterator::begin() const
+    {
+    if (!m_stmt.IsValid())
+        {
+        Utf8String sql = MakeSqlString("SELECT Id,StrData FROM " BEDB_TABLE_Property " WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "'", true);
+        m_db->GetCachedStatement(m_stmt, sql.c_str());
+        m_params.Bind(*m_stmt);
+        }
+    else
+        {
+        m_stmt->Reset();
+        }
+
+    return Entry(m_stmt.get(), (BE_SQLITE_ROW == m_stmt->Step()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+size_t DgnFonts::DbFaceDataDirect::Iterator::QueryCount() const
+    {
+    Utf8String sql = MakeSqlString("SELECT COUNT(*) FROM " BEDB_TABLE_Property " WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "'", true);
+
+    Statement query;
+    query.Prepare(*m_db, sql.c_str());
+    m_params.Bind(query);
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_ROW != query.Step()))
+        return 0;
+
+    return (size_t)query.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::DbFaceDataDirect::QueryById(bvector<Byte>& fontData, DataId id)
+    {
+    uint32_t fontDataSize;
+    if (BE_SQLITE_ROW != m_dbFonts.m_db.QueryPropertySize(fontDataSize, EMBEDDED_FACE_DATA_PROPERTY_SPEC, id, 0))
+        return ERROR;
+    
+    fontData.resize(fontDataSize);
+    if (BE_SQLITE_ROW != m_dbFonts.m_db.QueryProperty(&fontData[0], fontDataSize, EMBEDDED_FACE_DATA_PROPERTY_SPEC, id, 0))
+        return ERROR;
+    
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::DbFaceDataDirect::QueryByFace(bvector<Byte>& data, FaceSubId& subId, FaceKeyCR key)
+    {
+    EmbeddedFaceDataIterator allFaceData(m_dbFonts.m_db);
+    for (EmbeddedFaceDataIterator::Entry const& faceDataEntry : allFaceData)
+        {
+        Json::Value toc = jsonFromFaceMap(faceDataEntry);
+        for (Json::Value::const_iterator faceKeyIter = ((JsonValueCR)toc).begin(); ((JsonValueCR)toc).end() != faceKeyIter; ++faceKeyIter)
+            {
+            FaceKey currFaceKey = faceKeyFromJson(*faceKeyIter);
+            if (!key.Equals(currFaceKey))
+                continue;
+            
+            subId = faceSubIdFromJson(*faceKeyIter);
+            
+            data.resize(faceDataEntry.GetRawSize());
+            if (BE_SQLITE_ROW != m_dbFonts.m_db.QueryProperty(&data[0], (uint32_t)data.size(), EMBEDDED_FACE_DATA_PROPERTY_SPEC, faceDataEntry.GetId(), 0))
+                {
+                FONT_LOG.warningv("Could not retrieve embedded face data data for ID %i via the property API. This face data record cannot be used.", (int)faceDataEntry.GetId());
+                return ERROR;
+                }
+            
+            return SUCCESS;
+            }
+        }
+
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+bool DgnFonts::DbFaceDataDirect::Exists(FaceKeyCR key)
+    {
+    EmbeddedFaceDataIterator allFaceData(m_dbFonts.m_db);
+    for (EmbeddedFaceDataIterator::Entry const& faceDataEntry : allFaceData)
+        {
+        Json::Value toc = jsonFromFaceMap(faceDataEntry);
+        for (Json::ValueConstIterator faceKeyIter = ((JsonValueCR)toc).begin(); ((JsonValueCR)toc).end() != faceKeyIter; ++faceKeyIter)
+            {
+            FaceKey currFaceKey = faceKeyFromJson(*faceKeyIter);
+            if (!key.Equals(currFaceKey))
+                continue;
+
+            return true;
+            }
+        }
+    
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::DbFaceDataDirect::Insert(ByteCP data, size_t size, T_FaceMapCR keys)
+    {
+    Statement idQuery;
+    idQuery.Prepare(m_dbFonts.m_db, "SELECT MAX(Id) FROM " BEDB_TABLE_Property " WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "'");
+    if (UNEXPECTED_CONDITION(BE_SQLITE_ROW != idQuery.Step()))
+        return ERROR;
+
+    DataId id = (idQuery.GetValueInt64(0) + 1);
+
+    // Db does not expose a SaveProperty that lets us save a string and blob at the same time.
+    // Use the API for the blob so we get compression; manually insert the table of contents string.
+    
+    if (BE_SQLITE_OK != m_dbFonts.m_db.SaveProperty(EMBEDDED_FACE_DATA_PROPERTY_SPEC, data, (uint32_t)size, id, 0))
+        {
+        FONT_LOG.warningv("Could not save embedded face data data for ID %i via the property API. This face data record cannot be saved.", (int)id);
+        return ERROR;
+        }
+
+    Json::Value toc(Json::ValueType::arrayValue);
+    for (T_FaceMap::value_type const& keyEntry : keys)
+        {
+        FaceKeyCR faceKey = keyEntry.second;
+        
+        Json::Value entry(Json::ValueType::objectValue);
+        entry["subId"] = (Json::UInt)keyEntry.first;
+        entry["type"] = (Json::UInt)faceKey.m_type;
+        entry["familyName"] = faceKey.m_familyName.c_str();
+        entry["faceName"] = faceKey.m_faceName.c_str();
+        
+        toc.append(entry);
+        }
+    
+    Utf8String tocString = Json::FastWriter::ToString(toc);
+
+    Statement update;
+    update.Prepare(m_dbFonts.m_db, "UPDATE " BEDB_TABLE_Property " SET StrData=? WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "' AND Id=?");
+    update.BindText(1, tocString.c_str(), Statement::MakeCopy::No);
+    update.BindInt64(2, id);
+
+    if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != update.Step()))
+        {
+        FONT_LOG.warningv("Could not save embedded face data table of contents data for ID %i. This face data record cannot be saved.", (int)id);
+        return ERROR;
+        }
+    
+    FONT_LOG.infov("Embedded font data with ID/size %i/%i bytes. It contains the following faces:", (int)id, (int)size);
+    for (T_FaceMap::value_type const& keyEntry : keys)
+        FONT_LOG.infov("    FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s'", (int)keyEntry.first, (int)keyEntry.second.m_type, keyEntry.second.m_familyName.c_str(), keyEntry.second.m_faceName.c_str());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFonts::DbFaceDataDirect::Delete(FaceKeyCR key)
+    {
+    EmbeddedFaceDataIterator allFaceData(m_dbFonts.m_db);
+    for (EmbeddedFaceDataIterator::Entry const& faceDataEntry : allFaceData)
+        {
+        Json::Value toc = jsonFromFaceMap(faceDataEntry);
+        Json::ArrayIndex iFoundEntry = 0;
+        for (; iFoundEntry < toc.size(); ++iFoundEntry)
+            {
+            FaceKey currFaceKey = faceKeyFromJson(toc[iFoundEntry]);
+            if (!key.Equals(currFaceKey))
+                continue;
+
+            break;
+            }
+        
+        if (toc.size() == iFoundEntry)
+            continue;
+        
+        toc.removeIndex(iFoundEntry);
+        
+        // No more faces for this entry? Delete it entirely.
+        if (toc.empty())
+            {
+            if (BE_SQLITE_DONE != m_dbFonts.m_db.DeleteProperty(EMBEDDED_FACE_DATA_PROPERTY_SPEC, faceDataEntry.GetId(), 0))
+                {
+                FONT_LOG.warningv("Could not delete embedded face data for Type/FamilyName/FaceName %i/%i/'%s'/'%s' because the property could not be deleted.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
+                return ERROR;
+                }
+
+            FONT_LOG.infov("Deleted entire record for embedded face data for Type/FamilyName/FaceName %i/%i/'%s'/'%s'; it was the last face in the record.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
+
+            return SUCCESS;
+            }
+
+        // Otherwise persist the trimmed table of contents.
+        Utf8String tocString = Json::FastWriter::ToString(toc);
+
+        Statement update;
+        update.Prepare(m_dbFonts.m_db, "UPDATE " BEDB_TABLE_Property " SET StrData=? WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "' AND Id=?");
+        update.BindText(1, tocString.c_str(), Statement::MakeCopy::No);
+        update.BindInt64(2, faceDataEntry.GetId());
+
+        if (UNEXPECTED_CONDITION(BE_SQLITE_DONE != update.Step()))
+            {
+            FONT_LOG.warningv("Could not save trimmed embedded face data table of contents data for ID %i. This face data record cannot be saved.", (int)faceDataEntry.GetId());
+            return ERROR;
+            }
+
+        FONT_LOG.infov("Removed face FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s' from table of contents; these other faces are still in the record:", (int)faceDataEntry.GetId(), (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
+        for (Json::ValueConstIterator faceKeyIter = ((JsonValueCR)toc).begin(); ((JsonValueCR)toc).end() != faceKeyIter; ++faceKeyIter)
+            FONT_LOG.infov("    FaceSubId/Type/FamilyName/FaceName %i/%i/'%s'/'%s'", (int)faceKeyIter.key().asUInt(), (int)(*faceKeyIter)["type"].asUInt(), (*faceKeyIter)["familyName"].asCString(), (*faceKeyIter)["faceName"].asCString());
+
+        return SUCCESS;
+        }
+    
+    FONT_LOG.infov("Attempted to delete embedded face data for type/family/face %i/'%s'/'%s', but it did not exist.", (int)key.m_type, key.m_familyName.c_str(), key.m_faceName.c_str());
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+void DgnFonts::Update()
+    {
+    if (m_isFontMapLoaded)
+        return;
+    
+    m_isFontMapLoaded = true;
+
+    for (DbFontMapDirect::Iterator::Entry const& entry : DbFontMap().MakeIterator())
+        {
+        DgnFontId id = entry.GetId();
+        DgnFontPtr font = DbFontMap().QueryById(id);
+        if (!font.IsValid())
+            {
+            FONT_LOG.errorv("Could not deserialize font with id/type/name %i/%i/'%s'; a fallback will be inserted into the font map.", (int)id.GetValue(), (int)entry.GetType(), entry.GetName());
+            font = DgnFontManager::GetAnyFallbackFont().Clone();
+            }
+        
+        m_fontMap[id] = font;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontCP DgnFonts::FindFontById(DgnFontId id) const
+    {
+    const_cast<DgnFonts*>(this)->Update();
+    T_FontMap::const_iterator iter = m_fontMap.find(id);
+    return ((m_fontMap.end() != iter) ? iter->second.get() : nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontCP DgnFonts::FindFontByTypeAndName(DgnFontType type, Utf8CP name) const
+    {
+    const_cast<DgnFonts*>(this)->Update();
+
+    for (T_FontMap::value_type const& entry : m_fontMap)
+        {
+        DgnFontCR existingFont = *entry.second;
+        if ((existingFont.GetType() == type) && existingFont.GetName().EqualsI(name))
+            return entry.second.get();
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontId DgnFonts::FindId(DgnFontCR font) const
+    {
+    const_cast<DgnFonts*>(this)->Update();
+    
+    for (T_FontMap::value_type const& entry : m_fontMap)
+        {
+        DgnFontCR existingFont = *entry.second;
+        if ((font.GetType() == existingFont.GetType()) && font.GetName().EqualsI(existingFont.GetName()))
+            return entry.first;
+        }
+
+    return DgnFontId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontId DgnFonts::AcquireId(DgnFontCR font)
+    {
+    // This calls Update for us.
+    DgnFontId existingId = FindId(font);
+    if (existingId.IsValid())
+        return existingId;
+
+    DgnFontId newId;
+    if (SUCCESS != DbFontMap().Insert(font, newId))
+        {
+        FONT_LOG.errorv("Could not insert a font map entry for font of type/name %i/'%s'; the font could not be inserted into the database.", (int)font.GetType(), font.GetName().c_str());
+        return DgnFontId();
+        }
+
+    m_fontMap[newId] = DbFontMap().QueryById(newId);
+
+    FONT_LOG.infov("Created font map entry %i -> type/name %i/'%s'.", (int)newId.GetValue(), font.GetName().c_str());
+
+    return newId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+bool DgnFontDataSession::Start()
+    {
+    if (!m_hasStarted)
+        {
+        m_hasStarted = true;
+        m_isValid = ((nullptr != m_data) && (SUCCESS == m_data->_AddDataRef()));
+        }
+    
+    return m_isValid;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+void DgnFontDataSession::Stop()
+    {
+    if (m_isValid)
+        m_data->_ReleaseDataRef();
+    
+    m_hasStarted = false;
+    m_isValid = false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFont::~DgnFont() { m_dataSession.Stop(); DELETE_AND_CLEAR(m_data); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+void DgnFont::CopyFrom(DgnFontCR rhs)
+    {
+    m_type = rhs.m_type;
+    m_name = rhs.m_name;
+    m_data = ((nullptr != rhs.m_data) ? rhs.m_data->_CloneWithoutData() : nullptr);
+    m_dataSession.Reset(m_data);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+bool DgnFont::IsResolved() const
+    {
+    if (nullptr == m_data)
+        return false;
+    
+    return m_dataSession.Start();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontPtr DgnFontPersistence::Db::FromDb(DgnFonts& dbFonts, DgnFontId id, DgnFontType type, Utf8CP name, ByteCP metadata, size_t metadataSize)
+    {
+    switch (type)
+        {
+        case DgnFontType::TrueType: return DgnTrueTypeFontFromDb(dbFonts, id, name, metadata, metadataSize);
+        case DgnFontType::Rsc: return DgnRscFontFromDb(dbFonts, id, name, metadata, metadataSize);
+        case DgnFontType::Shx: return DgnShxFontFromDb(dbFonts, id, name, metadata, metadataSize);
+        }
+    
+    BeAssert(false);
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFontPersistence::Db::MetadataToDb(bvector<Byte>& metadata, DgnFontCR font)
+    {
+    switch (font.GetType())
+        {
+        case DgnFontType::TrueType: return SUCCESS;
+        case DgnFontType::Rsc: return DgnRscFontMetadataToDb(metadata, static_cast<DgnRscFontCR>(font));
+        case DgnFontType::Shx: return DgnShxFontMetadataToDb(metadata, static_cast<DgnShxFontCR>(font));
+        }
+
+    BeAssert(false);
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnFontPersistence::Db::Embed(DgnFonts::DbFaceDataDirect& faceData, DgnFontCR font)
+    {
+    IDgnFontDataP data = font.m_data;
+    if (nullptr == data)
+        return ERROR;
+    
+    return data->_Embed(faceData);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+DgnFontPtr DgnFontPersistence::Missing::CreateMissingFont(DgnFontType type, Utf8CP name)
+    {
+    switch (type)
+        {
+        case DgnFontType::TrueType: return new DgnTrueTypeFont(name, nullptr);
+        case DgnFontType::Rsc: return new DgnRscFont(name, nullptr);
+        case DgnFontType::Shx: return new DgnShxFont(name, nullptr);
+        }
+
+    BeAssert(false);
+    return nullptr;
+    }

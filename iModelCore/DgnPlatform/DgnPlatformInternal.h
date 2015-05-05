@@ -36,8 +36,6 @@
 #include <DgnPlatform/DgnCore/DgnCoreAPI.h>
 #include <DgnPlatform/DgnCore/rtypes.r.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
-#include <DgnPlatform/DgnCore/DgnShxFont.h>
-#include <DgnPlatform/DgnCore/DgnTrueTypeFont.h>
 #include <DgnPlatformInternal/DgnCore/MaterialTokens.h>
 #include <DgnPlatformInternal/DgnCore/RasterDb.h>
 #include <DgnPlatform/DgnCore/LsLocal.h>
@@ -52,7 +50,6 @@
 #include <DgnPlatform/DgnCore/GPArray.h>
 #include <DgnPlatform/DgnCore/GradientSettings.h>
 #include <DgnPlatform/DgnCore/LineStyleApi.h>
-#include <DgnPlatform/DgnCore/DgnRscFont.h>
 #include <DgnPlatform/DgnCore/Undo.h>
 #include <DgnPlatform/DgnCore/LineStyleApi.h>
 #include <DgnPlatform/DgnCore/DgnRangeTree.h>

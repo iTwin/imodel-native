@@ -143,7 +143,7 @@ WCharCP       inValue
         value[strLength-1] = 0;
         }
 
-    WChar     degreeDelimiters[] = {L'^', L':', L'd', L'D', SPECIALCHAR_UnicodeDegree, 0 };
+    WChar     degreeDelimiters[] = {L'^', L':', L'd', L'D', 0x00b0 /*degree*/, 0 };
     WChar     minuteDelimiters[] = {L'\'', L':', L'm', L'M', 0};
     WChar     secondDelimiters[] = {L'"', L':', L's', L'S', 0};
     WCharP    degreeString        = value;
@@ -243,7 +243,7 @@ static bool    vp_parseAsDegreeString (AngleMode mode, WCharCP inputString)
     if ( (AngleMode::Centesimal != mode) && (AngleMode::Radians != mode) )
         return true;
 
-    WChar allDelimiters[] = {L'^', L':', L'd', L'D', SPECIALCHAR_UnicodeDegree, L'\'', L'm', L'M', L'"', L's', L'S', 0};
+    WChar allDelimiters[] = {L'^', L':', L'd', L'D', 0x00b0 /*degree*/, L'\'', L'm', L'M', L'"', L's', L'S', 0};
     size_t  delimiterIndex  = wcscspn (inputString, allDelimiters);
 
     return (0 != inputString[delimiterIndex]);
