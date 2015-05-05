@@ -438,7 +438,7 @@ TEST_F (ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     auto readContext = ECSchemaReadContext::CreateContext ();
     ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
     ASSERT_TRUE (testSchema != nullptr);
-    auto importStatus = db.GetEC().GetSchemaManager().ImportECSchemas (readContext->GetCache ());
+    auto importStatus = db.Schemas().ImportECSchemas (readContext->GetCache ());
     ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
 
     ECSqlStatement stmt;
