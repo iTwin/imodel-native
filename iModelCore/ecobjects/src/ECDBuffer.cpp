@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -2349,6 +2349,14 @@ ECObjectsStatus ECDBuffer::CopyFromBuffer (ECDBufferCR source)    { return _Copy
 ClassLayoutCR ECDBuffer::GetClassLayout() const                             { return _GetClassLayout(); }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPrimitiveType (ECPropertyCR prop)
+    {
+    return prop.GetIsPrimitive() || (prop.GetIsArray() && ARRAYKIND_Primitive == prop.GetAsArrayProperty()->GetKind());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source, bool ignoreErrors)
@@ -2373,7 +2381,7 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         else 
             {
             ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
-            if (NULL != ecProp && ecProp->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+            if (NULL != ecProp && isPrimitiveType (*ecProp) && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
                 {
                 if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
