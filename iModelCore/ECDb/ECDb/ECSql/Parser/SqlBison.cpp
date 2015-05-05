@@ -82,7 +82,7 @@
  * 
  *************************************************************/
 
-#pragma warning(disable:4603)
+//#pragma warning(disable:4603) Give Error on iOS
 #include "ECDbPch.h"
 #include "SqlTypes.h"
 #include <vector>
