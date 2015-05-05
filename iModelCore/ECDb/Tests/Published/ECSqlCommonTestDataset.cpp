@@ -23,16 +23,22 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
 
     auto abstractClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "Abstract");
     Utf8String ecsqlStub;
-    if (ToECSql (ecsqlStub, ecsqlType, *abstractClass, true)) //polymorphic
+    if (ToECSql(ecsqlStub, ecsqlType, *abstractClass, true)) //polymorphic
         {
         Utf8String ecsql;
 
-        ecsql.Sprintf ("%s WHERE I > 0", ecsqlStub.c_str ());
+        ecsql.Sprintf("%s WHERE I > 0", ecsqlStub.c_str());
         //Abstract class has 1 subclass, so row count per class expected
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
+        if (ecsqlType == ECSqlType::Select)
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+        else
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::NotYetSupported);
 
-        ecsql.Sprintf ("%s WHERE ECInstanceId < 0", ecsqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0); //where cond always false
+        ecsql.Sprintf("%s WHERE ECInstanceId < 0", ecsqlStub.c_str());
+        if (ecsqlType == ECSqlType::Select)
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //where cond always false
+        else
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::NotYetSupported);
         }
 
     if (ToECSql (ecsqlStub, ecsqlType, *abstractClass, false)) // non-polymorphic
@@ -47,15 +53,21 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
         }
 
     auto abstractNoSubclassesClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "AbstractNoSubclasses");
-    if (ToECSql (ecsqlStub, ecsqlType, *abstractNoSubclassesClass, true)) // polymorphic
+    if (ToECSql(ecsqlStub, ecsqlType, *abstractNoSubclassesClass, true)) // polymorphic
         {
         Utf8String ecsql;
 
-        ecsql.Sprintf ("%s WHERE I > 0", ecsqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0); //where cond always false
+        ecsql.Sprintf("%s WHERE I > 0", ecsqlStub.c_str());
+        if (ecsqlType == ECSqlType::Select)
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //where cond always false
+        else
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::NotYetSupported);
 
-        ecsql.Sprintf ("%s WHERE ECInstanceId < 0", ecsqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0); //no subclasses -> no rows
+        ecsql.Sprintf("%s WHERE ECInstanceId < 0", ecsqlStub.c_str());
+        if (ecsqlType == ECSqlType::Select)
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //no subclasses -> no rows
+        else
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::NotYetSupported);
         }
 
     if (ToECSql (ecsqlStub, ecsqlType, *abstractNoSubclassesClass, false)) // non-polymorphic

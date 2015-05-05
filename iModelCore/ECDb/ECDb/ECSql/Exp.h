@@ -482,11 +482,6 @@ public:
     const_iterator<Exp*> end ();
     };
 
-    enum class FinalizeParseStatus {Completed, NotCompleted, Error};
-
-
-protected:
-    enum class FinalizeParseMode {BeforeFinalizingChildren, AfterFinalizingChildren};
 
     //=======================================================================================
     //! @bsiclass                                                Krischan.Eberle      12/2013
@@ -497,13 +492,17 @@ protected:
         bmap<ECSqlSystemProperty, size_t> m_indexMap;
 
     public:
-        SystemPropertyExpIndexMap () {}
+        SystemPropertyExpIndexMap() {}
 
-        void AddIndex (ECSqlSystemProperty systemPropertyExp, size_t index);
-        bool IsUnset (ECSqlSystemProperty systemPropertyExp) const;
-        int GetIndex (ECSqlSystemProperty systemPropertyExp) const;
+        void AddIndex(ECSqlSystemProperty systemPropertyExp, size_t index);
+        bool IsUnset(ECSqlSystemProperty systemPropertyExp) const;
+        int GetIndex(ECSqlSystemProperty systemPropertyExp) const;
         };
 
+    enum class FinalizeParseStatus {Completed, NotCompleted, Error};
+
+protected:
+    enum class FinalizeParseMode {BeforeFinalizingChildren, AfterFinalizingChildren};
 
 public:
     static Utf8CP const ASTERISK_TOKEN;

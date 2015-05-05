@@ -22,16 +22,8 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
 
     auto classNameExp = exp.GetClassNameExp ();
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
-
-    //if table is virtual, i.e. does not exist in db, the ECSQL is still valid, but will result
-    //in a no-op in SQLite. Continue preparation as clients must continue to be able to call the bind
-    //API, even if it is a no-op. If we stopped preparation, clients would see index out of range errors when 
-    //calling the bind API.
-    if (classMap.GetTable ().GetPersistenceType() == PersistenceType::Virtual)
-        ctx.SetNativeStatementIsNoop (true);
-   
+ 
     NativeSqlSnippets deleteNativeSqlSnippets;
-
     auto stat = GenerateNativeSqlSnippets (deleteNativeSqlSnippets, ctx, exp, *classNameExp);
     if (stat != ECSqlStatus::Success)
         return stat;
@@ -157,17 +149,24 @@ ClassNameExp const& classNameExp
             return status;
         }
 
-    if (!ctx.GetParentContext ())
+    IClassMap const& classMap = classNameExp.GetInfo().GetMap();
+    //if table is virtual, i.e. does not exist in db, and the ECSQL is not polymorphic the ECSQL is still valid, but will result
+    //in a no-op in SQLite. Continue preparation as clients must continue to be able to call the bind
+    //API, even if it is a no-op. If we stopped preparation, clients would see index out of range errors when 
+    //calling the bind API.
+    if (classMap.GetTable().GetPersistenceType() == PersistenceType::Virtual && 
+        (!classNameExp.IsPolymorphic() || classMap.GetStorageDescription().GetHorizontalPartitions ().empty()))
+        ctx.SetNativeStatementIsNoop(true);
+
+    if (ctx.GetParentContext() == nullptr)
         {
-        IClassMap const& classMap = classNameExp.GetInfo().GetMap();
         NativeSqlBuilder systemWhereClause;
         status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Delete,
-                                                                       classNameExp.IsPolymorphic(),
-                                                                       nullptr);
+                                                                       classNameExp.IsPolymorphic(), nullptr); //no table aliases allowed in SQLite DELETE statement
         if (status != ECSqlStatus::Success)
-            return ctx.SetError (status, "Could not generate the system portion of the native SQL where clause.");
+            return status;
 
-        deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet = std::move (systemWhereClause);
+        deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet = std::move(systemWhereClause);
         }
 
     return ECSqlStatus::Success;

@@ -85,46 +85,27 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
     {
     BeAssert(!classMap.GetMapStrategy().IsUnmapped() && "ClassMap::NativeSqlConverterImpl::GetWhereClause not expected to be called by unmapped class map.");
 
-    bool wasEmpty = whereClauseBuilder.IsEmpty();
-
-    //handle case where multiple classes are mapped to the table
-    auto const& table = classMap.GetTable();
-
-    auto classIdColumn = table.FindColumnCP("ECClassId"); //WIP: Needs a API, class id column can be named differently
-    const bool requiresClassIdFilter = classIdColumn != nullptr;
-    if (requiresClassIdFilter)
+    StorageDescription const& storageInfo = classMap.GetStorageDescription();
+    std::vector<HorizontalPartition> const& horizPartitions = storageInfo.GetHorizontalPartitions();
+    if (horizPartitions.empty())
         {
-        if (wasEmpty)
-            whereClauseBuilder.AppendParenLeft();
-        else
-            whereClauseBuilder.Append(" AND ");
-
-        whereClauseBuilder.Append(tableAlias, classIdColumn->GetName().c_str()).Append(" IN (");
-        whereClauseBuilder.Append(classMap.GetClass().GetId());
+        BeAssert(false && "No horizontal partitions for class map.");
+        return ECSqlStatus::Success;
         }
 
-
-    if (isPolymorphicClassExp)
+    if (isPolymorphicClassExp && horizPartitions.size() > 1)
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.",
+            ExpHelper::ToString(ecsqlType));
+        
+    HorizontalPartition const& horizPartition = horizPartitions[0];
+    if (horizPartition.HasFilter())
         {
-        auto derivedClassMapList = classMap.GetDerivedClassMaps();
-        if (!requiresClassIdFilter && !derivedClassMapList.empty())
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphism is not supported if the ECClass and all its subclasses are not mapped to the same table.");
+        if (!whereClauseBuilder.IsEmpty())
+            whereClauseBuilder.Append(BooleanSqlOperator::AND);
 
-        for (auto derivedClassMap : derivedClassMapList)
-            {
-            if (&derivedClassMap->GetTable() != &table)
-                return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphism is not supported if the ECClass and all its subclasses are not mapped to the same table.");
-
-            whereClauseBuilder.AppendComma().Append(derivedClassMap->GetClass().GetId());
-            }
-        }
-
-    if (requiresClassIdFilter)
-        {
-        whereClauseBuilder.AppendParenRight(); //right paren of IN
-
-        if (wasEmpty)
-            whereClauseBuilder.AppendParenRight(); //overall right paren
+        whereClauseBuilder.AppendParenLeft();
+        horizPartition.AppendECClassIdFilterSql(whereClauseBuilder);
+        whereClauseBuilder.AppendParenRight();
         }
 
     return ECSqlStatus::Success;

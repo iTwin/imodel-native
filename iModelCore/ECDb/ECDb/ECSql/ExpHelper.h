@@ -35,6 +35,7 @@ public:
     static Utf8CP ToString(SqlBinaryOperator op);
     static Utf8CP ToString(BooleanSqlOperator op);
     static Utf8CP ToString(UnarySqlOperator op);
+    static Utf8CP ToString(ECSqlType);
     };
 
 

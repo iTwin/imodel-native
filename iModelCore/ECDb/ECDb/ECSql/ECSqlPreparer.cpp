@@ -393,53 +393,40 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp (NativeSqlBuilder::List& nativeSqlS
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassNameExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassNameExp const* exp)
     {
-    const auto currentScopeECSqlType = ctx.GetCurrentScope ().GetECSqlType ();
+    const auto currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
     auto const& classMap = exp->GetInfo().GetMap();
-    if (ctx.IsPrimaryStatement ())
+    if (ctx.IsPrimaryStatement())
         {
-        auto policy = ECDbPolicyManager::GetClassPolicy (classMap, IsValidInECSqlPolicyAssertion::Get (currentScopeECSqlType, exp->IsPolymorphic ()));
-        if (!policy.IsSupported ())
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid ECClass '%s': %s", exp->GetId ().c_str (), policy.GetNotSupportedMessage ());
+        auto policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp->IsPolymorphic()));
+        if (!policy.IsSupported())
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid ECClass '%s': %s", exp->GetId().c_str(), policy.GetNotSupportedMessage());
         }
 
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;
-        if (classMap.GetDbView ().Generate (classViewSql, exp->IsPolymorphic(), ctx) != SUCCESS)
+        if (classMap.GetDbView().Generate(classViewSql, exp->IsPolymorphic(), ctx) != SUCCESS)
             {
-            BeAssert (false && "Class view generation failed during preparation of class name expression.");
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "Class view generation failed during preparation of class name expression.");
+            BeAssert(false && "Class view generation failed during preparation of class name expression.");
+            return ctx.SetError(ECSqlStatus::ProgrammerError, "Class view generation failed during preparation of class name expression.");
             }
 
-        classViewSql.AppendSpace ().AppendEscaped (exp->GetId ().c_str ());
-        nativeSqlSnippets.push_back (move (classViewSql));
+        classViewSql.AppendSpace().AppendEscaped(exp->GetId().c_str());
+        nativeSqlSnippets.push_back(move(classViewSql));
         return ECSqlStatus::Success;
         }
 
     if (currentScopeECSqlType == ECSqlType::Insert)
-        {
-        BeAssert (!exp->IsPolymorphic () && "ECSQL INSERT does not support polymorphism. This should have been caught by the parsing code already.");
-        NativeSqlBuilder nativeSqlSnippet;
-        //SQLite does not support table aliases in insert 
-        nativeSqlSnippet.AppendEscaped (classMap.GetTable ().GetName ().c_str());
-        nativeSqlSnippets.push_back (move (nativeSqlSnippet));
-        return ECSqlStatus::Success;
-        }
-
-    //now handle update and deletes.
-    bset<ECDbSqlTable const*> tables;
-    classMap.GetTables (tables, exp->IsPolymorphic ());
-
-    for (auto table : tables)
-        {
-        NativeSqlBuilder nativeSqlSnippet;
-        //SQLite does not support table aliases in both update and deletes 
-        nativeSqlSnippet.AppendEscaped (table->GetName ().c_str());
-        nativeSqlSnippets.push_back (move (nativeSqlSnippet));
-        }
-
+        BeAssert(!exp->IsPolymorphic() && "ECSQL INSERT does not support polymorphism. This should have been caught by the parsing code already.");
+    
+    //WIP: For now this just takes the single table even if the statement is polymorphic. 
+    //Once we support polymorphism across multiple tables this needs to be modified
+    NativeSqlBuilder nativeSqlSnippet;
+    //SQLite does not support table aliases in insert 
+    nativeSqlSnippet.AppendEscaped(classMap.GetTable().GetName().c_str());
+    nativeSqlSnippets.push_back(move(nativeSqlSnippet));
     return ECSqlStatus::Success;
     }
 

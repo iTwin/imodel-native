@@ -218,9 +218,9 @@ Utf8CP ExpHelper::ToString (SqlCompareListType type)
     return nullptr;
     }
 
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      05/2013
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle   08/2013
+//---------------------------------------------------------------------------------------
 Utf8CP ExpHelper::ToString(UnarySqlOperator op)
     {
     switch(op)
@@ -233,5 +233,28 @@ Utf8CP ExpHelper::ToString(UnarySqlOperator op)
     return nullptr;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle   05/2015
+//---------------------------------------------------------------------------------------
+//static
+Utf8CP ExpHelper::ToString(ECSqlType type)
+    {
+    switch (type)
+        {
+            case ECSqlType::Delete:
+                return "DELETE";
+            case ECSqlType::Insert:
+                return "INSERT";
+            case ECSqlType::Select:
+                return "SELECT";
+            case ECSqlType::Update:
+                return "UPDATE";
+
+            default:
+                BeAssert(false && "ExpHelper::ToString(ECSqlType) needs to be updated to a new value of the ECSqlType enum.");
+                return "";
+        }
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

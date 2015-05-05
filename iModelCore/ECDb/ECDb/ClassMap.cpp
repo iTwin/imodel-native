@@ -122,40 +122,23 @@ bool IClassMap::ContainsPropertyMapToTable () const
     return found;
     }
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2015
+//------------------------------------------------------------------------------------------
+StorageDescription const& IClassMap::GetStorageDescription() const
+    {
+    if (m_storageDescription == nullptr)
+        m_storageDescription = StorageDescription::Create(*this);
+
+    return *m_storageDescription;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
 ECDbSqlTable& IClassMap::GetTable () const
     {
     return _GetTable ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-void IClassMap::GetTables (bset<ECDbSqlTable const*>& tables, bool includeDerivedClasses) const
-    {
-    auto const& ecdbMap = GetECDbMap ();
-    auto insertTableDelegate = [&ecdbMap] (bset<ECDbSqlTable const*>& tables, IClassMap const& classMap)
-        {
-        auto const& table = classMap.GetTable ();
-        if (classMap.GetMapStrategy().IsMapped() && !ecdbMap.GetSQLManager ().IsNullTable (table))
-            tables.insert (&table);
-        };
-
-    if (!includeDerivedClasses)
-        {
-        insertTableDelegate (tables, *this);
-        return;
-        }
-
-
-    auto const& derivedClasses = ecdbMap.GetECDbR ().Schemas ().GetDerivedECClasses (const_cast<ECClassR> (GetClass ()));
-    for (auto derivedClass : derivedClasses)
-        {
-        auto derivedClassMap = ecdbMap.GetClassMap (*derivedClass);
-        insertTableDelegate (tables, *derivedClassMap);
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -953,7 +936,6 @@ ECPropertyCP ClassMap::GetECProperty (ECN::ECClassCR ecClass, WCharCP propertyAc
     return getECPropertyFromTokens (ecClass, tokens, 0);
     }
 
-
 //************************** MappedTable ***************************************************
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
@@ -1479,11 +1461,23 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications)
 //------------------------------------------------------------------------------------------
 ECDbSqlTable & ColumnFactory::GetTable ()  { return m_classMap.GetTable (); }
 
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition const* StorageDescription::GetPrimaryHorizontalPartition() const
+    {
+    if (m_horizontalPartitions.empty())
+        return nullptr;
+
+    return &m_horizontalPartitions.front();
+    }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
 //static
-std::unique_ptr<StorageDescription> StorageDescription::Create (ClassMapCR forClassMap)
+std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const& classMap)
     {
     const auto sql1 =
         " WITH RECURSIVE"
@@ -1521,10 +1515,12 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (ClassMapCR forCl
         "      JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
         "    WHERE ec_Table.Id = ?";
 
-    auto& ecdb = forClassMap.GetECDbMap ().GetECDbR ();
+    auto& ecdb = classMap.GetECDbMap().GetECDbR();
+    ECClassId classId = classMap.GetClass().GetId();
+
     CachedStatementPtr stmt1;
     ecdb.GetCachedStatement (stmt1, sql1);
-    stmt1->BindInt64 (1, forClassMap.GetClass ().GetId ());
+    stmt1->BindInt64(1, classId);
 
     CachedStatementPtr stmt2;
     ecdb.GetCachedStatement (stmt2, sql2);
@@ -1550,62 +1546,73 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (ClassMapCR forCl
         classMapToPartition[tableId].push_back (derivedECClassId);
         }
 
-    auto part = std::unique_ptr<StorageDescription> (new StorageDescription ());
-    part->m_classId = forClassMap.GetClass ().GetId ();
+    auto part = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
     std::vector<ECClassId> emptyFilter;
     for (auto cmP : classMapToPartition)
         {
         auto cmT = classMapToTable.find (cmP.first);
         if (cmP.second.size () > cmT->second.size ())
             {
-            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition>(new HorizontalPartition (cmP.first, cmP.second, cmT->second, false)));
+            part->m_horizontalPartitions.push_back (HorizontalPartition (cmP.first, cmP.second, cmT->second, false));
             }
         else if (cmP.second.size () < cmT->second.size ())
             {
-            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition> (new HorizontalPartition (cmP.first, cmP.second, cmP.second, true)));
+            part->m_horizontalPartitions.push_back (HorizontalPartition (cmP.first, cmP.second, cmP.second, true));
             }
         else if (cmP.second.size () == cmT->second.size ())
             {
-            part->m_hParts.push_back (std::unique_ptr<HorizontalPartition> (new HorizontalPartition (cmP.first, cmP.second, emptyFilter, true)));
+            part->m_horizontalPartitions.push_back (HorizontalPartition (cmP.first, cmP.second, emptyFilter, true));
             }
         }
     return std::move(part);
     }
+
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
+//@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-Utf8String HorizontalPartition::GetSQL () const
+HorizontalPartition& HorizontalPartition::operator=(HorizontalPartition&& rhs)
     {
-    if (m_filter.empty ())
-        return "";
-
-    Utf8String filterSql;
+    if (this != &rhs)
         {
-        if (m_includeFilter)
-            filterSql.append ("IN (");
-        else
-            filterSql.append ("NOT IN (");
-
-        for (auto i : m_filter)
-            {
-            Utf8String tmp;
-            tmp.Sprintf ("%lld", i);
-            filterSql.append (tmp);
-            if (i != m_filter.back ())
-                filterSql.append (",");
-            }
-
-        filterSql.append (")");
+        m_tableId = std::move(rhs.m_tableId);
+        m_classMapToPartition = std::move(rhs.m_classMapToPartition);
+        m_filter = std::move(rhs.m_filter);
+        m_includeFilter = std::move(rhs.m_includeFilter);
         }
 
-    return filterSql;
+    return *this;
     }
 
-StorageDescription const& ClassMap::GetStorageDescription () const
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2015
+//------------------------------------------------------------------------------------------
+void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder) const
     {
-    if (m_storageDescrip == nullptr)
-        m_storageDescrip = StorageDescription::Create (*this);
+    if (m_filter.empty())
+        return;
 
-    return *m_storageDescrip;
+    //WIP: Need to find the name of the class id column by API
+    sqlBuilder.Append("ECClassId ");
+
+    if (m_includeFilter)
+        sqlBuilder.Append(BooleanSqlOperator::IN);
+    else
+        sqlBuilder.Append(BooleanSqlOperator::NOT_IN);
+
+    sqlBuilder.AppendParenLeft();
+    bool isFirstItem = true;
+    for (ECClassId const& classId : m_filter)
+        {
+        if (!isFirstItem)
+            sqlBuilder.AppendComma();
+
+        sqlBuilder.Append(classId);
+
+        isFirstItem = false;
+        }
+
+    sqlBuilder.AppendParenRight();
     }
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -748,7 +748,6 @@ struct ECDbSqlTable : NonCopyableClass
 //======================================================================================
 // @bsiclass                                        muhammad.zaighum        01/2015
 //======================================================================================
-
 struct ECDbSqlTrigger : NonCopyableClass
     {
     public:
@@ -1004,8 +1003,8 @@ struct ECDbClassMapInfo : NonCopyableClass
     public:
         ECDbClassMapInfo (ECDbMapStorage& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
             :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap)
-            {
-            }
+            {}
+
         ECDbMapStorage& GetMapStorageR () { return m_map; }
         ECDbMapStorage const& GetMapStorage () const{ return m_map; }
         ECDbClassMapId GetId () const { return m_id; }
@@ -1020,23 +1019,7 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECDbPropertyMapInfo* CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, ECDbSqlColumn const& column);
         ECDbClassMapInfo* CreateDerivedClassMap (ECN::ECClassId classId, ECDbMapStrategy mapStrategy);
     };
-//template <typename KEY>
-//struct StatementCache
-//    {
-//    std::map<KEY, Statement> m_cache;
-//    Utf8CP _GetSQL (KEY key)
-//        {
-//        }
-//
-//    public:
-//        Statement* GetStatement (KEY key)
-//            {
-//            auto sql = _GetSQL (key);
-//            if (sql == nullptr)
-//                return nullptr;
-//            
-//            }
-//    };
+
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
@@ -1236,69 +1219,4 @@ struct ECDbSQLManager : public NonCopyableClass
             }
     };
 
-//struct ECDbSqlExpr
-//    {
-//
-//    };
-//struct ECDbSqlDerivedColumn : ECDbSqlExpr
-//    {
-//    Utf8String m_alias;
-//    ECDbSqlValueExpr m_value;
-//    };
-//
-//struct ECDbSqlValueExpr : ECDbSqlExpr
-//    {
-//
-//    };
-//struct ECDbSqlConstantExpr : ECDbSqlValueExpr
-//    {
-//    };
-//
-//struct ECDbSqlParameterExpr : ECDbSqlValueExpr
-//    {
-//    };
-//
-//struct ECDbSqlColumnExpr
-//    {
-//    ECDbSqlColumn const* m_column;
-//    };
-//
-//enum class ECDbSqlBinaryOperator
-//    {
-//
-//    };
-//enum class ECDbSqlUninaryOperator
-//    {
-//    IsNotNull,
-//    IsNull
-//
-//    };
-//struct SelectionExpr
-//    {
-//    std::vector<ECDbSqlDerivedColumn> m_columns;
-//    };
-//struct
-//struct ECDbSqlBooleanExpr
-//    {
-//
-//    };
-//struct ECDbSqlBinaryExpr
-//    {
-//    ECDbSqlBinaryOperator m_op;
-//    ECDbSqlValueExpr m_lhs;
-//    ECDbSqlValueExpr m_rhs;
-//    };
-//struct ECDbSqlUninaryExpr
-//    {
-//    ECDbSqlUninaryOperator m_op;
-//    ECDbSqlValueExpr m_value;
-//    };
-//
-//struct ECDbSqlRangeExpr
-//    {
-//    };
-//struct ECDbSqlTableExpr : ECDbSqlRangeExpr
-//    {
-//
-//    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

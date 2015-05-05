@@ -53,6 +53,7 @@
 #include "ECSql/InsertStatementExp.h"
 #include "ECSql/UpdateStatementExp.h"
 #include "ECSql/DeleteStatementExp.h"
+#include "ECSql/ExpHelper.h"
 #include "ECSql/ECSqlStatementImpl.h"
 #include "ECSql/ECSqlStatusContext.h"
 #include "ECSql/ECSqlParser.h"

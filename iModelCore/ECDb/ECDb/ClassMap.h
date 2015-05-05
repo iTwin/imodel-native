@@ -35,58 +35,57 @@ public:
 
     BentleyStatus Generate (NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& preparedContext) const;
     };
+
 //=======================================================================================
 //! Hold detail about how table partition is described for this class
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
 struct HorizontalPartition : NonCopyableClass
     {
-    private:
-        ECDbTableId m_tableId;
-        std::vector<ECN::ECClassId> m_classMapToParition;
-        std::vector<ECN::ECClassId> m_filter;
-        bool m_includeFilter;
-        //mutable Utf8String m_filterSql;
+private:
+    ECDbTableId m_tableId;
+    std::vector<ECN::ECClassId> m_classMapToPartition;
+    std::vector<ECN::ECClassId> m_filter;
+    bool m_includeFilter;
 
-    public:
-        HorizontalPartition (ECDbTableId tableId, std::vector<ECN::ECClassId>& classIds, std::vector<ECN::ECClassId>& filter, bool includeFilter)
-            : m_tableId (tableId), m_classMapToParition (std::move (classIds)), m_filter (std::move (filter)), m_includeFilter (includeFilter)
-            {
-            }
-        HorizontalPartition ()
-            {}
-        ~HorizontalPartition ()
-            {}
-        ECDbTableId GetTableId () const { return m_tableId; }
-        std::vector<ECN::ECClassId> const& GetFilter () const { return m_filter; }
-        std::vector<ECN::ECClassId> const& GetClassIds () const { return m_classMapToParition; }
-        bool IsInclusionFilter () const { return m_includeFilter; }
-        bool HasFilter () const { return !m_filter.empty (); }
-        Utf8String GetSQL () const;
+public:
+    HorizontalPartition (ECDbTableId tableId, std::vector<ECN::ECClassId>& classIds, std::vector<ECN::ECClassId>& filter, bool includeFilter)
+        : m_tableId (tableId), m_classMapToPartition (std::move (classIds)), m_filter (std::move (filter)), m_includeFilter (includeFilter)
+        {}
+ 
+    ~HorizontalPartition () {}
+    HorizontalPartition(HorizontalPartition&& rhs) : m_tableId(std::move(rhs.m_tableId)), m_classMapToPartition(std::move(rhs.m_classMapToPartition)), m_filter(std::move(rhs.m_filter)), m_includeFilter(std::move(rhs.m_includeFilter)) {}
+    HorizontalPartition& operator=(HorizontalPartition&& rhs);
+
+    ECDbTableId GetTableId () const { return m_tableId; }
+    std::vector<ECN::ECClassId> const& GetFilter () const { return m_filter; }
+    std::vector<ECN::ECClassId> const& GetClassIds () const { return m_classMapToPartition; }
+    bool IsInclusionFilter () const { return m_includeFilter; }
+    bool HasFilter () const { return !m_filter.empty (); }
+    void AppendECClassIdFilterSql (NativeSqlBuilder&) const;
     };
 
-struct ClassMap;
+struct IClassMap;
+
 //=======================================================================================
-//! Represent storage description for this class and its derived class for polymorphic queries
+//! Represents storage description for a given class map and its derived classes for polymorphic queries
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
 struct StorageDescription : NonCopyableClass
     {
-    private:      
-        std::vector<std::unique_ptr<HorizontalPartition>> m_hParts;
-        ECN::ECClassId m_classId;      
-    public:
-        ~StorageDescription (){}
-        std::vector<std::unique_ptr<HorizontalPartition>> const& GetHorizontalPartitions () const { return m_hParts; }    
-        HorizontalPartition const* GetPrimary () const
-            {
-            if (m_hParts.empty ())
-                return nullptr;
+private:      
+    ECN::ECClassId m_classId;
+    std::vector<HorizontalPartition> m_horizontalPartitions;
 
-            return m_hParts.front ().get();
-            }
-        ECN::ECClassId GetClassId () const { return m_classId; }
-        static std::unique_ptr<StorageDescription> Create (ClassMapCR forClassMap);
+    explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId) {}
+
+public:
+    ~StorageDescription (){}
+    std::vector<HorizontalPartition> const& GetHorizontalPartitions () const { return m_horizontalPartitions; }    
+    HorizontalPartition const* GetPrimaryHorizontalPartition () const;
+    ECN::ECClassId GetClassId () const { return m_classId; }
+
+    static std::unique_ptr<StorageDescription> Create (IClassMap const& forClassMap);
     };
 
 //=======================================================================================
@@ -122,6 +121,8 @@ public:
     
 
 private:
+    mutable std::unique_ptr<StorageDescription> m_storageDescription;
+
     virtual IClassMap const& _GetView (View classView) const = 0;
     virtual Type _GetClassMapType () const = 0;
     virtual ECN::ECClassCR _GetClass () const = 0;
@@ -148,9 +149,6 @@ public:
     std::vector<IClassMap const*> GetDerivedClassMaps () const;
     ECDbSqlTable& GetTable () const;
 
-    //! Returns the tables to which this class map - and all derived classes' class maps if
-    void GetTables (bset<ECDbSqlTable const*>& tables, bool includeDerivedClasses) const;
-
     //! Checks whether this class map contains a property map of type PropertyMapToTable.
     //! @return true, if the class map contains a PropertyMapToTable map. false otherwise.
     bool ContainsPropertyMapToTable () const;
@@ -162,6 +160,8 @@ public:
     ECDbMapCR GetECDbMap () const;
     ClassDbView const& GetDbView () const;
     Type GetClassMapType () const;
+
+    StorageDescription const& GetStorageDescription() const;
 
     bool IsMappedToSecondaryTable () const;
     bool IsRelationshipClassMap () const;
@@ -197,7 +197,7 @@ public:
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
-struct  ColumnFactory : NonCopyableClass
+struct ColumnFactory : NonCopyableClass
     {
     enum class SortBy
         {
@@ -304,10 +304,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbMapStrategy             m_mapStrategy;
         bool                        m_isDirty;
         bvector<ClassIndexInfoPtr>  m_indexes;
-        // clang says not used - bool m_useSharedColumnStrategy;
         ECDbClassMapId              m_id;
-        mutable std::unique_ptr<StorageDescription> m_storageDescrip;
-        //std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> m_exclusivelyStoredClassMaps;
 
     protected:
         ECN::ECClassCR              m_ecClass;
@@ -354,7 +351,6 @@ struct ClassMap : public IClassMap, RefCountedBase
         //! Builds the list of PropertyMaps for this ClassMap
         //! @param  classMapInfo This will contain information cleaned from ECDbClassHint
         MapStatus Initialize (ClassMapInfoCR classMapInfo);
-        StorageDescription const& GetStorageDescription () const;
  
     
     //! Used when finding/creating DbColumns that are mapped to ECProperties of the ECClass
