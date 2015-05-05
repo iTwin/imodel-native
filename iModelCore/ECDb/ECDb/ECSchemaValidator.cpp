@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaValidator.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -51,6 +51,7 @@ bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::EC
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitivePropertyNamesRule (ecClass, supportLegacySchemas))));
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new NoPropertiesOfSameTypeAsClassRule (ecClass))));
+    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new MapStrategyRule(ecClass))));
 
     bool valid = true;
     for (ECPropertyCP prop : ecClass.GetProperties (true))
@@ -133,11 +134,93 @@ void ECSchemaValidationRule::AddErrorToResult (ECSchemaValidationResult& result)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-Utf8String ECSchemaValidationRule::Error::ToString () const
+Utf8String ECSchemaValidationRule::Error::ToString() const
     {
-    return _ToString ();
+    return _ToString();
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Muhammada.zaighum                    04/2015
+//---------------------------------------------------------------------------------------
+MapStrategyRule::MapStrategyRule(ECClassCR ecClass)
+: ECSchemaValidationRule(Type::IncorrectMapStrategyClass), m_error(nullptr)
+    {
+    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Muhammada.zaighum                    04/2015
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ECSchemaValidationRule::Error> MapStrategyRule::_GetError() const
+    {
+    if (m_error->GetInvalidStrategies().empty())
+        return nullptr;
 
+    return std::move(m_error);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Muhammada.zaighum                    04/2015
+//---------------------------------------------------------------------------------------
+Utf8String MapStrategyRule::Error::_ToString() const
+    {
+    if (GetInvalidStrategies().empty())
+        return "";
+
+    Utf8String violatingStrategiesStr;
+    bool isFirstSet = true;
+    for (auto const& strategy : GetInvalidStrategies())
+        {
+        if (!isFirstSet)
+            {
+            violatingStrategiesStr.append(" - ");
+            isFirstSet = false;
+            }
+        violatingStrategiesStr.append(strategy);
+        }        
+
+    Utf8CP strTemplate = nullptr;
+    strTemplate = "ECSchema '%s' contains Invalid MapStrategies. Conflicting Strategies: %s.";
+    Utf8String str;
+    str.Sprintf(strTemplate, Utf8String(m_ecClass.GetSchema().GetName()).c_str(), Utf8String(violatingStrategiesStr).c_str());
+    return std::move(str);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Muhammada.zaighum                    04/2015
+//---------------------------------------------------------------------------------------
+bool MapStrategyRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
+    {
+    ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
+    mapStrategy.Reset();
+    ECValue mapStrategyValue;
+    ECValue mapStrategyOptionValue;
+    auto classHint = ClassHintReader::ReadHint(ecClass);
+    if (classHint != nullptr)
+        {
+        auto strategyStatus = classHint->GetValue(mapStrategyValue, BSCAP_MapStrategy);
+        auto strategyOptionStatus = classHint->GetValue(mapStrategyOptionValue, BSCAP_MapStrategyOption);
+        if (mapStrategyValue.IsNull() && mapStrategyOptionValue.IsNull())
+            {
+            return true;
+            }
+        if ((strategyStatus == ECOBJECTS_STATUS_Success || strategyOptionStatus == ECOBJECTS_STATUS_Success))
+            {
+            if (mapStrategy.Parse(mapStrategy, mapStrategyValue.GetUtf8CP(), mapStrategyOptionValue.GetUtf8CP()) == BentleyStatus::SUCCESS)
+                {
+                return true;
+                }
+            }
+        auto& invalidStrategies= m_error->GetInvalidStrategiesR();
+        if (!mapStrategyValue.IsNull())
+            {
+            invalidStrategies.push_back(mapStrategyValue.GetUtf8CP());
+            }
+        if (!mapStrategyOptionValue.IsNull())
+            {
+            invalidStrategies.push_back(mapStrategyOptionValue.GetUtf8CP());
+            }
+        return false;
+
+        }
+    return true;
+    }
 //**********************************************************************
 // CaseInsensitiveClassNamesRule
 //**********************************************************************

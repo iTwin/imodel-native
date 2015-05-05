@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaValidator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,8 @@ public:
         {
         CaseInsensitiveClassNames, //!< Names of ECClasses within one ECSchema must be case insensitive, i.e. must not only differ by case
         CaseInsensitivePropertyNames, //!< Names of ECProperties within one ECClass must be case insensitive, i.e. must not only differ by case
-        NoPropertiesOfSameTypeAsClass //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
+        NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
+        IncorrectMapStrategyClass
         };
 
     //=======================================================================================
@@ -111,7 +112,38 @@ public:
 
 
 //**************************** Subclasses *********************************************
+//=======================================================================================
+// @bsiclass                             Muhammad.Zaighum                  04/2015
+//+===============+===============+===============+===============+===============+======
+struct MapStrategyRule : ECSchemaValidationRule
+    {
+    public:
+        //=======================================================================================
+        // @bsiclass                  Muhammad.Zaighum                          07/2015
+        //+===============+===============+===============+===============+===============+======
+        struct Error : ECSchemaValidationRule::Error
+            {
+            private:
+                ECN::ECClassCR m_ecClass;
+                std::vector<Utf8String> m_invalidStrategy;
+                virtual Utf8String _ToString() const override;
+            public:
+                Error(Type ruleType, ECN::ECClassCR ecClass)
+                    : ECSchemaValidationRule::Error(ruleType), m_ecClass(ecClass)
+                    {}
+                ~Error() {}
+                std::vector<Utf8String> const& GetInvalidStrategies() const { return m_invalidStrategy; }
+                std::vector<Utf8String>& GetInvalidStrategiesR() { return m_invalidStrategy; }
+            };
 
+    private:
+        mutable std::unique_ptr<Error> m_error;
+        virtual bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
+        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+    public:
+        explicit MapStrategyRule(ECN::ECClassCR ecClass);
+        ~MapStrategyRule() {}
+    };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2014
