@@ -13,6 +13,8 @@ DeliveryDir=$(OutBuildContexts)PointoolsLibs_VS2012/Delivery/
 
 VendorAPIDir = $(OutBuildContexts)PointoolsLibs_VS2012/VendorAPI/Faro
 
+WixSrc = $(SrcRoot)Pointools/PointoolsCommon/PointoolsLibs/PointoolsLibsIO/VS2012/Formats/Faro/
+
 ComRegistryDir = $(OutBuildContexts)PointoolsLibs_VS2012/ComRegistry/
 
 #---------------------------------------------------------------------------------------------------------
@@ -75,8 +77,8 @@ always:
     @CreateSymLinks.py   -f"$(DeliveryDir)xerces-c_3_1.dll=${PointoolsLibs}\faro\5.2.0\x64\xerces-c_3_1.dll"
 
 always:
-    @CreateSymLinks.py   -f"$(ComRegistryDir)FARO.LS.SDK.dll.wxi=${PointoolsLibs}\faro\5.2.0\x64\FARO.LS.SDK.dll.wxi"
-    @CreateSymLinks.py   -f"$(ComRegistryDir)IQOpen.dll.wxi=${PointoolsLibs}\faro\5.2.0\x64\IQOpen.dll.wxi"
+    @CreateSymLinks.py   -f"$(ComRegistryDir)FARO.LS.SDK.dll.wxi=${WixSrc}/FARO.LS.SDK.dll.wxi"
+    @CreateSymLinks.py   -f"$(ComRegistryDir)IQOpen.dll.wxi=${WixSrc}/IQOpen.dll.wxi"
 
 %endif
 
