@@ -108,8 +108,10 @@ bool ClassHintReader::TryReadMapStrategy (ECDbMapStrategy& mapStrategy, IECInsta
     auto strategyOptionStatus = classHint.GetValue(mapStrategyOptionValue, BSCAP_MapStrategyOption);
     if (strategyStatus == ECOBJECTS_STATUS_Success || strategyOptionStatus == ECOBJECTS_STATUS_Success)
         {
-        mapStrategy.Parse(mapStrategy, mapStrategyValue.GetUtf8CP(), mapStrategyOptionValue.GetUtf8CP());
+        if(mapStrategy.Parse(mapStrategy, mapStrategyValue.GetUtf8CP(), mapStrategyOptionValue.GetUtf8CP()) == BentleyStatus::SUCCESS)
+            {
             return true;
+            }
         }
     return false;
     }
