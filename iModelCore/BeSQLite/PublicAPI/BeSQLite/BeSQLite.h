@@ -2634,6 +2634,10 @@ public:
     //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.
     BE_SQLITE_EXPORT DbResult SaveCreationDate();
 
+    //! Saves the build number of BeSqlite as the CreationBeSqliteBuildVersion property of this database.
+    //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.
+    BE_SQLITE_EXPORT DbResult SaveCreationBeSqliteBuildVersion();
+
     //! Query the CreationDate property of this database.
     //! @param[out] creationDate The date that the database was created.
     //! @return BE_SQLITE_ROW if the CreationDate property was successfully found and creationDate is valid, error status otherwise.
@@ -3289,6 +3293,8 @@ struct Properties
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::COMPRESS_PROPERTY_No);}
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
     static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
+    //! Build version of BeSqlite (e.g. 00.00.00.00) used to create this database; useful for forensic diagnostics.
+    static PropSpec CreationBeSqliteBuildVersion() {return PropSpec("CreationBeSqliteBuildVersion");}
     };
 
 END_BENTLEY_SQLITE_NAMESPACE
