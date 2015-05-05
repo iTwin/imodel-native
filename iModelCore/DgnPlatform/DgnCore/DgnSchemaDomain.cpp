@@ -322,9 +322,7 @@ StatusInt ElementHandler::FenceClip (ElementAgendaP inside, ElementAgendaP outsi
 
     return status;
     }
-#endif
 
-#if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -444,11 +442,7 @@ static int booleanWithFence (ElementAgendaR out, ElementHandleCR eh, ElementAgen
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt doOptimizedClip2d (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh, FenceParamsP fp)
     {
-#if defined (V10_WIP_ELEMENTHANDLER)
     CurveVectorPtr  pathCurve = ICurvePathQuery::ElementToCurveVector (eh);
-#else
-    CurveVectorPtr  pathCurve;
-#endif
 
     if (pathCurve.IsNull() || !(pathCurve->IsClosedPath() || pathCurve->IsUnionRegion() || pathCurve->IsParityRegion()))
         return ERROR;
@@ -469,7 +463,6 @@ static StatusInt doOptimizedClip2d (ElementAgendaP inside, ElementAgendaP outsid
 
     return ((SUCCESS == outsideStatus || SUCCESS == insideStatus) ? SUCCESS : ERROR);
     }
-#endif
 
 /*=================================================================================**//**
 * @bsiclass
@@ -527,7 +520,6 @@ virtual void _AnnounceTransform (TransformCP trans) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) override
     {
-#if defined (NEEDS_WORK_DGNITEM)
     if (SUCCESS != m_convertStatus)
         return SUCCESS;
 
@@ -567,7 +559,6 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
         if (SUCCESS == DraftingElementSchema::ToElement (eeh, *tmpCurves, m_eh, true, *m_eh->GetDgnModelP()))
             m_outside->Insert (eeh);
         }
-#endif
 
     return SUCCESS;
     }
@@ -598,7 +589,6 @@ virtual BentleyStatus _ProcessBody (ISolidKernelEntityCR entity, IFaceMaterialAt
         return SUCCESS;
         }
 
-#if defined (NEEDS_WORK_DGNITEM)
     for (ISolidKernelEntityPtr entityOut : insideEntity)
         {
         EditElementHandle   eeh;
@@ -618,26 +608,22 @@ virtual BentleyStatus _ProcessBody (ISolidKernelEntityCR entity, IFaceMaterialAt
 
         m_outside->Insert (eeh);
         }
-#endif
 
     return SUCCESS;
     }
 
 }; // FenceClipOutputProcessor
 
-#if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt doOptimizedClip3d (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh, FenceParamsP fp)
     {
-#if defined (V10_WIP_ELEMENTHANDLER)
     // Filter open elements and stuff like dimensions (which could draw shapes in terminators, etc.)...
     DisplayHandlerP dHandler = eh.GetDisplayHandler();
 
     if (!dHandler || !dHandler->IsRenderable (eh))
         return ERROR;
-#endif
 
     FenceClipOutputProcessor processor (inside, outside, &eh, fp);
 
@@ -749,7 +735,6 @@ StatusInt ElementHandler::ApplyTransform (EditElementHandleR element, TransformI
     }
 #endif
 
-
 TABLEHANDLER_DEFINE_MEMBERS(DgnSchemaTableHandler::Element)
 TABLEHANDLER_DEFINE_MEMBERS(DgnSchemaTableHandler::ModelDrivesModel)
 TABLEHANDLER_DEFINE_MEMBERS(DgnSchemaTableHandler::ElementDrivesElement)
@@ -759,9 +744,6 @@ HANDLER_DEFINE_MEMBERS(PhysicalModelHandler)
 HANDLER_DEFINE_MEMBERS(WebMercatorModelHandler)
 HANDLER_DEFINE_MEMBERS(StreetMapModelHandler)
 HANDLER_DEFINE_MEMBERS(ElementHandler)
-#ifdef WIP_ITEM_HANDLER
-HANDLER_DEFINE_MEMBERS(ElementItemHandler)
-#endif
 HANDLER_DEFINE_MEMBERS(PhysicalElementHandler)
 HANDLER_DEFINE_MEMBERS(DrawingElementHandler)
 HANDLER_DEFINE_MEMBERS(ViewHandler)
@@ -819,9 +801,6 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb D
     RegisterHandler(StreetMapModelHandler::GetHandler());
     RegisterHandler(ElementHandler::GetHandler());
     RegisterHandler(ViewHandler::GetHandler());
-#ifdef WIP_ITEM_HANDLER
-    RegisterHandler(ElementItemHandler::GetHandler());
-#endif
     RegisterHandler(PhysicalElementHandler::GetHandler());
     RegisterHandler(DrawingElementHandler::GetHandler());
     RegisterDefaultDependencyHandlers();

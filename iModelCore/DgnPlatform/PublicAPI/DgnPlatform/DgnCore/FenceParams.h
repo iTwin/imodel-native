@@ -43,7 +43,7 @@ double                  m_onTolerance;
 double                  m_unusedRemove;
 double                  m_zCameraLimit;
 
-DgnViewportP               m_viewport;
+DgnViewportP            m_viewport;
 
 FenceClipMode           m_clipMode;
 bool                    m_clipOwned;
@@ -101,7 +101,7 @@ DGNPLATFORM_EXPORT bool         AcceptCurve (MSBsplineCurveP);
 DGNPLATFORM_EXPORT bool         AcceptLineSegments (DPoint3dP,size_t numPoints, bool closed);
 DGNPLATFORM_EXPORT bool         AcceptDEllipse3d (DEllipse3dCR);
 
-DGNPLATFORM_EXPORT void         ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP outside, GeometricElementCR);
+DGNPLATFORM_EXPORT void         ParseAcceptedElement (DgnElementPtrVec* inside, DgnElementPtrVec* outside, GeometricElementCR);
 
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
@@ -147,7 +147,7 @@ DGNPLATFORM_EXPORT ClipVectorPtr        GetClipVector () const;
 DGNPLATFORM_EXPORT FenceClipMode        GetClipMode () const;
 
 //! Return current fence viewport.
-DGNPLATFORM_EXPORT DgnViewportP            GetViewport () const;
+DGNPLATFORM_EXPORT DgnViewportP         GetViewport () const;
 
 //! Return the target model for fence viewport. Used as destination for copy with clip.
 DGNPLATFORM_EXPORT DgnModelP            GetDgnModel () const;
@@ -167,11 +167,11 @@ DGNPLATFORM_EXPORT bool                 AllowOverlaps () const;
 //! Return true if the given element satisfies the fence criteria.
 DGNPLATFORM_EXPORT bool                 AcceptElement (GeometricElementCR);
 
-//! @param[out] agenda The list of elements that satisfied the fence criteria.
+//! @param[out] contents The list of elements that satisfied the fence criteria.
 //! @return SUCCESS If one or more elements were found that satisfied the fence criteria.
-//! @note Populates agenda with un-clipped elements that satisfy the fence criteria. Set overlap mode to false and clip mode to none to 
+//! @note Populates contents with un-clipped elements that satisfy the fence criteria. Set overlap mode to false and clip mode to none to 
 //!       collect only those elements completely inside the fence, otherwise both inside and overlapping elements are collected.
-DGNPLATFORM_EXPORT BentleyStatus        BuildAgenda (ElementAgendaR agenda);
+DGNPLATFORM_EXPORT BentleyStatus        GetContents (DgnElementIdSet& contents);
 
 //! Create a new instance of FenceParams.
 DGNPLATFORM_EXPORT static FenceParamsP  Create ();

@@ -230,13 +230,13 @@ virtual void            _DrawAreaPattern (ClipStencil& boundary) override {}
 virtual void            _DrawTextString (TextStringCR text) override;
 virtual ILineStyleCP    _GetCurrLineStyle (LineStyleSymbP* symb) override {return NULL;}
 
-BentleyStatus           PushBooleanCandidate (ElementHandleCR eh, TransformCP trans);
+BentleyStatus           PushBooleanCandidate (GeometricElementCR element, TransformCP trans);
 BentleyStatus           SetTargetModel (DgnModelR targetModel);
-BentleyStatus           VisitFloodCandidate (ElementHandleCR eh, TransformCP trans);
-BentleyStatus           VisitBooleanCandidate (ElementHandleCR eh, TransformCP trans, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
+BentleyStatus           VisitFloodCandidate (GeometricElementCR element, TransformCP trans);
+BentleyStatus           VisitBooleanCandidate (GeometricElementCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
 
-BentleyStatus           CreateRegionElement (EditElementHandleR eeh, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d);
-BentleyStatus           CreateRegionElements (ElementAgendaR out, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d);
+BentleyStatus           CreateRegionElement (DgnElementPtr& elm, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d);
+BentleyStatus           CreateRegionElements (DgnElementPtrVec& out, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d);
 
 public:
 
@@ -248,8 +248,8 @@ DGNPLATFORM_EXPORT void          SetAbortFunction (RGC_AbortFunction abort);
                    void          SetAssociativeRegionUpdate () {m_updateAssocRegion = true;}
                    void          SetCullRedundantLoops () {m_cullRedundantLoop = true;}
 
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnViewportP vp, ElementAgendaCP in);
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnModelR targetModel, ElementAgendaCR in, TransformCP inTrans);
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnViewportP vp, DgnElementPtrVec const* in);
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans);
 DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints (DPoint3dCP seedPoints, size_t numSeed);
 DGNPLATFORM_EXPORT void          AddFaceLoopsByInwardParitySearch (bool parityWithinComponent, bool vertexContactSufficient) {m_output.CollectByInwardParitySearch (parityWithinComponent, vertexContactSufficient);}
 DGNPLATFORM_EXPORT bool          ToggleFaceAtPoint (DPoint3dCR seedPoint);
@@ -265,8 +265,8 @@ DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DisplayPathCP>& regionRoots, 
 void                             EnableOriginalLoopSymbology () {m_setLoopSymbology = true;} // Legacy behavior of create grouped hole tool...
 
 DGNPLATFORM_EXPORT bool          GetAdjustedSeedPoints (bvector<DPoint3d>* seedPoints);
-DGNPLATFORM_EXPORT BentleyStatus UpdateAssociativeRegion (EditElementHandleR eeh);
-DGNPLATFORM_EXPORT BentleyStatus BooleanWithHoles (DgnModelR targetModel, ElementAgendaCR in, ElementAgendaCR holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation);
+DGNPLATFORM_EXPORT BentleyStatus UpdateAssociativeRegion (DgnElementPtr& elm);
+DGNPLATFORM_EXPORT BentleyStatus BooleanWithHoles (DgnModelR targetModel, DgnElementPtrVec const& in, DgnElementPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
@@ -286,7 +286,7 @@ DGNPLATFORM_EXPORT void SetFlattenBoundary (DVec3dCR flattenDir);
 
 //! Find closed regions from supplied boundary candidates using flood parameters and seed point locations.
 //! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
-DGNPLATFORM_EXPORT BentleyStatus Flood (DgnModelR targetModel, ElementAgendaCR in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed);
+DGNPLATFORM_EXPORT BentleyStatus Flood (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed);
 
 //! Create closed regions by boolean of curve vectors.
 DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, bvector<CurveVectorPtr> const& in, RegionType operation);
@@ -294,11 +294,11 @@ DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, bvector<CurveVe
 //! Create closed regions by boolean of closed boundary candidates.
 //! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
 //! @note An associative region element can be created for a single closed boundary element using a RegionType of RegionType::ExclusiveOr.
-DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, ElementAgendaCR in, TransformCP inTrans, RegionType operation);
+DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans, RegionType operation);
 
 //! Create closed regions by boolean between separate target and tool boundary candidates agendas.
 //! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
-DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, ElementAgendaCR target, ElementAgendaCR tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation);
+DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, DgnElementPtrVec const& target, DgnElementPtrVec const& tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation);
 
 //! Initialize associative region element parameters from current context settings for use with GetAssociativeRegion.
 DGNPLATFORM_EXPORT void InitRegionParams (RegionParams& params);
@@ -307,14 +307,14 @@ DGNPLATFORM_EXPORT void InitRegionParams (RegionParams& params);
 DGNPLATFORM_EXPORT BentleyStatus GetRegion (CurveVectorPtr& region);
 
 //! Return region result as a single element that represents a closed path, parity region, or union region.
-DGNPLATFORM_EXPORT BentleyStatus GetRegion (EditElementHandleR eeh);
+DGNPLATFORM_EXPORT BentleyStatus GetRegion (DgnElementPtr& elm);
 
 //! Return region result as an agenda of closed elements and grouped holes.
-DGNPLATFORM_EXPORT BentleyStatus GetRegions (ElementAgendaR out);
+DGNPLATFORM_EXPORT BentleyStatus GetRegions (DgnElementPtrVec& out);
 
 //! Return region result as an associative region element.
 //! @note The supplied boundary candidates must be persistent elements or an associative region can't be created.
-DGNPLATFORM_EXPORT BentleyStatus GetAssociativeRegion (EditElementHandleR eeh, RegionParams const& params, WCharCP cellName);
+DGNPLATFORM_EXPORT BentleyStatus GetAssociativeRegion (DgnElementPtr& elm, RegionParams const& params, WCharCP cellName);
 
 //! Create an instance of an RegionGraphicsContext for the purpose of creating closed regions by flood or boolean operation.
 //! @return A reference counted pointer to a RegionGraphicsContext.

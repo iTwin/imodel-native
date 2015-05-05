@@ -605,7 +605,7 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& region
     if (m_textBoundaries.IsValid ())
         TextBoxInfo::GetUsed (*m_textBoundaries, regionRoots); // Add text box paths that have been marked as used in result region boundary...
 
-    // NOTE: Cull duplicate entries. Used by DgnRegionElementTool to create ElementAgenda for "process originals"...
+    // NOTE: Cull duplicate entries. Used by DgnRegionElementTool for "process originals"...
     std::sort (regionRoots.begin (), regionRoots.end ());
     regionRoots.erase (std::unique (regionRoots.begin (), regionRoots.end ()), regionRoots.end ());
 
@@ -1040,39 +1040,25 @@ void            RegionGraphicsContext::_DrawTextString (TextStringCR text)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::VisitFloodCandidate (ElementHandleCR eh, TransformCP trans)
+BentleyStatus   RegionGraphicsContext::VisitFloodCandidate (GeometricElementCR element, TransformCP trans)
     {
-    if (!eh.IsValid ())
-        return ERROR;
-
-    GeometricElementCP geomElement = eh.GetGeometricElement();
-
-    if (nullptr == geomElement)
-        return ERROR;
-
     ViewContext::ContextMark mark (this);
 
     if (trans)
         _PushTransform (*trans);
 
-    return (BentleyStatus) _VisitElement (*geomElement);
+    return (BentleyStatus) _VisitElement (element);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PushBooleanCandidate (ElementHandleCR eh, TransformCP trans)
+BentleyStatus   RegionGraphicsContext::PushBooleanCandidate (GeometricElementCR element, TransformCP trans)
     {
     if (trans)
         _PushTransform (*trans);
 
-    if (eh.IsPersistent ())
-        {
-        GeometricElementCP geomElement = eh.GetGeometricElement();
-
-        if (nullptr != geomElement)
-            _SetCurrentElement (geomElement); // Push path entry since we aren't calling _VisitElement...
-        }
+    _SetCurrentElement (&element); // Push path entry since we aren't calling _VisitElement...
 
     return SUCCESS;
     }
@@ -1080,11 +1066,8 @@ BentleyStatus   RegionGraphicsContext::PushBooleanCandidate (ElementHandleCR eh,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate (ElementHandleCR eh, TransformCP trans, bvector<DMatrix4d>* wireProducts, bool allowText)
+BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate (GeometricElementCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts, bool allowText)
     {
-    if (!eh.IsValid())
-        return ERROR;
-
 #if defined (V10_WIP_ELEMENTHANDLER)
     CurveVectorPtr  curves = ICurvePathQuery::ElementToCurveVector (eh);
 
@@ -1159,7 +1142,7 @@ BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate (ElementHandleCR eh
 
     ViewContext::ContextMark mark (this);
 
-    if (SUCCESS != PushBooleanCandidate (eh, trans))
+    if (SUCCESS != PushBooleanCandidate (element, trans))
         return ERROR;
 
     m_output.ClipAndProcessCurveVector (*curves, false);
@@ -1276,7 +1259,7 @@ bool            RegionGraphicsContext::GetAdjustedSeedPoints (bvector<DPoint3d>*
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR eeh, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d)
+BentleyStatus   RegionGraphicsContext::CreateRegionElement (DgnElementPtr& element, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d)
     {
 #if defined (NEEDS_WORK_DGNITEM)
     switch (region.GetBoundaryType ())
@@ -1455,7 +1438,7 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElement (EditElementHandleR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::CreateRegionElements (ElementAgendaR out, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d)
+BentleyStatus   RegionGraphicsContext::CreateRegionElements (DgnElementPtrVec& out, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d)
     {
     // Return agenda of solid areas instead of a single union region...
     if (CurveVector::BOUNDARY_TYPE_UnionRegion == region.GetBoundaryType ())
@@ -1468,22 +1451,22 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElements (ElementAgendaR out,
             if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curvePrimitive->GetCurvePrimitiveType ())
                 return ERROR;
 
-            EditElementHandle  tmpEeh;
+            DgnElementPtr element;
 
-            if (SUCCESS != CreateRegionElement (tmpEeh, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
+            if (SUCCESS != CreateRegionElement (element, *curvePrimitive->GetChildCurveVectorCP (), regionRoots, is3d))
                 return ERROR;
 
-            out.InsertElemDescr (tmpEeh.ExtractWriteableElement().get());
+            out.push_back (element);
             }
         }
     else
         {
-        EditElementHandle  tmpEeh;
+        DgnElementPtr element;
 
-        if (SUCCESS != CreateRegionElement (tmpEeh, region, regionRoots, is3d))
+        if (SUCCESS != CreateRegionElement (element, region, regionRoots, is3d))
             return ERROR;
 
-        out.InsertElemDescr (tmpEeh.ExtractWriteableElement().get());
+        out.push_back (element);
         }
 
     return SUCCESS;
@@ -1500,20 +1483,20 @@ BentleyStatus   RegionGraphicsContext::GetRegion (CurveVectorPtr& region)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::GetRegion (EditElementHandleR eeh)
+BentleyStatus   RegionGraphicsContext::GetRegion (DgnElementPtr& element)
     {
     CurveVectorPtr  region;
 
     if (SUCCESS != m_output.GetActiveRegions (region))
         return ERROR;
 
-    return CreateRegionElement (eeh, *region, NULL, _GetViewTarget ()->Is3d ());
+    return CreateRegionElement (element, *region, NULL, _GetViewTarget ()->Is3d ());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::GetRegions (ElementAgendaR out)
+BentleyStatus   RegionGraphicsContext::GetRegions (DgnElementPtrVec& out)
     {
     CurveVectorPtr  region;
 
@@ -1526,7 +1509,7 @@ BentleyStatus   RegionGraphicsContext::GetRegions (ElementAgendaR out)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::GetAssociativeRegion (EditElementHandleR eeh, RegionParams const& params, WCharCP cellName)
+BentleyStatus   RegionGraphicsContext::GetAssociativeRegion (DgnElementPtr& element, RegionParams const& params, WCharCP cellName)
     {
     if (params.GetType () != m_operation)
         return ERROR;
@@ -1539,7 +1522,7 @@ BentleyStatus   RegionGraphicsContext::GetAssociativeRegion (EditElementHandleR 
     if (SUCCESS != m_output.GetActiveRegions (region))
         return ERROR;
 
-    ElementAgenda           out;
+    DgnElementPtrVec        out;
     bvector<DisplayPathCP>  regionRoots;
 
     if (SUCCESS != CreateRegionElements (out, *region, &regionRoots, _GetViewTarget ()->Is3d ()))
@@ -1565,20 +1548,20 @@ BentleyStatus   RegionGraphicsContext::GetAssociativeRegion (EditElementHandleR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::UpdateAssociativeRegion (EditElementHandleR eeh)
+BentleyStatus   RegionGraphicsContext::UpdateAssociativeRegion (DgnElementPtr& element)
     {
-    m_targetModel = eeh.GetDgnModelP (); // Model to use to create new geometry...
+    m_targetModel = &element->GetDgnModel(); // Model to use to create new geometry...
 
     CurveVectorPtr  region;
 
     if (SUCCESS != m_output.GetActiveRegions (region))
         return ERROR;
 
-    ElementAgenda           out;
+    DgnElementPtrVec        out;
     bvector<DisplayPathCP>  regionRoots;
 
     // NOTE: Can't use model dimension to update assoc region boundary in dictionary model...
-    if (SUCCESS != CreateRegionElements (out, *region, &regionRoots, eeh.GetDgnModelP ()->Is3d()))
+    if (SUCCESS != CreateRegionElements (out, *region, &regionRoots, element->Is3d()))
         return ERROR;
 
 #if defined (NEEDS_WORK_DGNITEM)
@@ -1756,7 +1739,7 @@ BentleyStatus   RegionGraphicsContext::AddFaceLoopsAtPoints (DPoint3dCP seedPoin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, ElementAgendaCP in)
+BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, DgnElementPtrVec const* in)
     {
     m_operation = RegionType::Flood;
     m_setupScan = true;
@@ -1778,8 +1761,15 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, ElementAg
 
     if (in)
         {
-        for (ElementHandleCP curr = in->GetFirst (), end = curr + in->GetCount (); curr < end ; curr++)
-            VisitFloodCandidate (*curr, NULL);
+        for (DgnElementPtr curr : *in)
+            {
+            GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+
+            if (nullptr == geomElement)
+                continue;
+
+            VisitFloodCandidate (*geomElement, NULL);
+            }
         }
     else
         {
@@ -1795,19 +1785,26 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, ElementAg
     return m_output.SetupGraph (m_gapTolerance, RegionLoops::Ignore != m_regionLoops);
     }
 
-typedef ElemAgendaEntry const* ElemAgendaEntryCP;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnModelR targetModel, ElementAgendaCR in, TransformCP inTrans)
+BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans)
     {
     m_operation = RegionType::Flood;
 
     if (SUCCESS != SetTargetModel (targetModel))
         return ERROR;
 
-    for (ElemAgendaEntryCP curr = in.GetFirst (), end = curr + in.GetCount (); curr < end ; curr++)
-        VisitFloodCandidate (*curr, inTrans ? inTrans + (curr - in.GetFirst ()) : NULL);
+    for (DgnElementPtr curr : in)
+        {
+        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+
+        if (nullptr != geomElement)
+            VisitFloodCandidate (*geomElement, inTrans);
+
+        if (nullptr != inTrans)
+            inTrans++;
+        }
 
     return m_output.SetupGraph (m_gapTolerance, RegionLoops::Ignore != m_regionLoops);
     }
@@ -1815,15 +1812,23 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnModelR targetModel, Ele
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Flood (DgnModelR targetModel, ElementAgendaCR in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed)
+BentleyStatus   RegionGraphicsContext::Flood (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed)
     {
     m_operation = RegionType::Flood;
 
     if (SUCCESS != SetTargetModel (targetModel))
         return ERROR;
 
-    for (ElemAgendaEntryCP curr = in.GetFirst (), end = curr + in.GetCount (); curr < end ; curr++)
-        VisitFloodCandidate (*curr, inTrans ? inTrans + (curr - in.GetFirst ()) : NULL);
+    for (DgnElementPtr curr : in)
+        {
+        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+
+        if (nullptr != geomElement)
+            VisitFloodCandidate (*geomElement, inTrans);
+
+        if (nullptr != inTrans)
+            inTrans++;
+        }
 
     if (SUCCESS != m_output.SetupGraph (m_gapTolerance, RegionLoops::Ignore != m_regionLoops))
         return ERROR;
@@ -1864,7 +1869,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, bvector<C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, ElementAgendaCR in, TransformCP inTrans, RegionType operation)
+BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
@@ -1874,8 +1879,16 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, ElementAg
     if (SUCCESS != SetTargetModel (targetModel))
         return ERROR;
 
-    for (ElemAgendaEntryCP curr = in.GetFirst (), end = curr + in.GetCount (); curr < end ; curr++)
-        VisitBooleanCandidate (*curr, inTrans ? inTrans + (curr - in.GetFirst ()) : NULL, NULL, true);
+    for (DgnElementPtr curr : in)
+        {
+        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+
+        if (nullptr != geomElement)
+            VisitBooleanCandidate (*geomElement, inTrans, nullptr, true);
+
+        if (nullptr != inTrans)
+            inTrans++;
+        }
 
     int highestOperand = m_output.GetCurrentGeomMarkerId ();
 
@@ -1891,7 +1904,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, ElementAg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, ElementAgendaCR target, ElementAgendaCR tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation)
+BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElementPtrVec const& target, DgnElementPtrVec const& tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
@@ -1901,13 +1914,29 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, ElementAg
     if (SUCCESS != SetTargetModel (targetModel))
         return ERROR;
 
-    for (ElemAgendaEntryCP curr = target.GetFirst (), end = curr + target.GetCount (); curr < end ; curr++)
-        VisitBooleanCandidate (*curr, targetTrans ? targetTrans + (curr - target.GetFirst ()) : NULL, NULL, false);
+    for (DgnElementPtr curr : target)
+        {
+        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+
+        if (nullptr != geomElement)
+            VisitBooleanCandidate (*geomElement, targetTrans, nullptr, false);
+
+        if (nullptr != targetTrans)
+            targetTrans++;
+        }
 
     int highestOperandA = m_output.GetCurrentGeomMarkerId ();
 
-    for (ElemAgendaEntryCP curr = tool.GetFirst (), end = curr + tool.GetCount (); curr < end ; curr++)
-        VisitBooleanCandidate (*curr, toolTrans ? toolTrans + (curr - tool.GetFirst ()) : NULL, NULL, true);
+    for (DgnElementPtr curr : tool)
+        {
+        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+
+        if (nullptr != geomElement)
+            VisitBooleanCandidate (*geomElement, toolTrans, nullptr, true);
+
+        if (nullptr != toolTrans)
+            toolTrans++;
+        }
 
     int highestOperandB = m_output.GetCurrentGeomMarkerId ();
 
@@ -1920,7 +1949,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, ElementAg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::BooleanWithHoles (DgnModelR targetModel, ElementAgendaCR in, ElementAgendaCR holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation)
+BentleyStatus   RegionGraphicsContext::BooleanWithHoles (DgnModelR targetModel, DgnElementPtrVec const& in, DgnElementPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
@@ -1932,13 +1961,29 @@ BentleyStatus   RegionGraphicsContext::BooleanWithHoles (DgnModelR targetModel, 
 
     bvector<DMatrix4d> wireProducts;
 
-    for (ElemAgendaEntryCP curr = in.GetFirst (), end = curr + in.GetCount (); curr < end ; curr++)
-        VisitBooleanCandidate (*curr, inTrans ? inTrans + (curr - in.GetFirst ()) : NULL, m_cullRedundantLoop ? &wireProducts : NULL);
+    for (DgnElementPtr curr : in)
+        {
+        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+
+        if (nullptr != geomElement)
+            VisitBooleanCandidate (*geomElement, inTrans, m_cullRedundantLoop ? &wireProducts : nullptr);
+
+        if (nullptr != inTrans)
+            inTrans++;
+        }
 
     int highestOperand = m_output.GetCurrentGeomMarkerId ();
 
-    for (ElemAgendaEntryCP curr = holes.GetFirst (), end = curr + holes.GetCount (); curr < end ; curr++)
-        VisitBooleanCandidate (*curr, holeTrans ? holeTrans + (curr - holes.GetFirst ()) : NULL);
+    for (DgnElementPtr curr : holes)
+        {
+        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+
+        if (nullptr != geomElement)
+            VisitBooleanCandidate (*geomElement, holeTrans);
+
+        if (nullptr != holeTrans)
+            holeTrans++;
+        }
 
     if (SUCCESS != m_output.SetupGraph (0.0, true))
         return ERROR;

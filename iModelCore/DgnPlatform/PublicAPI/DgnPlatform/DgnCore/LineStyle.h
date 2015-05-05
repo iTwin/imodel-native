@@ -16,6 +16,7 @@
 #include "../DgnPlatform.r.h"
 #include <RmgrTools/Tools/msstrlst.h>
 #include <DgnPlatform/Tools/KeyTree.h>
+#include "ElementHandle.h"
 
 #define STYLELINK_ID        0x79f9      /* Attribute ID (rad50 'STY')  */
 #define LSTYPE_Internal     0
@@ -662,23 +663,6 @@ DGNPLATFORM_EXPORT void AddCurvePrimitive (ICurvePrimitiveCR curve);
 DGNPLATFORM_EXPORT void AddCurveVector (CurveVectorCR curves, bool isFilled);
 
 }; // LsSymbolGraphicsCreator
-
-//=======================================================================================
-//! A list of DgnElement's.
-// @bsiclass                                                    Keith.Bentley   02/14
-//=======================================================================================
-struct DgnElementPtrVec : bvector<DgnElementPtr>
-{
-const_iterator Find(DgnElementCR val) const
-    {
-    for (auto it=begin(); it!=end(); ++it)
-        {
-        if (it->get() == &val)
-            return it;
-        }
-    return end(); // not found
-    }
-};
 
 //=======================================================================================
 //!  Represents a component that contains graphics.
