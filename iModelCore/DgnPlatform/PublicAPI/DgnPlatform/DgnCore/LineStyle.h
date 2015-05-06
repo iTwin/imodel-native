@@ -728,7 +728,9 @@ public:
     DgnElementPtrVec& GetElementsR() {return m_elements;}
     DgnElementPtrVec const& GetElements () const {return m_elements;}
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     DGNPLATFORM_EXPORT void AddGraphics (EditElementHandleR eeh);
+#endif
     DGNPLATFORM_EXPORT void FreeGraphics (bool freeDescr, bool freeXGraphics);
 
     DGNPLATFORM_EXPORT static BentleyStatus AddSymbolGraphicsAsProperty (uint32_t& componentId, DgnDbR project, Byte const*data, size_t size, PointSymRsc::SymbolType symbolType);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/IModifyElement.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,6 +23,7 @@ struct IModifyElement
     virtual bool _WantMakeCopy () const = 0;
     //! Call to set copy option.
     virtual void _SetWantMakeCopy (bool) = 0;
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     //! Called to perform element modification and update model. Implementation should call _OnElementModify
     //! and then add, replace, or delete the element based on a successful return status.
     //! @return SUCCESS if element was updated.
@@ -30,6 +31,7 @@ struct IModifyElement
     //! Called to apply element modification. This method should not update the model when returning SUCCESS.
     //! @return SUCCESS if modify was ok and element should be replaced, deleted, or added/copied.
     virtual StatusInt _OnElementModify (EditElementHandleR) = 0;
+#endif
     //! Called to initialize abort processing for ElementAgenda::ModifyAgenda.
     virtual void _ResetStop () = 0;
     //! Called to abort processing for ElementAgenda::ModifyAgenda.

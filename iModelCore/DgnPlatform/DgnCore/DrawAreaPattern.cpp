@@ -427,7 +427,9 @@ struct PatternSymbol : IDisplaySymbol
 {
 private:
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 mutable EditElementHandle   m_eeh;
+#endif
 mutable DgnElementP         m_elementRef;
 mutable DRange3d            m_range;
 
@@ -436,7 +438,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 ElementHandleCR GetElemHandle () const {return m_eeh;}
+#endif
 DgnElementP     GetElementRef () const {return m_elementRef;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -446,11 +450,11 @@ virtual void _Draw (ViewContextR context) override
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     // Pattern geometry will be a geom part...not an element...
-#endif
     GeometricElementCP geomElem = m_eeh.GetGeometricElement();
 
     if (geomElem)
         context.VisitElement (*geomElem);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -468,6 +472,7 @@ virtual StatusInt _GetRange (DRange3dR range) const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 PatternSymbol (DgnElementId cellId, DgnDbR project)
     {
+#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     DgnElementPtr edP;
 
     // If pattern cell doesn't already exist in project...it should fail...
@@ -482,7 +487,6 @@ PatternSymbol (DgnElementId cellId, DgnDbR project)
     BeAssert (edP.IsValid());
     m_eeh.SetDgnElement(edP.get());
 
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     // Match dimension of modelRef; otherwise pattern in 3D reference to 2D ends up at z=0, which may be outside of the range of the reference file.
     if (modelRef->Is3d () && !DisplayHandler::Is3dElem (m_eeh.GetGraphicsCP ()))
         {
@@ -499,9 +503,9 @@ PatternSymbol (DgnElementId cellId, DgnDbR project)
 
         m_eeh.GetHandler ().ConvertTo2d (m_eeh, flattenTrans, flattenDir);
         }
-#endif
 
     m_range = m_eeh.GetGeometricElement()->_GetRange3d();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -509,7 +513,11 @@ PatternSymbol (DgnElementId cellId, DgnDbR project)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Is3dCellSymbol ()
     {
+#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     return m_eeh.GetDgnModelP ()->Is3d();
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -993,6 +1001,7 @@ DPoint3dR       origin,
 double          contextScale
 )
     {
+#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     PatternSymbol symbCell (DgnElementId (params->cellId), context.GetDgnDb ());
 
     if (!symbCell.GetElemHandle ().IsValid ())
@@ -1036,7 +1045,6 @@ double          contextScale
     LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear (&orgTrans, NULL, &rMatrix, &origin, scale, scale, 0.0);
     cellRange.get8Corners (cellCorners);
 
-#if defined (NEEDS_WORK_DGNITEM)
     if (isQVOutput)
         {
         int     cellCmpns = symbCell.GetElemHandle ().GetGraphicsCP ()->GetComplexComponentCount ();
@@ -1055,7 +1063,6 @@ double          contextScale
                 drawFiltered = (viewRange.extentSquared () < context.GetMinLOD ());
             }
         }
-#endif
 
     if (useStencil)
         {
@@ -1089,6 +1096,7 @@ double          contextScale
     PatternHelper::PopBoundaryClipStencil (context, qvElem);
 
     context.DeleteSymbol (&symbCell); // Only needed if DrawSymbol has been called...i.e. early returns are ok!
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

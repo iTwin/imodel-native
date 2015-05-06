@@ -44,6 +44,7 @@ ElementHandle provides readonly access to an element. The subclass EditElementHa
 //=======================================================================================
 struct IElementState : Bentley::IRefCounted {};
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 //=======================================================================================
 //! A readonly "handle" to an element.
 //! @ingroup ElemHandles
@@ -236,6 +237,7 @@ struct IElementSet
     //! @return true if there were more members in the set and \a elHandle was set. If false, \a elHandle was not modified.
     virtual bool GetNext(ElementHandleR elHandle) = 0;
 };
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -44,6 +44,7 @@ StatusInt ITxn::DeleteElement (DgnElementP elRef)
     return elRef->_DeleteInDb();
     }
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE_FIX_NOW)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -72,3 +73,4 @@ StatusInt ITxn::ReplaceElement(EditElementHandleR eeh)
     eeh.ClearWriteable();
     return SUCCESS;
     }
+#endif
