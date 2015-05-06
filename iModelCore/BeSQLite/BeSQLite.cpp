@@ -504,7 +504,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
             }
         }
 
-    BeAssert((SQLITE_OK == checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
+    BeAssert((BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
 
     // attempt the commit/release or rollback
     DbResult rc;
