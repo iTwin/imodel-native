@@ -5855,7 +5855,7 @@ ZipErrors LzmaEncoder::Compress(bvector<Byte>& out, void const *input, uint32_t 
 //---------------------------------------------------------------------------------------
 DbResult Db::SaveCreationDate()
     {
-    SavePropertyString(Properties::CreationBeSqliteBuildVersion(), REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
+    SavePropertyString(Properties::BeSQLiteBuild(), REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
     return SavePropertyString(Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToUtf8String());
     }
 
