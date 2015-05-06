@@ -865,6 +865,7 @@ struct DgnElements : DgnDbTable
     friend struct DgnModels;
     friend struct ElementHandler;
     friend struct ITxnManager;
+    friend struct ProgressiveViewFilter;
 
     //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
@@ -908,16 +909,16 @@ private:
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
-    DgnElementPtr LoadElement(DgnElement::CreateParams const& params);
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
+    void ReleaseAndCleanup(DgnElementCPtr& element);
 
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
 public:
-    DGNPLATFORM_EXPORT void ReleaseAndCleanup(DgnElementPtr& element);
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
     DGNPLATFORM_EXPORT void AllocatedMemory(int32_t);
     DGNPLATFORM_EXPORT void ReturnedMemory(int32_t);
 
@@ -945,13 +946,14 @@ public:
     DGNPLATFORM_EXPORT DgnElementId GetHighestElementId();
     DGNPLATFORM_EXPORT DgnElementId MakeNewElementId();
 
-    //! Load an element within this DgnDb by its Id. @remarks The element is loaded if necessary.
-    //! @return nullptr if the element does not exist.
-    DGNPLATFORM_EXPORT DgnElementPtr GetElementById(DgnElementId id);
+    //! Get a DgnElement from this DgnDb by its Id. 
+    //! @remarks The element is loaded if necessary.
+    //! @return Invalid if the element does not exist.
+    DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
 
     //! Look up an element within this DgnDb by its Id.
     //! @return nullptr if the element does not exist or is not currently loaded.
-    DGNPLATFORM_EXPORT DgnElementP FindElementById(DgnElementId id) const;
+    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
 
     HeapZone& GetHeapZone() {return m_heapZone;}
 

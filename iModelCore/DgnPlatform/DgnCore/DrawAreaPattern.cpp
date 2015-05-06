@@ -428,7 +428,7 @@ struct PatternSymbol : IDisplaySymbol
 private:
 
 mutable EditElementHandle   m_eeh;
-mutable DgnElementP         m_elementRef;
+mutable DgnElementCP        m_elementRef;
 mutable DRange3d            m_range;
 
 public:
@@ -437,7 +437,7 @@ public:
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementHandleCR GetElemHandle () const {return m_eeh;}
-DgnElementP     GetElementRef () const {return m_elementRef;}
+DgnElementCP    GetElementRef () const {return m_elementRef;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
@@ -471,7 +471,7 @@ PatternSymbol (DgnElementId cellId, DgnDbR project)
     DgnElementPtr edP;
 
     // If pattern cell doesn't already exist in project...it should fail...
-    m_elementRef = project.Elements().FindElementById (cellId);
+    m_elementRef = project.Elements().FindElement(cellId);
     if (NULL == m_elementRef)
         return;
 
@@ -826,9 +826,8 @@ double          scale
         return false;                                       // The pattern is too big... Draw it.
 #endif
 
-    DgnElementP     cellElementRef;
-
-    if (NULL == (cellElementRef = symbCell.GetElementRef ()))
+    DgnElementCP   cellElementRef;
+    if (NULL == (cellElementRef = symbCell.GetElementRef()))
         return false;                                       // No place to persist map...
 
     GeometryMapPatternAppData*  appData;

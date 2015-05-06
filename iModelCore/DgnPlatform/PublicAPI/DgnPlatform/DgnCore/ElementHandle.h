@@ -58,7 +58,7 @@ protected:
     void ClearAll() {ClearWriteable(); ClearElemState(); ClearPersistent();}
 
     void Init(DgnElementCP element) {SetDgnElement(element); m_state = nullptr;}
-    void Init(DgnElementId id, DgnDbR dgndb) {Init(dgndb.Elements().GetElementById(id).get());}
+    void Init(DgnElementId id, DgnDbR dgndb) {Init(dgndb.Elements().GetElement(id).get());}
 
 public:
     void Invalidate() {ClearAll();}

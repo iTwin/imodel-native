@@ -848,9 +848,9 @@ void ViewController::LookAtViewAlignedVolume (DRange3dCR volume, double const* a
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_FillModels()
     {
-    for (auto modelId : m_viewedModels)
+    for (DgnModelId modelId : m_viewedModels)
         {
-        auto model = m_dgndb.Models().GetModelById(modelId);
+        DgnModelP model = m_dgndb.Models().GetModelById(modelId);
         if (model)
             model->FillModel();
         }
