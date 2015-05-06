@@ -345,6 +345,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     SchemaVersion  schemaVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
     db.SavePropertyString (PackageProperty::SchemaVersion(), schemaVersion.ToJson());
     db.SaveCreationDate();
+    db.SaveCreationBeSqliteBuildVersion();
 
     copyProjectPropertyToIModel(db, *sourceProject, DgnProjectProperty::SchemaVersion(), DgnEmbeddedProjectProperty::SchemaVersion(), id);
     copyProjectPropertyToIModel(db, *sourceProject, DgnProjectProperty::Name(), DgnEmbeddedProjectProperty::Name(), id);
