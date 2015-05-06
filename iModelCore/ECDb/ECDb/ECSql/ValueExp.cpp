@@ -394,7 +394,9 @@ Utf8String ConstantValueExp::ToECSql () const
         {
         auto primType = typeInfo.GetPrimitiveType ();
         if (primType == PRIMITIVETYPE_String)
+            {
             return "'" + m_value + "'";
+            }
 
         if (primType == PRIMITIVETYPE_DateTime)
             {

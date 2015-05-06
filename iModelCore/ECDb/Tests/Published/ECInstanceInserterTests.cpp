@@ -281,6 +281,15 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     runInsertTest (*testInstance, "Non-empty instance");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ExecuteECSqlCommand (ECSqlStatement& stmt, ECDbR db, Utf8CP ecsql)
+    {
+    ASSERT_EQ (stmt.Prepare (db, ecsql), ECSqlStatus::Success);
+    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    stmt.Finalize ();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/15
@@ -396,6 +405,80 @@ void ExecuteECSql (ECSqlStatement& stmt, ECInstanceKey& key, ECDbR ecdb, Utf8CP 
     stmt.Finalize ();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
+    {
+    auto const schema =
+        L"<?xml version='1.0' encoding='utf-8'?>"
+        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECClass typeName='ClassA' isDomainClass='True'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='Price' typeName='double' />"
+        L"        <ECProperty propertyName='Id' typeName='int' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ClassAB' isDomainClass='True'>"
+        L"        <BaseClass>ClassA</BaseClass>"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ClassAC' isDomainClass='True'>"
+        L"        <BaseClass>ClassA</BaseClass>"
+        L"    </ECClass>"
+        L"</ECSchema>";
+
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create ("TestECDbGroupByClauseWithFunctions.ecdb");
+    ECSchemaPtr testSchema;
+    auto readContext = ECSchemaReadContext::CreateContext ();
+    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
+    ASSERT_TRUE (testSchema != nullptr);
+    auto importStatus = db.Schemas().ImportECSchemas (readContext->GetCache ());
+    ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
+
+    ECSqlStatement stmt;
+    ExecuteECSqlCommand (stmt, db, "INSERT INTO rc.ClassA VALUES(1000, 1)");
+    ExecuteECSqlCommand (stmt, db, "INSERT INTO rc.ClassA VALUES(1500, 1)");
+    ExecuteECSqlCommand (stmt, db, "INSERT INTO rc.ClassAB VALUES(2000, 2)");
+    ExecuteECSqlCommand (stmt, db, "INSERT INTO rc.ClassAB VALUES(2500, 2)");
+    ExecuteECSqlCommand (stmt, db, "INSERT INTO rc.ClassAC VALUES(3000, 3)");
+    ExecuteECSqlCommand (stmt, db, "INSERT INTO rc.ClassAC VALUES(3500, 3)");
+
+    ASSERT_EQ (stmt.Prepare (db, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY Id"), ECSqlStatus::Success);
+    int count = 0;
+    Utf8String expectedAvgValues = "21250.022250.023250.0";
+    Utf8String actualAvgValues;
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        actualAvgValues.append (stmt.GetValueText (1));
+        actualAvgValues.append (stmt.GetValueText (0));
+        count++;
+        }
+    ASSERT_EQ (count, 3);
+    ASSERT_EQ (expectedAvgValues, actualAvgValues);
+    stmt.Finalize ();
+
+    count = 0;
+    actualAvgValues = "";
+    ASSERT_EQ (stmt.Prepare (db, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY GetECClassId()"), ECSqlStatus::Success);
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        actualAvgValues.append (stmt.GetValueText (1));
+        actualAvgValues.append (stmt.GetValueText (0));
+        count++;
+        }
+    ASSERT_EQ (count, 3);
+    ASSERT_EQ (expectedAvgValues, actualAvgValues);
+    stmt.Finalize ();
+
+    db.CloseDb ();
+    }
+    
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -521,4 +604,5 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
     ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
     stmt.Finalize ();
     }
+
 END_ECDBUNITTESTS_NAMESPACE

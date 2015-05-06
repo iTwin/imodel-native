@@ -167,7 +167,24 @@ TEST(ECDbInstances, DeleteECInstances)
         ASSERT_EQ(SUCCESS, stat);
         }
     }   
+TEST(ECDbInstances, QuoteTest)
+    {
+    ECDbTestProject test;
+    ECDbR ecdb = test.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
+    ECSqlStatement stmt1;
+    ASSERT_TRUE (stmt1.Prepare (ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')") == ECSqlStatus::Success);
+    ASSERT_TRUE (stmt1.Step () == ECSqlStepStatus::Done);
+    ECSqlStatement stmt2;
+    ASSERT_TRUE (stmt2.Prepare (ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''a''a'''") == ECSqlStatus::Success);
+    ASSERT_TRUE (stmt2.Step () == ECSqlStepStatus::HasRow);
+     ECSqlStatement stmt3;
+    ASSERT_TRUE (stmt3.Prepare (ecdb, "UPDATE ONLY stco.ClassWithPrimitiveProperties SET stringProp = '''g''''g'''") == ECSqlStatus::Success);
+    ASSERT_TRUE (stmt3.Step () == ECSqlStepStatus::Done);
+     ECSqlStatement stmt4;
+    ASSERT_TRUE (stmt4.Prepare (ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''g''''g'''") == ECSqlStatus::Success);
+    ASSERT_TRUE (stmt4.Step () == ECSqlStepStatus::HasRow);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                          04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
