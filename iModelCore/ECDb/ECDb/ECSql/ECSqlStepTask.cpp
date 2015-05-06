@@ -744,7 +744,7 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreatePropertyStepTask (std::uni
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateClassStepTask (ECSqlStepTask::Collection& taskList, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap)
+ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateClassStepTask (ECSqlStepTask::Collection& taskList, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement)
     {
     switch (taskType)
         {
@@ -758,7 +758,7 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateClassStepTask (ECSqlStepTa
             }
         case StepTaskType::Delete:
             {
-            return CreateDeleteStepTask (taskList, preparedContext, ecdb, classMap);
+            return CreateDeleteStepTask (taskList, preparedContext, ecdb, classMap, isPolymorphicStatement);
             }
         }
 
@@ -805,10 +805,10 @@ void ECSqlStepTaskFactory::GetConstraintClasses (ECSqlParseContext::ClassListByI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateDeleteStepTask (ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap)
+ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateDeleteStepTask(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement)
     {
     //1. Delete all struct array properties.
-    ECSqlStepTaskCreateStatus status = CreateStepTaskList (taskList, preparedContext, StepTaskType::Delete, ecdb, classMap);
+    ECSqlStepTaskCreateStatus status = CreateStepTaskList(taskList, preparedContext, StepTaskType::Delete, ecdb, classMap, isPolymorphicStatement);
     if (status != ECSqlStepTaskCreateStatus::Success)
         {
         BeAssert (false && "Failed to create delete step task list");
@@ -833,26 +833,7 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateDeleteStepTask (ECSqlStepT
 //---------------------------------------------------------------------------------------
 ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateInsertStepTask (ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap)
     {
-    //1. Delete all struct array properties.
-    ECSqlStepTaskCreateStatus status = CreateStepTaskList (taskList, preparedContext, StepTaskType::Insert, ecdb, classMap);
-    if (status != ECSqlStepTaskCreateStatus::Success)
-        {
-        BeAssert (false && "Failed to create delete step task list");
-        return status;
-        }
-    //2. Delete all relationships
-    //ECSQL_TODO ensure that all relevant relationships are loaded
-
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Affan.Khan         02/2014
-//---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateUpdateStepTask (ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap)
-    {
-    //1. Delete all struct array properties.
-    ECSqlStepTaskCreateStatus status = CreateStepTaskList (taskList, preparedContext, StepTaskType::Update, ecdb, classMap);
+    ECSqlStepTaskCreateStatus status = CreateStepTaskList (taskList, preparedContext, StepTaskType::Insert, ecdb, classMap, false);
     if (status != ECSqlStepTaskCreateStatus::Success)
         {
         BeAssert (false && "Failed to create delete step task list");
@@ -865,9 +846,23 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateUpdateStepTask (ECSqlStepT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateStepTaskList (ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, StepTaskType taskType, ECDbR ecdb, IClassMap const& classMap)
+ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateUpdateStepTask(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement)
     {
-    //1. Delete all struct array properties.
+    ECSqlStepTaskCreateStatus status = CreateStepTaskList (taskList, preparedContext, StepTaskType::Update, ecdb, classMap, isPolymorphicStatement);
+    if (status != ECSqlStepTaskCreateStatus::Success)
+        {
+        BeAssert (false && "Failed to create delete step task list");
+        return status;
+        }
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Affan.Khan         02/2014
+//---------------------------------------------------------------------------------------
+ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateStepTaskList(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, StepTaskType taskType, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement)
+    {
     ECSqlStepTaskCreateStatus status = ECSqlStepTaskCreateStatus::Success;
     auto processStructArrayProperties = [&] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
