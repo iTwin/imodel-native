@@ -30,7 +30,6 @@
 #undef min
 #undef max
 
-
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
 #define RUNONCE_CHECK(var,stat) {if(var) return stat; var=true;}
@@ -539,12 +538,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::Db() : m_embeddedFiles(*this), m_appData(*this)
-    {
-    m_dbFile = nullptr;
-    m_statements = nullptr;
-    }
-
+Db::Db() : m_embeddedFiles(*this), m_appData(*this), m_dbFile(nullptr), m_statements(nullptr) {}
 Db::~Db() {DoCloseDb();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -1131,16 +1125,6 @@ DbResult Db::SaveRepositoryId()
     return m_dbFile->m_rlvCache.SaveValue(m_dbFile->m_repositoryIdRlvIndex, m_dbFile->m_repositoryId.GetValue());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2015
-//---------------------------------------------------------------------------------------
-DbResult Db::SaveCreationBeSqliteBuildVersion()
-    {
-    static Utf8CP BUILD_VERSION = REL_V "." MAJ_V "." MIN_V "." SUBMIN_V;
-    
-    return SavePropertyString(Properties::CreationBeSqliteBuildVersion(), BUILD_VERSION);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1565,7 +1549,7 @@ DbResult Db::SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::QueryRepositoryLocalValue (Utf8CP name, Utf8StringR value) const
+DbResult Db::QueryRepositoryLocalValue(Utf8CP name, Utf8StringR value) const
     {
     Statement stmt;
     stmt.Prepare (*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
@@ -5871,6 +5855,7 @@ ZipErrors LzmaEncoder::Compress(bvector<Byte>& out, void const *input, uint32_t 
 //---------------------------------------------------------------------------------------
 DbResult Db::SaveCreationDate()
     {
+    SavePropertyString(Properties::CreationBeSqliteBuildVersion(), REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
     return SavePropertyString(Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToUtf8String());
     }
 
