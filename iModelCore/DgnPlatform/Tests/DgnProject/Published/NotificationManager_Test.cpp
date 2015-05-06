@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/NotificationManager_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -12,9 +12,6 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 class NotificationManagerTest : public GenericDgnModelTestFixture
 {
-protected:
-EditElementHandle      m_eeh;
-
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KyleDeeds  08/09
@@ -28,7 +25,6 @@ NotificationManagerTest()
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual ~NotificationManagerTest ()
     {
-    m_eeh.Invalidate();
     }
 };
 

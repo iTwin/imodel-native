@@ -2,13 +2,14 @@
 |
 |  $Source: Tests/DgnProject/Published/IEditInterface_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE_FIX_NOW)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     Evan.Williams  11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -34,7 +35,6 @@ virtual ~IEditInterfaceTest ()
     }
 };
 
-#if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * Create and modify a BsplineSurface using SetBsplineSurface() on IBSplineSurfaceEdit.
 * Will flip a BsplineSurface and elongate it.
@@ -97,9 +97,7 @@ TEST_F(IEditInterfaceTest, IBsplineSurfaceEdit)
     surface.ReleaseMem();
     editSurface.ReleaseMem();
     }
-#endif
 
-#if defined (DGNPLATFORM_WIP_ISolidPrimitiveQuery)
 /*---------------------------------------------------------------------------------**//**
 * Create and modify a cone using SetConeData()
 * @bsimethod                                                    Evan.Williams  12/09
@@ -141,9 +139,7 @@ TEST_F(IEditInterfaceTest, IConeEdit)
     EXPECT_EQ(editTopRadius, r0);
     EXPECT_EQ(editBottomRadius, r1);
     }
-#endif
 
-#if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * Create and modify a Mesh using SetMeshData() on IMeshEdit
 * Turn a basic square mesh into a more complex one.
@@ -217,5 +213,4 @@ TEST_F(IEditInterfaceTest, IMeshEdit)
         EXPECT_EQ(editHeader->PointIndex().at(i), checkHeader->PointIndex().at(i));
         }
     }
-
 #endif
