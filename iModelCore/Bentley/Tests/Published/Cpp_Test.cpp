@@ -70,10 +70,11 @@ using namespace std::placeholders; //for _1, _2, _3...
 static void test_high_resolution_clock()
     {
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    BeThreadUtilities::BeSleep(1);   // should permit reads to run, and they should be able to acquire g_rw_value_mutex
+    BeThreadUtilities::BeSleep(1);
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+    ASSERT_GT( t2 , t1 );
     std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-    ASSERT_TRUE( time_span >= std::chrono::milliseconds(1) );
+    ASSERT_GE( time_span , std::chrono::milliseconds(1) );
     }
 
 //  --------------------------------------------------------------------------------------
