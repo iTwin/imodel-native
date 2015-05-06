@@ -580,7 +580,7 @@ DgnModelStatus GeometricElement::_InsertInDb()
     GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId) VALUES(?,?,?)");
     stmt->BindId(3, m_elementId);
 
-    stat = _BindInsertGeom(*stmt);
+    stat = _BindPlacement(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
         return DGNMODEL_STATUS_Success;
 
@@ -603,7 +603,7 @@ DgnModelStatus GeometricElement::_UpdateInDb()
     GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=? WHERE ElementId=?");
     stmt->BindId(3, m_elementId);
 
-    stat = _BindInsertGeom(*stmt);
+    stat = _BindPlacement(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
         return DGNMODEL_STATUS_Success;
 
@@ -650,7 +650,7 @@ DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement3d::_BindInsertGeom(Statement& stmt)
+DgnModelStatus DgnElement3d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
         return DGNMODEL_STATUS_NoGeometry;
@@ -774,7 +774,7 @@ DgnModelStatus PhysicalElement::_UpdateInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement2d::_BindInsertGeom(Statement& stmt)
+DgnModelStatus DgnElement2d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
         return DGNMODEL_STATUS_NoGeometry;

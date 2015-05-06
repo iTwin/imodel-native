@@ -177,6 +177,7 @@ struct ITxnOptions
         }
     };
 
+#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -210,6 +211,7 @@ public:
 #endif
     //@}
 };
+#endif
 
 //__PUBLISH_SECTION_END__
 
@@ -352,7 +354,6 @@ protected:
     bvector<RevTxn> m_reversedTxn;
     Utf8String      m_txnDescr;
     uint64_t        m_txnSource;
-    ITxn*           m_currTxn;
     TxnId           m_firstTxn;
     TxnId           m_currentTxnID;
     bool            m_isActive;
@@ -436,12 +437,6 @@ public:
     //! Query if any Fatal validation errors were reported during the last boundary check.
     DGNPLATFORM_EXPORT bool HasAnyFatalValidationErrors() const;
 
-    //! Get the current transaction
-    DGNPLATFORM_EXPORT ITxn& GetCurrentTxn();
-
-    //! Set the current ITxn
-    //! @param newTxn   the ITxn implementation that is to handle changes in the current transaction
-    DGNPLATFORM_EXPORT ITxn& SetCurrentTxn (ITxn& newTxn);
     //@}
 
     //! @name Start and Stop Journaling Changes for Undo

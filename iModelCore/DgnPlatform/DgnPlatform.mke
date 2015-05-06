@@ -56,9 +56,6 @@ EnablerDepends =    $(HandlerDepends) \
                     $(DgnPlatformAPISrc)DgnHandlers/IManipulator.h \
                     $(DgnPlatformAPISrc)DgnHandlers/IModifyElement.h
 
-HandlerImplDepends = $(EnablerDepends)                          \
-                    $(DgnPlatformAPISrc)DgnCore/ElementHandle.h \
-
 #---------------------------------------------------------
 #  Set up for signing
 #---------------------------------------------------------
@@ -123,8 +120,6 @@ $(coreObjs)UnitDefinition$(oext): $(DgnCoreDir)UnitDefinition.cpp ${MultiCompile
 
 $(coreObjs)ElementAgenda$(oext): $(DgnCoreDir)ElementAgenda.cpp $(DgnCoreAPISrc)ElementAgenda.h ${MultiCompileDepends}
 
-$(coreObjs)ITxn$(oext): $(DgnCoreDir)ITxn.cpp  $(HandlerDepends) $(txnManagerDepends) ${MultiCompileDepends}
-
 $(coreObjs)TxnManager$(oext): $(DgnCoreDir)TxnManager.cpp $(txnManagerDepends) ${MultiCompileDepends}
 
 $(coreObjs)EntityDependencyGraph$(oext): $(DgnCoreDir)EntityDependencyGraph.cpp $(txnManagerDepends) ${MultiCompileDepends}
@@ -160,8 +155,6 @@ $(coreObjs)DgnRangeTree$(oext): $(DgnCoreDir)DgnRangeTree.cpp $(DgnCoreAPISrc)Dg
 $(coreObjs)VecMathDGNTolerances$(oext):     $(DgnCoreDir)VecMathDGNTolerances.cpp $(DgnPlatformAPISrc)VecMath.h ${MultiCompileDepends}
 
 $(coreObjs)DgnColors$(oext):   $(DgnCoreDir)DgnColors.cpp $(DgnCoreAPISrc)ColorUtil.h ${MultiCompileDepends}
-
-$(coreObjs)ElemHandle$(oext): $(DgnCoreDir)ElemHandle.cpp $(HandlerDepends) $(txnManagerDepends) $(DgnCoreAPISrc)/DgnElement.h  ${MultiCompileDepends}
 
 $(coreObjs)ViewController$(oext):    $(DgnCoreDir)ViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
@@ -247,7 +240,7 @@ $(coreObjs)DgnCoreValueFormat$(oext): $(DgnCoreDir)DgnCoreValueFormat.cpp $(DgnC
 
 $(coreObjs)ValueParse$(oext): $(DgnCoreDir)ValueParse.cpp $(DgnCoreAPISrc)ValueParse.h ${MultiCompileDepends}
 
-$(coreObjs)ACSManager$(oext): $(DgnCoreDir)ACSManager.cpp $(DgnCoreAPISrc)IAuxCoordSys.h $(DgnCoreAPISrc)ElementHandle.h ${MultiCompileDepends}
+$(coreObjs)ACSManager$(oext): $(DgnCoreDir)ACSManager.cpp $(DgnCoreAPISrc)IAuxCoordSys.h ${MultiCompileDepends}
 
 $(coreObjs)DgnFontManager$(oext):  $(fontMgrDir)DgnFontManager.cpp $(DgnCoreAPISrc)DgnFontManager.h $(DgnCoreAPISrc)DgnShxFont.h $(DgnCoreAPISrc)DgnTrueTypeFont.h $(DgnCoreAPISrc)DgnRscFont.h $(contextDepends) ${MultiCompileDepends}
 

@@ -203,8 +203,10 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb();
+
     //! Virtual copy constructor. If your subclass has member variables, it \em must override _InitFrom. @see _SwapWithModified
     virtual void _InitFrom(DgnElementCR other) {}
+
     //! Virtual move assignment operator. If your subclass has member variables, it \em must override _SwapWithModified. @see _InitFrom
     DGNPLATFORM_EXPORT virtual DgnModelStatus _SwapWithModified(DgnElementR);
     virtual DgnModelStatus _OnAdd() {return DGNMODEL_STATUS_Success;}
@@ -384,7 +386,7 @@ public:
 
     //! Convenience method to get the Element's class and id as an ElementItemKey. 
     //! @note The result may be invalid, since the item class is optional
-    ElementItemKey GetItemKey() const {return GetItemClassId().IsValid()? ElementItemKey(GetItemClassId(), GetElementId()): ElementItemKey(ECN::ECClassId(), GetElementId());}
+    ElementItemKey GetItemKey() const {return GetItemClassId().IsValid() ? ElementItemKey(GetItemClassId(), GetElementId()) : ElementItemKey(ECN::ECClassId(), GetElementId());}
 
     //! @return a pointer to a read-only instance that holds the ElementItem's properties, or nullptr if the element has no Item.
     //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
@@ -593,7 +595,7 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
-    virtual DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) = 0;
+    virtual DgnModelStatus _BindPlacement(BeSQLite::Statement&) = 0;
     GeometricElementCP _ToGeometricElement() const override {return this;}
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {;}
 
@@ -640,7 +642,7 @@ protected:
 
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _BindPlacement(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
 
@@ -697,7 +699,7 @@ protected:
     Placement2d m_placement;
     explicit DgnElement2d(CreateParams const& params) : T_Super(params) {}
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _BindInsertGeom(BeSQLite::Statement&) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _BindPlacement(BeSQLite::Statement&) override;
     DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
 

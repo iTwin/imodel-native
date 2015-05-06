@@ -265,16 +265,6 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox (Messag
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-ITxn& ITxnManager::SetCurrentTxn (ITxn& newTxn)
-    {
-    ITxn* old = m_currTxn;
-    m_currTxn = &newTxn;
-    return  *old;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::InteractiveHost::StartupInteractive()
