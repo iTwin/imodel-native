@@ -28,12 +28,6 @@ ECDbMapPersistenceTests.MappingStrategyTest
 #TFS Defect 201187
 ECDbHintTests.RelationshipTest_AllowDuplicateRelationships
 
-ECSqlSelectTestFixture.FromTests # Notified Krischan on 2015-May-06
-ECSqlSelectTestFixture.WhereAbstractClassTests # Notified Krischan on 2015-May-06
-ECSqlUpdateTestFixture.PolymorphicTests # Notified Krischan on 2015-May-06
-ECSqlUpdateTestFixture.WhereAbstractClassTests # Notified Krischan on 2015-May-06
-ECSqlDeleteTestFixture.PolymorphicTests # Notified Krischan on 2015-May-06
-ECSqlDeleteTestFixture.WhereAbstractClassTests # Notified Krischan on 2015-May-06
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
