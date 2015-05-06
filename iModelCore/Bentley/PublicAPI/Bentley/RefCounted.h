@@ -27,8 +27,8 @@ protected:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 public:
-    virtual uint32_t AddRef () const = 0;
-    virtual uint32_t Release () const = 0;
+    virtual uint32_t AddRef() const = 0;
+    virtual uint32_t Release() const = 0;
     };
 
 // You can use this macro to add an implementation of IRefCounted, i.e., the reference-counted pattern, directly into your class.
@@ -54,7 +54,7 @@ public:\
 
 /*=================================================================================**//**
 * Template to simplify the task of writing a class that implements the reference-counting pattern.
-* This template contains a complete implementation of the reference-counting pattern. 
+* This template contains a complete implementation of the reference-counting pattern.
 * If a class inherits from an instantiation of this template, the class inherits that implementation and becomes reference-counted.
 * Example:
 * \code
@@ -96,215 +96,86 @@ public:
 /*=================================================================================**//**
 * A shared pointer template for reference-counted objects.
 * Type \b T must have functions named AddRef and Release with signatures that conform to the reference-counting pattern.
-* @bsiclass                                                     03/04
+* @bsiclass
 +===============+===============+===============+===============+===============+======*/
-// This template was adapted from boost instrusive_ptr.
 template<class T> class RefCountedPtr
 {
 private:
-
-    typedef RefCountedPtr this_type;
+    T* m_p;
 
 public:
+    RefCountedPtr() : m_p(nullptr) {}
+    ~RefCountedPtr() {if (m_p != nullptr) m_p->Release ();}
+    RefCountedPtr(T* p, bool add_ref = true) : m_p(p) {if (m_p != nullptr && add_ref) m_p->AddRef ();}
+    template<class U> RefCountedPtr(RefCountedPtr<U> const & rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef ();}
+    RefCountedPtr(RefCountedPtr const& rhs): m_p(rhs.m_p) {if (m_p != nullptr) m_p->AddRef ();}
+    RefCountedPtr(RefCountedPtr&& rhs) : m_p(std::move(rhs.m_p)){rhs.m_p = nullptr;}
+    RefCountedPtr& operator=(RefCountedPtr&& rhs) {RefCountedPtr(std::move(rhs)).swap(*this); return *this;}
 
-    typedef T element_type;
+    template<class U> RefCountedPtr & operator=(RefCountedPtr<U> const & rhs) {RefCountedPtr(rhs).swap(*this); return *this;}
+    bool operator== (RefCountedPtr<T> const& rhs) const {return m_p == rhs.m_p;}
+    template<class U> bool operator== (RefCountedPtr<U> const& rhs) const {return m_p == rhs.get();}
+    bool operator!= (RefCountedPtr<T> const& rhs) const {return m_p != rhs.m_p;}
+    template<class U> bool operator!= (RefCountedPtr<U> const& rhs) const {return m_p != rhs.get();}
 
-    RefCountedPtr(): p_(0)     {}
+    RefCountedPtr& operator=(RefCountedPtr const & rhs) {RefCountedPtr(rhs).swap(*this); return *this;}
+    RefCountedPtr& operator=(T* rhs) {RefCountedPtr(rhs).swap(*this); return *this;}
+    T* get() const {return m_p;}
+    T& operator*() const {return *m_p;}
+    T* operator->() const {return m_p;}
 
-    //  << BENTLEY COMMENT:
-    //      This constructor is used by the compiler for automatic type conversions.
-    //      That is what allows code like this to compile:
-    //      RefCountedPtr<T> Function ()
-    //          {
-    //          T* p = ..
-    //          return p;
-    //          }
-    RefCountedPtr(T * p, bool add_ref = true): p_(p)
-    {
-        if(p_ != 0 && add_ref) p_->AddRef ();
-    }
+    bool IsValid() const {return nullptr != m_p;} //!< Return true if the ref-counted object has a valid (non-NULL) internal object.
+    bool IsNull() const  {return !IsValid();}     //!< Return true if the ref-counted object has a invalid (NULL) internal object.
+    bool Equals(T const* other) const {return other == get();}
+    bool Equals(RefCountedPtr const& other) const {return other.get() == get();}
+    void swap(RefCountedPtr& rhs) {T* tmp = m_p; m_p = rhs.m_p; rhs.m_p = tmp;} //!< Swap the internal objects pointed to by two smart pointers.
+};
 
-    template<class U> RefCountedPtr(RefCountedPtr<U> const & rhs): p_(rhs.get())
-    {
-        if(p_ != 0) p_->AddRef ();
-    }
-
-    RefCountedPtr(RefCountedPtr const& rhs): p_(rhs.p_)
-    {
-        if(p_ != 0) p_->AddRef ();
-    }
-
-    RefCountedPtr(RefCountedPtr&& rhs) : p_(std::move(rhs.p_)){ rhs.p_ = 0;}
-
-    RefCountedPtr& operator=(RefCountedPtr&& rhs) 
-    {
-        this_type(std::move(rhs)).swap(*this);
-        return *this;
-    }
-
-    ~RefCountedPtr()
-    {
-        if(p_ != 0) p_->Release ();
-    }
-
-    template<class U> RefCountedPtr & operator=(RefCountedPtr<U> const & rhs)
-    {
-        this_type(rhs).swap(*this);
-        return *this;
-    }
-
-    // << BENTLEY CHANGE:
-    //      We moved the comparison operators inside the class.
-    bool operator== (RefCountedPtr<T> const& rhs) const
-    {
-        return p_ == rhs.p_;
-    }
-
-    template<class U> bool operator== (RefCountedPtr<U> const& rhs) const
-    {
-        return p_ == rhs.get();
-    }
-
-    bool operator!= (RefCountedPtr<T> const& rhs) const
-    {
-        return p_ != rhs.p_;
-    }
-
-    template<class U> bool operator!= (RefCountedPtr<U> const& rhs) const
-    {
-        return p_ != rhs.get();
-    }
-
-    RefCountedPtr & operator=(RefCountedPtr const & rhs)
-    {
-        this_type(rhs).swap(*this);
-        return *this;
-    }
-
-    RefCountedPtr & operator=(T * rhs)
-    {
-        this_type(rhs).swap(*this);
-        return *this;
-    }
-
-    //! Get a pointer the intenal object held by the reference-counted object
-    T * get() const
-    {
-        return p_;
-    }
-
-    //! Get a constant reference to the intenal object held by the reference-counted object
-    T* const& GetCR() const
-    {
-        return p_;
-    }
-
-    //! Get a reference to the intenal object held by the reference-counted object
-    T*& GetR()
-    {
-        return p_;
-    }
-
-    //! Get a reference to the intenal object held by the reference-counted object
-    T & operator*() const
-    {
-        return *p_;
-    }
-
-    //! Get a pointer to the intenal object held by the reference-counted object
-    T * operator->() const
-    {
-        return p_;
-    }
-
-    //! Return true if the ref-counted object has a valid (non-NULL) internal object.
-    bool IsValid () const {return 0 != p_;}
-    //! Return true if the ref-counted object has a invalid (NULL) internal object.
-    bool IsNull () const  {return !IsValid();}
-    bool Equals (T const* other) const {return other == get();}
-    bool Equals (RefCountedPtr const& other) const {return other.get() == get();}
-
-    // << BENTLEY CHANGE:
-    //      We eliminated this type-conversion operator. If the class overloads operator==
-    //      and provides a conversion-to-pointer operator, then the compiler thinks that
-    //      (ptr == NULL) is ambiguous, since it could either use the overloaded operator==
-    //      or convert ptr to a pointer and compare that to NULL instead.
-    //      The expression (ptr == NULL) now works by first creating a temporary RefCountedPtr, with p_ = NULL,
-    //      and then calling RefCountedPtr::operator==
-
-    //  << BENTLEY COMMENT: The purpose of this strange-looking type and the function
-    //  <<  that follows is to allow expressions like
-    //  <<      (rcptr == NULL)
-    //  <<  without permitting bad things like
-    //  <<      delete rcptr
-    //  <<  or
-    //  <<      (rcptr + 1)
-    //  <<  or
-    //  <<      (rcptr == 2)
-/*
-    typedef T * this_type::*unspecified_bool_type;
-
-    operator unspecified_bool_type () const
-    {
-        return p_ == 0? 0: &this_type::p_;
-    }
-*/
-
-    //! Swap the internal objects pointed to by two smart pointers.
-    void swap(RefCountedPtr & rhs)
-    {
-        T * tmp = p_;
-        p_ = rhs.p_;
-        rhs.p_ = tmp;
-    }
-
-#if defined (DO_NOT_DO_THIS)
-    /* The Boost documentation says that automatic conversion to T* is too error-prone! */
-    operator T*() const
-    {
-        return p_;
-    }
-#endif
-
+/*=================================================================================**//**
+* A shared pointer template for a reference-counted pointer to a const object.
+* Type \b T must have functions named AddRef and Release with signatures that conform to the reference-counting pattern.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+template<class T> class RefCountedCPtr
+{
 private:
+    T const* m_p;
 
-    T * p_;
+public:
+    RefCountedCPtr() : m_p(nullptr) {}
+    ~RefCountedCPtr() {if (m_p != nullptr) m_p->Release ();}
+    RefCountedCPtr(T const* p, bool add_ref = true) : m_p(p){if (m_p != nullptr && add_ref) m_p->AddRef ();}
+    template<class U> RefCountedCPtr(RefCountedCPtr<U> const & rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef ();}
+    RefCountedCPtr(RefCountedCPtr const& rhs) : m_p(rhs.m_p) {if (m_p != nullptr) m_p->AddRef ();}
+    RefCountedCPtr(RefCountedPtr<T> const& rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef ();}
+    RefCountedCPtr(RefCountedCPtr&& rhs) : m_p(std::move(rhs.m_p)) {rhs.m_p = nullptr;}
+    RefCountedCPtr& operator=(RefCountedCPtr&& rhs) {RefCountedCPtr(std::move(rhs)).swap(*this); return *this;}
+
+    template<class U> RefCountedCPtr& operator=(RefCountedCPtr<U> const& rhs){RefCountedCPtr(rhs).swap(*this); return *this;}
+    bool operator== (RefCountedCPtr<T> const& rhs) const {return m_p == rhs.m_p;}
+    template<class U> bool operator== (RefCountedCPtr<U> const& rhs) const {return m_p == rhs.get();}
+    bool operator!= (RefCountedCPtr<T> const& rhs) const {return m_p != rhs.m_p;}
+    template<class U> bool operator!= (RefCountedCPtr<U> const& rhs) const {return m_p != rhs.get();}
+
+    RefCountedCPtr& operator=(RefCountedCPtr const& rhs) {RefCountedCPtr(rhs).swap(*this); return *this;}
+    RefCountedCPtr& operator=(T const* rhs) {RefCountedCPtr(rhs).swap(*this); return *this;}
+    T const* get() const {return m_p;}
+    T const& operator*() const {return *m_p;}
+    T const* operator->() const {return m_p;}
+
+    bool IsValid() const {return nullptr != m_p;} //!< Return true if the ref-counted object has a valid (non-NULL) internal object.
+    bool IsNull() const  {return !IsValid();}     //!< Return true if the ref-counted object has a invalid (NULL) internal object.
+    bool Equals(T const* other) const {return other == get();}
+    bool Equals(RefCountedCPtr const& other) const {return other.get() == get();}
+    void swap(RefCountedCPtr & rhs) {T const* tmp = m_p; m_p = rhs.m_p; rhs.m_p = tmp;} //!< Swap the internal objects pointed to by two smart pointers.
 };
 
 #if !defined (DOCUMENTATION_GENERATOR)
-
-    // << BENTLEY CHANGE:
-    //      We removed operator== and similar overloads from global scope. This was causing
-    //      a compiler error somewhere else (nobody remembers where). Probably related to
-    //      the fact that RefCountedPtr has a constructor that can be used for automatic type conversions.
-
-template<class T> void swap(RefCountedPtr<T> & lhs, RefCountedPtr<T> & rhs)
-{
-    lhs.swap(rhs);
-}
-
-// mem_fn support
-
-template<class T> T * get_pointer(RefCountedPtr<T> const & p)
-{
-    return p.get();
-}
-
-template<class T, class U> RefCountedPtr<T> static_pointer_cast(RefCountedPtr<U> const & p)
-{
-    return static_cast<T *>(p.get());
-}
-
-template<class T, class U> RefCountedPtr<T> const_pointer_cast(RefCountedPtr<U> const & p)
-{
-    return const_cast<T *>(p.get());
-}
-
-template<class T, class U> RefCountedPtr<T> dynamic_pointer_cast(RefCountedPtr<U> const & p)
-{
-    return dynamic_cast<T *>(p.get());
-}
-
+template<class T> void swap(RefCountedPtr<T> & lhs, RefCountedPtr<T> & rhs) {lhs.swap(rhs);}
+template<class T> T * get_pointer(RefCountedPtr<T> const & p) {return p.get();}
+template<class T, class U> RefCountedPtr<T> static_pointer_cast(RefCountedPtr<U> const & p){return static_cast<T *>(p.get());}
+template<class T, class U> RefCountedPtr<T> const_pointer_cast(RefCountedPtr<U> const & p) {return const_cast<T *>(p.get());}
+template<class T, class U> RefCountedPtr<T> dynamic_pointer_cast(RefCountedPtr<U> const & p){return dynamic_cast<T *>(p.get());}
 #endif // DOCUMENTATION_GENERATOR
 
 END_BENTLEY_NAMESPACE
