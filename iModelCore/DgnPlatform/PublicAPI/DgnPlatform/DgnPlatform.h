@@ -58,8 +58,7 @@
     BEGIN_BENTLEY_API_NAMESPACE typedef struct DgnPlatform::_sname_* _tname_; END_BENTLEY_API_NAMESPACE
 
 #define DGNPLATFORM_REF_COUNTED_PTR(_sname_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
-    BEGIN_BENTLEY_API_NAMESPACE typedef RefCountedPtr<DgnPlatform::_sname_> _sname_##Ptr; END_BENTLEY_API_NAMESPACE
+    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define DGNPLATFORM_CLASS_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE class _name_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
@@ -71,7 +70,7 @@
 
 #define RASTER_REF_COUNTED_PTR(_sname_) \
     BEGIN_RASTER_NAMESPACE struct _sname_; END_RASTER_NAMESPACE \
-    BEGIN_BENTLEY_API_NAMESPACE typedef RefCountedPtr<DgnPlatform::Raster::_sname_> _sname_##Ptr; END_BENTLEY_API_NAMESPACE
+    BEGIN_BENTLEY_API_NAMESPACE DEFINE_REF_COUNTED_PTR(DgnPlatform::Raster::_sname_) END_BENTLEY_API_NAMESPACE
 
 #define RASTER_TYPEDEF1(_sourceName_,_name_,_structclass_) \
     BEGIN_RASTER_NAMESPACE _structclass_ _sourceName_; END_RASTER_NAMESPACE  \
@@ -113,9 +112,6 @@ DGNPLATFORM_TYPEDEFS (DgnViewport)
 DGNPLATFORM_TYPEDEFS (DisplayStyle)
 DGNPLATFORM_TYPEDEFS (DisplayStyleFlags)
 DGNPLATFORM_TYPEDEFS (DrawingElement)
-#ifdef WIP_ITEM_HANDLER
-DGNPLATFORM_TYPEDEFS (ElementItemHandler)
-#endif
 DGNPLATFORM_TYPEDEFS (GeomStream)
 DGNPLATFORM_TYPEDEFS (GeometricElement)
 DGNPLATFORM_TYPEDEFS (GradientSymb)
@@ -136,18 +132,15 @@ DGNPLATFORM_TYPEDEFS (ViewFlags)
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (TextString);
 DGNPLATFORM_REF_COUNTED_PTR (TextStringStyle);
+
+DGNPLATFORM_TYPEDEFS (AxisAlignedBox2d)
+DGNPLATFORM_TYPEDEFS (AxisAlignedBox3d)
 DGNPLATFORM_TYPEDEFS (Caret)
 DGNPLATFORM_TYPEDEFS (ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS (ClipPrimitive);
 DGNPLATFORM_TYPEDEFS (ClipVector);
 DGNPLATFORM_TYPEDEFS (ClipVolumeOverrides)
 DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
-DGNPLATFORM_TYPEDEFS (AxisAlignedBox3d)
-DGNPLATFORM_TYPEDEFS (AxisAlignedBox2d)
-DGNPLATFORM_TYPEDEFS (ElementAlignedBox3d)
-DGNPLATFORM_TYPEDEFS (ElementAlignedBox2d)
-DGNPLATFORM_TYPEDEFS (Placement3d)
-DGNPLATFORM_TYPEDEFS (Placement2d)
 DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
 DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
 DGNPLATFORM_TYPEDEFS (DgnColorMap)
@@ -175,6 +168,8 @@ DGNPLATFORM_TYPEDEFS (EditElementHandle)
 DGNPLATFORM_TYPEDEFS (ElemDisplayParams)
 DGNPLATFORM_TYPEDEFS (ElemMatSymb)
 DGNPLATFORM_TYPEDEFS (ElementAgenda)
+DGNPLATFORM_TYPEDEFS (ElementAlignedBox2d)
+DGNPLATFORM_TYPEDEFS (ElementAlignedBox3d)
 DGNPLATFORM_TYPEDEFS (ElementGeometry)
 DGNPLATFORM_TYPEDEFS (ElementGeometryBuilder)
 DGNPLATFORM_TYPEDEFS (ElementHandle)
@@ -192,10 +187,10 @@ DGNPLATFORM_TYPEDEFS (IACSManager)
 DGNPLATFORM_TYPEDEFS (IAuxCoordSys)
 DGNPLATFORM_TYPEDEFS (ICachedDraw)
 DGNPLATFORM_TYPEDEFS (IDisplaySymbol)
-DGNPLATFORM_TYPEDEFS (IEditManipulator)
 DGNPLATFORM_TYPEDEFS (IEditAction)
 DGNPLATFORM_TYPEDEFS (IEditActionArray)
 DGNPLATFORM_TYPEDEFS (IEditActionSource)
+DGNPLATFORM_TYPEDEFS (IEditManipulator)
 DGNPLATFORM_TYPEDEFS (IElementGraphicsProcessor)
 DGNPLATFORM_TYPEDEFS (IElementSet)
 DGNPLATFORM_TYPEDEFS (IElementState)
@@ -244,6 +239,8 @@ DGNPLATFORM_TYPEDEFS (PersistentSnapPath)
 DGNPLATFORM_TYPEDEFS (PhysicalModel)
 DGNPLATFORM_TYPEDEFS (PhysicalRedlineViewController)
 DGNPLATFORM_TYPEDEFS (PhysicalViewController)
+DGNPLATFORM_TYPEDEFS (Placement2d)
+DGNPLATFORM_TYPEDEFS (Placement3d)
 DGNPLATFORM_TYPEDEFS (PropertyContext)
 DGNPLATFORM_TYPEDEFS (QVAliasMaterialId)
 DGNPLATFORM_TYPEDEFS (QueryModel)
@@ -275,18 +272,18 @@ GEOCOORD_TYPEDEFS (IGeoCoordinateServices)
 GEOCOORD_TYPEDEFS (DgnGCS)
 /** @endcond */
 
-DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR (DgnDb)
 DGNPLATFORM_REF_COUNTED_PTR (DgnElement)
-DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
-DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
-DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
 DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
+DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
+DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
+DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
+DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
+DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalRedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
 DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
-DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive);
@@ -297,7 +294,6 @@ DGNPLATFORM_REF_COUNTED_PTR (DisplayStyleHandlerSettings)
 DGNPLATFORM_REF_COUNTED_PTR (IProgressiveDisplay)
 DGNPLATFORM_REF_COUNTED_PTR (IRasterSourceFileQuery)
 DGNPLATFORM_REF_COUNTED_PTR (ViewController)
-DGNPLATFORM_REF_COUNTED_PTR (XGraphicsSymbolStamp)
 /** @endcond */
 
 //__PUBLISH_SECTION_END__
@@ -416,7 +412,7 @@ struct DgnElementKey : BeSQLite::EC::ECInstanceKey
 typedef DgnElementKey const& DgnElementKeyCR;
 
 //=======================================================================================
-//! The key (classId,instanceId) of an ElementGeom.
+//! The key (classId,instanceId) of a the Item aspect.
 //=======================================================================================
 struct ElementItemKey : BeSQLite::EC::ECInstanceKey
 {
@@ -435,6 +431,8 @@ struct ElementItemKey : BeSQLite::EC::ECInstanceKey
 typedef ElementItemKey const& ElementItemKeyCR;
 
 //=======================================================================================
+//! Bounding box is a DRange3d the holds the min/max values for an object in each of x,y,z in some coordinate system.
+//! A bounding box makes no guarantee of 
 // @bsiclass
 //=======================================================================================
 struct BoundingBox3d : DRange3d

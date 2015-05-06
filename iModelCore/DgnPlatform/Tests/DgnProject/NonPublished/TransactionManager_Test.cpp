@@ -535,7 +535,7 @@ TEST_F (TransactionManagerTests, ElementInstance)
     auto key1 = InsertElement ("E1");
     ASSERT_TRUE( key1.GetElementId().IsValid() );
 
-    DgnElementPtr el = m_db->Elements().GetElementById(key1.GetElementId());
+    DgnElementCPtr el = m_db->Elements().GetElement(key1.GetElementId());
     ASSERT_TRUE( el.IsValid() );
 
     ASSERT_EQ( &el->GetElementHandler(), &TestElementHandler::GetHandler() );
@@ -589,7 +589,7 @@ TEST_F (TransactionManagerTests, ElementItem)
     auto key1 = InsertElement ("E1");
     ASSERT_TRUE( key1.GetElementId().IsValid() );
 
-    GeometricElementCP el = m_db->Elements().GetElementById(key1.GetElementId())->ToGeometricElement();
+    GeometricElementCPtr el = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
     ASSERT_TRUE( el != nullptr );
 
     ASSERT_EQ( &el->GetElementHandler(), &TestElementHandler::GetHandler() );

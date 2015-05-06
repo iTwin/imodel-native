@@ -2389,7 +2389,7 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
     if (m_existing.FindElementById(elementId))
         return;
 
-    DgnElementPtr el = m_dgndb.Elements().GetElementById(elementId);
+    DgnElementCPtr el = m_dgndb.Elements().GetElement(elementId);
     if (el.IsValid())
         {
         GeometricElementCP geomElem = el->ToGeometricElement();

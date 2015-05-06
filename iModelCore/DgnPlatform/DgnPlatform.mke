@@ -524,3 +524,4 @@ SQLANG_Xliff        = $(o)xliffs/DgnHandlersMessages_en.xliff
 
 $(BuildContext)Delivery/icons : $(DgnCoreDir)/icons
     $(LinkFirstDepToFirstTargetAsDirectory)
+

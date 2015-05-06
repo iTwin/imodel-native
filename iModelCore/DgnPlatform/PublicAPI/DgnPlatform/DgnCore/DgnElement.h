@@ -240,9 +240,6 @@ public:
 
     bool Is3d() const {return nullptr != _ToElement3d();}
     bool IsInPool() const {return m_flags.m_inPool;}
-
-    void SetElementClassId(DgnClassId classId) {m_classId = classId;}
-    void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}
     bool IsAnyDirty() const {return 0 != m_flags.m_dirtyFlag;}
     bool IsElemDirty()const {return 0 != (DIRTY_ElemData & m_flags.m_dirtyFlag);}
@@ -254,7 +251,7 @@ public:
     int GetElFlags() const {return m_flags.m_elFlags;}
     ElementHiliteState IsHilited() const {return (ElementHiliteState) m_flags.m_hiliteState;}
     void SetHilited(ElementHiliteState newState) const {m_flags.m_hiliteState = newState;}
-    DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo);
+    DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const;
 
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
     uint32_t GetRefCount() const {return m_refCount.load();}
@@ -333,11 +330,14 @@ public:
     //! @return Id will be invalid if this element does not have a parent element
     DgnElementId GetParentId() const {return m_parentId;}
 
-    //! Get the category of the element held by this element.
+    //! Get the category of this DgnElement.
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
 
-    //! Get the code (business key) of the element held by this element.
+    //! Get the code (business key) of this DgnElement.
     Utf8CP GetCode() const {return m_code.c_str();}
+
+    //! Set the code of this DgnElement.
+    void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
 
     //! Return a default code given a class name and a DgnElementId.
     //! @note DgnElement::_GenerateDefaultCode calls this for its default implementation.
@@ -391,12 +391,6 @@ public:
     //! @note The result may be invalid, since the item class is optional
     ElementItemKey GetItemKey() const {return GetItemClassId().IsValid()? ElementItemKey(GetItemClassId(), GetElementId()): ElementItemKey(ECN::ECClassId(), GetElementId());}
 
-    //! Get the handler that generated the ElementGeom
-#ifdef WIP_ITEM_HANDLER
-    DGNPLATFORM_EXPORT ElementItemHandler& GetItemHandler() const;
-#endif
-
-    //! Get a copy of the ElementItem associated with this element, if any.
     //! @return a pointer to a read-only instance that holds the ElementItem's properties, or nullptr if the element has no Item.
     //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
     //! @see GetItemP, SetItem, RemoveItem
@@ -460,7 +454,6 @@ public:
     //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
     //! @see RemoveItem for a direct way to delete the ElementItem.
     DGNPLATFORM_EXPORT void RemoveAspect(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
-
     //@}
 };
 

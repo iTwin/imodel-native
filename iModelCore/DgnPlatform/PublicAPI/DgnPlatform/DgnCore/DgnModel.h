@@ -29,9 +29,9 @@ typedef bset<DgnElementP> T_StdDgnElementSet;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DgnElementMap : bmap<DgnElementId, DgnElementPtr>
+struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
     {
-    void Add(DgnElementR el) 
+    void Add(DgnElementCR el) 
         {
         DgnElementId  id = el.GetElementId();
         if (!id.IsValid())
@@ -246,8 +246,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnReplaceElement(DgnElementR element, DgnElementR replacement);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnAddElement(DgnElementR element);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementR element);
-    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementR el);
-    DGNPLATFORM_EXPORT virtual void _OnAddedElement(DgnElementR el);
+    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
+    DGNPLATFORM_EXPORT virtual void _OnAddedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementR element, bool cancel);
     DGNPLATFORM_EXPORT virtual void _OnReplacedElement(DgnElementR element, DgnElementR original);
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
@@ -256,7 +256,7 @@ protected:
     virtual PlanarPhysicalModelCP _ToPlanarPhysicalModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
 
-    void RegisterElement(DgnElementR);
+    void RegisterElement(DgnElementCR);
     void SetFilled() {m_wasFilled=true; AllocateRangeIndex();}
     void AllocateRangeIndex() const;
     void ClearRangeIndex();
@@ -320,7 +320,7 @@ public:
     /** @{ */
     //! Find a DgnElementP in this model by DgnElementId.
     //! @return DgnElementP of element with \a id, or NULL.
-    DGNPLATFORM_EXPORT DgnElementP FindElementById(DgnElementId id);
+    DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id);
     /** @} */
 
     //! Query if this is a 3D model

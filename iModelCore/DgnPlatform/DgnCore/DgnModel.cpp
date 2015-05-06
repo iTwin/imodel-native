@@ -498,7 +498,7 @@ void DgnModel::ClearRangeIndex()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::RegisterElement(DgnElementR element)
+void DgnModel::RegisterElement(DgnElementCR element)
     {
     if (m_wasFilled)
         m_elements.Add(element);
@@ -511,7 +511,7 @@ void DgnModel::RegisterElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnLoadedElement(DgnElementR el) 
+void DgnModel::_OnLoadedElement(DgnElementCR el) 
     {
     RegisterElement(el);
     }
@@ -527,7 +527,7 @@ DgnModelStatus DgnModel::_OnAddElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnAddedElement(DgnElementR el) 
+void DgnModel::_OnAddedElement(DgnElementCR el) 
     {
     RegisterElement(el);
     }
@@ -664,7 +664,7 @@ void DgnModel::ElementChanged(DgnElement& elRef, DgnElementChangeReason reason)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP DgnModel::FindElementById(DgnElementId id)
+DgnElementCP DgnModel::FindElementById(DgnElementId id)
     {
     auto it = m_elements.find(id);
     return it == m_elements.end() ? nullptr : it->second.get();
@@ -1035,14 +1035,15 @@ DgnFileStatus DgnModel::FillModel()
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnElementId id(stmt.GetValueId<DgnElementId>(Column::Id));
-        DgnElementPtr elRef = elements.FindElementById(id);
-        if (!elRef.IsValid())
-             elements.LoadElement(DgnElement::CreateParams(*this,
-                    stmt.GetValueId<DgnClassId>(Column::ClassId), 
-                    stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
-                    stmt.GetValueText(Column::Code), 
-                    id,
-                    stmt.GetValueId<DgnElementId>(Column::ParentId)));
+        if (nullptr != elements.FindElement(id))  // already loaded?
+            continue;
+
+        elements.LoadElement(DgnElement::CreateParams(*this,
+            stmt.GetValueId<DgnClassId>(Column::ClassId), 
+            stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
+            stmt.GetValueText(Column::Code), 
+            id,
+            stmt.GetValueId<DgnElementId>(Column::ParentId)));
         }
 
     SetReadOnly(m_dgndb.IsReadonly());

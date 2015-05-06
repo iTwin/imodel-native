@@ -106,19 +106,6 @@ DgnClassId DgnElement::GetItemClassId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ITEM_HANDLER
-ElementItemHandler& GeometricElement::GetItemHandler() const
-    {
-    if (nullptr == m_itemHandler)
-        m_itemHandler = ElementItemHandler::GetHandler().GetItemHandler(GetDgnDb(), GetItemClassId());
-
-    return *m_itemHandler;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t DgnElement::_AddRef() const
@@ -420,7 +407,7 @@ T_QvElemSet* GeometricElement::GetQvElems(bool createIfNotPresent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::SetInSelectionSet(bool yesNo)
+void DgnElement::SetInSelectionSet(bool yesNo) const
     {
     m_flags.m_inSelectionSet = yesNo;
     SetHilited(yesNo ? HILITED_Normal : HILITED_None);
@@ -526,14 +513,15 @@ DgnModelStatus DgnElement::_InsertInDb()
         _GenerateDefaultCode();
 
     CachedStatementPtr stmt;
+    enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Code=5,ParentId=6};
     GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Code,ParentId) VALUES(?,?,?,?,?,?)");
 
-    stmt->BindId(1, m_elementId);
-    stmt->BindId(2, m_classId);
-    stmt->BindId(3, m_dgnModel.GetModelId());
-    stmt->BindId(4, m_categoryId);
-    stmt->BindText(5, m_code.c_str(), Statement::MakeCopy::No);
-    stmt->BindId(6, m_parentId);
+    stmt->BindId(Column::ElementId, m_elementId);
+    stmt->BindId(Column::ECClassId, m_classId);
+    stmt->BindId(Column::ModelId, m_dgnModel.GetModelId());
+    stmt->BindId(Column::CategoryId, m_categoryId);
+    stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
+    stmt->BindId(Column::ParentId, m_parentId);
 
     if (stmt->Step() != BE_SQLITE_DONE)
         return DGNMODEL_STATUS_ElementWriteError;
@@ -549,19 +537,16 @@ DgnModelStatus DgnElement::_InsertInDb()
 DgnModelStatus DgnElement::_UpdateInDb()
     {
     CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET ECClassId=?,ModelId=?,CategoryId=?,Code=?,ParentId=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Code=2,ParentId=3,ElementId=4};
+    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Code=?,ParentId=? WHERE Id=?");
 
-    stmt->BindId(1, m_classId);
-    stmt->BindId(2, m_dgnModel.GetModelId());
-    stmt->BindId(3, m_categoryId);
-    stmt->BindText(4, m_code.c_str(), Statement::MakeCopy::No);
-    stmt->BindId(5, m_parentId);
-    stmt->BindId(6, m_elementId);
+    // note: ECClassId and ModelId cannot be modified.
+    stmt->BindId(Column::CategoryId, m_categoryId);
+    stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
+    stmt->BindId(Column::ParentId, m_parentId);
+    stmt->BindId(Column::ElementId, m_elementId);
 
-    if (stmt->Step() != BE_SQLITE_DONE)
-        return DGNMODEL_STATUS_ElementWriteError;
-
-    return DGNMODEL_STATUS_Success;
+    return (stmt->Step() != BE_SQLITE_DONE) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
 
 //=======================================================================================
