@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandardCustomAttributeHelper.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,7 +16,7 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=======================================================================================    
 //! DateTimeInfo contains the meta data held by the custom attribute \b %DateTimeInfo on an 
-//! ECProperty of type ::PRIMITIVETYPE_DateTime.
+//! ECProperty of type DgnPlatform::PRIMITIVETYPE_DateTime.
 //! @remarks 
 //! Date time values in ECObjects are represented by the DateTime class. Each DateTime instance can 
 //! contain metadata about the actual date time value (see DateTime::Info). 

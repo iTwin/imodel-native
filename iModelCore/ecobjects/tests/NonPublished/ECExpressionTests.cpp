@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublished/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -117,7 +117,7 @@ TEST_F (RoundtripExpressionTests, Roundtrip)
     Roundtrip (L"this.Property", L"this.Property");
     Roundtrip (L"this.Property *  this[\"Property\"]", L"this.Property*this[\"Property\"]");
     Roundtrip (L"Something.Method ( )", L"Something.Method()");
-    Roundtrip (L"Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", L"Something.Method(0,1.5,2,\"string\",this.Property)");
+    Roundtrip (L"Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", L"Something.Method(0,1.5,2.0,\"string\",this.Property)");
     Roundtrip (L"IIf (True,  Null, \t2 ^3  -3* 4)", L"IIf(True,Null,2^3-3*4)");
     Roundtrip (L"X = \"Thing\" OrElse X = \"Stuff\"", L"X=\"Thing\"OrElse X=\"Stuff\"");
 
@@ -134,7 +134,7 @@ TEST_F (RoundtripExpressionTests, Roundtrip)
     Roundtrip (L"0.00390625", L"0.00390625");
     Roundtrip (L"method (method (True, method (method (1.5), False)))", L"method(method(True,method(method(1.5),False)))");
 
-    Roundtrip (L"X => X < 5.0 AndAlso X > 1.5", L"X=>X<5 AndAlso X>1.5");
+    Roundtrip (L"X => X < 5.0 AndAlso X > 1.5", L"X=>X<5.0 AndAlso X>1.5");
     Roundtrip (L"this.Array.Any (X => X.Name = \"Chuck\" OrElse X.Name = \"Bob\")", L"this.Array.Any(X=>X.Name=\"Chuck\"OrElse X.Name=\"Bob\")");
     }
 
