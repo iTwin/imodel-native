@@ -52,6 +52,8 @@ public:\
 // If you put DEFINE_BENTLEY_REF_COUNTED_MEMBERS in your class definition, also put the following macro into your constructor:
 #define DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT m_refCount.store(0);
 
+#define DEFINE_REF_COUNTED_PTR(_sname_) typedef RefCountedPtr<_sname_> _sname_##Ptr; typedef RefCountedCPtr<_sname_> _sname_##CPtr;
+
 /*=================================================================================**//**
 * Template to simplify the task of writing a class that implements the reference-counting pattern.
 * This template contains a complete implementation of the reference-counting pattern.
