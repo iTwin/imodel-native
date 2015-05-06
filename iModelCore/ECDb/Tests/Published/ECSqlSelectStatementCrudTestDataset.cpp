@@ -1037,7 +1037,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::FromTests( int rowCountPerClass )
     // Abstract classes
     //*******************************************************
     ecsql = "SELECT I, S FROM ecsql.Abstract";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass); //Abstract class has 1 subclass, so single row count expected
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 2*rowCountPerClass); //Abstract class has 2 subclasses, so double row count expected
 
     ecsql = "SELECT I, S FROM ONLY ecsql.Abstract";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 0);

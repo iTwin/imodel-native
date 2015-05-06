@@ -86,15 +86,16 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
     BeAssert(!classMap.GetMapStrategy().IsUnmapped() && "ClassMap::NativeSqlConverterImpl::GetWhereClause not expected to be called by unmapped class map.");
 
     HorizontalPartition const* horizPartition = nullptr;
-    std::vector<HorizontalPartition const*> nonVirtualPartitions = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitions();
-    if (!isPolymorphicClassExp || nonVirtualPartitions.empty())
+    std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();
+    if (!isPolymorphicClassExp || nonVirtualPartitionIndices.empty())
         horizPartition = &classMap.GetStorageDescription().GetRootHorizontalPartition();
     else
         {
-        BeAssert(nonVirtualPartitions.size() == 1 && "Check that class only maps to a single table should have been done during class name preparation");
-        horizPartition = nonVirtualPartitions[0];
+        BeAssert(nonVirtualPartitionIndices.size() == 1 && "Check that class only maps to a single table should have been done during class name preparation");
+        horizPartition = classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]);
         }
 
+    BeAssert(horizPartition != nullptr);
     ECDbSqlTable const& table = horizPartition->GetTable();
     if (table.GetPersistenceType() == PersistenceType::Virtual)
         return ECSqlStatus::Success; //table is virtual-> noop

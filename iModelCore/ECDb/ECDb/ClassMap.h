@@ -49,11 +49,9 @@ private:
     bool m_hasInversedPartitionClassIds;
 
 public:
-    explicit HorizontalPartition (ECDbSqlTable const& table) : m_table(&table) {}
- 
+    explicit HorizontalPartition(ECDbSqlTable const& table) : m_table(&table), m_hasInversedPartitionClassIds (false) {}
     ~HorizontalPartition () {}
-    
-    HorizontalPartition(HorizontalPartition&& rhs) : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)), m_inversedPartitionClassIds(std::move(rhs.m_inversedPartitionClassIds)), m_hasInversedPartitionClassIds(std::move(rhs.m_hasInversedPartitionClassIds)) {}
+    HorizontalPartition(HorizontalPartition&& rhs);
     HorizontalPartition& operator=(HorizontalPartition&& rhs);
 
     ECDbSqlTable const& GetTable () const { return *m_table; }
@@ -77,17 +75,22 @@ struct StorageDescription : NonCopyableClass
 private:      
     ECN::ECClassId m_classId;
     std::vector<HorizontalPartition> m_horizontalPartitions;
-    std::vector<HorizontalPartition const*> m_nonVirtualHorizontalPartitions;
-    HorizontalPartition const* m_rootHorizontalPartition;
+    std::vector<size_t> m_nonVirtualHorizontalPartitionIndices;
+    size_t m_rootHorizontalPartitionIndex;
 
-    explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId), m_rootHorizontalPartition(nullptr) {}
+    explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId), m_rootHorizontalPartitionIndex(0) {}
 
-    HorizontalPartition& AddHorizontalPartition(HorizontalPartition&&, bool isRootPartition);
+    size_t AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition);
 public:
     ~StorageDescription (){}
-    HorizontalPartition const& GetRootHorizontalPartition() const { BeAssert(m_rootHorizontalPartition != nullptr); return *m_rootHorizontalPartition; }
-    std::vector<HorizontalPartition> const& GetHorizontalPartitions () const { return m_horizontalPartitions; }   
-    std::vector<HorizontalPartition const*> const& GetNonVirtualHorizontalPartitions() const { return m_nonVirtualHorizontalPartitions; }
+    StorageDescription(StorageDescription&&);
+    StorageDescription& operator=(StorageDescription&&);
+
+    HorizontalPartition const* GetHorizontalPartition(size_t index) const;
+    HorizontalPartition* GetHorizontalPartitionP(size_t index);
+    std::vector<HorizontalPartition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
+    HorizontalPartition const& GetRootHorizontalPartition() const { return *GetHorizontalPartition(m_rootHorizontalPartitionIndex); }
+    std::vector<size_t> const& GetNonVirtualHorizontalPartitionIndices() const { return m_nonVirtualHorizontalPartitionIndices; }
     ECN::ECClassId GetClassId () const { return m_classId; }
 
     static std::unique_ptr<StorageDescription> Create (IClassMap const& forClassMap);

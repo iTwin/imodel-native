@@ -419,8 +419,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
 
     ECDbSqlTable const* table = nullptr;
-    std::vector<HorizontalPartition const*> nonVirtualPartitions = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitions();
-    if (!exp->IsPolymorphic() || nonVirtualPartitions.empty())
+    std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();
+    if (!exp->IsPolymorphic() || nonVirtualPartitionIndices.empty())
         {
         HorizontalPartition const& horizPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
         table = &horizPartition.GetTable();
@@ -429,10 +429,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         {
         BeAssert(currentScopeECSqlType != ECSqlType::Insert && "ECSQL INSERT does not support polymorphism. This should have been caught by the parsing code already.");
 
-        if (nonVirtualPartitions.size() > 1)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.", currentScopeECSqlType);
+        if (nonVirtualPartitionIndices.size() > 1)
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.", 
+                                ExpHelper::ToString(currentScopeECSqlType));
 
-        table = &nonVirtualPartitions[0]->GetTable();
+        BeAssert(classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]) != nullptr);
+        table = &classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0])->GetTable();
         }
 
     BeAssert(table != nullptr);
