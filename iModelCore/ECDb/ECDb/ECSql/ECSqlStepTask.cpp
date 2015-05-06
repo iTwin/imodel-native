@@ -754,7 +754,7 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateClassStepTask (ECSqlStepTa
             }
         case StepTaskType::Update:
             {
-            return CreateUpdateStepTask (taskList, preparedContext, ecdb, classMap);
+            return CreateUpdateStepTask(taskList, preparedContext, ecdb, classMap, isPolymorphicStatement);
             }
         case StepTaskType::Delete:
             {
