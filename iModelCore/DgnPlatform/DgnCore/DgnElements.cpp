@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/DgnElementPool.cpp $
+|     $Source: DgnCore/DgnElements.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -1222,3 +1222,49 @@ DgnElementId DgnElements::MakeNewElementId()
     return DgnElementId(val.m_luid.u);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus DgnElements::InsertElement(DgnElementR element)
+    {
+    if (element.GetElementId().IsValid())
+        return DGNMODEL_STATUS_IdExists;
+
+    DgnModelR model = element.GetDgnModel();
+    if (&model.GetDgnDb() != &m_dgndb)
+        return DGNMODEL_STATUS_WrongDgnDb;
+
+    DgnModelStatus stat = element._OnAdd();
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    stat = model._OnAddElement(element);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    element.m_elementId = MakeNewElementId();
+    stat = element._InsertInDb();
+    if (DGNMODEL_STATUS_Success != stat)
+        {
+        element.m_elementId = DgnElementId();
+        return stat;
+        }
+
+    element._ApplyScheduledChangesToInstances(element);
+    element._ClearScheduledChangesToInstances();
+
+    element._OnAdded();
+
+    AddDgnElement(element);
+    model._OnAddedElement(element);
+
+    return DGNMODEL_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus DgnElements::UpdateElement(DgnElementR element)
+    {
+    return DGNMODEL_STATUS_Success;
+    }

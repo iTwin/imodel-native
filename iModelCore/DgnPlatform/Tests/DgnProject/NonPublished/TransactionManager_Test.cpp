@@ -130,7 +130,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
             return DgnElementKey();
 
-        testElement->AddToModel();
+        db.Elements().InsertElement(*testElement);
         return testElement->GetElementKey();
         }
 

@@ -45,7 +45,7 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     //.............................................................................................
     DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
-    elementPtr->AddToModel();
+    db.Elements().InsertElement(*elementPtr);
     ASSERT_TRUE(elementPtr->GetElementKey().IsValid());
     
     //.............................................................................................
@@ -97,7 +97,7 @@ TEST_F(DgnLinkTest, Iterator)
     //.............................................................................................
     DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
-    elementPtr->AddToModel();
+    db.Elements().InsertElement(*elementPtr);
     ASSERT_TRUE(elementPtr->GetElementKey().IsValid());
     
     //.............................................................................................
@@ -180,12 +180,12 @@ TEST_F(DgnLinkTest, OtherIterators)
     //.............................................................................................
     DgnElementPtr element1 = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
     ASSERT_TRUE(element1.IsValid());
-    element1->AddToModel();
+    db.Elements().InsertElement(*element1);
     ASSERT_TRUE(element1->GetElementKey().IsValid());
 
     DgnElementPtr element2 = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
     ASSERT_TRUE(element2.IsValid());
-    element2->AddToModel();
+    db.Elements().InsertElement(*element2);
     ASSERT_TRUE(element2->GetElementKey().IsValid());
 
     DgnLinkPtr link1 = DgnLink::Create(db); link1->SetDisplayLabel("link1"); link1->SetEmbeddedDocumentName("EmbeddedDocumentName1");

@@ -955,18 +955,26 @@ public:
     //! @return nullptr if the element does not exist or is not currently loaded.
     DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
 
+    //! Insert the supplied DgnElement into this DgnDb.
+    //! @param[in] element The element to add.
+    //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
+    DGNPLATFORM_EXPORT DgnModelStatus InsertElement(DgnElementR element);
+
+    DGNPLATFORM_EXPORT DgnModelStatus UpdateElement(DgnElementR);
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementR);
+
     HeapZone& GetHeapZone() {return m_heapZone;}
 
-    //! Query for the Code for the specified DgnElement.
+    //! Query for the Code for the specified DgnElementId.
     DGNPLATFORM_EXPORT Utf8String QueryElementCode(DgnElementId) const;
 
-    //! Return the key of the element from its ID.
+    //! Return the key of the element from its DgnElementId.
     //! @note used when you know the DgnElementId, but need a DgnElementKey which also contains the ECClassId.
     //! @note an invalid key will be returned in the case of an error
     //! @see ECInstanceKey::IsValid
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId) const;
 
-    //! Delete the specified element.
+    //! Delete the element for the specified DgnElementId.
     DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
 
     //! Update the last modified timestamp of the specified element
