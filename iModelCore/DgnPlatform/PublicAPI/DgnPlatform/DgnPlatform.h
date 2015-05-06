@@ -58,8 +58,7 @@
     BEGIN_BENTLEY_API_NAMESPACE typedef struct DgnPlatform::_sname_* _tname_; END_BENTLEY_API_NAMESPACE
 
 #define DGNPLATFORM_REF_COUNTED_PTR(_sname_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
-    BEGIN_BENTLEY_API_NAMESPACE typedef RefCountedPtr<DgnPlatform::_sname_> _sname_##Ptr; typedef RefCountedCPtr<DgnPlatform::_sname_> _sname_##CPtr; END_BENTLEY_API_NAMESPACE
+    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define DGNPLATFORM_CLASS_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE class _name_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
@@ -71,7 +70,7 @@
 
 #define RASTER_REF_COUNTED_PTR(_sname_) \
     BEGIN_RASTER_NAMESPACE struct _sname_; END_RASTER_NAMESPACE \
-    BEGIN_BENTLEY_API_NAMESPACE typedef RefCountedPtr<DgnPlatform::Raster::_sname_> _sname_##Ptr; END_BENTLEY_API_NAMESPACE
+    BEGIN_BENTLEY_API_NAMESPACE DEFINE_REF_COUNTED_PTR(DgnPlatform::Raster::_sname_) END_BENTLEY_API_NAMESPACE
 
 #define RASTER_TYPEDEF1(_sourceName_,_name_,_structclass_) \
     BEGIN_RASTER_NAMESPACE _structclass_ _sourceName_; END_RASTER_NAMESPACE  \
