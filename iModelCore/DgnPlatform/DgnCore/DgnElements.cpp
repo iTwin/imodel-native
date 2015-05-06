@@ -888,7 +888,7 @@ void DgnElements::Destroy()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::AllocatedMemory(int32_t size)
+void DgnElements::AllocatedMemory(int32_t size) const
     {
     if (size<0)
         {
@@ -902,7 +902,7 @@ void DgnElements::AllocatedMemory(int32_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::ReturnedMemory(int32_t size)
+void DgnElements::ReturnedMemory(int32_t size) const
     {
     if (size<0)
         {
@@ -941,7 +941,7 @@ void DgnElements::OnUnreferenced(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::AddDgnElement(DgnElementR element)
+void DgnElements::AddDgnElement(DgnElementR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsInPool());
@@ -1092,18 +1092,19 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params) 
         return nullptr;
         }
 
-    DgnElementPtr elRef = elHandler->Create(params);
-    if (!elRef.IsValid())
+    DgnElementPtr el = elHandler->Create(params);
+    if (!el.IsValid())
         {
         BeAssert(false);
         return nullptr;
         }
 
-    if (DGNMODEL_STATUS_Success != elRef->_LoadFromDb())
+    if (DGNMODEL_STATUS_Success != el->_LoadFromDb())
         return nullptr;
 
-    params.m_model._OnLoadedElement(*elRef);
-    return elRef;
+    AddDgnElement(*el);
+    params.m_model._OnLoadedElement(*el);
+    return el;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1238,7 +1239,7 @@ DgnModelStatus DgnElements::InsertElement(DgnElementR element)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    stat = model._OnAddElement(element);
+    stat = model._OnInsertElement(element);
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
@@ -1256,7 +1257,7 @@ DgnModelStatus DgnElements::InsertElement(DgnElementR element)
     element._OnAdded();
 
     AddDgnElement(element);
-    model._OnAddedElement(element);
+    model._OnInsertedElement(element);
 
     return DGNMODEL_STATUS_Success;
     }
@@ -1264,7 +1265,32 @@ DgnModelStatus DgnElements::InsertElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElements::UpdateElement(DgnElementR element)
+DgnModelStatus DgnElements::UpdateElement(DgnElementR replacement)
     {
+    DgnElementCPtr orig = GetElement(replacement.GetElementId());
+    if (!orig.IsValid())
+        return DGNMODEL_STATUS_InvalidId;
+
+    DgnElementR element = const_cast<DgnElementR>(*orig.get());
+    DgnModelR model = element.GetDgnModel();
+    if ((&model.GetDgnDb() != &m_dgndb) || (&model != &replacement.GetDgnModel()))
+        return DGNMODEL_STATUS_WrongModel;
+
+    DgnModelStatus status = model._OnUpdateElement(element, replacement);
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    status = element._SwapWithModified(replacement);
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    status = element._UpdateInDb();
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    element._ApplyScheduledChangesToInstances(replacement);
+    element._ClearScheduledChangesToInstances();
+
+    model._OnUpdatedElement(element, replacement);
     return DGNMODEL_STATUS_Success;
     }

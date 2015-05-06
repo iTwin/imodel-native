@@ -469,7 +469,6 @@ Utf8String DgnElement::GenerateDefaultCode(Utf8CP className, DgnElementId elemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_LoadFromDb()
     {
-    GetDgnDb().Elements().AddDgnElement(*this);
     return DGNMODEL_STATUS_Success;
     }
 

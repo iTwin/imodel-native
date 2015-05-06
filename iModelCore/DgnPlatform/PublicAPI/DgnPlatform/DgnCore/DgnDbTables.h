@@ -905,7 +905,7 @@ private:
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
-    void AddDgnElement(DgnElementR);
+    void AddDgnElement(DgnElementR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
@@ -919,8 +919,8 @@ public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
     DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
-    DGNPLATFORM_EXPORT void AllocatedMemory(int32_t);
-    DGNPLATFORM_EXPORT void ReturnedMemory(int32_t);
+    DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
+    DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
