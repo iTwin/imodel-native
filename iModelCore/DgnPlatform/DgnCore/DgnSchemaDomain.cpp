@@ -782,8 +782,22 @@ ElementHandlerP ElementHandler::FindHandler(DgnDb const& db, DgnClassId handlerI
         return handler->_ToElementHandler();
 
     // not there, check via base classes
-    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(GetHandler()));
-    return handler ? handler->_ToElementHandler() : nullptr;
+    //WIP: FInd safer way to make sure to find the best matching base class element handler
+    //To avoid that ElementHandler is used for classes that don't have their own handler
+    //but are derived from PhysicalElement or other well-known BIS element types
+    bvector<ElementHandlerP> baseClassHandlers;
+    baseClassHandlers.push_back(&PhysicalElementHandler::GetHandler());
+    baseClassHandlers.push_back(&DrawingElementHandler::GetHandler());
+    baseClassHandlers.push_back(&ElementHandler::GetHandler());
+
+    for (ElementHandler* baseHandler : baseClassHandlers)
+        {
+        handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(*baseHandler));
+        if (handler != nullptr)
+            return handler->_ToElementHandler();
+        }
+
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
