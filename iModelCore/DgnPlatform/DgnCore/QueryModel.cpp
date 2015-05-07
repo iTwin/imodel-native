@@ -10,8 +10,6 @@
 #include <DgnPlatform/DgnCore/QueryView.h>
 #include "UpdateLogging.h"
 
-#include "UpdateLogging.h"
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
 //--------------+------------------------------------------------------------------------
@@ -62,12 +60,12 @@ void QueryModel::SaveQueryResults()
     m_selector.m_results = 0;
 
     //  First add everything from the list used for drawing.
-    for (auto result : m_currQueryResults->m_elements)
-        _OnAddedElement(*result);
+    for (auto const& result : m_currQueryResults->m_elements)
+        _OnLoadedElement(*result);
 
     //  Now add everything that is in the secondary list but not the first.
     for (auto const& result : m_currQueryResults->m_closeElements)
-        _OnAddedElement(*result);
+        _OnLoadedElement(*result);
     }
 
 //---------------------------------------------------------------------------------------

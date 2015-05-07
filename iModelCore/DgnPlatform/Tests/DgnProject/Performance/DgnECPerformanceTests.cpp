@@ -49,7 +49,9 @@ ECSchemaR schema,
 DgnDbTestDgnManager tdm
 )
     {
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     DgnModelP model = tdm.GetDgnModelP();
+#endif
 
     ECClassP testClass = schema.GetClassP(TEST_CLASS_NAME);
     // We don't want to time the creation of the elements.  So we create them in one loop, and then insert instances
@@ -96,6 +98,7 @@ DgnDbTestDgnManager tdm
         }
     insertingTimer.Stop();
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     bvector<EditElementHandle*> elements;
     for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
         {
@@ -106,7 +109,6 @@ DgnDbTestDgnManager tdm
         elements.push_back (eeh);
         }
 
-#if defined (NEEDS_WORK_DGNITEM)
     attachingTimer.Start();
     for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
         {
@@ -136,10 +138,12 @@ DgnDbTestDgnManager tdm
     LogResultsToFile(results);
     tdm.GetDgnProjectP()->SaveChanges();
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
         {
         delete elements[i];
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

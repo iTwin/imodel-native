@@ -437,7 +437,7 @@ StatusInt ScanCriteria::ProcessRangeIndexResults ()
                 }
 
             bool            goToNextElement = true;
-            ElementHandle   currElm (currElRef);   // to lock element data in memory
+            DgnElementPtr   currElm = (DgnElementP) currElRef; // to lock element data in memory
 
             if (!scanStatus)
                 {

@@ -16,6 +16,7 @@
 #include "../DgnPlatform.r.h"
 #include <RmgrTools/Tools/msstrlst.h>
 #include <DgnPlatform/Tools/KeyTree.h>
+#include "ElementHandle.h"
 
 #define STYLELINK_ID        0x79f9      /* Attribute ID (rad50 'STY')  */
 #define LSTYPE_Internal     0
@@ -664,23 +665,6 @@ DGNPLATFORM_EXPORT void AddCurveVector (CurveVectorCR curves, bool isFilled);
 }; // LsSymbolGraphicsCreator
 
 //=======================================================================================
-//! A list of DgnElement's.
-// @bsiclass                                                    Keith.Bentley   02/14
-//=======================================================================================
-struct DgnElementPtrVec : bvector<DgnElementPtr>
-{
-const_iterator Find(DgnElementCR val) const
-    {
-    for (auto it=begin(); it!=end(); ++it)
-        {
-        if (it->get() == &val)
-            return it;
-        }
-    return end(); // not found
-    }
-};
-
-//=======================================================================================
 //!  Represents a component that contains graphics.
 //!  @ingroup LineStyleManagerModule
 // @bsiclass
@@ -744,7 +728,9 @@ public:
     DgnElementPtrVec& GetElementsR() {return m_elements;}
     DgnElementPtrVec const& GetElements () const {return m_elements;}
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     DGNPLATFORM_EXPORT void AddGraphics (EditElementHandleR eeh);
+#endif
     DGNPLATFORM_EXPORT void FreeGraphics (bool freeDescr, bool freeXGraphics);
 
     DGNPLATFORM_EXPORT static BentleyStatus AddSymbolGraphicsAsProperty (uint32_t& componentId, DgnDbR project, Byte const*data, size_t size, PointSymRsc::SymbolType symbolType);

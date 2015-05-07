@@ -25,7 +25,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 * Interface adopted by an element handler class to present manipulator controls.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct     IEditManipulator : public IElementState
+struct     IEditManipulator : RefCountedBase
 {
 public:
 

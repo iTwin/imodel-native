@@ -351,11 +351,6 @@ public:
     //! @note This call must always follow a previous call to #AddRef.
     uint32_t Release() const {return _Release();}
 
-    //! Add this DgnElement to its DgnModel.
-    //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
-    //! @see EditElementHandle::ReplaceInModel for how to update an existing element in its DgnModel.
-    DGNPLATFORM_EXPORT DgnModelStatus AddToModel();
-
     /// @name Element Properties
     //@{
 

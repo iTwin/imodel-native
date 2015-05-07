@@ -734,8 +734,8 @@ SnapStatus      SnapContext::DoTextSnap ()
         case SnapMode::Origin:
         case SnapMode::NearestKeypoint:
             {
-            ElementHandle eh (snap->GetPathElem (0));
-            DPoint3d      hitPoint = (eh.GetDgnElement()->Is3d() ? eh.GetDgnElement()->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(eh.GetDgnElement()->ToElement2d()->GetPlacement().GetOrigin()));
+            DgnElementP element = snap->GetHeadElem();
+            DPoint3d    hitPoint = (element->Is3d() ? element->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(element->ToElement2d()->GetPlacement().GetOrigin()));
             
             ElmLocalToWorld (hitPoint);
             SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);

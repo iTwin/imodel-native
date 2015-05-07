@@ -426,37 +426,6 @@ void DgnElement::DeallocateRef(bool dbUnloading)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::AddToModel()
-    {
-    if (m_elementId.IsValid())
-        return DGNMODEL_STATUS_IdExists;
-
-    DgnModelStatus stat = _OnAdd();
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    stat = m_dgnModel._OnAddElement(*this);
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    DgnElements& elements =m_dgnModel.GetDgnDb().Elements();
-    m_elementId = elements.MakeNewElementId();
-
-    stat = _InsertInDb();
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    _ApplyScheduledChangesToInstances(*this);
-    _ClearScheduledChangesToInstances();
-
-    _OnAdded();
-
-    return DGNMODEL_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId DgnElement::QueryClassId(DgnDbR db)
@@ -500,7 +469,6 @@ Utf8String DgnElement::GenerateDefaultCode(Utf8CP className, DgnElementId elemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_LoadFromDb()
     {
-    GetDgnDb().Elements().AddDgnElement(*this);
     return DGNMODEL_STATUS_Success;
     }
 
@@ -523,12 +491,7 @@ DgnModelStatus DgnElement::_InsertInDb()
     stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
     stmt->BindId(Column::ParentId, m_parentId);
 
-    if (stmt->Step() != BE_SQLITE_DONE)
-        return DGNMODEL_STATUS_ElementWriteError;
-
-    GetDgnDb().Elements().AddDgnElement(*this);
-    m_dgnModel._OnAddedElement(*this);
-    return DGNMODEL_STATUS_Success;
+    return stmt->Step() != BE_SQLITE_DONE ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

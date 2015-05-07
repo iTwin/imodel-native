@@ -44,31 +44,3 @@ StatusInt ITxn::DeleteElement (DgnElementP elRef)
     return elRef->_DeleteInDb();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ITxn::ReplaceElement(EditElementHandleR eeh)
-    {
-    if (m_opts.m_writesIllegal)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    DgnElementP original  = const_cast<DgnElementP>(eeh.GetPersistentElement());
-    DgnElementP  modified = eeh.GetEditElement();
-    if (nullptr == original || nullptr == modified)
-        {
-        BeAssert (false);
-        return ERROR;
-        }
-
-    ClearReversedTxns(original->GetDgnDb());
-
-    DgnModelStatus status = original->GetDgnModel().ReplaceElement(*original, *modified);
-    if (DGNMODEL_STATUS_Success != status)
-        return  status;
-
-    eeh.ClearWriteable();
-    return SUCCESS;
-    }

@@ -9,8 +9,6 @@
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-
-
 typedef struct IDataObject    GuiDataObject;
 
 #include <Bentley/bvector.h>
@@ -38,6 +36,8 @@ enum class ModifyElementSource
     DragSelection    = 6,    //!< The element is selected by the user by drag selection or multi-selection using ctrl.
     Unknown          = 10,   //!< The source for the element is unknown - not caused by a modification command.
 };
+
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 
 struct  IElementAgendaEvents;
 
@@ -372,6 +372,8 @@ public:
     //! Callback invoked to display changed elements
     DGNPLATFORM_EXPORT void DrawElementAgenda (ElementAgendaR agenda, DgnDrawMode drawMode, DrawPurpose purpose);
 }; // IDrawElementAgenda
+
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -13,39 +13,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman      05/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AddElementToModel (EditElementHandleR eeh)
-    {
-    DgnModelP model = eeh.GetDgnModelP ();
-
-    size_t numberBeforeAdded = model->CountElements();
-
-    DgnPlatform::DgnElementId id = eeh.GetDgnElement()->GetElementId();
-    if (id.IsValid())
-        return BSIERROR;
-
-    StatusInt result = eeh.GetWriteableElement()->AddToModel();
-    if (SUCCESS != result)
-        return result;
-
-    id = eeh.GetDgnElement()->GetElementId();
-    if (!id.IsValid())
-        return BSIERROR;
-
-    if (!model->FindElementById (id))
-        return BSIERROR;
-
-    size_t numberAfterAdded = model->CountElements();
-    if (numberAfterAdded <= numberBeforeAdded)
-        return BSIERROR;
-
-    return SUCCESS;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman      05/09
 +---------------+---------------+---------------+---------------+---------------+------*/

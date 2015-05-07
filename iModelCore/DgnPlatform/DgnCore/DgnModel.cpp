@@ -519,7 +519,7 @@ void DgnModel::_OnLoadedElement(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnAddElement(DgnElementR element)
+DgnModelStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
     return m_readonly ? DGNMODEL_STATUS_ReadOnly : DGNMODEL_STATUS_Success;
     }
@@ -527,7 +527,7 @@ DgnModelStatus DgnModel::_OnAddElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnAddedElement(DgnElementCR el) 
+void DgnModel::_OnInsertedElement(DgnElementCR el) 
     {
     RegisterElement(el);
     }
@@ -572,7 +572,7 @@ void DgnModel::_OnDeletedElement(DgnElementR element, bool canceled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnReplacedElement(DgnElementR element, DgnElementR replacement)
+void DgnModel::_OnUpdatedElement(DgnElementR element, DgnElementR replacement)
     {
     GeometricElementCP geom = element._ToGeometricElement();
     if (nullptr != m_rangeIndex && nullptr != geom)
@@ -586,7 +586,7 @@ void DgnModel::_OnReplacedElement(DgnElementR element, DgnElementR replacement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnReplaceElement(DgnElementR element, DgnElementR replacement)
+DgnModelStatus DgnModel::_OnUpdateElement(DgnElementCR element, DgnElementR replacement)
     {
     if (this != (&replacement.GetDgnModel()) || (this != &element.GetDgnModel()))
         {
@@ -606,30 +606,6 @@ DgnModelStatus DgnModel::_OnReplaceElement(DgnElementR element, DgnElementR repl
     return DGNMODEL_STATUS_Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::ReplaceElement(DgnElementR element, DgnElementR replacement)
-    {
-    DgnModelStatus status = _OnReplaceElement(element, replacement);
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
-
-    status = element._SwapWithModified(replacement);
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
-
-
-    status = element._UpdateInDb();
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
-
-    element._ApplyScheduledChangesToInstances(replacement);
-    element._ClearScheduledChangesToInstances();
-
-    _OnReplacedElement(element, replacement);
-    return DGNMODEL_STATUS_Success;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
