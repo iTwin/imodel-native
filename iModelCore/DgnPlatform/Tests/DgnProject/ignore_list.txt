@@ -32,6 +32,21 @@ DgnGraphicsTest3d.AddWithSymbology                      # John -- no longer work
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+#fail because DgnDbSync currently doesn't create any ElementGeom.
+DgnDb.Settings
+GeomStreamTest.DgnElement
+AnnotationTextBlockTest.DeepCopy
+AnnotationTextStyleTest.DefaultsAndAccessors
+AnnotationTextStyleTest.DeepCopy
+AnnotationTextStyleTest.TableReadWrite
+DgnLinkTest.RoundTripUrlLink
+DgnLinkTest.Iterator
+DgnLinkTest.OtherIterators
+DgnFontTests.CompressEscapeSequences
+DgnFontTests.ExpandEscapeSequences
+DgnFontTests.GetFonts
+
+
 
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 
