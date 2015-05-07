@@ -67,6 +67,15 @@
         <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
     </Part>
 
+		<Part Name="ScalableMeshHandler" BMakeFile="ScalableMeshHandler/handler.mke">
+	<SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh" />
+	<SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
+	        <Bindings>
+            <Libs>delivery/$(shlibprefix)ScalableMeshHandler$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)ScalableMeshHandler$(shlibext)</Assemblies> 
+            <PublicAPI Domain="ScalableMeshHandler" />
+        </Bindings>
+	</Part>
 
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
@@ -106,7 +115,6 @@
         <ProductDirectory Name="MrSidAssemblies"            Path="" />
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="" />
         <ProductDirectory Name="ECObjectsNativeAssemblies"  Path="" />
-        
         <ProductDirectory Name="ECSchemas" Path="ECSchemas" />       
 
         <ProductDirectory Name="GeomNativeAssemblies" Path=""/>

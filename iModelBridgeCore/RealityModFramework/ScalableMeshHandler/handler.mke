@@ -1,0 +1,74 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ScalableMeshHandler/handler.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
+
+
+appName     = ScalableMeshHandler
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+%include  mdl.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+
+#----------------------------------------------------------------------
+#   Symlink APIs
+#----------------------------------------------------------------------
+always:
+   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMeshHandler=$(_MakeFilePath)/PublicAPI"
+
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt) $(cIncs) $(PublicApiIncludes) $(CCompOpts)
+        |  -------- --------
+
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+CCompOpts + -DNOMINMAX -D__SCM_HANDLERS_BUILD__
+
+MultiCompileDepends=$(_MakeFileSpec) 
+#DisableMultiCompile=1
+%include MultiCppCompileRule.mki
+
+
+$(o)ScalableMeshModel$(oext) : $(baseDir)ScalableMeshHandler/ScalableMeshModel.cpp ${MultiCompileDepends}
+
+$(o)ScalableMeshProgressiveDisplay$(oext) : $(baseDir)ScalableMeshHandler/ScalableMeshProgressiveDisplay.cpp ${MultiCompileDepends}
+
+$(o)QvCachedNodeManager$(oext) : $(baseDir)ScalableMeshHandler/QvCachedNodeManager.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+    $(ContextSubpartsLibs)DgnPlatform.lib \
+	$(ContextSubpartsLibs)ScalableMesh.lib \
+	$(ContextSubpartsLibs)BaseGeoCoord.lib 
+
+LINKER_LIBRARIES            = \
+    $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)TerrainModelFormats$(libext)
+	
+%include $(sharedMki)LinkLibrary.mki
+
