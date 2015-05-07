@@ -171,7 +171,7 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
-    DgnFontCR ttFont = DgnFontManager::GetFallbackTrueTypeFont();
+    DgnFontCR ttFont = DgnFontManager::GetLastResortTrueTypeFont();
     ASSERT_TRUE(ttFont.IsResolved());
 
     DgnFontId ttFontId = project.Fonts().AcquireId(ttFont);

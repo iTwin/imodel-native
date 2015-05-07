@@ -18,15 +18,19 @@ typedef bvector<DgnFontPtr> T_DgnFontPtrs;
 //=======================================================================================
 struct DgnGlyph
 {
-    typedef uint16_t T_Id;
-
-private:
-    T_Id m_id;
+    typedef uint16_t T_Id; // The only real use of exposing this is for QuickVision. It should in reality be a QVwchar, but replicate here because we're below quickvision.
 
 public:
-    T_Id GetId() const { return m_id; }
+    virtual T_Id _GetId() const = 0;
+    T_Id GetId() const { return _GetId(); }
+    virtual DRange2d _GetRange() const = 0;
+    DRange2d GetRange() const { return _GetRange(); }
+    virtual DRange2d _GetExactRange() const = 0;
+    DRange2d GetExactRange() const { return _GetExactRange(); }
     virtual BentleyStatus _FillGpa(GPArrayR) const = 0;
     BentleyStatus FillGpa(GPArrayR gpa) const { return _FillGpa(gpa); }
+    virtual bool _IsBlank() const = 0;
+    bool IsBlank() const { return _IsBlank(); }
 };
 
 //=======================================================================================
@@ -136,15 +140,23 @@ struct DgnTrueTypeFont : DgnFont
 {
 private:
     friend struct DgnFontPersistence;
+    typedef bmap<unsigned int /*FT_Uint*/, DgnGlyphCP> GlyphCache;
+    typedef bmap<DgnFontStyle, GlyphCache> GlyphCacheMap;
+    mutable GlyphCacheMap m_glyphCache;
+
+    DgnGlyphCP FindGlyphCP(FT_Face, unsigned int /*FT_UInt*/ glyphIndex, DgnFontStyle) const;
+    BentleyStatus ComputeAdvanceWidths(T_DoubleVectorR, FT_Face, uint32_t const* ucs4Chars, size_t numChars) const;
 
 public:
     DgnTrueTypeFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::TrueType, name, data) {}
     DgnTrueTypeFont(DgnTrueTypeFontCR rhs) : DgnFont(rhs) {}
+    DGNPLATFORM_EXPORT virtual ~DgnTrueTypeFont();
     DgnTrueTypeFontR operator=(DgnTrueTypeFontCR rhs) { DgnFont::operator=(rhs); return *this; }
     DGNPLATFORM_EXPORT DgnFontPtr Create(Utf8CP name, IDgnFontDataP data);
     DGNPLATFORM_EXPORT virtual DgnFontPtr _Clone() const override;
     DGNPLATFORM_EXPORT virtual BentleyStatus _LayoutGlyphs(DgnGlyphLayoutResultR, DgnGlyphLayoutContextCR) const override;
     virtual bool _CanDrawWithLineWeight() const override { return false; }
+    DGNPLATFORM_EXPORT static BentleyStatus GetTrueTypeGlyphDataDirect(bvector<Byte>&, double& scaleFactor, DgnGlyphCR);
 };
 
 //=======================================================================================
@@ -227,10 +239,10 @@ public:
 //=======================================================================================
 struct DgnFontManager : NonCopyableClass
 {
-    DGNPLATFORM_EXPORT static DgnFontCR GetFallbackTrueTypeFont();
-    DGNPLATFORM_EXPORT static DgnFontCR GetFallbackRscFont();
-    DGNPLATFORM_EXPORT static DgnFontCR GetFallbackShxFont();
-    DGNPLATFORM_EXPORT static DgnFontCR GetAnyFallbackFont();
+    DGNPLATFORM_EXPORT static DgnFontCR GetLastResortTrueTypeFont();
+    DGNPLATFORM_EXPORT static DgnFontCR GetLastResortRscFont();
+    DGNPLATFORM_EXPORT static DgnFontCR GetLastResortShxFont();
+    DGNPLATFORM_EXPORT static DgnFontCR GetAnyLastResortFont();
     DGNPLATFORM_EXPORT static DgnFontCR GetDecoratorFont();
     DGNPLATFORM_EXPORT static DgnFontCR ResolveFont(DgnFontCP);
 };

@@ -13,7 +13,7 @@
 TextStringStylePtr TextStringStyle::Create() { return new TextStringStyle(); }
 TextStringStyle::TextStringStyle() :
     T_Super(),
-    m_font(&DgnFontManager::GetFallbackTrueTypeFont()),
+    m_font(&DgnFontManager::GetLastResortTrueTypeFont()),
     m_isBold(false),
     m_isItalic(false),
     m_isUnderlined(false),

@@ -8,6 +8,8 @@
 #include "../DgnPlatform.h"
 #include "DgnDbTables.h"
 
+typedef struct FT_FaceRec_* FT_Face; // Shield users from freetype.h because they have a bad include scheme.
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
@@ -27,8 +29,8 @@ struct IDgnFontData
 //=======================================================================================
 struct IDgnTrueTypeFontData : IDgnFontData
 {
-    static BentleyStatus GetFamilyName(Utf8StringR familyName, struct FT_FaceRec_&);
-    virtual struct FT_FaceRec_* _GetFaceP(DgnFontStyle) = 0;
+    static BentleyStatus GetFamilyName(Utf8StringR familyName, FT_Face);
+    virtual FT_Face _GetFaceP(DgnFontStyle) = 0;
 };
 
 //=======================================================================================

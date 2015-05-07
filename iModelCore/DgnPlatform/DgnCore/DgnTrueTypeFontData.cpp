@@ -212,7 +212,7 @@ BentleyStatus DgnTrueTypeFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceDa
                 }
             
             Utf8String familyName;
-            IDgnTrueTypeFontData::GetFamilyName(familyName, *face);
+            IDgnTrueTypeFontData::GetFamilyName(familyName, face);
             
             DgnFontStyle style = ftStyleIndexToDgnFontStyle(face->style_flags);
             Utf8String styleName = dgnFontStyleToStyleName(style);
@@ -780,7 +780,7 @@ BentleyStatus Win32TrueTypeFontData::EmbedFace(DgnFonts::DbFaceDataDirect& faceD
             }
 
         Utf8String familyName;
-        IDgnTrueTypeFontData::GetFamilyName(familyName, *face);
+        IDgnTrueTypeFontData::GetFamilyName(familyName, face);
 
         DgnFontStyle style = ftStyleIndexToDgnFontStyle(face->style_flags);
         Utf8String styleName = dgnFontStyleToStyleName(style);
@@ -983,7 +983,7 @@ static bool isNameUnicode(FT_SfntName const& name) { return (TT_PLATFORM_APPLE_U
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus IDgnTrueTypeFontData::GetFamilyName(Utf8StringR familyNameStr, struct FT_FaceRec_& face)
+BentleyStatus IDgnTrueTypeFontData::GetFamilyName(Utf8StringR familyNameStr, FT_Face face)
     {
     // In order to determine what the base/regular face of a font is, we need more information than FT_Face::family_name/style_flags/style_name.
     // For example:
@@ -1007,13 +1007,16 @@ BentleyStatus IDgnTrueTypeFontData::GetFamilyName(Utf8StringR familyNameStr, str
     //
     // Thus, we can use name ID 1 for family to properly group fonts together.
 
+    if (nullptr == face)
+        return ERROR;
+
     bool hasFamilyName = false;
     FT_SfntName familyName = {0};
-    FT_UInt numStrings = FT_Get_Sfnt_Name_Count(&face);
+    FT_UInt numStrings = FT_Get_Sfnt_Name_Count(face);
     for (FT_UInt iString = 0; iString < numStrings; ++iString)
         {
         FT_SfntName thisName;
-        FT_Get_Sfnt_Name(&face, iString, &thisName);
+        FT_Get_Sfnt_Name(face, iString, &thisName);
 
         // The values in the name table can have multiple definition with various encodings, targeting various languages.
         // We do not intend to support all 50+ possible ways to encode strings. I have sampled over 1000 fonts, and all can be decoded with merely a handful of schemes.
@@ -1052,15 +1055,15 @@ BentleyStatus IDgnTrueTypeFontData::GetFamilyName(Utf8StringR familyNameStr, str
 
     if (!hasFamilyName)
         {
-        FONT_LOG.warningv("Could not determine the real family name of font face %i; using '%s' instead.", (int)face.face_index, face.family_name);
-        familyNameStr = face.family_name;
+        FONT_LOG.warningv("Could not determine the real family name of font face %i; using '%s' instead.", (int)face->face_index, face->family_name);
+        familyNameStr = face->family_name;
         return ERROR;
         }
 
     if (SUCCESS != convertTTNameString(familyNameStr, familyName))
         {
-        FONT_LOG.warningv("Could not decode the real family name of font face %i; using '%s' instead.", (int)face.face_index, face.family_name);
-        familyNameStr = face.family_name;
+        FONT_LOG.warningv("Could not decode the real family name of font face %i; using '%s' instead.", (int)face->face_index, face->family_name);
+        familyNameStr = face->family_name;
         return ERROR;
         }
     
@@ -1109,7 +1112,7 @@ T_DgnFontPtrs DgnFontPersistence::File::FromTrueTypeFiles(bvector<BeFileName> co
                 numFaces = face->num_faces;
 
             Utf8String familyName;
-            if (SUCCESS != IDgnTrueTypeFontData::GetFamilyName(familyName, *face))
+            if (SUCCESS != IDgnTrueTypeFontData::GetFamilyName(familyName, face))
                 continue;
             
             T_FamilyFaceMap::iterator foundFamilyEntry = familyFaceMap.find(familyName);

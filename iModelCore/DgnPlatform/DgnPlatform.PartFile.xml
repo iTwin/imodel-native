@@ -40,8 +40,6 @@
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="ECObjectsNative"     PartFile="ecobjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
-        <SubPart PartName="LastResortFonts"     PartFile="MstnAppData"  Repository="miscdev-mstnappdata" />
-        <SubPart PartName="FontConfigurationFile"   PartFile="MstnAppData"  Repository="miscdev-mstnappdata" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="png"                 PartFile="png"          Repository="Libsrc-png"/>
         <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
@@ -51,6 +49,7 @@
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
             <Assemblies ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff,Delivery/xliffs/DgnHandlersMessages_en.xliff</Files>
+            <Files Required="false" ProductDirectoryName="DgnPlatformLastResortFonts" SubPartDirectory="DgnPlatformLastResortFonts">Delivery/lastresortfonts</Files>
             <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" SubPartDirectory="DgnPlatformIcons" Required="false" />
         </Bindings>
     </Part>
@@ -188,7 +187,6 @@
 
         <SubPart PartName="DgnPlatformDemoSource" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples"/>
         <SubPart PartName="DgnPlatformSample" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples"/>
-        <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
 
         <Directories DirectoryListName="DgnPlatform" />
     </Product>

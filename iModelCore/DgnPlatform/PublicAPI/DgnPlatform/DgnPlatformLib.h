@@ -171,34 +171,34 @@ public:
         {
         protected:
             bool m_isInitialized;
-            BeSQLiteDbP m_fallbackFontDb;
+            BeSQLiteDbP m_lastResortFontDb;
             DgnFonts* m_dbFonts;
-            DgnFontPtr m_fallbackTTFont;
-            DgnFontPtr m_fallbackRscFont;
-            DgnFontPtr m_fallbackShxFont;
+            DgnFontPtr m_lastResortTTFont;
+            DgnFontPtr m_lastResortRscFont;
+            DgnFontPtr m_lastResortShxFont;
             bool m_triedToLoadFTLibrary;
             FT_Library m_ftLibrary;
         
-            DGNPLATFORM_EXPORT virtual BeFileName _GetFallbackFontDbPath();
-            DGNPLATFORM_EXPORT virtual BentleyStatus _EnsureFallbackFontDb();
-            DGNPLATFORM_EXPORT virtual DgnFontPtr _CreateFallbackFont(DgnFontType);
+            DGNPLATFORM_EXPORT virtual BeFileName _GetLastResortFontDbPath();
+            DGNPLATFORM_EXPORT virtual BentleyStatus _EnsureLastResortFontDb();
+            DGNPLATFORM_EXPORT virtual DgnFontPtr _CreateLastResortFont(DgnFontType);
         
         public:
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
-            FontAdmin() : m_isInitialized(false), m_fallbackFontDb(nullptr), m_dbFonts(nullptr), m_triedToLoadFTLibrary(false), m_ftLibrary(nullptr) {}
+            FontAdmin() : m_isInitialized(false), m_lastResortFontDb(nullptr), m_dbFonts(nullptr), m_triedToLoadFTLibrary(false), m_ftLibrary(nullptr) {}
             DGNPLATFORM_EXPORT virtual ~FontAdmin();
             virtual int _GetVersion() const { return 1; } // Do not override!
             virtual void _OnHostTermination(bool isProcessShutdown) override { delete this; }
 
-            virtual DgnFontCR _GetFallbackTrueTypeFont() { return m_fallbackTTFont.IsValid() ? *m_fallbackTTFont : *(m_fallbackTTFont = _CreateFallbackFont(DgnFontType::TrueType)); }
-            DgnFontCR GetFallbackTrueTypeFont() { return _GetFallbackTrueTypeFont(); }
-            virtual DgnFontCR _GetFallbackRscFont() { return m_fallbackRscFont.IsValid() ? *m_fallbackRscFont : *(m_fallbackRscFont = _CreateFallbackFont(DgnFontType::Rsc)); }
-            DgnFontCR GetFallbackRscFont() { return _GetFallbackRscFont(); }
-            virtual DgnFontCR _GetFallbackShxFont() { return m_fallbackShxFont.IsValid() ? *m_fallbackShxFont : *(m_fallbackShxFont = _CreateFallbackFont(DgnFontType::Shx)); }
-            DgnFontCR GetFallbackShxFont() { return _GetFallbackShxFont(); }
-            virtual DgnFontCR _GetAnyFallbackFont() { return _GetFallbackTrueTypeFont(); }
-            DgnFontCR GetAnyFallbackFont() { return _GetAnyFallbackFont(); }
-            virtual DgnFontCR _GetDecoratorFont() { return _GetFallbackTrueTypeFont(); }
+            virtual DgnFontCR _GetLastResortTrueTypeFont() { return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType)); }
+            DgnFontCR GetLastResortTrueTypeFont() { return _GetLastResortTrueTypeFont(); }
+            virtual DgnFontCR _GetLastResortRscFont() { return m_lastResortRscFont.IsValid() ? *m_lastResortRscFont : *(m_lastResortRscFont = _CreateLastResortFont(DgnFontType::Rsc)); }
+            DgnFontCR GetLastResortRscFont() { return _GetLastResortRscFont(); }
+            virtual DgnFontCR _GetLastResortShxFont() { return m_lastResortShxFont.IsValid() ? *m_lastResortShxFont : *(m_lastResortShxFont = _CreateLastResortFont(DgnFontType::Shx)); }
+            DgnFontCR GetLastResortShxFont() { return _GetLastResortShxFont(); }
+            virtual DgnFontCR _GetAnyLastResortFont() { return _GetLastResortTrueTypeFont(); }
+            DgnFontCR GetAnyLastResortFont() { return _GetAnyLastResortFont(); }
+            virtual DgnFontCR _GetDecoratorFont() { return _GetLastResortTrueTypeFont(); }
             DgnFontCR GetDecoratorFont() { return _GetDecoratorFont(); }
             DGNPLATFORM_EXPORT virtual DgnFontCR _ResolveFont(DgnFontCP);
             DgnFontCR ResolveFont(DgnFontCP font) { return _ResolveFont(font); }

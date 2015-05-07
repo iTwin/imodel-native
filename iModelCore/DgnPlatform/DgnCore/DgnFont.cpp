@@ -13,17 +13,16 @@
 DgnPlatformLib::Host::FontAdmin::~FontAdmin()
     {
     DELETE_AND_CLEAR(m_dbFonts);
-    DELETE_AND_CLEAR(m_fallbackFontDb);
+    DELETE_AND_CLEAR(m_lastResortFontDb);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-BeFileName DgnPlatformLib::Host::FontAdmin::_GetFallbackFontDbPath()
+BeFileName DgnPlatformLib::Host::FontAdmin::_GetLastResortFontDbPath()
     {
     BeFileName path = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    path.AppendToPath(L"fonts");
-    path.AppendToPath(L"fallbackfonts");
+    path.AppendToPath(L"lastresortfonts");
 
     return path;
     }
@@ -31,35 +30,35 @@ BeFileName DgnPlatformLib::Host::FontAdmin::_GetFallbackFontDbPath()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureFallbackFontDb()
+BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureLastResortFontDb()
     {
     if (m_isInitialized)
         return ((nullptr != m_dbFonts) ? SUCCESS : ERROR);
 
     m_isInitialized = true;
     
-    BeFileName path = _GetFallbackFontDbPath();
+    BeFileName path = _GetLastResortFontDbPath();
     if (path.empty())
         {
-        FONT_LOG.error("Could not determine the fallback font database path. Fallback fonts cannot be loaded.");
+        FONT_LOG.error("Could not determine the last resort font database path. Last resort fonts cannot be loaded.");
         BeAssert(false);
         return ERROR;
         }
     
-    unique_ptr<Db> fallbackFontDb(new Db());
-    DbResult openResult = fallbackFontDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_No, nullptr));
+    unique_ptr<Db> lastResortDb(new Db());
+    DbResult openResult = lastResortDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OPEN_Readonly));
     if (BE_SQLITE_OK != openResult)
         {
-        FONT_LOG.errorv("Could not open the fallback font database '%s' with error code %i/'%s'.", Utf8String(path).c_str(), (int)openResult, Db::InterpretDbResult(openResult));
+        FONT_LOG.errorv("Could not open the last resort font database '%s' with error code %i/'%s'.", Utf8String(path).c_str(), (int)openResult, Db::InterpretDbResult(openResult));
         BeAssert(false);
         return ERROR;
         }
 
-    m_fallbackFontDb = fallbackFontDb.release();
+    m_lastResortFontDb = lastResortDb.release();
 
-    FONT_LOG.infov("Using fallback font database '%s'.", Utf8String(path).c_str());
+    FONT_LOG.infov("Using last resort font database '%s'.", Utf8String(path).c_str());
     
-    m_dbFonts = new DgnFonts(*m_fallbackFontDb, "fallbackfont");
+    m_dbFonts = new DgnFonts(*m_lastResortFontDb, "lastresortfont");
 
     return SUCCESS;
     }
@@ -67,17 +66,17 @@ BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureFallbackFontDb()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnPlatformLib::Host::FontAdmin::_CreateFallbackFont(DgnFontType type)
+DgnFontPtr DgnPlatformLib::Host::FontAdmin::_CreateLastResortFont(DgnFontType type)
     {
-    if (SUCCESS != _EnsureFallbackFontDb())
+    if (SUCCESS != _EnsureLastResortFontDb())
         return nullptr;
     
     Utf8String name;
     switch (type)
         {
-        case DgnFontType::TrueType: name = "FallbackTrueTypeFont"; break;
-        case DgnFontType::Rsc: name = "FallbackRscFont"; break;
-        case DgnFontType::Shx: name = "FallbackShxFont"; break;
+        case DgnFontType::TrueType: name = "LastResortTrueTypeFont"; break;
+        case DgnFontType::Rsc: name = "LastResortRscFont"; break;
+        case DgnFontType::Shx: name = "LastResortShxFont"; break;
 
         default:
             BeAssert(false);
@@ -87,7 +86,7 @@ DgnFontPtr DgnPlatformLib::Host::FontAdmin::_CreateFallbackFont(DgnFontType type
     DgnFontPtr foundFont = m_dbFonts->DbFontMap().QueryByTypeAndName(type, name.c_str());
     if (!foundFont.IsValid())
         {
-        FONT_LOG.errorv("Could not find a fallback font with type/name %i/'%s'.", (int)type, name.c_str());
+        FONT_LOG.errorv("Could not find a last resort font with type/name %i/'%s'.", (int)type, name.c_str());
         BeAssert(false);
         return nullptr;
         }
@@ -107,9 +106,9 @@ DgnFontCR DgnPlatformLib::Host::FontAdmin::_ResolveFont(DgnFontCP font)
         {
         switch (font->GetType())
             {
-            case DgnFontType::TrueType: return _GetFallbackTrueTypeFont();
-            case DgnFontType::Rsc: return _GetFallbackRscFont();
-            case DgnFontType::Shx: return _GetFallbackShxFont();
+            case DgnFontType::TrueType: return _GetLastResortTrueTypeFont();
+            case DgnFontType::Rsc: return _GetLastResortRscFont();
+            case DgnFontType::Shx: return _GetLastResortShxFont();
         
             default:
                 BeAssert(false);
@@ -117,16 +116,16 @@ DgnFontCR DgnPlatformLib::Host::FontAdmin::_ResolveFont(DgnFontCP font)
             }
         }
     
-    return DgnFontManager::GetAnyFallbackFont();
+    return _GetAnyLastResortFont();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-DgnFontCR DgnFontManager::GetFallbackTrueTypeFont() { return T_HOST.GetFontAdmin()._GetFallbackTrueTypeFont(); }
-DgnFontCR DgnFontManager::GetFallbackRscFont() { return T_HOST.GetFontAdmin()._GetFallbackRscFont(); }
-DgnFontCR DgnFontManager::GetFallbackShxFont() { return T_HOST.GetFontAdmin()._GetFallbackShxFont(); }
-DgnFontCR DgnFontManager::GetAnyFallbackFont() { return T_HOST.GetFontAdmin()._GetAnyFallbackFont(); }
+DgnFontCR DgnFontManager::GetLastResortTrueTypeFont() { return T_HOST.GetFontAdmin()._GetLastResortTrueTypeFont(); }
+DgnFontCR DgnFontManager::GetLastResortRscFont() { return T_HOST.GetFontAdmin()._GetLastResortRscFont(); }
+DgnFontCR DgnFontManager::GetLastResortShxFont() { return T_HOST.GetFontAdmin()._GetLastResortShxFont(); }
+DgnFontCR DgnFontManager::GetAnyLastResortFont() { return T_HOST.GetFontAdmin()._GetAnyLastResortFont(); }
 DgnFontCR DgnFontManager::GetDecoratorFont() { return T_HOST.GetFontAdmin()._GetDecoratorFont(); }
 DgnFontCR DgnFontManager::ResolveFont(DgnFontCP font) { return T_HOST.GetFontAdmin()._ResolveFont(font); }
 
@@ -178,7 +177,7 @@ size_t DgnFonts::DbFontMapDirect::Iterator::QueryCount() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnFonts::DbFontMapDirect::CreateFontTable()
     {
-    DbResult createStatus = m_dbFonts.m_db.CreateTable(DGN_TABLE_Font,
+    DbResult createStatus = m_dbFonts.m_db.CreateTable(m_dbFonts.m_tableName.c_str(),
         "Id INTEGER PRIMARY KEY,"
         "Type INT,"
         "Name CHAR NOT NULL COLLATE NOCASE,"
@@ -713,7 +712,7 @@ void DgnFonts::Update()
         if (!font.IsValid())
             {
             FONT_LOG.errorv("Could not deserialize font with id/type/name %i/%i/'%s'; a fallback will be inserted into the font map.", (int)id.GetValue(), (int)entry.GetType(), entry.GetName());
-            font = DgnFontManager::GetAnyFallbackFont().Clone();
+            font = DgnFontManager::GetAnyLastResortFont().Clone();
             }
         
         m_fontMap[id] = font;

@@ -522,3 +522,8 @@ SQLANG_Xliff        = $(o)xliffs/DgnHandlersMessages_en.xliff
 $(BuildContext)Delivery/icons : $(DgnCoreDir)/icons
     $(LinkFirstDepToFirstTargetAsDirectory)
 
+#----------------------------------------------------------------------
+# Last resort fonts that are required to be available to DgnPlatform.
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/lastresortfonts : $(baseDir)LastResortFonts/lastresortfonts
+    $(LinkFirstDepToFirstTarget)
