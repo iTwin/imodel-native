@@ -176,13 +176,15 @@ ECSqlTestDataset ECSqlDeleteTestDataset::PolymorphicTests (int rowCountPerClass)
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
 
     ecsql = "DELETE FROM ecsql.AbstractTablePerHierarchy";
-    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass * 2, true);
+    //ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass * 2, true);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
 
     ecsql = "DELETE FROM ONLY ecsql.AbstractTablePerHierarchy";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
 
     ecsql = "DELETE FROM ecsql.THBase";
-    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 6 * rowCountPerClass, true);
+    //ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 6 * rowCountPerClass, true);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
 
     ecsql = "DELETE FROM ONLY ecsql.THBase";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);

@@ -28,11 +28,19 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
         Utf8String ecsql;
 
         ecsql.Sprintf("%s WHERE I > 0", ecsqlStub.c_str());
-        //AbstractTablePerHierarchy class has 2 subclasses, so row count per class expected
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 2 * rowCountPerClass);
+        if (ecsqlType == ECSqlType::Delete)
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::NotYetSupported);
+        else
+            {
+            //AbstractTablePerHierarchy class has 2 subclasses, so row count per class expected
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 2 * rowCountPerClass);
+            }
 
         ecsql.Sprintf("%s WHERE ECInstanceId < 0", ecsqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //where cond always false
+        if (ecsqlType == ECSqlType::Delete)
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::NotYetSupported);
+        else
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //where cond always false
         }
 
     if (ToECSql (ecsqlStub, ecsqlType, *abstractClass, false)) // non-polymorphic

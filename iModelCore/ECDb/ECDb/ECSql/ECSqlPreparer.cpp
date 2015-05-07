@@ -434,7 +434,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                                 ExpHelper::ToString(currentScopeECSqlType));
 
         BeAssert(classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]) != nullptr);
-        table = &classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0])->GetTable();
+        HorizontalPartition const* partition = classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]);
+        
+        //WIP: We need to fix deletion of subclasses' struct array entries for polymorphic delete. Until then we hard-fail
+        //on attempts to polymorphic DELETES if the class has subclasses
+        if (currentScopeECSqlType == ECSqlType::Delete && partition->GetClassIds().size() > 1)
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL DELETE is not yet supported.");
+
+        table = &partition->GetTable();
         }
 
     BeAssert(table != nullptr);
