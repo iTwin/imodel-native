@@ -19,6 +19,7 @@ static bool ExtractArg(T& str, ECN::EvaluationResultVector const& args, size_t i
     {
     return index < args.size() ? SystemSymbolProvider::ExtractArg(str, args[index], allowNull) : false;
     }
+
 template<typename T>
 static bool ExtractArg(T& extractedValue, ECN::EvaluationResultVector const& args, size_t index)
     {

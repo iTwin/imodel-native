@@ -405,8 +405,6 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (SymbolR symbol);
     ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (wchar_t const* ident);
 
-    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets, ExpressionContextP outer = NULL);
-
     //! Creates a new SymbolExpressionContext using requested symbol sets and if an ECInstance is passed in it will publish it for "this" access
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr   CreateWithThis (bvector<WString> const& requestedSymbolSets, IECInstanceP instance = NULL);
 
@@ -416,6 +414,9 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  AddSymbol (SymbolR symbol);
     //! Creates a new SymbolExpressionContext from the given ExpressionContext
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(ExpressionContextP outer);
+    //! Creates a new SymbolExpressionContext from the given ExpressionContext and using sybmols from all the specified symbol sets. If the vector 
+    //! is empty all available symbol are made available.
+    ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(bvector<WString> const& requestedSymbolSets, ExpressionContextP outer = NULL);
 }; // End of class SymbolExpressionContext
 
 
