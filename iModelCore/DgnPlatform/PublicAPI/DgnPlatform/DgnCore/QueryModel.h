@@ -42,8 +42,8 @@ struct QueryModel : PhysicalModel
     //=======================================================================================
     struct Results
     {
-        bvector<DgnElementP> m_elements;
-        bvector<DgnElementP> m_closeElements;
+        bvector<DgnElementCP> m_elements;
+        bvector<DgnElementCP> m_closeElements;
         bool   m_reachedMaxElements;
         bool   m_eliminatedByLOD;
         uint32_t m_drawnBeforePurge;

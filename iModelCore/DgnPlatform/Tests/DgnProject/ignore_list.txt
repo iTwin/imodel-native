@@ -32,7 +32,6 @@ DgnGraphicsTest3d.AddWithSymbology                      # John -- no longer work
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 
 DgnLevelTableTests.IModelCopyAndRenameLevels # can't create this scenario without separate options .xml file for each dgn file published

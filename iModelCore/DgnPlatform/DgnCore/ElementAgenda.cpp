@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   08/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -196,3 +197,4 @@ void            ElementAgenda::AddGroupSelectionMembers (DgnModelP baseDgnModel)
     }
 #endif
 
+#endif

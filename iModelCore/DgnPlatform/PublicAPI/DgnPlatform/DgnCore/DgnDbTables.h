@@ -865,6 +865,7 @@ struct DgnElements : DgnDbTable
     friend struct DgnModels;
     friend struct ElementHandler;
     friend struct ITxnManager;
+    friend struct ProgressiveViewFilter;
 
     //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
@@ -904,22 +905,22 @@ private:
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
-    void AddDgnElement(DgnElementR);
+    void AddDgnElement(DgnElementR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
-    DgnElementPtr LoadElement(DgnElement::CreateParams const& params);
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
+    void ReleaseAndCleanup(DgnElementCPtr& element);
 
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
 public:
-    DGNPLATFORM_EXPORT void ReleaseAndCleanup(DgnElementPtr& element);
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql);
-    DGNPLATFORM_EXPORT void AllocatedMemory(int32_t);
-    DGNPLATFORM_EXPORT void ReturnedMemory(int32_t);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
+    DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
+    DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -945,26 +946,35 @@ public:
     DGNPLATFORM_EXPORT DgnElementId GetHighestElementId();
     DGNPLATFORM_EXPORT DgnElementId MakeNewElementId();
 
-    //! Load an element within this DgnDb by its Id. @remarks The element is loaded if necessary.
-    //! @return nullptr if the element does not exist.
-    DGNPLATFORM_EXPORT DgnElementPtr GetElementById(DgnElementId id);
+    //! Get a DgnElement from this DgnDb by its Id. 
+    //! @remarks The element is loaded if necessary.
+    //! @return Invalid if the element does not exist.
+    DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
 
     //! Look up an element within this DgnDb by its Id.
     //! @return nullptr if the element does not exist or is not currently loaded.
-    DGNPLATFORM_EXPORT DgnElementP FindElementById(DgnElementId id) const;
+    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+
+    //! Insert the supplied DgnElement into this DgnDb.
+    //! @param[in] element The element to add.
+    //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
+    DGNPLATFORM_EXPORT DgnModelStatus InsertElement(DgnElementR element);
+
+    DGNPLATFORM_EXPORT DgnModelStatus UpdateElement(DgnElementR);
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementR);
 
     HeapZone& GetHeapZone() {return m_heapZone;}
 
-    //! Query for the Code for the specified DgnElement.
+    //! Query for the Code for the specified DgnElementId.
     DGNPLATFORM_EXPORT Utf8String QueryElementCode(DgnElementId) const;
 
-    //! Return the key of the element from its ID.
+    //! Return the key of the element from its DgnElementId.
     //! @note used when you know the DgnElementId, but need a DgnElementKey which also contains the ECClassId.
     //! @note an invalid key will be returned in the case of an error
     //! @see ECInstanceKey::IsValid
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId) const;
 
-    //! Delete the specified element.
+    //! Delete the element for the specified DgnElementId.
     DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
 
     //! Update the last modified timestamp of the specified element

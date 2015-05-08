@@ -498,7 +498,7 @@ void DgnModel::ClearRangeIndex()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::RegisterElement(DgnElementR element)
+void DgnModel::RegisterElement(DgnElementCR element)
     {
     if (m_wasFilled)
         m_elements.Add(element);
@@ -511,7 +511,7 @@ void DgnModel::RegisterElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnLoadedElement(DgnElementR el) 
+void DgnModel::_OnLoadedElement(DgnElementCR el) 
     {
     RegisterElement(el);
     }
@@ -519,7 +519,7 @@ void DgnModel::_OnLoadedElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnAddElement(DgnElementR element)
+DgnModelStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
     return m_readonly ? DGNMODEL_STATUS_ReadOnly : DGNMODEL_STATUS_Success;
     }
@@ -527,7 +527,7 @@ DgnModelStatus DgnModel::_OnAddElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnAddedElement(DgnElementR el) 
+void DgnModel::_OnInsertedElement(DgnElementCR el) 
     {
     RegisterElement(el);
     }
@@ -572,7 +572,7 @@ void DgnModel::_OnDeletedElement(DgnElementR element, bool canceled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnReplacedElement(DgnElementR element, DgnElementR replacement)
+void DgnModel::_OnUpdatedElement(DgnElementR element, DgnElementR replacement)
     {
     GeometricElementCP geom = element._ToGeometricElement();
     if (nullptr != m_rangeIndex && nullptr != geom)
@@ -586,7 +586,7 @@ void DgnModel::_OnReplacedElement(DgnElementR element, DgnElementR replacement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnReplaceElement(DgnElementR element, DgnElementR replacement)
+DgnModelStatus DgnModel::_OnUpdateElement(DgnElementCR element, DgnElementR replacement)
     {
     if (this != (&replacement.GetDgnModel()) || (this != &element.GetDgnModel()))
         {
@@ -606,30 +606,6 @@ DgnModelStatus DgnModel::_OnReplaceElement(DgnElementR element, DgnElementR repl
     return DGNMODEL_STATUS_Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::ReplaceElement(DgnElementR element, DgnElementR replacement)
-    {
-    DgnModelStatus status = _OnReplaceElement(element, replacement);
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
-
-    status = element._SwapWithModified(replacement);
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
-
-
-    status = element._UpdateInDb();
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
-
-    element._ApplyScheduledChangesToInstances(replacement);
-    element._ClearScheduledChangesToInstances();
-
-    _OnReplacedElement(element, replacement);
-    return DGNMODEL_STATUS_Success;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
@@ -664,7 +640,7 @@ void DgnModel::ElementChanged(DgnElement& elRef, DgnElementChangeReason reason)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP DgnModel::FindElementById(DgnElementId id)
+DgnElementCP DgnModel::FindElementById(DgnElementId id)
     {
     auto it = m_elements.find(id);
     return it == m_elements.end() ? nullptr : it->second.get();
@@ -1035,14 +1011,15 @@ DgnFileStatus DgnModel::FillModel()
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnElementId id(stmt.GetValueId<DgnElementId>(Column::Id));
-        DgnElementPtr elRef = elements.FindElementById(id);
-        if (!elRef.IsValid())
-             elements.LoadElement(DgnElement::CreateParams(*this,
-                    stmt.GetValueId<DgnClassId>(Column::ClassId), 
-                    stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
-                    stmt.GetValueText(Column::Code), 
-                    id,
-                    stmt.GetValueId<DgnElementId>(Column::ParentId)));
+        if (nullptr != elements.FindElement(id))  // already loaded?
+            continue;
+
+        elements.LoadElement(DgnElement::CreateParams(*this,
+            stmt.GetValueId<DgnClassId>(Column::ClassId), 
+            stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
+            stmt.GetValueText(Column::Code), 
+            id,
+            stmt.GetValueId<DgnElementId>(Column::ParentId)));
         }
 
     SetReadOnly(m_dgndb.IsReadonly());

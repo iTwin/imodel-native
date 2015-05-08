@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/DgnElementPool.cpp $
+|     $Source: DgnCore/DgnElements.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -229,7 +229,7 @@ public:
     DgnElementP FindElement(DgnElementId key, bool setAccessed);
     void AddElement(DgnElementR);
     void KillElement(DgnElementP, bool);
-    void ReleaseAndCleanup(DgnElementP element);
+    void ReleaseAndCleanup(DgnElementCP element);
     void Purge(int64_t memTarget);
     void Destroy();
 };
@@ -419,7 +419,7 @@ ElemPurge ElemIdInternalNode::_Purge(int64_t memTarget)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2014
 //---------------------------------------------------------------------------------------
-void ElemIdTree::ReleaseAndCleanup(DgnElementP element)
+void ElemIdTree::ReleaseAndCleanup(DgnElementCP element)
     {
     if (element->GetRefCount() != 0)
         {
@@ -748,7 +748,7 @@ ElemIdLeafNode const* ElemIdInternalNode::_NextSibling(ElemIdRangeNodeCP from) c
             }
         }
 
-    BeAssert(0);
+    BeAssert(false);
     return nullptr;
     }
 
@@ -888,7 +888,7 @@ void DgnElements::Destroy()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::AllocatedMemory(int32_t size)
+void DgnElements::AllocatedMemory(int32_t size) const
     {
     if (size<0)
         {
@@ -902,7 +902,7 @@ void DgnElements::AllocatedMemory(int32_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::ReturnedMemory(int32_t size)
+void DgnElements::ReturnedMemory(int32_t size) const
     {
     if (size<0)
         {
@@ -941,7 +941,7 @@ void DgnElements::OnUnreferenced(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::AddDgnElement(DgnElementR element)
+void DgnElements::AddDgnElement(DgnElementR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsInPool());
@@ -956,15 +956,14 @@ void DgnElements::AddDgnElement(DgnElementR element)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2014
 //---------------------------------------------------------------------------------------
-void DgnElements::ReleaseAndCleanup(DgnElementPtr& elementRef)
+void DgnElements::ReleaseAndCleanup(DgnElementCPtr& elementRef)
     {
-    DgnElementP element = elementRef.get();
-    if (element->GetRefCount() != 1)
+    if (elementRef->GetRefCount() != 1)
         return;
 
     elementRef = nullptr;
     BeDbMutexHolder _v_v(m_mutex);
-    m_tree->ReleaseAndCleanup(element);
+    m_tree->ReleaseAndCleanup(elementRef.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -979,7 +978,7 @@ void DgnElements::Purge(int64_t memTarget)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP DgnElements::FindElementById(DgnElementId id) const
+DgnElementCP DgnElements::FindElement(DgnElementId id) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     return m_tree->FindElement(id, false);
@@ -988,7 +987,7 @@ DgnElementP DgnElements::FindElementById(DgnElementId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnElements::GetStatement(CachedStatementPtr& stmt, Utf8CP sql)
+DbResult DgnElements::GetStatement(CachedStatementPtr& stmt, Utf8CP sql) const
     {
     return m_stmts.GetPreparedStatement(stmt, *m_dgndb.GetDbFile(), sql);
     }
@@ -1003,7 +1002,7 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20)
     {
     m_listeners = nullptr;
-    m_tree      = new ElemIdTree(dgndb);
+    m_tree = new ElemIdTree(dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1023,7 +1022,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
     // changeset and see whether they are in fact "undeletes" from undo/redo.
     for (auto& el : summary.m_addedElements)
         {
-        DgnElementP elRef = FindElementById(el);
+        DgnElementP elRef = const_cast<DgnElementP>(FindElement(el));
         if (nullptr != elRef) // if it is not found, there's nothing to do
             elRef->UnDeleteElement();
         }
@@ -1031,7 +1030,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
     // DELETES: elements that were deleted by the changeset must be marked as deleted in the pool (see discussion above).
     for (auto& el : summary.m_deletedElements)
         {
-        DgnElementP elRef = FindElementById(el);
+        DgnElementP elRef = const_cast<DgnElementP>(FindElement(el));
         if (nullptr != elRef) // if not found, nothing to do
             {
             DgnModelR model = elRef->GetDgnModel();
@@ -1062,7 +1061,7 @@ void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
     // we delete them so there is no corresponding work here for them.
     for (auto& el : summary.m_deletedElements)
         {
-        DgnElementP elRef = FindElementById(el);
+        DgnElementP elRef = const_cast<DgnElementP>(FindElement(el));
         if (nullptr == elRef)
             continue;
 
@@ -1084,7 +1083,7 @@ void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElements::LoadElement(DgnElement::CreateParams const& params)
+DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params) const
     {
     ElementHandlerP elHandler = ElementHandler::FindHandler(m_dgndb, params.m_classId);
     if (nullptr == elHandler)
@@ -1093,24 +1092,25 @@ DgnElementPtr DgnElements::LoadElement(DgnElement::CreateParams const& params)
         return nullptr;
         }
 
-    DgnElementPtr elRef = elHandler->Create(params);
-    if (!elRef.IsValid())
+    DgnElementPtr el = elHandler->Create(params);
+    if (!el.IsValid())
         {
         BeAssert(false);
         return nullptr;
         }
 
-    if (DGNMODEL_STATUS_Success != elRef->_LoadFromDb())
+    if (DGNMODEL_STATUS_Success != el->_LoadFromDb())
         return nullptr;
 
-    params.m_model._OnLoadedElement(*elRef);
-    return elRef;
+    AddDgnElement(*el);
+    params.m_model._OnLoadedElement(*el);
+    return el;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElements::GetElementById(DgnElementId elementId) 
+DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     {
     if (!elementId.IsValid())
         return nullptr;
@@ -1119,8 +1119,8 @@ DgnElementPtr DgnElements::GetElementById(DgnElementId elementId)
     // *with the lock held* before we load it. This avoids a race condition where an element is loaded on more than one thread.
     BeDbMutexHolder _v(m_mutex);
 
-    DgnElementPtr elRef = FindElementById(elementId);
-    if (elRef.IsValid())
+    DgnElementCP elRef = FindElement(elementId);
+    if (nullptr != elRef)
         return elRef;
 
     CachedStatementPtr stmt;
@@ -1223,3 +1223,74 @@ DgnElementId DgnElements::MakeNewElementId()
     return DgnElementId(val.m_luid.u);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus DgnElements::InsertElement(DgnElementR element)
+    {
+    if (element.GetElementId().IsValid())
+        return DGNMODEL_STATUS_IdExists;
+
+    DgnModelR model = element.GetDgnModel();
+    if (&model.GetDgnDb() != &m_dgndb)
+        return DGNMODEL_STATUS_WrongDgnDb;
+
+    DgnModelStatus stat = element._OnAdd();
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    stat = model._OnInsertElement(element);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    element.m_elementId = MakeNewElementId();
+    stat = element._InsertInDb();
+    if (DGNMODEL_STATUS_Success != stat)
+        {
+        element.m_elementId = DgnElementId();
+        return stat;
+        }
+
+    element._ApplyScheduledChangesToInstances(element);
+    element._ClearScheduledChangesToInstances();
+
+    element._OnAdded();
+
+    AddDgnElement(element);
+    model._OnInsertedElement(element);
+
+    return DGNMODEL_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus DgnElements::UpdateElement(DgnElementR replacement)
+    {
+    DgnElementCPtr orig = GetElement(replacement.GetElementId());
+    if (!orig.IsValid())
+        return DGNMODEL_STATUS_InvalidId;
+
+    DgnElementR element = const_cast<DgnElementR>(*orig.get());
+    DgnModelR model = element.GetDgnModel();
+    if ((&model.GetDgnDb() != &m_dgndb) || (&model != &replacement.GetDgnModel()))
+        return DGNMODEL_STATUS_WrongModel;
+
+    DgnModelStatus status = model._OnUpdateElement(element, replacement);
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    status = element._SwapWithModified(replacement);
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    status = element._UpdateInDb();
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    element._ApplyScheduledChangesToInstances(replacement);
+    element._ClearScheduledChangesToInstances();
+
+    model._OnUpdatedElement(element, replacement);
+    return DGNMODEL_STATUS_Success;
+    }

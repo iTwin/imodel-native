@@ -259,6 +259,7 @@ ECN::ECClassCP DgnDomains::FindBaseOfType(DgnClassId subClassId, DgnClassId base
     if (nullptr==subClass || nullptr==baseClass || subClass == baseClass) // can't be baseclass of yourself
         return nullptr;
 
+    //WIP: This won't work if subClass has two base classes and both of them have different handlers
     // this loop is due to multiple inheritance. Look for the right baseclass
     for (auto* thisClass : subClass->GetBaseClasses())
         {
@@ -283,7 +284,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
     ECN::ECClassCP superClass = FindBaseOfType(handlerId, baseClassId);
     if (nullptr == superClass)
         {
-        BeAssert(false);
+        //BeAssert(false);
         return nullptr;
         }
 

@@ -2,11 +2,12 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementAgenda_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     KyleDeeds  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -47,7 +48,6 @@ TEST_F(ElementAgendaTest, GetSource)
     ASSERT_TRUE(source == actual);
     }
 
-#if defined (NEEDS_WORK_DGNITEM)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KyleDeeds  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/

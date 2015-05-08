@@ -10,8 +10,6 @@
 #include <DgnPlatform/DgnCore/QueryView.h>
 #include "UpdateLogging.h"
 
-#include "UpdateLogging.h"
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
 //--------------+------------------------------------------------------------------------
@@ -36,7 +34,7 @@ void QueryModel::ResizeElementList(uint32_t newCount)
 
     ResetResults();
     for (auto result :  m_currQueryResults->m_elements)
-        _OnAddedElement(*result);
+        _OnLoadedElement(*result);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,12 +60,12 @@ void QueryModel::SaveQueryResults()
     m_selector.m_results = 0;
 
     //  First add everything from the list used for drawing.
-    for (auto result : m_currQueryResults->m_elements)
-        _OnAddedElement(*result);
+    for (auto const& result : m_currQueryResults->m_elements)
+        _OnLoadedElement(*result);
 
     //  Now add everything that is in the secondary list but not the first.
     for (auto const& result : m_currQueryResults->m_closeElements)
-        _OnAddedElement(*result);
+        _OnLoadedElement(*result);
     }
 
 //---------------------------------------------------------------------------------------
@@ -260,7 +258,7 @@ void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dVi
             break;
             }
 
-        DgnElementPtr elRef = pool.GetElementById(curr);
+        DgnElementCPtr elRef = pool.GetElement(curr);
         RTree3dVal rtreeRange;
         if (!elRef.IsValid())
             continue; // id is in the list but not in the file
@@ -403,11 +401,11 @@ void QueryModel::Selector::qt_ProcessRequest()
             }
 
         bool hitLimit = pool.GetTotalAllocated() > (int64_t) (2 * m_maxMemory);
-        DgnElementPtr el;
+        DgnElementCPtr el;
         if (!hitLimit)
-            el = pool.GetElementById(DgnElementId(curr->second));
+            el = pool.GetElement(DgnElementId(curr->second));
         else
-            el = pool.FindElementById(DgnElementId(curr->second));
+            el = pool.FindElement(DgnElementId(curr->second));
 
         if (el.IsValid())
             m_results->m_closeElements.push_back(el.get());
@@ -422,11 +420,11 @@ void QueryModel::Selector::qt_ProcessRequest()
             }
 
         bool hitLimit = pool.GetTotalAllocated() > (int64_t) (2 * m_maxMemory);
-        DgnElementPtr el;
+        DgnElementCPtr el;
         if (!hitLimit)
-            el = pool.GetElementById(DgnElementId(curr->second));
+            el = pool.GetElement(DgnElementId(curr->second));
         else
-            el = pool.FindElementById(DgnElementId(curr->second));
+            el = pool.FindElement(DgnElementId(curr->second));
 
         if (el.IsValid())
             m_results->m_elements.push_back(el.get());

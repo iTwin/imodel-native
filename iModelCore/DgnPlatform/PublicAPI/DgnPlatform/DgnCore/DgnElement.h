@@ -240,9 +240,6 @@ public:
 
     bool Is3d() const {return nullptr != _ToElement3d();}
     bool IsInPool() const {return m_flags.m_inPool;}
-
-    void SetElementClassId(DgnClassId classId) {m_classId = classId;}
-    void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}
     bool IsAnyDirty() const {return 0 != m_flags.m_dirtyFlag;}
     bool IsElemDirty()const {return 0 != (DIRTY_ElemData & m_flags.m_dirtyFlag);}
@@ -254,7 +251,7 @@ public:
     int GetElFlags() const {return m_flags.m_elFlags;}
     ElementHiliteState IsHilited() const {return (ElementHiliteState) m_flags.m_hiliteState;}
     void SetHilited(ElementHiliteState newState) const {m_flags.m_hiliteState = newState;}
-    DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo);
+    DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const;
 
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
     uint32_t GetRefCount() const {return m_refCount.load();}
@@ -333,11 +330,14 @@ public:
     //! @return Id will be invalid if this element does not have a parent element
     DgnElementId GetParentId() const {return m_parentId;}
 
-    //! Get the category of the element held by this element.
+    //! Get the category of this DgnElement.
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
 
-    //! Get the code (business key) of the element held by this element.
+    //! Get the code (business key) of this DgnElement.
     Utf8CP GetCode() const {return m_code.c_str();}
+
+    //! Set the code of this DgnElement.
+    void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
 
     //! Return a default code given a class name and a DgnElementId.
     //! @note DgnElement::_GenerateDefaultCode calls this for its default implementation.
@@ -350,11 +350,6 @@ public:
     //! Decrement the reference count of this DgnElement. When the reference count goes to zero, the element becomes "garbage" and may be reclaimed later.
     //! @note This call must always follow a previous call to #AddRef.
     uint32_t Release() const {return _Release();}
-
-    //! Add this DgnElement to its DgnModel.
-    //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
-    //! @see EditElementHandle::ReplaceInModel for how to update an existing element in its DgnModel.
-    DGNPLATFORM_EXPORT DgnModelStatus AddToModel();
 
     /// @name Element Properties
     //@{
@@ -391,12 +386,6 @@ public:
     //! @note The result may be invalid, since the item class is optional
     ElementItemKey GetItemKey() const {return GetItemClassId().IsValid()? ElementItemKey(GetItemClassId(), GetElementId()): ElementItemKey(ECN::ECClassId(), GetElementId());}
 
-    //! Get the handler that generated the ElementGeom
-#ifdef WIP_ITEM_HANDLER
-    DGNPLATFORM_EXPORT ElementItemHandler& GetItemHandler() const;
-#endif
-
-    //! Get a copy of the ElementItem associated with this element, if any.
     //! @return a pointer to a read-only instance that holds the ElementItem's properties, or nullptr if the element has no Item.
     //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
     //! @see GetItemP, SetItem, RemoveItem
@@ -415,7 +404,7 @@ public:
     //! will hold multiple instances if the element has more than aspect of the specified class.
     //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
     //! @see GetItemcp for a direct way to access the ElementItem.
-    //! @see GetAspectsP, SetAspect, RemoveAspect
+    //! @see GetAspectsP, AddAspect, RemoveAspect
     DGNPLATFORM_EXPORT bvector<ECN::IECInstanceCP> GetAspects(DgnClassId aspectClass) const;
 
     //! Get writable copies of all existing or pending ElementAspects of the specified class that are associated with this element.
@@ -425,7 +414,7 @@ public:
     //! @note GetAspectsP returns instances that can be used to read and/or modify the aspects' properties.
     //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
     //! @see GetItemP for a direct way to access the ElementItem.
-    //! @see GetAspects, SetAspect, RemoveAspect, CancelAspectChange
+    //! @see GetAspects, AddAspect, RemoveAspect, CancelAspectChange
     DGNPLATFORM_EXPORT bvector<ECN::IECInstanceP> GetAspectsP(DgnClassId aspectClass);
 
     //! Set the ElementItem associated with this element.
@@ -450,7 +439,7 @@ public:
     //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
     //! @see SetItem for a direct way to insert or update the ElementItem.
     //! @see GetAspectsP, CancelAspectChange, RemoveAspect
-    DGNPLATFORM_EXPORT void SetAspect(ECN::IECInstanceR instance);
+    DGNPLATFORM_EXPORT void AddAspect(ECN::IECInstanceR instance);
 
     //! Specify that an aspect of this element should be deleted.
     //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.
@@ -460,7 +449,6 @@ public:
     //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
     //! @see RemoveItem for a direct way to delete the ElementItem.
     DGNPLATFORM_EXPORT void RemoveAspect(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
-
     //@}
 };
 

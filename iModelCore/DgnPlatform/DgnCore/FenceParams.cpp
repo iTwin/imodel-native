@@ -673,8 +673,8 @@ struct FenceAcceptContext : public ViewContext
     DEFINE_T_SUPER(ViewContext)
 private:
     FenceAcceptOutput   m_output;
-    bset<DgnElementCP>  m_contents;         // Need to ensure uniqueness for multiple passes (cut/forward/back, etc.)
-    bool                m_collectContents;  // true for BuildAgenda, false for AcceptElement...
+    DgnElementIdSet     m_contents;
+    bool                m_collectContents;  // true for GetContents, false for AcceptElement...
     DgnViewportP        m_nonVisibleViewport;
 
 protected:
@@ -838,7 +838,7 @@ virtual StatusInt _VisitElement (GeometricElementCR element) override
     m_output.OnNewElement (); // Initialize accept status for top-level element...
 
     if (SUCCESS == T_Super::_VisitElement (element) && m_output.GetCurrentAccept ())
-        m_contents.insert(&element);
+        m_contents.insert(element.GetElementId());
 
     m_output.OnNewElement (); // Clear abort status and continue checking next top-level element...
 
@@ -850,8 +850,7 @@ virtual StatusInt _VisitElement (GeometricElementCR element) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual StatusInt _VisitDgnModel (DgnModelP inDgnModel) override
     {
-    // NOTE: ElementAgenda should be changed to a single DgnDb ElementIdSet; so it's not useful allowing a DgnTool to override this check.
-    //       Always ignore elements that are not from the context's target project...
+    // Always ignore elements that are not from the context's target dgnDb...
     if (&inDgnModel->GetDgnDb () != &GetDgnDb ())
         return ERROR;
 
@@ -894,7 +893,7 @@ bool            AcceptCurveVector (CurveVectorCR curves, FenceParamsP fp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   BuildAgenda (FenceParamsP fp, ElementAgendaR agenda)
+BentleyStatus   GetContents (FenceParamsP fp, DgnElementIdSet& contents)
     {
     m_viewport = fp->GetViewport ();
 
@@ -934,7 +933,7 @@ BentleyStatus   BuildAgenda (FenceParamsP fp, ElementAgendaR agenda)
     if (m_contents.empty ())
         return ERROR;
 
-    agenda.Insert (m_contents);
+    contents = m_contents;
 
     return SUCCESS;
     }
@@ -948,7 +947,7 @@ bool            FenceParams::IsCameraOn () const {return m_camera;}
 double          FenceParams::GetFocalLength () const {return m_focalLength;}
 ClipVectorPtr   FenceParams::GetClipVector () const {return m_clip;}
 FenceClipMode   FenceParams::GetClipMode () const {return m_clipMode;}
-DgnViewportP       FenceParams::GetViewport () const {BeAssert (m_viewport && "Fence viewport must not be NULL"); return m_viewport;}
+DgnViewportP    FenceParams::GetViewport () const {BeAssert (m_viewport && "Fence viewport must not be NULL"); return m_viewport;}
 DgnModelP       FenceParams::GetDgnModel () const {BeAssert (m_viewport && "Fence viewport must not be NULL"); return m_viewport ? m_viewport->GetViewController ().GetTargetModel () : NULL;}
 TransformP      FenceParams::GetTransform () {return &m_transform;}
 void            FenceParams::SetOverlapMode (bool val) {m_overlapMode = val;}
@@ -2675,7 +2674,7 @@ static void     calculateSegmentIntersections (FenceParamsR fp, ICurvePrimitive*
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     flushPartialCurve (ElementAgendaP inside, ElementAgendaP outside, CurveVectorR curveVector, GeometricElementCR element, bool isInside)
+static void     flushPartialCurve (DgnElementPtrVec* inside, DgnElementPtrVec* outside, CurveVectorR curveVector, GeometricElementCR element, bool isInside)
     {
     if (curveVector.empty ())
         return;
@@ -2704,7 +2703,7 @@ static void     flushPartialCurve (ElementAgendaP inside, ElementAgendaP outside
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP outside, GeometricElementCR element)
+void FenceParams::ParseAcceptedElement (DgnElementPtrVec* inside, DgnElementPtrVec* outside, GeometricElementCR element)
     {
     // TODO: Look into pushing the fence clip onto the output and having SimplifyViewDrawGeom do the clipping...
 #if defined (NEEDS_WORK_DGNITEM)
@@ -2732,7 +2731,9 @@ void FenceParams::ParseAcceptedElement (ElementAgendaP inside, ElementAgendaP ou
         if (!context.AcceptCurveVector (*curveVector, &tmpFp))
             return;
 
-        inside->Insert(&element);
+        DgnElementPtr copy = element.Duplicate();
+
+        inside->push_back(copy);
         return;
         }
 
@@ -2847,9 +2848,9 @@ bool            FenceParams::AcceptElement (GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   FenceParams::BuildAgenda (ElementAgendaR agenda)
+BentleyStatus   FenceParams::GetContents (DgnElementIdSet& contents)
     {
     FenceAcceptContext context;
 
-    return context.BuildAgenda (this, agenda);
+    return context.GetContents (this, contents);
     }

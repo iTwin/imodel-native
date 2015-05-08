@@ -545,7 +545,7 @@ DG_INLINE int           SnapContext::GetSnapDivisor() {return m_snapDivisor;}
 
 DG_INLINE DgnPlatformLib::Host& DgnPlatformLib::GetHost() {return *static_cast<DgnPlatformLib::Host*> (g_hostForThread.GetValueAsPointer());}
 
-DG_INLINE void          IDrawElementAgenda::DrawElementAgenda (ElementAgendaR agenda, DgnDrawMode drawMode, DrawPurpose purpose) {_DrawElementAgenda (agenda, drawMode, purpose);}
+//DG_INLINE void          IDrawElementAgenda::DrawElementAgenda (ElementAgendaR agenda, DgnDrawMode drawMode, DrawPurpose purpose) {_DrawElementAgenda (agenda, drawMode, purpose);}
 DG_INLINE Utf8StringCR                  Material::GetName () const                  { return m_name; }
 DG_INLINE Utf8StringR                   Material::GetNameR ()                       { return m_name; }
 DG_INLINE Utf8StringCR                  Material::GetPalette () const               { return m_palette; }
