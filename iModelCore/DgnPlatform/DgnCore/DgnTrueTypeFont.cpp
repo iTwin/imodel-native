@@ -91,7 +91,7 @@ DRange2d DgnTrueTypeGlyph::_GetRange() const
             {
             m_range.low.x = 0.0;
             m_range.low.y = 0.0;
-            m_range.high.x = (m_face->glyph->metrics.horiAdvance / (double)m_face->units_per_EM);
+            m_range.high.x = (m_face->glyph->metrics.horiAdvance / (64.0 * (double)m_face->units_per_EM));
             m_range.high.y = 1.0;
             }
         }
@@ -115,10 +115,10 @@ DRange2d DgnTrueTypeGlyph::_GetExactRange() const
             }
         else
             {
-            m_exactRange.low.x = (m_face->glyph->metrics.horiBearingX / (double)m_face->units_per_EM);
-            m_exactRange.high.y = (m_face->glyph->metrics.horiBearingY / (double)m_face->units_per_EM);
-            m_exactRange.low.y = (m_exactRange.high.y - (m_face->glyph->metrics.height / (double)m_face->units_per_EM));
-            m_exactRange.high.x = (m_exactRange.low.x + (m_face->glyph->metrics.width / (double)m_face->units_per_EM));
+            m_exactRange.low.x = (m_face->glyph->metrics.horiBearingX / (64.0 * (double)m_face->units_per_EM));
+            m_exactRange.high.y = (m_face->glyph->metrics.horiBearingY / (64.0 * (double)m_face->units_per_EM));
+            m_exactRange.low.y = (m_exactRange.high.y - (m_face->glyph->metrics.height / (64.0 * (double)m_face->units_per_EM)));
+            m_exactRange.high.x = (m_exactRange.low.x + (m_face->glyph->metrics.width / (64.0 * (double)m_face->units_per_EM)));
             }
         }
 
@@ -567,7 +567,8 @@ BentleyStatus DgnTrueTypeFont::GetTrueTypeGlyphDataDirect(bvector<Byte>& data, d
     data.resize(dataSize);
     decomposeOutline(ttGlyph->GetFace()->glyph->outline, &data[0], dataSize);
 
-    scaleFactor = 64.0;
+    // ftPosToFIXED, used by our decomposition functions, already takes out the 64.0 to increase precision at that level.
+    scaleFactor = (double)ttGlyph->GetFace()->units_per_EM;
 
     return SUCCESS;
     }
@@ -578,15 +579,6 @@ BentleyStatus DgnTrueTypeFont::GetTrueTypeGlyphDataDirect(bvector<Byte>& data, d
 BentleyStatus DgnTrueTypeFont::ComputeAdvanceWidths(T_DoubleVectorR advanceWidths, FT_Face face, uint32_t const* ucs4Chars, size_t numChars) const
     {
     // Currently only supports unidirectional, left-to-right text. Need to consider libraries like harfbuzz, pango, and cairo for complex and bidirectional scripts.
-    //FT_Set_Pixel_Sizes(face, face->units_per_EM, 0);
-    FT_Size_RequestRec sizeRequest;
-    memset(&sizeRequest, 0, sizeof(sizeRequest));
-    sizeRequest.type = FT_SIZE_REQUEST_TYPE_SCALES;
-    sizeRequest.width = face->units_per_EM * 64;
-    sizeRequest.height = face->units_per_EM * 64;
-    if (FT_Err_Ok != FT_Request_Size(face, &sizeRequest))
-        return ERROR;
-
     for (size_t iChar = 0; iChar < numChars; ++iChar)
         {
         FT_UInt glyphIndex = FT_Get_Char_Index(face, ucs4Chars[iChar]);
@@ -610,7 +602,7 @@ BentleyStatus DgnTrueTypeFont::ComputeAdvanceWidths(T_DoubleVectorR advanceWidth
 
         // Freetype normally exposes lengths as "26.6 fractional pixel" units. This means they're integers made of a 26-bit integer mantissa, and a 6-bit fractional part. In other words, all coordinates are multiplied by 64.
         // This allows an integer to represent sub-pixel positions. The goal of this function is to operate in a 0..1 nominal space, so divide.
-        advanceWidths.push_back((face->glyph->advance.x / (double)face->units_per_EM) + (kerning.x / (double)face->units_per_EM));
+        advanceWidths.push_back((face->glyph->advance.x / (64.0 * (double)face->units_per_EM)) + (kerning.x / (64.0 * (double)face->units_per_EM)));
         }
 
     return SUCCESS;
