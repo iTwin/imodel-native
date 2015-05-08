@@ -49,8 +49,8 @@ DgnECSymbolProvider::DgnECSymbolProvider()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnECSymbolProvider::RegisterSymbolProvider (IECSymbolProviderCR provider)
     {
-    if (m_symbolProviders.end() == std::find_if (m_symbolProviders.begin(), m_symbolProviders.end(), [&](IECSymbolProviderCP existing) { return existing == &provider; }))
-        m_symbolProviders.push_back (&provider);
+    if (m_symbolProviders.end() == std::find_if(m_symbolProviders.begin(), m_symbolProviders.end(), [&] (IECSymbolProviderCP existing) { return existing == &provider; }))
+        m_symbolProviders.push_back(&provider);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -60,7 +60,7 @@ void DgnECSymbolProvider::UnregisterSymbolProvider (IECSymbolProviderCR provider
     {
     auto found = std::find_if (m_symbolProviders.begin(), m_symbolProviders.end(), [&](IECSymbolProviderCP existing) { return existing == &provider; });
     if (found != m_symbolProviders.end())
-        m_symbolProviders.erase (found);
+        m_symbolProviders.erase(found);
     }
 
 /*---------------------------------------------------------------------------------**//**
