@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnColors_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -74,7 +74,7 @@ TEST_F(DgnColorsTest, InsertTrueColor)
     DgnColors& colorTable = project->Colors();
 
     ColorDef colorDef (255, 254, 253);
-    DgnTrueColorId colorId = colorTable.InsertColor(colorDef, "TestName1", "TestBook1");
+    DgnTrueColorId colorId = colorTable.Insert(colorDef, "TestName1", "TestBook1");
 
     EXPECT_TRUE(colorId.IsValid());
     EXPECT_EQ(colorId.GetValue(), colorTable.FindMatchingColor(colorDef).GetValue());

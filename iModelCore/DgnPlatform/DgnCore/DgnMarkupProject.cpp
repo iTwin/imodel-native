@@ -704,7 +704,7 @@ DgnViewAssociationData::CheckResults RedlineModel::CheckAssociation (DgnDbR dgnP
 
     DgnViewAssociationData::CheckResults viewResults (GetDgnMarkupProject()->CheckAssociation (dgnProject, assocData));
 
-    if (assocData.GetViewId().IsValid() && !dgnProject.Views().QueryViewById (assocData.GetViewId()).IsValid())
+    if (assocData.GetViewId().IsValid() && !dgnProject.Views().QueryView (assocData.GetViewId()).IsValid())
         {
         viewResults.ViewNotFound = true;
         }
@@ -1744,7 +1744,7 @@ ViewController* RedlineViewController::Create (DgnDbR project, DgnViewId viewId)
     auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
     if (markupProject == NULL)
         return NULL;
-    auto rdlView = markupProject->Views().QueryViewById (viewId);
+    auto rdlView = markupProject->Views().QueryView (viewId);
     auto rdlModel = markupProject->OpenRedlineModel (rdlView.GetBaseModelId());
     if (rdlModel == NULL)
         return NULL;
@@ -1767,7 +1767,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView (RedlineModelR rdlMod
     DgnClassId classId(project->Schemas().GetECClassId("dgn","RedlineView"));
     DgnViews::View view (DgnViewType::Sheet, classId, rdlModel.GetModelId(), rdlModel.GetModelName(), NULL, DgnViewSource::Generated);
 
-    auto result = rdlModel.GetDgnMarkupProject()->Views().InsertView (view);
+    auto result = rdlModel.GetDgnMarkupProject()->Views().Insert(view);
     if (BE_SQLITE_OK != result)
         return NULL;
 
@@ -1934,7 +1934,7 @@ ViewControllerPtr PhysicalRedlineViewController::Create (DgnViewType viewType, U
     auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
     if (markupProject == NULL)
         return NULL;
-    auto rdlView = markupProject->Views().QueryViewById (viewId);
+    auto rdlView = markupProject->Views().QueryView (viewId);
     auto rdlModel = markupProject->OpenRedlineModel (rdlView.GetBaseModelId());
     if (rdlModel == NULL)
         return NULL;

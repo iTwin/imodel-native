@@ -347,7 +347,7 @@ DgnTrueColorId DgnColors::FindMatchingColor(ColorDef color) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnColors::QueryColorById (ColorDef& color, Utf8StringP name, Utf8StringP book, DgnTrueColorId id) const
+BentleyStatus DgnColors::QueryColor(ColorDef& color, Utf8StringP name, Utf8StringP book, DgnTrueColorId id) const
     {
     Statement stmt;
     stmt.Prepare (m_dgndb, "SELECT Value,Name,Book FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Id=?");
@@ -385,7 +385,7 @@ BentleyStatus DgnColors::QueryColorByName(ColorDef& color, Utf8StringCR name, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTrueColorId DgnColors::InsertColor (ColorDef color, Utf8CP name, Utf8CP book)
+DgnTrueColorId DgnColors::Insert(ColorDef color, Utf8CP name, Utf8CP book)
     {
     DgnTrueColorId newId;
 

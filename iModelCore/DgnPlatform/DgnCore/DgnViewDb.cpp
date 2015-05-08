@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnViews::InsertView (View& entry)
+DbResult DgnViews::Insert(View& entry)
     {
     entry.m_viewId.Invalidate();
     m_dgndb.GetNextRepositoryBasedId (entry.m_viewId, DGN_TABLE(DGN_CLASSNAME_View), "Id");
@@ -38,7 +38,7 @@ DbResult DgnViews::InsertView (View& entry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnViews::UpdateView(View const& entry)
+DbResult DgnViews::Update(View const& entry)
     {
     Statement stmt;
     stmt.Prepare (m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_View) " SET ViewType=?,Name=?,Descr=?,Source=?,BaseModel=?,ECClassId=? WHERE Id=?");
@@ -57,7 +57,7 @@ DbResult DgnViews::UpdateView(View const& entry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnViews::DeleteView(DgnViewId viewId)
+DbResult DgnViews::Delete(DgnViewId viewId)
     {
     Statement stmt;
     stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_View) " WHERE Id=?");
@@ -68,7 +68,7 @@ DbResult DgnViews::DeleteView(DgnViewId viewId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViews::View DgnViews::QueryViewById (DgnViewId id) const
+DgnViews::View DgnViews::QueryView(DgnViewId id) const
     {
     Statement stmt;
     stmt.Prepare (m_dgndb, "SELECT Name,ViewType,Descr,Source,BaseModel,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_View) " WHERE Id=?");

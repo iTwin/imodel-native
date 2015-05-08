@@ -130,7 +130,7 @@ uint32_t DgnElement::_Release() const
         {
         // add to the DgnFile's unreferenced element count
         GetDgnDb().Elements().OnUnreferenced(*this);
-        return  0;
+        return 0;
         }
 
     // is not in the pool, just delete it
@@ -580,10 +580,7 @@ DgnModelStatus GeometricElement::_InsertInDb()
     if (DGNMODEL_STATUS_NoGeometry == stat)
         return DGNMODEL_STATUS_Success;
 
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    return DoInsertOrUpdate(*stmt);
+    return (DGNMODEL_STATUS_Success != stat) ? stat : DoInsertOrUpdate(*stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -603,10 +600,7 @@ DgnModelStatus GeometricElement::_UpdateInDb()
     if (DGNMODEL_STATUS_NoGeometry == stat)
         return DGNMODEL_STATUS_Success;
 
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    return DoInsertOrUpdate(*stmt);
+    return (DGNMODEL_STATUS_Success != stat) ? stat : DoInsertOrUpdate(*stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -698,11 +692,7 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
         return nullptr;
         }
 
-    PhysicalElementPtr elementPtr = new PhysicalElement(CreateParams(model, PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
-#ifdef WIP_ITEM_HANDLER // item class id is optional, so there is no need to set it to the default dgn.ElementItem classid
-    elementPtr->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(model.GetDgnDb()));
-#endif
-    return elementPtr;
+    return new PhysicalElement(CreateParams(model, PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -930,7 +920,6 @@ DgnModelStatus DgnElement2d::_SwapWithModified(DgnElementR other)
     return DGNMODEL_STATUS_Success;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1117,7 +1106,6 @@ BentleyStatus CachedInstance::ApplyScheduledChange(InstanceUpdateOutcome& outcom
         }
 
     // write the item.
-
     if (ApplyScheduledReplace(db) == BSISUCCESS)
         {
         outcome = InstanceUpdateOutcome::Updated;
@@ -1487,7 +1475,7 @@ BentleyStatus CachedInstance::ApplyScheduledChangesToItem(DgnElementR el)
         return BSIERROR;
         }
 
-    //  Ensure that the proposed item has the correct ID
+    //  Ensure that the proposed item has the correct Id
     setInstanceId(*m_instance, el.GetElementId());
 
     if (m_changeType == InstanceChangeType::Write)

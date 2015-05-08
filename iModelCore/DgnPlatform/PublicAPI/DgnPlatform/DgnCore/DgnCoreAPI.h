@@ -21,7 +21,6 @@
 #include "Material.h"
 #include "ElementHandler.h"
 #include "DgnDomain.h"
-#include "ElementHandle.h"
 #include "ElementGeometry.h"
 #include "ElementGraphics.h"
 #include "FenceParams.h"

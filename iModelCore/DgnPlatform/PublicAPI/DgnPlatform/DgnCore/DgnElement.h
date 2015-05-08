@@ -250,6 +250,7 @@ public:
     void SetHilited(ElementHiliteState newState) const {m_flags.m_hiliteState = newState;}
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const;
 
+    void SetParentId(DgnElementId parent) {m_parentId=parent;}
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
     uint32_t GetRefCount() const {return m_refCount.load();}
     void SetDirtyFlags(DirtyFlags flags) {m_flags.m_dirtyFlag |= flags;}

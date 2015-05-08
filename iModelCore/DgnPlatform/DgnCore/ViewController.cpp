@@ -90,7 +90,7 @@ ViewControllerPtr ViewHandler::_SupplyController(DgnDbR db, DgnViews::View const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr DgnViews::LoadViewController(DgnViewId viewId, FillModels fillModels) const
     {
-    DgnViews::View view = QueryViewById(viewId);
+    DgnViews::View view = QueryView(viewId);
     if (!view.IsValid())
         return nullptr;
 
@@ -295,7 +295,7 @@ void ViewController::_RestoreFromSettings (JsonValueCR settings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::Load()
     {
-    DgnViews::View entry = m_dgndb.Views().QueryViewById(m_viewId);
+    DgnViews::View entry = m_dgndb.Views().QueryView(m_viewId);
     if (!entry.IsValid())
         {
         BeAssert (false);
@@ -365,10 +365,10 @@ DbResult ViewController::Save()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::SaveAs (Utf8CP newName)
     {
-    DgnViews::View newRow(m_dgndb.Views().QueryViewById(m_viewId));
+    DgnViews::View newRow(m_dgndb.Views().QueryView(m_viewId));
     newRow.SetName(newName);
 
-    DbResult rc = m_dgndb.Views().InsertView(newRow);
+    DbResult rc = m_dgndb.Views().Insert(newRow);
     if (BE_SQLITE_OK != rc)
         return rc;
 

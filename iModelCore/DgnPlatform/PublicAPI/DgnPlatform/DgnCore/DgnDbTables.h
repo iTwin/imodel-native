@@ -354,7 +354,7 @@ public:
     //! @param[in] row The definition of the category to create.
     //! @param[in] the appearance for the default SubCategory for the new category
     //! @return BE_SQLITE_OK if the category was added; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified DgnCategoryId and/or code is already used.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertCategory(Category& row, SubCategory::Appearance const&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Category& row, SubCategory::Appearance const&);
 
     //! Remove a category from the DgnDb.
     //! @param[in] id the id of the category to remove.
@@ -363,13 +363,13 @@ public:
     //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
     //! know for sure that the category is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
     //! @note it is illegal to delete the default category. Any attempt to do so will fail.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteCategory(DgnCategoryId id);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnCategoryId id);
 
     //! Change properties of a category.
     //! @param[in] row The new category data to apply.
     //! @return BE_SQLITE_OK if the update was applied; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified code is used
     //! by another category in the table.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateCategory(Category const& row);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Category const& row);
 
     //! Get the Id of a Category from its code.
     //! @param[in] categoryCode The code of the category of interest.
@@ -389,12 +389,12 @@ public:
     //! Get the information about a category from its Id.
     //! @param[in] id The Id of the category of interest.
     //! @return The data for the category. Call IsValid() on the result to determine whether this method was successful.
-    DGNPLATFORM_EXPORT Category QueryCategoryById(DgnCategoryId id) const;
+    DGNPLATFORM_EXPORT Category Query(DgnCategoryId id) const;
 
     //! Look up a category by code.
     //! @param[in] categoryCode the category code to look up
     //! @return The data for the category. Call IsValid() on the result to determine whether this method was successful.
-    Category QueryCategoryByCode(Utf8CP categoryCode) const {return QueryCategoryById(QueryCategoryId(categoryCode));}
+    Category QueryCategoryByCode(Utf8CP categoryCode) const {return Query(QueryCategoryId(categoryCode));}
 
     //! Get an iterator over the categories in this DgnDb.
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
@@ -574,19 +574,19 @@ public:
 
 public:
     //! Add a new view to the database.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertView(View&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(View&);
 
     //! Delete an existing view from the database.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteView(DgnViewId viewId);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnViewId viewId);
 
     //! Change the contents of an existing view in the database.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateView(View const&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(View const&);
 
     //! Get the DgnViewId for a view, by name
     DGNPLATFORM_EXPORT DgnViewId QueryViewId(Utf8CP viewName) const;
 
     //! Get the data for a view, by DgnViewId
-    DGNPLATFORM_EXPORT View QueryViewById(DgnViewId id) const;
+    DGNPLATFORM_EXPORT View QueryView(DgnViewId id) const;
 
     enum class FillModels{No=0, Yes=1};
     DGNPLATFORM_EXPORT ViewControllerPtr LoadViewController(DgnViewId id, FillModels fillModels=FillModels::No) const;
@@ -1087,7 +1087,7 @@ public:
     //! @param[in] bookname The name of the colorbook (or nullptr).
     //! @note For a given bookname, there may not be more than one color with the same name.
     //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
-    DGNPLATFORM_EXPORT DgnTrueColorId InsertColor(ColorDef color, Utf8CP name=0, Utf8CP bookname=0);
+    DGNPLATFORM_EXPORT DgnTrueColorId Insert(ColorDef color, Utf8CP name=0, Utf8CP bookname=0);
 
     //! Find the first DgnTrueColorId that has a given color value.
     //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
@@ -1100,7 +1100,7 @@ public:
     //! @param[out] bookname The bookName for the colorId. May be nullptr.
     //! @param[in] colorId the true color id to query
     //! @return SUCCESS if colorId was found in the table and the values are valid. ERROR otherwise.
-    DGNPLATFORM_EXPORT BentleyStatus QueryColorById(ColorDef& color, Utf8StringP name, Utf8StringP bookname, DgnTrueColorId colorId) const;
+    DGNPLATFORM_EXPORT BentleyStatus QueryColor(ColorDef& color, Utf8StringP name, Utf8StringP bookname, DgnTrueColorId colorId) const;
 
     //! Get color by name and bookname.
     //! @param[out] color The RGB value for the color
@@ -1580,6 +1580,6 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT void PurgeUnused();
-}; // DgnLinks
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
