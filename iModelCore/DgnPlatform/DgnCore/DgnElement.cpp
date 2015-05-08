@@ -768,9 +768,6 @@ DgnModelStatus DgnElement2d::_LoadFromDb()
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    if (IsUndisplayed()) // has no geometry, and therefore no placement
-        return DGNMODEL_STATUS_Success;
-
     CachedStatementPtr stmt;
     GetDgnDb().Elements().GetStatement(stmt, "SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
     stmt->BindId(1, m_elementId);
