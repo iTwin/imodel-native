@@ -263,8 +263,6 @@ void GeometricElement::SaveGeomStream(GeomStreamCP stream)
 void DgnElement::MarkAsDeleted()
     {
     SetDeletedRef();
-    SetDirtyFlags(DgnElement::DIRTY_Both);
-
     SetHilited(HILITED_None);
     m_dgnModel.ElementChanged(*this, ELEMREF_CHANGE_REASON_Delete);
     }
@@ -323,8 +321,6 @@ void DgnElement::UnDeleteElement()
         return;
 
     ClearDeletedRef();
-    SetDirtyFlags(DIRTY_Both);
-
 #if defined (NEEDS_WORK_ELEMDSCR_REWORK)
     m_dgnModel.InsertRangeElement(_ToGeometricElement());
 #endif
@@ -658,18 +654,12 @@ DgnModelStatus DgnElement3d::_LoadFromDb()
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    if (IsUndisplayed()) // has no geometry, and therefore no placement
-        return DGNMODEL_STATUS_Success;
-
     CachedStatementPtr stmt;
     GetDgnDb().Elements().GetStatement(stmt, "SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        {
-        BeAssert(false);
-        return DGNMODEL_STATUS_ElementReadError;
-        }
+        return DGNMODEL_STATUS_Success; // it is legal to have an element with no geometry.
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
@@ -786,10 +776,7 @@ DgnModelStatus DgnElement2d::_LoadFromDb()
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        {
-        BeAssert(false);
-        return DGNMODEL_STATUS_ElementReadError;
-        }
+        return DGNMODEL_STATUS_Success; // it is legal to have an element with no geometry.
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
@@ -931,7 +918,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::Duplicate() const
+DgnElementPtr DgnElement::MakeWriteableCopy() const
     {
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(m_dgnModel, m_classId, m_categoryId, m_code.c_str(), m_elementId, m_parentId));
     newEl->_InitFrom(*this);
@@ -1074,7 +1061,7 @@ BentleyStatus CachedInstance::ApplyScheduledReplace(DgnDbR db)
 BentleyStatus CachedInstance::ApplyScheduledInsert(DgnDbR db)
     {
     ECInstanceId newId;
-    ECInstanceId* useNewId = ECInstanceIdHelper::FromString(newId, m_instance->GetInstanceId().c_str())? &newId: nullptr;
+    ECInstanceId* useNewId = ECInstanceIdHelper::FromString(newId, m_instance->GetInstanceId().c_str()) ? &newId : nullptr;
 
     ECInstanceKey newkey;
     ECInstanceInserter inserter(db, m_instance->GetClass());

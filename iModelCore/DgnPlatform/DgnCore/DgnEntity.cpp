@@ -89,7 +89,7 @@ DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnElements::UpdateParentElementId(DgnElementId parentElementId, DgnElementId childElementId)
+BentleyStatus DgnElements::UpdateParentId(DgnElementId parentElementId, DgnElementId childElementId)
     {
     if (!parentElementId.IsValid() || !childElementId.IsValid())
         return BentleyStatus::ERROR;
@@ -129,14 +129,13 @@ BentleyStatus DgnElements::InsertElementGroupsElements(DgnElementKeyCR groupElem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    03/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnElements::QueryParentElementId(DgnElementId childElementId) const
+DgnElementId DgnElements::QueryParentId(DgnElementId childElementId) const
     {
     if (!childElementId.IsValid())
         return DgnElementId();
 
     CachedStatementPtr statementPtr;
     m_dgndb.GetCachedStatement(statementPtr, "SELECT ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-
     statementPtr->BindId(1, childElementId);
 
     return (BE_SQLITE_ROW != statementPtr->Step()) ? DgnElementId() : statementPtr->GetValueId<DgnElementId>(0);

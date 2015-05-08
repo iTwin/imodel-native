@@ -991,12 +991,12 @@ public:
     //! Query the last modified time from the specified element
     DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
 
-    //! Insert an ElementOwnsChildElements relationship between the specified parent element and child element
-    DGNPLATFORM_EXPORT BentleyStatus UpdateParentElementId(DgnElementId parentElementId, DgnElementId childElementId);
+    //! Update the ParentId of a DgnElement
+    DGNPLATFORM_EXPORT BentleyStatus UpdateParentId(DgnElementId parentId, DgnElementId childElement);
 
     //! Query the ElementOwnsChildElements relationship to find the parent element of the specified (child) element.
     //! @return the returned DgnElementId will be invalid if the specified element has no parent
-    DGNPLATFORM_EXPORT DgnElementId QueryParentElementId(DgnElementId childElementId) const;
+    DGNPLATFORM_EXPORT DgnElementId QueryParentId(DgnElementId childElementId) const;
 
     //! Insert an ElementGroupsElements relationship between the specified element and the member element
     DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey);
