@@ -21,8 +21,10 @@ struct TextStringStyle : public RefCountedBase
 {
 //__PUBLISH_SECTION_END__
 private:
-    DEFINE_T_SUPER(RefCountedBase)
+    DEFINE_T_SUPER(RefCountedBase);
+    friend struct TextString;
     friend struct TextStyleInterop;
+    friend struct TextStringPersistence;
 
     ColorDef m_color;
     DgnFontCP m_font;
@@ -35,6 +37,7 @@ private:
     // **** ADDING MEMBERS? Consider updating: TextStyleInterop ****
     // *************************************************************
 
+    void Reset();
     void CopyFrom(TextStringStyleCR);
 
 public:
@@ -99,7 +102,8 @@ struct TextString : public RefCountedBase
 //__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase);
-    
+    friend struct TextStringPersistence;
+
     Utf8String m_text;
     TextStringStyle m_style;
     DPoint3d m_origin;
@@ -111,6 +115,7 @@ private:
     bvector<DgnGlyph::T_Id> m_glyphIds;
     bvector<DPoint3d> m_glyphOrigins;
 
+    void Reset();
     void CopyFrom(TextStringCR);
     void Update() const;
     void Update();

@@ -3,6 +3,9 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
+
+using namespace flatbuffers;
 
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
@@ -19,6 +22,7 @@ TextStringStyle::TextStringStyle() :
     m_isUnderlined(false),
     m_size({ 0.0, 0.0 })
     {
+    // Making additions or changes? Please check CopyFrom and Reset.
     }
 
 //---------------------------------------------------------------------------------------
@@ -29,12 +33,27 @@ TextStringStyle::TextStringStyle(TextStringStyleCR rhs) : T_Super(rhs) { CopyFro
 TextStringStyleR TextStringStyle::operator=(TextStringStyleCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this; }
 void TextStringStyle::CopyFrom(TextStringStyleCR rhs)
     {
+    // Making additions or changes? Please check constructor and Reset.
     m_color = rhs.m_color;
     m_font = rhs.m_font;
     m_isBold = rhs.m_isBold;
     m_isItalic = rhs.m_isItalic;
     m_isUnderlined = rhs.m_isUnderlined;
     m_size = rhs.m_size;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     01/2015
+//---------------------------------------------------------------------------------------
+void TextStringStyle::Reset()
+    {
+    // Making additions or changes? Please check constructor and CopyFrom.
+    m_color.SetAllColors(0);
+    m_font = &DgnFontManager::GetLastResortTrueTypeFont();
+    m_isBold = false;
+    m_isItalic = false;
+    m_isUnderlined = false;
+    m_size.Zero();
     }
 
 //---------------------------------------------------------------------------------------
@@ -75,6 +94,7 @@ TextString::TextString() :
     T_Super(),
     m_isValid(false)
     {
+    // Making additions or changes? Please check CopyFrom and Reset.
     m_origin.Zero();
     m_orientation.InitIdentity();
     }
@@ -87,6 +107,7 @@ TextString::TextString(TextStringCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
 TextStringR TextString::operator=(TextStringCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this; }
 void TextString::CopyFrom(TextStringCR rhs)
     {
+    // Making additions or changes? Please check constructor and Reset.
     m_text = rhs.m_text;
     m_style = rhs.m_style;
     m_origin = rhs.m_origin;
@@ -99,6 +120,23 @@ void TextString::CopyFrom(TextStringCR rhs)
     m_glyphOrigins = rhs.m_glyphOrigins;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     01/2015
+//---------------------------------------------------------------------------------------
+void TextString::Reset()
+    {
+    // Making additions or changes? Please check constructor and CopyFrom.
+    m_text.clear();
+    m_style.Reset();
+    m_origin.Zero();
+    m_orientation.InitIdentity();
+
+    m_isValid = false;
+    m_range = DRange2d::NullRange();
+    m_glyphs.clear();
+    m_glyphIds.clear();
+    m_glyphOrigins.clear();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015
 //---------------------------------------------------------------------------------------
@@ -391,4 +429,130 @@ void TextString::DrawTextAdornments(ViewContextR context) const
     context.CookDisplayParams();
     output.DrawLineString3d(2, pts, NULL);
     context.PopTransformClip();
+    }
+
+static const uint8_t CURRENT_STYLE_MAJOR_VERSION = 1;
+static const uint8_t CURRENT_STYLE_MINOR_VERSION = 0;
+static const uint8_t CURRENT_MAJOR_VERSION = 1;
+static const uint8_t CURRENT_MINOR_VERSION = 0;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& textStringOffset, FlatBufferBuilder& encoder, TextStringCR text, DgnDbR db)
+    {
+    // I prefer to ensure encoders write default values instead of it being unknown later if it's really a default value, or if the encoder missed it and it's bad data.
+    TemporaryForceDefaults forceDefaults(encoder, true);
+
+    //.............................................................................................
+    if (nullptr == text.m_style.m_font)
+        return ERROR;
+
+    DgnFontId fontId = db.Fonts().AcquireId(*text.m_style.m_font);
+    if (!fontId.IsValid())
+        return ERROR;
+
+    FB::TextStringStyleBuilder fbStyle(encoder);
+    fbStyle.add_majorVersion(CURRENT_STYLE_MAJOR_VERSION);
+    fbStyle.add_minorVersion(CURRENT_STYLE_MINOR_VERSION);
+    fbStyle.add_color(text.m_style.m_color.GetValue());
+    fbStyle.add_fontId(fontId.GetValue());
+    fbStyle.add_isBold(text.m_style.m_isBold);
+    fbStyle.add_isItalic(text.m_style.m_isItalic);
+    fbStyle.add_isUnderlined(text.m_style.m_isUnderlined);
+    fbStyle.add_height(text.m_style.m_size.y);
+    fbStyle.add_widthFactor(text.m_style.m_size.x / text.m_style.m_size.y);
+
+    Offset<FB::TextStringStyle> fbStyleOffset = fbStyle.Finish();
+
+    //.............................................................................................
+    Offset<String> textValueOffset = encoder.CreateString(text.m_text);
+    Transform textTransform = Transform::FromMatrixAndFixedPoint(text.m_orientation, text.m_origin);
+
+    FB::TextStringBuilder fbText(encoder);
+    fbText.add_majorVersion(CURRENT_MAJOR_VERSION);
+    fbText.add_minorVersion(CURRENT_STYLE_MINOR_VERSION);
+    fbText.add_text(textValueOffset);
+    fbText.add_style(fbStyleOffset);
+    fbText.add_transform(reinterpret_cast<FB::TextStringTransform*>(const_cast<TransformP>(&textTransform)));
+
+    textStringOffset = fbText.Finish();
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus TextStringPersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, TextStringCR text, DgnDbR db)
+    {
+    FlatBufferBuilder encoder;
+
+    //.............................................................................................
+    Offset<FB::TextString> textOffset;
+    if (SUCCESS != EncodeAsFlatBuf(textOffset, encoder, text, db))
+        return ERROR;
+
+    //.............................................................................................
+    encoder.Finish(textOffset);
+    buffer.resize(encoder.GetSize());
+    memcpy(&buffer[0], encoder.GetBufferPointer(), encoder.GetSize());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::TextString const& fbText, DgnDbCR db)
+    {
+    text.Reset();
+    
+    if (!fbText.has_majorVersion() || fbText.majorVersion() > CURRENT_MAJOR_VERSION)
+        return ERROR;
+    
+    if (!fbText.has_style() || !fbText.has_text())
+        return ERROR;
+
+    if (!fbText.style()->has_majorVersion() || fbText.style()->majorVersion() > CURRENT_STYLE_MAJOR_VERSION)
+        return ERROR;
+
+    if (!fbText.style()->has_fontId() || !fbText.style()->has_height())
+        return ERROR;
+
+    //.............................................................................................
+    Transform textTransform = Transform::FromIdentity();
+    if (fbText.has_transform())
+        textTransform = *(TransformCP)fbText.transform();
+
+    text.SetText(fbText.text()->c_str());
+    textTransform.GetTranslation(text.m_origin);
+    textTransform.GetMatrix(text.m_orientation);
+
+    //.............................................................................................
+    FB::TextStringStyle const& fbStyle = *fbText.style();
+    TextStringStyle& style = text.m_style;
+
+    if (fbStyle.has_color()) style.SetColor(ColorDef(fbStyle.color()));
+    style.SetFont(T_HOST.GetFontAdmin().ResolveFont(db.Fonts().FindFontById(DgnFontId(fbStyle.fontId()))));
+    if (fbStyle.has_isBold()) style.SetIsBold(0 != fbStyle.isBold());
+    if (fbStyle.has_isItalic()) style.SetIsItalic(0 != fbStyle.isItalic());
+    if (fbStyle.has_isUnderlined()) style.SetIsUnderlined(0 != fbStyle.isUnderlined());
+    style.m_size.y = fbStyle.height();
+    
+    if (fbStyle.has_widthFactor())
+        style.m_size.x = style.m_size.x * fbStyle.widthFactor();
+    else
+        style.m_size.x = style.m_size.y;
+    
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, ByteCP buffer, size_t numBytes, DgnDbCR db)
+    {
+    FB::TextString const* fbText = GetRoot<FB::TextString>(buffer);
+    return DecodeFromFlatBuf(text, *fbText, db);
     }
