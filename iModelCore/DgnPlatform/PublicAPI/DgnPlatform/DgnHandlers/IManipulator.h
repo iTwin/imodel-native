@@ -9,8 +9,6 @@
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#include <DgnPlatform/DgnCore/ElementHandle.h>
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*=================================================================================**//**

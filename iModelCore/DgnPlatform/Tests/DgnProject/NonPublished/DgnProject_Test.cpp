@@ -122,7 +122,7 @@ TEST(DgnDb,AddDeleteLine)
         
         projectName.SetNameUtf8 (project->GetDbFileName());
 
-        DgnModelP defaultModel = project->Models().GetModelById(project->Models().QueryFirstModelId());
+        DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
         defaultModel->FillModel();
 
         size_t nLinesCreated = 0;
@@ -143,7 +143,7 @@ TEST(DgnDb,AddDeleteLine)
         openProject (project, projectName, BeSQLite::Db::OPEN_ReadWrite);
         ASSERT_TRUE( project != NULL);
 
-        DgnModelP defaultModel = project->Models().GetModelById(project->Models().QueryFirstModelId());
+        DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
         ASSERT_TRUE( defaultModel != NULL );
         ASSERT_TRUE( defaultModel->FillModel() == SUCCESS );
 
@@ -164,7 +164,7 @@ TEST(DgnDb,AddDeleteLine)
         openProject (project, projectName, BeSQLite::Db::OPEN_Readonly);
         ASSERT_TRUE( project != NULL);
 
-        DgnModelP defaultModel = project->Models().GetModelById(project->Models().QueryFirstModelId());
+        DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
         ASSERT_TRUE( defaultModel != NULL );
         ASSERT_TRUE( defaultModel->FillModel() == SUCCESS );
 
@@ -255,7 +255,7 @@ TEST (DgnDb, CheckStandardProperties)
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("ModelProps",        "dgn_Model"     ),  0) );
 
     //  Use the model API to access model properties and check their values
-    DgnModelP defaultModel = project->Models().GetModelById(project->Models().QueryFirstModelId());
+    DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
     DgnModel::Properties const& minfo = defaultModel->GetProperties();
@@ -391,7 +391,7 @@ TEST(DgnDb, LoadModelThroughProject)
     DgnModelId modelId = modelTable.QueryModelId("Model2d");
     ASSERT_TRUE (modelId.IsValid());
 
-    DgnModelP model = project->Models().GetModelById (modelId);
+    DgnModelP model = project->Models().GetModel (modelId);
     ASSERT_TRUE (NULL != model);
 
     //Just one more check to see that we got the right model
@@ -655,7 +655,7 @@ struct DgnProjectPackageTest : public testing::Test
             properties.modelCount = 0;
             for (DgnModels::Iterator::Entry const& entry: modelTable.MakeIterator())
                 {
-                DgnModelP model = project->Models().GetModelById(entry.GetModelId());
+                DgnModelP model = project->Models().GetModel(entry.GetModelId());
                 model->FillModel();
                 properties.elmCount += model->CountElements();
                 properties.modelCount++;

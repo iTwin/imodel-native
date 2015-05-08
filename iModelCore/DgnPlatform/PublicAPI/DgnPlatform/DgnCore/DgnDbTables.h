@@ -354,7 +354,7 @@ public:
     //! @param[in] row The definition of the category to create.
     //! @param[in] the appearance for the default SubCategory for the new category
     //! @return BE_SQLITE_OK if the category was added; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified DgnCategoryId and/or code is already used.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertCategory(Category& row, SubCategory::Appearance const&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Category& row, SubCategory::Appearance const&);
 
     //! Remove a category from the DgnDb.
     //! @param[in] id the id of the category to remove.
@@ -363,13 +363,13 @@ public:
     //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
     //! know for sure that the category is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
     //! @note it is illegal to delete the default category. Any attempt to do so will fail.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteCategory(DgnCategoryId id);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnCategoryId id);
 
     //! Change properties of a category.
     //! @param[in] row The new category data to apply.
     //! @return BE_SQLITE_OK if the update was applied; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified code is used
     //! by another category in the table.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateCategory(Category const& row);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Category const& row);
 
     //! Get the Id of a Category from its code.
     //! @param[in] categoryCode The code of the category of interest.
@@ -389,12 +389,12 @@ public:
     //! Get the information about a category from its Id.
     //! @param[in] id The Id of the category of interest.
     //! @return The data for the category. Call IsValid() on the result to determine whether this method was successful.
-    DGNPLATFORM_EXPORT Category QueryCategoryById(DgnCategoryId id) const;
+    DGNPLATFORM_EXPORT Category Query(DgnCategoryId id) const;
 
     //! Look up a category by code.
     //! @param[in] categoryCode the category code to look up
     //! @return The data for the category. Call IsValid() on the result to determine whether this method was successful.
-    Category QueryCategoryByCode(Utf8CP categoryCode) const {return QueryCategoryById(QueryCategoryId(categoryCode));}
+    Category QueryCategoryByCode(Utf8CP categoryCode) const {return Query(QueryCategoryId(categoryCode));}
 
     //! Get an iterator over the categories in this DgnDb.
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
@@ -574,19 +574,19 @@ public:
 
 public:
     //! Add a new view to the database.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertView(View&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(View&);
 
     //! Delete an existing view from the database.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteView(DgnViewId viewId);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnViewId viewId);
 
     //! Change the contents of an existing view in the database.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateView(View const&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(View const&);
 
     //! Get the DgnViewId for a view, by name
     DGNPLATFORM_EXPORT DgnViewId QueryViewId(Utf8CP viewName) const;
 
     //! Get the data for a view, by DgnViewId
-    DGNPLATFORM_EXPORT View QueryViewById(DgnViewId id) const;
+    DGNPLATFORM_EXPORT View QueryView(DgnViewId id) const;
 
     enum class FillModels{No=0, Yes=1};
     DGNPLATFORM_EXPORT ViewControllerPtr LoadViewController(DgnViewId id, FillModels fillModels=FillModels::No) const;
@@ -752,23 +752,17 @@ public:
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
     //! instance of the appropriate model type. If the model is already loaded, a pointer to the existing DgnModel is returned.
     //! @param[in] modelId The Id of the model to load.
-    DGNPLATFORM_EXPORT DgnModelP GetModelById(DgnModelId modelId);
+    DGNPLATFORM_EXPORT DgnModelP GetModel(DgnModelId modelId);
+
+    template<class T> T* Get(DgnModelId id) {return dynamic_cast<T*>(GetModel(id));}
 
     //! Query if the specified model has already been loaded.
     //! @return a pointer to the model if found, or nullptr if the model has not been loaded.
     //! @see GetLoadedModels
     //! @see LoadModelById
-    DGNPLATFORM_EXPORT DgnModelP FindModelById(DgnModelId modelId);
+    DGNPLATFORM_EXPORT DgnModelP FindModel(DgnModelId modelId);
 
-    //! Get the models currently loaded
-    //! Example:
-    //! \code
-    //! for (DgnModelP model : db.Models().GetLoadedModels())
-    //!     {
-    //!       ...
-    //!     }
-    //! \endcode
-    //! @see LoadModelById
+    //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
     DGNPLATFORM_EXPORT BentleyStatus DeleteModel(DgnModelId id);
@@ -810,7 +804,7 @@ public:
 
     //! Insert a new model.
     //! @return DGNMODEL_STATUS_Success if the new model was successfully create or error otherwise.
-    DGNPLATFORM_EXPORT DgnModelStatus InsertNewModel(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
+    DGNPLATFORM_EXPORT DgnModelStatus Insert(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
 
     DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModelId);
 
@@ -911,9 +905,11 @@ private:
     void OnChangesetCanceled(TxnSummary const&);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
     void ReleaseAndCleanup(DgnElementCPtr& element);
-
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
+
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnModelStatus* stat=nullptr);
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnModelStatus* stat=nullptr);
 
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
@@ -946,10 +942,15 @@ public:
     DGNPLATFORM_EXPORT DgnElementId GetHighestElementId();
     DGNPLATFORM_EXPORT DgnElementId MakeNewElementId();
 
-    //! Get a DgnElement from this DgnDb by its Id. 
+    //! Get a DgnElement from this DgnDb by its DgnElementId. 
     //! @remarks The element is loaded if necessary.
     //! @return Invalid if the element does not exist.
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
+
+    //! Get a DgnElement by its DgnElementId, and dynamic_cast the result to a specific subclass of DgnElement.
+    //! This tempated method is merely a shortcut to calling GetElement and dynamic_cast'ing the result to the class of the 
+    //! specified template argument. 
+    template<class T> RefCountedCPtr<T> Get(DgnElementId id) const {return dynamic_cast<T const*>(GetElement(id).get());}
 
     //! Look up an element within this DgnDb by its Id.
     //! @return nullptr if the element does not exist or is not currently loaded.
@@ -957,11 +958,18 @@ public:
 
     //! Insert the supplied DgnElement into this DgnDb.
     //! @param[in] element The element to add.
+    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if result is valid, error status otherwise.
     //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
-    DGNPLATFORM_EXPORT DgnModelStatus InsertElement(DgnElementR element);
+    template<class T> RefCountedCPtr<T> Insert(RefCountedPtr<T>& element, DgnModelStatus* stat=nullptr) 
+        {RefCountedCPtr<T> result=(T const*)InsertElement(*element.get(), stat).get(); if (result.IsValid()){element=nullptr;} return result;}
 
-    DGNPLATFORM_EXPORT DgnModelStatus UpdateElement(DgnElementR);
+    template<class T> RefCountedCPtr<T> Update(RefCountedPtr<T>& element, DgnModelStatus* stat=nullptr) 
+        {RefCountedCPtr<T> result=(T const*)UpdateElement(*element.get(), stat).get(); if (result.IsValid()){element=nullptr;} return result;}
+
     DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementR);
+
+    //! Delete the element for the specified DgnElementId.
+    DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
 
     HeapZone& GetHeapZone() {return m_heapZone;}
 
@@ -974,9 +982,6 @@ public:
     //! @see ECInstanceKey::IsValid
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId) const;
 
-    //! Delete the element for the specified DgnElementId.
-    DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
-
     //! Update the last modified timestamp of the specified element
     //! @note Updates to the element class automatically cause the last modified time to be updated (via a database trigger).
     //! This method should only be used to indicate that aspect of the element has changed and that change should be
@@ -986,12 +991,12 @@ public:
     //! Query the last modified time from the specified element
     DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
 
-    //! Insert an ElementOwnsChildElements relationship between the specified parent element and child element
-    DGNPLATFORM_EXPORT BentleyStatus UpdateParentElementId(DgnElementId parentElementId, DgnElementId childElementId);
+    //! Update the ParentId of a DgnElement
+    DGNPLATFORM_EXPORT BentleyStatus UpdateParentId(DgnElementId parentId, DgnElementId childElement);
 
     //! Query the ElementOwnsChildElements relationship to find the parent element of the specified (child) element.
     //! @return the returned DgnElementId will be invalid if the specified element has no parent
-    DGNPLATFORM_EXPORT DgnElementId QueryParentElementId(DgnElementId childElementId) const;
+    DGNPLATFORM_EXPORT DgnElementId QueryParentId(DgnElementId childElementId) const;
 
     //! Insert an ElementGroupsElements relationship between the specified element and the member element
     DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey);
@@ -1082,7 +1087,7 @@ public:
     //! @param[in] bookname The name of the colorbook (or nullptr).
     //! @note For a given bookname, there may not be more than one color with the same name.
     //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
-    DGNPLATFORM_EXPORT DgnTrueColorId InsertColor(ColorDef color, Utf8CP name=0, Utf8CP bookname=0);
+    DGNPLATFORM_EXPORT DgnTrueColorId Insert(ColorDef color, Utf8CP name=0, Utf8CP bookname=0);
 
     //! Find the first DgnTrueColorId that has a given color value.
     //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
@@ -1095,7 +1100,7 @@ public:
     //! @param[out] bookname The bookName for the colorId. May be nullptr.
     //! @param[in] colorId the true color id to query
     //! @return SUCCESS if colorId was found in the table and the values are valid. ERROR otherwise.
-    DGNPLATFORM_EXPORT BentleyStatus QueryColorById(ColorDef& color, Utf8StringP name, Utf8StringP bookname, DgnTrueColorId colorId) const;
+    DGNPLATFORM_EXPORT BentleyStatus QueryColor(ColorDef& color, Utf8StringP name, Utf8StringP bookname, DgnTrueColorId colorId) const;
 
     //! Get color by name and bookname.
     //! @param[out] color The RGB value for the color
@@ -1575,6 +1580,6 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT void PurgeUnused();
-}; // DgnLinks
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -117,6 +117,8 @@ DGNPLATFORM_TYPEDEFS (GeometricElement)
 DGNPLATFORM_TYPEDEFS (GradientSymb)
 DGNPLATFORM_TYPEDEFS (IDrawGeom)
 DGNPLATFORM_TYPEDEFS (IElemTopology)
+DGNPLATFORM_TYPEDEFS (IRedrawOperation)
+DGNPLATFORM_TYPEDEFS (IRedrawAbort)
 DGNPLATFORM_TYPEDEFS (IViewDraw)
 DGNPLATFORM_TYPEDEFS (IViewOutput)
 DGNPLATFORM_TYPEDEFS (LineStyleInfo)
@@ -566,6 +568,23 @@ struct Frustum
     void Invalidate() {memset(this, 0, sizeof(*this));}
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
+};
+
+//=======================================================================================
+//! A list of DgnElementDescr's.
+// @bsiclass                                                    Keith.Bentley   02/14
+//=======================================================================================
+struct DgnElementPtrVec : bvector<DgnElementPtr>
+{
+    const_iterator Find(DgnElementCR val) const
+        {
+        for (auto it=begin(); it!=end(); ++it)
+            {
+            if (it->get() == &val)
+                return it;
+            }
+        return end(); // not found
+        }
 };
 
 //=======================================================================================

@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnCategories::InsertCategory (DgnCategories::Category& row, DgnCategories::SubCategory::Appearance const& appearance)
+DbResult DgnCategories::Insert(DgnCategories::Category& row, DgnCategories::SubCategory::Appearance const& appearance)
     {
     if (row.IsValid() || !IsValidCode(row.GetCode()))
         {
@@ -43,7 +43,7 @@ DbResult DgnCategories::InsertCategory (DgnCategories::Category& row, DgnCategor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnCategories::UpdateCategory (Category const& row)
+DbResult DgnCategories::Update(Category const& row)
     {
     if (!row.IsValid() || !IsValidCode(row.GetCode()))
         return  BE_SQLITE_ERROR;
@@ -66,7 +66,7 @@ DbResult DgnCategories::UpdateCategory (Category const& row)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnCategories::DeleteCategory (DgnCategoryId categoryId)
+DbResult DgnCategories::Delete(DgnCategoryId categoryId)
     {
     Statement stmt;
     stmt.Prepare (m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Category) " WHERE Id=?");
@@ -122,7 +122,7 @@ DgnCategoryId DgnCategories::QueryHighestId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategories::Category DgnCategories::QueryCategoryById (DgnCategoryId id) const
+DgnCategories::Category DgnCategories::Query(DgnCategoryId id) const
     {
     if (!id.IsValid())
         return Category();
@@ -367,12 +367,17 @@ void DgnCategories::SubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
     m_invisible = val.get(APPEARANCE_Invisible, false).asBool();
     m_color  = ColorDef(val[APPEARANCE_Color].asUInt());
     m_weight = val[APPEARANCE_Weight].asUInt();
-    m_style  = DgnStyleId(val[APPEARANCE_Style].asInt64());
+    if (val.isMember(APPEARANCE_Style))
+        m_style  = DgnStyleId(val[APPEARANCE_Style].asInt64());
+    else
+        m_style.Invalidate();
     m_displayPriority = val[APPEARANCE_Priority].asInt();
     m_transparency = val[APPEARANCE_Transparency].asDouble();
 
     if (val.isMember(APPEARANCE_Material))
         m_material = DgnMaterialId(val[APPEARANCE_Material].asInt64());
+    else
+        m_material.Invalidate();
     }
 
 /*---------------------------------------------------------------------------------**//**

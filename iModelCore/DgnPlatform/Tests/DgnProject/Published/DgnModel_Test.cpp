@@ -35,7 +35,7 @@ struct DgnModelTests : public testing::Test
             {
             DgnModels& modelTable =  m_dgndb->Models();
             DgnModelId id = modelTable.QueryModelId(name);
-            m_modelP =  modelTable.GetModelById(id);
+            m_modelP =  modelTable.GetModel(id);
             if (m_modelP)
                 m_modelP->FillModel();
             }
@@ -75,7 +75,7 @@ TEST_F(DgnModelTests, GetName)
     EXPECT_TRUE(status == DGNMODEL_STATUS_Success)<<"Failed to create model";
     DgnModelId id = modelTable.QueryModelId(newName.c_str());
     ASSERT_TRUE(id.IsValid());
-    m_modelP =  modelTable.GetModelById (id);
+    m_modelP =  modelTable.GetModel (id);
     Utf8String nameToVerify(m_modelP->GetModelName());
     EXPECT_TRUE(newName.CompareTo(nameToVerify.c_str())==0);
     }
