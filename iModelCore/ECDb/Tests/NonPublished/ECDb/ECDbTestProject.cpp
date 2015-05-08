@@ -1086,6 +1086,9 @@ bool ECDbTestUtility::CompareECInstances (IECInstanceCR expected, IECInstanceCR 
             return false;
         }
 
+    if (&expected.GetClass() == &actual.GetClass() && expected.GetClass().GetPropertyCount(true) == 0 && actual.GetClass().GetPropertyCount(true) == 0)
+        return true;
+    
     ECValuesCollectionPtr propertyValuesExpected = ECValuesCollection::Create (expected);
     if (propertyValuesExpected.IsNull()) 
         return false;

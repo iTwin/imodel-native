@@ -765,18 +765,14 @@ TEST(ECDbInstances, UpdateECInstances)
         updateInst->SetInstanceId (importedInstance->GetInstanceId().c_str());
 
         ECInstanceUpdater updater (db, ecClass);
-        //empty classes cannot be updated
-        if (ecClass.GetPropertyCount (true) > 0)
-            ASSERT_TRUE (updater.IsValid ());
-        else
-            {
-            ASSERT_FALSE (updater.IsValid ());
-            return;
-            }
+        ASSERT_TRUE (updater.IsValid ());
         
         // update the instance with new data.
         auto updateStatus = updater.Update (*updateInst);
         ASSERT_EQ (SUCCESS, updateStatus);
+
+        if (ecClass.GetPropertyCount() == 0)
+            return;
 
         // now read back the instance from db
         ecStatement.Reset();

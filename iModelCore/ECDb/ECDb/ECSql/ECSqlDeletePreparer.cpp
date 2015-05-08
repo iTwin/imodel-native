@@ -43,7 +43,8 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
         StepTaskType::Delete,
         ctx,
         classMap.GetECDbMap ().GetECDbR (),
-        classMap);
+        classMap,
+        classNameExp->IsPolymorphic ());
     if (status != ECSqlStepTaskCreateStatus::NothingToDo)
         {
         if (status != ECSqlStepTaskCreateStatus::Success)
