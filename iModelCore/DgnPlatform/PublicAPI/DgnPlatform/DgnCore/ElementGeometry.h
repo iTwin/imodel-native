@@ -314,6 +314,27 @@ DGNPLATFORM_EXPORT ~ElementGeometryCollection ();
 typedef RefCountedPtr<ElementGeometryBuilder> ElementGeometryBuilderPtr;
 
 //=======================================================================================
+// ElementGeometryBuilder provides methods for setting up an element's GeomStream and Placement(2d/3d).
+// An element's geometry should always be stored relative to its placement. A placement defines the
+// element to world transform.
+//
+// Example: To create a 10m line defined by its start point and located at 5,5,0 you could call Create and specify a 
+//          placement origin of 5,5,0 and append a line curve primitive with start point 0,0,0 and endpoint 10,0,0.
+//          This result could also be achieve more simply by using CreateWorld and supplying a line from 5,5,0 to 15,5,0.
+//
+//          A reason to use Create instead of CreateWorld is to specify a placement that is more meaningful to 
+//          the application. The application might want to set things up so that the element origin was the line’s 
+//          midpoint instead of the start point. In this case the line curve primitive would be created with start 
+//          point -5,0,0 and end point 5,0,0. To create a line parallel to the y axis instead of x, specify a yaw angle of 90, etc.
+//
+// An element can be "moved" simply by updating it's placement. It may be convenient for the the application to initially specify
+// an identity placement, append the geometry, and then just update the placement to reflect the element’s world coordinates and
+// orientation. It’s not expected for the placement to remain identity unless the element is really at the origin.
+//
+// For repeated geometry that can be shared in a single GeomStream or by multiple GeomStreams, a DgnGeomPart should be
+// created. When appending a DgnGeomPartId you specify the part geometry to element transform in order to position the 
+// part's geometry relative to the other geometry/parts display by the element.
+//
 //! @bsiclass
 //=======================================================================================
 struct ElementGeometryBuilder : RefCountedBase
@@ -349,14 +370,14 @@ DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);
 
 DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
 DGNPLATFORM_EXPORT bool Append (ElemDisplayParamsCR);
-DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCP geomToElement = nullptr);
-DGNPLATFORM_EXPORT bool Append (ElementGeometryCR, TransformCP geomToElement = nullptr);
-DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR, TransformCP geomToElement = nullptr);
-DGNPLATFORM_EXPORT bool Append (CurveVectorCR, TransformCP geomToElement = nullptr);
-DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR, TransformCP geomToElement = nullptr);
-DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR, TransformCP geomToElement = nullptr);
-DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR, TransformCP geomToElement = nullptr);
-DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, TransformCP geomToElement = nullptr, IFaceMaterialAttachmentsCP attachments = nullptr);
+DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement);
+DGNPLATFORM_EXPORT bool Append (ElementGeometryCR);
+DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
+DGNPLATFORM_EXPORT bool Append (CurveVectorCR);
+DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR);
+DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR);
+DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR);
+DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle = 0.0);

@@ -1389,7 +1389,7 @@ bvector<IECInstanceP>  DgnElement::GetAspectsP(DgnClassId aspectClassId)      {r
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-void DgnElement::SetAspect(IECInstanceR aspectInstance)
+void DgnElement::AddAspect(IECInstanceR aspectInstance)
     {
     DgnClassId aspectClassId(aspectInstance.GetClass().GetId());
 
