@@ -22,13 +22,13 @@
 #include <string>
 #include <BeSQLite/DownloadAdmin.h>
 #include "BeSQLiteProfileManager.h"
+#include <prg.h>
 
 #include "seven/Types.h"
 #include "seven/Lzma2Enc.h"
 #include "seven/Lzma2Dec.h"
 #undef min
 #undef max
-
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
@@ -504,7 +504,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
             }
         }
 
-    BeAssert((SQLITE_OK == checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
+    BeAssert((BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
 
     // attempt the commit/release or rollback
     DbResult rc;
@@ -538,12 +538,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::Db() : m_embeddedFiles(*this), m_appData(*this)
-    {
-    m_dbFile = nullptr;
-    m_statements = nullptr;
-    }
-
+Db::Db() : m_embeddedFiles(*this), m_appData(*this), m_dbFile(nullptr), m_statements(nullptr) {}
 Db::~Db() {DoCloseDb();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -1554,7 +1549,7 @@ DbResult Db::SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::QueryRepositoryLocalValue (Utf8CP name, Utf8StringR value) const
+DbResult Db::QueryRepositoryLocalValue(Utf8CP name, Utf8StringR value) const
     {
     Statement stmt;
     stmt.Prepare (*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
@@ -5860,6 +5855,7 @@ ZipErrors LzmaEncoder::Compress(bvector<Byte>& out, void const *input, uint32_t 
 //---------------------------------------------------------------------------------------
 DbResult Db::SaveCreationDate()
     {
+    SavePropertyString(Properties::BeSQLiteBuild(), REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
     return SavePropertyString(Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToUtf8String());
     }
 

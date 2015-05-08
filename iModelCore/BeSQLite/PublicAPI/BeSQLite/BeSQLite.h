@@ -3289,6 +3289,8 @@ struct Properties
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::COMPRESS_PROPERTY_No);}
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
     static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
+    //! Build version of BeSqlite (e.g. 00.00.00.00) used to create this database; useful for forensic diagnostics.
+    static PropSpec BeSQLiteBuild()     {return PropSpec("BeSQLiteBuild");}
     };
 
 END_BENTLEY_SQLITE_NAMESPACE
