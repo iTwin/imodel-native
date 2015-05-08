@@ -110,13 +110,13 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
 {
 public:
-    enum DirtyFlags {DIRTY_ElemData = 1<<0, DIRTY_Aspects = 1<<1, DIRTY_Both = (DIRTY_ElemData|DIRTY_Aspects)};
     friend struct DgnElements;
     friend struct DgnModel;
     friend struct ElemIdTree;
     friend struct EditElementHandle;
     friend struct ElementHandler;
 
+    //! Parameters for creating new DgnElements
     struct CreateParams
     {
     DgnModelR       m_model;
@@ -129,7 +129,6 @@ public:
                 m_model(model), m_classId(classId), m_categoryId(category), m_code(code), m_id(id), m_parentId(parent) {}
 
     void SetCode(Utf8CP code) {m_code = code;}
-    void SetElementId(DgnElementId id) {m_id=id;}
     void SetParentId(DgnElementId parent) {m_parentId=parent;}
     };
 
@@ -156,14 +155,12 @@ protected:
         uint32_t m_lockHeld:1;
         uint32_t m_editable:1;
         uint32_t m_inPool:1;
-        uint32_t m_dirtyFlag:2;
         uint32_t m_deletedRef:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hiliteState:3;
         uint32_t m_undisplayed:1;
         uint32_t m_mark1:1;                        // used by applications
         uint32_t m_mark2:1;                        // used by applications
-        uint32_t m_elFlags:4;                      // used by element type specific code
         Flags() {memset(this, 0, sizeof(*this));}
         };
 
@@ -180,7 +177,6 @@ protected:
 
     AppDataEntry* FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry, HeapZoneR zone) const;
 
-    void ClearDirty() {m_flags.m_dirtyFlag = 0;}
     void SetDeletedRef() {m_flags.m_deletedRef = true;}
     void ClearDeletedRef() {m_flags.m_deletedRef = false;}
     void SetInPool(bool val) {m_flags.m_inPool = val;}
@@ -238,22 +234,16 @@ public:
     bool Is3d() const {return nullptr != _ToElement3d();}
     bool IsInPool() const {return m_flags.m_inPool;}
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}
-    bool IsAnyDirty() const {return 0 != m_flags.m_dirtyFlag;}
-    bool IsElemDirty()const {return 0 != (DIRTY_ElemData & m_flags.m_dirtyFlag);}
     void SetMark1(bool yesNo) const {if (m_flags.m_mark1==yesNo) return; m_flags.m_mark1 = yesNo;}
     void SetMark2(bool yesNo) const {if (m_flags.m_mark2==yesNo) return; m_flags.m_mark2 = yesNo;}
-    void SetElFlags(int flags) {m_flags.m_elFlags = flags;}
     bool IsMarked1() const {return true == m_flags.m_mark1;}
     bool IsMarked2() const {return true == m_flags.m_mark2;}
-    int GetElFlags() const {return m_flags.m_elFlags;}
     ElementHiliteState IsHilited() const {return (ElementHiliteState) m_flags.m_hiliteState;}
     void SetHilited(ElementHiliteState newState) const {m_flags.m_hiliteState = newState;}
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const;
 
-    void SetParentId(DgnElementId parent) {m_parentId=parent;}
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
     uint32_t GetRefCount() const {return m_refCount.load();}
-    void SetDirtyFlags(DirtyFlags flags) {m_flags.m_dirtyFlag |= flags;}
 
     DGNPLATFORM_EXPORT void ForceElemChanged(bool qvCacheCleared, DgnElementChangeReason);
     DGNPLATFORM_EXPORT void ForceElemChangedPost();
@@ -271,9 +261,10 @@ public:
     //! Determine whether this DgnElement is an element that once existed, but has been deleted.
     bool IsDeleted() const {return m_flags.m_deletedRef;}
 
-    static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
-
-    DGNPLATFORM_EXPORT virtual DgnElementPtr Duplicate() const;
+    //! Make a writeable copy of this DgnElement so that the copy may be edited.
+    //! @return a DgnElementPtr that holds the copy of this element.
+    //! Only one copy at a time may exist. If another copy is extant, this method will return an invalid DgnElementPtr.
+    DGNPLATFORM_EXPORT DgnElementPtr MakeWriteableCopy() const;
 
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
@@ -327,6 +318,9 @@ public:
     //! Get the DgnElementId for the parent of this element
     //! @return Id will be invalid if this element does not have a parent element
     DgnElementId GetParentId() const {return m_parentId;}
+
+    //! Change the parent of this DgnElement
+    void SetParentId(DgnElementId parent) {m_parentId=parent;}
 
     //! Get the category of this DgnElement.
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
@@ -448,6 +442,8 @@ public:
     //! @see RemoveItem for a direct way to delete the ElementItem.
     DGNPLATFORM_EXPORT void RemoveAspect(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
     //@}
+
+    static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
 };
 
 //=======================================================================================
