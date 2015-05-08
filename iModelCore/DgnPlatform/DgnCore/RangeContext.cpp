@@ -1030,6 +1030,7 @@ StatusInt DgnViewport::ComputeViewRange (DRange3dR range, FitViewParams& params)
     return SUCCESS;
     }
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Marc.Bedard  01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1061,6 +1062,7 @@ StatusInt       DgnViewport::ComputeFittedElementRange (DRange3dR rangeUnion, IE
     
     return context.GetElemRange()->GetRange (rangeUnion);
     }
+#endif
 
 /*=================================================================================**//**
 * Context to caclulate the range of all elements within a view.

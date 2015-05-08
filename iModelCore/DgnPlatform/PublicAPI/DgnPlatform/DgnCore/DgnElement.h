@@ -351,11 +351,6 @@ public:
     //! @note This call must always follow a previous call to #AddRef.
     uint32_t Release() const {return _Release();}
 
-    //! Add this DgnElement to its DgnModel.
-    //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
-    //! @see EditElementHandle::ReplaceInModel for how to update an existing element in its DgnModel.
-    DGNPLATFORM_EXPORT DgnModelStatus AddToModel();
-
     /// @name Element Properties
     //@{
 
@@ -409,7 +404,7 @@ public:
     //! will hold multiple instances if the element has more than aspect of the specified class.
     //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
     //! @see GetItemcp for a direct way to access the ElementItem.
-    //! @see GetAspectsP, SetAspect, RemoveAspect
+    //! @see GetAspectsP, AddAspect, RemoveAspect
     DGNPLATFORM_EXPORT bvector<ECN::IECInstanceCP> GetAspects(DgnClassId aspectClass) const;
 
     //! Get writable copies of all existing or pending ElementAspects of the specified class that are associated with this element.
@@ -419,7 +414,7 @@ public:
     //! @note GetAspectsP returns instances that can be used to read and/or modify the aspects' properties.
     //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
     //! @see GetItemP for a direct way to access the ElementItem.
-    //! @see GetAspects, SetAspect, RemoveAspect, CancelAspectChange
+    //! @see GetAspects, AddAspect, RemoveAspect, CancelAspectChange
     DGNPLATFORM_EXPORT bvector<ECN::IECInstanceP> GetAspectsP(DgnClassId aspectClass);
 
     //! Set the ElementItem associated with this element.
@@ -444,7 +439,7 @@ public:
     //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
     //! @see SetItem for a direct way to insert or update the ElementItem.
     //! @see GetAspectsP, CancelAspectChange, RemoveAspect
-    DGNPLATFORM_EXPORT void SetAspect(ECN::IECInstanceR instance);
+    DGNPLATFORM_EXPORT void AddAspect(ECN::IECInstanceR instance);
 
     //! Specify that an aspect of this element should be deleted.
     //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.

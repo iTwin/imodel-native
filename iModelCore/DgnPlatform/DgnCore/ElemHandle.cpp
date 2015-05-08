@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -40,4 +41,5 @@ StatusInt EditElementHandle::ReplaceInModel()
         }
     return  m_persistent->GetDgnDb().GetTxnManager().GetCurrentTxn().ReplaceElement(*this);
     }
+#endif
 

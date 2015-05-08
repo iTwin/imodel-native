@@ -520,7 +520,7 @@ BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int det
         SyncInfoChangeSet changeSet(db, (ChangeSetType::Patch==info.m_type));
         extractChangeSetBySequenceNumberDirect (changeSet, csfile, info.m_sequenceNumber);
 
-        printf ("\n\n--Changeset SequenceNumber=%llu type=%d desc=[%s] time=%ls size=%d---\n", info.m_sequenceNumber, info.m_type, info.m_description.c_str(), info.m_time.ToString().c_str(), changeSet.GetSize());
+        printf ("\n\n--Changeset SequenceNumber=%" PRIu64 " type=%d desc=[%s] time=%ls size=%d---\n", info.m_sequenceNumber, info.m_type, info.m_description.c_str(), info.m_time.ToString().c_str(), changeSet.GetSize());
 
         changeSet.Dump(db, (ChangeSetType::Patch==info.m_type), detailLevel);
         }

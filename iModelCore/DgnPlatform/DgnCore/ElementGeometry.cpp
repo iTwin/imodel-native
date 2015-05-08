@@ -2225,7 +2225,7 @@ bool ElementGeometryBuilder::Append (ElemDisplayParamsCR elParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCP geomToElement)
+bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCR geomToElement)
     {
     // NEEDSWORK: Need to get geometry to update range, etc...
     //            Should we require a placement to have been specified already?!?
@@ -2355,10 +2355,10 @@ bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom, bool deferWrite
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ElementGeometryCR geom, TransformCP geomToElement)
+bool ElementGeometryBuilder::Append (ElementGeometryCR geom)
     {
     if (m_haveLocalGeom)
-        return AppendLocal(geom, geomToElement);
+        return AppendLocal(geom, nullptr);
 
     ElementGeometryPtr geomPtr;
 
@@ -2383,16 +2383,16 @@ bool ElementGeometryBuilder::Append (ElementGeometryCR geom, TransformCP geomToE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ICurvePrimitiveCR geom, TransformCP geomToElement)
+bool ElementGeometryBuilder::Append (ICurvePrimitiveCR geom)
     {
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
 
-        if (!getRange(geom, localRange, geomToElement))
+        if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom (localRange, geomToElement);
+        OnNewGeom (localRange, nullptr);
         m_writer.Append(geom);
 
         return true;
@@ -2406,16 +2406,16 @@ bool ElementGeometryBuilder::Append (ICurvePrimitiveCR geom, TransformCP geomToE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (CurveVectorCR geom, TransformCP geomToElement)
+bool ElementGeometryBuilder::Append (CurveVectorCR geom)
     {
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
 
-        if (!getRange(geom, localRange, geomToElement))
+        if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom (localRange, geomToElement);
+        OnNewGeom (localRange, nullptr);
         m_writer.Append(geom);
 
         return true;
@@ -2429,16 +2429,16 @@ bool ElementGeometryBuilder::Append (CurveVectorCR geom, TransformCP geomToEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom, TransformCP geomToElement)
+bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom)
     {
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
 
-        if (!getRange(geom, localRange, geomToElement))
+        if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom (localRange, geomToElement);
+        OnNewGeom (localRange, nullptr);
         m_writer.Append(geom);
 
         return true;
@@ -2452,16 +2452,16 @@ bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom, TransformCP geomToE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (MSBsplineSurfaceCR geom, TransformCP geomToElement)
+bool ElementGeometryBuilder::Append (MSBsplineSurfaceCR geom)
     {
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
 
-        if (!getRange(geom, localRange, geomToElement))
+        if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom (localRange, geomToElement);
+        OnNewGeom (localRange, nullptr);
         m_writer.Append(geom);
 
         return true;
@@ -2475,16 +2475,16 @@ bool ElementGeometryBuilder::Append (MSBsplineSurfaceCR geom, TransformCP geomTo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom, TransformCP geomToElement)
+bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom)
     {
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
 
-        if (!getRange(geom, localRange, geomToElement))
+        if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom (localRange, geomToElement);
+        OnNewGeom (localRange, nullptr);
         m_writer.Append(geom);
 
         return true;
@@ -2498,16 +2498,16 @@ bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom, TransformCP geomToEle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, TransformCP geomToElement, IFaceMaterialAttachmentsCP attachments)
+bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAttachmentsCP attachments)
     {
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
 
-        if (!getRange(geom, localRange, geomToElement))
+        if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom (localRange, geomToElement);
+        OnNewGeom (localRange, nullptr);
         m_writer.Append(geom, attachments);
 
         return true;

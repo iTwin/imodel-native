@@ -169,7 +169,7 @@ $(coreObjs)HypermodelingViewController$(oext): $(DgnCoreDir)HypermodelingViewCon
 
 $(coreObjs)SectioningPhysicalViewController$(oext): $(DgnCoreDir)SectioningPhysicalViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
-$(coreObjs)DgnElementPool$(oext): $(DgnCoreDir)DgnElementPool.cpp $(DgnCoreAPISrc)DgnDb.h ${MultiCompileDepends}
+$(coreObjs)DgnElements$(oext): $(DgnCoreDir)DgnElements.cpp $(DgnCoreAPISrc)DgnDb.h ${MultiCompileDepends}
 
 $(coreObjs)DgnViewport$(oext):    $(DgnCoreDir)DgnViewport.cpp $(contextDepends) ${MultiCompileDepends}
 

@@ -97,7 +97,7 @@ public:
     DgnElementPtr Create(DgnElement::CreateParams const& params) {return _CreateInstance(params);}
 
 public:
-    //! Find the ElemenntHandler for a DgnClassId within a supplied DgnDb.
+    //! Find the ElementHandler for a DgnClassId within a supplied DgnDb.
     DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
 
 }; // Handler

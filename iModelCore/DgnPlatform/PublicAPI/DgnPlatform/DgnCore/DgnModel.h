@@ -243,13 +243,13 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);
     DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnReplaceElement(DgnElementR element, DgnElementR replacement);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnAddElement(DgnElementR element);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnUpdateElement(DgnElementCR element, DgnElementR replacement);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnInsertElement(DgnElementR element);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementR element);
     DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
-    DGNPLATFORM_EXPORT virtual void _OnAddedElement(DgnElementCR el);
+    DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementR element, bool cancel);
-    DGNPLATFORM_EXPORT virtual void _OnReplacedElement(DgnElementR element, DgnElementR original);
+    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementR element, DgnElementR original);
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
@@ -282,7 +282,6 @@ public:
     bool NotifyOnEmpty();
 
     DGNPLATFORM_EXPORT ModelHandler& GetModelHandler() const;
-    DGNPLATFORM_EXPORT DgnModelStatus ReplaceElement(DgnElementR element, DgnElementR replacement);
 
     void ModelFillComplete();
     void ElementChanged(DgnElement&, DgnElementChangeReason);

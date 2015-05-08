@@ -483,22 +483,29 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
     </ECClass>
 
-    <ECRelationshipClass typeName="ElementOwnsAspect" isDomainClass="True" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="ElementOwnsAspects" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <Source cardinality="(1,1)" polymorphic="True">
             <ECCustomAttributes>
                 <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <ECIdColumn>ElementId</ECIdColumn>
+                   <ECIdColumn>ElementId</ECIdColumn>
+                   <ECClassIdColumn>ElementClassId</ECClassIdColumn>
                 </ECDbRelationshipConstraintHint>
             </ECCustomAttributes>
             <Class class="Element" />
         </Source>
-        <Target cardinality="(0,1)" polymorphic="True">
+        <Target cardinality="(0,N)" polymorphic="True">
+            <ECCustomAttributes>
+                <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                    <ECIdColumn>AspectId</ECIdColumn>
+                    <ECClassIdColumn>AspectClassId</ECClassIdColumn>
+                </ECDbRelationshipConstraintHint>
+            </ECCustomAttributes>
             <Class class="ElementAspect" />
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <BaseClass>ElementOwnsAspect</BaseClass>
+        <BaseClass>ElementOwnsAspects</BaseClass>
         <Source cardinality="(1,1)" polymorphic="True">
             <ECCustomAttributes>
                 <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -525,7 +532,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <BaseClass>ElementOwnsAspect</BaseClass>
+        <BaseClass>ElementOwnsAspects</BaseClass>
         <Source cardinality="(1,1)" polymorphic="True">
             <ECCustomAttributes>
                 <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">

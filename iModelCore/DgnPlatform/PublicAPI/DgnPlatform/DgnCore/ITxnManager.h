@@ -202,10 +202,12 @@ public:
     //! @return SUCCESS if the element was deleted.
     DGNPLATFORM_EXPORT StatusInt DeleteElement (DgnElementP elem);
 
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     //! Replace an existing element in a model with a different one.
     //! @param[in,out] el The element to be replaced.
     //! @return SUCCESS if the element was replaced and out is non-NULL.
     DGNPLATFORM_EXPORT StatusInt ReplaceElement (EditElementHandleR el);
+#endif
     //@}
 };
 
