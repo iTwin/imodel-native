@@ -115,7 +115,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
 
     DgnElementKey InsertElement (DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
         {
-        DgnModelP model = db.Models().GetModelById(mid);
+        DgnModelP model = db.Models().GetModel(mid);
         DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
         GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
@@ -130,8 +130,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
             return DgnElementKey();
 
-        db.Elements().InsertElement(*testElement);
-        return testElement->GetElementKey();
+        return db.Elements().Insert(testElement)->GetElementKey();
         }
 
     BentleyStatus DeleteElement (DgnDbR db, DgnElementId eid)
@@ -254,7 +253,7 @@ public:
 
     DgnModelR GetDefaultModel()
         {
-        return *m_db->Models().GetModelById(m_defaultModelId);
+        return *m_db->Models().GetModel(m_defaultModelId);
         }
 
     virtual void FinalizeStatements() {}
@@ -284,7 +283,7 @@ void SetupProject (WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mo
     ASSERT_NE( nullptr ,  m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
-    DgnModelP defaultModel = m_db->Models().GetModelById(m_defaultModelId);
+    DgnModelP defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_NE( nullptr , defaultModel );
     GetDefaultModel().FillModel();
 
@@ -452,7 +451,7 @@ TEST_F (TransactionManagerTests, StreetMapModel)
     auto newModelId = StreetMapModelHandler::CreateStreetMapModel(*m_db, StreetMapModelHandler::MapService::MapQuest, StreetMapModelHandler::MapType::SatelliteImage, true);
     ASSERT_TRUE( newModelId.IsValid() );
 
-    DgnModelP model = m_db->Models().GetModelById(newModelId);
+    DgnModelP model = m_db->Models().GetModel(newModelId);
     ASSERT_NE( nullptr , model );
 
     WebMercatorModel* webmercatormodel = dynamic_cast<WebMercatorModel*>(model);

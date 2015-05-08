@@ -148,7 +148,7 @@ void SectioningViewController::_RestoreFromSettings (JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnModel* fillModel (DgnDbR project, DgnModelId mid)
     {
-    auto model = project.Models().GetModelById (mid);
+    auto model = project.Models().GetModel (mid);
     if (model == NULL)
         return NULL;
 

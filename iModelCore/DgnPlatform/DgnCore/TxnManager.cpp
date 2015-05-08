@@ -55,23 +55,6 @@ struct UndoChangeSet : ChangeSet
         }
 };
 
-//=======================================================================================
-//! for debugging, BeAssert if anyone tries to write a transactionable change while this object is on the stack.
-//! @bsiclass                                                     Keith.Bentley   03/07
-//=======================================================================================
-struct  IllegalTxnMark : IllegalTxn
-{
-private:
-    ITxnManager&    m_mgr;
-    ITxn*           m_oldTxn;
-
-public:
-    IllegalTxnMark (ITxnManager& mgr) : m_mgr(mgr) {m_oldTxn = &mgr.SetCurrentTxn (*this); mgr.GetDgnDb().ExecuteSql("pragma query_only=TRUE");}
-    ~IllegalTxnMark () {m_mgr.GetDgnDb().ExecuteSql("pragma query_only=FALSE"); m_mgr.SetCurrentTxn (*m_oldTxn);}
-};
-
-static UndoableTxn  s_undoableTxn;
-
 #define UNDO_TABLE_Entry "Entry"
 #define UNDO_TABLE_Data  "Data"
 #define UNDO_TABLE_Mark  "Mark"
@@ -251,9 +234,6 @@ ITxnManager::ITxnManager(DgnDbR project) : m_dgndb(project)
     m_inDynamics        = false;
     m_doChangePropagation = true;
     m_txnSource         = 0;
-    m_currTxn           = NULL;
-
-    SetCurrentTxn (s_undoableTxn);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -266,7 +246,6 @@ void ITxnManager::Deactivate()
 
     m_db.CloseDb();
     SetActive (false);
-    SetCurrentTxn (s_undoableTxn);
 
     m_dgndb.DropChangeTracker(UndoTracker::MyName());
     }
@@ -287,7 +266,6 @@ void ITxnManager::Activate()
     m_callRestartFunc = true;
     m_db.Open();
 
-    SetCurrentTxn (s_undoableTxn);
     SetActive (true);
 
     UndoTracker* tracker = new UndoTracker();
@@ -467,9 +445,6 @@ void ITxnManager::CheckTxnBoundary()
     undoTracker->SetIndirectChanges(true);
     BentleyStatus status = ComputeIndirectChanges(changeset);
     undoTracker->SetIndirectChanges(false);
-
-    // everything that happens from here to the end of this function is internal, not undoable
-    IllegalTxnMark txnManagerNotAvailable(*this);
 
     // *** DO NOT RETURN WITHOUT CALLING RESTART ***
 
@@ -715,11 +690,7 @@ BeSQLite::DbResult ITxnManager::ApplyChangeSetInternal(BeSQLite::ChangeSet& chan
     TxnSummary summary (m_dgndb, txnId, txnDescr, txnSource, changeset);
 
     // notify monitors that changeset is about to be applied
-    if (true)
-        {
-        IllegalTxnMark _v_v_v(*this);      // don't allow any database changes
-        T_HOST.GetTxnAdmin()._OnTxnReverse(summary, isUndo);
-        }
+    T_HOST.GetTxnAdmin()._OnTxnReverse(summary, isUndo);
 
     DbResult rc = changeset.ApplyChanges(m_dgndb);
     if (rc != BE_SQLITE_OK)
@@ -730,8 +701,6 @@ BeSQLite::DbResult ITxnManager::ApplyChangeSetInternal(BeSQLite::ChangeSet& chan
 
     if (true)
         {
-        IllegalTxnMark _v_v_v(*this);      // don't allow any database changes
-
         if (cleanup == HowToCleanUpElements::CallApplied)
             m_dgndb.Elements().OnChangesetApplied(summary);
 
@@ -1000,8 +969,6 @@ void ITxnManager::ReinstateTxn (TxnRange& revTxn, Utf8StringP redoStr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ITxnManager::ReinstateActions (RevTxn& revTxn)
     {
-    IllegalTxnMark _v_v_v(*this);      // don't allow any recursion!
-
     Utf8String redoStr;
     ReinstateTxn (revTxn.m_range, &redoStr);     // do the actual redo now.
 
@@ -1090,30 +1057,6 @@ BentleyStatus ITxnManager::SaveUndoMark(Utf8CP name)
 
     m_db.SaveMark (TxnId(m_currentTxnID-1), name);
     return  SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UndoableTxn::_CheckDgnModelForWrite (DgnModelP dgnModel)
-    {
-    if (NULL == dgnModel)
-        return DGNHANDLERS_STATUS_NoModel;
-
-    // make sure they're not trying to write to a query model.
-    if (!dgnModel->GetModelId().IsValid())
-        return  DGNMODEL_STATUS_InvalidModel;
-
-    return dgnModel->IsReadOnly() ? DGNHANDLERS_STATUS_FileReadonly : DGNHANDLERS_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ITxn::ClearReversedTxns(DgnDbR project)
-    {
-    if (m_opts.m_clearReversedTxns)
-        project.GetTxnManager().ClearReversedTxns();
     }
 
 /*---------------------------------------------------------------------------------**//**

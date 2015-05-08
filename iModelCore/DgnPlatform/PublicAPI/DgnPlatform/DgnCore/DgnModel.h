@@ -250,6 +250,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementR element, bool cancel);
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementR element, DgnElementR original);
+    DGNPLATFORM_EXPORT virtual void _OnModelFillComplete();
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
@@ -283,7 +284,6 @@ public:
 
     DGNPLATFORM_EXPORT ModelHandler& GetModelHandler() const;
 
-    void ModelFillComplete();
     void ElementChanged(DgnElement&, DgnElementChangeReason);
     DGNPLATFORM_EXPORT DgnRangeTree* GetRangeIndexP(bool create) const;
     void ReadProperties();
@@ -365,6 +365,7 @@ public:
     //! @return SUCCESS if appData was successfully added. Note that it is illegal to add or remove AppData from within
     //! any of the AppData "_On" methods. If an entry with \a key already exists, it will be dropped and replaced with \a appData.
     DGNPLATFORM_EXPORT StatusInt AddAppData(DgnModelAppData::Key const& key, DgnModelAppData* appData);
+
     //! @return SUCCESS if appData with key is found and was dropped.
     //! @remarks Calls the app data object's _OnCleanup method.
     DGNPLATFORM_EXPORT StatusInt DropAppData(DgnModelAppData::Key const& key);

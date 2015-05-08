@@ -14,7 +14,6 @@ typedef struct IDataObject    GuiDataObject;
 #include <Bentley/bvector.h>
 #include <Bentley/bset.h>
 #include "IViewOutput.h"
-#include "ElementHandle.h"
 
 #if !defined (DOCUMENTATION_GENERATOR)
 DGNPLATFORM_TYPEDEFS (IModifyElement)

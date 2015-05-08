@@ -46,7 +46,7 @@ struct CachedInstances : DgnElementAppData
     CachedInstance m_item;
     bmap<DgnClassId, bvector<CachedInstance>> m_otherAspects;
 
-    virtual void _OnCleanup(DgnElementCP host, bool unloadingModel, HeapZoneR zone) override;
+    virtual void _OnCleanup(DgnElementCP host, HeapZoneR zone) override;
 
     CachedInstances() : m_itemChecked(false) {}
     void Clear() {m_element.Clear(); m_item.Clear(); m_otherAspects.clear(); m_itemChecked=false;}
@@ -87,7 +87,7 @@ CachedInstances& CachedInstances::Get(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachedInstances::_OnCleanup(DgnElementCP host, bool unloadingModel, HeapZoneR zone)
+void CachedInstances::_OnCleanup(DgnElementCP host, HeapZoneR zone)
     {
     delete this; // *** WIP_ELEMENT_INSTANCES - use HeapZone to avoid malloc
     }
@@ -130,7 +130,7 @@ uint32_t DgnElement::_Release() const
         {
         // add to the DgnFile's unreferenced element count
         GetDgnDb().Elements().OnUnreferenced(*this);
-        return  0;
+        return 0;
         }
 
     // is not in the pool, just delete it
@@ -141,7 +141,7 @@ uint32_t DgnElement::_Release() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry, HeapZone& zone, bool cacheUnloading) const
+DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry, HeapZone& zone) const
     {
     AppDataEntry* next = thisEntry.m_next;
 
@@ -150,9 +150,8 @@ DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDa
     else
         m_appData = next;
 
-    thisEntry.ClearEntry(this, cacheUnloading, zone);
-    if (!cacheUnloading)
-        zone.Free(&thisEntry, sizeof(AppDataEntry));
+    thisEntry.ClearEntry(this, zone);
+    zone.Free(&thisEntry, sizeof(AppDataEntry));
 
     return  next;
     }
@@ -222,7 +221,7 @@ StatusInt DgnElement::DropAppData(DgnElementAppData::Key const& key) const
         if (thisEntry->m_key != &key)
             break;
 
-        FreeAppDataEntry(prev, *thisEntry, GetHeapZone(), false);
+        FreeAppDataEntry(prev, *thisEntry, GetHeapZone());
         return  SUCCESS;
         }
 
@@ -232,10 +231,10 @@ StatusInt DgnElement::DropAppData(DgnElementAppData::Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::ClearAllAppData(HeapZone& zone, bool cacheUnloading)
+void DgnElement::ClearAllAppData(HeapZone& zone)
     {
     for (AppDataEntry* thisEntry=m_appData; thisEntry; )
-        thisEntry = FreeAppDataEntry(NULL, *thisEntry, zone, cacheUnloading);
+        thisEntry = FreeAppDataEntry(NULL, *thisEntry, zone);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -360,7 +359,7 @@ void DgnElement::ForceElemChanged(bool qvCacheCleared, DgnElementChangeReason re
         {
         next = thisEntry->m_next;
         if (thisEntry->m_obj->_OnElemChanged(this, qvCacheCleared, reason))
-            FreeAppDataEntry(prev, *thisEntry, zone, false);
+            FreeAppDataEntry(prev, *thisEntry, zone);
         else
             prev = thisEntry;
         }
@@ -416,13 +415,10 @@ void DgnElement::SetInSelectionSet(bool yesNo) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::DeallocateRef(bool dbUnloading)
+DgnElement::~DgnElement()
     {
-    auto& pool = GetDgnDb().Elements();
-    ClearAllAppData(pool.GetHeapZone(), dbUnloading);
-    pool.ReturnedMemory(_GetMemSize());
-
-    delete this;
+    BeAssert(!IsInPool());
+    ClearAllAppData(GetDgnDb().Elements().GetHeapZone());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,14 +576,11 @@ DgnModelStatus GeometricElement::_InsertInDb()
     GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId) VALUES(?,?,?)");
     stmt->BindId(3, m_elementId);
 
-    stat = _BindInsertGeom(*stmt);
+    stat = _BindPlacement(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
         return DGNMODEL_STATUS_Success;
 
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    return DoInsertOrUpdate(*stmt);
+    return (DGNMODEL_STATUS_Success != stat) ? stat : DoInsertOrUpdate(*stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -603,14 +596,11 @@ DgnModelStatus GeometricElement::_UpdateInDb()
     GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=? WHERE ElementId=?");
     stmt->BindId(3, m_elementId);
 
-    stat = _BindInsertGeom(*stmt);
+    stat = _BindPlacement(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
         return DGNMODEL_STATUS_Success;
 
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    return DoInsertOrUpdate(*stmt);
+    return (DGNMODEL_STATUS_Success != stat) ? stat : DoInsertOrUpdate(*stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -650,7 +640,7 @@ DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement3d::_BindInsertGeom(Statement& stmt)
+DgnModelStatus DgnElement3d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
         return DGNMODEL_STATUS_NoGeometry;
@@ -702,11 +692,7 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
         return nullptr;
         }
 
-    PhysicalElementPtr elementPtr = new PhysicalElement(CreateParams(model, PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
-#ifdef WIP_ITEM_HANDLER // item class id is optional, so there is no need to set it to the default dgn.ElementItem classid
-    elementPtr->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(model.GetDgnDb()));
-#endif
-    return elementPtr;
+    return new PhysicalElement(CreateParams(model, PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -774,7 +760,7 @@ DgnModelStatus PhysicalElement::_UpdateInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement2d::_BindInsertGeom(Statement& stmt)
+DgnModelStatus DgnElement2d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
         return DGNMODEL_STATUS_NoGeometry;
@@ -852,9 +838,6 @@ void GeometricElement::_InitFrom(DgnElementCR other)
 
     SaveGeomStream(&otherGeom->m_geom);
     m_itemClassId = otherGeom->m_itemClassId;
-#ifdef WIP_ITEM_HANDLER
-    m_itemHandler = otherGeom->m_itemHandler;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -900,9 +883,6 @@ DgnModelStatus GeometricElement::_SwapWithModified(DgnElementR other)
 
     std::swap(m_geom, geom->m_geom);
     std::swap(m_itemClassId, geom->m_itemClassId);
-#ifdef WIP_ITEM_HANDLER
-    std::swap(m_itemHandler, geom->m_itemHandler);
-#endif
     return DGNMODEL_STATUS_Success;
     }
 
@@ -939,7 +919,6 @@ DgnModelStatus DgnElement2d::_SwapWithModified(DgnElementR other)
     std::swap(m_placement, el2d->m_placement);
     return DGNMODEL_STATUS_Success;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
@@ -1127,7 +1106,6 @@ BentleyStatus CachedInstance::ApplyScheduledChange(InstanceUpdateOutcome& outcom
         }
 
     // write the item.
-
     if (ApplyScheduledReplace(db) == BSISUCCESS)
         {
         outcome = InstanceUpdateOutcome::Updated;
@@ -1497,7 +1475,7 @@ BentleyStatus CachedInstance::ApplyScheduledChangesToItem(DgnElementR el)
         return BSIERROR;
         }
 
-    //  Ensure that the proposed item has the correct ID
+    //  Ensure that the proposed item has the correct Id
     setInstanceId(*m_instance, el.GetElementId());
 
     if (m_changeType == InstanceChangeType::Write)
