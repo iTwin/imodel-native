@@ -182,7 +182,7 @@ void BeConditionVariable::notify_one() {to_cv(this).notify_one();}
 //--------------+------------------------------------------------------------------------
 bool BeConditionVariable::ProtectedWaitOnCondition(BeMutexHolder& holder, IConditionVariablePredicate* condition, uint32_t timeoutMillis)
     {
-    static_assert (sizeof(m_osCV) == sizeof(std::condition_variable_any), "BeConditionVariable wrong size");
+    static_assert (sizeof(m_osCV) >= sizeof(std::condition_variable_any), "BeConditionVariable wrong size");
 
     bool    conditionSatisfied = NULL == condition ? false : condition->_TestCondition (*this);
     bool    timedOut           = timeoutMillis == 0;
