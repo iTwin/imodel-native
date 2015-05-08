@@ -721,7 +721,7 @@ MaterialPtr     m_material;
 GeometryMapPatternAppData (MaterialPtr material) : m_material (material) {}
 MaterialCP GetMaterial () {return m_material.get ();}
 
-virtual void _OnCleanup (DgnElementCP host, bool unloadingModel, HeapZoneR zone) override {m_material = NULL;}
+virtual void _OnCleanup (DgnElementCP host, HeapZoneR zone) override {m_material = NULL;}
 };
     
 /*---------------------------------------------------------------------------------**//**

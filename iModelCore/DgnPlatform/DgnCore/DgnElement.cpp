@@ -46,7 +46,7 @@ struct CachedInstances : DgnElementAppData
     CachedInstance m_item;
     bmap<DgnClassId, bvector<CachedInstance>> m_otherAspects;
 
-    virtual void _OnCleanup(DgnElementCP host, bool unloadingModel, HeapZoneR zone) override;
+    virtual void _OnCleanup(DgnElementCP host, HeapZoneR zone) override;
 
     CachedInstances() : m_itemChecked(false) {}
     void Clear() {m_element.Clear(); m_item.Clear(); m_otherAspects.clear(); m_itemChecked=false;}
@@ -87,7 +87,7 @@ CachedInstances& CachedInstances::Get(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachedInstances::_OnCleanup(DgnElementCP host, bool unloadingModel, HeapZoneR zone)
+void CachedInstances::_OnCleanup(DgnElementCP host, HeapZoneR zone)
     {
     delete this; // *** WIP_ELEMENT_INSTANCES - use HeapZone to avoid malloc
     }
@@ -141,7 +141,7 @@ uint32_t DgnElement::_Release() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry, HeapZone& zone, bool cacheUnloading) const
+DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry, HeapZone& zone) const
     {
     AppDataEntry* next = thisEntry.m_next;
 
@@ -150,9 +150,8 @@ DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDa
     else
         m_appData = next;
 
-    thisEntry.ClearEntry(this, cacheUnloading, zone);
-    if (!cacheUnloading)
-        zone.Free(&thisEntry, sizeof(AppDataEntry));
+    thisEntry.ClearEntry(this, zone);
+    zone.Free(&thisEntry, sizeof(AppDataEntry));
 
     return  next;
     }
@@ -222,7 +221,7 @@ StatusInt DgnElement::DropAppData(DgnElementAppData::Key const& key) const
         if (thisEntry->m_key != &key)
             break;
 
-        FreeAppDataEntry(prev, *thisEntry, GetHeapZone(), false);
+        FreeAppDataEntry(prev, *thisEntry, GetHeapZone());
         return  SUCCESS;
         }
 
@@ -232,10 +231,10 @@ StatusInt DgnElement::DropAppData(DgnElementAppData::Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::ClearAllAppData(HeapZone& zone, bool cacheUnloading)
+void DgnElement::ClearAllAppData(HeapZone& zone)
     {
     for (AppDataEntry* thisEntry=m_appData; thisEntry; )
-        thisEntry = FreeAppDataEntry(NULL, *thisEntry, zone, cacheUnloading);
+        thisEntry = FreeAppDataEntry(NULL, *thisEntry, zone);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -360,7 +359,7 @@ void DgnElement::ForceElemChanged(bool qvCacheCleared, DgnElementChangeReason re
         {
         next = thisEntry->m_next;
         if (thisEntry->m_obj->_OnElemChanged(this, qvCacheCleared, reason))
-            FreeAppDataEntry(prev, *thisEntry, zone, false);
+            FreeAppDataEntry(prev, *thisEntry, zone);
         else
             prev = thisEntry;
         }
@@ -416,13 +415,10 @@ void DgnElement::SetInSelectionSet(bool yesNo) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::DeallocateRef(bool dbUnloading)
+DgnElement::~DgnElement()
     {
-    auto& pool = GetDgnDb().Elements();
-    ClearAllAppData(pool.GetHeapZone(), dbUnloading);
-    pool.ReturnedMemory(_GetMemSize());
-
-    delete this;
+    BeAssert(!IsInPool());
+    ClearAllAppData(GetDgnDb().Elements().GetHeapZone());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -852,9 +848,6 @@ void GeometricElement::_InitFrom(DgnElementCR other)
 
     SaveGeomStream(&otherGeom->m_geom);
     m_itemClassId = otherGeom->m_itemClassId;
-#ifdef WIP_ITEM_HANDLER
-    m_itemHandler = otherGeom->m_itemHandler;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -900,9 +893,6 @@ DgnModelStatus GeometricElement::_SwapWithModified(DgnElementR other)
 
     std::swap(m_geom, geom->m_geom);
     std::swap(m_itemClassId, geom->m_itemClassId);
-#ifdef WIP_ITEM_HANDLER
-    std::swap(m_itemHandler, geom->m_itemHandler);
-#endif
     return DGNMODEL_STATUS_Success;
     }
 

@@ -227,7 +227,7 @@ void ViewController::_ChangeCategoryDisplay (DgnCategoryId categoryId, bool onOf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetModelById(m_targetModelId);}
+DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetModel(m_targetModelId);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
@@ -307,7 +307,7 @@ DbResult ViewController::Load()
     m_viewedModels.insert (m_baseModelId);
 
     Utf8String settingsStr;
-    //  The QueryModel calls GetModelById in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
+    //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     DbResult  rc = GetDgnDb().Views().QueryProperty (settingsStr, GetViewId(), DgnViewProperty::Settings());
     if (BE_SQLITE_ROW != rc)
         return rc;
@@ -316,10 +316,10 @@ DbResult ViewController::Load()
     Json::Reader::Parse (settingsStr, json);
     _RestoreFromSettings(json);
 
-    //  The QueryModel calls GetModelById in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
+    //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     //  the model is not already loaded.
     for (auto&id : GetViewedModels())
-        m_dgndb.Models().GetModelById(id);
+        m_dgndb.Models().GetModel(id);
 
     return BE_SQLITE_OK;
     }
@@ -850,7 +850,7 @@ void ViewController::_FillModels()
     {
     for (DgnModelId modelId : m_viewedModels)
         {
-        DgnModelP model = m_dgndb.Models().GetModelById(modelId);
+        DgnModelP model = m_dgndb.Models().GetModel(modelId);
         if (model)
             model->FillModel();
         }

@@ -370,7 +370,7 @@ void QueryViewController::_ChangeModelDisplay (DgnModelId modelId, bool onOff)
         m_viewedModels.insert(modelId);
         //  Ensure the model is in the m_loadedModels list.  QueryModel 
         //  must not do this in the query thread.
-        m_dgndb.Models().GetModelById(modelId);
+        m_dgndb.Models().GetModel(modelId);
         }
     else
         {
@@ -436,7 +436,7 @@ Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR)
     //  The query produces a thread race condition if it calls QueryModelById and 
     //  the model is not already loaded.
     for (auto& id : GetViewedModels())
-        m_dgndb.Models().GetModelById(id);
+        m_dgndb.Models().GetModel(id);
 
     return Utf8String ("SELECT rTreeAccept(r.ElementId) FROM "
            DGN_VTABLE_PrjRTree " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e "
@@ -503,7 +503,7 @@ void QueryViewController::_DrawView(ViewContextR context)
         // Allow models to participate in picking
         for (DgnModelId modelId : GetViewedModels())
             {
-            DgnModel* model = GetDgnDb().Models().GetModelById(modelId);
+            DgnModel* model = GetDgnDb().Models().GetModel(modelId);
             if (nullptr != model)
                 model->_AddGraphicsToScene (context);
             }
@@ -600,7 +600,7 @@ void QueryViewController::_DrawView(ViewContextR context)
     // Next, allow external data models to draw or schedule external data.
     for (DgnModelId modelId : GetViewedModels())
         {
-        DgnModel* model = GetDgnDb().Models().GetModelById(modelId);
+        DgnModel* model = GetDgnDb().Models().GetModel(modelId);
         if (nullptr != model)
             model->_AddGraphicsToScene (context);
         }

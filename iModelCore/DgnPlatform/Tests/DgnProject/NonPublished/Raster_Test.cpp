@@ -81,7 +81,7 @@ void DgnRasterTest::GetViewStates (bool * testViewStates)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnModelP DgnModels::getAndFill(DgnDbR db, DgnModelId modelID)
     {
-    DgnModelP dgnModel = db.Models().GetModelById (modelID);
+    DgnModelP dgnModel = db.Models().GetModel (modelID);
     if (dgnModel == NULL)
         return NULL;
 

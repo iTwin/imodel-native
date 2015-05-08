@@ -61,8 +61,8 @@ struct TxnId
     int32_t m_value;
 
 public:
-    TxnId ()  {m_value = -1;}
-    explicit TxnId (int32_t val) {m_value = val;}
+    TxnId()  {m_value = -1;}
+    explicit TxnId(int32_t val) {m_value = val;}
 //__PUBLISH_SECTION_END__
     void Init() {m_value = 0;}
     void Next() {++m_value;}
@@ -103,10 +103,10 @@ public:
     ~TxnSummary();
 
     //! Table handler should call this function to record the fact that the specified Element was changed in the current txn.
-    DGNPLATFORM_EXPORT void AddAffectedElement (DgnElementId const&, DgnModelId, ChangeType);
+    DGNPLATFORM_EXPORT void AddAffectedElement(DgnElementId const&, DgnModelId, ChangeType);
 
     //! Table handler should call this function to record the fact that the specified relationship with a dependency was changed in the current txn.
-    DGNPLATFORM_EXPORT void AddAffectedDependency (BeSQLite::EC::ECInstanceId const&, ChangeType);
+    DGNPLATFORM_EXPORT void AddAffectedDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
 
     void AddFailedDependencyTarget(DgnElementId eid) {m_failedDependencyTargets.insert(eid);}
     void SetModelDependencyChanges() {m_modelDepsChanged=true;}
@@ -156,10 +156,10 @@ public:
 //=======================================================================================
 struct TxnMonitor
 {
-    virtual void _OnTxnBoundary (TxnSummaryCR) = 0;
-    virtual void _OnTxnReverse (TxnSummaryCR, TxnDirection isUndo) = 0;
-    virtual void _OnTxnReversed (TxnSummaryCR, TxnDirection isUndo) = 0;
-    virtual void _OnUndoRedoFinished (DgnDbR, TxnDirection isUndo) {}
+    virtual void _OnTxnBoundary(TxnSummaryCR) = 0;
+    virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo) = 0;
+    virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo) = 0;
+    virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo) {}
 };
 
 //=======================================================================================
@@ -177,42 +177,6 @@ struct ITxnOptions
         }
     };
 
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct ITxn : NonCopyableClass
-{
-private:
-    StatusInt CheckElementForWrite (DgnElementP);
-
-protected:
-    ITxnOptions m_opts;
-    ITxn(ITxnOptions opts = ITxnOptions()) : m_opts (opts) {}
-    virtual ~ITxn() {}
-
-    void ClearReversedTxns (DgnDbR);
-    virtual StatusInt _CheckDgnModelForWrite (DgnModelP) {return SUCCESS;}
-
-public:
-    /// @name Element I/O
-    //@{
-
-    //! Delete an element from a model.
-    //! @param[in]          elem            The DgnElementP of the element to be deleted. Must be a valid existing element.
-    //! @return SUCCESS if the element was deleted.
-    DGNPLATFORM_EXPORT StatusInt DeleteElement (DgnElementP elem);
-
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
-    //! Replace an existing element in a model with a different one.
-    //! @param[in,out] el The element to be replaced.
-    //! @return SUCCESS if the element was replaced and out is non-NULL.
-    DGNPLATFORM_EXPORT StatusInt ReplaceElement (EditElementHandleR el);
-#endif
-    //@}
-};
-#endif
-
 //__PUBLISH_SECTION_END__
 
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -226,10 +190,10 @@ class TxnRange
     TxnId     m_last;
 
 public:
-    TxnRange (TxnId first, TxnId last) : m_first(first), m_last(last) {}
+    TxnRange(TxnId first, TxnId last) : m_first(first), m_last(last) {}
 
-    TxnId GetFirst () {return m_first;}
-    TxnId GetLast () {return m_last;}
+    TxnId GetFirst() {return m_first;}
+    TxnId GetLast() {return m_last;}
 };
 
 //=======================================================================================
@@ -240,7 +204,7 @@ struct RevTxn
 {
     TxnRange    m_range;
     bool        m_multiStep;
-    RevTxn (TxnRange& range, bool multiStep) : m_range (range) {m_multiStep = multiStep;}
+    RevTxn(TxnRange& range, bool multiStep) : m_range(range) {m_multiStep = multiStep;}
 };
 #endif
 
@@ -251,7 +215,7 @@ struct UndoDb : BeSQLite::Db
 {
     BeSQLite::DbResult Open();
     void Empty();
-    void TruncateChanges (TxnId id);
+    void TruncateChanges(TxnId id);
     BeSQLite::DbResult SaveEntry(TxnId id, uint64_t source, Utf8StringCR descr);
     BeSQLite::DbResult ReadEntry(TxnId id, uint64_t& source, Utf8StringR cmdName);
     BeSQLite::DbResult SaveChange(TxnId id, BeSQLite::ChangeSet& changeset);
@@ -263,7 +227,7 @@ struct UndoDb : BeSQLite::Db
         UndoDb& m_db;
         TxnId   m_id;
         mutable BeSQLite::Statement m_sql;
-        ChangedFiles (UndoDb& db, TxnId id) : m_db(db), m_id(id){}
+        ChangedFiles(UndoDb& db, TxnId id) : m_db(db), m_id(id){}
 
         struct Entry : std::iterator<std::input_iterator_tag, Entry const>
             {
@@ -271,7 +235,7 @@ struct UndoDb : BeSQLite::Db
         private:
             bool  m_isValid;
             BeSQLiteStatementP m_sql;
-            Entry (BeSQLiteStatementP sql, bool isValid) {m_sql = sql; m_isValid = isValid;}
+            Entry(BeSQLiteStatementP sql, bool isValid) {m_sql = sql; m_isValid = isValid;}
 
         public:
             bool IsValid() const {return m_isValid;}
@@ -285,7 +249,7 @@ struct UndoDb : BeSQLite::Db
 
         typedef Entry const_iterator;
         const_iterator begin() const;
-        const_iterator end() const {return Entry (&m_sql, false);}
+        const_iterator end() const {return Entry(&m_sql, false);}
         };
 };
 
@@ -339,13 +303,12 @@ struct ITxnManager
         virtual Utf8String _GetDescription() const {return m_description;}
         virtual ValidationErrorSeverity _GetSeverity() const {return m_severity;}
         
-        ValidationError (ValidationErrorSeverity sev, Utf8StringCR desc) : m_severity(sev), m_description(desc) {;}
+        ValidationError(ValidationErrorSeverity sev, Utf8StringCR desc) : m_severity(sev), m_description(desc) {;}
     };
 
 //__PUBLISH_SECTION_END__
 
     friend struct TxnIter;
-    friend struct ITxn;
 
 protected:
     DgnDbR          m_dgndb;
@@ -364,41 +327,36 @@ protected:
     bool            m_doChangePropagation;
     bvector<IValidationErrorPtr> m_validationErrors; //!< Validation errors detected on the last boundary check
 
-    void SetActive (bool newValue) {m_isActive = newValue;}
+    void SetActive(bool newValue) {m_isActive = newValue;}
     void SetUndoInProgress(bool);
-    TxnId GetFirstTxnId () {return m_firstTxn;}
-    void ReverseTxnRange (TxnRange& txnRange, Utf8StringP, bool);
-    void CheckTxnBoundary ();
-    void ReinstateTxn (TxnRange&, Utf8StringP redoStr);
+    TxnId GetFirstTxnId() {return m_firstTxn;}
+    void ReverseTxnRange(TxnRange& txnRange, Utf8StringP, bool);
+    void CheckTxnBoundary();
+    void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
     bool HasAnyChanges();
-    void ApplyChanges (TxnId, TxnDirection);
-    void CancelChanges (BeSQLite::ChangeSet&);
-    void CancelChanges (TxnId txnId);
-    StatusInt ReinstateActions (RevTxn& revTxn);
+    void ApplyChanges(TxnId, TxnDirection);
+    void CancelChanges(BeSQLite::ChangeSet&);
+    void CancelChanges(TxnId txnId);
+    StatusInt ReinstateActions(RevTxn& revTxn);
     bool PrepareForUndo();
-    StatusInt ReverseActions (TxnRange& txnRange, bool multiStep, bool showMsg);
+    StatusInt ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg);
     enum class HowToCleanUpElements {CallApplied, CallCancelled};
-    BeSQLite::DbResult ApplyChangeSetInternal (BeSQLite::ChangeSet& changeset, TxnId txnId, Utf8StringCR txnDescr, uint64_t txnSource, TxnDirection isUndo, HowToCleanUpElements);
-
+    BeSQLite::DbResult ApplyChangeSetInternal(BeSQLite::ChangeSet& changeset, TxnId txnId, Utf8StringCR txnDescr, uint64_t txnSource, TxnDirection isUndo, HowToCleanUpElements);
     BentleyStatus ComputeIndirectChanges(BeSQLite::ChangeSet&);
 
 public:
     void InitTempTables();
-
     void UpdateModelDependencyIndex();
-
     Utf8String GetChangedElementsTableName() const;
-
     Utf8String GetChangedElementDrivesElementRelationshipsTableName() const;
 
-    DGNPLATFORM_EXPORT bool GetDoChangePropagation() const {return m_doChangePropagation;}
-    DGNPLATFORM_EXPORT void SetDoChangePropagation (bool b) {m_doChangePropagation=b;}
-
+    bool GetDoChangePropagation() const {return m_doChangePropagation;}
+    void SetDoChangePropagation(bool b) {m_doChangePropagation=b;}
     DGNPLATFORM_EXPORT BentleyStatus SaveUndoMark(Utf8CP name);
-    DGNPLATFORM_EXPORT void GetUndoString (Utf8StringR);
-    DGNPLATFORM_EXPORT void GetRedoString (Utf8StringR);
+    DGNPLATFORM_EXPORT void GetUndoString(Utf8StringR);
+    DGNPLATFORM_EXPORT void GetRedoString(Utf8StringR);
 
-    DGNPLATFORM_EXPORT ITxnManager (DgnDbR);
+    DGNPLATFORM_EXPORT ITxnManager(DgnDbR);
 
     //! Apply a changeset and then clean up the screen, reload elements, refresh other cached data, and notify txn listeners.
     //! @param changeset the changeset to apply
@@ -423,10 +381,10 @@ public:
     //! changes are to be undone separately.
     //! @remarks If there is a Transaction Group active, the effect of this method is only to validate the transaction, if requested.
     //! @remarks If this is an undoable transaction, then TxnMonitors are invoked before changes are committed.
-    DGNPLATFORM_EXPORT void CloseCurrentTxn ();
+    DGNPLATFORM_EXPORT void CloseCurrentTxn();
 
     //! TxnMonitors may call this to report a validation error. If the severity of the validation error is set to ValidationErrorSeverity::Fatal, then the transaction will be cancelled.
-    DGNPLATFORM_EXPORT void ReportValidationError (IValidationError&);
+    DGNPLATFORM_EXPORT void ReportValidationError(IValidationError&);
 
     //! Query the number of validation errors that were reported during the last boundary check.
     DGNPLATFORM_EXPORT size_t GetValidationErrorCount() const;
@@ -469,13 +427,13 @@ public:
     //!                       changes from this group are included with the previous changes.
     //! @remarks This method should \e always be paired with a call to EndTxnGroup.
     //! @remarks This method cancels all pending nested transactions.
-    DGNPLATFORM_EXPORT void StartTxnGroup (bool startNewTxn);
+    DGNPLATFORM_EXPORT void StartTxnGroup(bool startNewTxn);
 
     //! Close the current Transaction Group.
     DGNPLATFORM_EXPORT void EndTxnGroup();
 
     //! Return the number of entries in the current Transaction Group.
-    DGNPLATFORM_EXPORT size_t GetTxnGroupCount ();
+    DGNPLATFORM_EXPORT size_t GetTxnGroupCount();
 
     //! @return The TxnId of the beginning of the innermost Transaction Group. If no Transaction Group is active, the TxnId will be zero.
     DGNPLATFORM_EXPORT TxnId GetCurrGroupStart();
@@ -486,11 +444,11 @@ public:
 
     //! Query if there are currently any reversible (undoable) changes in the Transaction Manager
     //! @return true if there are currently any reversible (undoable) changes in the Transaction Manager.
-    DGNPLATFORM_EXPORT bool HasEntries ();
+    DGNPLATFORM_EXPORT bool HasEntries();
 
     //! Query if there are currently any reinstateable (redoable) changes in the Transaction Manager
     //! @return True if there are currently any reinstateable (redoable) changes in the Transaction Manager.
-    DGNPLATFORM_EXPORT bool RedoIsPossible ();
+    DGNPLATFORM_EXPORT bool RedoIsPossible();
 
     //! Reverse (undo) the most recent transaction(s).
     //! @param[in] numActions the number of transactions to reverse. If numActions is greater than 1, the entire set of transactions will
@@ -499,29 +457,29 @@ public:
     //!           used by) a transaction, call ClearReversedTxns.
     //! @see ReinstateTxn ClearReversedTxns
     //! @remarks This method cancels all pending nested transactions.
-    DGNPLATFORM_EXPORT void ReverseTxns (int numActions);
+    DGNPLATFORM_EXPORT void ReverseTxns(int numActions);
 
     //! Reverse (undo) the most recent transaction.
     //! @param[in] callRestartFunc whether to restart the current tool afterwards, only the current tool should pass false.
     //! @remarks This method cancels all pending nested transactions.
-    DGNPLATFORM_EXPORT void ReverseSingleTxn (bool callRestartFunc=true);
+    DGNPLATFORM_EXPORT void ReverseSingleTxn(bool callRestartFunc=true);
 
     //! Reverse all element changes back to the most recent Mark. Marks are created by calling SaveUndoMark.
     //! @param[out] name of mark undone.
     //! @remarks This method cancels all pending nested transactions.
-    DGNPLATFORM_EXPORT void ReverseToMark (Utf8StringR name);
+    DGNPLATFORM_EXPORT void ReverseToMark(Utf8StringR name);
 
     //! Reverse all element changes back to the beginning of the session.
     //! @param[in] prompt display a dialog warning the user of the severity of this action and giving an opportunity to cancel.
     //! @remarks This method cancels all pending nested transactions.
-    DGNPLATFORM_EXPORT void ReverseAll (bool prompt);
+    DGNPLATFORM_EXPORT void ReverseAll(bool prompt);
 
     //! Reverse all element changes back to a previously saved TxnPos.
     //! @param[in] pos a TxnPos obtained from a previous call to GetCurrTxnPos.
     //! @return SUCCESS if the transactions were reversed, ERROR if TxnPos is invalid.
     //! @remarks This method cancels all pending nested transactions.
     //! @see  GetCurrTxnPos CancelToPos
-    DGNPLATFORM_EXPORT StatusInt ReverseToPos (TxnId pos);
+    DGNPLATFORM_EXPORT StatusInt ReverseToPos(TxnId pos);
 
     //! Get the Id of the most recently commited transaction.
     //! @return the current TxnPos. This value can be saved and later used to reverse changes that happen after this time.
@@ -534,27 +492,27 @@ public:
     //! @param[in] callRestartFunc whether to restart the current tool afterwards, only the current tool should pass false.
     //! @return SUCCESS if the transactions were reversed and cleared, ERROR if TxnPos is invalid.
     //! @remarks This method cancels all pending nested transactions.
-    DGNPLATFORM_EXPORT StatusInt CancelToPos (TxnId pos, bool callRestartFunc=true);
+    DGNPLATFORM_EXPORT StatusInt CancelToPos(TxnId pos, bool callRestartFunc=true);
 
     //! Clear vestiges of any reversed transactions from memory. Reversed transactions can be reinstated. Therefore, they still
     //! occupy memory in the cache and in the transaction buffer. This method clears them and makes them non-reinstateable.
     //! @remarks If any transactions are reversed, the Transaction Manager will automatically call this method before any new element
     //!          changes can be journaled. That is, after a reverse, ClearReversedTxns is implied if anything other than Reinstate happens.
-    DGNPLATFORM_EXPORT void ClearReversedTxns ();
+    DGNPLATFORM_EXPORT void ClearReversedTxns();
 
     //! Reinstate the most recent previously applied and then reversed transaction. Since at any time multiple transactions can be reversed, it
     //! may take multiple calls to this method to reinstate all reversed operations.
     //! @return SUCCESS if a reversed transaction was reinstated, ERROR if no transactions were reversed.
-    DGNPLATFORM_EXPORT StatusInt ReinstateTxn ();
+    DGNPLATFORM_EXPORT StatusInt ReinstateTxn();
 
     //! Query if undo/redo is in progress
-    DGNPLATFORM_EXPORT bool IsUndoInProgress ();
+    DGNPLATFORM_EXPORT bool IsUndoInProgress();
 
     //! Set value for the "TxnSource" to be saved in undo
-    DGNPLATFORM_EXPORT void SetTxnSource (uint64_t souce);
+    DGNPLATFORM_EXPORT void SetTxnSource(uint64_t souce);
 
     //! Set description of current txn. Used to show what will be undone/redone.
-    DGNPLATFORM_EXPORT void SetTxnDescription (Utf8CP descr);
+    DGNPLATFORM_EXPORT void SetTxnDescription(Utf8CP descr);
 
     //! Get the DgnDb of this ITxnManager
     DGNPLATFORM_EXPORT DgnDbR GetDgnDb();
@@ -571,7 +529,7 @@ struct TxnAdmin : DgnHost::IHostObject
 protected:
     TxnMonitors m_monitors;
 
-    template <typename CALLER> void CallMonitors (CALLER const& caller)
+    template <typename CALLER> void CallMonitors(CALLER const& caller)
         {
         try {
             for (auto curr = m_monitors.begin(); curr!=m_monitors.end(); )
@@ -579,7 +537,7 @@ protected:
                 if (*curr == NULL)
                     curr = m_monitors.erase(curr);
                 else
-                    {caller (**curr); ++curr;}
+                    {caller(**curr); ++curr;}
                 }
             }
         catch (...) {}
@@ -588,28 +546,29 @@ protected:
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
     
-    virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
+    virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
     virtual bool _OnPromptReverseAll() {return true;}
     virtual void _RestartTool()  {}
     virtual void _OnNothingToUndo() {}
     virtual void _OnPrepareForUndoRedo(){}
     virtual void _OnNothingToRedo(){}
 
-    DGNPLATFORM_EXPORT virtual void _OnTxnBoundary (TxnSummaryCR);
-    DGNPLATFORM_EXPORT virtual void _OnTxnReverse (TxnSummaryCR, TxnDirection isUndo);
-    DGNPLATFORM_EXPORT virtual void _OnTxnReversed (TxnSummaryCR, TxnDirection isUndo);
-    DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished (DgnDbR, TxnDirection isUndo);
+    DGNPLATFORM_EXPORT virtual void _OnTxnBoundary(TxnSummaryCR);
+    DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo);
+    DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo);
+    DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo);
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
     //! @name Transaction Monitors
     //@{
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     //! @param monitor a monitor to add
-    DGNPLATFORM_EXPORT void AddTxnMonitor (TxnMonitor& monitor);
+    DGNPLATFORM_EXPORT void AddTxnMonitor(TxnMonitor& monitor);
 
     //! Drop a TxnMonitor.
     //! @param monitor a monitor to drop
-    DGNPLATFORM_EXPORT void DropTxnMonitor (TxnMonitor& monitor);
+    DGNPLATFORM_EXPORT void DropTxnMonitor(TxnMonitor& monitor);
     //@}
 
     };

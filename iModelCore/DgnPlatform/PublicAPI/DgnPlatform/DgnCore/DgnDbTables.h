@@ -752,23 +752,17 @@ public:
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
     //! instance of the appropriate model type. If the model is already loaded, a pointer to the existing DgnModel is returned.
     //! @param[in] modelId The Id of the model to load.
-    DGNPLATFORM_EXPORT DgnModelP GetModelById(DgnModelId modelId);
+    DGNPLATFORM_EXPORT DgnModelP GetModel(DgnModelId modelId);
+
+    template<class T> T* Get(DgnModelId id) {return dynamic_cast<T*>(GetModel(id));}
 
     //! Query if the specified model has already been loaded.
     //! @return a pointer to the model if found, or nullptr if the model has not been loaded.
     //! @see GetLoadedModels
     //! @see LoadModelById
-    DGNPLATFORM_EXPORT DgnModelP FindModelById(DgnModelId modelId);
+    DGNPLATFORM_EXPORT DgnModelP FindModel(DgnModelId modelId);
 
-    //! Get the models currently loaded
-    //! Example:
-    //! \code
-    //! for (DgnModelP model : db.Models().GetLoadedModels())
-    //!     {
-    //!       ...
-    //!     }
-    //! \endcode
-    //! @see LoadModelById
+    //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
     DGNPLATFORM_EXPORT BentleyStatus DeleteModel(DgnModelId id);
@@ -810,7 +804,7 @@ public:
 
     //! Insert a new model.
     //! @return DGNMODEL_STATUS_Success if the new model was successfully create or error otherwise.
-    DGNPLATFORM_EXPORT DgnModelStatus InsertNewModel(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
+    DGNPLATFORM_EXPORT DgnModelStatus Insert(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
 
     DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModelId);
 
@@ -911,9 +905,11 @@ private:
     void OnChangesetCanceled(TxnSummary const&);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
     void ReleaseAndCleanup(DgnElementCPtr& element);
-
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
+
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnModelStatus* stat=nullptr);
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnModelStatus* stat=nullptr);
 
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
@@ -946,10 +942,15 @@ public:
     DGNPLATFORM_EXPORT DgnElementId GetHighestElementId();
     DGNPLATFORM_EXPORT DgnElementId MakeNewElementId();
 
-    //! Get a DgnElement from this DgnDb by its Id. 
+    //! Get a DgnElement from this DgnDb by its DgnElementId. 
     //! @remarks The element is loaded if necessary.
     //! @return Invalid if the element does not exist.
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
+
+    //! Get a DgnElement by its DgnElementId, and dynamic_cast the result to a specific subclass of DgnElement.
+    //! This tempated method is merely a shortcut to calling GetElement and dynamic_cast'ing the result to the class of the 
+    //! specified template argument. 
+    template<class T> RefCountedCPtr<T> Get(DgnElementId id) const {return dynamic_cast<T const*>(GetElement(id).get());}
 
     //! Look up an element within this DgnDb by its Id.
     //! @return nullptr if the element does not exist or is not currently loaded.
@@ -957,11 +958,18 @@ public:
 
     //! Insert the supplied DgnElement into this DgnDb.
     //! @param[in] element The element to add.
+    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if result is valid, error status otherwise.
     //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
-    DGNPLATFORM_EXPORT DgnModelStatus InsertElement(DgnElementR element);
+    template<class T> RefCountedCPtr<T> Insert(RefCountedPtr<T>& element, DgnModelStatus* stat=nullptr) 
+        {RefCountedCPtr<T> result=(T const*)InsertElement(*element.get(), stat).get(); if (result.IsValid()){element=nullptr;} return result;}
 
-    DGNPLATFORM_EXPORT DgnModelStatus UpdateElement(DgnElementR);
+    template<class T> RefCountedCPtr<T> Update(RefCountedPtr<T>& element, DgnModelStatus* stat=nullptr) 
+        {RefCountedCPtr<T> result=(T const*)UpdateElement(*element.get(), stat).get(); if (result.IsValid()){element=nullptr;} return result;}
+
     DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementR);
+
+    //! Delete the element for the specified DgnElementId.
+    DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
 
     HeapZone& GetHeapZone() {return m_heapZone;}
 
@@ -973,9 +981,6 @@ public:
     //! @note an invalid key will be returned in the case of an error
     //! @see ECInstanceKey::IsValid
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId) const;
-
-    //! Delete the element for the specified DgnElementId.
-    DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
 
     //! Update the last modified timestamp of the specified element
     //! @note Updates to the element class automatically cause the last modified time to be updated (via a database trigger).

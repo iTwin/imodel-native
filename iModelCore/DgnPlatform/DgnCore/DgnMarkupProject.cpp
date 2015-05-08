@@ -1150,7 +1150,7 @@ BentleyStatus RedlineModel::LoadSheetDef ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineModelP RedlineModel::Open (DgnMarkupProjectR markupProject, DgnModelId mid)
     {
-    DgnModelP model = markupProject.Models().GetModelById (mid);
+    DgnModelP model = markupProject.Models().GetModel (mid);
     if (NULL == model)
         return NULL;
     if (model->GetModelType() != DgnModelType::Redline)
@@ -1170,7 +1170,7 @@ RedlineModelP RedlineModel::Open (DgnMarkupProjectR markupProject, DgnModelId mi
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalRedlineModelP PhysicalRedlineModel::Open (DgnMarkupProjectR markupProject, DgnModelId mid)
     {
-    DgnModelP model = markupProject.Models().GetModelById (mid);
+    DgnModelP model = markupProject.Models().GetModel (mid);
     if (NULL == model)
         return NULL;
     if (model->GetModelType() != DgnModelType::PhysicalRedline)
@@ -1210,7 +1210,7 @@ RedlineModelP RedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP
     DgnModels::Model templateModel;
     if (markupProject.Models().QueryModelById (&templateModel, templateModelId) == BSISUCCESS && templateModel.GetModelType() == DgnModelType::Sheet)
         {
-        DgnModelP templateModel = markupProject.Models().GetModelById (templateModelId);
+        DgnModelP templateModel = markupProject.Models().GetModel (templateModelId);
 
         //  Copy model properties and settings
         rdlModel->GetPropertiesR() = templateModel->GetProperties();
@@ -2031,7 +2031,7 @@ RedlineModelP DgnMarkupProject::OpenRedlineModel (DgnModelId mid)
 
     RedlineModelP redlineModel;
 
-    DgnModelP dgnModel = Models().FindModelById (mid);
+    DgnModelP dgnModel = Models().FindModel (mid);
     if (dgnModel)
         redlineModel = dynamic_cast<RedlineModelP>(dgnModel);
     else
@@ -2057,7 +2057,7 @@ PhysicalRedlineModelP DgnMarkupProject::OpenPhysicalRedlineModel (DgnModelId mid
 
     PhysicalRedlineModelP redlineModel;
 
-    DgnModelP dgnModel = Models().FindModelById (mid);
+    DgnModelP dgnModel = Models().FindModel (mid);
     if (dgnModel)
         redlineModel = dynamic_cast<PhysicalRedlineModelP>(dgnModel);
     else
@@ -2081,7 +2081,7 @@ BentleyStatus DgnMarkupProject::EmptyRedlineModel (DgnModelId mid)
     if (CheckIsOpen() != BSISUCCESS)
         return BSIERROR;
 
-    DgnModelP dgnModel = Models().FindModelById (mid);
+    DgnModelP dgnModel = Models().FindModel (mid);
     if (dgnModel == NULL)
         return BSIERROR;
 

@@ -211,7 +211,7 @@ public:
 * @param        maxEntries      The maximum capacity for this tree node.
 * @bsimethod                                                    KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-KeyRangeNode (T_IParent* parent)
+KeyRangeNode(T_IParent* parent)
     {
     m_parent     = parent;
     m_nEntries   = 0;
@@ -224,14 +224,14 @@ KeyRangeNode (T_IParent* parent)
     T_IParent const*    GetParent () const               {return m_parent;}
     bool                IsSloppy() const                 {return m_isSloppy;}
     void                CheckSloppy() const              {if (IsSloppy()){((KeyRangeNode*)this)->CalculateNodeRange();}}
-    bool                ContainsKey (KTYPE key) const    {CheckSloppy(); return m_range.Contains (key);}
+    bool                ContainsKey (KTYPE key) const    {CheckSloppy(); return m_range.Contains(key);}
     int                 GetCount () const                {return m_nEntries;}
 
 /*---------------------------------------------------------------------------------**//**
 * Initializes the range for this node.
 * @bsimethod                                                    KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InitRange (KTYPE min, KTYPE max)
+void InitRange(KTYPE min, KTYPE max)
     {
     m_range.Init (min, max);
     m_isSloppy = false;

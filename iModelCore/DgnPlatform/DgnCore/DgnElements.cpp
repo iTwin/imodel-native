@@ -228,7 +228,7 @@ public:
     ElemIdRangeNodeP GetRoot() {return m_root;}
     DgnElementP FindElement(DgnElementId key, bool setAccessed);
     void AddElement(DgnElementR);
-    void KillElement(DgnElementP, bool);
+    void KillElement(DgnElementR, bool);
     void ReleaseAndCleanup(DgnElementCP element);
     void Purge(int64_t memTarget);
     void Destroy();
@@ -264,7 +264,7 @@ ElemPurge ElemIdLeafNode::_ReleaseAndCleanup(uint64_t key)
             memmove(m_elems + index, m_elems + index + 1,(m_nEntries-index) * sizeof(DgnElementP));
 
             // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
-            m_treeRoot.KillElement(target, false);
+            m_treeRoot.KillElement(*target, false);
             break;
             }
         }
@@ -308,7 +308,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
 
     // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
     for (unsigned i = 0; i < killedIndex; i++)
-        m_treeRoot.KillElement(killed[i], false);
+        m_treeRoot.KillElement(*killed[i], false);
 
     return (0 == m_nEntries) ? ElemPurge::Deleted : ElemPurge::Kept;
     }
@@ -768,9 +768,9 @@ void ElemIdTree::AddElement(DgnElementR entry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::KillElement(DgnElementP elRef, bool killingWholeTree)
+void ElemIdTree::KillElement(DgnElementR element, bool killingWholeTree)
     {
-    BeAssert(0 == elRef->GetRefCount());
+    BeAssert(0 == element.GetRefCount());
     if (!killingWholeTree)
         {
         BeAssert(0 != m_totals.m_entries);
@@ -780,7 +780,9 @@ void ElemIdTree::KillElement(DgnElementP elRef, bool killingWholeTree)
         ++m_stats.m_purged;
         }
 
-    elRef->DeallocateRef(killingWholeTree);
+    m_dgndb.Elements().ReturnedMemory(element._GetMemSize());
+    element.SetInPool(false);
+    delete &element;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -834,7 +836,7 @@ void ElemIdLeafNode::_Empty()
     DgnElementH end = m_elems + m_nEntries;
 
     for (DgnElementH curr = m_elems; curr < end; ++curr)
-        m_treeRoot.KillElement(*curr, true);
+        m_treeRoot.KillElement(**curr, true);
 
     m_nEntries = 0;
     }
@@ -945,7 +947,7 @@ void DgnElements::AddDgnElement(DgnElementR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsInPool());
-    element.SetInPool();
+    element.SetInPool(true);
 
     AllocatedMemory(element._GetMemSize());
 
@@ -1132,7 +1134,7 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnModelP dgnModel = m_dgndb.Models().GetModelById(stmt->GetValueId<DgnModelId>(Column::ModelId));
+    DgnModelP dgnModel = m_dgndb.Models().GetModel(stmt->GetValueId<DgnModelId>(Column::ModelId));
     if (nullptr == dgnModel)
         {
         BeAssert(false);
@@ -1226,71 +1228,93 @@ DgnElementId DgnElements::MakeNewElementId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElements::InsertElement(DgnElementR element)
+DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* outStat)
     {
-    if (element.GetElementId().IsValid())
-        return DGNMODEL_STATUS_IdExists;
+    DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
+
+    if (element.GetElementId().IsValid() || element.IsInPool())
+        {
+        stat = DGNMODEL_STATUS_IdExists;
+        return nullptr;
+        }
 
     DgnModelR model = element.GetDgnModel();
     if (&model.GetDgnDb() != &m_dgndb)
-        return DGNMODEL_STATUS_WrongDgnDb;
+        {
+        stat = DGNMODEL_STATUS_WrongDgnDb;
+        return nullptr;
+        }
 
-    DgnModelStatus stat = element._OnAdd();
+    stat = element._OnInsert();
     if (DGNMODEL_STATUS_Success != stat)
-        return stat;
+        return nullptr;
 
     stat = model._OnInsertElement(element);
     if (DGNMODEL_STATUS_Success != stat)
-        return stat;
+        return nullptr;
 
     element.m_elementId = MakeNewElementId();
     stat = element._InsertInDb();
     if (DGNMODEL_STATUS_Success != stat)
         {
         element.m_elementId = DgnElementId();
-        return stat;
+        return nullptr;
         }
 
     element._ApplyScheduledChangesToInstances(element);
     element._ClearScheduledChangesToInstances();
 
-    element._OnAdded();
-
     AddDgnElement(element);
-    model._OnInsertedElement(element);
 
-    return DGNMODEL_STATUS_Success;
+    element._OnInserted();
+    model._OnInsertedElement(element);
+    
+    return &element;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElements::UpdateElement(DgnElementR replacement)
+DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatus* outStat)
     {
+    DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
+
     DgnElementCPtr orig = GetElement(replacement.GetElementId());
     if (!orig.IsValid())
-        return DGNMODEL_STATUS_InvalidId;
+        {
+        stat = DGNMODEL_STATUS_InvalidId;
+        return nullptr;
+        }
+
+    if (replacement.IsInPool())
+        {
+        stat =  DGNMODEL_STATUS_WrongElement;
+        return nullptr;
+        }
 
     DgnElementR element = const_cast<DgnElementR>(*orig.get());
     DgnModelR model = element.GetDgnModel();
     if ((&model.GetDgnDb() != &m_dgndb) || (&model != &replacement.GetDgnModel()))
-        return DGNMODEL_STATUS_WrongModel;
+        {
+        stat = DGNMODEL_STATUS_WrongModel;
+        return nullptr;
+        }
 
-    DgnModelStatus status = model._OnUpdateElement(element, replacement);
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
+    stat = model._OnUpdateElement(element, replacement);
+    if (DGNMODEL_STATUS_Success != stat)
+        return nullptr;
 
-    status = element._SwapWithModified(replacement);
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
+    stat = element._SwapWithModified(replacement);
+    if (DGNMODEL_STATUS_Success != stat)
+        return nullptr;
 
-    status = element._UpdateInDb();
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
+    stat = element._UpdateInDb();
+    if (DGNMODEL_STATUS_Success != stat)
+        return nullptr;
 
     element._ApplyScheduledChangesToInstances(replacement);
     element._ClearScheduledChangesToInstances();
 
     model._OnUpdatedElement(element, replacement);
-    return DGNMODEL_STATUS_Success;
+    return &element;
     }

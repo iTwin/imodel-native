@@ -131,7 +131,7 @@ TEST(DgnResourceURI_Test, TestDgnElements)
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
-    DgnModelP defaultModel = project->Models().GetModelById (project->Models().GetFirstModelId());
+    DgnModelP defaultModel = project->Models().GetModel (project->Models().GetFirstModelId());
     ASSERT_TRUE( defaultModel != nullptr );
     defaultModel->FillModel();
 
@@ -164,7 +164,7 @@ TEST(DgnResourceURI_Test, TestECInstances)
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
-    DgnModelP defaultModel = project->Models().GetModelById (project->Models().GetFirstModelId());
+    DgnModelP defaultModel = project->Models().GetModel (project->Models().GetFirstModelId());
     ASSERT_TRUE( defaultModel != nullptr );
     project->Models().FillSectionsInModel (*defaultModel);
 
