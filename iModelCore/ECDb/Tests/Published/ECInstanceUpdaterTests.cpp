@@ -169,7 +169,7 @@ TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     ASSERT_EQ (SUCCESS, newLastMod.ToJulianDay (newLastModJdHns));
 
     uint64_t timeSpan = newLastModJdHns - firstLastModJdHns;
-    const uint64_t timeSpan_1sec_in_hns = 10000000ULL;
+    const uint64_t timeSpan_1sec_in_hns = 5000000ULL;
     ASSERT_GT (timeSpan, timeSpan_1sec_in_hns) << "New LastMod must be at least 1 second later than old LastMod as test was paused for 1 sec before updating";
     }
 
