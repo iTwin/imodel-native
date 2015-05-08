@@ -691,14 +691,14 @@ QvElem* Find (QvUnsizedKeyP* foundKey, double size, QvUnsizedKeyCR unsizedKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void  _OnCleanup (DgnElementCP host, bool unloadingCache, HeapZone& zone) override
+virtual void  _OnCleanup (DgnElementCP host, HeapZone& zone) override
     {
 #if defined (NEEDS_WORK_DGNITEM)
     for (Entry* thisEntry=m_entry; thisEntry; thisEntry=thisEntry->m_next)
         thisEntry->m_key.m_unsizedKey.ReleaseHandlerKey();
 #endif
 
-    QvElemSet<QvSizedKey>::_OnCleanup (host, unloadingCache, zone);
+    QvElemSet<QvSizedKey>::_OnCleanup(host, zone);
     }
 
 }; // QvElemCacheSet

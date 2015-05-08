@@ -105,7 +105,7 @@ static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCate
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void getCategoryString (Utf8StringR categoryStr, DgnElementCR element)
     {
-    DgnCategories::Category const& category = DGN_TABLE_LEVEL_FOR_MODEL(&element.GetDgnModel()).QueryCategoryById (element.GetCategoryId());
+    DgnCategories::Category const& category = DGN_TABLE_LEVEL_FOR_MODEL(&element.GetDgnModel()).Query(element.GetCategoryId());
 
     if (!category.IsValid ())
         return;

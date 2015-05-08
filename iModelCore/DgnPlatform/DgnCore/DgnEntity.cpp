@@ -51,10 +51,7 @@ DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
 
     statementPtr->BindId(1, elementId);
 
-    if (ECSqlStepStatus::HasRow != statementPtr->Step())
-        return DateTime();
-
-    return statementPtr->GetValueDateTime(0);
+    return (ECSqlStepStatus::HasRow != statementPtr->Step()) ? DateTime() : statementPtr->GetValueDateTime(0);
     }
 
 //---------------------------------------------------------------------------------------

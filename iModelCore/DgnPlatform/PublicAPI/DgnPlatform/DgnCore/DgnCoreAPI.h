@@ -21,7 +21,6 @@
 #include "Material.h"
 #include "ElementHandler.h"
 #include "DgnDomain.h"
-#include "ElementHandle.h"
 #include "ElementGeometry.h"
 #include "ElementGraphics.h"
 #include "FenceParams.h"
@@ -56,7 +55,6 @@
 #include "NullContext.h"
 #include "QvViewport.h"
 #include "Sprites.h"
-#include "Undo.h"
 
 //__PUBLISH_SECTION_START__
 #endif // DOCUMENTATION_GENERATOR

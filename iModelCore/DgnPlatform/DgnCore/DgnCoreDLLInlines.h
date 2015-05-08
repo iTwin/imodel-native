@@ -534,7 +534,6 @@ DG_INLINE DRay3d          IPickGeom::GetBoresite () const { return _GetBoresite(
 
 DG_INLINE StatusInt     ViewController::VisitHit (HitPathCR hit, ViewContextR context) const{return _VisitHit (hit, context);}
 DG_INLINE void          ViewController::DrawView (ViewContextR context) {return _DrawView(context);}
-DG_INLINE ITxn&         ITxnManager::GetCurrentTxn() {return *m_currTxn;}
 DG_INLINE DgnDbR        ITxnManager::GetDgnDb() {return m_dgndb;}
 DG_INLINE Utf8String    ITxnManager::IValidationError::GetDescription() const {return _GetDescription();}
 DG_INLINE               ITxnManager::ValidationErrorSeverity ITxnManager::IValidationError::GetSeverity() const {return _GetSeverity();}

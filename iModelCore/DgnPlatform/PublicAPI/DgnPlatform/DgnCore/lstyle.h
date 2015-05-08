@@ -12,7 +12,6 @@
 
 #include    <map>
 #include    <Bentley/bvector.h>
-#include    "ElementHandle.h"
 #include    "LineStyle.h"
 
 typedef struct dwgLineStyleInfo* DwgLineStyleInfoP;     // this is outside the linestyle namespace.

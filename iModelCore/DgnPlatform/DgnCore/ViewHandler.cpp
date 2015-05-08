@@ -32,5 +32,5 @@ StatusInt ViewController::_VisitHit (HitPathCR hit, ViewContextR context) const
 void ViewController::_DrawView (ViewContextR context) 
     {
     for (auto modelId : m_viewedModels)
-        context.VisitDgnModel (m_dgndb.Models().GetModelById(modelId));
+        context.VisitDgnModel (m_dgndb.Models().GetModel(modelId));
     }

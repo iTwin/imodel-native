@@ -469,8 +469,9 @@ struct FilledCaller
 * do things that have to happen after a model is completely filled.
 * @bsimethod                                                    KeithBentley    02/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::ModelFillComplete()
+void DgnModel::_OnModelFillComplete()
     {
+    SetReadOnly(m_dgndb.IsReadonly());
     m_appData.CallAll(FilledCaller(*this));
     }
 
@@ -606,7 +607,6 @@ DgnModelStatus DgnModel::_OnUpdateElement(DgnElementCR element, DgnElementR repl
     return DGNMODEL_STATUS_Success;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -675,7 +675,7 @@ bool DgnModels::FreeQvCache()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModels::InsertNewModel(DgnModelR model, Utf8CP description, bool inGuiList)
+DgnModelStatus DgnModels::Insert(DgnModelR model, Utf8CP description, bool inGuiList)
     {
     if (model.m_modelId.IsValid())
         return DGNMODEL_STATUS_IdExists;
@@ -746,7 +746,7 @@ DgnModelP DgnModels::CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name,
         return nullptr;
         }
 
-    DgnModelP seedModel = GetModelById(seedModelId);
+    DgnModelP seedModel = GetModel(seedModelId);
     if (nullptr == seedModel)
         {
         status = DGNMODEL_STATUS_BadSeedModel;
@@ -754,7 +754,7 @@ DgnModelP DgnModels::CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name,
         }
 
     DgnModelPtr newModel = seedModel->Duplicate(name);
-    status = InsertNewModel(*newModel);
+    status = Insert(*newModel);
     if (DGNMODEL_STATUS_Success != status)
         return nullptr;
 
@@ -797,7 +797,7 @@ DgnModelP DgnModels::CreateDgnModel(DgnModelId modelId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::FindModelById(DgnModelId modelId)
+DgnModelP DgnModels::FindModel(DgnModelId modelId)
     {
     auto const& it=m_models.find(modelId);
     return  it!=m_models.end() ? it->second.get() : NULL;
@@ -806,12 +806,12 @@ DgnModelP DgnModels::FindModelById(DgnModelId modelId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::GetModelById(DgnModelId modelId)
+DgnModelP DgnModels::GetModel(DgnModelId modelId)
     {
     if (!modelId.IsValid())
         return  NULL;
 
-    DgnModelP dgnModel = FindModelById(modelId);
+    DgnModelP dgnModel = FindModel(modelId);
     return (NULL != dgnModel) ? dgnModel : CreateDgnModel(modelId);
     }
 
@@ -1022,8 +1022,7 @@ DgnFileStatus DgnModel::FillModel()
             stmt.GetValueId<DgnElementId>(Column::ParentId)));
         }
 
-    SetReadOnly(m_dgndb.IsReadonly());
-    ModelFillComplete();
+    _OnModelFillComplete();
 
     return  DGNFILE_STATUS_Success;
     }

@@ -810,6 +810,7 @@ DgnElementP DrawingElementHandler::_CreateInstance(DgnElement::CreateParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb Domain",1) 
     {
+    RegisterHandler(ModelHandler::GetHandler());
     RegisterHandler(PhysicalModelHandler::GetHandler());
     RegisterHandler(WebMercatorModelHandler::GetHandler());
     RegisterHandler(StreetMapModelHandler::GetHandler());

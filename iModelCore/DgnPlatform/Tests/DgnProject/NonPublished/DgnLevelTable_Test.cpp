@@ -181,7 +181,7 @@ TEST(DgnLevelTableTests,IModelMergeLevels)
     DgnFileR file = project->GetDgnFile();
     FOR_EACH (DgnModels::Iterator::Entry const& entry, file.MakeModelIterator (MODEL_ITERATE_All))
         {
-        DgnModelP model = project->Models().GetModelById (entry.GetModelId());
+        DgnModelP model = project->Models().GetModel (entry.GetModelId());
         ASSERT_TRUE( model != NULL );
         ASSERT_TRUE( model->IsFilled (DgnModelSections::Model) != DgnModelSections::Model ) << "models should not be filled by default";
         modelCount++;
@@ -246,7 +246,7 @@ TEST(DgnLevelTableTests,IModelCopyAndRenameLevels)
     DgnFileR file = project->GetDgnFile();
     FOR_EACH (DgnModels::Iterator::Entry const& entry, file.MakeModelIterator (MODEL_ITERATE_All))
         {
-        DgnModelP model = project->Models().GetModelById (entry.GetModelId());
+        DgnModelP model = project->Models().GetModel (entry.GetModelId());
         ASSERT_TRUE( model != NULL );
         ASSERT_TRUE( model->IsFilled (DgnModelSections::Model) != DgnModelSections::Model ) << "models should not be filled by default";
         modelCount++;

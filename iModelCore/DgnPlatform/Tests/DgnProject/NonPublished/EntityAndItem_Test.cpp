@@ -190,7 +190,7 @@ void ElementAndItemTests::SetupProject (WCharCP projFile, WCharCP testFile, BeSQ
     ASSERT_TRUE( NULL != s_testElementHandler.GetElementClass(*m_db) );
     ASSERT_TRUE( NULL != s_testItemHandler.GetItemClass(*m_db) );
 
-    m_defaultModel = dynamic_cast<PhysicalModel*>(m_db->Models().GetModelById(m_db->Models().QueryFirstModelId()));
+    m_defaultModel = dynamic_cast<PhysicalModel*>(m_db->Models().GetModel(m_db->Models().QueryFirstModelId()));
     ASSERT_TRUE( m_defaultModel != NULL );
     m_defaultModel->FillModel();
 

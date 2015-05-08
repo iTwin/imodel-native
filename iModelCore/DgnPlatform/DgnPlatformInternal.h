@@ -53,7 +53,6 @@
 #include <DgnPlatform/DgnCore/GradientSettings.h>
 #include <DgnPlatform/DgnCore/LineStyleApi.h>
 #include <DgnPlatform/DgnCore/DgnRscFont.h>
-#include <DgnPlatform/DgnCore/Undo.h>
 #include <DgnPlatform/DgnCore/LineStyleApi.h>
 #include <DgnPlatform/DgnCore/DgnRangeTree.h>
 #include <DgnPlatform/DgnCore/ITiledRaster.h>

@@ -20,7 +20,7 @@ static void countModelsInFirstView (size_t& count, DgnDbR project)
         {
         if (viewEntry.GetDgnViewType() == DgnViewType::Physical)
             {
-            auto view = project.Views().QueryViewById (viewEntry.GetDgnViewId());
+            auto view = project.Views().QueryView (viewEntry.GetDgnViewId());
             
             PhysicalViewController phys(project, viewEntry.GetDgnViewId());
             phys.Load();
