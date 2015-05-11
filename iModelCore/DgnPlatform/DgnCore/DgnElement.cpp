@@ -248,17 +248,7 @@ QvCache*  GeometricElement::GetMyQvCache() const {return GetDgnDb().Models().Get
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::SaveGeomStream(GeomStreamCP stream)
     {
-    uint32_t oldSize = _GetMemSize(); // save current size
     m_geom = *stream;     // assign the new element (overwrites or reallocates)
-
-    if (!IsInPool())
-        return;
-
-    int32_t sizeChange = _GetMemSize() - oldSize; // figure out whether the element data is larger now than before
-    BeAssert(0 <= sizeChange); // we never shrink
-
-    if (0 < sizeChange) // report the number or bytes the element grew.
-        GetDgnDb().Elements().AllocatedMemory(sizeChange);
     }
 
 /*---------------------------------------------------------------------------------**//**

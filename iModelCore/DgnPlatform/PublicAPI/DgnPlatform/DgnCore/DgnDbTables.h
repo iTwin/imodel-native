@@ -899,7 +899,7 @@ private:
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
-    void AddDgnElement(DgnElementR) const;
+    void AddToPool(DgnElementR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
@@ -908,8 +908,8 @@ private:
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
-    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnModelStatus* stat=nullptr);
-    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnModelStatus* stat=nullptr);
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnModelStatus* stat);
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnModelStatus* stat);
 
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
@@ -960,11 +960,9 @@ public:
     //! @param[in] element The element to add.
     //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if result is valid, error status otherwise.
     //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
-    template<class T> RefCountedCPtr<T> Insert(RefCountedPtr<T>& element, DgnModelStatus* stat=nullptr) 
-        {RefCountedCPtr<T> result=(T const*)InsertElement(*element.get(), stat).get(); if (result.IsValid()){element=nullptr;} return result;}
+    template<class T> RefCountedCPtr<T> Insert(T& element, DgnModelStatus* stat=nullptr) {return (T const*)InsertElement(element, stat).get();}
 
-    template<class T> RefCountedCPtr<T> Update(RefCountedPtr<T>& element, DgnModelStatus* stat=nullptr) 
-        {RefCountedCPtr<T> result=(T const*)UpdateElement(*element.get(), stat).get(); if (result.IsValid()){element=nullptr;} return result;}
+    template<class T> RefCountedCPtr<T> Update(T& element, DgnModelStatus* stat=nullptr) {return (T const*)UpdateElement(element, stat).get();}
 
     DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementR);
 

@@ -31,7 +31,7 @@ static bool s_abcShouldFail;
 //=======================================================================================
 struct ABCHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
     {
-    HANDLER_DECLARE_MEMBERS (TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
+    DOMAINHANDLER_DECLARE_MEMBERS (TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
 
     bvector<EC::ECInstanceId> m_relIds;
 
@@ -101,12 +101,8 @@ static CurveVectorPtr computeShape()
 //=======================================================================================
 struct TestElementHandler : DgnPlatform::ElementHandler
 {
-    HANDLER_DECLARE_MEMBERS ("TestElement", TestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("TestElement", TestElement, TestElementHandler, DgnPlatform::ElementHandler, )
 
-    virtual DgnElementP _CreateInstance(DgnElement::CreateParams const& params) override
-        {
-        return new TestElement(TestElement::CreateParams(params));
-        }
 
     ECN::ECClassCP GetTestElementECClass (DgnDbR db)
         {
@@ -130,7 +126,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
             return DgnElementKey();
 
-        return db.Elements().Insert(testElement)->GetElementKey();
+        return db.Elements().Insert(*testElement)->GetElementKey();
         }
 
     BentleyStatus DeleteElement (DgnDbR db, DgnElementId eid)
