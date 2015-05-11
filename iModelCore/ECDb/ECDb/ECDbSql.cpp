@@ -576,9 +576,24 @@ std::vector<ECDbSqlColumn const*> const& ECDbSqlTable::GetColumns () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
+bool ECDbSqlTable::TryGetECClassIdColumn (ECDbSqlColumn const*& classIdCol) const
+    {
+    if (!m_isClassIdColumnCached)
+        {
+        m_classIdColumn = GetFilteredColumnFirst(ECDbSystemColumnECClassId);
+        m_isClassIdColumnCached = true;
+        }
+
+    classIdCol = m_classIdColumn;
+    return m_classIdColumn != nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
 ECDbSqlIndex* ECDbSqlTable::CreateIndex (Utf8CP indexName)
     {
-    return m_dbDef.CreateIndex (GetName ().c_str (), indexName);
+    return m_dbDef.CreateIndex(GetName().c_str(), indexName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -869,7 +884,8 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Syncronize (ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSqlTable::PersistenceManager::Create (ECDbR ecdb, bool createIndexes)
     {
-    if (!GetTable ().IsValid ())
+    ECDbSqlTable const& table = GetTable();
+    if (!table.IsValid())
         {
         BeAssert (false && "Table definition is not valid");
         return BentleyStatus::ERROR;
@@ -881,7 +897,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Create (ECDbR ecdb, bool createI
     //    return BentleyStatus::ERROR;
     //    }
 
-    auto sql = DDLGenerator::GetCreateTableDDL (GetTable (), DDLGenerator::CreateOption::Create);
+    auto sql = DDLGenerator::GetCreateTableDDL(table, DDLGenerator::CreateOption::Create);
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         return BentleyStatus::ERROR;
 
@@ -889,13 +905,13 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Create (ECDbR ecdb, bool createI
         {
         for (auto index : GetTableR ().GetIndexesR ())
             {
-            if (index->GetPersistenceManagerR ().Create (ecdb) != BentleyStatus::SUCCESS)
+            if (index->GetPersistenceManagerR().Create(ecdb) != BentleyStatus::SUCCESS)
                 {
                 BeAssert (false && "Failed to create index");
                 return BentleyStatus::ERROR;
                 }
             }
-        for (auto trigger : m_table.GetTriggers())
+        for (auto trigger : table.GetTriggers())
             {
             auto sql = DDLGenerator::GetCreateTriggerDDL(*trigger);
             if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
@@ -1179,7 +1195,7 @@ ECDbSqlIndex* ECDbSqlDb::CreateIndex(Utf8CP tableName, Utf8CP indexName)
             m_nameGenerator.Generate (generatedName);
             } while (HasObject (generatedName.c_str ()));
 
-            auto index = new ECDbSqlIndex(*table, generatedName.c_str(),GetManagerR().GetIdGenerator().NextIndexId());
+            auto index = new ECDbSqlIndex(*table, generatedName.c_str(), GetManagerR().GetIdGenerator().NextIndexId());
             m_index[index->GetName ().c_str ()] = std::unique_ptr<ECDbSqlIndex> (index);
             return index;
         }
@@ -1190,7 +1206,7 @@ ECDbSqlIndex* ECDbSqlDb::CreateIndex(Utf8CP tableName, Utf8CP indexName)
         return nullptr;
         }
 
-    auto index = new ECDbSqlIndex(*table, indexName,GetManagerR().GetIdGenerator().NextIndexId());
+    auto index = new ECDbSqlIndex(*table, indexName, GetManagerR().GetIdGenerator().NextIndexId());
     m_index[index->GetName ().c_str ()] = std::unique_ptr<ECDbSqlIndex> (index);
     return index;
     }
@@ -1784,14 +1800,6 @@ BentleyStatus ECDbSqlForeignKeyConstraint::ReadFrom (ECDbSqlTable& ecdbSqlTable,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-bool ECDbSqlIndex::IsPartialIndex () const
-    {
-    return !GetWhereExpression ().empty ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
 bool ECDbSqlIndex::Contains (Utf8CP column) const
     {
     for (auto col : m_columns)
@@ -1877,12 +1885,12 @@ BentleyStatus ECDbSqlIndex::WriteTo (BeXmlNodeR xmlNode) const
     {
     auto ecdbSqlIndexXml = xmlNode.AddEmptyElement (ECDBSQL_INDEX);
     ecdbSqlIndexXml->AddAttributeStringValue (ECDBSQL_NAME, WString (m_name.c_str (), BentleyCharEncoding::Utf8).c_str ());
-    ecdbSqlIndexXml->AddAttributeUInt64Value (ECDBSQL_ID, static_cast<uint64_t>(GetId ()));
+    ecdbSqlIndexXml->AddAttributeUInt64Value (ECDBSQL_ID, (uint64_t)(GetId ()));
     ecdbSqlIndexXml->AddAttributeStringValue (ECDBSQL_TABLE, WString (m_table.GetName ().c_str (), BentleyCharEncoding::Utf8).c_str ());
     if (m_isUnique)
         ecdbSqlIndexXml->AddAttributeBooleanValue (ECDBSQL_UNIQUE, m_isUnique);
 
-    if (!m_whereExpression.empty ())
+    if (!m_whereExpression.empty())
         ecdbSqlIndexXml->AddAttributeStringValue (ECDBSQL_WHERE, WString (m_whereExpression.c_str (), BentleyCharEncoding::Utf8).c_str ());
 
     for (auto column : m_columns)
@@ -1903,17 +1911,16 @@ BentleyStatus ECDbSqlIndex::ReadFrom (ECDbSqlDb& ecdbSqlDb, BeXmlNodeR xmlNode)
         return BentleyStatus::ERROR;
 
     Utf8String name, whereExpr, table;
-    uint64_t i64;
-    bool isUnique = false;
-
     xmlNode.GetAttributeStringValue (name, ECDBSQL_NAME);
-    xmlNode.GetAttributeUInt64Value (i64, ECDBSQL_ID);
+    uint64_t id;
+    xmlNode.GetAttributeUInt64Value(id, ECDBSQL_ID);
     xmlNode.GetAttributeStringValue (table, ECDBSQL_TABLE);
-    xmlNode.GetAttributeBooleanValue (isUnique, ECDBSQL_UNIQUE);
-    xmlNode.GetAttributeStringValue (whereExpr, ECDBSQL_WHERE);
+    bool isUnique = false;
+    xmlNode.GetAttributeBooleanValue(isUnique, ECDBSQL_UNIQUE);
 
+    xmlNode.GetAttributeStringValue (whereExpr, ECDBSQL_WHERE);
     auto index = ecdbSqlDb.CreateIndex (table.c_str (), name.c_str ());
-    index->SetId (static_cast<int64_t>(i64));
+    index->SetId(static_cast<int64_t>(id));
     index->SetIsUnique (isUnique);
     index->SetWhereExpression (whereExpr.c_str ());
 
@@ -1933,7 +1940,7 @@ BentleyStatus ECDbSqlIndex::ReadFrom (ECDbSqlDb& ecdbSqlDb, BeXmlNodeR xmlNode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlIndex::PersistenceManager::Create (ECDbR ecdb)
+BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb)
     {
     if (!GetIndex().IsValid())
         {
@@ -1941,13 +1948,11 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Create (ECDbR ecdb)
         return BentleyStatus::ERROR;
         }
 
-    //if (Exist (ecdb))
-    //    {
-    //    BeAssert (false && "Index already exist");
-    //    return BentleyStatus::ERROR;
-    //    }
+    //If the table has a class id column (which we don't know when the index is being defined) we need to add
+    //a where exp to the index to only index rows of that class id
+    EvaluateClassIdWhereExp(ecdb);
 
-    auto sql = DDLGenerator::GetCreateIndexDDL (GetIndex (), DDLGenerator::CreateOption::Create);
+    auto sql = DDLGenerator::GetCreateIndexDDL(GetIndex(), DDLGenerator::CreateOption::Create);
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to create index");
@@ -1979,6 +1984,32 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Drop (ECDbR ecdb)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  05/2015
+//---------------------------------------------------------------------------------------
+void ECDbSqlIndex::PersistenceManager::EvaluateClassIdWhereExp(ECDbR ecdb)
+    {
+    BeAssert(ecdb.GetECDbImplR().GetECDbMap().IsMapping());
+    ECDbMap::MapContext const* mapContext = ecdb.GetECDbImplR().GetECDbMap().GetMapContext();
+    ECClassId classId;
+    if (!mapContext->TryGetClassIdToIndex(classId, m_index))
+        return;
+
+    ECDbSqlColumn const* classIdCol = nullptr;
+    if (m_index.GetTable().TryGetECClassIdColumn (classIdCol))
+        {
+        BeAssert(classIdCol != nullptr);
+        Utf8StringR whereExp = m_index.GetWhereExpressionR();
+        if (!whereExp.empty())
+            whereExp.append(" AND ");
+
+        whereExp.append(classIdCol->GetName()).append(" = ");
+        Utf8String classIdStr;
+        classIdStr.Sprintf("%lld", classId);
+        whereExp.append(classIdStr);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 bool ECDbSqlIndex::PersistenceManager::Exist (ECDbR ecdb) const
@@ -1995,7 +2026,7 @@ bool ECDbSqlIndex::PersistenceManager::Exist (ECDbR ecdb) const
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static 
-Utf8String DDLGenerator::GetCreateIndexDDL (ECDbSqlIndex const& o, DDLGenerator::CreateOption option)
+Utf8String DDLGenerator::GetCreateIndexDDL(ECDbSqlIndex const& o, DDLGenerator::CreateOption option)
     {
     //CREATE UNIQUE INDEX name ON table () WHERE (expr)
     Utf8String sql = "CREATE ";
@@ -2006,10 +2037,9 @@ Utf8String DDLGenerator::GetCreateIndexDDL (ECDbSqlIndex const& o, DDLGenerator:
         sql.append ("UNIQUE ");
 
     sql.append ("INDEX [").append (o.GetName ()).append ("] ON [").append(o.GetTable().GetName()).append("] (").append (GetColumnList (o.GetColumns ())).append (")");
-    if (o.IsPartialIndex ())
-        {
-        sql.append (" WHERE (").append (o.GetWhereExpression ()).append (")");
-        }
+
+    if (!o.GetWhereExpression().empty())
+        sql.append(" WHERE (").append(o.GetWhereExpression()).append(")");
 
     return sql;
     }

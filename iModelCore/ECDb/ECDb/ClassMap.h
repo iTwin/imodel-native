@@ -397,12 +397,11 @@ struct ClassMap : public IClassMap, RefCountedBase
 struct MappedTable : public RefCountedBase
 {
 private:
-    ECDbSqlTable&                    m_table;
-    bool                        m_generatedClassId;
-    bvector<ClassMapCP>          m_classMaps;
-    ECDbMapR                    m_ecDbMap;
+    ECDbSqlTable& m_table;
+    bool m_generatedClassIdColumn;
+    bvector<ClassMapCP> m_classMaps;
+    ECDbMapR m_ecDbMap;
 
-    //~MappedTable(void);
     MappedTable(MappedTableCR); // hide copy constructor
     MappedTable (ECDbMapR ecDbMap, ClassMapCR classMap);
 
@@ -418,7 +417,7 @@ public:
     //! It must be called prior to calling ECDbMap::CreateTableInDb()
     StatusInt   FinishTableDefinition();
     StatusInt   AddClassMap (ClassMapCR classMap);
-    bool        IsFinished() const { return m_generatedClassId;}
+    bool        IsFinished() const { return m_generatedClassIdColumn;}
     };
 
 

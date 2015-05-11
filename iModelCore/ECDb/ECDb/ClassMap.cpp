@@ -575,6 +575,11 @@ void ClassMap::CreateIndices ()
 
         auto index = m_table->CreateIndex (indexInfo->GetName ());
         index->SetIsUnique (indexInfo->GetIsUnique ());
+
+        //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
+        BeAssert(GetECDbMap().IsMapping());
+        GetECDbMap().GetMapContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
+
         Utf8String whereExpression;
         bool error = false;
 
@@ -941,7 +946,7 @@ ECPropertyCP ClassMap::GetECProperty (ECN::ECClassCR ecClass, WCharCP propertyAc
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MappedTable::MappedTable (ECDbMapR ecDbMap, ClassMapCR classMap) : m_table (classMap.GetTable ()), m_ecDbMap (ecDbMap), m_generatedClassId (false)
+MappedTable::MappedTable (ECDbMapR ecDbMap, ClassMapCR classMap) : m_table (classMap.GetTable ()), m_ecDbMap (ecDbMap), m_generatedClassIdColumn (false)
     {
     m_classMaps.push_back (&classMap);
     }
@@ -975,7 +980,7 @@ StatusInt MappedTable::FinishTableDefinition ()
 
         if (tablePerHierarchy || nOwners > 1)
             {
-            if (!m_generatedClassId)
+            if (!m_generatedClassIdColumn)
                 {
                 auto ecClassIdColumn = m_table.FindColumnP (ECDB_COL_ECClassId);
                 if (ecClassIdColumn == nullptr)
@@ -986,7 +991,7 @@ StatusInt MappedTable::FinishTableDefinition ()
                         return ERROR;
                     }
 
-                m_generatedClassId = true;
+                m_generatedClassIdColumn = true;
                 }
 
             else

@@ -1096,19 +1096,18 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
     if (existingIndex)
         {
         if (&existingIndex->GetTable () == &GetTable ())
-            {
             return existingIndex;
-            }
         else
-            {
             BeAssert (false && "Index with same name exist on a different table");
-            }
 
         return nullptr;
         }
 
     auto index = GetTable ().CreateIndex (name.c_str ());
     index->SetIsUnique (isUniqueIndex);
+
+    //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
+    GetECDbMap().GetMapContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
     return index;
     }
     

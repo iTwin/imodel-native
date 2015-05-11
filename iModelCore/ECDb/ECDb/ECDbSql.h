@@ -292,15 +292,16 @@ struct ECDbSqlIndex : NonCopyableClass
     struct PersistenceManager : NonCopyableClass
         {
         private:
-            ECDbSqlIndex const& m_index;
+            ECDbSqlIndex& m_index;
+
+            void EvaluateClassIdWhereExp(ECDbR ecdb);
+
         public:
-            PersistenceManager (ECDbSqlIndex const& table)
-                :m_index (table)
-                {
-                }
+            PersistenceManager (ECDbSqlIndex& index) :m_index(index) {}
             ~PersistenceManager (){}
+
             ECDbSqlIndex const& GetIndex () const{ return m_index; }
-            BentleyStatus Create (ECDbR ecdb);
+            BentleyStatus Create(ECDbR ecdb);
             BentleyStatus Drop (ECDbR ecdb);
             bool Exist (ECDbR ecdb) const;
         };
@@ -314,8 +315,10 @@ struct ECDbSqlIndex : NonCopyableClass
         ECDbIndexId m_id;
     private:
         ECDbSqlIndex(ECDbSqlTable& table, Utf8CP name, ECDbIndexId id)
-            :m_isUnique(false), m_table(table), m_name(name),  m_id(id), m_persistenceManager(*this)
+            :m_name(name), m_table(table), m_isUnique(false), m_persistenceManager(*this), m_id(id)
             {}
+
+        Utf8StringR GetWhereExpressionR() { return m_whereExpression; }
 
     public:
         ECDbIndexId GetId () const { return m_id; }
@@ -329,7 +332,6 @@ struct ECDbSqlIndex : NonCopyableClass
         std::vector<ECDbSqlColumn const*> const& GetColumns () const { return m_columns; }
         void SetWhereExpression (Utf8CP expression) { m_whereExpression = expression; }
         Utf8StringCR GetWhereExpression () const { return m_whereExpression; }
-        bool IsPartialIndex () const;
         bool Contains (Utf8CP column) const;
         BentleyStatus Add (Utf8CP column);
         BentleyStatus Remove (Utf8CP column);
@@ -671,23 +673,26 @@ struct ECDbSqlTable : NonCopyableClass
 
     private:
         ECDbSqlDb& m_dbDef;
+        ECDbTableId m_id;
+        Utf8String m_name;
         NameGenerator m_nameGeneratorForColumn;
+        PersistenceType m_type;
+        OwnerType m_ownerType;
         std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8> m_columns;
         std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8> m_trigers;
         std::vector<ECDbSqlColumn const*> m_orderedColumns;
+        mutable bool m_isClassIdColumnCached;
+        mutable ECDbSqlColumn const* m_classIdColumn;
         std::vector<std::unique_ptr<ECDbSqlConstraint>> m_constraints;
-        EditHandle m_editInfo;
-        PersistenceType m_type;
-        Utf8String m_name;
-        OwnerType m_ownerType;
         PersistenceManager m_persistenceManager;
+        EditHandle m_editInfo;
         std::vector<std::function<void (ColumnEvent, ECDbSqlColumn&)>> m_columnEvents;
-        ECDbTableId m_id;
     private:
         ECDbSqlTable (Utf8CP name, ECDbSqlDb& sqlDbDef, ECDbTableId id, PersistenceType type, OwnerType ownerType)
-            : m_name (name), m_id (id), m_dbDef (sqlDbDef), m_nameGeneratorForColumn ("x%02x"), m_type (type), m_ownerType (ownerType), m_persistenceManager (*this)
-            {
-            }
+            : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("x%02x"), m_type(type), m_ownerType(ownerType), 
+            m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this)
+            {}
+
         std::weak_ptr<ECDbSqlColumn> GetColumnWeakPtr (Utf8CP name) const;
     public:
         ECDbTableId GetId () const { return m_id; }
@@ -705,6 +710,7 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<const ECDbSqlTrigger*> GetTriggers()const;
         ECDbSqlColumn const* FindColumnCP (Utf8CP name) const;
         ECDbSqlColumn* FindColumnP (Utf8CP name) const;
+        bool TryGetECClassIdColumn(ECDbSqlColumn const*&) const;
         std::vector<ECDbSqlColumn const*> const& GetColumns () const;
         EditHandle& GetEditHandleR () { return m_editInfo; }
         EditHandle const& GetEditHandle () const { return m_editInfo; }
@@ -791,7 +797,7 @@ struct DDLGenerator
         static Utf8String GetColumnsDDL (std::vector<ECDbSqlColumn const*> columns);
         static Utf8String GetColumnDDL (ECDbSqlColumn const& column);
     public:
-        static Utf8String GetCreateIndexDDL (ECDbSqlIndex const& index, CreateOption createOption);
+        static Utf8String GetCreateIndexDDL(ECDbSqlIndex const& index, CreateOption createOption);
         static Utf8String GetCreateTableDDL (ECDbSqlTable const& table, CreateOption createOption);
         static Utf8String GetCreateTriggerDDL(ECDbSqlTrigger const& trigger);
 

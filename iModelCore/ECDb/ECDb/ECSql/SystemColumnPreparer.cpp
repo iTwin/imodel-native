@@ -100,7 +100,8 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
     if (table.GetPersistenceType() == PersistenceType::Virtual)
         return ECSqlStatus::Success; //table is virtual-> noop
 
-    ECDbSqlColumn const* classIdCol = table.GetFilteredColumnFirst(ECDbSystemColumnECClassId);
+    ECDbSqlColumn const* classIdCol = nullptr;
+    table.TryGetECClassIdColumn(classIdCol);
     BeAssert(classIdCol != nullptr || horizPartition->GetClassIds().size() == 1 && "If table doesn't have class id column, only one class must map to it");
     if (classIdCol == nullptr || !horizPartition->NeedsClassIdFilter ())
         return ECSqlStatus::Success; //table doesn't have class id or all class ids need to be considered -> no filter needed

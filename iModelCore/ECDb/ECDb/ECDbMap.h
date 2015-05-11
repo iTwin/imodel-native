@@ -20,6 +20,19 @@ struct ECDbMap :NonCopyableClass
 typedef bmap<ECN::ECClassId, ClassMapPtr>       ClassMapDictionary;
 typedef bmap<ECDbSqlTable*, MappedTablePtr>          ClustersByTable;
 
+public:
+    struct MapContext : NonCopyableClass
+        {
+    private:
+        bmap<ECDbSqlIndex const*, ECN::ECClassId> m_classIdFilteredIndices;
+
+    public:
+        MapContext() {}
+        ~MapContext() {}
+
+        void AddClassIdFilteredIndex(ECDbSqlIndex const&, ECN::ECClassId);
+        bool TryGetClassIdToIndex(ECN::ECClassId&, ECDbSqlIndex const&) const;
+        };
 private:
     mutable BeMutex m_criticalSection;
     ECDbR                       m_ecdb;
@@ -29,7 +42,7 @@ private:
     bset<ECN::ECClassId>        m_exclusivelyStoredClasses;
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
     mutable int                 m_classMapLoadAccessCounter;
-    bool m_mapping;
+    mutable std::unique_ptr<MapContext> m_mapContext;
     bool                        TryGetClassMap (ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const;
     ClassMapPtr                 DoGetClassMap (ECN::ECClassCR ecClass) const;
     ClassMapPtr                 LoadAddClassMap (ECN::ECClassCR ecClass);
@@ -45,15 +58,16 @@ private:
     CreateTableStatus           CreateOrUpdateRequiredTables ();
     void BeginMapping ();
     void EndMapping ();
-   
+
 public:                        
                                 explicit ECDbMap (ECDbR ecdb);
-                                ~ECDbMap ();
+                                ~ECDbMap() {}
 
     ECDbSQLManager const&        GetSQLManager () const { return m_ecdbSqlManager; }
     ECDbSQLManager&              GetSQLManagerR () { return m_ecdbSqlManager; }
 
     bool IsMapping () const;
+    MapContext* GetMapContext() const;
     bool AssertIfNotMapping () const;
     bool AssertIfMapping () const;
 

@@ -16,16 +16,27 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbMap::ECDbMap (ECDbR ecdb) 
-: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb), m_mapping (false)
+: m_ecdb(ecdb), m_classMapLoadAccessCounter(0), m_ecdbSqlManager(ecdb), m_mapContext(nullptr)
     {}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   05/2015
+//---------------+---------------+---------------+---------------+---------------+--------
+ECDbMap::MapContext* ECDbMap::GetMapContext() const
+    {
+    if (AssertIfNotMapping())
+        return nullptr;
+    
+    return m_mapContext.get();
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2015
 //---------------+---------------+---------------+---------------+---------------+--------
 void ECDbMap::BeginMapping ()
     {
-    BeAssert (m_mapping == false);
-    m_mapping = true;
+    AssertIfMapping();
+    m_mapContext = std::unique_ptr<MapContext>(new MapContext());
     }
 
 //----------------------------------------------------------------------------------------
@@ -33,8 +44,8 @@ void ECDbMap::BeginMapping ()
 //---------------+---------------+---------------+---------------+---------------+--------
 void ECDbMap::EndMapping ()
     {
-    BeAssert (m_mapping == true);
-    m_mapping = false;
+    AssertIfNotMapping();
+    m_mapContext = nullptr;
     }
 
 //----------------------------------------------------------------------------------------
@@ -42,7 +53,7 @@ void ECDbMap::EndMapping ()
 //---------------+---------------+---------------+---------------+---------------+--------
 bool ECDbMap::IsMapping () const
     {
-    return m_mapping;
+    return m_mapContext != nullptr;
     }
 
 //----------------------------------------------------------------------------------------
@@ -50,13 +61,8 @@ bool ECDbMap::IsMapping () const
 //---------------+---------------+---------------+---------------+---------------+--------
 bool ECDbMap::AssertIfNotMapping () const
     {
-    if (IsMapping () == false)
-        {
-        BeAssert (false && "ECDb is in currently is not in mapping mode. Which was not expected");
-        return true;
-        }
-
-    return false;
+    BeAssert(IsMapping() && "ECDb is in currently is not in mapping mode. Which was not expected");
+    return !IsMapping();
     }
 
 //----------------------------------------------------------------------------------------
@@ -64,13 +70,8 @@ bool ECDbMap::AssertIfNotMapping () const
 //---------------+---------------+---------------+---------------+---------------+--------
 bool ECDbMap::AssertIfMapping () const
     {
-    if (IsMapping () == true)
-        {
-        BeAssert (false && "ECDb is in currently in mapping mode. Which was not expected");
-        return true;
-        }
-
-    return false;
+    BeAssert (!IsMapping () && "ECDb is in currently in mapping mode. Which was not expected");
+    return IsMapping();
     }
 
 //----------------------------------------------------------------------------------------
@@ -79,13 +80,6 @@ bool ECDbMap::AssertIfMapping () const
 bool ECDbMap::IsExclusivelyStored (ECN::ECClassId ecClassId) const
     {
     return m_exclusivelyStoredClasses.find (ecClassId) != m_exclusivelyStoredClasses.end ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Casey.Mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbMap::~ECDbMap()
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -619,7 +613,7 @@ CreateTableStatus ECDbMap::FinishTableDefinition (ECDbSqlTable& table) const
     if (AssertIfNotMapping ())
         return CreateTableStatus::CREATE_ECTABLE_Error;
 
-    BeMutexHolder aGurad (m_criticalSection);
+    BeMutexHolder mutex (m_criticalSection);
 
     ClustersByTable::const_iterator cit = m_clustersByTable.find (&table);
     if (m_clustersByTable.end() == cit)
@@ -930,5 +924,30 @@ DbResult ECDbMap::Save()
     return BE_SQLITE_DONE;
     }
 
+//************************************************************************************
+// ECDbMap::MapContext
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   05/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::MapContext::AddClassIdFilteredIndex(ECDbSqlIndex const& index, ECClassId classId)
+    {
+    BeAssert(m_classIdFilteredIndices.find(&index) == m_classIdFilteredIndices.end());
+    m_classIdFilteredIndices[&index] = classId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   05/2015
+//---------------------------------------------------------------------------------------
+bool ECDbMap::MapContext::TryGetClassIdToIndex (ECClassId& classId, ECDbSqlIndex const& index) const
+    {
+    auto it = m_classIdFilteredIndices.find(&index);
+    if (it == m_classIdFilteredIndices.end())
+        return false;
+
+    classId = it->second;
+    return true;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
