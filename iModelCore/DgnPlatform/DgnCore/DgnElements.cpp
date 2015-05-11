@@ -1279,6 +1279,12 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     {
     DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
+    if (replacement.IsInPool())
+        {
+        stat =  DGNMODEL_STATUS_WrongElement;
+        return nullptr;
+        }
+
     DgnElementCPtr orig = GetElement(replacement.GetElementId());
     if (!orig.IsValid())
         {
@@ -1286,11 +1292,6 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         return nullptr;
         }
 
-    if (replacement.IsInPool())
-        {
-        stat =  DGNMODEL_STATUS_WrongElement;
-        return nullptr;
-        }
 
     DgnElementR element = const_cast<DgnElementR>(*orig.get());
     DgnModelR model = element.GetDgnModel();
@@ -1304,7 +1305,8 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
-    stat = element._SwapWithModified(replacement);
+    uint32_t oldSize = _GetMemSize(); // save current size
+    stat = element._CopyFrom(replacement);
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
@@ -1314,6 +1316,12 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
 
     element._ApplyScheduledChangesToInstances(replacement);
     element._ClearScheduledChangesToInstances();
+
+    int32_t sizeChange = _GetMemSize() - oldSize; // figure out whether the element data is larger now than before
+    BeAssert(0 <= sizeChange); // we never shrink
+
+    if (0 < sizeChange) // report the number or bytes the element grew.
+        AllocatedMemory(sizeChange);
 
     model._OnUpdatedElement(element, replacement);
     return &element;
