@@ -140,7 +140,7 @@ DgnDbTestDgnManager tdm
         ASSERT_EQ (SUCCESS, stat2);
 #endif
         DgnModelStatus modelStatus;
-        model->GetDgnDb().Elements().Insert(element, &modelStatus);
+        model->GetDgnDb().Elements().Insert(*element, &modelStatus);
         ASSERT_EQ (SUCCESS, modelStatus);
         }
     attachingTimer.Stop();

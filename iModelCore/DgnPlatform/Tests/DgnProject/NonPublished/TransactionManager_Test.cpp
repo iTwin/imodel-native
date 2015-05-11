@@ -605,7 +605,7 @@ TEST_F (TransactionManagerTests, ElementItem)
         checkItemProperty(*modifiedEl, true, initialTestPropValue); // item should appear to be there on the modified copy
 
         DgnModelStatus modelStatus;
-        m_db->Elements().Update(modifiedEl, &modelStatus);
+        m_db->Elements().Update(*modifiedEl, &modelStatus);
         ASSERT_EQ (BSISUCCESS, modelStatus);
         }
 
@@ -624,7 +624,7 @@ TEST_F (TransactionManagerTests, ElementItem)
         checkItemProperty(*modifiedEl, true, changedTestPropValue); // item property should appear to be changed on the modified copy
 
         DgnModelStatus modelStatus;
-        m_db->Elements().Update(modifiedEl, &modelStatus);
+        m_db->Elements().Update(*modifiedEl, &modelStatus);
         ASSERT_EQ (BSISUCCESS, modelStatus);
         }
 
