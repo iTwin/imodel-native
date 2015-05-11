@@ -56,6 +56,14 @@ struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
                         updater = new ECInstanceUpdater(db, *updatedInstance);
                     }
 
+                if (testClass->GetPropertyCount() == 0)
+                    {
+                    ASSERT_FALSE(updater->IsValid());
+                    return;
+                    }
+                else
+                    ASSERT_TRUE(updater->IsValid());
+
                 status = updater->Update(*updatedInstance);
                 ASSERT_EQ (SUCCESS, status);
 

@@ -51,7 +51,6 @@ private:
     int m_ecinstanceIdParameterIndex;
     bool m_needsCalculatedPropertyEvaluation;
     bool m_isValid;
-    bool m_isNoop;
 
     void Initialize(bvector<ECPropertyCP>& propertiesToBind);
     void Initialize(bvector<uint32_t>& propertiesToBind);
@@ -132,9 +131,6 @@ ECN::ECClassCR ecClass,
 bvector<uint32_t>& propertiesToBind
 )
     {
-    //if (propertiesToBind.size() < 1) // WIP_ECSQL: Assert? throw exception?
-    //    return;
-
     if (ecClass.GetRelationshipClassCP () != nullptr)
         m_impl = new RelationshipUpdaterImpl (ecdb, ecClass);
     else
@@ -227,15 +223,17 @@ void ECInstanceUpdater::Impl::LogFailure (ECN::IECInstanceCR instance, Utf8CP er
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass)
-: Impl (ecClass), m_ecdb (ecdb), m_isValid (false), m_isNoop (false), m_needsCalculatedPropertyEvaluation (false)
+: Impl (ecClass), m_ecdb (ecdb), m_isValid (false), m_needsCalculatedPropertyEvaluation (false)
     {
     bvector<ECPropertyCP> propertiesToBind;
     for (ECPropertyCP ecProperty : GetECClass().GetProperties(true))
         {
         if (ecProperty->GetIsReadOnly())
             continue;
+
         propertiesToBind.push_back(ecProperty);
         }
+
     Initialize(propertiesToBind);
     }
 
@@ -243,7 +241,7 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass)
 // @bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, IECInstanceCR instance)
-    : Impl(instance.GetClass()), m_ecdb(ecdb), m_isValid(false), m_isNoop(false), m_needsCalculatedPropertyEvaluation(false)
+    : Impl(instance.GetClass()), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     bvector<ECPropertyCP> propertiesToBind;
 
@@ -261,7 +259,7 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, IECInstanceCR instance)
 // @bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
-    : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_isNoop(false), m_needsCalculatedPropertyEvaluation(false)
+    : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(propertiesToBind);
     }
@@ -276,11 +274,10 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
 
     if (propertiesToBind.size() < 1)
         {
-        LOG.warningv(L"ECClass '%ls' doesn't have any properties. Using ECInstanceUpdater with instances of that class is a no-op therefore.",
+        LOG.errorv(L"ECClass '%ls' doesn't have any properties. Instances of that class therefore cannot be updated.",
                      GetECClass().GetFullName());
 
-        m_isValid = true;
-        m_isNoop = true;
+        m_isValid = false;
         return;
         }
 
@@ -351,11 +348,10 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
 
     if (propertiesToBind.size() < 1)
         {
-        LOG.warningv(L"ECClass '%ls' doesn't have any properties. Using ECInstanceUpdater with instances of that class is a no-op therefore.",
-                     GetECClass().GetFullName());
+        LOG.errorv(L"ECClass '%ls' doesn't have any properties. Instances of that class therefore cannot be updated.",
+                   GetECClass().GetFullName());
 
-        m_isValid = true;
-        m_isNoop = true;
+        m_isValid = false;
         return;
         }
 
@@ -402,9 +398,6 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
     {
-    if (m_isNoop)
-        return BSISUCCESS;
-
     //"Pins" the internal memory buffer used by the ECDBuffer such that :
     //a) all calculated property values will be evaluated exactly once, when scope is constructed; and
     //b) addresses of all property values will not change for lifetime of scope.
