@@ -239,4 +239,10 @@
     <ClCompile Include="Published\WebServices\PassportTests.cpp" />
     <ClCompile Include="Published\WebServices\UsageTrackingTests.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="dependencies.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
 </Project>
