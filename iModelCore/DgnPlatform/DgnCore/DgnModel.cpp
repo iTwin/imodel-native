@@ -762,14 +762,6 @@ DgnModelP DgnModels::CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP PhysicalModelHandler::_CreateInstance(DgnModel::CreateParams const& params)
-    {
-    return new PhysicalModel(params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelP DgnModels::CreateDgnModel(DgnModelId modelId)

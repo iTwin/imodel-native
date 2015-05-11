@@ -314,6 +314,7 @@ public:
     void SetMercator(Mercator const&);
 };
 
+
 //=======================================================================================
 //! Base class for model handlers that create models derived from WebMercatorModel.
 //! Instances of WebMercatorModel must be able to assume that their handler is-a WebMercatorModelHandler.
@@ -322,10 +323,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModelHandler : ModelHandler
 {
-    HANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
-protected:
-
-    DGNPLATFORM_EXPORT DgnModelP _CreateInstance(DgnModel::CreateParams const&) override;
+    MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercatorModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
 
 public:
     //! Create the URL to request the specified tile from a map service.
@@ -338,6 +336,12 @@ public:
     DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
 };
 
+struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
+{
+    DEFINE_T_SUPER(WebMercatorModel)
+    StreetMapModel(CreateParams const& params) : T_Super(params) {}
+};
+
 //=======================================================================================
 // A handler for models that communicate with one of the well known street map services
 // to obtain and display street maps and satellite imagery based on the WebMercator tiling system.
@@ -345,7 +349,7 @@ public:
 //=======================================================================================
 struct StreetMapModelHandler : WebMercatorModelHandler
 {
-    HANDLER_DECLARE_MEMBERS ("StreetMapModel", StreetMapModelHandler, WebMercatorModelHandler, DGNPLATFORM_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS ("StreetMapModel", StreetMapModel, StreetMapModelHandler, WebMercatorModelHandler, DGNPLATFORM_EXPORT)
 
     //! Identifies a well known street map tile service
     enum class MapService 

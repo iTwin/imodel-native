@@ -248,13 +248,7 @@ QvCache*  GeometricElement::GetMyQvCache() const {return GetDgnDb().Models().Get
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::SaveGeomStream(GeomStreamCP stream)
     {
-    uint32_t oldSize = _GetMemSize(); // save current size
     m_geom = *stream;     // assign the new element (overwrites or reallocates)
-    int32_t sizeChange = _GetMemSize() - oldSize; // figure out whether the element data is larger now than before
-    BeAssert(0 <= sizeChange); // we never shrink
-
-    if (0 < sizeChange) // report the number or bytes the element grew.
-        GetDgnDb().Elements().AllocatedMemory(sizeChange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -797,14 +791,18 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_SwapWithModified(DgnElementR other)
+DgnModelStatus DgnElement::_CopyFrom(DgnElementCR other)
     {
-    if (m_elementId != other.m_elementId || &m_dgnModel!=&other.m_dgnModel || !IsSameType(other))
+    if (&other == this)
+        return DGNMODEL_STATUS_Success;
+
+    if (!IsSameType(other) || &m_dgnModel != &other.m_dgnModel)
         return DGNMODEL_STATUS_BadElement;
 
-    std::swap(m_categoryId, other.m_categoryId);
-    std::swap(m_code, other.m_code);
-    other.SetDeletedRef();
+    m_categoryId = other.m_categoryId;
+    m_code       = other.m_code;
+    m_parentId   = other.m_parentId;
+    m_itemClassId = other.m_itemClassId;
 
     return DGNMODEL_STATUS_Success;
     }
@@ -812,95 +810,42 @@ DgnModelStatus DgnElement::_SwapWithModified(DgnElementR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_InitFrom(DgnElementCR other)
+DgnModelStatus GeometricElement::_CopyFrom(DgnElementCR other)
     {
-    T_Super::_InitFrom(other);
+    auto stat = T_Super::_CopyFrom(other);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
 
-    GeometricElementCP otherGeom = other.ToGeometricElement();
-    if (nullptr == otherGeom)
-        return;
-
+    GeometricElementCP otherGeom = (GeometricElementCP) &other;
     SaveGeomStream(&otherGeom->m_geom);
-    m_itemClassId = otherGeom->m_itemClassId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_InitFrom(DgnElementCR other)
-    {
-    T_Super::_InitFrom(other);
-
-    DgnElement3dCP other3d = other.ToElement3d();
-    if (nullptr == other3d)
-        return;
-
-    m_placement = other3d->m_placement;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement2d::_InitFrom(DgnElementCR other)
-    {
-    T_Super::_InitFrom(other);
-
-    DgnElement2dCP other2d = other.ToElement2d();
-    if (nullptr == other2d)
-        return;
-
-    m_placement = other2d->m_placement;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::_SwapWithModified(DgnElementR other)
-    {
-    DgnModelStatus stat = T_Super::_SwapWithModified(other);
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    GeometricElementP geom = (GeometricElementP) other.ToGeometricElement();
-    if (nullptr == geom)
-        return DGNMODEL_STATUS_BadElement;
-
-    std::swap(m_geom, geom->m_geom);
-    std::swap(m_itemClassId, geom->m_itemClassId);
     return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement3d::_SwapWithModified(DgnElementR other)
+DgnModelStatus DgnElement3d::_CopyFrom(DgnElementCR other)
     {
-    DgnModelStatus stat = T_Super::_SwapWithModified(other);
+    auto stat = T_Super::_CopyFrom(other);
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement3dP el3d = (DgnElement3dP) other.ToElement3d();
-    if (nullptr == el3d)
-        return DGNMODEL_STATUS_BadElement;
-
-    std::swap(m_placement, el3d->m_placement);
+    DgnElement3dCP el3d = (DgnElement3dCP) &other;
+    m_placement = el3d->m_placement;
     return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement2d::_SwapWithModified(DgnElementR other)
+DgnModelStatus DgnElement2d::_CopyFrom(DgnElementCR other)
     {
-    DgnModelStatus stat = T_Super::_SwapWithModified(other);
+    auto stat = T_Super::_CopyFrom(other);
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement2dP el2d = (DgnElement2dP) other.ToElement2d();
-    if (nullptr == el2d)
-        return DGNMODEL_STATUS_BadElement;
-
-    std::swap(m_placement, el2d->m_placement);
+    DgnElement2dCP el2d = (DgnElement2dCP) &other;
+    m_placement = el2d->m_placement;
     return DGNMODEL_STATUS_Success;
     }
 
@@ -918,7 +863,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 DgnElementPtr DgnElement::MakeWriteableCopy() const
     {
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(m_dgnModel, m_classId, m_categoryId, m_code.c_str(), m_elementId, m_parentId));
-    newEl->_InitFrom(*this);
+    newEl->_CopyFrom(*this);
     return newEl;
     }
 

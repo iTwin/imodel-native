@@ -1116,7 +1116,7 @@ public:
 //=======================================================================================
 struct ViewHandler : DgnDomain::Handler
 {
-    HANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_View, ViewHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_View, ViewHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
 protected:
     virtual ViewHandlerP _ToViewHandler() {return this;}

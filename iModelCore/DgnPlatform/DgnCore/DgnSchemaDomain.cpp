@@ -783,29 +783,6 @@ ElementHandlerP ElementHandler::FindHandler(DgnDb const& db, DgnClassId handlerI
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP ElementHandler::_CreateInstance(DgnElement::CreateParams const& params)
-    {
-    return new DgnElement(params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP PhysicalElementHandler::_CreateInstance(DgnElement::CreateParams const& params)
-    {
-    return new PhysicalElement(PhysicalElement::CreateParams(params));
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP DrawingElementHandler::_CreateInstance(DgnElement::CreateParams const& params)
-    {
-    return new DrawingElement(DrawingElement::CreateParams(params));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb Domain",1) 

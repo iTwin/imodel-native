@@ -48,16 +48,16 @@ The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is alwa
     __classname__&  __classname__::z_Get##__classname__##Instance(){__classname__*& instance=z_PeekInstance(); if (nullptr==instance) instance=z_CreateInstance(); return *instance;}
 
 // This macro must be included within the class declaration of a DgnDomain::Handler.
-#define HANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
+#define DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
     private:   __exporter__ static __classname__*& z_PeekInstance(); \
                             static __classname__* z_CreateInstance(); \
     public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
                __exporter__ static __classname__& z_Get##__classname__##Instance();
 
-#define HANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__superclass__,__exporter__) \
+#define DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__superclass__,__exporter__) \
     private:   typedef __superclass__ T_Super; \
     protected: __classname__()  {m_ecClassName =  __ECClassName__ ;} \
-    HANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__)
+    DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__)
 
 // This macro must be included within the source file that implements an DgnDomain::Handler
 #define HANDLER_DEFINE_MEMBERS(__classname__) \
@@ -80,6 +80,7 @@ The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is alwa
 
 #define TABLEHANDLER_DEFINE_MEMBERS(__classname__) \
     __classname__&  __classname__::GetHandler(){static __classname__* s_instance=nullptr; if (nullptr==s_instance) s_instance=new __classname__(); return *s_instance;}
+
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

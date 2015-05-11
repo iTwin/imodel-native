@@ -943,7 +943,7 @@ void DgnElements::OnUnreferenced(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::AddDgnElement(DgnElementR element) const
+void DgnElements::AddToPool(DgnElementR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsInPool());
@@ -1104,7 +1104,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params) 
     if (DGNMODEL_STATUS_Success != el->_LoadFromDb())
         return nullptr;
 
-    AddDgnElement(*el);
+    AddToPool(*el);
     params.m_model._OnLoadedElement(*el);
     return el;
     }
@@ -1253,23 +1253,25 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
-    element.m_elementId = MakeNewElementId();
-    stat = element._InsertInDb();
-    if (DGNMODEL_STATUS_Success != stat)
+    DgnElementPtr newElement = element.MakeWriteableCopy();
+    if (!newElement.IsValid())
         {
-        element.m_elementId = DgnElementId();
+        stat = DGNMODEL_STATUS_BadElement;
         return nullptr;
         }
 
-    element._ApplyScheduledChangesToInstances(element);
-    element._ClearScheduledChangesToInstances();
+    newElement->m_elementId = MakeNewElementId(); 
+    stat = newElement->_InsertInDb();
+    if (DGNMODEL_STATUS_Success != stat)
+        return nullptr;
 
-    AddDgnElement(element);
+    element.m_elementId = newElement->m_elementId; // set this on input element so caller can see it
+    newElement->_ApplyScheduledChangesToInstances(element);
+    AddToPool(*newElement);
 
-    element._OnInserted();
-    model._OnInsertedElement(element);
-    
-    return &element;
+    newElement->_OnInserted();
+    model._OnInsertedElement(*newElement);
+    return newElement;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1279,16 +1281,16 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     {
     DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
+    if (replacement.IsInPool())
+        {
+        stat =  DGNMODEL_STATUS_WrongElement;
+        return nullptr;
+        }
+
     DgnElementCPtr orig = GetElement(replacement.GetElementId());
     if (!orig.IsValid())
         {
         stat = DGNMODEL_STATUS_InvalidId;
-        return nullptr;
-        }
-
-    if (replacement.IsInPool())
-        {
-        stat =  DGNMODEL_STATUS_WrongElement;
         return nullptr;
         }
 
@@ -1304,7 +1306,8 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
-    stat = element._SwapWithModified(replacement);
+    uint32_t oldSize = element._GetMemSize(); // save current size
+    stat = element._CopyFrom(replacement);
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
@@ -1314,6 +1317,12 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
 
     element._ApplyScheduledChangesToInstances(replacement);
     element._ClearScheduledChangesToInstances();
+
+    int32_t sizeChange = element._GetMemSize() - oldSize; // figure out whether the element data is larger now than before
+    BeAssert(0 <= sizeChange); // we never shrink
+
+    if (0 < sizeChange) // report the number or bytes the element grew.
+        AllocatedMemory(sizeChange);
 
     model._OnUpdatedElement(element, replacement);
     return &element;
