@@ -1,79 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Published\ArcHandlers_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\XmlFragment_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\BSplineCurveHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\BSplineSurfaceHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\CellHeaderHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ChainHeaderHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ColorBook_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ConeHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\CopyContext_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\CurveHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DgnElementHelpers.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DgnProject_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DgnTextStyle_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DimensionHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DimensionStyle_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECInstanceHolder_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ElementAgenda_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ElementCreateHelpers.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\Font_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\GroupedHoleHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\IAreaFillProperties_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\IEditInterface_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\LightElement_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\LinearHandlers_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\MeshHandlers_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\MSElementDescr_Test.cpp">
@@ -132,9 +66,6 @@
     </ClCompile>
     <ClCompile Include="Performance\TestSchemaHelper.cpp">
       <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DgnECPersistence_Test.cpp">
-      <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="BackDoor\BackDoor.cpp">
       <Filter>BackDoor</Filter>
@@ -205,16 +136,7 @@
     <ClCompile Include="NonPublished\XGraphics_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Assembly_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\DgnGraphics_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DgnLinkTable_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DgnMaterials_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\DgnResourceURI_Test.cpp">
@@ -270,13 +192,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Published\DgnElementHelpers.h">
-      <Filter>Published</Filter>
-    </ClInclude>
     <ClInclude Include="Published\DgnHandlersTests.h">
-      <Filter>Published</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ElementCreateHelpers.h">
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="Published\GenericDgnModelTestFixture.h">
@@ -325,9 +241,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DgnDbUnitTests.PartFile.xml">
-      <Filter>Published</Filter>
-    </None>
     <None Include="ignore_list.txt" />
   </ItemGroup>
 </Project>
