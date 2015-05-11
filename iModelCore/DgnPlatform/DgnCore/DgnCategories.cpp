@@ -367,12 +367,17 @@ void DgnCategories::SubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
     m_invisible = val.get(APPEARANCE_Invisible, false).asBool();
     m_color  = ColorDef(val[APPEARANCE_Color].asUInt());
     m_weight = val[APPEARANCE_Weight].asUInt();
-    m_style  = DgnStyleId(val[APPEARANCE_Style].asInt64());
+    if (val.isMember(APPEARANCE_Style))
+        m_style  = DgnStyleId(val[APPEARANCE_Style].asInt64());
+    else
+        m_style.Invalidate();
     m_displayPriority = val[APPEARANCE_Priority].asInt();
     m_transparency = val[APPEARANCE_Transparency].asDouble();
 
     if (val.isMember(APPEARANCE_Material))
         m_material = DgnMaterialId(val[APPEARANCE_Material].asInt64());
+    else
+        m_material.Invalidate();
     }
 
 /*---------------------------------------------------------------------------------**//**

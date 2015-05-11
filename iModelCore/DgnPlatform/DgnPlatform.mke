@@ -29,8 +29,7 @@ DgnPlatformInternalDir = $(DgnCoreDir)../PrivateApi/DgnPlatformInternal/
 dimensionDir    = $(DgnHandlersDir)Dimension/
 markupDir       = $(DgnHandlersDir)Markup/
 
-contextDepends  =   $(DgnCoreAPISrc)ElementAgenda.h         \
-                    $(DgnCoreAPISrc)ViewContext.h           \
+contextDepends  =   $(DgnCoreAPISrc)ViewContext.h           \
                     $(DgnCoreAPISrc)IViewOutput.h           \
                     $(DgnCoreAPISrc)IViewDraw.h             \
                     $(DgnCoreAPISrc)DgnViewport.h
@@ -54,7 +53,6 @@ LsLocalDepends = $(DgnCoreAPISrc)LsLocal.h $(DgnCoreAPISrc)LineStyle.h $(context
 
 EnablerDepends =    $(HandlerDepends) \
                     $(DgnPlatformAPISrc)DgnHandlers/IManipulator.h \
-                    $(DgnPlatformAPISrc)DgnHandlers/IModifyElement.h
 
 #---------------------------------------------------------
 #  Set up for signing
@@ -117,8 +115,6 @@ $(coreObjs)DgnElement$(oext)      : $(DgnCoreDir)DgnElement.cpp ${MultiCompileDe
 $(coreObjs)DgnModel$(oext)        : $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnCoreAPISrc)ScanCriteria.h 
 
 $(coreObjs)UnitDefinition$(oext): $(DgnCoreDir)UnitDefinition.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
-
-$(coreObjs)ElementAgenda$(oext): $(DgnCoreDir)ElementAgenda.cpp $(DgnCoreAPISrc)ElementAgenda.h ${MultiCompileDepends}
 
 $(coreObjs)TxnManager$(oext): $(DgnCoreDir)TxnManager.cpp $(txnManagerDepends) ${MultiCompileDepends}
 
