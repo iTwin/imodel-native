@@ -1358,12 +1358,9 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
     private:
 
         ECRelationshipClassP m_relClass;
-        bool m_isMultiple;
    //__PUBLISH_SECTION_START__
     public:
         ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple = false);
-        //! Returns true if the constraint allows for a variable number of classes
-        ECOBJECTS_EXPORT bool GetIsMultiple() const;
         ECOBJECTS_EXPORT iterator begin() const;    //!< Returns the beginning of the iterator
         ECOBJECTS_EXPORT iterator end() const;      //!< Returns the end of the iterator
         ECOBJECTS_EXPORT ECRelationshipConstraintClassCP operator[](size_t x)const; //!< Array operator overloaded
@@ -1424,9 +1421,6 @@ protected:
 public:
  
     ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
-
-    //! Returns true if the constraint allows for a variable number of classes
-    ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
 
     //! Sets the label of the constraint role in the relationship.
     ECOBJECTS_EXPORT ECObjectsStatus            SetRoleLabel (WStringCR value);
