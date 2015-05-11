@@ -24,20 +24,42 @@ double PerformanceDgnECTests::s_zCoord = 0.0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                 07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PerformanceDgnECTests::CreateArbitraryElement (EditElementHandleR editElementHandle, DgnModelR model)
+StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, DgnModelR model)
     {
-#if defined (NEEDS_WORK_DGNITEM)
-    DSegment3d  segment;
-    segment.point[0] = DPoint3d::FromXYZ (s_xCoord, s_yCoord, s_zCoord); 
-    segment.point[1] = DPoint3d::FromXYZ (s_xCoord + s_increment, s_yCoord + s_increment, s_zCoord + s_increment);
+    if (!model.Is3d())
+        return ERROR; // What kind of model is this?!?
 
-    s_xCoord += 2 * s_increment;
-    s_yCoord += 2 * s_increment;
-    s_zCoord += 2 * s_increment;
+    DgnClassId elementClassId = DgnClassId(model.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)); // Should be passed in from primary ECInstance...
+    ElementHandlerP elementHandler = ElementHandler::FindHandler(model.GetDgnDb(), elementClassId);
 
-    return LineHandler::CreateLineElement (editElementHandle, NULL, segment, model.Is3d(), model);
-#endif
-    return ERROR;
+    if (nullptr == elementHandler)
+        return ERROR;
+
+    DgnCategoryId categoryId = model.GetDgnDb().Categories().MakeIterator().begin().GetCategoryId(); // Do any categories exist? Test probably needs to add one...
+
+    if (!categoryId.IsValid())
+        return ERROR;
+
+    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model, elementClassId, categoryId));
+
+    if (!element.IsValid())
+        return ERROR;
+
+    GeometricElementP geomElement = element->ToGeometricElementP();
+
+    if (nullptr == geomElement)
+        return ERROR;
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElement);
+
+    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(s_xCoord, s_yCoord, s_zCoord), DPoint3d::From(s_xCoord + s_increment, s_yCoord + s_increment, s_zCoord + s_increment))));
+
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElement))
+        return ERROR;
+
+    out = element;
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -49,10 +71,7 @@ ECSchemaR schema,
 DgnDbTestDgnManager tdm
 )
     {
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     DgnModelP model = tdm.GetDgnModelP();
-#endif
-
     ECClassP testClass = schema.GetClassP(TEST_CLASS_NAME);
     // We don't want to time the creation of the elements.  So we create them in one loop, and then insert instances
     // in a second loop
@@ -98,34 +117,37 @@ DgnDbTestDgnManager tdm
         }
     insertingTimer.Stop();
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
-    bvector<EditElementHandle*> elements;
+    DgnElementPtrVec elements;
     for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
         {
         StatusInt status;
-        EditElementHandle* eeh = new EditElementHandle();
-        status = CreateArbitraryElement (*eeh, *model);
+        DgnElementPtr element;
+        status = CreateArbitraryElement (element, *model);
         ASSERT_EQ(SUCCESS, status);
-        elements.push_back (eeh);
+        elements.push_back (element);
         }
 
     attachingTimer.Start();
     for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
         {
-        EditElementHandle*  elemHandle = elements[i];
+        DgnElementPtr element = elements[i];
 
+#if defined (NEEDS_WORK_DGNITEM)
+        // NEEDSWORK: primary ECInstance affects element class/element handler...should be supplied to CreateArbitraryElement???
         ECInstanceId ecInstanceId;
         ECInstanceIdHelper::FromString(ecInstanceId, instances[i]->GetInstanceId().c_str());
         StatusInt stat2 = DgnECPersistence::SetPrimaryInstanceOnElement (*elemHandle, ECInstanceKey (testClass->GetId(), ecInstanceId), *tdm.GetDgnProjectP());
         ASSERT_EQ (SUCCESS, stat2);
-        ASSERT_EQ (SUCCESS, elemHandle->AddToModel());
+#endif
+        DgnModelStatus modelStatus;
+        model->GetDgnDb().Elements().Insert(element, &modelStatus);
+        ASSERT_EQ (SUCCESS, modelStatus);
         }
     attachingTimer.Stop();
     totalInsertingStopwatch.Stop();
     PERFORMANCELOG.infov (L"Inserting %d instances (total): %.4lf", TESTCLASS_INSTANCE_COUNT, totalInsertingStopwatch.GetElapsedSeconds ());
     PERFORMANCELOG.infov (L"Inserting %d instances (inserting): %.4lf", TESTCLASS_INSTANCE_COUNT, insertingTimer.GetElapsedSeconds());
     PERFORMANCELOG.infov (L"Creating and Inserting %d elements with primary instance attached: %.4lf", TESTCLASS_INSTANCE_COUNT, attachingTimer.GetElapsedSeconds());
-#endif
 
     bmap<Utf8String, double> results;
     Utf8String total(totalInsertingStopwatch.GetDescription().c_str());
@@ -137,13 +159,6 @@ DgnDbTestDgnManager tdm
 
     LogResultsToFile(results);
     tdm.GetDgnProjectP()->SaveChanges();
-
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
-    for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
-        {
-        delete elements[i];
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

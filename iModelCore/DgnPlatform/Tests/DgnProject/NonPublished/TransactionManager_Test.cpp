@@ -544,7 +544,6 @@ TEST_F (TransactionManagerTests, ElementInstance)
     ASSERT_EQ( e1props.GetValue(v, TMTEST_TEST_ELEMENT_TestElementProperty) , ECN::ECOBJECTS_STATUS_Success );
     }
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE_FIX_NOW)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -598,28 +597,28 @@ TEST_F (TransactionManagerTests, ElementItem)
     if (true)
         {
         //  Add an ElementItem
-
         ECN::IECInstancePtr newItem = testItemClass->GetDefaultStandaloneEnabler()->CreateInstance();
         newItem->SetValue(TMTEST_TEST_ITEM_TestItemProperty, ECN::ECValue(initialTestPropValue));
 
-        EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetWriteableElement()->ToGeometricElement());
-        ASSERT_TRUE( modifiedEl != nullptr );
+        GeometricElementCPtr elChange = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
+        GeometricElementPtr modifiedEl = elChange->MakeWriteableCopy()->ToGeometricElementP();
 
         modifiedEl->SetItem(*newItem);
 
         checkItemProperty(*el, false, nullptr); // element should still have no item
         checkItemProperty(*modifiedEl, true, initialTestPropValue); // item should appear to be there on the modified copy
 
-        ASSERT_EQ( BSISUCCESS , elChange.ReplaceInModel() );
+        DgnModelStatus modelStatus;
+        m_db->Elements().Update(modifiedEl, &modelStatus);
+        ASSERT_EQ (BSISUCCESS, modelStatus);
         }
 
     checkItemProperty(*el, true, initialTestPropValue); // item should now be in the DB
 
     if (true)
         {
-        EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetWriteableElement()->ToGeometricElement());
+        GeometricElementCPtr elChange = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
+        GeometricElementPtr modifiedEl = elChange->MakeWriteableCopy()->ToGeometricElementP();
 
         ECN::IECInstanceP existingItem = modifiedEl->GetItemP();
         ASSERT_NE( existingItem , nullptr );
@@ -628,7 +627,9 @@ TEST_F (TransactionManagerTests, ElementItem)
         checkItemProperty(*el, true, initialTestPropValue); // item property should be unchanged in the DB
         checkItemProperty(*modifiedEl, true, changedTestPropValue); // item property should appear to be changed on the modified copy
 
-        ASSERT_EQ( BSISUCCESS , elChange.ReplaceInModel() );
+        DgnModelStatus modelStatus;
+        m_db->Elements().Update(modifiedEl, &modelStatus);
+        ASSERT_EQ (BSISUCCESS, modelStatus);
         }
 
     checkItemProperty(*el, true, changedTestPropValue); // item should now be in the DB
@@ -674,7 +675,6 @@ TEST_F (TransactionManagerTests, ElementItem)
     " WHERE e.ECInstanceId=?"
 */
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15

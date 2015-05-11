@@ -16,8 +16,6 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-typedef bvector <ElementHandle>  T_SimplifyResults;
-
 typedef std::map <WString, WString> NameDefinitionList_T;
 typedef NameDefinitionList_T::value_type   NameDefinitionValue_T;
 
@@ -32,20 +30,23 @@ private:
 public:
                    static LineStyleStatus MapToLineStyleStatus(int status);
 DGNPLATFORM_EXPORT static int           CreateSymbolDscr (DgnElementPtrVec&,Byte *symBufP, int bufSize, int threeD, uint32_t rscType, DgnModelP model);
-DGNPLATFORM_EXPORT static void          AddLsRange (EditElementHandleR);
 DGNPLATFORM_EXPORT static bool          ElementHasLineStyle (GeometricElementCP pElem, DgnModelP modelRef);
-DGNPLATFORM_EXPORT static void          TransformParams (EditElementHandleR elem, TransformCP pTrans, DgnModelP sourceDgnModel, DgnModelP destDgnModel, bool canChangeSize);
-DGNPLATFORM_EXPORT static StatusInt     DuplicateStyleDef (DgnElementP* newDefinitionElement, ElementHandleR oldDef, DgnDbP destFile);
 DGNPLATFORM_EXPORT static int32_t       AddStyle (Utf8CP name, DgnDbR dgnFile, long seedID);
                    static void          AdjustParamUorScale (LineStyleParamsP paramsP, int32_t styleNo, DgnModelP modelRef, DgnCategoryId level);
                    static void          MergeParams (LineStyleParamsP outParams, LineStyleParamsP masterParams, LineStyleParamsP paramsToAdd);
-DGNPLATFORM_EXPORT static BentleyStatus SimplifySymbol (T_SimplifyResults& results, ElementHandleCR eh);
 DGNPLATFORM_EXPORT static void          InitializeParams (LineStyleParams*params);
-DGNPLATFORM_EXPORT static StatusInt     GetParamsFromElement (LineStyleParamsP pParams, ElementHandleR eh);
                    static StatusInt     GetLinNameList (NameDefinitionList_T&nameDefList, WCharCP linFileName);
 DGNPLATFORM_EXPORT static int           LoadLinDefinition (WCharCP linFileName, bvector<WString>&definitionsToLoad, DgnModelP modelRef, double linUnitsToMuFactor);
 DGNPLATFORM_EXPORT static int           LoadLinDefinition (WCharCP linFileName, WCharCP oneDefinitionToLoad, DgnModelP modelRef, double linUnitsToMuFactor);
 DGNPLATFORM_EXPORT static double        GetDefaultLinScale (DgnModelP destDgnModel);
+
+#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
+DGNPLATFORM_EXPORT static void          AddLsRange (EditElementHandleR);
+DGNPLATFORM_EXPORT static void          TransformParams (EditElementHandleR elem, TransformCP pTrans, DgnModelP sourceDgnModel, DgnModelP destDgnModel, bool canChangeSize);
+DGNPLATFORM_EXPORT static StatusInt     DuplicateStyleDef (DgnElementP* newDefinitionElement, ElementHandleR oldDef, DgnDbP destFile);
+DGNPLATFORM_EXPORT static BentleyStatus SimplifySymbol (T_SimplifyResults& results, ElementHandleCR eh);
+DGNPLATFORM_EXPORT static StatusInt     GetParamsFromElement (LineStyleParamsP pParams, ElementHandleR eh);
+#endif
 };
 
 //=======================================================================================

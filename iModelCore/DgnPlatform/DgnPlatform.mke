@@ -366,8 +366,6 @@ $(coreObjs)HitPath$(oext): $(DgnHandlersDir)HitPath.cpp $(DgnCoreAPISrc)DisplayP
 
 $(coreObjs)PickContext$(oext): $(DgnHandlersDir)PickContext.cpp  $(DgnCoreAPISrc)HitPath.h $(DgnCoreAPISrc)DisplayPath.h $(contextDepends) $(DgnCoreAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
 
-$(coreObjs)IEcPropertyHandler$(oext) : $(DgnHandlersDir)IEcPropertyHandler.cpp $(DgnHandlersAPISrc)IEcPropertyHandler.h ${MultiCompileDepends}
-
 $(coreObjs)RegionUtil$(oext): $(DgnHandlersDir)RegionUtil.cpp $(contextDepends) ${MultiCompileDepends}
 
 $(coreObjs)ScopedDgnHost$(oext)          : $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
@@ -426,7 +424,7 @@ cppObjects = $(coreObjects)
 #   Portable inline handling (make sure that there is a non-inlined implementation when required)
 # -----------------------------------------------------------------------------------------------
 
-$(handlerObjs)DgnPlatformDLLInlines$(oext) : $(baseDir)DgnPlatformDLLInlines.cpp $(baseDir)DgnCore/DgnCoreDLLInlines.h $(baseDir)DgnHandlers/DgnHandlersDLLInlines.h ${MultiCompileDepends}
+$(handlerObjs)DgnPlatformDLLInlines$(oext) : $(baseDir)DgnPlatformDLLInlines.cpp $(baseDir)DgnCore/DgnCoreDLLInlines.h ${MultiCompileDepends}
 
 cppObjects +% $(handlerObjs)DgnPlatformDLLInlines$(oext)
 
