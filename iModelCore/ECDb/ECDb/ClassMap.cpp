@@ -576,10 +576,6 @@ void ClassMap::CreateIndices ()
         auto index = m_table->CreateIndex (indexInfo->GetName ());
         index->SetIsUnique (indexInfo->GetIsUnique ());
 
-        //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
-        BeAssert(GetECDbMap().IsMapping());
-        GetECDbMap().GetMapContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
-
         Utf8String whereExpression;
         bool error = false;
 
@@ -746,6 +742,12 @@ void ClassMap::CreateIndices ()
         if (error || !index->IsValid ())
             {
             index->Drop ();
+            }
+        else
+            {
+            //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
+            BeAssert(GetECDbMap().IsMapping());
+            GetECDbMap().GetMapContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
             }
         }
     }

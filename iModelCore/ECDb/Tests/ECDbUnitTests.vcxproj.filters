@@ -187,6 +187,9 @@
     <ClCompile Include="Published\ECDbMapPersistence_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECDbSql_Test.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
