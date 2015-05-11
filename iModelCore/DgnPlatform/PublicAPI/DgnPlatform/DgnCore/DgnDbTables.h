@@ -168,7 +168,7 @@ struct DgnCategories : DgnDbTable
             DGNPLATFORM_EXPORT bool operator==(Appearance const& other) const;
             bool IsEqual(Appearance const& other) const {return *this==other;}
             void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
-            Utf8String ToJson() const;   //!< convert this appearance to a json string
+            DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
         };// Appearance
 
         //! View-specific overrides of the appearance of a SubCategory
