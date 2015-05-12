@@ -849,38 +849,6 @@ struct ECDbDebugStringWriter : NonCopyableClass
         Utf8StringCR GetString () const;
     };
 
-
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
-struct ECDbSqlDbDebugWriter
-    {
-    private:
-        ECDbSqlDbDebugWriter ()
-            {}
-
-    public:
-        static void WriteDbDef (ECDbDebugStringWriter& writer, ECDbSqlDb const& obj);
-        static void WriteTableDef (ECDbDebugStringWriter& writer, ECDbSqlTable const& obj);
-        static void WriteColumnDef (ECDbDebugStringWriter& writer, ECDbSqlColumn const& obj);
-    };
-
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
-struct IWriteDebugString
-    {
-    private:
-        virtual void _WriteDebugString (ECDbDebugStringWriter& writer) = 0;
-
-    public:
-        void WriteDebugString (ECDbDebugStringWriter& writer)
-            {
-            _WriteDebugString (writer);
-            }
-    };
-
-
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================

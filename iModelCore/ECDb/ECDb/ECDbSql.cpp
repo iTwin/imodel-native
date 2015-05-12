@@ -149,59 +149,6 @@ EditHandle::EditHandle (EditHandle const &&  eh)
 //---------------------------------------------------------------------------------------
 EditHandle::~EditHandle (){ /*AssertInEditMode ();*/ }
 
-//****************************************************************************************
-//ECDbSqlDbDebugWriter
-//****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-//static 
-void ECDbSqlDbDebugWriter::WriteDbDef (ECDbDebugStringWriter& writer, ECDbSqlDb const& obj)
-    {
-    writer.WriteLine ("[ObjectType = ECDbSqlDb] [Name = %s]", obj.GetName ().c_str ());
-    auto scope = writer.CreateScope ();
-
-    for (auto const childObj : obj.GetTables ())
-        {
-        WriteTableDef (writer, *childObj);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-//static 
-void ECDbSqlDbDebugWriter::WriteTableDef (ECDbDebugStringWriter& writer, ECDbSqlTable const& obj)
-    {
-    writer.WriteLine ("[ObjectType = ECDbSqlTable] [Name = %s]", obj.GetName ().c_str ());
-    auto scope = writer.CreateScope ();
-    for (auto const childObj : obj.GetColumns ())
-        {
-        WriteColumnDef (writer, *childObj);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-//static 
-void ECDbSqlDbDebugWriter::WriteColumnDef (ECDbDebugStringWriter& writer, ECDbSqlColumn const& obj)
-    {
-    Utf8String typeName = "<not-set>";
-    switch (obj.GetType ())
-        {
-        case ECDbSqlColumn::Type::Any: typeName = "Any"; break;
-        case ECDbSqlColumn::Type::Binary: typeName = "Binary"; break;
-        case ECDbSqlColumn::Type::Boolean: typeName = "Boolean"; break;
-        case ECDbSqlColumn::Type::DateTime: typeName = "DateTime"; break;
-        case ECDbSqlColumn::Type::Double: typeName = "Double"; break;
-        case ECDbSqlColumn::Type::Integer: typeName = "Integer"; break;
-        case ECDbSqlColumn::Type::Long: typeName = "Long"; break;
-        case ECDbSqlColumn::Type::String: typeName = "String"; break;
-        }
-    writer.WriteLine ("[ObjectType = ECDbSqlColumn] [Name = %s] [Type : %s]", obj.GetName ().c_str (), typeName.c_str ());
-    }
-
 
 //****************************************************************************************
 //ECDbDebugStringWriter
