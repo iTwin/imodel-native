@@ -13,6 +13,8 @@ ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+# TFS Item 211624
+ECInstanceInserterTests.CloseDbAfterInstanceInsertionUsingStandaloneEnabler
 # TFS Defect 140982
 ECDbRelationships.RelationshipProperties 
 ECDbRelationships.JoinTests

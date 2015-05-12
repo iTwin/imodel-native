@@ -406,7 +406,6 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
     ECDBufferScope scope;
     if (m_needsCalculatedPropertyEvaluation)
         scope.Init (instance.GetECDBuffer ());
-
     ECInstanceAdapterHelper::ECInstanceInfo instanceInfo (instance);
     //now add parameter values for regular properties
     for (auto const& bindingInfo : m_ecValueBindingInfos)
