@@ -567,10 +567,27 @@ struct Frustum
 };
 
 //=======================================================================================
-//! A list of DgnElementDescr's.
+//! A list of DgnElementPtr's.
 // @bsiclass                                                    Keith.Bentley   02/14
 //=======================================================================================
 struct DgnElementPtrVec : bvector<DgnElementPtr>
+{
+    const_iterator Find(DgnElementCR val) const
+        {
+        for (auto it=begin(); it!=end(); ++it)
+            {
+            if (it->get() == &val)
+                return it;
+            }
+        return end(); // not found
+        }
+};
+
+//=======================================================================================
+//! A list of DgnElementCPtr's.
+// @bsiclass
+//=======================================================================================
+struct DgnElementCPtrVec : bvector<DgnElementCPtr>
 {
     const_iterator Find(DgnElementCR val) const
         {
