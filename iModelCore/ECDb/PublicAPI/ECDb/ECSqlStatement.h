@@ -167,7 +167,7 @@ public:
     //! Initializes a new unprepared ECSqlStatement.
     ECDB_EXPORT ECSqlStatement ();
     //! Destroys the ECSqlStatement and all internal resources.
-    ECDB_EXPORT ~ECSqlStatement ();
+    ECDB_EXPORT virtual ~ECSqlStatement ();
     //! Move constructor
     ECDB_EXPORT ECSqlStatement (ECSqlStatement&& rhs);
     //! Move assignment operator
