@@ -1883,7 +1883,7 @@ const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple) :m_relClass(relClass), m_isMultiple(isMultiple)
+ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple) :m_relClass(relClass)
     {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
@@ -1897,18 +1897,6 @@ ECRelationshipConstraintClassList& ECRelationshipConstraint::GetConstraintClasse
     return m_constraintClasses;
     }
 
-bool ECRelationshipConstraintClassList::GetIsMultiple() const
-    {
-    return m_isMultiple;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECRelationshipConstraint::GetIsMultiple () const
-    {
-    return m_constraintClasses.GetIsMultiple();
-    }
-  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2538,18 +2526,12 @@ ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintC
             return ECOBJECTS_STATUS_SchemaNotFound;
         }
 
-    if (!m_isMultiple)
-        m_constraintClasses.clear();
-    else
+    for (auto &constraintClassIterator : m_constraintClasses)
         {
-
-        for (auto &constraintClassIterator : m_constraintClasses)
+        if (&constraintClassIterator->GetClass() == &ecClass)
             {
-            if (&constraintClassIterator->GetClass() == &ecClass)
-                {
-                classConstraint = constraintClassIterator.get();
-                return ECOBJECTS_STATUS_Success;
-                }
+            classConstraint = constraintClassIterator.get();
+            return ECOBJECTS_STATUS_Success;
             }
         }
     auto newConstraintClass =  std::unique_ptr<ECRelationshipConstraintClass>(new ECRelationshipConstraintClass(ecClass));
