@@ -541,7 +541,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
     style.m_size.y = fbStyle.height();
     
     if (fbStyle.has_widthFactor())
-        style.m_size.x = style.m_size.x * fbStyle.widthFactor();
+        style.m_size.x = style.m_size.y * fbStyle.widthFactor();
     else
         style.m_size.x = style.m_size.y;
     

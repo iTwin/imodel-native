@@ -33,6 +33,7 @@ enum class GeometryType
     BsplineSurface      = 4,
     Polyface            = 5,
     SolidKernelEntity   = 6,
+    TextString          = 7,
     };
 
 //__PUBLISH_SECTION_END__
@@ -47,6 +48,7 @@ ElementGeometry (ISolidPrimitivePtr const& source);
 ElementGeometry (MSBsplineSurfacePtr const& source);
 ElementGeometry (PolyfaceHeaderPtr const& source);
 ElementGeometry (ISolidKernelEntityPtr const& source);
+ElementGeometry (TextStringPtr const& source);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -60,6 +62,7 @@ DGNPLATFORM_EXPORT ISolidPrimitivePtr GetAsISolidPrimitive () const;
 DGNPLATFORM_EXPORT MSBsplineSurfacePtr GetAsMSBsplineSurface () const;
 DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetAsPolyfaceHeader () const;
 DGNPLATFORM_EXPORT ISolidKernelEntityPtr GetAsISolidKernelEntity () const;
+DGNPLATFORM_EXPORT TextStringPtr GetAsTextString () const;
 
 DGNPLATFORM_EXPORT bool GetLocalCoordinateFrame (TransformR localToWorld) const;
 DGNPLATFORM_EXPORT bool GetLocalRange (DRange3dR localRange, TransformR localToWorld) const; // Expensive - copies geometry!
@@ -74,6 +77,7 @@ DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ISolidPrimitiveCR source);
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (MSBsplineSurfaceCR source);
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (PolyfaceQueryCR source);
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ISolidKernelEntityCR source);
+DGNPLATFORM_EXPORT static ElementGeometryPtr Create (TextStringCR source);
 
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ICurvePrimitivePtr const& source);
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (CurveVectorPtr const& source);
@@ -81,6 +85,7 @@ DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ISolidPrimitivePtr const& s
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (MSBsplineSurfacePtr const& source);
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (PolyfaceHeaderPtr const& source);
 DGNPLATFORM_EXPORT static ElementGeometryPtr Create (ISolidKernelEntityPtr const& source);
+DGNPLATFORM_EXPORT static ElementGeometryPtr Create (TextStringPtr const& source);
 
 }; // ElementGeometry
 
@@ -114,6 +119,7 @@ enum class OpCode : uint32_t
     AreaFill            = 19,   //!< Opaque and gradient fills
     Pattern             = 20,   //!< Hatch, cross-hatch, and area pattern
     Material            = 21,   //!< Render material
+    TextString          = 22,   //!< TextString (single-line/single-format run of characters)
     };
 
 //=======================================================================================
@@ -148,9 +154,10 @@ struct Operation
 //=======================================================================================
 struct Writer
     {
-    bvector<uint8_t>  m_buffer;
+    DgnDbP m_db;
+    bvector<uint8_t> m_buffer;
 
-    Writer () {AppendHeader ();}
+    Writer (DgnDbR db) : m_db(&db) {AppendHeader ();}
 
     void AppendHeader () {Header hdr; Append (Operation (OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
     void Reset () {m_buffer.clear (); AppendHeader ();};
@@ -168,6 +175,7 @@ struct Writer
     DGNPLATFORM_EXPORT void Append (DgnSubCategoryId, TransformCR geomToWorld);
     DGNPLATFORM_EXPORT void Append (DgnGeomPartId);
     DGNPLATFORM_EXPORT void Append (ElemDisplayParamsCR); // Adds multiple op-codes...
+    DGNPLATFORM_EXPORT void Append (TextStringCR);
 
     }; // Writer;
     
@@ -176,20 +184,25 @@ struct Writer
 //=======================================================================================
 struct Reader
     {
-    static Header const* GetHeader (Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*) egOp.m_data : nullptr);}
+    DgnDbP m_db;
+    
+    Reader(DgnDbR db) : m_db(&db) {}
 
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, DEllipse3dR, int8_t& boundary);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, PolyfaceQueryCarrier&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, ICurvePrimitivePtr&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, CurveVectorPtr&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, ISolidPrimitivePtr&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, MSBsplineSurfacePtr&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, ISolidKernelEntityPtr&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, ElementGeometryPtr&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, DgnSubCategoryId&, TransformR);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, DgnGeomPartId&);
-    DGNPLATFORM_EXPORT static bool Get (Operation const&, ElemDisplayParamsR); // Updated by multiple op-codes, true if changed
+    static Header const* GetHeader(Operation const& egOp) { return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr); }
+
+    DGNPLATFORM_EXPORT bool Get (Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, DEllipse3dR, int8_t& boundary) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, PolyfaceQueryCarrier&) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, ICurvePrimitivePtr&) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, CurveVectorPtr&) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, ISolidPrimitivePtr&) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, MSBsplineSurfacePtr&) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, ISolidKernelEntityPtr&) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, ElementGeometryPtr&) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, DgnSubCategoryId&, TransformR) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, DgnGeomPartId&) const;
+    DGNPLATFORM_EXPORT bool Get (Operation const&, ElemDisplayParamsR) const; // Updated by multiple op-codes, true if changed
+    DGNPLATFORM_EXPORT bool Get (Operation const&, TextStringR) const;
 
     }; // Reader
 
@@ -378,6 +391,7 @@ DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR);
 DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR);
 DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR);
 DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr);
+DGNPLATFORM_EXPORT bool Append (TextStringCR);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle = 0.0);

@@ -27,6 +27,11 @@ struct TextStringTest : public GenericDgnModelTestFixture
 //---------------------------------------------------------------------------------------
 TEST_F(TextStringTest, SanityMeasure)
     {
+    // Purpose: Create a TextString and ensure it was able to layout its glyph.
+    // A non-blank range implies that the font was found, loaded from the DB/system, LayoutGlyphs succeeded, and TextString processed the results.
+    // Exact floating point range has proven fuzzy in the past due to variations in font versions and operating systems.
+    // It is sufficient for this sanity test to ensure a non-null/empty range was computed, not exactly what the range was. Writing more advanced range tests will be an art.
+
     TextStringStylePtr style = TextStringStyle::Create();
     style->SetFont(DgnFontManager::GetLastResortTrueTypeFont());
     style->SetSize(DPoint2d::From(1000.0, 1000.0));

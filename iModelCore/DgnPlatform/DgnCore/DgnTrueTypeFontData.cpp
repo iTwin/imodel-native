@@ -98,7 +98,34 @@ static BentleyStatus createAndConfigFace(FT_Face& face, FT_Long faceIndex, Utf8C
         return ERROR;
         }
 
-    if (FT_Err_Ok != FT_Set_Pixel_Sizes(face, face->units_per_EM, 0))
+#ifdef FONT_DESIGNER_SCALE
+    /*
+        TrueType fonts (vs. RSC and SHX) have many metrics determining glyph scaling and line spacing.
+        DgnV8 has classically ignored these in favor of attempting to make TrueType act more like legacy RSC and SHX systems.
+        This is a nice crash course: http://chanae.walon.org/pub/ttf/ttf_glyphs.htm
+        Similar: http://www.freetype.org/freetype2/docs/glyphs/glyphs-3.html
+        Important fields on FT_FaceRec:
+            units_per_EM - The height of this box should be mapped to the desired physical height of the text. This means virtually all glyphs will be notably smaller than the indicated height.
+            height - The intended height from one baseline to the next; a 1.0 line spacing if you will. Could also think of this as a visually padded box around the text.
+            ascender - The general distance of ascenders in the font. Useful with ratios.
+            descender - The general distance of descenders in the font. Useful with ratios.
+            line gap (derived as height - ascender - descender) - the residual distance between the EM box and the line height.
+        All of the above is easily to correlate in Word, for example. What is harder to find documentation for is how to distribute the line gap above and below the EM box.
+        Empirically, this seems distributed as a ratio of ascender/units_per_EM and descender/units_per_EM.
+        While utilizing all of this is well and good, it makes TrueType act unlike RSC and SHX, and makes DgnV8 import more difficult.
+        We should perhaps consider allowing this for "annotation" text (vs. "physical text").
+    */
+    FT_UInt pixelScale = face->units_per_EM;
+#else // Legacy DgnV8 scaling
+    FT_Short effectiveAscender = face->ascender;
+
+    if (FT_Err_Ok == FT_Load_Char(face, L'A', FT_LOAD_NO_SCALE))
+        effectiveAscender = (FT_Short)abs(face->glyph->metrics.horiBearingY);
+
+    FT_UInt pixelScale = (FT_UInt)(face->units_per_EM * (face->units_per_EM / (double)effectiveAscender));
+#endif
+    
+    if (FT_Err_Ok != FT_Set_Pixel_Sizes(face, pixelScale, 0))
         {
         FONT_LOG.errorv("Failed to scale font face %i for family '%s'. This font will be considered unresolved and may be subject to substitution.", (int)faceIndex, face->family_name);
         return ERROR;

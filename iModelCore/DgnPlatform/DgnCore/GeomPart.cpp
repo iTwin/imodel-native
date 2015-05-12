@@ -199,7 +199,7 @@ DgnGeomPartId DgnGeomParts::MakeNewGeomPartId()
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnGeomParts::InsertGeomPart(DgnGeomPartR geomPart)
     {
-    ElementGeomIO::Writer writer;
+    ElementGeomIO::Writer writer(m_dgndb);
 
     for (ElementGeometryPtr elemGeom : geomPart.GetGeometry())
         {
@@ -238,7 +238,7 @@ DgnGeomPartId DgnGeomParts::InsertGeomPart(const void* geometryBlob, int geometr
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnGeomParts::UpdateGeomPart(DgnGeomPartR geomPart)
     {
-    ElementGeomIO::Writer writer;
+    ElementGeomIO::Writer writer(m_dgndb);
 
     for (ElementGeometryPtr elemGeom : geomPart.GetGeometry())
         {
