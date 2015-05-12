@@ -63,18 +63,12 @@ struct DgnElementAppData
 
     //! Return a name for this type of app data.
     //! @remarks Strictly for debugging, does not need to be implemented or localized.
-    //! @return The name string or NULL.
-    virtual WCharCP _GetName() {return NULL;}
+    //! @return The name string or nullptr.
+    virtual WCharCP _GetName() {return nullptr;}
 
     //! Called to clean up owned resources and delete the app data.
     //! @param[in]  host            DgnElementP that app data was added to.
-    //! @param[in]  zone            HeapZone for the DgnElementP holding the app data.
-    //! @remarks If the app data was allocated using DgnElement::GetHeapZone(), there is
-    //! nothing to free when unloadingCache is true as the entire heap zone will be freed with
-    //! the cache. If unloadingCache is false, call HeapZone::Free. If a heap zone was not used, call delete/release/free as appropriate.
-    //! @note If the appData was allocated using placement new with DgnElement::GetHeapZone(), the appData's
-    //! destructor should be manually called in this method.
-    virtual void _OnCleanup(DgnElementCP host, HeapZoneR zone) = 0;
+    virtual void _OnCleanup(DgnElementCP host) = 0;
 
     //! Called to allow app data to react to changes to the persistent element it was added to.
     //! @param[in]  host            DgnElementP that app data was added to.
@@ -146,8 +140,8 @@ protected:
         AppDataEntry*                 m_next;
 
         void Init(DgnElementAppData::Key const& key, DgnElementAppData* obj, AppDataEntry* next) {m_key = &key; m_obj = obj; m_next = next;}
-        void ClearEntry(DgnElementCP el, HeapZoneR zone) {if (NULL == m_obj) return; m_obj->_OnCleanup(el, zone); m_obj=NULL;}
-        void SetEntry(DgnElementAppData* obj, DgnElementCP el, HeapZoneR zone) {ClearEntry(el, zone); m_obj = obj;}
+        void ClearEntry(DgnElementCP el) {if (nullptr == m_obj) return; m_obj->_OnCleanup(el); m_obj=nullptr;}
+        void SetEntry(DgnElementAppData* obj, DgnElementCP el) {ClearEntry(el); m_obj = obj;}
         };
 
     struct Flags
@@ -155,7 +149,6 @@ protected:
         uint32_t m_lockHeld:1;
         uint32_t m_editable:1;
         uint32_t m_inPool:1;
-        uint32_t m_deletedRef:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hiliteState:3;
         uint32_t m_undisplayed:1;
@@ -175,22 +168,16 @@ protected:
     mutable Flags   m_flags;
     mutable AppDataEntry* m_appData;
 
-    AppDataEntry* FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry, HeapZoneR zone) const;
+    AppDataEntry* FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry) const;
 
-    void SetDeletedRef() {m_flags.m_deletedRef = true;}
-    void ClearDeletedRef() {m_flags.m_deletedRef = false;}
     void SetInPool(bool val) {m_flags.m_inPool = val;}
-    void MarkAsDeleted();
-    void UnDeleteElement();
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
-    DgnModelStatus ReloadFromDb();
     ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
 
     explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
              m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId), m_appData(nullptr) {}
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
-    DGNPLATFORM_EXPORT virtual void _GenerateDefaultCode();
     DGNPLATFORM_EXPORT virtual DgnModelStatus _LoadFromDb();
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
@@ -245,7 +232,7 @@ public:
 
     DGNPLATFORM_EXPORT void ForceElemChanged(bool qvCacheCleared, DgnElementChangeReason);
     DGNPLATFORM_EXPORT void ForceElemChangedPost();
-    DGNPLATFORM_EXPORT void ClearAllAppData(HeapZoneR);
+    DGNPLATFORM_EXPORT void ClearAllAppData();
 
     //! Test if the element is in the selection set
     bool IsInSelectionSet() const {return m_flags.m_inSelectionSet;}
@@ -256,18 +243,15 @@ public:
     //! Set the element to be displayed or not displayed
     void SetUndisplayedFlag(bool yesNo) {m_flags.m_undisplayed = yesNo;}
 
-    //! Determine whether this DgnElement is an element that once existed, but has been deleted.
-    bool IsDeleted() const {return m_flags.m_deletedRef;}
-
     //! Make a writeable copy of this DgnElement so that the copy may be edited.
     //! @return a DgnElementPtr that holds the copy of this element.
     //! Only one copy at a time may exist. If another copy is extant, this method will return an invalid DgnElementPtr.
-    DGNPLATFORM_EXPORT DgnElementPtr MakeWriteableCopy() const;
+    DGNPLATFORM_EXPORT DgnElementPtr CopyForEdit() const;
 
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
-/** @name DgnElementAppData Management */
-/** @{ */
+    /** @name DgnElementAppData Management */
+    /** @{ */
     //! Get the HeapZone for the this element.
     DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
 
@@ -275,9 +259,7 @@ public:
     //! @param[in] key The AppData's key. If an DgnElementAppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
     //! @param[in] appData The appData object to attach to this element.
-    //! @param[in] heapZone HeapZone for this element. \b Must be the HeapZone returned by #GetHeapZone.
-    //! @param[in] allowOnDeleted if false (the default), this method will reject adds if the element is deleted.
-    DGNPLATFORM_EXPORT StatusInt AddAppData(DgnElementAppData::Key const& key, DgnElementAppData* appData, HeapZoneR heapZone, bool allowOnDeleted=false) const;
+    DGNPLATFORM_EXPORT StatusInt AddAppData(DgnElementAppData::Key const& key, DgnElementAppData* appData) const;
 
     //! Drop Application data from this element.
     //! @param[in] key the key for the DgnElementAppData to drop.
@@ -286,9 +268,9 @@ public:
 
     //! Find DgnElementAppData on this element by key.
     //! @param[in] key The key for the DgnElementAppData of interest.
-    //! @return the DgnElementAppData for key \a key, or NULL.
+    //! @return the DgnElementAppData for key \a key, or nullptr.
     DGNPLATFORM_EXPORT DgnElementAppData* FindAppData(DgnElementAppData::Key const& key) const;
-/** @} */
+    /** @} */
 
     //! Get the DgnModel of this element.
     DgnModelR GetDgnModel() const {return m_dgnModel;}
@@ -329,9 +311,7 @@ public:
     //! Set the code of this DgnElement.
     void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
 
-    //! Return a default code given a class name and a DgnElementId.
-    //! @note DgnElement::_GenerateDefaultCode calls this for its default implementation.
-    DGNPLATFORM_EXPORT static Utf8String GenerateDefaultCode(Utf8CP className, DgnElementId elementId);
+    DGNPLATFORM_EXPORT virtual Utf8String _GenerateDefaultCode();
 
     //! Increment the reference count of this DgnElement
     //! @note This call should always be paired with a corresponding subsequent call to #Release when the element is no longer referenced.

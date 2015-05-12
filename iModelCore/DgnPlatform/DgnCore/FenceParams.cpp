@@ -2731,7 +2731,7 @@ void FenceParams::ParseAcceptedElement (DgnElementPtrVec* inside, DgnElementPtrV
         if (!context.AcceptCurveVector (*curveVector, &tmpFp))
             return;
 
-        DgnElementPtr copy = element.MakeWriteableCopy();
+        DgnElementPtr copy = element.CopyForEdit();
         inside->push_back(copy);
         return;
         }

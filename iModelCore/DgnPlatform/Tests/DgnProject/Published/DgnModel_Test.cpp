@@ -51,9 +51,9 @@ TEST_F(DgnModelTests, GetGraphicElements)
     ASSERT_NE(graphicElementCount, 0);
     ASSERT_TRUE(graphicElementCount > 0)<<"Please provide model with graphics elements, otherwise this test case makes no sense";
     int count = 0;
-    for (DgnElementCP elm : *m_modelP)
+    for (auto const& elm : *m_modelP)
         {
-        EXPECT_TRUE(&elm->GetDgnModel() == m_modelP);
+        EXPECT_TRUE(&elm.second->GetDgnModel() == m_modelP);
         ++count;
         }
     EXPECT_EQ(graphicElementCount, count);

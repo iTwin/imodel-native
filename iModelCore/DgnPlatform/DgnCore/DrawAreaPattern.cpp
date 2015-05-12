@@ -721,7 +721,7 @@ MaterialPtr     m_material;
 GeometryMapPatternAppData (MaterialPtr material) : m_material (material) {}
 MaterialCP GetMaterial () {return m_material.get ();}
 
-virtual void _OnCleanup (DgnElementCP host, HeapZoneR zone) override {m_material = NULL;}
+virtual void _OnCleanup (DgnElementCP host) override {m_material = NULL;}
 };
     
 /*---------------------------------------------------------------------------------**//**
@@ -850,7 +850,7 @@ double          scale
         if (!pMaterial.IsValid ())
             return false;
 
-        cellElementRef->AddAppData (s_appDataKey, appData = new GeometryMapPatternAppData (pMaterial), cellElementRef->GetHeapZone ());
+        cellElementRef->AddAppData (s_appDataKey, appData = new GeometryMapPatternAppData (pMaterial));
         }
 
 #if defined (NEEDS_WORK_DGNITEM)

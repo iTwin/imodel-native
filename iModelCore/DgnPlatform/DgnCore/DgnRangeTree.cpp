@@ -1041,10 +1041,9 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
     BeAssert(0 != m_leafNodeSize);
     m_root = AllocateLeafNode();
 
-    DgnElementIterator  iter;
-    for (DgnElementCP element = iter.GetFirstDgnElement(dgnModel); nullptr != element;  element = iter.GetNextDgnElement())
+    for (auto const& element : dgnModel.GetElements())
         {
-        GeometricElementCP geom = element->ToGeometricElement();
+        GeometricElementCP geom = element.second->ToGeometricElement();
         if (nullptr != geom)
             AddElement(Entry(geom->_GetRange3d(), *geom));
         }
@@ -1067,7 +1066,6 @@ void DgnRangeTree::AddElement(Entry const& entry)
     if (nullptr == m_root)
         m_root = AllocateLeafNode();
     
-    BeAssert(!entry.m_elm->IsDeleted());
     BeAssert(!((DRTInternalNodeP)m_root)->DropElement(entry, *this));
 
     DRTLeafNodeP leaf = m_root->ToLeaf();

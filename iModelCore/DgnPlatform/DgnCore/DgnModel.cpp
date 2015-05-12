@@ -476,19 +476,6 @@ void DgnModel::_OnModelFillComplete()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnModel::CountElements() const
-    {
-    uint32_t count = 0;
-
-    for (const_iterator it=begin(); it!=end(); ++it)
-        ++count;
-
-    return  count;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ClearRangeIndex()
@@ -594,9 +581,6 @@ DgnModelStatus DgnModel::_OnUpdateElement(DgnElementCR element, DgnElementR repl
         BeAssert(false);
         return DGNMODEL_STATUS_WrongModel;
         }
-
-    if (element.IsDeleted())
-        return DGNMODEL_STATUS_ReplacingDeleted;
 
     if (IsReadOnly())
         return DGNMODEL_STATUS_ReadOnly;
@@ -856,93 +840,6 @@ QvCache* DgnModels::GetQvCache(bool createIfNecessary)
         return m_qvCache;
 
     return (m_qvCache = T_HOST.GetGraphicsAdmin()._CreateQvCache());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnElementIterator::GetFirstDgnElement(DgnModelCR model, bool wantDeleted)
-    {
-    m_map = &model.m_elements;
-    m_it  = m_map->begin();
-
-    DgnElementCP currElement = GetCurrentDgnElement();
-
-    if (currElement && (!wantDeleted && currElement->IsDeleted()))
-        currElement = GetNextDgnElement(wantDeleted);
-
-    return  currElement;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnElementIterator::GetNextDgnElement(bool wantDeleted)
-    {
-    if (!IsValid())
-        return  nullptr;
-    
-    while (true)
-        {
-        ++m_it;
-
-        DgnElementCP currElement = GetCurrentDgnElement();
-
-        if (!wantDeleted && currElement && currElement->IsDeleted())
-            continue;
-
-        return  currElement;
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnElementIterator::SetCurrentDgnElement(DgnElementCP toElm)
-    {
-    if (!IsValid())
-        return  nullptr;
-
-    m_it = m_map->find(toElm->GetElementId());
-    return GetCurrentDgnElement();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIterator& DgnElementIterator::operator++ ()
-    {
-    GetNextDgnElement();
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnElementIterator::operator== (DgnElementIterator const& rhs) const
-    {
-    // two invalid iterator are equal
-    return (!IsValid() && !rhs.IsValid()) || (m_map == rhs.m_map && m_it == rhs.m_it);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIterator DgnModel::begin() const
-    {
-    DgnElementIterator it;
-    it.GetFirstDgnElement(*this);
-    return it;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIterator DgnModel::end() const
-    {
-    return DgnElementIterator();
     }
 
 /*---------------------------------------------------------------------------------**//**

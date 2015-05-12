@@ -129,7 +129,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         return db.Elements().Insert(*testElement)->GetElementKey();
         }
 
-    BentleyStatus DeleteElement (DgnDbR db, DgnElementId eid)
+    DgnModelStatus DeleteElement (DgnDbR db, DgnElementId eid)
         {
         return db.Elements().DeleteElement (eid);
         }
@@ -596,9 +596,7 @@ TEST_F (TransactionManagerTests, ElementItem)
         ECN::IECInstancePtr newItem = testItemClass->GetDefaultStandaloneEnabler()->CreateInstance();
         newItem->SetValue(TMTEST_TEST_ITEM_TestItemProperty, ECN::ECValue(initialTestPropValue));
 
-        GeometricElementCPtr elChange = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
-        GeometricElementPtr modifiedEl = elChange->MakeWriteableCopy()->ToGeometricElementP();
-
+        GeometricElementPtr modifiedEl = m_db->Elements().GetForEdit<GeometricElement>(key1.GetElementId());
         modifiedEl->SetItem(*newItem);
 
         checkItemProperty(*el, false, nullptr); // element should still have no item
@@ -614,7 +612,7 @@ TEST_F (TransactionManagerTests, ElementItem)
     if (true)
         {
         GeometricElementCPtr elChange = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
-        GeometricElementPtr modifiedEl = elChange->MakeWriteableCopy()->ToGeometricElementP();
+        GeometricElementPtr modifiedEl = elChange->CopyForEdit()->ToGeometricElementP();
 
         ECN::IECInstanceP existingItem = modifiedEl->GetItemP();
         ASSERT_NE( existingItem , nullptr );

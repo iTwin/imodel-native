@@ -240,7 +240,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 ElemPurge ElemIdLeafNode::_ReleaseAndCleanup(uint64_t key)
     {
-    // binary search for position to put new entry
     for (int begin=0, end=m_nEntries; begin < end;)
         {
         int index = begin +(end - begin - 1)/2;
@@ -1016,6 +1015,7 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnChangesetApplied(TxnSummary const& summary)
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     // ADDS: elements that were added by the changeset are generally not of interest. However, when we
     // delete elements in a session we don't remove them from the pool or from loaded models.
     // Rather, they are marked as deleted. That is for two reasons: 1) otherwise we wouldn't know what model to
@@ -1048,6 +1048,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
         BeAssert(DGNMODEL_STATUS_Success == stat);
         UNUSED_VARIABLE(stat);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1059,6 +1060,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     // This is only necessary because we keep deleted elements in memory. For XAttributes, we free the memory when
     // we delete them so there is no corresponding work here for them.
     for (auto& el : summary.m_deletedElements)
@@ -1080,6 +1082,7 @@ void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
         model._OnDeletedElement(*elRef, true); // this causes the model to remove this element from its "owned" list.
         BeAssert(elRef->GetRefCount() == 0);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1253,7 +1256,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
-    DgnElementPtr newElement = element.MakeWriteableCopy();
+    DgnElementPtr newElement = element.CopyForEdit();
     if (!newElement.IsValid())
         {
         stat = DGNMODEL_STATUS_BadElement;
@@ -1327,3 +1330,78 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     model._OnUpdatedElement(element, replacement);
     return &element;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2014
+//---------------------------------------------------------------------------------------
+DgnModelStatus DgnElements::DeleteElement(DgnElementCR el)
+    {
+#if defined (NEEDS_WORK_ELEMENTS_API)
+    if (!elementId.IsValid())
+        return BentleyStatus::ERROR;
+
+    CachedStatementPtr statementPtr;
+    m_dgndb.GetCachedStatement(statementPtr, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+
+    statementPtr->BindId(1, elementId);
+    return (BE_SQLITE_DONE == statementPtr->Step()) ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+
+#endif
+    return DGNMODEL_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnElements::UpdateLastModifiedTime(DgnElementId elementId)
+    {
+    if (!elementId.IsValid())
+        return BentleyStatus::ERROR;
+
+    CachedStatementPtr statementPtr;
+    m_dgndb.GetCachedStatement(statementPtr, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET Id=Id WHERE Id=?"); // Minimal SQL to cause trigger to run
+
+    statementPtr->BindId(1, elementId);
+    return (BE_SQLITE_DONE == statementPtr->Step()) ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2015
+//---------------------------------------------------------------------------------------
+DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
+    {
+    if (!elementId.IsValid())
+        return DateTime();
+
+    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT LastMod FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
+    if (!statementPtr.IsValid())
+        return DateTime();
+
+    statementPtr->BindId(1, elementId);
+
+    return (ECSqlStepStatus::HasRow != statementPtr->Step()) ? DateTime() : statementPtr->GetValueDateTime(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                    03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnElements::InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey)
+    {
+    if (!groupElementKey.IsValid() || !memberElementKey.IsValid())
+        return BentleyStatus::ERROR;
+
+    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement
+        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupsElements) 
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
+
+    if (!statementPtr.IsValid())
+        return BentleyStatus::ERROR;
+
+    statementPtr->BindInt64(1, groupElementKey.GetECClassId());
+    statementPtr->BindId   (2, groupElementKey.GetECInstanceId());
+    statementPtr->BindInt64(3, memberElementKey.GetECClassId());
+    statementPtr->BindId   (4, memberElementKey.GetECInstanceId());
+
+    return (ECSqlStepStatus::Done != statementPtr->Step()) ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
+    }
+

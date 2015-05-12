@@ -905,6 +905,9 @@ private:
     void OnChangesetCanceled(TxnSummary const&);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
     void ReleaseAndCleanup(DgnElementCPtr& element);
+    bool IsElementIdUsed(DgnElementId id) const;
+    DgnElementId GetHighestElementId();
+    DgnElementId MakeNewElementId();
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
@@ -917,6 +920,12 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
     DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
     DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
+
+#if !defined (DOCUMENTATION_GENERATOR)
+    //! Look up an element within this DgnDb by its Id.
+    //! @return nullptr if the element does not exist or is not currently loaded.
+    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+#endif
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -938,10 +947,6 @@ public:
     //! Reset the statistics for the pool.
     DGNPLATFORM_EXPORT void ResetStatistics();
 
-    DGNPLATFORM_EXPORT bool IsElementIdUsed(DgnElementId id) const;
-    DGNPLATFORM_EXPORT DgnElementId GetHighestElementId();
-    DGNPLATFORM_EXPORT DgnElementId MakeNewElementId();
-
     //! Get a DgnElement from this DgnDb by its DgnElementId. 
     //! @remarks The element is loaded if necessary.
     //! @return Invalid if the element does not exist.
@@ -952,33 +957,21 @@ public:
     //! specified template argument. 
     template<class T> RefCountedCPtr<T> Get(DgnElementId id) const {return dynamic_cast<T const*>(GetElement(id).get());}
 
-    //! Look up an element within this DgnDb by its Id.
-    //! @return nullptr if the element does not exist or is not currently loaded.
-    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
 
     //! Insert the supplied DgnElement into this DgnDb.
     //! @param[in] element The element to add.
     //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if result is valid, error status otherwise.
     //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
-    template<class T> RefCountedCPtr<T> Insert(T& element, DgnModelStatus* stat=nullptr) {return (T const*)InsertElement(element, stat).get();}
+    template<class T> RefCountedCPtr<T> Insert(T& element, DgnModelStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
-    template<class T> RefCountedCPtr<T> Update(T& element, DgnModelStatus* stat=nullptr) {return (T const*)UpdateElement(element, stat).get();}
+    template<class T> RefCountedCPtr<T> Update(T& element, DgnModelStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
 
-    DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementR);
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementCR);
 
-    //! Delete the element for the specified DgnElementId.
-    DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
+    DgnModelStatus DeleteElement(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? DeleteElement(*el) : DGNMODEL_STATUS_ElementNotFound;}
 
     HeapZone& GetHeapZone() {return m_heapZone;}
-
-    //! Query for the Code for the specified DgnElementId.
-    DGNPLATFORM_EXPORT Utf8String QueryElementCode(DgnElementId) const;
-
-    //! Return the key of the element from its DgnElementId.
-    //! @note used when you know the DgnElementId, but need a DgnElementKey which also contains the ECClassId.
-    //! @note an invalid key will be returned in the case of an error
-    //! @see ECInstanceKey::IsValid
-    DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId) const;
 
     //! Update the last modified timestamp of the specified element
     //! @note Updates to the element class automatically cause the last modified time to be updated (via a database trigger).
@@ -988,13 +981,6 @@ public:
 
     //! Query the last modified time from the specified element
     DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
-
-    //! Update the ParentId of a DgnElement
-    DGNPLATFORM_EXPORT BentleyStatus UpdateParentId(DgnElementId parentId, DgnElementId childElement);
-
-    //! Query the ElementOwnsChildElements relationship to find the parent element of the specified (child) element.
-    //! @return the returned DgnElementId will be invalid if the specified element has no parent
-    DGNPLATFORM_EXPORT DgnElementId QueryParentId(DgnElementId childElementId) const;
 
     //! Insert an ElementGroupsElements relationship between the specified element and the member element
     DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey);
