@@ -415,7 +415,7 @@ Utf8String DgnElement::_GenerateDefaultCode()
         return "";
 
     Utf8String className(GetElementClass()->GetName());
-    return Utf8PrintfString("%s%lld", className, m_elementId.GetValue());
+    return Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
