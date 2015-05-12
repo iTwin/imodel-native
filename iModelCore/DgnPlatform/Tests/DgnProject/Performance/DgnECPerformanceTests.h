@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/DgnECPerformanceTests.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,7 +19,7 @@ struct PerformanceDgnECTests : public PerformanceTestFixture
 
         static double s_increment;
 
-        StatusInt CreateArbitraryElement (EditElementHandleR editElementHandle, DgnModelR model);
+        StatusInt CreateArbitraryElement (DgnElementPtr& out, DgnModelR model);
 
     protected:
         PerformanceDgnECTests() : PerformanceTestFixture() {} 

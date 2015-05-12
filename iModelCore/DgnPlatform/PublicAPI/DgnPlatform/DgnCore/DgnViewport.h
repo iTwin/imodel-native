@@ -603,7 +603,7 @@ public:
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
     DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(IProgressiveDisplay& pd);
     void SynchShadowList ();
-    void UpdateShadowList (IElementSetP, DgnDrawMode, DrawPurpose);
+    void UpdateShadowList (DgnDrawMode, DrawPurpose);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef (DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR, DgnModelP targetModel);
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority ();

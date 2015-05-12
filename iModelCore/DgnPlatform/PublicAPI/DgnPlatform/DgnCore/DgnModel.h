@@ -533,12 +533,17 @@ public:
     SheetModel(CreateParams const& params) : T_Super(params) {}
     };
 
+
+#define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
+        private: virtual DgnModel* _CreateInstance(DgnModel::CreateParams const& params) override {return new __classname__(params);}\
+        DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : DgnDomain::Handler
 {
-    HANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model, ModelHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, ModelHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
 protected:
     ModelHandlerP _ToModelHandler() override {return this;}
@@ -559,10 +564,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalModelHandler : ModelHandler
 {
-    HANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
-
-protected:
-    DGNPLATFORM_EXPORT DgnModelP _CreateInstance(DgnModel::CreateParams const& params) override;
+    MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, PhysicalModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

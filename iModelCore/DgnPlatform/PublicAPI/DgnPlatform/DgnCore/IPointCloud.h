@@ -103,17 +103,8 @@ private:
     DGNPLATFORM_EXPORT void      SetSpatialReferenceWkt(WStringCR wktString);
 
 public:
-    //! Non-published method used to recreate already created point cloud element.
-    static PointCloudPropertiesPtr Create(ElementHandleCR pointCloudEh);
-
     //! Non-published method used to initialize point cloud element.
     DGNPLATFORM_EXPORT StatusInt InitFromRawData(DataInternalizer& dataInternalizer, DgnModelP modelRef);
-
-    //! Load attachment information from the provided ElementHandle into this PointCloudProperties.
-    DGNPLATFORM_EXPORT StatusInt LoadFromElement(ElementHandleCR eh);
-    
-    //! Store this PointCloudProperties information to the provided EditElemHandle.
-    DGNPLATFORM_EXPORT StatusInt StoreToElement(EditElementHandleR eeh) const;
 
     //! Compute point cloud transformation using global origin, transformation matrix, UOR per meter
     DGNPLATFORM_EXPORT Transform ComputeCloudTransform() const;
@@ -201,110 +192,7 @@ public:
     DGNPLATFORM_EXPORT void SetGlobalOrigin(DPoint3dCR val);
 };
 
-/*---------------------------------------------------------------------------------**//**
-* Interface to query persistent information about a point cloud element.
-* @bsiinterface
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct IPointCloudQuery
-{
-//__PUBLISH_SECTION_END__
-protected:
-    virtual PointCloudPropertiesPtr     _GetPointCloudProperties(ElementHandleCR eh) const = 0;
-    virtual PointCloudClipPropertiesPtr _GetPointCloudClipProperties(ElementHandleCR eh) const = 0;
-    virtual PointCloudClipReferencePtr  _GetClipReference(ElementHandleCR eh) const = 0;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    //! Gets the PointCloudProperties associated to the provided element.
-    //! @param[in]  eh  Element from which the PointCloudProperties are extracted.
-    //! @return    Point cloud properties.
-    DGNPLATFORM_EXPORT PointCloudPropertiesPtr      GetPointCloudProperties(ElementHandleCR eh) const;
-
-    //! Gets the  PointCloudClipProperties associated to the provided element.
-    //! @param[in]  eh  Element from which the PointCloudClipProperties are extracted.
-    //! @return    Point cloud clip properties.
-    DGNPLATFORM_EXPORT PointCloudClipPropertiesPtr  GetPointCloudClipProperties(ElementHandleCR eh) const;
-
-//__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT PointCloudClipReferencePtr   GetClipReference(ElementHandleCR eh) const;
-//__PUBLISH_SECTION_START__
-
-}; // IPointCloudQuery
-
-/*---------------------------------------------------------------------------------**//**
-* Interface to edit persistent information about a point cloud element.
-* @bsiinterface
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct IPointCloudEdit : public IPointCloudQuery
-{
-//__PUBLISH_SECTION_END__
-protected:
-    virtual StatusInt _SetPointCloudProperties(EditElementHandleR eeh, PointCloudPropertiesCR props) = 0;
-    virtual StatusInt _SetPointCloudClipProperties(EditElementHandleR eeh, PointCloudClipPropertiesCR props) = 0;
-    virtual StatusInt _SetClipReference(EditElementHandleR eh, PointCloudClipReferenceCR clipRef) = 0;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    //! Sets the PointCloudProperties on an element.
-    //! @param[in]  eeh     Element on which the PointCloudProperties are set.
-    //! @param[in]  props   PointCloudProperties to set on the element.
-    //! @return     SUCCESS or ERROR.
-    DGNPLATFORM_EXPORT StatusInt SetPointCloudProperties(EditElementHandleR eeh, PointCloudPropertiesCR props);
-
-    //! Sets the PointCloudClipProperties on an element.
-    //! @param[in]  eeh     Element on which the PointCloudClipProperties are set.
-    //! @param[in]  props   PointCloudClipProperties to set on the element.
-    //! @return     SUCCESS or ERROR.
-    DGNPLATFORM_EXPORT StatusInt SetPointCloudClipProperties(EditElementHandleR eeh, PointCloudClipPropertiesCR props);
-
-//__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT StatusInt SetClipReference(EditElementHandleR eh, PointCloudClipReferenceCR clipRef);
-//__PUBLISH_SECTION_START__
-
-}; // IPointCloudEdit
-
 /// @endGroup
-
-
-//__PUBLISH_SECTION_END__
-/*---------------------------------------------------------------------------------**//**
-* PointCloudElementFacility
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct PointCloudElementFacility
-    {
-    public:
-        DGNPLATFORM_EXPORT static void CreateBox(DPoint3d box[8], DRange3d const& range);
-        DGNPLATFORM_EXPORT static void CreateBox(DPoint3d box[8], DVector3d const& range);
-
-
-        DGNPLATFORM_EXPORT static void GetRangeBox(DPoint3d box[8], ElementHandleCR eh, bool clipped=true);
-        DGNPLATFORM_EXPORT static void DrawBoundingBox(ViewContextR context, ElementHandleCR eh);
-        DGNPLATFORM_EXPORT static void DrawBoundingBoxFaces(ViewContextR context, ElementHandleCR eh, bool clipped=true);
-
-    };
-//__PUBLISH_SECTION_START__
-
-
-//__PUBLISH_SECTION_END__
-/*---------------------------------------------------------------------------------**//**
-* MakeDgnModelWritable                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct MakeDgnModelWritable
-    {
-    public:
-        DGNPLATFORM_EXPORT MakeDgnModelWritable(DgnModelR cacheP);
-        DGNPLATFORM_EXPORT ~MakeDgnModelWritable();
-
-    private:
-        MakeDgnModelWritable(MakeDgnModelWritable const&);  // disabled
-        MakeDgnModelWritable& operator=(MakeDgnModelWritable const&);   // disabled
-
-        DgnModelR   m_dgnCache;
-        bool        m_wasReadOnly;
-    };
-//__PUBLISH_SECTION_START__
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

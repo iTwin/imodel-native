@@ -25,7 +25,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 extern ECInstanceKey CreateAndImportInstance (ECDbR db, ECClassCR ecClass);
-extern StatusInt CreateArbitraryElement (EditElementHandleR editElementHandle, DgnModelR model);
 extern void DebugDumpJson (const Json::Value& jsonValue);
 extern int CountRows (ECSqlStatement& statement);
 extern bool WriteJsonToFile (WCharCP path, const Json::Value& jsonValue);

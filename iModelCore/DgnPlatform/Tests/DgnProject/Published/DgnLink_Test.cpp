@@ -42,13 +42,11 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    //.............................................................................................
     DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
-    auto result = db.Elements().Insert(elementPtr);
+    DgnElementCPtr result = db.Elements().Insert(*elementPtr);
     ASSERT_TRUE(result.IsValid());
     
-    //.............................................................................................
     static const Utf8CP LINK1_DISPLAY_LABEL = "Url Link 1";
     static const Utf8CP LINK1_URL = "http://www.google.com";
     
@@ -61,7 +59,6 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementKey(), *link1));
     ASSERT_TRUE(link1->GetId().IsValid());
 
-    //.............................................................................................
     DgnLinkPtr link1b = db.Links().QueryById(link1->GetId());
     ASSERT_TRUE(link1b.IsValid());
     EXPECT_TRUE(link1b->GetId() == link1->GetId());
@@ -94,10 +91,9 @@ TEST_F(DgnLinkTest, Iterator)
     DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    //.............................................................................................
     DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
-    auto result = db.Elements().Insert(elementPtr);
+    DgnElementCPtr result = db.Elements().Insert(*elementPtr);
     ASSERT_TRUE(result->GetElementKey().IsValid());
     
     //.............................................................................................
@@ -178,12 +174,12 @@ TEST_F(DgnLinkTest, OtherIterators)
 
     DgnElementPtr element1 = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
     ASSERT_TRUE(element1.IsValid());
-    auto result1 = db.Elements().Insert(element1);
+    DgnElementCPtr result1 = db.Elements().Insert(*element1);
     ASSERT_TRUE(result1.IsValid());
 
     DgnElementPtr element2 = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
     ASSERT_TRUE(element2.IsValid());
-    auto result2 = db.Elements().Insert(element2);
+    DgnElementCPtr result2 = db.Elements().Insert(*element2);
     ASSERT_TRUE(result2.IsValid());
 
     DgnLinkPtr link1 = DgnLink::Create(db); link1->SetDisplayLabel("link1"); link1->SetEmbeddedDocumentName("EmbeddedDocumentName1");

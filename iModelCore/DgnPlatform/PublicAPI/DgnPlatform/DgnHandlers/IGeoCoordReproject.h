@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/IGeoCoordReproject.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -137,11 +137,11 @@ virtual DgnGCSP                 GetSourceGCS ()=0;
 virtual DgnGCSP                 GetDestinationGCS ()=0;
 
 /*---------------------------------------------------------------------------------**//**
-* Returns true if the elemHandle passed in should be stroked, given its range the option
+* Returns true if the element passed in should be stroked, given its range the option
 *  appropriate to that element type.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool                    ShouldStroke (EditElementHandleR elemHandle, ReprojectionOption option)=0;
+virtual bool                    ShouldStroke (GeometricElementCR, ReprojectionOption option)=0;
 
 /*---------------------------------------------------------------------------------**//**
 * Returns the source modelRef.

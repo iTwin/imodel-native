@@ -1448,7 +1448,7 @@ DgnModelId StreetMapModelHandler::CreateStreetMapModel(DgnDbR db, MapService map
     DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel"));
     BeAssert(classId.IsValid());
 
-    WebMercatorModelPtr model = new WebMercatorModel(DgnModel::CreateParams(db, classId, modelName.c_str()));
+    WebMercatorModelPtr model = new StreetMapModel(DgnModel::CreateParams(db, classId, modelName.c_str()));
 
     WebMercatorModel::Mercator props;
     props.m_mapService = Utf8PrintfString("%d", mapService);
@@ -1459,14 +1459,6 @@ DgnModelId StreetMapModelHandler::CreateStreetMapModel(DgnDbR db, MapService map
     model->SetMercator(props);
     db.Models().Insert(*model);
     return model->GetModelId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP WebMercatorModelHandler::_CreateInstance(WebMercatorModel::CreateParams const& params)
-    {
-    return new WebMercatorModel(params);
     }
 
 /*---------------------------------------------------------------------------------**//**

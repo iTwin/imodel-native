@@ -196,11 +196,9 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb();
 
-    //! Virtual copy constructor. If your subclass has member variables, it \em must override _InitFrom. @see _SwapWithModified
-    virtual void _InitFrom(DgnElementCR other) {}
+    //! Virtual assignment operator.  If your subclass has member variables, it \em must override _InitFrom.
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR other);
 
-    //! Virtual move assignment operator. If your subclass has member variables, it \em must override _SwapWithModified. @see _InitFrom
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _SwapWithModified(DgnElementR);
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
     virtual void _OnInserted() {}
     virtual GeometricElementCP _ToGeometricElement() const {return nullptr;}
@@ -214,7 +212,7 @@ protected:
     ECN::IECInstanceP GetItem(bool setModifiedFlag) const;
 
 public:
-    void InitFrom(DgnElementCR rhs) {_InitFrom(rhs);}
+    DgnModelStatus CopyFrom(DgnElementCR rhs) {return _CopyFrom(rhs);}
 
     DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR);
     DGNPLATFORM_EXPORT void _ClearScheduledChangesToInstances();
@@ -582,11 +580,10 @@ protected:
     GeomStream m_geom;
     
     uint32_t _GetMemSize() const override {return sizeof(*this) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR other) override;
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
     virtual DgnModelStatus _BindPlacement(BeSQLite::Statement&) = 0;
     GeometricElementCP _ToGeometricElement() const override {return this;}
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {;}
@@ -635,8 +632,7 @@ protected:
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _BindPlacement(BeSQLite::Statement&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
-    DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
 
 public:
     DgnElement3dCP _ToElement3d() const override {return this;}
@@ -692,8 +688,7 @@ protected:
     explicit DgnElement2d(CreateParams const& params) : T_Super(params) {}
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _BindPlacement(BeSQLite::Statement&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _SwapWithModified(DgnElementR) override;
-    DGNPLATFORM_EXPORT void _InitFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
 
 public:
     DgnElement2dCP _ToElement2d() const override {return this;}

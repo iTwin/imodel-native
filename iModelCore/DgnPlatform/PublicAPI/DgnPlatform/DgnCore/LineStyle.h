@@ -673,15 +673,12 @@ struct          LsSymbolComponent : public LsComponent
     , public IDisplaySymbol
 //__PUBLISH_SECTION_START__
     {
-    typedef bvector<ElementHandle> T_SymbolElements;
-    typedef T_SymbolElements::iterator  T_SymbolElementsIter;
 //__PUBLISH_SECTION_END__
 private:
     bool                m_isModified;
     WChar               m_descr[LS_MAX_DESCR];
     WChar               m_styleName[LS_MAX_NAME];   // Stored on element, for round trip.  Kind of dumb though; remove in future file format.
 
-    //  T_SymbolElements    m_elements;
     DgnElementPtrVec   m_elements;
 
     size_t              m_xGraphicsSize;

@@ -18,7 +18,6 @@
 
 //__PUBLISH_SECTION_END__
 #include "PickContext.h"
-#include "IEcPropertyHandler.h"
 #include "IGeoCoordReproject.h"
 //__PUBLISH_SECTION_START__
 
