@@ -797,57 +797,6 @@ struct DDLGenerator
 
     };
 
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
-struct ECDbDebugStringWriter : NonCopyableClass
-    {
-    struct Scope
-        {
-        private:
-            ECDbDebugStringWriter& m_writer;
-
-        public:
-            Scope (ECDbDebugStringWriter& writer)
-                : m_writer (writer)
-                {
-                m_writer.Indent ();
-                }
-
-            ECDbDebugStringWriter& GetWriter ()
-                {
-                return m_writer;
-                }
-            ~Scope ()
-                {
-                m_writer.Unindent ();
-                }
-        };
-
-    typedef std::unique_ptr<Scope> ScopePtr;
-    private:
-        size_t m_currentIndent;
-        size_t m_indentSize;
-        bool m_needPrefix;
-        Utf8String m_indentChar;
-        Utf8String m_buffer;
-        Utf8String m_eol;
-        Utf8String m_prefix;
-        Utf8CP BuildPrefix ();
-    public:
-        ECDbDebugStringWriter (int indentSize = 1, Utf8CP indentChar = " ");
-        ~ECDbDebugStringWriter ()
-            {}
-        void Indent ();
-        void Unindent ();
-        void Reset ();
-        void Write (Utf8StringCR buffer);
-        void Write (Utf8CP fmt, ...);
-        void WriteLine (Utf8CP fmt, ...);
-        void WriteLine ();
-        ScopePtr CreateScope ();
-        Utf8StringCR GetString () const;
-    };
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
