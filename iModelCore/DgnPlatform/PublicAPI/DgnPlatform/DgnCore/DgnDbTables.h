@@ -129,16 +129,16 @@ struct DgnCategories : DgnDbTable
         struct Appearance
         {
         private:
-            bool        m_invisible;    //!< Graphics on this SubCategory should not be visible
-            bool        m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
-            bool        m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
-            bool        m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
-            ColorDef    m_color;
-            uint32_t    m_weight;
-            DgnStyleId  m_style;
-            int32_t     m_displayPriority; // only valid for SubCategories in 2D models
-            DgnMaterialId m_material;
-            double      m_transparency;
+            bool            m_invisible;    //!< Graphics on this SubCategory should not be visible
+            bool            m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
+            bool            m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
+            bool            m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
+            ColorDef        m_color;
+            uint32_t        m_weight;
+            DgnStyleId      m_style;
+            int32_t         m_displayPriority; // only valid for SubCategories in 2D models
+            DgnMaterialId   m_material;
+            double          m_transparency;
 
         public:
             void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate();}
@@ -168,7 +168,7 @@ struct DgnCategories : DgnDbTable
             DGNPLATFORM_EXPORT bool operator==(Appearance const& other) const;
             bool IsEqual(Appearance const& other) const {return *this==other;}
             void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
-            Utf8String ToJson() const;   //!< convert this appearance to a json string
+            DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
         };// Appearance
 
         //! View-specific overrides of the appearance of a SubCategory

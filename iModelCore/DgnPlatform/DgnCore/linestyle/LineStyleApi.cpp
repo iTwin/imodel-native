@@ -12,28 +12,18 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LineStyleUtil::ElementHasLineStyle (GeometricElementCP pElem, DgnModelP modelRef)
+bool LineStyleUtil::ElementHasLineStyle (GeometricElementCR element)
     {
-    /* The only non-graphic element allowed these linkages is the multiline styles */
-    if (NULL == pElem)
-        return false;
+    ElementGeometryCollection collection(element);
 
-#if defined (LEVEL_FACET_REORG)
-    int32_t styleNo = pElem->GetSymbology().style;
-    if (styleNo == STYLE_BYLEVEL)
+    for (ElementGeometryPtr geom : collection)
         {
-        DgnCategories::Category const& category = DGN_TABLE_LEVEL_FOR_MODEL(modelRef).QueryCategoryById(pElem->GetCategory());
-        if (category.IsValid ())
-            styleNo = category.GetAppearance().GetStyle();
-        }
-    else if (styleNo == STYLE_BYCELL)
-        {
-        /* NEEDSWORK_V8_LINESTYLE - this (somehow?) would need to look up the style from the cell */
-        return  true;
+        ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+
+        if (nullptr != params.GetLineStyle())
+            return true;
         }
 
-    return !IS_LINECODE (styleNo);
-#endif
     return false;
     }
 
@@ -51,99 +41,6 @@ LineStyleParams*     params
     params->rMatrix.form3d[0][0] = params->rMatrix.form3d[1][1] = params->rMatrix.form3d[2][2] = 
     params->scale = params->gapScale = params->dashScale = params->normal.z = 1.0;
     }
-
-#if defined (NEEDSWORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt   getLsSymbFromElement (LineStyleSymbP lsSymb, ElementHandleCR elHandle)
-    {
-    DisplayHandlerP dHandler = elHandle.GetDisplayHandler();
-    if (NULL == dHandler)
-        return  ERROR;
-
-    ElemDisplayParams   elParams;
-    dHandler->GetElemDisplayParams (elHandle, elParams);
-
-    lsSymb->Clear();
-
-    NullOutput  output;
-    NullContext context (&output);
-
-    context.SetDgnDb (*elHandle.GetDgnDb ());
-
-    lsSymb->FromNaturalElemDisplayParams (elParams, context, NULL, NULL);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Given an element with its range already set (not including linestyle), expand the range
-* such that the maximum offset of the linestyle is added to each range component. This will create
-* a range cube that will definitely encompass the entire element including the linestyles, but of course
-* may not be the "tightest cube" possible. That's ok, since the real range is too expensive to calculate.
-* @bsimethod                                                    JimBartlett     06/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-void     LineStyleUtil::AddLsRange (EditElementHandleR elHandle)
-    {
-    GeometricElementCP el= elHandle.GetGeometricElement();
-    DgnModelP   model = elHandle.GetDgnModelP();
-
-    BeAssert (NULL != model);
-
-    if (NULL == model)
-        return;
-
-#if defined (NEEDS_WORK_DGNITEM)
-    // the range of multilines with linestyles will already be set via the individual lines
-    if (el->GetLegacyType() == MULTILINE_ELM || TEXT_ELM == el->GetLegacyType())
-        return;
-#endif
-
-    if (!LineStyleUtil::ElementHasLineStyle(el, model))
-        return;
-
-    LineStyleSymb   lsSymb;
-    getLsSymbFromElement (&lsSymb, elHandle);
-
-    LsDefinitionCP  nameRec = dynamic_cast <LsDefinitionCP> (lsSymb.GetILineStyle());
-    if (NULL == nameRec || NULL == nameRec->GetLsComponent ())
-        return;
-
-    // "maxWidth" is actually twice the maximum offset, so divide it by two.
-    double maxOff = ((nameRec->_GetMaxWidth() * lsSymb.GetScale()) / 2.0);
-
-    // see if there's a width modifier on the element, and if the linestyle is affected by it.
-    if (nameRec->GetLsComponent()->_IsAffectedByWidth(false))
-        {
-        double  startOff = lsSymb.GetOriginWidth() / 2.0;
-        double  endOff   = lsSymb.GetEndWidth() / 2.0;
-
-        if (startOff > maxOff)
-            maxOff = startOff;
-
-        if (endOff > maxOff)
-            maxOff = endOff;
-        }
-
-    if (0.0 == maxOff)
-        return;
-
-    int64_t     iMaxOff = (int64_t) maxOff;
-    DRange3dR range  = el->GetRangeR();
-
-    range.low.x -= iMaxOff;
-    range.low.y -= iMaxOff;
-    range.high.x += iMaxOff;
-    range.high.y += iMaxOff;
-
-    if (model->Is3d())
-        {
-        range.low.z -= iMaxOff;
-        range.high.z += iMaxOff;
-        }
-    }
-#endif
 
 //////////////////Methods that were originally in lsproc.c
 /*---------------------------------------------------------------------------------**//**
@@ -624,11 +521,11 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
     }
 
 //  Potential inlines
-uint64_t            LsComponent::GetId ()       const {return m_location.GetIdentKey ();}
+uint64_t            LsComponent::GetId ()const {return m_location.GetIdentKey ();}
 LsElementType       LsComponent::GetElementType () const {return m_location.GetElementType ();}
 WString             LsComponent::GetDescription () const {return m_descr;}
 LsLocationType      LsComponent::GetLocationType () const {return m_location.GetSourceType();}
-DgnDbP         LsComponent::GetProjectP() const {return m_location.GetDgnDb();}
+DgnDbP              LsComponent::GetDgnDbP() const {return m_location.GetDgnDb();}
 
 bool                LsStroke::IsDash ()           TESTSTROKEMODE (STROKE_Dash)
 bool                LsStroke::IsDashFirst ()      TESTSTROKEMODE (STROKE_DashFirst)
