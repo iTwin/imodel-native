@@ -2,7 +2,7 @@
 |
 |     $Source: tests/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1362,9 +1362,6 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Backward);
     EXPECT_TRUE(ECRelatedInstanceDirection::Backward == relationshipClass->GetStrengthDirection());
     
-    EXPECT_FALSE(relationshipClass->GetSource().GetIsMultiple());
-    EXPECT_TRUE(relationshipClass->GetTarget().GetIsMultiple());
-    
     EXPECT_TRUE(relationshipClass->GetTarget().GetIsPolymorphic());
     EXPECT_TRUE(relationshipClass->GetSource().GetIsPolymorphic());
     relationshipClass->GetSource().SetIsPolymorphic(false);
@@ -1379,7 +1376,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     relationshipClass->GetSource().AddClass(*structClass);
     EXPECT_EQ(1, relationshipClass->GetSource().GetClasses().size());
     relationshipClass->GetSource().AddClass(*class1);
-    EXPECT_EQ(1, relationshipClass->GetSource().GetClasses().size());
+    EXPECT_EQ(2, relationshipClass->GetSource().GetClasses().size());
     
     relationshipClass->GetTarget().AddClass(*relatedClass);
     EXPECT_EQ(1, relationshipClass->GetTarget().GetClasses().size());

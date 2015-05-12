@@ -379,13 +379,13 @@ public:
     //! @return true if the ECValue content is of type BentleyApi::ECN::PRIMITIVETYPE_IGeometry. false otherwise.
     ECOBJECTS_EXPORT bool           IsIGeometry() const;
 
-    //! Indicates whether the content of this ECValue is an array (::VALUEKIND_Array).
+    //! Indicates whether the content of this ECValue is an array (DgnPlatform::VALUEKIND_Array).
     //! @return true if the ECValue content is an array. false otherwise.
     ECOBJECTS_EXPORT bool           IsArray () const;
-    //! Indicates whether the content of this ECValue is a struct (::VALUEKIND_Struct).
+    //! Indicates whether the content of this ECValue is a struct (DgnPlatform::VALUEKIND_Struct).
     //! @return true if the ECValue content is a struct. false otherwise.
     ECOBJECTS_EXPORT bool           IsStruct () const;
-    //! Indicates whether the content of this ECValue is of a primitive type (::VALUEKIND_Primitive).
+    //! Indicates whether the content of this ECValue is of a primitive type (DgnPlatform::VALUEKIND_Primitive).
     //! @return true if the ECValue content is of a primitive type. false otherwise.
     ECOBJECTS_EXPORT bool           IsPrimitive () const;
     //! Gets the PrimitiveType of this ECValue        

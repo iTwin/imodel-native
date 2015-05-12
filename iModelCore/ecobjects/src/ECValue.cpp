@@ -1609,7 +1609,9 @@ static WString formatDouble (double d)
             --nonZeroPos;
 
         if (nonZeroPos == dotPos)
-            str.erase (dotPos, WString::npos);
+            //We need to keep ".0" at the end to make sure we keep information about the value type,
+            //this will be needed during value parsing.
+            str.erase (dotPos + 2, WString::npos);
         else if (nonZeroPos < str.length() - 1)
             str.erase (nonZeroPos+1, WString::npos);
         }

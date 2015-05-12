@@ -473,7 +473,12 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
 +---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::SetInternalValue (uint32_t propertyIndex, ECValueCR v) 
     {
-    return _SetInternalValue (propertyIndex, v, false, 0); 
+    auto status = _SetInternalValue (propertyIndex, v, false, 0);
+
+    if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
+        status = ECOBJECTS_STATUS_Success;
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
