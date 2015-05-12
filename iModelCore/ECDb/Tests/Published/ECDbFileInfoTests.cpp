@@ -159,7 +159,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ(embeddedFileId.GetValue(), actualFileId.GetValue());
 
     BeFileName exportFilePath;
-    BeTest::GetHost().GetTempDir(exportFilePath);
+    BeTest::GetHost ().GetOutputRoot (exportFilePath);
     exportFilePath.AppendToPath(testFileNameW.c_str());
 
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), testFileName));
