@@ -82,6 +82,7 @@
     <ClInclude Include="Published\Utils\Web\WebServices\WSQueryTests.h" />
     <ClInclude Include="Published\Utils\Web\WebServices\WSRepositoryClientTests.h" />
     <ClInclude Include="Published\Utils\Web\WebTestsHelper.h" />
+    <ClInclude Include="Published\ValuePrinter.h" />
     <ClInclude Include="Published\WebServices\ChunkedUploadRequestTests.h" />
     <ClInclude Include="Published\WebServices\MobileTrackingTests.h" />
     <ClInclude Include="Published\WebServices\MockServerInfoListener.h" />
@@ -173,6 +174,7 @@
     <ClCompile Include="Published\Utils\Web\WebServices\WSQueryTests.cpp" />
     <ClCompile Include="Published\Utils\Web\WebServices\WSRepositoryClientTests.cpp" />
     <ClCompile Include="Published\Utils\Web\WebTestsHelper.cpp" />
+    <ClCompile Include="Published\ValuePrinter.cpp" />
     <ClCompile Include="Published\ViewportTests.cpp" />
     <ClCompile Include="Published\UnitTests.cpp" />
     <ClCompile Include="Published\WebServices\ChunkedUploadRequestTests.cpp" />
