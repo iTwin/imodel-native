@@ -168,7 +168,7 @@ struct DGN_angles_value : ScalarFunction
 };
 
 //=======================================================================================
-// Get one of the values of a DPoint3d by index: {Yaw=0, Pitch=1, Roll=2}
+// return the maximum absolute difference among the angles.
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct DGN_angles_maxdiff : ScalarFunction

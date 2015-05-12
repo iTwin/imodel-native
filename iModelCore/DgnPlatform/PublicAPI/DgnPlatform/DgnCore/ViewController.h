@@ -83,7 +83,7 @@ public:
 //! @ingroup DgnViewGroup
 /**
  A ViewController provides the behavior for a type of view. It also provides the persistent information
- about how the view relates to a \ref DgnProjectGroup (e.g. what models/categories are displayed, the ViewFlags that control how graphics
+ about how the view relates to a \ref DgnDbGroup (e.g. what models/categories are displayed, the ViewFlags that control how graphics
  are represented, etc.)
  <p>
  When a ViewController is paired with a DgnViewport, it then controls the operation of that view. Generally there will

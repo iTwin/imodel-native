@@ -12,7 +12,7 @@
 
 Classes for working with elements in memory.
 
-Elements must be loaded from @ref DgnProjectGroup and cached in memory before they can be accessed.
+Elements must be loaded from @ref DgnDbGroup and cached in memory before they can be accessed.
 Element are loaded and cached using DgnDb::Elements() methods or using QueryModel's.
 
 */
