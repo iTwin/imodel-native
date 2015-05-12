@@ -13,6 +13,7 @@
 #include <MobileDgn/Utils/Http/HttpRequest.h>
 #include <MobileDgn/Utils/Http/HttpResponse.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
+#include "ValuePrinter.h"
 
 #define BEGIN_WSCLIENT_UNIT_TESTS_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace WSC { namespace UnitTests {
 #define END_WSCLIENT_UNIT_TESTS_NAMESPACE      } } END_BENTLEY_NAMESPACE
