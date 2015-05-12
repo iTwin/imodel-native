@@ -599,7 +599,7 @@ public:
     //! Retrieves a value indicating whether the component definition comes from a resource file or DgnFile.
     DGNPLATFORM_EXPORT LsLocationType GetLocationType () const;
     //! Retrieves a DgnDbP if the component is defined in a project file; NULL otherwise.
-    DGNPLATFORM_EXPORT DgnDbP GetProjectP () const;
+    DGNPLATFORM_EXPORT DgnDbP GetDgnDbP () const;
     //! Retrieves the name of the resource file or DgnFile that contains the component definition.
     DGNPLATFORM_EXPORT WString GetFileName () const;
     //! Retrieves the description of the component; this is the description that is stored with the definition.
@@ -679,7 +679,7 @@ private:
     WChar               m_descr[LS_MAX_DESCR];
     WChar               m_styleName[LS_MAX_NAME];   // Stored on element, for round trip.  Kind of dumb though; remove in future file format.
 
-    DgnElementPtrVec   m_elements;
+    DgnElementPtrVec    m_elements;
 
     size_t              m_xGraphicsSize;
     Byte const*         m_xGraphicsData;
@@ -711,7 +711,7 @@ public:
     void                SetXGraphics        (Byte const *data, size_t dataSize);
     Byte const*         GetXGraphicsData    () const {return m_xGraphicsData;}
     size_t              GetXGraphicsSize    () const {return m_xGraphicsSize;}
-    DgnModelP        GetSymbolDgnModel   (ViewContextCP context) const;
+    DgnModelP           GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
     void                SetSymBase          (DPoint3dCP sz){m_symBase = *sz;}
@@ -724,9 +724,7 @@ public:
     DgnElementPtrVec& GetElementsR() {return m_elements;}
     DgnElementPtrVec const& GetElements () const {return m_elements;}
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
-    DGNPLATFORM_EXPORT void AddGraphics (EditElementHandleR eeh);
-#endif
+    DGNPLATFORM_EXPORT void AddGraphics (DgnElementPtr&);
     DGNPLATFORM_EXPORT void FreeGraphics (bool freeDescr, bool freeXGraphics);
 
     DGNPLATFORM_EXPORT static BentleyStatus AddSymbolGraphicsAsProperty (uint32_t& componentId, DgnDbR project, Byte const*data, size_t size, PointSymRsc::SymbolType symbolType);

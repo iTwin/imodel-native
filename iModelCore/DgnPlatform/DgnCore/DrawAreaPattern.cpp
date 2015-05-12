@@ -427,22 +427,14 @@ struct PatternSymbol : IDisplaySymbol
 {
 private:
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
-mutable EditElementHandle   m_eeh;
-#endif
-mutable DgnElementCP        m_elementRef;
-mutable DRange3d            m_range;
+DgnGeomPartId       m_partId;
+mutable DRange3d    m_range;
 
 public:
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
-ElementHandleCR GetElemHandle () const {return m_eeh;}
-#endif
-DgnElementCP    GetElementRef () const {return m_elementRef;}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -450,10 +442,6 @@ virtual void _Draw (ViewContextR context) override
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     // Pattern geometry will be a geom part...not an element...
-    GeometricElementCP geomElem = m_eeh.GetGeometricElement();
-
-    if (geomElem)
-        context.VisitElement (*geomElem);
 #endif
     }
 
@@ -470,7 +458,7 @@ virtual StatusInt _GetRange (DRange3dR range) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-PatternSymbol (DgnElementId cellId, DgnDbR project)
+PatternSymbol (DgnGeomPartId partId, DgnDbR project)
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     DgnElementPtr edP;
@@ -505,6 +493,9 @@ PatternSymbol (DgnElementId cellId, DgnDbR project)
         }
 
     m_range = m_eeh.GetGeometricElement()->_GetRange3d();
+#else
+    m_partId = partId;
+    m_range  = DRange3d::NullRange();
 #endif
     }
 
@@ -564,7 +555,7 @@ static void CookPatternSymbology (PatternParamsCR params, ViewContextR context)
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Weight))
             elParams->SetWeight (params.weight);
 
-#if defined (WIP_LINESTYLE)
+#if defined (NEEDSWORK_WIP_LINESTYLE)
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Style))
             elParams->SetLineStyle (params.style, elParams->GetLineStyleParams ());
 #endif
@@ -729,7 +720,7 @@ virtual void _OnCleanup (DgnElementCP host, HeapZoneR zone) override {m_material
 +---------------+---------------+---------------+---------------+---------------+------*/
 static MaterialPtr CreateGeometryMapMaterial (ViewContextR context, PatternSymbol& symbCell, PatternParamsP params, DPoint2dCR spacing)
     {
-#if defined (NEEDS_WORK_DGNITEM)
+#if defined (NEEDSWORK_WIP_MATERIAL)
     MaterialPtr         pMaterial = Material::Create (symbCell.GetElemHandle ().GetDgnModelP ()->GetDgnDb());
     MaterialSettingsR   settings = pMaterial->GetSettingsR ();
     MaterialMapP        map = settings.GetMapsR().AddMap (MaterialMap::MAPTYPE_Geometry);
@@ -820,6 +811,7 @@ DPoint2dCR      spacing,
 double          scale
 )
     {
+#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     static      DgnElementAppData::Key s_appDataKey;
 
     if (DrawPurpose::Plot == context.GetDrawPurpose())      // Opt for slower, higher quality when plotting.
@@ -853,7 +845,6 @@ double          scale
         cellElementRef->AddAppData (s_appDataKey, appData = new GeometryMapPatternAppData (pMaterial), cellElementRef->GetHeapZone ());
         }
 
-#if defined (NEEDS_WORK_DGNITEM)
     // NOTE: Colors aren't stored in geometry map for point cells, setup active matsymb color from pattern if different than element color...
     if (symbCell.IsPointCellSymbol () && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentDisplayParams ()->GetLineColor () != params->color)
         {
@@ -861,7 +852,6 @@ double          scale
         context.CookDisplayParams ();
         context.CookDisplayParamsOverrides ();
         }
-#endif
 
     OvrMatSymbP  ovrMatSymb = context.GetOverrideMatSymb ();
 
@@ -930,6 +920,9 @@ double          scale
         }
 
     return true;
+#else
+    return false;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

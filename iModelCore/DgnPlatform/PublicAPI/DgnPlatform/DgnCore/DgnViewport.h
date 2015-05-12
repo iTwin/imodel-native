@@ -674,10 +674,8 @@ public:
     //! @return  the line pattern for lineCodeValue
     DGNPLATFORM_EXPORT uint32_t GetIndexedLinePattern (int index) const;
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     //! Compute the range of the element when displayed in this DgnViewport
-    DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange (DRange3dR range, IElementSetR elements, RotMatrixCP rMatrix);
-#endif
+    DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange (DRange3dR range, DgnElementIdSet const& elements, RotMatrixCP rMatrix=nullptr);
 
     DGNPLATFORM_EXPORT void SetMinimumLOD (double minLOD);
     /** @} */

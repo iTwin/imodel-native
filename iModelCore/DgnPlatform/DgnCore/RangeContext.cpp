@@ -1030,39 +1030,38 @@ StatusInt DgnViewport::ComputeViewRange (DRange3dR range, FitViewParams& params)
     return SUCCESS;
     }
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Marc.Bedard  01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       DgnViewport::ComputeFittedElementRange (DRange3dR rangeUnion, IElementSetR elements, RotMatrixCP rMatrix)
+StatusInt       DgnViewport::ComputeFittedElementRange (DRange3dR rangeUnion, DgnElementIdSet const& elements, RotMatrixCP rMatrix)
     {
     FitViewParams params;
     params.m_rMatrix = rMatrix;//Old function had this feature. So retaining it
 
-    FitContext  context (params);
+    FitContext context(params);
     context.SetViewport(this);
-    context.AllocateScanCriteria ();
-    context.InitFitContext ();
+    context.AllocateScanCriteria();
+    context.InitFitContext();
 
-    ElementHandle curr;  
-    for (bool more = elements.GetFirst(curr); more; more = elements.GetNext(curr))
+    for (DgnElementId elemId : elements)
         {
-        if (!curr.IsValid())
+        DgnElementCPtr elem = context.GetDgnDb().Elements().GetElement(elemId);
+
+        if (!elem.IsValid())
             continue;
 
-        GeometricElementCP geom = curr.GetGeometricElement();
+        GeometricElementCP geomElem = elem->ToGeometricElement();
 
-        if (nullptr == geom)
+        if (nullptr == geomElem)
             continue;
 
-        ViewContext::ContextMark mark (&context);
+        ViewContext::ContextMark mark(&context);
 
-        context.VisitElement (*geom);
+        context.VisitElement(*geomElem);
         }
     
     return context.GetElemRange()->GetRange (rangeUnion);
     }
-#endif
 
 /*=================================================================================**//**
 * Context to caclulate the range of all elements within a view.
