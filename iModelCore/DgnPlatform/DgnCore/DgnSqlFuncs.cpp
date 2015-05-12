@@ -308,7 +308,7 @@ struct DGN_bbox_overlaps : ScalarFunction
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DGN_bbox_contained : ScalarFunction
+struct DGN_bbox_contains : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -320,7 +320,7 @@ struct DGN_bbox_contained : ScalarFunction
         ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
         ctx.SetResultInt(box2.IsContained(box1));
         }
-    DGN_bbox_contained() : ScalarFunction("DGN_bbox_contained", 2, DbValueType::IntegerVal) {}
+    DGN_bbox_contains() : ScalarFunction("DGN_bbox_contains", 2, DbValueType::IntegerVal) {}
 };
 
 //=======================================================================================
@@ -430,7 +430,7 @@ void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
                           new DGN_bbox_areaxy,
                           new DGN_bbox_depth,
                           new DGN_bbox_height,
-                          new DGN_bbox_contained,
+                          new DGN_bbox_contains,
                           new DGN_bbox_overlaps,
                           new DGN_bbox_union,
                           new DGN_bbox_value,
