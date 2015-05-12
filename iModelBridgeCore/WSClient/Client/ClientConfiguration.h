@@ -10,6 +10,7 @@
 
 #include <MobileDgn/Utils/Http/HttpClient.h>
 #include <WebServices/Client/WebServicesClient.h>
+#include <WebServices/Client/WSRepositoryClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -21,7 +22,7 @@ struct ClientConfiguration
     private:
         const Utf8String m_serverUrl;
         const Utf8String m_repositoryId;
-        const BeFileName m_defaultSchemaPath;
+        const IWSSchemaProviderPtr m_schemaProvider;
         std::shared_ptr<MobileDgn::Utils::HttpClient> m_httpClient;
 
     public:
@@ -30,14 +31,14 @@ struct ClientConfiguration
             Utf8StringCR serverUrl,
             Utf8StringCR repositoryId,
             MobileDgn::Utils::HttpRequestHeadersCR defaultHeaders,
-            BeFileNameCP defaultSchemaPath,
+            IWSSchemaProviderPtr schemaProvider,
             MobileDgn::Utils::IHttpHandlerPtr customHandler
             );
 
         Utf8StringCR GetServerUrl () const;
         Utf8StringCR GetRepositoryId () const;
         MobileDgn::Utils::HttpClientR GetHttpClient () const;
-        BeFileNameCR GetDefaultSchemaPath () const;
+        BeFileName GetDefaultSchemaPath (WSInfoCR info) const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
