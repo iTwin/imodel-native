@@ -15,6 +15,7 @@
 #include <WebServices/Client/WSRepositoryClient.h>
 
 #include "WebServicesTestsHelper.h"
+#include "MockWSSchemaProvider.h"
 #include "../StubInstances.h"
 
 using namespace ::testing;
@@ -124,10 +125,10 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV12AndPropertiesTo
     EXPECT_EQ (WSError::Id::NotSupported, response.GetError ().GetId ());
     }
 
-TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithoutDefaultSchemaAndQueryNavigationRoot_ReturnsNotSupported)
+TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithoutSchemaProviderAndQueryNavigationRoot_ReturnsNotSupported)
     {
-    BeFileNameCP defaultSchemaPath = nullptr;
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), defaultSchemaPath, GetHandlerPtr ());
+    IWSSchemaProviderPtr schemaProvider = nullptr;
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
@@ -140,13 +141,37 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithoutDefaultS
     EXPECT_EQ (WSError::Id::NotSupported, response.GetError ().GetId ());
     }
 
-TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithDefaultSchemaAndQueryNavigationRoot_UsesDefaultSchemaAndReturnsCorrectResults)
+#ifdef USE_GTEST
+TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithSchemaProviderButNoSchemaReturnedAndQueryNavigationRoot_ReturnsNotSupported)
+    {
+    auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (BeFileName ()));
+
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
+
+    GetHandler ().ExpectRequests (2);
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
+    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK, R"({"TestClass" : [ { "$id" : "TestId" } ]})"));
+
+    BeTest::SetFailOnAssert (false);
+    auto response = client->SendGetChildrenRequest (ObjectId ())->GetResult ();
+    BeTest::SetFailOnAssert (true);
+
+    EXPECT_EQ (WSError::Id::NotSupported, response.GetError ().GetId ());
+    }
+#endif
+
+#ifdef USE_GTEST
+TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithSchemaProviderAndQueryNavigationRoot_UsesProviderSchemaAndReturnsCorrectResults)
     {
     Utf8String schemaXml =
         R"( <ECSchema schemaName="DefaultSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             </ECSchema>)";
-    BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
+
+    auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
@@ -157,15 +182,15 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithDefaultSche
     ASSERT_TRUE (response.IsSuccess ());
     EXPECT_EQ (ObjectId ("DefaultSchema.TestClass", "TestId"), (*response.GetValue ().GetInstances ().begin ()).GetObjectId ());
     }
+#endif
 
-#ifdef MOBILEUTILS_PORT
-TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2WithDefaultSchemaAndQueryNavigationRoot_DoesNotUseDefaultSchema)
+#ifdef USE_GTEST
+TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2WithSchemaProviderAndQueryNavigationRoot_DoesNotCallSchemaProvider)
     {
-    Utf8String schemaXml =
-        R"( <ECSchema schemaName="DefaultSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            </ECSchema>)";
-    BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
+    auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).Times (0);
+
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
 
     StubInstances instances;
     instances.Add ({"TestSchema.TestClass", "TestId"});
@@ -179,8 +204,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2WithDefaultSchem
     ASSERT_TRUE (response.IsSuccess ());
     EXPECT_EQ (ObjectId ("TestSchema.TestClass", "TestId"), (*response.GetValue ().GetInstances ().begin ()).GetObjectId ());
     }
-#endif // MOBILEUTILS_PORT
-
+#endif
 
 TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndNavigationRoot_RetrievesSchemaAndReturnsCorrectResults)
     {
@@ -286,7 +310,6 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndSpecificNavNo
     EXPECT_EQ (2, GetHandler ().GetRequestsPerformed ());
     }
 
-//#ifdef MOBILEUTILS_PORT
 TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseContainsInstance_SucceedsAndParsesInstance)
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
@@ -303,7 +326,6 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseConta
     ASSERT_TRUE (result.IsSuccess ());
     EXPECT_EQ (ObjectId ("TestSchema.TestClass", "A"), (*result.GetValue ().GetInstances ().begin ()).GetObjectId ());
     }
-//#endif // MOBILEUTILS_PORT
 
 TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithEmptyNavigationParentIdCustomParameter_MappedToNavigationRootQuery)
     {
@@ -764,6 +786,35 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson
     client->SendCreateObjectRequest (objectCreationJson)->Wait ();
     }
 
+TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModifications)
+    {
+    // TODO: unify WebApi 1 and 2 to have SendChangeRequest that would accept changeset. WebApi 1 would be limited to single instance changes.
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
+
+    Json::Value objectCreationJson = ToJson (
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "TestSchema",
+                "className" : "TestClass",
+                "instanceId" : "TestId",
+                "properties": {}
+                }
+            })");
+
+    GetHandler ().ExpectRequests (2);
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
+    GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ ("POST", request.GetMethod ().c_str ());
+        EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId", request.GetUrl ().c_str ());
+        EXPECT_EQ (objectCreationJson, request.GetRequestBody ()->AsJson ());
+        return StubHttpResponse ();
+        });
+
+    client->SendCreateObjectRequest (objectCreationJson)->Wait ();
+    }
+
 TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2FormatResponseFromResponseId)
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
@@ -800,38 +851,8 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2
     EXPECT_EQ (expectedObject, response.GetValue ().GetObject ());
     }
 
-TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModifications)
-    {
-    // TODO: unify WebApi 1 and 2 to have SendChangeRequest that would accept changeset. WebApi 1 would be limited to single instance changes.
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
-
-    Json::Value objectCreationJson = ToJson (
-        R"( {
-            "instance" :
-                {
-                "schemaName" : "TestSchema",
-                "className" : "TestClass",
-                "instanceId" : "TestId",
-                "properties": {}
-                }
-            })");
-
-    GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
-    GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
-        {
-        EXPECT_STREQ ("POST", request.GetMethod ().c_str ());
-        EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId", request.GetUrl ().c_str ());
-        EXPECT_EQ (objectCreationJson, request.GetRequestBody ()->AsJson ());
-        return StubHttpResponse ();
-        });
-
-    client->SendCreateObjectRequest (objectCreationJson)->Wait ();
-    }
-
 TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJsonAsObject)
     {
-
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     Json::Value responseObject = ToJson (R"({ "testMember" : "testValue" })");
@@ -1073,13 +1094,17 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11AndNoDefaultSche
     EXPECT_EQ (WSError::Id::NotSupported, result.GetError ().GetId ());
     }
 
-TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema_ReturnsObjectForDefaultSchema)
+#ifdef USE_GTEST
+TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithSchemaProvider_ReturnsObjectForProviderSchema)
     {
     Utf8String schemaXml =
         R"( <ECSchema schemaName="DefaultSchema" nameSpacePrefix="TS" version="4.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             </ECSchema>)";
-    BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
+
+    auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
 
     GetHandler ().ForFirstRequest (StubWSInfoHttpResponseWebApi13 ());
 
@@ -1093,14 +1118,19 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema
     EXPECT_EQ (4, schemaInstance.GetProperties ()["VersionMajor"].GetInt ());
     EXPECT_EQ (2, schemaInstance.GetProperties ()["VersionMinor"].GetInt ());
     }
+#endif
 
-TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema_ETagIsSchemaId)
+#ifdef USE_GTEST
+TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithSchemaProviderSchema_ETagIsSchemaId)
     {
     Utf8String schemaXml =
         R"( <ECSchema schemaName="DefaultSchema" nameSpacePrefix="TS" version="4.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             </ECSchema>)";
-    BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
+
+    auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
 
     GetHandler ().ForFirstRequest (StubWSInfoHttpResponseWebApi13 ());
 
@@ -1110,14 +1140,19 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema
     EXPECT_TRUE (result.GetValue ().IsModified ());
     EXPECT_EQ ("DUMMY_SCHEMA_OBJECT-DefaultSchema.04.02", result.GetValue ().GetETag ());
     }
+#endif
 
+#ifdef USE_GTEST
 TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchemaAndSendingETag_ResponseNotModified)
     {
     Utf8String schemaXml =
         R"( <ECSchema schemaName="DefaultSchema" nameSpacePrefix="TS" version="4.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             </ECSchema>)";
-    BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
+
+    auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
 
     GetHandler ().ForFirstRequest (StubWSInfoHttpResponseWebApi13 ());
 
@@ -1126,6 +1161,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema
     ASSERT_TRUE (result.IsSuccess ());
     EXPECT_FALSE (result.GetValue ().IsModified ());
     }
+#endif
 
 TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1_SendsGetSchemaRequestWithSuppliedETag)
     {
@@ -1254,13 +1290,18 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1BentleyConnectAndDum
 
     client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, FSTest::StubFilePath (), "TestETag")->Wait ();
     }
-TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectIdAndHasDefaultSchema_ReturnsDefaultSchema)
+
+#ifdef USE_GTEST
+TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectIdAndHasProvidedSchema_ReturnsProvidedSchema)
     {
     Utf8String schemaXml =
         R"( <ECSchema schemaName="DefaultSchema" nameSpacePrefix="TS" version="4.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             </ECSchema>)";
-    BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
+
+    auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (1);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
@@ -1271,14 +1312,19 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
     EXPECT_TRUE (result.GetValue ().IsModified ());
     EXPECT_EQ (schemaXml, FSTest::ReadFile (result.GetValue ().GetFilePath ()));
     }
+#endif
 
-TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectIdAndHasDefaultSchemaWithETag_ReturnsNotModified)
+#ifdef USE_GTEST
+TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObjectIdAndHasProvidedSchemaWithETag_ReturnsNotModified)
     {
     Utf8String schemaXml =
         R"( <ECSchema schemaName="DefaultSchema" nameSpacePrefix="TS" version="4.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             </ECSchema>)";
-    BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
-    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
+
+    auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), schemaProvider, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (1);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
@@ -1289,6 +1335,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
     ASSERT_TRUE (result.IsSuccess ());
     EXPECT_FALSE (result.GetValue ().IsModified ());
     }
+#endif
 
 TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2_SendsGetSchemasRequest)
     {
@@ -1305,7 +1352,6 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2_SendsGetSchemasR
     client->SendGetSchemasRequest ()->Wait ();
     }
 
-#ifdef MOBILEUTILS_PORT
 TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2ResponseContainsObjects_ReturnsObjects)
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
@@ -1320,4 +1366,3 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2ResponseContainsO
 
     EXPECT_EQ (ObjectId ("TestSchema.TestClass", "A"), (*(result.GetValue ().GetInstances ().begin ())).GetObjectId ());
     }
-#endif

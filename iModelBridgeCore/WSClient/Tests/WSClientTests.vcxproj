@@ -87,6 +87,7 @@
     <ClInclude Include="Published\WebServices\MockServerInfoListener.h" />
     <ClInclude Include="Published\WebServices\MockWSClient.h" />
     <ClInclude Include="Published\WebServices\MockWSRepositoryClient.h" />
+    <ClInclude Include="Published\WebServices\MockWSSchemaProvider.h" />
     <ClInclude Include="Published\WebServices\ObjectIdTests.h" />
     <ClInclude Include="Published\WebServices\PassportTests.h" />
     <ClInclude Include="Published\WebServices\Response\WSObjectsReaderV1Tests.h" />
@@ -189,6 +190,12 @@
     <ClCompile Include="Published\WebServices\WSQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\WSRepositoryClientTests.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="dependencies.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{962EAE8A-23AA-4992-B5BA-ABB8E8536306}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
@@ -198,7 +205,7 @@
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <IntDir>$(TEMP)</IntDir>
-    <OutDir />
+    <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -235,18 +242,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb  reb wsclientunittests begtestexe -x64 -s</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb  reb wsclientunittests begtestexe -x64</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p  WSClientUnitTests b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\begtest.exe</NMakeOutput>
-    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI\;$(SrcRoot)WSClient\PublicAPI\;$(OutRoot)Winx64\BuildContexts\BeGTest\VendorAPI\</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\BeGTest\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>bb  reb wsclientunittests begtestexe -x86 -s</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb  reb wsclientunittests begtestexe -x86</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax86 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSClient -p  WSClientUnitTests b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax86 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx86\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
-    <NMakeIncludeSearchPath>$(OutRoot)Winx86\BuildContexts\MobileDgn\PublicAPI\;$(OutRoot)Winx86\BuildContexts\MobileDgn\VendorAPI\;$(OutRoot)Winx86\build\UnitTests\MobileDgn\BackDoorMobileDgnUnitTests\PublicAPI\;$(SrcRoot)MobileDgn\PublicAPI\;</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx86\build\WSClient\PublishedApi\;$(OutRoot)Winx86\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx86\BuildContexts\BeGTest\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeBuildCommandLine>bb  reb wsclientunittests begtestexe -x64 -s</NMakeBuildCommandLine>
@@ -254,6 +265,8 @@
     <NMakeReBuildCommandLine>bb  reb wsclientunittests begtestexe -x64</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\MobileDgn\PublicAPI\;$(OutRoot)Winx64\BuildContexts\MobileDgn\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\MobileDgn\BackDoorMobileDgnUnitTests\PublicAPI\;$(SrcRoot)MobileDgn\PublicAPI\</NMakeIncludeSearchPath>
+    <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(TEMP)</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>bb  reb wsclientunittests begtestexe -x86 -s</NMakeBuildCommandLine>
@@ -268,6 +281,11 @@
     </BuildLog>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <BuildLog>
+      <Path>$(TEMP)\$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <BuildLog>
       <Path>$(TEMP)\$(MSBuildProjectName).log</Path>
     </BuildLog>

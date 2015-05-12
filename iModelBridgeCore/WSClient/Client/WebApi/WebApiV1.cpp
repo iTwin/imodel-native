@@ -683,10 +683,11 @@ HttpRequest::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    if (!m_configuration->GetDefaultSchemaPath ().empty ())
+    BeFileName defaultSchemaPath = m_configuration->GetDefaultSchemaPath (m_info);
+    if (!defaultSchemaPath.empty ())
         {
         SchemaInfo info;
-        if (SUCCESS != ReadSchemaInfoFromFile (m_configuration->GetDefaultSchemaPath (), info))
+        if (SUCCESS != ReadSchemaInfoFromFile (defaultSchemaPath, info))
             {
             return CreateCompletedAsyncTask (SchemaResult::Error (WSError::CreateFunctionalityNotSupportedError ()));
             }
@@ -699,7 +700,7 @@ ICancellationTokenPtr cancellationToken
             return CreateCompletedAsyncTask (SchemaResult::Success (response));
             }
 
-        if (SUCCESS != WriteFileToHttpBody (m_configuration->GetDefaultSchemaPath (), body))
+        if (SUCCESS != WriteFileToHttpBody (defaultSchemaPath, body))
             {
             return CreateCompletedAsyncTask (SchemaResult::Error (WSError::CreateFunctionalityNotSupportedError ()));
             }

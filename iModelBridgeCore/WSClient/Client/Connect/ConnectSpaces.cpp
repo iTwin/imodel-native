@@ -195,7 +195,7 @@ void ConnectSpaces::Cancel()
     {
     // Note: m_cancelToken is a ref-counted pointer, but it is created in the constructor,
     // so there's no need to check if it's non-null.
-    m_cancelToken->SetCanceled();
+    m_cancelToken->SetCanceled ();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -678,7 +678,7 @@ void ConnectSpaces::ResetEula(bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::CheckEula(bool getNewToken)
     {
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str() , Connect::GetStsUrl().c_str())) 
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -777,12 +777,12 @@ void ConnectSpaces::CheckEula(bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
     {
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str() , Connect::GetStsUrl().c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return false;
         }
-    BeFileName tempPathName = MobileDgnCommon::GetApplicationPaths ().GetTemporaryDirectory();
+    BeFileName tempPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetTemporaryDirectory ();
     tempPathName.AppendToPath(L"eula.html");
     Utf8String tempPath(tempPathName);
     Utf8String url = sm_eulaUrlBase;
@@ -847,7 +847,7 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::AcceptEula(bool getNewToken)
     {
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, AcceptEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), EULA_STS_AUTH_URI))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, AcceptEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), Connect::GetStsUrl().c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -1025,8 +1025,8 @@ void ConnectSpaces::DownloadFile(JsonValueCR messageObj, bool getNewToken)
     Utf8String docId(MESSAGE_STRING_FIELD("$id"));
     Utf8String lastModified(MESSAGE_STRING_FIELD("FileLastModifiedDate"));
     WString wFilename(filename.c_str(), true);
-    BeFileName tempPathName = MobileDgnCommon::GetApplicationPaths ().GetTemporaryDirectory();
-    BeFileName docsPathName = MobileDgnCommon::GetApplicationPaths ().GetDocumentsDirectory();
+    BeFileName tempPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetTemporaryDirectory ();
+    BeFileName docsPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetDocumentsDirectory ();
     tempPathName.AppendToPath(wFilename.c_str());
     docsPathName.AppendToPath(wFilename.c_str());
 
@@ -1182,7 +1182,7 @@ Json::Value ConnectSpaces::AppendFileStatus(JsonValueCR itemObj)
     {
     Utf8String filename(itemObj["Name"].asString());
     WString wFilename(filename.c_str(), true);
-    BeFileName docsPathName = MobileDgnCommon::GetApplicationPaths ().GetDocumentsDirectory();
+    BeFileName docsPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetDocumentsDirectory ();
     docsPathName.AppendToPath(wFilename.c_str());
     FileStatus status = MissingStatus;
     DateTime remoteModTime;
@@ -1277,7 +1277,7 @@ bool ConnectSpaces::OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj
                 break;
             case ResetEulaAction:
                 ResetEulaAsync();
-                break;
+                break;    
             case CheckEulaAction:
                 CheckEulaAsync();
                 break;
@@ -1301,7 +1301,7 @@ bool ConnectSpaces::OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj
 
 void ConnectSpaces::DecreaseDates()
     {
-    BeFileName docsPathName = MobileDgnCommon::GetApplicationPaths ().GetDocumentsDirectory();
+    BeFileName docsPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetDocumentsDirectory();
     bvector<BeFileName> imodelPaths;
     BeDirectoryIterator::WalkDirsAndMatch(imodelPaths, docsPathName, L"*.imodel", false);
     int i = 0;

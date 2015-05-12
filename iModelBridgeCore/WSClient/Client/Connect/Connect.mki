@@ -22,8 +22,7 @@ ConnectHeaders  = $(ConnectPublicApiDirectory)Authentication.h                  
                   $(ConnectPublicApiDirectory)IConnectAuthenticationPersistence.h   \
                   $(ConnectPublicApiDirectory)IConnectTokenProvider.h               \
                   $(ConnectPublicApiDirectory)SamlToken.h                           \
-                  $(ConnectSourceDirectory)AuthenticationData.h                     \
-                  $(ConnectSourceDirectory)DatabaseHelper.h
+                  $(ConnectSourceDirectory)AuthenticationData.h
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
@@ -44,8 +43,6 @@ $(o)ConnectSpaces$(oext)                    : $(ConnectSourceDirectory)ConnectSp
 
 $(o)ConnectTokenProvider$(oext)             : $(ConnectSourceDirectory)ConnectTokenProvider.cpp $(ConnectHeaders) ${MultiCompileDepends}
 
-$(o)DatabaseHelper$(oext)                   : $(ConnectSourceDirectory)DatabaseHelper.cpp $(ConnectHeaders) ${MultiCompileDepends}
-
 $(o)SamlToken$(oext)                        : $(ConnectSourceDirectory)SamlToken.cpp $(ConnectHeaders) ${MultiCompileDepends}
 
 WSClientObjectList + $(o)Authentication$(oext)                      \
@@ -56,6 +53,5 @@ WSClientObjectList + $(o)Authentication$(oext)                      \
                      $(o)ConnectSetup$(oext)                        \
                      $(o)ConnectSpaces$(oext)                       \
                      $(o)ConnectTokenProvider$(oext)                \
-                     $(o)DatabaseHelper$(oext)                      \
                      $(o)SamlToken$(oext)
 
