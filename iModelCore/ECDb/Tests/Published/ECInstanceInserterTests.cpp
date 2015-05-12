@@ -507,7 +507,7 @@ TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertionUsingStandaloneEna
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*testSchema));
-    ASSERT_EQ (SUCCESS, ecdb.GetEC ().GetSchemaManager ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
+    ASSERT_EQ (SUCCESS, ecdb.Schemas().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
     ecdb.SaveChanges ();
 
     StandaloneECEnablerPtr enabler = testClass->GetDefaultStandaloneEnabler ();
