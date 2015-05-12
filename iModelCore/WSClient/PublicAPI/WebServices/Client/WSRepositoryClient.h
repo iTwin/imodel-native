@@ -11,6 +11,7 @@
 #include <WebServices/Client/WebServicesClient.h>
 
 #include <MobileDgn/Utils/Threading/AsyncResult.h>
+#include <MobileDgn/Utils/Threading/LimitingTaskQueue.h>
 #include <WebServices/Client/ObjectId.h>
 #include <WebServices/Client/Response/WSCreateObjectResponse.h>
 #include <WebServices/Client/Response/WSFileResponse.h>
@@ -147,6 +148,19 @@ struct IWSRepositoryClient
     };
 
 /*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef std::shared_ptr<struct IWSSchemaProvider> IWSSchemaProviderPtr;
+struct IWSSchemaProvider
+    {
+    public:
+        virtual ~IWSSchemaProvider ()
+            {
+            };
+        virtual BeFileName GetSchema (WSInfoCR info) = 0;
+    };
+
+/*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSRepositoryClient : public IWSRepositoryClient
@@ -154,6 +168,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
     private:
         std::shared_ptr<struct ClientConnection> m_connection;
         IWSClientPtr m_serverClient;
+        mutable MobileDgn::Utils::LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
 
     private:
         WSRepositoryClient (std::shared_ptr<struct ClientConnection> connection);
@@ -179,16 +194,20 @@ struct WSRepositoryClient : public IWSRepositoryClient
         //! @param[in] defaultHeaders - headers used for each request. User-Agent is recomended for being able to identify client in server.
         //!                             Mas-Uuid and Mas-App-Guid are posible for licensing purposes.
         //! @param[in] customHandler - custom http handler for testing purposes.
-        //! @param[in] defaultSchemaPath - schema that should be used for server with WebApi v1.x. Will override server schema if added. 
-        //! Note: schema is mandatory for server with WebApi v1.1. Use WSClient::GetServerInfo() to figure out version if needed.
-        WSCLIENT_EXPORT static IWSRepositoryClientPtr Create
+        //! @param[in] schemaProvider - schema provider for WSG 1.x servers in order to override their schemas
+        //! Note: schema is required for server with WebApi v1.1 as it does not provide one
+        WSCLIENT_EXPORT static std::shared_ptr<WSRepositoryClient> Create
             (
             Utf8StringCR serverUrl,
             Utf8StringCR repositoryId,
             MobileDgn::Utils::HttpRequestHeadersCR defaultHeaders,
-            BeFileNameCP defaultSchemaPath = nullptr,
+            IWSSchemaProviderPtr schemaProvider = nullptr,
             MobileDgn::Utils::IHttpHandlerPtr customHandler = nullptr
             );
+
+        //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple 
+        //! file downloads at once.
+        WSCLIENT_EXPORT void SetFileDownloadLimit (size_t limit);
 
         WSCLIENT_EXPORT IWSClientPtr GetWSClient () const override;
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId () const override;

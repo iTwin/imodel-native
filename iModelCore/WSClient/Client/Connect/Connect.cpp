@@ -95,20 +95,6 @@ void Connect::SetWsgUrl (Utf8StringCR url)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Rolandas.Rimkus    04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR Connect::GetStsUrl ()
-    {
-    if (s_stsUrl.empty ())
-        {
-        s_stsUrl = LEARN_STS_AUTH_URI;
-        if (UrlProvider::IsInitialized ())
-            s_stsUrl = UrlProvider::GetConnectLearnStsAuthUri ();
-        }
-    return s_stsUrl;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR Connect::GetEulaUrl ()
@@ -123,6 +109,22 @@ Utf8StringCR Connect::GetEulaUrl ()
             }
         }
     return s_eulaUrl;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Rolandas.Rimkus    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR Connect::GetStsUrl ()
+    {
+    if (s_stsUrl.empty ())
+        {
+        s_stsUrl = LEARN_STS_AUTH_URI;
+        if (UrlProvider::IsInitialized ())
+            {
+            s_stsUrl = UrlProvider::GetConnectLearnStsAuthUri ();
+            }
+        }
+    return s_stsUrl;
     }
 
 /*--------------------------------------------------------------------------------------+

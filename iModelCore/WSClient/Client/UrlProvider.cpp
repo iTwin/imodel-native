@@ -16,19 +16,26 @@ bool UrlProvider::s_isInitialized = false;
 const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
     "https://qa-punchlist-eus.cloudapp.net",
     "https://qa-punchlist-eus.cloudapp.net",
-    "https://prod-punchlist-eus.cloudapp.net"
+    "https://connect-punchlist.bentley.com"
     };
 
+// CONNECT 1.1
+//const Utf8String UrlProvider::s_connectWsgUrl[3] = {
+//    "https://qa-connectgateway-eus.cloudapp.net",
+//    "https://qa-connectgateway-eus.cloudapp.net",
+//    "https://prod-connectgateway-eus.cloudapp.net"
+//    };
+
 const Utf8String UrlProvider::s_connectWsgUrl[3] = {
-    "https://qa-connectgateway-eus.cloudapp.net",
-    "https://qa-connectgateway-eus.cloudapp.net",
-    "https://prod-connectgateway-eus.cloudapp.net"
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
+    "https://connect-wsg20.bentley.com"
     };
 
 const Utf8String UrlProvider::s_connectEulaUrl[3] = {
     "https://dev-agreement-eus.cloudapp.net/rest",
     "https://dev-agreement-eus.cloudapp.net/rest",
-    "https://agreement-eus.cloudapp.net/rest"
+    "https://connect-agreement.bentley.com/rest"
     };
 
 const Utf8String UrlProvider::s_connectLearnStsAuthUri[3] = {
@@ -48,6 +55,7 @@ const Utf8String UrlProvider::s_passportUrl[3] = {
     "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
     "https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport"
     };
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -104,17 +112,17 @@ Utf8StringCR UrlProvider::GetConnectLearnStsAuthUri ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   2/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR UrlProvider::GetUsageTrackingUrl()
+Utf8StringCR UrlProvider::GetUsageTrackingUrl ()
     {
-    BeAssert(s_isInitialized && "UrlProvider not initialized");
+    BeAssert (s_isInitialized && "UrlProvider not initialized");
     return s_usageTrackingUrl[s_env];
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   2/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR UrlProvider::GetPassportUrl()
+Utf8StringCR UrlProvider::GetPassportUrl ()
     {
-    BeAssert(s_isInitialized && "UrlProvider not initialized");
+    BeAssert (s_isInitialized && "UrlProvider not initialized");
     return s_passportUrl[s_env];
     }

@@ -432,7 +432,9 @@ ICancellationTokenPtr cancellationToken
 
     Utf8String url = GetUrl (CreateClassSubPath (schemaName, className));
     if (!instanceId.empty ())
+        {
         url += "/" + instanceId;
+        }
 
     ChunkedUploadRequest request ("POST", url, m_configuration->GetHttpClient ());
 

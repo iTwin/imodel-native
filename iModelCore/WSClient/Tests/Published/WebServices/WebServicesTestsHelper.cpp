@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #include "WebServicesTestsHelper.h"
 
 HttpResponse StubHttpResponse (ConnectionStatus status)

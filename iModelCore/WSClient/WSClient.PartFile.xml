@@ -16,7 +16,8 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
+    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" 
+     BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
         <SubPart PartName="PublishedApi" PartFile="MobileDgn" Repository="MobileDgn"/>
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <Bindings>
@@ -55,7 +56,8 @@
         </Bindings>
     </Part>
 
-    <Part Name="WSClientUnitTests" ExcludePlatforms="Linux*" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
+    <Part Name="WSClientUnitTests" ExcludePlatforms="Linux*" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" 
+     BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
         <!-- Get the tested API -->
         <SubPart    PartName="WebServicesClient" />
         <!-- Needed for published unit tests -->
