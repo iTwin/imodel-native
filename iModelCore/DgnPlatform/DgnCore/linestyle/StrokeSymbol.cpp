@@ -392,15 +392,13 @@ void LsSymbolComponent::FreeGraphics (bool freeDescr, bool freeXGraphics)
         }
     }
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::AddGraphics (EditElementHandleR eeh)
+void LsSymbolComponent::AddGraphics (DgnElementPtr& element)
     {
-    m_elements.push_back(eeh.ExtractWriteableElement());
+    m_elements.push_back(element);
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012

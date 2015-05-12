@@ -205,7 +205,7 @@ private:
     HitPathP GetPreLocatedPath ();
 
 protected:
-    typedef bvector<RefCountedPtr<DisplayPath> > HilitedArray;
+    typedef bvector<RefCountedPtr<DisplayPath>> HilitedArray;
 
     HilitedArray    m_hilitedElems;
     HitList*        m_hitList;
@@ -224,7 +224,7 @@ protected:
     DGNVIEW_EXPORT virtual void _GetLocateError (Utf8StringR reasonString, int reason);
     DGNVIEW_EXPORT virtual void _AdjustSnapPath (SnapContext&);
     virtual bool _IsSnappableDgnAttachment (DgnModelP modelRef) {return true;}
-    virtual DisplayPathCP _GetAppFilterPath () {return NULL;}
+    virtual DisplayPathCP _GetAppFilterPath () {return nullptr;}
     virtual LocateFilterStatus _AppFilterHit (LocateFailureValue*, Utf8StringP explanation, HitPathCP path, LocateFilterFunc internalFilter, bool preLocate, LOCATE_Action action) {return LOCATE_FILTER_STATUS_Neutral;}
     virtual SnapStatus _PerformConstraintSnap(SnapPathP, double hotDistance, HitSource snapSource) {return SnapStatus::Success;}
     DGNVIEW_EXPORT virtual void _GetPreferredPointSnapModes (bvector<SnapMode>& snaps, HitSource source);
