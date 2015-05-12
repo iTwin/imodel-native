@@ -271,14 +271,10 @@ struct ECDbSqlDb : NonCopyableClass
         std::vector<ECDbSqlIndex*> GetIndexesR ();
         const std::vector<ECDbSqlTable const*> GetTables () const;
         virtual  ~ECDbSqlDb () {}
-        BentleyStatus WriteTo (BeXmlDom& xmlDom) const;
-        BentleyStatus WriteTo (Utf8StringR xml) const;
         StringPool const& GetStringPool () const { return m_stringPool; }
         StringPool& GetStringPoolR ()  { return m_stringPool; }
         BentleyStatus DropIndex (Utf8CP name);
         BentleyStatus DropTable (Utf8CP name);
-        static BentleyStatus ReadFrom (ECDbSqlDb& ecdbSqlDb, BeXmlDomR xmlDom);
-        static BentleyStatus ReadFrom (ECDbSqlDb& ecdbSqlDb, Utf8StringCR xml);
         bool IsModified () const;
         void Reset ();        
     };
@@ -335,8 +331,6 @@ struct ECDbSqlIndex : NonCopyableClass
         bool Contains (Utf8CP column) const;
         BentleyStatus Add (Utf8CP column);
         BentleyStatus Remove (Utf8CP column);
-        BentleyStatus WriteTo (BeXmlNodeR xmlNode) const;
-        static BentleyStatus ReadFrom (ECDbSqlDb& ecdbSqlDb, BeXmlNodeR xmlNode);
         BentleyStatus Drop ();
         bool IsValid () const { return !m_columns.empty (); }
         PersistenceManager const& GetPersistenceManager () const { return m_persistenceManager; }
@@ -500,8 +494,6 @@ struct ECDbSqlColumn : NonCopyableClass
         Constraint& GetConstraintR ()  { return m_constraints; };
         bool IsReusable () const { return m_type == Type::Any; }
         virtual ~ECDbSqlColumn () {}
-        BentleyStatus WriteTo (BeXmlNodeR xmlNode) const;
-        static BentleyStatus ReadFrom (ECDbSqlTable& ecdbSqlTable, BeXmlNodeR xmlNode);
         static Type StringToType (Utf8CP typeName);
         static Utf8CP TypeToString (Type type);
         BentleyStatus SetUserFlags (uint32_t userFlags);
@@ -529,17 +521,12 @@ struct ECDbSqlConstraint : NonCopyableClass
         ECDbSqlTable const& m_table;
 
     public:
-        ECDbSqlConstraint (Type type, ECDbSqlTable const& table)
-            :m_type (type), m_table (table)
-            {}
+        ECDbSqlConstraint (Type type, ECDbSqlTable const& table) :m_type (type), m_table (table) {}
 
+        virtual ~ECDbSqlConstraint() {}
 
         Type GetType () const { return m_type; }
         ECDbSqlTable const& GetTable () const { return m_table; }
-        virtual ~ECDbSqlConstraint (){}
-        BentleyStatus WriteTo (BeXmlNodeR xmlNode) const;
-        static BentleyStatus ReadFrom (ECDbSqlTable& ecdbSqlTable, BeXmlNodeR xmlNode);
-
     };
 
 //======================================================================================
@@ -564,8 +551,6 @@ struct ECDbSqlPrimaryKeyConstraint : ECDbSqlConstraint
             return std::find_if (m_columns.begin (), m_columns.end (), [columnName] (ECDbSqlColumn const* column){ return column->GetName ().EqualsI (columnName); }) != m_columns.end ();
             }       
         std::vector<ECDbSqlColumn const*> const& GetColumns () const { return m_columns; }        
-        BentleyStatus WriteTo (BeXmlNodeR xmlNode) const;
-        static BentleyStatus ReadFrom (ECDbSqlTable& ecdbSqlTable, BeXmlNodeR xmlNode);
     };
 
 
@@ -626,9 +611,7 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         bool ContainsInSource (Utf8CP columnName) const;
         bool ContainsInTarget (Utf8CP columnName) const;
         BentleyStatus Remove (Utf8CP sourceColumn, Utf8CP targetColumn);
-        BentleyStatus WriteTo (BeXmlNodeR xmlNode) const;
         size_t Count () const { return m_targetColumns.size (); }
-        static BentleyStatus ReadFrom (ECDbSqlTable& ecdbSqlTable, BeXmlNodeR xmlNode);
         static ActionType ParseActionType (WCharCP actionType);
         static MatchType ParseMatchType (WCharCP matchType);
         static Utf8CP ToSQL (ActionType actionType);
@@ -695,6 +678,8 @@ struct ECDbSqlTable : NonCopyableClass
 
         std::weak_ptr<ECDbSqlColumn> GetColumnWeakPtr (Utf8CP name) const;
     public:
+        virtual ~ECDbSqlTable() {}
+
         ECDbTableId GetId () const { return m_id; }
         void SetId (ECDbTableId id) { m_id = id; }
         Utf8StringCR GetName () const { return m_name; }
@@ -735,9 +720,6 @@ struct ECDbSqlTable : NonCopyableClass
 
         bool DeleteColumn (Utf8CP name);
         BentleyStatus FinishEditing ();
-        virtual ~ECDbSqlTable (){}
-        BentleyStatus WriteTo (BeXmlNodeR xmlNode) const;
-        static BentleyStatus ReadFrom (ECDbSqlDb& ecdbSqlDb, BeXmlNodeR xmlNode);
         //! temp method
         void AddColumnEventHandler (std::function<void (ColumnEvent, ECDbSqlColumn&)> columnEventHandler){ m_columnEvents.push_back(columnEventHandler); }
         std::set<ECN::ECClassId> GetReferences () const;
