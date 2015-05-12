@@ -8,8 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <MobileDgn/Utils/Utils.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
+#include <WebServices/Client/WebServicesClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
