@@ -200,10 +200,17 @@ static Utf8CP APPEARANCE_Transparency = "transp";
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnCategories::InsertSubCategory (SubCategory& subCategory)
     {
-    if (!subCategory.GetSubCategoryId().IsValid() || !subCategory.GetCategoryId().IsValid())
+    if (!subCategory.GetCategoryId().IsValid())
         {
         BeAssert (false);
         return BE_SQLITE_ERROR;
+        }
+
+    if (!subCategory.GetSubCategoryId().IsValid())
+        {
+        DbResult rc = m_dgndb.GetNextRepositoryBasedId(subCategory.m_subCategoryId, DGN_TABLE(DGN_CLASSNAME_SubCategory), "Id");
+        if (BE_SQLITE_OK != rc)
+            return rc;
         }
 
     Statement stmt;
