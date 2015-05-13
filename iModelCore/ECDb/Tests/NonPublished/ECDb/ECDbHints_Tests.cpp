@@ -623,4 +623,39 @@ TEST_F (ECDbHintTests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThis
         }
     ASSERT_EQ (expectedColumnNames, actualColumnNames);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbHintTests, TestInValidMapStrategyValue)
+    {
+    auto const schema =
+        L"<?xml version='1.0' encoding='utf-8'?>"
+        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECClass typeName='ClassA' isDomainClass='True'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>TablePerHierarchy | ReuseColumn</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='Price' typeName='double' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ClassAB' isDomainClass='True'>"
+        L"        <BaseClass>ClassA</BaseClass>"
+        L"    </ECClass>"
+        L"</ECSchema>";
+
+    ECDbTestProject::Initialize ();
+    ECDb ecdb;
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"SchemaHintDb.ecdb"))<<"ECDb couldn't be created";
+
+    ECSchemaPtr testSchema;
+    auto readContext = ECSchemaReadContext::CreateContext ();
+    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
+    ASSERT_TRUE (testSchema != nullptr);
+    auto importStatus = ecdb.Schemas ().ImportECSchemas (readContext->GetCache ());
+    ASSERT_TRUE (importStatus == BentleyStatus::ERROR)<< "Schema import successful instead of returning error";
+    }
 END_ECDBUNITTESTS_NAMESPACE
