@@ -161,7 +161,7 @@ GetValueAsserter const& asserter
             TestSchemaHelper::TESTCLASS_NAME,
             asserter.GetPropertyName ());
     PerformanceTestingFrameWork performanceObj;
-    performanceObj.writeTodb(L"PerformanceTest.ecdb", totalStopWatch, testDetails, "RunGetValueWithIsNullTest for the ECSQLStatement Preformance for TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
+    performanceObj.writeTodb(totalStopWatch, testDetails, "RunGetValueWithIsNullTest for the ECSQLStatement Preformance for TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,7 +203,7 @@ GetValueAsserter const& asserter
             TestSchemaHelper::TESTCLASS_NAME,
             asserter.GetPropertyName ());
     PerformanceTestingFrameWork performanceObj;
-    performanceObj.writeTodb(L"PerformanceTest.ecdb", totalStopWatch, testDetails, "RunGetValueWithoutIsNullTest for the ECSQLStatement Preformance  TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
+    performanceObj.writeTodb(totalStopWatch, testDetails, "RunGetValueWithoutIsNullTest for the ECSQLStatement Preformance  TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Krischan.Eberle          09/12

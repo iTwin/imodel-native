@@ -51,7 +51,7 @@ void PerformanceBisDesignTestFixture::RunTest (Utf8CP dbFileName, Context& conte
         _RunInsertTest (db, context);
         logInsertTime.Stop();
         PerformanceTestingFrameWork performanceObjInsert;
-        EXPECT_TRUE(performanceObjInsert.writeTodb(L"PerformanceTest.ecdb", logInsertTime, "Performance BIS Design Studies test RunInsert For : ", bisonTestDetails + " Db is used to cover the scenario mention in Db Name "));
+        EXPECT_TRUE(performanceObjInsert.writeTodb(logInsertTime, "Performance BIS Design Studies test, RunInsert For : " + bisonTestDetails , " Db is used to cover the scenario mention in Db Name "));
         }
 
     //select test
@@ -62,7 +62,7 @@ void PerformanceBisDesignTestFixture::RunTest (Utf8CP dbFileName, Context& conte
         _RunSelectTest(db, context);
         PerformanceTestingFrameWork performanceObjSelect;
         logSelecttTime.Stop();
-        EXPECT_TRUE(performanceObjSelect.writeTodb(L"PerformanceTest.ecdb", logSelecttTime, "Performance BIS Design Studies test RunInsert For : ", bisonTestDetails + " Db is used to cover the scenario mention in Db Name "));
+        EXPECT_TRUE(performanceObjSelect.writeTodb(logSelecttTime, "Performance BIS Design Studies test, RunSelect For : " + bisonTestDetails , " Db is used to cover the scenario mention in Db Name "));
       
         }
     }
