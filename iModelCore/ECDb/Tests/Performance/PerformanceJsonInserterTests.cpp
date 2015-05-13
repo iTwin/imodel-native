@@ -53,7 +53,7 @@ void ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad.Zaighum                  05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(PerformanceJsonInserter, InsertJasonCppUsingPresistanceAPI)
+TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
 {
     ECDbTestProject testProject;
     auto& ecdb = testProject.Create("performancejsoninserter.ecdb", L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml", false);
@@ -86,7 +86,7 @@ TEST(PerformanceJsonInserter, InsertJasonCppUsingPresistanceAPI)
     ecdb.SaveChanges();
     LOG.infov("Inserting JsonCpp JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);
     PerformanceTestingFrameWork performanceObj;
-    EXPECT_TRUE(performanceObj.writeTodb(L"PerformanceTest.ecdb", timer, "PerformanceJsonInserter,InsertJasonCppUsingPresistanceAPI", "Inserting JsonCpp JSON objects into ECDb For repetitionCount: 1000"));
+    EXPECT_TRUE(performanceObj.writeTodb(timer, "PerformanceJsonInserter,InsertJsonCppUsingPresistanceAPI", "Inserting JsonCpp JSON objects into ECDb For repetitionCount: 1000"));
 }
 
 
@@ -134,7 +134,7 @@ TEST(PerformanceJsonInserter, InsertRapidJsonInsertJasonCppUsingPresistanceAPI)
     LOG.infov("Inserting RapidJson JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, rapidJasintimer.GetElapsedSeconds() * 1000.0);
 
     PerformanceTestingFrameWork performanceObjRapidJason;
-    EXPECT_TRUE(performanceObjRapidJason.writeTodb(L"PerformanceTest.ecdb", rapidJasintimer, "PerformanceJsonInserter,InsertRapidJsonInsertJasonCppUsingPresistanceAPI", "Inserting RapidJson JSON objects into ECDb For repetitionCount:  1000"));
+    EXPECT_TRUE(performanceObjRapidJason.writeTodb(rapidJasintimer, "PerformanceJsonInserter,InsertRapidJsonInsertJasonCppUsingPresistanceAPI", "Inserting RapidJson JSON objects into ECDb For repetitionCount:  1000"));
 }
 
 END_ECDBUNITTESTS_NAMESPACE

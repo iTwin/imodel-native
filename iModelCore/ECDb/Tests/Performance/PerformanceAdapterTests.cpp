@@ -64,7 +64,7 @@ struct PerformanceAdapterTestFixture : PerformanceTestFixture
                     results[Utf8String(timerName)] = timer.GetElapsedSeconds();
                     LOG.infov(L"%ls took %lf seconds.", timerName, timer.GetElapsedSeconds());
                     PerformanceTestingFrameWork performanceObj;
-                    EXPECT_TRUE(performanceObj.writeTodb(L"PerformanceTest.ecdb", LogTimer, TestDetails, " Adding 10000 array elements for property: " + propertyName));
+                    EXPECT_TRUE(performanceObj.writeTodb(LogTimer, TestDetails, " Adding 10000 array elements for property: " + propertyName));
                     }
                 }
             }

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/PerformanceBisDesignStudies_Test.cpp $
+|  $Source: Tests/Performance/PerformanceBisDesignStudies_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceBisDesignTestFixture.h"
@@ -167,7 +167,7 @@ TEST (Performance_BisDesign, InsertPerformanceAndNumberOfIndicesTest)
         }
     logTimer.Stop();
     PerformanceTestingFrameWork performanceObj;
-    EXPECT_TRUE(performanceObj.writeTodb(L"PerformanceTest.ecdb", logTimer, "Performance_BisDesign.InsertPerformanceAndNumberOfIndicesTest ", " PerformanceBsiDesignStudies Test run using  performance_bisdesign_insertperformance_and_indexcount.db"));
+    EXPECT_TRUE(performanceObj.writeTodb(logTimer, "Performance_BisDesign,InsertPerformanceAndNumberOfIndicesTest ", " PerformanceBsiDesignStudies Test run using  performance_bisdesign_insertperformance_and_indexcount.db"));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -15,7 +15,7 @@ void ReadJsonInputFromFile (Json::Value& jsonInput, BeFileName& jsonFilePath);
 //---------------------------------------------------------------------------------------
 // @bsitest                                    Shaun.Sewall                     12/13
 //---------------------------------------------------------------------------------------
-TEST(PerformanceJsonComparison, ParseJasonUsingStartupCompany)
+TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
     {
     //-----------------------------------------------------------------------------------
     //  Construct a test JSON object
@@ -60,9 +60,9 @@ TEST(PerformanceJsonComparison, ParseJasonUsingStartupCompany)
 
     timer.Stop();
     printf ("Parsing large JSON object (%d rows) with JsonCpp took %.4f seconds\n", numRows, timer.GetElapsedSeconds());
-    Utf8String testDetailsParseCpp = "PerformanceJsonComparison,ParseJasonCppUsingStartupCompany";
+    Utf8String testDetailsParseCpp = "PerformanceJsonComparison,ParseJsonCppUsingStartupCompany";
     PerformanceTestingFrameWork performanceObjRapidJason;
-    EXPECT_TRUE(performanceObjRapidJason.writeTodb(L"PerformanceTest.ecdb", timer, testDetailsParseCpp, "Parsing large JSON object  having 1000 rows with JsonCpp  using StartupCompany.json"));
+    EXPECT_TRUE(performanceObjRapidJason.writeTodb(timer, testDetailsParseCpp + " :Using JsonCpp", "Parsing large JSON object  having 1000 rows with JsonCpp  using StartupCompany.json"));
     //-----------------------------------------------------------------------------------
     //  Parse using RapidJson
     //-----------------------------------------------------------------------------------
@@ -81,13 +81,13 @@ TEST(PerformanceJsonComparison, ParseJasonUsingStartupCompany)
     rapidJasonTimer.Stop();
     printf ("Parsing large JSON object (%d rows) with RapidJson took %.4f seconds\n", numRows, timer.GetElapsedSeconds());
     Utf8String testDetailsParseRapidJason = "PerformanceJsonComparison,ParseJasonCppUsingStartupCompany";
-    EXPECT_TRUE(performanceObjRapidJason.writeTodb(L"PerformanceTest.ecdb", rapidJasonTimer, testDetailsParseRapidJason, "Parsing large JSON object  having 1000 rows with RapidJson  using StartupCompany.json"));
+    EXPECT_TRUE(performanceObjRapidJason.writeTodb(rapidJasonTimer, testDetailsParseRapidJason + " :Using RapidJson", "Parsing large JSON object  having 1000 rows with RapidJson  using StartupCompany.json"));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST(PerformanceJsonComparison, AddJason)
+TEST(PerformanceJsonComparison, AddJson)
     {
     Json::ArrayIndex numEntries = 1000;
     PerformanceTestingFrameWork performanceObjdJason;
@@ -137,7 +137,7 @@ TEST(PerformanceJsonComparison, AddJason)
     timer.Stop();
     printf ("Adding and verifying %d entries with JsonCpp took %.4f seconds\n", numEntries, timer.GetElapsedSeconds());
     Utf8String testDetailsAddJasonCpp = "PerformanceJsonComparison,AddAndVerifyJasonCpp";
-    EXPECT_TRUE(performanceObjdJason.writeTodb(L"PerformanceTest.ecdb", timer, testDetailsAddJasonCpp, "Adding and Verifying 1000 enteries with JsonCpp"));
+    EXPECT_TRUE(performanceObjdJason.writeTodb(timer, testDetailsAddJasonCpp, "Adding and Verifying 1000 enteries with JsonCpp"));
     //-----------------------------------------------------------------------------------
     //  Add using RapidJson
     //-----------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ TEST(PerformanceJsonComparison, AddJason)
     addRapidJasontimer.Stop();
     printf ("Adding and verifying %d entries with RapidJson took %.4f seconds\n", numEntries, timer.GetElapsedSeconds());
     Utf8String testDetailsAddRapidJason = "PerformanceJsonComparison,AddAndVerifyRapidJson";
-    EXPECT_TRUE(performanceObjdJason.writeTodb(L"PerformanceTest.ecdb", addRapidJasontimer, testDetailsAddRapidJason, "Adding and Verifying 1000 enteries with RapidJson"));
+    EXPECT_TRUE(performanceObjdJason.writeTodb(addRapidJasontimer, testDetailsAddRapidJason, "Adding and Verifying 1000 enteries with RapidJson"));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
