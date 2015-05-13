@@ -248,8 +248,8 @@ DGNPLATFORM_EXPORT void          SetAbortFunction (RGC_AbortFunction abort);
                    void          SetAssociativeRegionUpdate () {m_updateAssocRegion = true;}
                    void          SetCullRedundantLoops () {m_cullRedundantLoop = true;}
 
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnViewportP vp, DgnElementPtrVec const* in);
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans);
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnViewportP vp, DgnElementCPtrVec const* in);
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans);
 DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints (DPoint3dCP seedPoints, size_t numSeed);
 DGNPLATFORM_EXPORT void          AddFaceLoopsByInwardParitySearch (bool parityWithinComponent, bool vertexContactSufficient) {m_output.CollectByInwardParitySearch (parityWithinComponent, vertexContactSufficient);}
 DGNPLATFORM_EXPORT bool          ToggleFaceAtPoint (DPoint3dCR seedPoint);
@@ -266,7 +266,7 @@ void                             EnableOriginalLoopSymbology () {m_setLoopSymbol
 
 DGNPLATFORM_EXPORT bool          GetAdjustedSeedPoints (bvector<DPoint3d>* seedPoints);
 DGNPLATFORM_EXPORT BentleyStatus UpdateAssociativeRegion (DgnElementPtr& elm);
-DGNPLATFORM_EXPORT BentleyStatus BooleanWithHoles (DgnModelR targetModel, DgnElementPtrVec const& in, DgnElementPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation);
+DGNPLATFORM_EXPORT BentleyStatus BooleanWithHoles (DgnModelR targetModel, DgnElementCPtrVec const& in, DgnElementCPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation);
 
 //__PUBLISH_SECTION_START__
 //__PUBLISH_CLASS_VIRTUAL__
@@ -286,7 +286,7 @@ DGNPLATFORM_EXPORT void SetFlattenBoundary (DVec3dCR flattenDir);
 
 //! Find closed regions from supplied boundary candidates using flood parameters and seed point locations.
 //! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
-DGNPLATFORM_EXPORT BentleyStatus Flood (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed);
+DGNPLATFORM_EXPORT BentleyStatus Flood (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed);
 
 //! Create closed regions by boolean of curve vectors.
 DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, bvector<CurveVectorPtr> const& in, RegionType operation);
@@ -294,11 +294,11 @@ DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, bvector<CurveVe
 //! Create closed regions by boolean of closed boundary candidates.
 //! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
 //! @note An associative region element can be created for a single closed boundary element using a RegionType of RegionType::ExclusiveOr.
-DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans, RegionType operation);
+DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans, RegionType operation);
 
 //! Create closed regions by boolean between separate target and tool boundary candidates agendas.
 //! @note inTrans is an array pf size in.GetCount of tranforms for each boundary candidate, can be NULL if all boundaries are in the coordinates of the targetModel.
-DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, DgnElementPtrVec const& target, DgnElementPtrVec const& tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation);
+DGNPLATFORM_EXPORT BentleyStatus Boolean (DgnModelR targetModel, DgnElementCPtrVec const& target, DgnElementCPtrVec const& tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation);
 
 //! Initialize associative region element parameters from current context settings for use with GetAssociativeRegion.
 DGNPLATFORM_EXPORT void InitRegionParams (RegionParams& params);

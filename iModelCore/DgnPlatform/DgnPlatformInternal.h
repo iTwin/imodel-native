@@ -137,7 +137,6 @@ extern double const fc_hugeVal;
 
 #if defined (NDEBUG) && !defined (BENTLEY_WINRT)
     #include "DgnCore/DgnCoreDLLInlines.h"     // only included here if were're NOT debugging
-    #include "DgnHandlers/DgnHandlersDLLInlines.h"      // only included here if were're NOT debugging
 #endif
 
 #undef GetMessage

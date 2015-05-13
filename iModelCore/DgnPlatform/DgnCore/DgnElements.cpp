@@ -83,7 +83,7 @@ public:
     virtual void _Add(DgnElementR entry, uint64_t counter) = 0;
     virtual struct ElemIdLeafNode const* _GetFirstNode() const = 0;
     virtual ElemPurge _Purge(int64_t memTarget) = 0;
-    virtual ElemPurge _ReleaseAndCleanup(uint64_t key) = 0;
+    virtual ElemPurge _Drop(uint64_t key) = 0;
     virtual void _Empty() = 0;
 
     bool ContainsKey(uint64_t key) const {CheckSloppy(); return m_range.Contains(key);}
@@ -114,13 +114,12 @@ private:
     DgnElementP m_elems[NUM_LEAFENTRIES];
 
     void CalculateLeafRange() const {InitRange(m_elems[0]->GetElementId().GetValue(),(*LastEntry())->GetElementId().GetValue());}
-    void ReleaseAllPinned(DgnElementP ref);
 
     virtual ElemIdLeafNode const* _GetFirstNode() const {return this;}
     virtual void _CalculateNodeRange() const override {CalculateLeafRange();}
     virtual void _Add(DgnElementR entry, uint64_t counter) override;
     virtual ElemPurge _Purge(int64_t) override;
-    virtual ElemPurge _ReleaseAndCleanup(uint64_t key) override;
+    virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
 
 public:
@@ -148,7 +147,7 @@ protected:
     virtual ElemIdLeafNode const* _GetFirstNode() const override {return (*FirstEntryC())->_GetFirstNode();}
     virtual ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP from) const override;
     virtual ElemPurge _Purge(int64_t) override;
-    virtual ElemPurge _ReleaseAndCleanup(uint64_t key) override;
+    virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
 
     void AccessedNode(int i);
@@ -228,8 +227,9 @@ public:
     ElemIdRangeNodeP GetRoot() {return m_root;}
     DgnElementP FindElement(DgnElementId key, bool setAccessed);
     void AddElement(DgnElementR);
-    void KillElement(DgnElementR, bool);
-    void ReleaseAndCleanup(DgnElementCP element);
+    void DropElement(DgnElementCR);
+    void KillElement(DgnElementR el, bool wholeTree) {BeAssert(0 == el.GetRefCount()); RemoveElement(el, wholeTree); delete &el;}
+    void RemoveElement(DgnElementCR element, bool wholeTree);
     void Purge(int64_t memTarget);
     void Destroy();
 };
@@ -238,12 +238,11 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/
 //---------------------------------------------------------------------------------------
-ElemPurge ElemIdLeafNode::_ReleaseAndCleanup(uint64_t key)
+ElemPurge ElemIdLeafNode::_Drop(uint64_t key)
     {
-    // binary search for position to put new entry
     for (int begin=0, end=m_nEntries; begin < end;)
         {
-        int index = begin +(end - begin - 1)/2;
+        int index = begin + (end - begin - 1)/2;
         uint64_t thisId = m_elems[index]->GetElementId().GetValue();
         if (key < thisId)
             end = index;
@@ -252,19 +251,14 @@ ElemPurge ElemIdLeafNode::_ReleaseAndCleanup(uint64_t key)
         else
             {
             //  this is the entry to delete
-            BeAssert(m_elems[index]->GetRefCount() == 0); // duplicate keys!
-            if (m_elems[index]->GetRefCount() != 0)
-                return ElemPurge::Kept;
-
-            DgnElementP target = m_elems[index];
-            m_isSloppy = true;           // we can't tell whether we may have dropped the first or last entry.
-            //  Is it worth computing m_allReferenced?
+            DgnElementP target = m_elems[index]; // save the target element
+            m_isSloppy = true; // we can't tell whether we may have dropped the first or last entry.
 
             m_nEntries -= 1;
             memmove(m_elems + index, m_elems + index + 1,(m_nEntries-index) * sizeof(DgnElementP));
 
-            // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
-            m_treeRoot.KillElement(*target, false);
+            // mark it as not in pool and adjust pool stats
+            m_treeRoot.RemoveElement(*target, false);
             break;
             }
         }
@@ -332,7 +326,7 @@ static bool sortById(ElemIdRangeNodeP n1, ElemIdRangeNodeP n2) {return n1->GetLo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2014
 //---------------------------------------------------------------------------------------
-ElemPurge ElemIdInternalNode::_ReleaseAndCleanup(uint64_t key)
+ElemPurge ElemIdInternalNode::_Drop(uint64_t key)
     {
     for (unsigned index = 0; index <(unsigned)m_nEntries; ++index)
         {
@@ -342,7 +336,7 @@ ElemPurge ElemIdInternalNode::_ReleaseAndCleanup(uint64_t key)
 
         if (key >= currRange.m_low && key <= currRange.m_high)
             {
-            if (ElemPurge::Deleted != node->_ReleaseAndCleanup(key))
+            if (ElemPurge::Deleted != node->_Drop(key))
                 {
                 //  Should we compute m_allReferenced -- maybe call AreAllRefenced
                 return ElemPurge::Kept;
@@ -356,7 +350,7 @@ ElemPurge ElemIdInternalNode::_ReleaseAndCleanup(uint64_t key)
             }
         }
 
-    BeAssert(false && "did not find _ReleaseAndCleanup target");
+    BeAssert(false);
     return ElemPurge::Kept;
     }
 
@@ -419,19 +413,12 @@ ElemPurge ElemIdInternalNode::_Purge(int64_t memTarget)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2014
 //---------------------------------------------------------------------------------------
-void ElemIdTree::ReleaseAndCleanup(DgnElementCP element)
+void ElemIdTree::DropElement(DgnElementCR element)
     {
-    if (element->GetRefCount() != 0)
-        {
-        BeAssert(false && "ref count is not 0");
-        return;
-        }
-
-    uint64_t key = element->GetElementId().GetValue();
-    if (nullptr == m_root ||(ElemPurge::Deleted != m_root->_ReleaseAndCleanup(key)))
+    if (nullptr == m_root || (ElemPurge::Deleted != m_root->_Drop(element.GetElementId().GetValue())))
         return;
 
-    // all of the elements were garbage!
+    // tree is now empty
     FreeNode(m_root, m_root->IsLeaf());
     m_root = nullptr;
     }
@@ -768,9 +755,8 @@ void ElemIdTree::AddElement(DgnElementR entry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::KillElement(DgnElementR element, bool killingWholeTree)
+void ElemIdTree::RemoveElement(DgnElementCR element, bool killingWholeTree)
     {
-    BeAssert(0 == element.GetRefCount());
     if (!killingWholeTree)
         {
         BeAssert(0 != m_totals.m_entries);
@@ -782,7 +768,6 @@ void ElemIdTree::KillElement(DgnElementR element, bool killingWholeTree)
 
     m_dgndb.Elements().ReturnedMemory(element._GetMemSize());
     element.SetInPool(false);
-    delete &element;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -943,7 +928,7 @@ void DgnElements::OnUnreferenced(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::AddDgnElement(DgnElementR element) const
+void DgnElements::AddToPool(DgnElementR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsInPool());
@@ -955,17 +940,19 @@ void DgnElements::AddDgnElement(DgnElementR element) const
     ++m_tree->m_stats.m_newElements;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2014
-//---------------------------------------------------------------------------------------
-void DgnElements::ReleaseAndCleanup(DgnElementCPtr& elementRef)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::DropFromPool(DgnElementCR element) const
     {
-    if (elementRef->GetRefCount() != 1)
+    if (element.GetRefCount() == 0)
+        {
+        BeAssert(false); // somebody else must own it or we cannot drop it from the pool
         return;
+        }
 
-    elementRef = nullptr;
     BeDbMutexHolder _v_v(m_mutex);
-    m_tree->ReleaseAndCleanup(elementRef.get());
+    m_tree->DropElement(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1016,6 +1003,7 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnChangesetApplied(TxnSummary const& summary)
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     // ADDS: elements that were added by the changeset are generally not of interest. However, when we
     // delete elements in a session we don't remove them from the pool or from loaded models.
     // Rather, they are marked as deleted. That is for two reasons: 1) otherwise we wouldn't know what model to
@@ -1048,6 +1036,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
         BeAssert(DGNMODEL_STATUS_Success == stat);
         UNUSED_VARIABLE(stat);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1059,6 +1048,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     // This is only necessary because we keep deleted elements in memory. For XAttributes, we free the memory when
     // we delete them so there is no corresponding work here for them.
     for (auto& el : summary.m_deletedElements)
@@ -1080,6 +1070,7 @@ void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
         model._OnDeletedElement(*elRef, true); // this causes the model to remove this element from its "owned" list.
         BeAssert(elRef->GetRefCount() == 0);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1104,7 +1095,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params) 
     if (DGNMODEL_STATUS_Success != el->_LoadFromDb())
         return nullptr;
 
-    AddDgnElement(*el);
+    AddToPool(*el);
     params.m_model._OnLoadedElement(*el);
     return el;
     }
@@ -1149,18 +1140,24 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
                     stmt->GetValueId<DgnElementId>(Column::ParentId)));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+DgnElementKey DgnElements::GetElementKey(DgnElementId elementId) const
+    {
+    CachedStatementPtr stmt;
+    GetStatement(stmt, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindInt64(1, elementId.GetValueUnchecked());
+    return BE_SQLITE_ROW == stmt->Step() ? DgnElementKey(stmt->GetValueId<DgnClassId>(0), elementId) : DgnElementKey();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElements::IsElementIdUsed(DgnElementId id) const
     {
     CachedStatementPtr stmt;
-    if (BE_SQLITE_OK != m_dgndb.GetCachedStatement(stmt, "SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?"))
-        {
-        BeAssert(0);
-        return false;
-        }
-
+    m_dgndb.GetCachedStatement(stmt, "SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindInt64(1, id.GetValueUnchecked());
     return BE_SQLITE_ROW == stmt->Step();
     }
@@ -1253,23 +1250,25 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
-    element.m_elementId = MakeNewElementId();
-    stat = element._InsertInDb();
-    if (DGNMODEL_STATUS_Success != stat)
+    DgnElementPtr newElement = element.CopyForEdit();
+    if (!newElement.IsValid())
         {
-        element.m_elementId = DgnElementId();
+        stat = DGNMODEL_STATUS_BadElement;
         return nullptr;
         }
 
-    element._ApplyScheduledChangesToInstances(element);
-    element._ClearScheduledChangesToInstances();
+    newElement->m_elementId = MakeNewElementId(); 
+    stat = newElement->_InsertInDb();
+    if (DGNMODEL_STATUS_Success != stat)
+        return nullptr;
 
-    AddDgnElement(element);
+    element.m_elementId = newElement->m_elementId; // set this on input element so caller can see it
+    newElement->_ApplyScheduledChangesToInstances(element);
+    AddToPool(*newElement);
 
-    element._OnInserted();
-    model._OnInsertedElement(element);
-    
-    return &element;
+    newElement->_OnInserted();
+    model._OnInsertedElement(*newElement);
+    return newElement;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1279,16 +1278,16 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     {
     DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
+    if (replacement.IsInPool())
+        {
+        stat =  DGNMODEL_STATUS_WrongElement;
+        return nullptr;
+        }
+
     DgnElementCPtr orig = GetElement(replacement.GetElementId());
     if (!orig.IsValid())
         {
         stat = DGNMODEL_STATUS_InvalidId;
-        return nullptr;
-        }
-
-    if (replacement.IsInPool())
-        {
-        stat =  DGNMODEL_STATUS_WrongElement;
         return nullptr;
         }
 
@@ -1304,7 +1303,8 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
-    stat = element._SwapWithModified(replacement);
+    uint32_t oldSize = element._GetMemSize(); // save current size
+    stat = element._CopyFrom(replacement);
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
@@ -1315,6 +1315,90 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     element._ApplyScheduledChangesToInstances(replacement);
     element._ClearScheduledChangesToInstances();
 
+    int32_t sizeChange = element._GetMemSize() - oldSize; // figure out whether the element data is larger now than before
+    BeAssert(0 <= sizeChange); // we never shrink
+
+    if (0 < sizeChange) // report the number or bytes the element grew.
+        AllocatedMemory(sizeChange);
+
     model._OnUpdatedElement(element, replacement);
     return &element;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus DgnElements::DeleteElement(DgnElementCR element)
+    {
+    DgnModelR model = element.GetDgnModel();
+    if (&model.GetDgnDb() != &m_dgndb || !element.IsInPool())
+        return DGNMODEL_STATUS_WrongElement;
+
+    DgnModelStatus stat = model._OnDeleteElement(element);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    stat = element._DeleteInDb();
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    DropFromPool(element);
+    model._OnDeletedElement(element);
+    return DGNMODEL_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnElements::UpdateLastModifiedTime(DgnElementId elementId)
+    {
+    if (!elementId.IsValid())
+        return BentleyStatus::ERROR;
+
+    CachedStatementPtr stmt;
+    m_dgndb.GetCachedStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET Id=Id WHERE Id=?"); // Minimal SQL to cause trigger to run
+
+    stmt->BindId(1, elementId);
+    return (BE_SQLITE_DONE == stmt->Step()) ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2015
+//---------------------------------------------------------------------------------------
+DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
+    {
+    if (!elementId.IsValid())
+        return DateTime();
+
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT LastMod FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
+    if (!stmt.IsValid())
+        return DateTime();
+
+    stmt->BindId(1, elementId);
+
+    return (ECSqlStepStatus::HasRow != stmt->Step()) ? DateTime() : stmt->GetValueDateTime(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                    03/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnElements::InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey)
+    {
+    if (!groupElementKey.IsValid() || !memberElementKey.IsValid())
+        return BentleyStatus::ERROR;
+
+    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement
+        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupsElements) 
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
+
+    if (!statementPtr.IsValid())
+        return BentleyStatus::ERROR;
+
+    statementPtr->BindInt64(1, groupElementKey.GetECClassId());
+    statementPtr->BindId   (2, groupElementKey.GetECInstanceId());
+    statementPtr->BindInt64(3, memberElementKey.GetECClassId());
+    statementPtr->BindId   (4, memberElementKey.GetECInstanceId());
+
+    return (ECSqlStepStatus::Done != statementPtr->Step()) ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
+    }
+

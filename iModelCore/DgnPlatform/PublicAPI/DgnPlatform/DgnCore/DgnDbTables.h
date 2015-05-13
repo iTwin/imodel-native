@@ -129,16 +129,16 @@ struct DgnCategories : DgnDbTable
         struct Appearance
         {
         private:
-            bool        m_invisible;    //!< Graphics on this SubCategory should not be visible
-            bool        m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
-            bool        m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
-            bool        m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
-            ColorDef    m_color;
-            uint32_t    m_weight;
-            DgnStyleId  m_style;
-            int32_t     m_displayPriority; // only valid for SubCategories in 2D models
-            DgnMaterialId m_material;
-            double      m_transparency;
+            bool            m_invisible;    //!< Graphics on this SubCategory should not be visible
+            bool            m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
+            bool            m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
+            bool            m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
+            ColorDef        m_color;
+            uint32_t        m_weight;
+            DgnStyleId      m_style;
+            int32_t         m_displayPriority; // only valid for SubCategories in 2D models
+            DgnMaterialId   m_material;
+            double          m_transparency;
 
         public:
             void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate();}
@@ -168,7 +168,7 @@ struct DgnCategories : DgnDbTable
             DGNPLATFORM_EXPORT bool operator==(Appearance const& other) const;
             bool IsEqual(Appearance const& other) const {return *this==other;}
             void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
-            Utf8String ToJson() const;   //!< convert this appearance to a json string
+            DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
         };// Appearance
 
         //! View-specific overrides of the appearance of a SubCategory
@@ -765,7 +765,7 @@ public:
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
-    DGNPLATFORM_EXPORT BentleyStatus DeleteModel(DgnModelId id);
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteModel(DgnModelId id);
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
     DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
 
@@ -899,17 +899,20 @@ private:
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
-    void AddDgnElement(DgnElementR) const;
+    void AddToPool(DgnElementR) const;
+    void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
-    void ReleaseAndCleanup(DgnElementCPtr& element);
+    bool IsElementIdUsed(DgnElementId id) const;
+    DgnElementId GetHighestElementId();
+    DgnElementId MakeNewElementId();
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
-    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnModelStatus* stat=nullptr);
-    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnModelStatus* stat=nullptr);
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnModelStatus* stat);
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnModelStatus* stat);
 
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
@@ -917,6 +920,12 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
     DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
     DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
+
+#if !defined (DOCUMENTATION_GENERATOR)
+    //! Look up an element in the pool of loaded elements for this DgnDb.
+    //! @return nullptr if the is not in the pool.
+    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+#endif
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -938,49 +947,37 @@ public:
     //! Reset the statistics for the pool.
     DGNPLATFORM_EXPORT void ResetStatistics();
 
-    DGNPLATFORM_EXPORT bool IsElementIdUsed(DgnElementId id) const;
-    DGNPLATFORM_EXPORT DgnElementId GetHighestElementId();
-    DGNPLATFORM_EXPORT DgnElementId MakeNewElementId();
-
     //! Get a DgnElement from this DgnDb by its DgnElementId. 
     //! @remarks The element is loaded if necessary.
     //! @return Invalid if the element does not exist.
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
+
+    //! Gets the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId. 
+    //! @remarks This simply does a fast look up of the DgnClassId for the given DgnElementId. It
+    //! does not load the element into memory.
+    //! @return Invalid key if the element does not exist.
+    DGNPLATFORM_EXPORT DgnElementKey GetElementKey(DgnElementId id) const;
 
     //! Get a DgnElement by its DgnElementId, and dynamic_cast the result to a specific subclass of DgnElement.
     //! This tempated method is merely a shortcut to calling GetElement and dynamic_cast'ing the result to the class of the 
     //! specified template argument. 
     template<class T> RefCountedCPtr<T> Get(DgnElementId id) const {return dynamic_cast<T const*>(GetElement(id).get());}
 
-    //! Look up an element within this DgnDb by its Id.
-    //! @return nullptr if the element does not exist or is not currently loaded.
-    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
 
     //! Insert the supplied DgnElement into this DgnDb.
     //! @param[in] element The element to add.
     //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if result is valid, error status otherwise.
     //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
-    template<class T> RefCountedCPtr<T> Insert(RefCountedPtr<T>& element, DgnModelStatus* stat=nullptr) 
-        {RefCountedCPtr<T> result=(T const*)InsertElement(*element.get(), stat).get(); if (result.IsValid()){element=nullptr;} return result;}
+    template<class T> RefCountedCPtr<T> Insert(T& element, DgnModelStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
-    template<class T> RefCountedCPtr<T> Update(RefCountedPtr<T>& element, DgnModelStatus* stat=nullptr) 
-        {RefCountedCPtr<T> result=(T const*)UpdateElement(*element.get(), stat).get(); if (result.IsValid()){element=nullptr;} return result;}
+    template<class T> RefCountedCPtr<T> Update(T& element, DgnModelStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
 
-    DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementR);
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementCR);
 
-    //! Delete the element for the specified DgnElementId.
-    DGNPLATFORM_EXPORT BentleyStatus DeleteElement(DgnElementId);
+    DgnModelStatus DeleteElement(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? DeleteElement(*el) : DGNMODEL_STATUS_ElementNotFound;}
 
     HeapZone& GetHeapZone() {return m_heapZone;}
-
-    //! Query for the Code for the specified DgnElementId.
-    DGNPLATFORM_EXPORT Utf8String QueryElementCode(DgnElementId) const;
-
-    //! Return the key of the element from its DgnElementId.
-    //! @note used when you know the DgnElementId, but need a DgnElementKey which also contains the ECClassId.
-    //! @note an invalid key will be returned in the case of an error
-    //! @see ECInstanceKey::IsValid
-    DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId) const;
 
     //! Update the last modified timestamp of the specified element
     //! @note Updates to the element class automatically cause the last modified time to be updated (via a database trigger).
@@ -990,13 +987,6 @@ public:
 
     //! Query the last modified time from the specified element
     DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
-
-    //! Update the ParentId of a DgnElement
-    DGNPLATFORM_EXPORT BentleyStatus UpdateParentId(DgnElementId parentId, DgnElementId childElement);
-
-    //! Query the ElementOwnsChildElements relationship to find the parent element of the specified (child) element.
-    //! @return the returned DgnElementId will be invalid if the specified element has no parent
-    DGNPLATFORM_EXPORT DgnElementId QueryParentId(DgnElementId childElementId) const;
 
     //! Insert an ElementGroupsElements relationship between the specified element and the member element
     DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey);

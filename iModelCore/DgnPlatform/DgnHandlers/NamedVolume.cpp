@@ -361,31 +361,30 @@ void NamedVolume::GetRange(DRange3d& range) const
 void NamedVolume::FindElements 
 (
 ElementIdSet* elementIds,
-ElementAgenda* elementAgenda,
 FenceParamsR fence,
 Statement& stmt,
-DgnDbR project
+DgnDbR dgnDb
 ) const
     {
-#ifdef WIP_NAMED_VOLUME
-    DgnFileR dgnFile = project.GetDgnFile();
+    if (nullptr == elementIds)
+        return;
+
     DbResult result;
     while ((result = stmt.Step()) == BE_SQLITE_ROW)
         {
-        ElementId id = stmt.GetValueId<ElementId> (0);
-        PersistentDgnElementPtr elementRef = dgnFile.GetElementById (id);
-        BeAssert (elementRef.IsValid());
+        DgnElementId id = stmt.GetValueId<DgnElementId> (0);
+        DgnElementCPtr element = dgnDb.Elements().GetElement(id);
 
-        ElementHandle eh (elementRef.get());
-        if (!fence.AcceptElement (eh))
+        if (!element.IsValid())
+            continue;
+        
+        GeometricElementCP geomElement = element->ToGeometricElement();
+
+        if (nullptr == geomElement || !fence.AcceptElement (*geomElement))
             continue;
 
-        if (nullptr != elementIds)
-            elementIds->insert (id);
-        if (nullptr != elementAgenda)
-            elementAgenda->Insert (elementRef.get());
+        elementIds->insert (id);
         }
-#endif
     }
 
 //--------------------------------------------------------------------------------------
@@ -394,19 +393,24 @@ DgnDbR project
 void NamedVolume::FindElements 
 (
 ElementIdSet* elementIds,
-ElementAgenda* elementAgenda,
-DgnDbR project,
+DgnDbR dgnDb,
 bool allowPartialOverlaps /*=true*/
 ) const
     {
-#ifdef WIP_NAMED_VOLUME
-    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (project);
+    if (nullptr == elementIds)
+        return;
+
+    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (dgnDb);
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
     
     // Prepare element query by range
     Statement stmt;
+#ifdef WIP_NAMED_VOLUME
     Utf8CP sql = "SELECT ElementId FROM " DGNELEMENT_VTABLE_3dRTree " WHERE xmax > ? AND xmin < ?  AND ymax > ? AND ymin < ? AND zmax > ? AND zmin < ?";
-    DbResult result = stmt.Prepare (project, sql);
+#else
+    Utf8CP sql = "";
+#endif
+    DbResult result = stmt.Prepare (dgnDb, sql);
     BeAssert (result == BE_SQLITE_OK);
 
     DRange3d volumeRange;
@@ -418,8 +422,7 @@ bool allowPartialOverlaps /*=true*/
     stmt.BindDouble (5, volumeRange.low.z);
     stmt.BindDouble (6, volumeRange.high.z);
 
-    this->FindElements (elementIds, elementAgenda, *fence, stmt, project);
-#endif
+    this->FindElements (elementIds, *fence, stmt, dgnDb);
     }
 
 //--------------------------------------------------------------------------------------
@@ -428,15 +431,16 @@ bool allowPartialOverlaps /*=true*/
 void NamedVolume::FindElements 
 (
 ElementIdSet* elementIds,
-ElementAgenda* elementAgenda,
 DgnViewportR viewport,
 bool allowPartialOverlaps /*=true*/
 ) const
     {
-#ifdef WIP_NAMED_VOLUME
-    QueryViewControllerP viewController = dynamic_cast<QueryViewControllerP> (viewport.GetViewControllerP());
+    if (nullptr == elementIds)
+        return;
+
+    QueryViewControllerP viewController = dynamic_cast<QueryViewControllerP> (&viewport.GetViewControllerR());
     BeAssert (viewController != nullptr);
-    DgnDbR project = viewController->GetDgnProject();
+    DgnDbR dgnDb = viewController->GetDgnDb();
     
     // Turn camera off
     // TODO: Seems like turning the camera off and back on shouldn't be necessary, but the results seem to be affected - needs investigation .
@@ -448,11 +452,15 @@ bool allowPartialOverlaps /*=true*/
     
     // Prepare element query by range, and by what's visible in the view
     Statement stmt;
+#ifdef WIP_NAMED_VOLUME
     Utf8CP sql = "SELECT a.ElementId FROM " DGNELEMENT_VTABLE_3dRTree " AS a, " DGNELEMENT_TABLE_Data " AS b" \
         " WHERE a.xmax > ? AND a.xmin < ?  AND a.ymax > ? AND a.ymin < ? AND a.zmax > ? AND a.zmin < ?" \
         " AND a.ElementId=b.ElementId" \
         " AND InVirtualSet (?, b.ModelId, b.Level)";
-    DbResult result = stmt.Prepare (project, sql);
+#else
+    Utf8CP sql = "";
+#endif
+    DbResult result = stmt.Prepare (dgnDb, sql);
     BeAssert (result == BE_SQLITE_OK);
 
     DRange3d volumeRange;
@@ -469,13 +477,12 @@ bool allowPartialOverlaps /*=true*/
 
     stmt.BindVirtualSet (7, *viewController);
 
-    this->FindElements (elementIds, elementAgenda, *fence, stmt, project);
+    this->FindElements (elementIds, *fence, stmt, dgnDb);
 
     // Turn camera back on
     viewController->SetCameraOn (wasCameraOn);
     viewport.SynchWithViewController (false);
-#endif
-     }
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
@@ -491,9 +498,9 @@ bool allowPartialOverlaps /*=true*/
     if (nullptr == geomElement)
         return false;
 
-    DgnDbR project = element.GetDgnDb();
+    DgnDbR dgnDb = element.GetDgnDb();
 
-    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (project);
+    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (dgnDb);
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
 
     return fence->AcceptElement (*geomElement);

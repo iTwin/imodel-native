@@ -46,7 +46,7 @@ struct CachedInstances : DgnElementAppData
     CachedInstance m_item;
     bmap<DgnClassId, bvector<CachedInstance>> m_otherAspects;
 
-    virtual void _OnCleanup(DgnElementCP host, HeapZoneR zone) override;
+    virtual void _OnCleanup(DgnElementCP host) override;
 
     CachedInstances() : m_itemChecked(false) {}
     void Clear() {m_element.Clear(); m_item.Clear(); m_otherAspects.clear(); m_itemChecked=false;}
@@ -79,7 +79,7 @@ CachedInstances& CachedInstances::Get(DgnElementCR el)
         {
         // *** WIP_ELEMENT_INSTANCES - use HeapZone to avoid malloc
         d = new CachedInstances;
-        el.AddAppData(s_key, d, el.GetHeapZone());
+        el.AddAppData(s_key, d);
         }
     return *d;
     }
@@ -87,7 +87,7 @@ CachedInstances& CachedInstances::Get(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachedInstances::_OnCleanup(DgnElementCP host, HeapZoneR zone)
+void CachedInstances::_OnCleanup(DgnElementCP host)
     {
     delete this; // *** WIP_ELEMENT_INSTANCES - use HeapZone to avoid malloc
     }
@@ -108,7 +108,7 @@ DgnClassId DgnElement::GetItemClassId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnElement::_AddRef() const
+uint32_t DgnElement::AddRef() const
     {
     if (0 == m_refCount && IsInPool())
         GetDgnDb().Elements().OnReclaimed(*this);
@@ -119,7 +119,7 @@ uint32_t DgnElement::_AddRef() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnElement::_Release() const
+uint32_t DgnElement::Release() const
     {
     if (1 < m_refCount--)
         return m_refCount.load();
@@ -141,7 +141,7 @@ uint32_t DgnElement::_Release() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry, HeapZone& zone) const
+DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry) const
     {
     AppDataEntry* next = thisEntry.m_next;
 
@@ -150,8 +150,8 @@ DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDa
     else
         m_appData = next;
 
-    thisEntry.ClearEntry(this, zone);
-    zone.Free(&thisEntry, sizeof(AppDataEntry));
+    thisEntry.ClearEntry(this);
+    GetHeapZone().Free(&thisEntry, sizeof(AppDataEntry));
 
     return  next;
     }
@@ -175,14 +175,8 @@ DgnElementAppData* DgnElement::FindAppData(DgnElementAppData::Key const& key) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnElement::AddAppData(DgnElementAppData::Key const& key, DgnElementAppData* obj, HeapZone& zone, bool allowOnDeleted) const
+StatusInt DgnElement::AddAppData(DgnElementAppData::Key const& key, DgnElementAppData* obj) const
     {
-    if (!allowOnDeleted && IsDeleted())
-        {
-        BeAssert(0);
-        return ERROR;
-        }
-
     AppDataEntry* prevEntry = NULL;
     AppDataEntry* nextEntry = m_appData;
     for (; nextEntry; prevEntry=nextEntry, nextEntry=nextEntry->m_next)
@@ -193,11 +187,11 @@ StatusInt DgnElement::AddAppData(DgnElementAppData::Key const& key, DgnElementAp
         if (nextEntry->m_key != &key)
             break;
 
-        nextEntry->SetEntry(obj, this, zone);      // already exists, just change it
+        nextEntry->SetEntry(obj, this);      // already exists, just change it
         return SUCCESS;
         }
 
-    AppDataEntry* newEntry = (AppDataEntry*) zone.Alloc(sizeof(AppDataEntry));
+    AppDataEntry* newEntry = (AppDataEntry*) GetHeapZone().Alloc(sizeof(AppDataEntry));
     newEntry->Init(key, obj, nextEntry);
 
     if (prevEntry)
@@ -221,7 +215,7 @@ StatusInt DgnElement::DropAppData(DgnElementAppData::Key const& key) const
         if (thisEntry->m_key != &key)
             break;
 
-        FreeAppDataEntry(prev, *thisEntry, GetHeapZone());
+        FreeAppDataEntry(prev, *thisEntry);
         return  SUCCESS;
         }
 
@@ -231,10 +225,10 @@ StatusInt DgnElement::DropAppData(DgnElementAppData::Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::ClearAllAppData(HeapZone& zone)
+void DgnElement::ClearAllAppData()
     {
     for (AppDataEntry* thisEntry=m_appData; thisEntry; )
-        thisEntry = FreeAppDataEntry(NULL, *thisEntry, zone);
+        thisEntry = FreeAppDataEntry(NULL, *thisEntry);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -248,101 +242,28 @@ QvCache*  GeometricElement::GetMyQvCache() const {return GetDgnDb().Models().Get
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::SaveGeomStream(GeomStreamCP stream)
     {
-    uint32_t oldSize = _GetMemSize(); // save current size
     m_geom = *stream;     // assign the new element (overwrites or reallocates)
-    int32_t sizeChange = _GetMemSize() - oldSize; // figure out whether the element data is larger now than before
-    BeAssert(0 <= sizeChange); // we never shrink
-
-    if (0 < sizeChange) // report the number or bytes the element grew.
-        GetDgnDb().Elements().AllocatedMemory(sizeChange);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::MarkAsDeleted()
-    {
-    SetDeletedRef();
-    SetHilited(HILITED_None);
-    m_dgnModel.ElementChanged(*this, ELEMREF_CHANGE_REASON_Delete);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_DeleteInDb()
+DgnModelStatus DgnElement::_DeleteInDb() const
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    if (m_dgnModel.IsReadOnly())
-        return  DGNMODEL_STATUS_ReadOnly;
+    CachedStatementPtr stmt;
+    GetDgnDb().Elements().GetStatement(stmt, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindId(1, m_elementId);
 
-    // let handler reject deletion
-    if (ElementHandler::PRE_ACTION_Ok != m_elementHandler._OnElementDelete(*this))
-        return  DGNMODEL_STATUS_BadRequest;
-
-    MarkRefDeleted(m_dgnModel);
-
-    // to delete an element, we delete it from the Element table. Foreign keys and triggers cause all of the related
-    // tables to be cleaned up.
-    CachedStatementPtr deleteStmt;
-    DbResult status = m_dgndb.GetCachedStatement(deleteStmt, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    deleteStmt->BindId(1, elementId);
-    DbResult rc = deleteStmt->Step();
-
-    if (rc == BE_SQLITE_CONSTRAINT_FOREIGNKEY)
+    switch (stmt->Step())
         {
-        UnDeleteElement();
-        return  DGNMODEL_STATUS_ForeignKeyConstraint;
+        case BE_SQLITE_CONSTRAINT_FOREIGNKEY:
+            return  DGNMODEL_STATUS_ForeignKeyConstraint;
+
+        case BE_SQLITE_DONE:
+            return DGNMODEL_STATUS_Success;
         }
 
-    m_dgnModel.OnElementDeletedFromDb(*this, false);
-
-    if (rc != BE_SQLITE_DONE)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    m_elementHandler._OnElementDeleted(GetDgnDb(), m_elementId);
-#endif
-    return DGNMODEL_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* undelete a deleted element
-* @bsimethod                                                    KeithBentley    03/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::UnDeleteElement()
-    {
-    if (m_dgnModel.IsReadOnly())
-        return;
-
-    if (!IsDeleted())
-        return;
-
-    ClearDeletedRef();
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    m_dgnModel.InsertRangeElement(_ToGeometricElement());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::ReloadFromDb()
-    {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    m_dgnModel.ElementChanged(*this, ELEMREF_CHANGE_REASON_Modify);
-
-    DbElementReloader reloader(*this);
-    DgnModelStatus stat = reloader.ReloadElement();
-
-    if (DGNMODEL_STATUS_Success == stat)
-        m_dgnModel.OnElementModified(*this);
-
-    return  stat;
-#endif
-    return DGNMODEL_STATUS_Success;
+    return DGNMODEL_STATUS_ElementWriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,12 +271,11 @@ DgnModelStatus DgnElement::ReloadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::ForceElemChanged(bool qvCacheCleared, DgnElementChangeReason reason)
     {
-    HeapZone& zone = GetHeapZone();
     for (AppDataEntry* prev=NULL, *next, *thisEntry=m_appData; thisEntry; thisEntry=next)
         {
         next = thisEntry->m_next;
         if (thisEntry->m_obj->_OnElemChanged(this, qvCacheCleared, reason))
-            FreeAppDataEntry(prev, *thisEntry, zone);
+            FreeAppDataEntry(prev, *thisEntry);
         else
             prev = thisEntry;
         }
@@ -395,7 +315,7 @@ T_QvElemSet* GeometricElement::GetQvElems(bool createIfNotPresent) const
     HeapZone& zone = GetHeapZone();
     qvElems = new((T_QvElemSet*) zone.Alloc(sizeof(T_QvElemSet))) T_QvElemSet(zone);
 
-    AddAppData(s_qvElemsKey, qvElems, zone);
+    AddAppData(s_qvElemsKey, qvElems);
     return  qvElems;
     }
 
@@ -414,7 +334,7 @@ void DgnElement::SetInSelectionSet(bool yesNo) const
 DgnElement::~DgnElement()
     {
     BeAssert(!IsInPool());
-    ClearAllAppData(GetDgnDb().Elements().GetHeapZone());
+    ClearAllAppData();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -434,34 +354,15 @@ ECClassCP DgnElement::GetElementClass() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_GenerateDefaultCode()
-    {
-    if (!m_elementId.IsValid())
-        return;
-
-    Utf8String className(GetElementClass()->GetName());
-    m_code = GenerateDefaultCode(className.c_str(), m_elementId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnElement::GenerateDefaultCode(Utf8CP className, DgnElementId elementId)
-    {
-    if (!elementId.IsValid())
-        return "";
-
-    return Utf8PrintfString("%s%lld", className, elementId.GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_LoadFromDb()
+Utf8String DgnElement::_GenerateDefaultCode()
     {
-    return DGNMODEL_STATUS_Success;
+    if (!m_elementId.IsValid())
+        return "";
+
+    Utf8String className(GetElementClass()->GetName());
+    return Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -470,7 +371,7 @@ DgnModelStatus DgnElement::_LoadFromDb()
 DgnModelStatus DgnElement::_InsertInDb()
     {
     if (m_code.empty())
-        _GenerateDefaultCode();
+        m_code = _GenerateDefaultCode();
 
     CachedStatementPtr stmt;
     enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Code=5,ParentId=6};
@@ -540,12 +441,7 @@ DgnModelStatus GeometricElement::_LoadFromDb()
         return DGNMODEL_STATUS_ElementReadError;
         }
 
-    // determine how much memory is to be allocated for this element's geom (new size - old size)
-    uint32_t oldSize = m_geom.GetAllocSize();
     m_geom.ReserveMemory(header.m_size);
-    int32_t sizeChange = m_geom.GetAllocSize() - oldSize;
-    if (0 < sizeChange)
-        pool.AllocatedMemory(sizeChange);
 
     uint32_t actuallyRead;
     snappy.ReadAndFinish(m_geom.GetDataR(), m_geom.GetSize(), actuallyRead);
@@ -797,14 +693,18 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_SwapWithModified(DgnElementR other)
+DgnModelStatus DgnElement::_CopyFrom(DgnElementCR other)
     {
-    if (m_elementId != other.m_elementId || &m_dgnModel!=&other.m_dgnModel || !IsSameType(other))
+    if (&other == this)
+        return DGNMODEL_STATUS_Success;
+
+    if (!IsSameType(other) || &m_dgnModel != &other.m_dgnModel)
         return DGNMODEL_STATUS_BadElement;
 
-    std::swap(m_categoryId, other.m_categoryId);
-    std::swap(m_code, other.m_code);
-    other.SetDeletedRef();
+    m_categoryId = other.m_categoryId;
+    m_code       = other.m_code;
+    m_parentId   = other.m_parentId;
+    m_itemClassId = other.m_itemClassId;
 
     return DGNMODEL_STATUS_Success;
     }
@@ -812,95 +712,42 @@ DgnModelStatus DgnElement::_SwapWithModified(DgnElementR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_InitFrom(DgnElementCR other)
+DgnModelStatus GeometricElement::_CopyFrom(DgnElementCR other)
     {
-    T_Super::_InitFrom(other);
+    auto stat = T_Super::_CopyFrom(other);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
 
-    GeometricElementCP otherGeom = other.ToGeometricElement();
-    if (nullptr == otherGeom)
-        return;
-
+    GeometricElementCP otherGeom = (GeometricElementCP) &other;
     SaveGeomStream(&otherGeom->m_geom);
-    m_itemClassId = otherGeom->m_itemClassId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_InitFrom(DgnElementCR other)
-    {
-    T_Super::_InitFrom(other);
-
-    DgnElement3dCP other3d = other.ToElement3d();
-    if (nullptr == other3d)
-        return;
-
-    m_placement = other3d->m_placement;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement2d::_InitFrom(DgnElementCR other)
-    {
-    T_Super::_InitFrom(other);
-
-    DgnElement2dCP other2d = other.ToElement2d();
-    if (nullptr == other2d)
-        return;
-
-    m_placement = other2d->m_placement;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::_SwapWithModified(DgnElementR other)
-    {
-    DgnModelStatus stat = T_Super::_SwapWithModified(other);
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    GeometricElementP geom = (GeometricElementP) other.ToGeometricElement();
-    if (nullptr == geom)
-        return DGNMODEL_STATUS_BadElement;
-
-    std::swap(m_geom, geom->m_geom);
-    std::swap(m_itemClassId, geom->m_itemClassId);
     return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement3d::_SwapWithModified(DgnElementR other)
+DgnModelStatus DgnElement3d::_CopyFrom(DgnElementCR other)
     {
-    DgnModelStatus stat = T_Super::_SwapWithModified(other);
+    auto stat = T_Super::_CopyFrom(other);
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement3dP el3d = (DgnElement3dP) other.ToElement3d();
-    if (nullptr == el3d)
-        return DGNMODEL_STATUS_BadElement;
-
-    std::swap(m_placement, el3d->m_placement);
+    DgnElement3dCP el3d = (DgnElement3dCP) &other;
+    m_placement = el3d->m_placement;
     return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement2d::_SwapWithModified(DgnElementR other)
+DgnModelStatus DgnElement2d::_CopyFrom(DgnElementCR other)
     {
-    DgnModelStatus stat = T_Super::_SwapWithModified(other);
+    auto stat = T_Super::_CopyFrom(other);
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement2dP el2d = (DgnElement2dP) other.ToElement2d();
-    if (nullptr == el2d)
-        return DGNMODEL_STATUS_BadElement;
-
-    std::swap(m_placement, el2d->m_placement);
+    DgnElement2dCP el2d = (DgnElement2dCP) &other;
+    m_placement = el2d->m_placement;
     return DGNMODEL_STATUS_Success;
     }
 
@@ -915,10 +762,10 @@ ElementHandlerR DgnElement::GetElementHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::MakeWriteableCopy() const
+DgnElementPtr DgnElement::CopyForEdit() const
     {
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(m_dgnModel, m_classId, m_categoryId, m_code.c_str(), m_elementId, m_parentId));
-    newEl->_InitFrom(*this);
+    newEl->_CopyFrom(*this);
     return newEl;
     }
 

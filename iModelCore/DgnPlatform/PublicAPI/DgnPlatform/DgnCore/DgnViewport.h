@@ -603,7 +603,7 @@ public:
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
     DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(IProgressiveDisplay& pd);
     void SynchShadowList ();
-    void UpdateShadowList (IElementSetP, DgnDrawMode, DrawPurpose);
+    void UpdateShadowList (DgnDrawMode, DrawPurpose);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef (DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR, DgnModelP targetModel);
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority ();
@@ -674,10 +674,8 @@ public:
     //! @return  the line pattern for lineCodeValue
     DGNPLATFORM_EXPORT uint32_t GetIndexedLinePattern (int index) const;
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE)
     //! Compute the range of the element when displayed in this DgnViewport
-    DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange (DRange3dR range, IElementSetR elements, RotMatrixCP rMatrix);
-#endif
+    DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange (DRange3dR range, DgnElementIdSet const& elements, RotMatrixCP rMatrix=nullptr);
 
     DGNPLATFORM_EXPORT void SetMinimumLOD (double minLOD);
     /** @} */

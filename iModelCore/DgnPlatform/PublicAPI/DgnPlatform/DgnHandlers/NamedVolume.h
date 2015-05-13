@@ -37,7 +37,7 @@ private:
     void Get3dShape (bvector<DPoint3d>& shape) const;
     ClipVectorPtr CreateClipVector() const;
     std::unique_ptr<FenceParams> CreateFence (DgnViewportP viewport, bool allowPartialOverlaps) const;
-    static std::unique_ptr<DgnViewport> CreateNonVisibleViewport (DgnDbR project);
+    static std::unique_ptr<DgnViewport> CreateNonVisibleViewport (DgnDbR dgnDb);
 
     // Gets the range of the volume, described from the Project Coordinate System in storage units 
     void GetRange(DRange3d& range) const;
@@ -45,10 +45,9 @@ private:
     void FindElements 
         (
         ElementIdSet* elementIds, 
-        ElementAgenda* elementAgenda, 
         FenceParamsR fence,
         Statement& stmt,
-        DgnDbR project
+        DgnDbR dgnDb
         ) const;
 
 //__PUBLISH_SECTION_START__
@@ -185,19 +184,17 @@ public:
 
     //! Find all elements in the project within the named volume
     //! @param[out] elementIds Element ids found (pass nullptr if not interested). Any existing entries are not cleared. 
-    //! @param[out] elementAgenda Elements found (pass nullptr if not interested). Any existing entries are not cleared. 
     //! @param[in] project DgnProject containing the elements
     //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
     //! to include elements that partially overlap the volume (i.e., at the boundary). 
-    DGNPLATFORM_EXPORT void FindElements (ElementIdSet* elementIds, ElementAgenda* elementAgenda, DgnDbR project, bool allowPartialOverlaps = true) const;
+    DGNPLATFORM_EXPORT void FindElements (ElementIdSet* elementIds, DgnDbR dgnDb, bool allowPartialOverlaps = true) const;
 
     //! Find all elements in the specified view within the named volume
     //! @param[out] elementIds Element ids found (pass nullptr if not interested). Any existing entries are not cleared. 
-    //! @param[out] elementAgenda Elements found (pass nullptr if not interested). Any existing entries are not cleared. 
     //! @param[in] viewport Viewport that's used to find only the elements displayed. 
     //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
     //! to include elements that partially overlap the volume (i.e., at the boundary). 
-    DGNPLATFORM_EXPORT void FindElements (ElementIdSet* elementIds, ElementAgenda* elementAgenda, DgnViewportR viewport, bool allowPartialOverlaps = true) const;
+    DGNPLATFORM_EXPORT void FindElements (ElementIdSet* elementIds, DgnViewportR viewport, bool allowPartialOverlaps = true) const;
 
     //! Determines if the named volume contains the element
     //! @param elementRef Element to check

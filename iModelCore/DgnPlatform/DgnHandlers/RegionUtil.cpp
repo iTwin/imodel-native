@@ -1739,7 +1739,7 @@ BentleyStatus   RegionGraphicsContext::AddFaceLoopsAtPoints (DPoint3dCP seedPoin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, DgnElementPtrVec const* in)
+BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, DgnElementCPtrVec const* in)
     {
     m_operation = RegionType::Flood;
     m_setupScan = true;
@@ -1761,7 +1761,7 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, DgnElemen
 
     if (in)
         {
-        for (DgnElementPtr curr : *in)
+        for (DgnElementCPtr curr : *in)
             {
             GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
 
@@ -1788,14 +1788,14 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnViewportP vp, DgnElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans)
+BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans)
     {
     m_operation = RegionType::Flood;
 
     if (SUCCESS != SetTargetModel (targetModel))
         return ERROR;
 
-    for (DgnElementPtr curr : in)
+    for (DgnElementCPtr curr : in)
         {
         GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
 
@@ -1812,14 +1812,14 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph (DgnModelR targetModel, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Flood (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed)
+BentleyStatus   RegionGraphicsContext::Flood (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans, DPoint3dCP seedPoints, size_t numSeed)
     {
     m_operation = RegionType::Flood;
 
     if (SUCCESS != SetTargetModel (targetModel))
         return ERROR;
 
-    for (DgnElementPtr curr : in)
+    for (DgnElementCPtr curr : in)
         {
         GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
 
@@ -1869,7 +1869,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, bvector<C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElementPtrVec const& in, TransformCP inTrans, RegionType operation)
+BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
@@ -1879,7 +1879,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElemen
     if (SUCCESS != SetTargetModel (targetModel))
         return ERROR;
 
-    for (DgnElementPtr curr : in)
+    for (DgnElementCPtr curr : in)
         {
         GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
 
@@ -1904,7 +1904,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElementPtrVec const& target, DgnElementPtrVec const& tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation)
+BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElementCPtrVec const& target, DgnElementCPtrVec const& tool, TransformCP targetTrans, TransformCP toolTrans, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
@@ -1914,7 +1914,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElemen
     if (SUCCESS != SetTargetModel (targetModel))
         return ERROR;
 
-    for (DgnElementPtr curr : target)
+    for (DgnElementCPtr curr : target)
         {
         GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
 
@@ -1927,7 +1927,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElemen
 
     int highestOperandA = m_output.GetCurrentGeomMarkerId ();
 
-    for (DgnElementPtr curr : tool)
+    for (DgnElementCPtr curr : tool)
         {
         GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
 
@@ -1949,7 +1949,7 @@ BentleyStatus   RegionGraphicsContext::Boolean (DgnModelR targetModel, DgnElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::BooleanWithHoles (DgnModelR targetModel, DgnElementPtrVec const& in, DgnElementPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation)
+BentleyStatus   RegionGraphicsContext::BooleanWithHoles (DgnModelR targetModel, DgnElementCPtrVec const& in, DgnElementCPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation)
     {
     if (RegionType::Flood == operation)
         return ERROR;
@@ -1961,7 +1961,7 @@ BentleyStatus   RegionGraphicsContext::BooleanWithHoles (DgnModelR targetModel, 
 
     bvector<DMatrix4d> wireProducts;
 
-    for (DgnElementPtr curr : in)
+    for (DgnElementCPtr curr : in)
         {
         GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
 
@@ -1974,7 +1974,7 @@ BentleyStatus   RegionGraphicsContext::BooleanWithHoles (DgnModelR targetModel, 
 
     int highestOperand = m_output.GetCurrentGeomMarkerId ();
 
-    for (DgnElementPtr curr : holes)
+    for (DgnElementCPtr curr : holes)
         {
         GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
 

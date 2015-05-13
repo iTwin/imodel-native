@@ -166,15 +166,12 @@ DGNPLATFORM_TYPEDEFS (DropGeometry)
 DGNPLATFORM_TYPEDEFS (DropGraphics)
 DGNPLATFORM_TYPEDEFS (DwgHatchDef)
 DGNPLATFORM_TYPEDEFS (DwgHatchDefLine)
-DGNPLATFORM_TYPEDEFS (EditElementHandle)
 DGNPLATFORM_TYPEDEFS (ElemDisplayParams)
 DGNPLATFORM_TYPEDEFS (ElemMatSymb)
-DGNPLATFORM_TYPEDEFS (ElementAgenda)
 DGNPLATFORM_TYPEDEFS (ElementAlignedBox2d)
 DGNPLATFORM_TYPEDEFS (ElementAlignedBox3d)
 DGNPLATFORM_TYPEDEFS (ElementGeometry)
 DGNPLATFORM_TYPEDEFS (ElementGeometryBuilder)
-DGNPLATFORM_TYPEDEFS (ElementHandle)
 DGNPLATFORM_TYPEDEFS (ElementHandler);
 DGNPLATFORM_TYPEDEFS (ElementLocateManager)
 DGNPLATFORM_TYPEDEFS (FenceManager)
@@ -194,7 +191,6 @@ DGNPLATFORM_TYPEDEFS (IEditActionArray)
 DGNPLATFORM_TYPEDEFS (IEditActionSource)
 DGNPLATFORM_TYPEDEFS (IEditManipulator)
 DGNPLATFORM_TYPEDEFS (IElementGraphicsProcessor)
-DGNPLATFORM_TYPEDEFS (IElementSet)
 DGNPLATFORM_TYPEDEFS (IElementState)
 DGNPLATFORM_TYPEDEFS (IFaceMaterialAttachments)
 DGNPLATFORM_TYPEDEFS (ILineStyle)
@@ -571,10 +567,27 @@ struct Frustum
 };
 
 //=======================================================================================
-//! A list of DgnElementDescr's.
+//! A list of DgnElementPtr's.
 // @bsiclass                                                    Keith.Bentley   02/14
 //=======================================================================================
 struct DgnElementPtrVec : bvector<DgnElementPtr>
+{
+    const_iterator Find(DgnElementCR val) const
+        {
+        for (auto it=begin(); it!=end(); ++it)
+            {
+            if (it->get() == &val)
+                return it;
+            }
+        return end(); // not found
+        }
+};
+
+//=======================================================================================
+//! A list of DgnElementCPtr's.
+// @bsiclass
+//=======================================================================================
+struct DgnElementCPtrVec : bvector<DgnElementCPtr>
 {
     const_iterator Find(DgnElementCR val) const
         {

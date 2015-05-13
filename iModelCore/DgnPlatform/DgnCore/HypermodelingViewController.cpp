@@ -184,8 +184,8 @@ DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR dr
         return appData->m_range;
 
     DRange3d range = DRange3d::NullRange();
-    for (auto* el : *model)
-        range.Extend(el->ToGeometricElement()->_GetRange3d());
+    for (auto const& el : *model)
+        range.Extend(el.second->ToGeometricElement()->_GetRange3d());
 
     range.ScaleAboutCenter (range, 1.10);
 

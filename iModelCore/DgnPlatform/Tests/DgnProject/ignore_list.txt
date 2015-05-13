@@ -107,6 +107,7 @@ DgnViewsTest.InsertDeletedView
 DgnViewsTest.InsertExistingView
 DgnViewsTest.InsertView
 DgnViewsTest.WorkWithViewTable
+DgpRoundtripExpressionTests.Roundtrip
 ECDbInstances.SelectDgnLinksForDgnElement
 EntityDependencyGraph.CycleTest1
 EntityDependencyGraph.CycleTest2

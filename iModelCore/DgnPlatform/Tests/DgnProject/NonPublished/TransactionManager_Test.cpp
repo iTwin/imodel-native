@@ -31,7 +31,7 @@ static bool s_abcShouldFail;
 //=======================================================================================
 struct ABCHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
     {
-    HANDLER_DECLARE_MEMBERS (TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
+    DOMAINHANDLER_DECLARE_MEMBERS (TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
 
     bvector<EC::ECInstanceId> m_relIds;
 
@@ -101,12 +101,8 @@ static CurveVectorPtr computeShape()
 //=======================================================================================
 struct TestElementHandler : DgnPlatform::ElementHandler
 {
-    HANDLER_DECLARE_MEMBERS ("TestElement", TestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("TestElement", TestElement, TestElementHandler, DgnPlatform::ElementHandler, )
 
-    virtual DgnElementP _CreateInstance(DgnElement::CreateParams const& params) override
-        {
-        return new TestElement(TestElement::CreateParams(params));
-        }
 
     ECN::ECClassCP GetTestElementECClass (DgnDbR db)
         {
@@ -130,10 +126,10 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
             return DgnElementKey();
 
-        return db.Elements().Insert(testElement)->GetElementKey();
+        return db.Elements().Insert(*testElement)->GetElementKey();
         }
 
-    BentleyStatus DeleteElement (DgnDbR db, DgnElementId eid)
+    DgnModelStatus DeleteElement (DgnDbR db, DgnElementId eid)
         {
         return db.Elements().DeleteElement (eid);
         }
@@ -544,7 +540,6 @@ TEST_F (TransactionManagerTests, ElementInstance)
     ASSERT_EQ( e1props.GetValue(v, TMTEST_TEST_ELEMENT_TestElementProperty) , ECN::ECOBJECTS_STATUS_Success );
     }
 
-#if defined (NOT_NOW_WIP_REMOVE_ELEMENTHANDLE_FIX_NOW)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -598,28 +593,26 @@ TEST_F (TransactionManagerTests, ElementItem)
     if (true)
         {
         //  Add an ElementItem
-
         ECN::IECInstancePtr newItem = testItemClass->GetDefaultStandaloneEnabler()->CreateInstance();
         newItem->SetValue(TMTEST_TEST_ITEM_TestItemProperty, ECN::ECValue(initialTestPropValue));
 
-        EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetWriteableElement()->ToGeometricElement());
-        ASSERT_TRUE( modifiedEl != nullptr );
-
+        GeometricElementPtr modifiedEl = m_db->Elements().GetForEdit<GeometricElement>(key1.GetElementId());
         modifiedEl->SetItem(*newItem);
 
         checkItemProperty(*el, false, nullptr); // element should still have no item
         checkItemProperty(*modifiedEl, true, initialTestPropValue); // item should appear to be there on the modified copy
 
-        ASSERT_EQ( BSISUCCESS , elChange.ReplaceInModel() );
+        DgnModelStatus modelStatus;
+        m_db->Elements().Update(*modifiedEl, &modelStatus);
+        ASSERT_EQ (BSISUCCESS, modelStatus);
         }
 
     checkItemProperty(*el, true, initialTestPropValue); // item should now be in the DB
 
     if (true)
         {
-        EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetWriteableElement()->ToGeometricElement());
+        GeometricElementCPtr elChange = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
+        GeometricElementPtr modifiedEl = elChange->CopyForEdit()->ToGeometricElementP();
 
         ECN::IECInstanceP existingItem = modifiedEl->GetItemP();
         ASSERT_NE( existingItem , nullptr );
@@ -628,7 +621,9 @@ TEST_F (TransactionManagerTests, ElementItem)
         checkItemProperty(*el, true, initialTestPropValue); // item property should be unchanged in the DB
         checkItemProperty(*modifiedEl, true, changedTestPropValue); // item property should appear to be changed on the modified copy
 
-        ASSERT_EQ( BSISUCCESS , elChange.ReplaceInModel() );
+        DgnModelStatus modelStatus;
+        m_db->Elements().Update(*modifiedEl, &modelStatus);
+        ASSERT_EQ (BSISUCCESS, modelStatus);
         }
 
     checkItemProperty(*el, true, changedTestPropValue); // item should now be in the DB
@@ -674,7 +669,6 @@ TEST_F (TransactionManagerTests, ElementItem)
     " WHERE e.ECInstanceId=?"
 */
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15

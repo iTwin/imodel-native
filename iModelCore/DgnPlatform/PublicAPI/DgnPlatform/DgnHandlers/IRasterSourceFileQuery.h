@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/IRasterSourceFileQuery.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,17 +24,12 @@ struct  IRasterSourceFileQuery : public IRefCounted
 private:
 
 protected:
-    DGNPLATFORM_EXPORT virtual BentleyStatus    _InitFrom (ElementHandleCR eh)=0;
     DGNPLATFORM_EXPORT virtual uint64_t         _GetBitmapHeight () const = 0;
     DGNPLATFORM_EXPORT virtual uint64_t         _GetBitmapWidth  () const = 0;
     DGNPLATFORM_EXPORT virtual BentleyStatus    _ReadToRGBA (Byte *RgbaBuffer, size_t maxBufferLength, bool useBgIfNoAlpha) const=0;
 
     //__PUBLISH_CLASS_VIRTUAL__
 public:
-
-    //! Initialize the source file query object.
-    //! @param[in]      eh                          A pointer to corresponding raster attachment elementHandle.
-    DGNPLATFORM_EXPORT BentleyStatus       InitFrom (ElementHandleCR eh);
 
     //! Query bitmap height in pixels.
     //! @return bitmap height in pixels.
