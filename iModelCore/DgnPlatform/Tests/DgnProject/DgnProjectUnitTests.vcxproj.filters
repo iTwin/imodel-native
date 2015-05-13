@@ -1,37 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Published\XmlFragment_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\Font_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\IEditInterface_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\MSElementDescr_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\Multiline_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\Note_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\NotificationManager_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SharedCellHandler_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\SurfaceAndSolidHandlers_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\Tag_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\TextBlock_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\UnitDefinition_Test.cpp">
@@ -51,9 +30,6 @@
     </ClCompile>
     <ClCompile Include="NonPublished\ECDbInstances_Test.cpp">
       <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="Performance\RasterPerformance_Test.cpp">
-      <Filter>Performance</Filter>
     </ClCompile>
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp">
       <Filter>Performance</Filter>
@@ -85,28 +61,10 @@
     <ClCompile Include="NonPublished\DgnColors_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\DgnKeyString_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\DgnModelSelector_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\DgnModel_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="Published\DgnModel_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\DgnModelTable_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\DgnProject_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\DgnProjectImporter_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\DgnSessions_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\DgnStyles_Test.cpp">
@@ -118,22 +76,13 @@
     <ClCompile Include="NonPublished\ElementAgenda_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\MeshHandlers_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\Raster_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\SharedCellHandler_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\TransactionManager_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\XGraphics_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="Published\DgnGraphics_Test.cpp">
@@ -148,16 +97,7 @@
     <ClCompile Include="Published\MarkupProject_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\MultilineStyle_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\Rtti_tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PublishedReferenceAttachmentsScenario_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\DgnECNavigator_Test.cpp">
@@ -175,12 +115,6 @@
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\CrudElementPerformance_Test.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\ECDbInstances_Test_Old.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\MSElementDescr_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -189,6 +123,18 @@
     </ClCompile>
     <ClCompile Include="Published\TextAnnotation_Test.cpp">
       <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnLink_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\NamedVolume_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnLevelTable_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\EntityAndItem_Test.cpp">
+      <Filter>NonPublished</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
