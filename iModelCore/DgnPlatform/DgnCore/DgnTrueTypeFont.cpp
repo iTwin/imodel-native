@@ -42,9 +42,9 @@ DgnFontPtr DgnTrueTypeFont::_Clone() const { return new DgnTrueTypeFont(*this); 
 //---------------------------------------------------------------------------------------
 DgnTrueTypeFont::~DgnTrueTypeFont()
     {
-    for (GlyphCacheMap::reference cacheMapEntry : m_glyphCache)
+    for (T_GlyphCacheMap::reference cacheMapEntry : m_glyphCache)
         {
-        for (GlyphCache::reference cacheEntry : cacheMapEntry.second)
+        for (T_GlyphCache::reference cacheEntry : cacheMapEntry.second)
             DELETE_AND_CLEAR(cacheEntry.second);
         }
     }
@@ -527,19 +527,19 @@ bool DgnTrueTypeGlyph::_IsBlank() const
 //---------------------------------------------------------------------------------------
 DgnGlyphCP DgnTrueTypeFont::FindGlyphCP(FT_Face face, FT_UInt id, DgnFontStyle style) const
     {
-    GlyphCacheMap::iterator foundCache = m_glyphCache.find(style);
-    GlyphCache* glyphCache = nullptr;
+    T_GlyphCacheMap::iterator foundCache = m_glyphCache.find(style);
+    T_GlyphCache* glyphCache = nullptr;
     if (m_glyphCache.end() != foundCache)
         {
         glyphCache = &foundCache->second;
         }
     else
         {
-        m_glyphCache[style] = GlyphCache();
+        m_glyphCache[style] = T_GlyphCache();
         glyphCache = &m_glyphCache[style];
         }
     
-    GlyphCache::const_iterator foundGlyph = glyphCache->find(id);
+    T_GlyphCache::const_iterator foundGlyph = glyphCache->find(id);
     if (glyphCache->end() != foundGlyph)
         return foundGlyph->second;
     
@@ -609,14 +609,20 @@ BentleyStatus DgnTrueTypeFont::ComputeAdvanceWidths(T_DoubleVectorR advanceWidth
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     03/2015
+// @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-static void scaleAndOffsetGlyphRange(DRange2dR range, DPoint2dCR scale, DPoint2d offset)
+static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
     {
-    range.low.x = (range.low.x * scale.x) + offset.x;
-    range.low.y = (range.low.y * scale.y) + offset.y;
-    range.high.x = (range.high.x * scale.x) + offset.x;
-    range.high.y = (range.high.y * scale.y) + offset.y;
+    style = DgnFontStyle::Regular;
+    if (isBold && isItalic) style = DgnFontStyle::BoldItalic;
+    else if (isBold) style = DgnFontStyle::Bold;
+    else if (isItalic) style = DgnFontStyle::Italic;
+
+    FT_Face face = data._GetFaceP(style);
+    if (nullptr == face)
+        face = data._GetFaceP(DgnFontStyle::Regular);
+    
+    return face;
     }
 
 //---------------------------------------------------------------------------------------
@@ -624,46 +630,28 @@ static void scaleAndOffsetGlyphRange(DRange2dR range, DPoint2dCR scale, DPoint2d
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGlyphLayoutContextCR context) const
     {
-    if (!IsResolved())
-        return ERROR;
-    
     // If you make any changes to this method, also consider examining DgnRscFont::_LayoutGlpyhs and DgnShxFont::_LayoutGlyphs.
     //  This method differs from the V8i variants in that it is designed to compute only the low-level information needed,
     //  and to serve both TextString and TextBlock through a single code path. This does mean that some extraneous information
     //  is potentially computed, but should be cheap compared to the overall layout operation.
 
-    // Determine the best face data to use.
-    DgnFontStyle style = DgnFontStyle::Regular;
-    if (context.m_isBold && context.m_isItalic) style = DgnFontStyle::BoldItalic;
-    else if (context.m_isBold) style = DgnFontStyle::Bold;
-    else if (context.m_isItalic) style = DgnFontStyle::Italic;
-    
-    IDgnTrueTypeFontData* data = (IDgnTrueTypeFontData*)m_data;
-    FT_Face face = data->_GetFaceP(style);
-    if (nullptr == face)
-        face = data->_GetFaceP(DgnFontStyle::Regular);
-    if (nullptr == face)
-        return ERROR;
-    
-    // UTF-8 is mulit-byte; need to figure out each UCS "character" so we can look up the glyph.
-    bvector<Byte> ucs4charsBuffer;
-    if (SUCCESS != BeStringUtilities::TranscodeStringDirect(ucs4charsBuffer, "UCS-4", (ByteCP)context.m_string.c_str(), sizeof(Utf8Char) * (context.m_string.size() + 1), "UTF-8"))
+    if (!IsResolved())
         return ERROR;
 
-    // ICU for UCS-4 injects a BOM on the front which we don't want.
-    BeAssert(0xfeff == *(uint32_t const*)&ucs4charsBuffer[0]);
-    uint32_t const* ucs4Chars = (uint32_t const*)&ucs4charsBuffer[sizeof(uint32_t)];
-    size_t maxNumUcs4Chars = ((ucs4charsBuffer.size() - 1) / 4);
-    size_t numUcs4Chars = 0;
-    while ((0 != ucs4Chars[numUcs4Chars]) && (numUcs4Chars < maxNumUcs4Chars))
-        ++numUcs4Chars;
+    // Determine the best face data to use.
+    DgnFontStyle style;
+    FT_Face face = determineFace(style, context.m_isBold, context.m_isItalic, (IDgnTrueTypeFontData&)*m_data);
     
+    // UTF-8 is mulit-byte; need to figure out each UCS "character" so we can look up the glyph.
+    bvector<Byte> ucs4CharsBuffer;
+    size_t numUcs4Chars;
+    uint32_t const* ucs4Chars = DgnFont::Utf8ToUcs4(ucs4CharsBuffer, numUcs4Chars, context.m_string);
     if (0 == numUcs4Chars)
         return SUCCESS;
     
     // Compute the advance widths.
     T_DoubleVector widths;
-    widths.reserve(context.m_string.size());
+    widths.reserve(numUcs4Chars);
     if (SUCCESS != ComputeAdvanceWidths(widths, face, ucs4Chars, numUcs4Chars))
         return ERROR;
 
@@ -693,10 +681,10 @@ BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGl
         result.m_glyphOrigins.push_back(DPoint3d::From(penPosition));
 
         DRange2d glyphRange = glyph->GetRange();
-        scaleAndOffsetGlyphRange(glyphRange, context.m_drawSize, penPosition);
+        DgnFont::ScaleAndOffsetGlyphRange(glyphRange, context.m_drawSize, penPosition);
         
         DRange2d glyphExactRange = glyph->GetExactRange();
-        scaleAndOffsetGlyphRange(glyphExactRange, context.m_drawSize, penPosition);
+        DgnFont::ScaleAndOffsetGlyphRange(glyphExactRange, context.m_drawSize, penPosition);
         
         // It is important to use the array overload of DRange2d::Extend; the ranges can be inverted for backwards/upside-down text, and the DRange2d overload enforces low/high semantics.
         result.m_range.Extend(&glyphRange.low, 2);

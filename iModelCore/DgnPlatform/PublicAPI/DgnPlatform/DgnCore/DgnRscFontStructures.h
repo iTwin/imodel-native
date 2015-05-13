@@ -159,8 +159,8 @@ struct RscFontHeader
     RscFontVec resv0;
     uint32_t fractMap;
     uint32_t unicodeMap;
-    uint32_t m_filledFlag:1;
-    uint32_t m_unused:31;
+    uint32_t filledFlag:1;
+    uint32_t unused:31;
     int16_t languageId;
     unsigned short nFamilyName;
     unsigned short nFontName;

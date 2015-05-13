@@ -120,6 +120,8 @@ protected:
     DgnFont(DgnFontCR rhs) : RefCountedBase(rhs) { CopyFrom(rhs); }
     DGNPLATFORM_EXPORT virtual ~DgnFont();
     DgnFontR operator=(DgnFontCR rhs) { RefCountedBase::operator=(rhs); if (this != &rhs) CopyFrom(rhs); return *this; }
+    static uint32_t const* Utf8ToUcs4(bvector<Byte>& ucs4CharsBuffer, size_t& numUcs4Chars, Utf8StringCR);
+    static void ScaleAndOffsetGlyphRange(DRange2dR, DPoint2dCR, DPoint2d);
 
 public:
     DgnFontType GetType() const { return m_type; }
@@ -140,9 +142,9 @@ struct DgnTrueTypeFont : DgnFont
 {
 private:
     friend struct DgnFontPersistence;
-    typedef bmap<unsigned int /*FT_Uint*/, DgnGlyphCP> GlyphCache;
-    typedef bmap<DgnFontStyle, GlyphCache> GlyphCacheMap;
-    mutable GlyphCacheMap m_glyphCache;
+    typedef bmap<unsigned int /*FT_Uint*/, DgnGlyphCP> T_GlyphCache;
+    typedef bmap<DgnFontStyle, T_GlyphCache> T_GlyphCacheMap;
+    mutable T_GlyphCacheMap m_glyphCache;
 
     DgnGlyphCP FindGlyphCP(FT_Face, unsigned int /*FT_UInt*/ glyphIndex, DgnFontStyle) const;
     BentleyStatus ComputeAdvanceWidths(T_DoubleVectorR, FT_Face, uint32_t const* ucs4Chars, size_t numChars) const;
@@ -180,11 +182,21 @@ struct DgnRscFont : DgnFont
 private:
     friend struct DgnFontPersistence;
     Metadata m_metadata;
+    typedef bmap<DgnGlyph::T_Id, DgnGlyphCP> T_GlyphCache;
+    mutable T_GlyphCache m_glyphCache;
+    mutable bool m_hasLoadedGlyphs;
+    typedef bpair<uint8_t, uint8_t> T_FractionMapKey;
+    typedef bmap<T_FractionMapKey, DgnGlyph::T_Id> T_FractionMap;
+    mutable T_FractionMap m_fractions;
+    mutable bool m_hasLoadedFractions;
 
-    IDgnRscFontData* GetDataP() { return (IDgnRscFontData*)m_data; }
+    DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
+    DgnGlyph::T_Id FindFractionGlyphCode(uint8_t numerator, uint8_t denominator) const;
+    DgnGlyph::T_Id Ucs4CharToFontChar(uint32_t, CharCP codePageString, bvector<Byte>& localeBuffer) const;
+    bvector<DgnGlyph::T_Id> Utf8ToFontChar(Utf8StringCR) const;
 
 public:
-    DgnRscFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Rsc, name, data) {}
+    DgnRscFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Rsc, name, data), m_hasLoadedGlyphs(false), m_hasLoadedFractions(false) {}
     DgnRscFont(DgnRscFontCR rhs) : DgnFont(rhs) {}
     DgnRscFontR operator=(DgnRscFontCR rhs) { DgnFont::operator=(rhs); return *this; }
     DGNPLATFORM_EXPORT DgnFontPtr Create(Utf8CP name, IDgnFontDataP data);
@@ -218,8 +230,6 @@ struct DgnShxFont : DgnFont
 private:
     friend struct DgnFontPersistence;
     Metadata m_metadata;
-
-    IDgnShxFontData* GetDataP() { return (IDgnShxFontData*)m_data; }
 
 public:
     DgnShxFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Shx, name, data) {}

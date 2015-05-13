@@ -788,6 +788,36 @@ DgnFontId DgnFonts::AcquireId(DgnFontCR font)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+uint32_t const* DgnFont::Utf8ToUcs4(bvector<Byte>& ucs4CharsBuffer, size_t& numUcs4Chars, Utf8StringCR str)
+    {
+    if (SUCCESS != BeStringUtilities::TranscodeStringDirect(ucs4CharsBuffer, "UCS-4", (ByteCP)str.c_str(), sizeof(Utf8Char) * (str.size() + 1), "UTF-8"))
+        return 0;
+
+    // ICU for UCS-4 injects a BOM on the front which we don't want.
+    BeAssert(0xfeff == *(uint32_t const*)&ucs4CharsBuffer[0]);
+    uint32_t const* ucs4Chars = (uint32_t const*)&ucs4CharsBuffer[sizeof(uint32_t)];
+    size_t maxNumUcs4Chars = ((ucs4CharsBuffer.size() - 1) / 4);
+    numUcs4Chars = 0;
+    while ((0 != ucs4Chars[numUcs4Chars]) && (numUcs4Chars < maxNumUcs4Chars))
+        ++numUcs4Chars;
+
+    return ucs4Chars;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+void DgnFont::ScaleAndOffsetGlyphRange(DRange2dR range, DPoint2dCR scale, DPoint2d offset)
+    {
+    range.low.x = (range.low.x * scale.x) + offset.x;
+    range.low.y = (range.low.y * scale.y) + offset.y;
+    range.high.x = (range.high.x * scale.x) + offset.x;
+    range.high.y = (range.high.y * scale.y) + offset.y;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
 bool DgnFontDataSession::Start()

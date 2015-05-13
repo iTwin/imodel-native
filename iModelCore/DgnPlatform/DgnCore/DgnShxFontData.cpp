@@ -445,7 +445,7 @@ DgnFontPtr DgnFontPersistence::File::FromShxFile(BeFileNameCR path)
     Utf8String pathBaseName(path.GetFileNameWithoutExtension());
     
     DgnShxFontP font = new DgnShxFont(pathBaseName.c_str(), new DgnShxFileFontData(path));
-    DgnShxFont::ShxType shxType = font->GetDataP()->GetShxType();
+    DgnShxFont::ShxType shxType = font->GetShxType();
     if (DgnShxFont::ShxType::Invalid != shxType)
         setMetadataToDefault(font->GetMetadataR(), shxType);
     

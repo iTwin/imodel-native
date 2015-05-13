@@ -12,7 +12,7 @@
 //---------------------------------------------------------------------------------------
 DgnFontPtr DgnShxFont::Create(Utf8CP name, IDgnFontDataP data) { return new DgnShxFont(name, data); }
 DgnFontPtr DgnShxFont::_Clone() const { return new DgnShxFont(*this); }
-DgnShxFont::ShxType DgnShxFont::GetShxType() const { return const_cast<DgnShxFontP>(this)->GetDataP()->GetShxType(); }
+DgnShxFont::ShxType DgnShxFont::GetShxType() const { return ((IDgnShxFontData*)m_data)->GetShxType(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
