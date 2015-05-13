@@ -722,7 +722,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
         {
         switch (entity.GetEntityType())
             {
-            case ISolidKernelEntity::EntityType_Sheet:
+            case ISolidKernelEntity::EntityType_Sheet: // NEEDWORK: Save single planar face as CurveVector? See PSolidUtil::CreateElement in Vancouver...
             case ISolidKernelEntity::EntityType_Solid:
                 {
                 saveBRep = saveFacets = true;
@@ -799,7 +799,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
 
     if (saveEdges)
         {
-        // When facetted representation is an approximation, we need to store the edge curvcs for snapping...
+        // When facetted representation is an approximation, we need to store the edge curves for snapping...
         // NEEDSWORK: Face attachments affect color...
         CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, true, false);
 
