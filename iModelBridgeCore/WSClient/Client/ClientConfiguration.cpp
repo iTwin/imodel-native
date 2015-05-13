@@ -15,15 +15,14 @@ ClientConfiguration::ClientConfiguration
 Utf8StringCR serverUrl,
 Utf8StringCR repositoryId,
 HttpRequestHeadersCR defaultHeaders,
-BeFileNameCP defaultSchemaPath,
+IWSSchemaProviderPtr schemaProvider,
 IHttpHandlerPtr customHandler
 ) :
 m_serverUrl (serverUrl),
 m_repositoryId (repositoryId),
-m_defaultSchemaPath (nullptr == defaultSchemaPath ? L"" : *defaultSchemaPath),
+m_schemaProvider (schemaProvider),
 m_httpClient (std::make_shared<HttpClient> (customHandler))
     {
-    BeAssert (nullptr == defaultSchemaPath || !defaultSchemaPath->empty ());
     m_httpClient->DefaultRequestHeaders () = defaultHeaders;
     }
 
@@ -54,7 +53,11 @@ HttpClientR ClientConfiguration::GetHttpClient () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameCR ClientConfiguration::GetDefaultSchemaPath () const
+BeFileName ClientConfiguration::GetDefaultSchemaPath (WSInfoCR info) const
     {
-    return m_defaultSchemaPath;
+    if (nullptr == m_schemaProvider)
+        {
+        return BeFileName ();
+        }
+    return m_schemaProvider->GetSchema (info);
     }

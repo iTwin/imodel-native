@@ -6,6 +6,7 @@
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
+#include <WebServices/Client/UrlProvider.h>
 #include <WebServices/Client/UsageTracking.h>
 #include <Bentley/Base64Utilities.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
@@ -24,7 +25,7 @@ static bool s_usageTrackingInitialized = false;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsageTracking::Initialize(IHttpHandlerPtr customHttpHandler)
+void UsageTracking::Initialize (IHttpHandlerPtr customHttpHandler)
     {
     if (!s_usageTrackingInitialized)
         {
@@ -36,7 +37,7 @@ void UsageTracking::Initialize(IHttpHandlerPtr customHttpHandler)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsageTracking::Uninintialize()
+void UsageTracking::Uninintialize ()
     {
     s_customHttpHandler = nullptr;
     s_usageTrackingInitialized = false;
@@ -45,38 +46,45 @@ void UsageTracking::Uninintialize()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer)
+StatusInt UsageTracking::RegisterUserUsages (Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer)
     {
-    MobileTracking mt(dev, userId, prodId, projId, usageDate, prodVer);
-    return RegisterUserUsages(mt);
+    MobileTracking mt (dev, userId, prodId, projId, usageDate, prodVer);
+    return RegisterUserUsages (mt);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(bvector<MobileTracking> usages)
+StatusInt UsageTracking::RegisterUserUsages (bvector<MobileTracking> usages)
     {
     Json::Value usageList;
     for (MobileTracking mt : usages)
         {
-        if(!mt.IsEmpty())
-            usageList.append(mt.ToJson());
+        if (!mt.IsEmpty ())
+            {
+            usageList.append (mt.ToJson ());
+            }
         }
 
-    if (0 >= usageList.size())
+    if (0 >= usageList.size ())
+        {
         return USAGE_NO_USAGES;
+        }
 
-    HttpClient client(s_customHttpHandler);
-    HttpRequest request = client.CreatePostRequest(GetUsageTrackingUrl());
-    request.GetHeaders().SetContentType("application/json");
+    HttpClient client (s_customHttpHandler);
+    HttpRequest request = client.CreatePostRequest (GetUsageTrackingUrl ());
+    request.GetHeaders ().SetContentType ("application/json");
 
-    Utf8String body = Json::FastWriter().write(usageList);
-    HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(usageList));
-    request.SetRequestBody(requestBody);
+    Utf8String body = Json::FastWriter ().write (usageList);
+    HttpStringBodyPtr requestBody = HttpStringBody::Create (Json::FastWriter ().write (usageList));
+    request.SetRequestBody (requestBody);
 
-    HttpResponse httpResponse = request.Perform();
-    if(httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
+    HttpResponse httpResponse = request.Perform ();
+
+    if (httpResponse.GetConnectionStatus () != ConnectionStatus::OK)
+        {
         return USAGE_ERROR;
+        }
 
     return USAGE_SUCCESS;
     }
@@ -84,51 +92,52 @@ StatusInt UsageTracking::RegisterUserUsages(bvector<MobileTracking> usages)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(MobileTracking usage)
+StatusInt UsageTracking::RegisterUserUsages (MobileTracking usage)
     {
     bvector<MobileTracking> list;
-    list.push_back(usage);
-    return RegisterUserUsages(list);
+    list.push_back (usage);
+    return RegisterUserUsages (list);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR deviceId)
+Json::Value UsageTracking::GetUserUsages (Utf8StringCR userGuid, Utf8StringCR deviceId)
     {
-    Utf8PrintfString user(userGuid.c_str());
-    user.ToLower();
-    Utf8PrintfString getURL("%s/%s/%s", GetUsageTrackingUrl().c_str(), user.c_str(), deviceId.c_str());
-    Utf8StringCR ver = VerifyClientMobile(userGuid, deviceId);
+    Utf8PrintfString user (userGuid.c_str ());
+    user.ToLower ();
+    Utf8PrintfString getURL ("%s/%s/%s", GetUsageTrackingUrl ().c_str (), user.c_str (), deviceId.c_str ());
+    Utf8StringCR ver = VerifyClientMobile (userGuid, deviceId);
 
-    HttpClient client(s_customHttpHandler);
-    HttpRequest request = client.CreateGetRequest(getURL);
-    request.GetHeaders().SetContentType("application/json");
-    request.GetHeaders().AddValue("ClientAuth", ver.c_str());
+    HttpClient client (s_customHttpHandler);
+    HttpRequest request = client.CreateGetRequest (getURL);
+    request.GetHeaders ().SetContentType ("application/json");
+    request.GetHeaders ().AddValue ("ClientAuth", ver.c_str ());
 
-    HttpResponse httpResponse = request.Perform();
+    HttpResponse httpResponse = request.Perform ();
 
-    Json::Value usages = httpResponse.GetBody().AsJson();
+    Json::Value usages = httpResponse.GetBody ().AsJson ();
     return usages;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR deviceId, Utf8StringCR date)
+Json::Value UsageTracking::GetUserUsages (Utf8StringCR userGuid, Utf8StringCR deviceId, Utf8StringCR date)
     {
-    Utf8PrintfString user(userGuid.c_str());
-    user.ToLower();
-    Utf8PrintfString getURL("%s/%s/%s/%s", GetUsageTrackingUrl().c_str(), user.c_str(), deviceId.c_str(), date.c_str());
-    Utf8StringCR ver = VerifyClientMobile(userGuid, deviceId);
+    Utf8PrintfString user (userGuid.c_str ());
+    user.ToLower ();
+    Utf8PrintfString getURL ("%s/%s/%s/%s", GetUsageTrackingUrl ().c_str (), user.c_str (), deviceId.c_str (), date.c_str ());
+    Utf8StringCR ver = VerifyClientMobile (userGuid, deviceId);
 
-    HttpClient client(s_customHttpHandler);
-    HttpRequest request = client.CreateGetRequest(getURL);
-    request.GetHeaders().SetContentType("application/json");
-    request.GetHeaders().AddValue("ClientAuth", ver.c_str());
+    HttpClient client (s_customHttpHandler);
+    HttpRequest request = client.CreateGetRequest (getURL);
+    request.GetHeaders ().SetContentType ("application/json");
+    request.GetHeaders ().AddValue ("ClientAuth", ver.c_str ());
 
-    HttpResponse httpResponse = request.Perform();
-    Json::Value usages = httpResponse.GetBody().AsJson();
+    HttpResponse httpResponse = request.Perform ();
+
+    Json::Value usages = httpResponse.GetBody ().AsJson ();
     return usages;
     }
 
@@ -180,26 +189,27 @@ static bool CalcSha1 (Utf8StringCR input, Utf8StringR hash)
 #endif
     }
 
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UsageTracking::VerifyClientMobile(Utf8StringCR userGuid, Utf8StringCR deviceId)
+Utf8String UsageTracking::VerifyClientMobile (Utf8StringCR userGuid, Utf8StringCR deviceId)
     {
     const int arrayLen = 20;
 
     int pickValues[arrayLen] = {35, 20, 46, 30, 34, 14, 36, 21, 3, 37, 13, 12, 19, 47, 8, 42, 23, 18, 24, 45};
     const int numIterations = 6;
 
-    Utf8PrintfString fullString("%s%s", userGuid.c_str(), deviceId.c_str());
+    Utf8PrintfString fullString ("%s%s", userGuid.c_str (), deviceId.c_str ());
     Utf8String pwString;
     for (int i = 0; i < arrayLen; i++)
-        pwString[i] = fullString[pickValues[i] % fullString.length()];
+        {
+        pwString[i] = fullString[pickValues[i] % fullString.length ()];
+        }
 
     Utf8String hash;
     for (int i = 0; i < numIterations; i++)
         {
-        CalcSha1(pwString, hash);
+        CalcSha1 (pwString, hash);
         pwString = hash;
         }
 
@@ -209,7 +219,12 @@ Utf8String UsageTracking::VerifyClientMobile(Utf8StringCR userGuid, Utf8StringCR
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UsageTracking::GetUsageTrackingUrl()
+Utf8String UsageTracking::GetUsageTrackingUrl ()
     {
-    return USAGE_TRACK_URL;
+    Utf8String usageTrackingUrl (USAGE_TRACK_URL);
+    if (UrlProvider::IsInitialized ())
+        {
+        usageTrackingUrl = UrlProvider::GetUsageTrackingUrl ();
+        }
+    return usageTrackingUrl;
     }

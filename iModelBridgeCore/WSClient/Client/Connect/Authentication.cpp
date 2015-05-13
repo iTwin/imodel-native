@@ -37,6 +37,13 @@ void Authenticate(JsonValueCR messageDataObj)
         {
         Json::Value setupData(Json::objectValue);
         setupData[AuthenticationData::USERNAME] = username;
+
+        // XXX: duplicate properties under Data. Quick workaround for WorkSite
+        // demo, to be unified after.
+        Json::Value data(Json::objectValue);
+        data[AuthenticationData::USERNAME] = username;
+        setupData["Data"] = data;
+
         MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, std::move (setupData));
 
         if (isSignOut)
@@ -72,5 +79,12 @@ void Authenticate(JsonValueCR messageDataObj)
 
     Json::Value setupData(messageDataObj);
     setupData[AuthenticationData::TOKEN] = token.AsString();
+
+    // XXX: duplicate properties under Data. Quick workaround for WorkSite
+    // demo, to be unified after.
+    Json::Value data(messageDataObj);
+    data[AuthenticationData::TOKEN] = token.AsString();
+    setupData["Data"] = data;
+
     MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, std::move(setupData));
     }
