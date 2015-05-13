@@ -1145,24 +1145,10 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnElementKey DgnElements::GetElementKey(DgnElementId elementId) const
     {
-    if (!elementId.IsValid())
-        return DgnElementKey();
-
-    CachedECSqlStatementPtr stmt = m_dgndb.GetPreparedECSqlStatement("SELECT GetECClassId() FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return DgnElementKey();
-        }
-
-    stmt->BindId(1, elementId);
-    if (ECSqlStepStatus::HasRow == stmt->Step())
-        {
-        BeAssert(!stmt->IsValueNull(0));
-        return DgnElementKey(stmt->GetValueId<DgnClassId>(0), elementId);
-        }
-
-    return DgnElementKey();
+    CachedStatementPtr stmt;
+    GetStatement(stmt, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindInt64(1, elementId.GetValueUnchecked());
+    return BE_SQLITE_ROW == stmt->Step() ? DgnElementKey(stmt->GetValueId<DgnClassId>(0), elementId) : DgnElementKey();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1171,12 +1157,7 @@ DgnElementKey DgnElements::GetElementKey(DgnElementId elementId) const
 bool DgnElements::IsElementIdUsed(DgnElementId id) const
     {
     CachedStatementPtr stmt;
-    if (BE_SQLITE_OK != m_dgndb.GetCachedStatement(stmt, "SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?"))
-        {
-        BeAssert(0);
-        return false;
-        }
-
+    m_dgndb.GetCachedStatement(stmt, "SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindInt64(1, id.GetValueUnchecked());
     return BE_SQLITE_ROW == stmt->Step();
     }
