@@ -327,9 +327,10 @@ void PerformanceTestFixture::OpenTestDb(ECDbR testDb, Db::OpenMode openMode, Sta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Adeel.Shoukat          07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceTestingFrameWork::openDb(WString dbName)
+void PerformanceTestingFrameWork::openDb()
 {
-    //static bool isDbOpen = false;
+    // This is hard coded name of the ECDb that stores performance results
+    WString dbName(L"PerformanceTest.ecdb");
     if (m_Db.IsDbOpen())
     {
         stmt.Finalize();
@@ -367,65 +368,16 @@ void PerformanceTestingFrameWork::openDb(WString dbName)
 /*---------------------------------------------------------------------------------**//**
 *@bsimethod                                            Adeel.Shoukat          07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PerformanceTestingFrameWork::writeTodb(WString dbName, StopWatch &timerCount, Utf8String testName, Utf8String testDescription)
+bool PerformanceTestingFrameWork::writeTodb(StopWatch &timerCount, Utf8String testName, Utf8String testDescription)
 {
-    int performanceCount = 0;
-    int testRunCount = 0;
-    int lastRunCount = 0;
-    DbResult selectPreparetResult, insertPreparetResult;
-    Statement insertStatement, selectStatement;
-    Utf8CP insertQuery = nullptr;
-    Utf8CP selectQuery = nullptr;
-    double timeInSecods;
-    Utf8CP testNameInDb;
-
-    openDb(dbName);
-    timeInSecods = timerCount.GetElapsedSeconds();
-
-    selectQuery = "Select * from PerformanceTestRun";
-    insertQuery = "INSERT INTO PerformanceTestRun(PerformanceTestRun,TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?,?)";
-    selectPreparetResult = selectStatement.Prepare(m_Db, selectQuery);
-    EXPECT_EQ(selectPreparetResult, DbResult::BE_SQLITE_OK);
-
-    while (selectStatement.Step() == DbResult::BE_SQLITE_ROW)
-    {
-        lastRunCount = testRunCount;
-        testNameInDb = selectStatement.GetValueText(1);
-        if (testNameInDb == testName)
-        {
-            testRunCount = selectStatement.GetValueInt(0);
-            if (testRunCount >= lastRunCount)
-            {
-                performanceCount = testRunCount;
-
-            }
-        }
-    }
-    performanceCount = performanceCount + 1;
-    insertPreparetResult = insertStatement.Prepare(m_Db, insertQuery);
-    insertStatement.BindInt(1, performanceCount);
-    insertStatement.BindText(2, testName, Statement::MakeCopy::No);
-    insertStatement.BindDouble(3, timeInSecods);
-    insertStatement.BindText(4, testDescription, Statement::MakeCopy::No);
-    if (insertPreparetResult == DbResult::BE_SQLITE_OK)
-    {
-        DbResult stepResult = insertStatement.Step();
-        if (stepResult == DbResult::BE_SQLITE_DONE)
-        {
-            DbResult ChangesResult = m_Db.SaveChanges();
-
-            if (ChangesResult == DbResult::BE_SQLITE_OK)
-            {
-                return true;
-            }
-        }
-    }
-    return false;
+    return writeTodb(timerCount.GetElapsedSeconds(), testName, testDescription);
 }
 /*---------------------------------------------------------------------------------**//**
+* Writes time to the datbase along with test name and description
+* Time is to be sent in seconds.
 *@bsimethod                                            Adeel.Shoukat          07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PerformanceTestingFrameWork::writeTodbForDouble(WString dbName, double timerCount, Utf8String testName, Utf8String testDescription, bool bTimeInMiliSecond)
+bool PerformanceTestingFrameWork::writeTodb(double timeInSeconds, Utf8String testName, Utf8String testDescription)
 {
     int performanceCount = 0;
     int testRunCount = 0;
@@ -434,13 +386,8 @@ bool PerformanceTestingFrameWork::writeTodbForDouble(WString dbName, double time
     Statement insertStatement, selectStatement;
     Utf8CP insertQuery = nullptr;
     Utf8CP selectQuery = nullptr;
-    double timeInSecods;
     Utf8CP testNameInDb;
-    openDb(dbName);
-    if (bTimeInMiliSecond)
-        timeInSecods = timerCount*1000.0;
-    else
-        timeInSecods = timerCount;
+    openDb();
     selectQuery = "Select * from PerformanceTestRun";
     insertQuery = "INSERT INTO PerformanceTestRun(PerformanceTestRun,TestName,ExecutionTime,DescriptionOfTest) VALUES(?,?,?,?)";
     selectPreparetResult = selectStatement.Prepare(m_Db, selectQuery);
@@ -463,7 +410,7 @@ bool PerformanceTestingFrameWork::writeTodbForDouble(WString dbName, double time
     insertPreparetResult = insertStatement.Prepare(m_Db, insertQuery);
     insertStatement.BindInt(1, performanceCount);
     insertStatement.BindText(2, testName, Statement::MakeCopy::No);
-    insertStatement.BindDouble(3, timeInSecods);
+    insertStatement.BindDouble(3, timeInSeconds);
     insertStatement.BindText(4, testDescription, Statement::MakeCopy::No);
     if (insertPreparetResult == DbResult::BE_SQLITE_OK)
     {

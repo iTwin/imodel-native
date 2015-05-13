@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/QueryTests.cpp $
+|  $Source: Tests/Performance/QueryTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -58,7 +58,7 @@ struct PerformanceQueryTests : PerformanceTestFixture
             double ellapsedSecond;
             ExecuteSql(ecSql, timerName, results, expectedNumberOfResults, ellapsedSecond);
             PerformanceTestingFrameWork obj;
-            EXPECT_TRUE(obj.writeTodbForDouble(L"PerformanceTest.ecdb", ellapsedSecond, "LoadByInstanceId:  " + instanceId + className, " QueryAllInstancesByClass ",true));
+            EXPECT_TRUE(obj.writeTodb(ellapsedSecond * 1000.0, "LoadByInstanceId:  " + instanceId + className, " QueryAllInstancesByClass "));
             }
 
         void QueryAllInstancesByClass(Utf8String className, bmap<Utf8String, double>& results, int expectedNumberOfResults)
@@ -70,7 +70,7 @@ struct PerformanceQueryTests : PerformanceTestFixture
             double ellapsedSecond;
             ExecuteSql(ecSql, timerName, results, expectedNumberOfResults, ellapsedSecond);
             PerformanceTestingFrameWork obj;
-            EXPECT_TRUE(obj.writeTodbForDouble(L"PerformanceTest.ecdb", ellapsedSecond, "QueryAllInstances " + className, " QueryAllInstancesByClass ",true));
+            EXPECT_TRUE(obj.writeTodb(ellapsedSecond * 1000.0, "QueryAllInstances " + className, " QueryAllInstancesByClass "));
             }
 
         void QueryAllInstancesByClassWithOrderBy(Utf8String className, Utf8String propertyName, bmap<Utf8String, double>& results, int expectedNumberOfResults)
@@ -82,7 +82,7 @@ struct PerformanceQueryTests : PerformanceTestFixture
             double ellapsedSecond;
             ExecuteSql(ecSql, timerName, results, expectedNumberOfResults, ellapsedSecond);
             PerformanceTestingFrameWork obj;
-            EXPECT_TRUE(obj.writeTodbForDouble(L"PerformanceTest.ecdb", ellapsedSecond, "QueryAllInstances " + className, propertyName + " QueryAllInstancesByClassWithOrderBy ",true));
+            EXPECT_TRUE(obj.writeTodb(ellapsedSecond * 1000.0, "QueryAllInstances " + className, propertyName + " QueryAllInstancesByClassWithOrderBy "));
             }
 
     public:

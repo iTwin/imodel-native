@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "UnitTests/NonPublished/ECDb/ECDbTestProject.h"
+#include"PerformanceTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -289,6 +290,9 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
     timer.Stop ();
     LOG.infov ("Schema Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
+    PerformanceTestingFrameWork performanceObjSchemaImport;
+    EXPECT_TRUE(performanceObjSchemaImport.writeTodb(timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_Import", "Import EC Schema with 10,000 Custom Attributes"));
+
     ecdb.SaveChanges ();
 
     timer.Start ();
@@ -300,6 +304,8 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     ECSchemaCP ecschema = ecdb.Schemas ().GetECSchema ("TestSchema", true);
     timer.Stop ();
     LOG.infov ("Schema Export took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
+    EXPECT_TRUE(performanceObjSchemaImport.writeTodb(timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_GetSchema", "Gets the schema that has 10,000 Custom Attributes"));
+
     ASSERT_TRUE (ecschema != nullptr);
 
     ecdb.CloseDb ();

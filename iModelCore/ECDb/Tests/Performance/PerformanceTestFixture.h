@@ -57,14 +57,14 @@ private:
     ECSqlStatement stmt;
     DbResult dbOpenStat;
     BeFileName dir;
-    WString dbName;
+
 public:
     PerformanceTestingFrameWork()
     {
     }
-    void openDb(WString dbName);
-    bool writeTodb(WString dbName,StopWatch &timerCount, Utf8String testName, Utf8String testDescription);
-    bool writeTodbForDouble(WString dbName, double timerCount, Utf8String testName, Utf8String testDescription,bool timeInMiliSecond);
+    void openDb();
+    bool writeTodb(StopWatch &timerCount, Utf8String testName, Utf8String testDescription);
+    bool writeTodb(double timeInSeconds, Utf8String testName, Utf8String testDescription);
 };
 
 END_ECDBUNITTESTS_NAMESPACE
