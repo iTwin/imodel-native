@@ -426,12 +426,14 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
     ECInstanceId ecinstanceId;
     if (!ECInstanceIdHelper::FromString (ecinstanceId, instance.GetInstanceId ().c_str ()))
         {
-        BeAssert (false && "ECInstance to update needs an ECInstance in order to identify the right row in the ECDb file.");
-        BeAssert (ecinstanceId.IsValid ());
+        Utf8String errorMessage;
+        errorMessage.Sprintf("ECInstanceId '%s' is empty or not a valid ECDb ECInstanceId.", Utf8String(instance.GetInstanceId()).c_str());
+        LogFailure(instance, errorMessage.c_str());
         return ERROR;
         }
 
-    auto stat = m_statement.BindId (m_ecinstanceIdParameterIndex, ecinstanceId);
+    BeAssert(ecinstanceId.IsValid());
+    auto stat = m_statement.BindId(m_ecinstanceIdParameterIndex, ecinstanceId);
     if (stat != ECSqlStatus::Success)
         return ERROR;
 
