@@ -482,7 +482,7 @@ TEST_F (ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertionUsingStandaloneEnabler)
+TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
     {
     ECDb ecdb;
     BeFileName applicationSchemaDir;
@@ -514,12 +514,15 @@ TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertionUsingStandaloneEna
     ECN::StandaloneECInstancePtr testClassInstance = enabler->CreateInstance ();
     testClassInstance->SetValue (L"TestProperty", ECValue (L"firstProperty"));
 
-    ECInstanceInserter inserter (ecdb, *testClass);
-    ASSERT_TRUE (inserter.IsValid ());
-    ECInstanceKey instanceKey;
-    auto insertStatus = inserter.Insert (instanceKey, *testClassInstance);
-    ASSERT_EQ (SUCCESS, insertStatus);
-
+        {
+        //wrap inserter in a nested block to make sure it (and its internal ECSqlStatement) is destroyed before the DB is closed
+        ECInstanceInserter inserter(ecdb, *testClass);
+        ASSERT_TRUE(inserter.IsValid());
+        ECInstanceKey instanceKey;
+        auto insertStatus = inserter.Insert(instanceKey, *testClassInstance);
+        ASSERT_EQ(SUCCESS, insertStatus);
+        }
+    
     ecdb.CloseDb ();
     }
 
