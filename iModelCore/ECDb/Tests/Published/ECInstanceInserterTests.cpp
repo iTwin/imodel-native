@@ -478,7 +478,51 @@ TEST_F (ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
 
     db.CloseDb ();
     }
-    
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertionUsingStandaloneEnabler)
+    {
+    ECDb ecdb;
+    BeFileName applicationSchemaDir;
+    BeTest::GetHost ().GetDgnPlatformAssetsDirectory (applicationSchemaDir);
+    BeFileName temporaryDir;
+    BeTest::GetHost ().GetOutputRoot (temporaryDir);
+    ECDb::Initialize (temporaryDir, &applicationSchemaDir);
+    auto stat = ECDbTestUtility::CreateECDb (ecdb, nullptr, L"InstanceInserterDb.ecdb");
+    ASSERT_EQ (stat, BE_SQLITE_OK);
+
+    ECSchemaPtr testSchema;
+    ECClassP testClass = nullptr;
+    PrimitiveECPropertyP premitiveProperty = nullptr;
+    ECSchema::CreateSchema (testSchema, L"TestSchema", 1, 0);
+    ASSERT_TRUE (testSchema.IsValid ());
+    testSchema->SetNamespacePrefix (L"ts");
+    testSchema->SetDescription (L"Dynamic Test Schema");
+    testSchema->SetDisplayLabel (L"Test Schema");
+
+    ASSERT_TRUE (testSchema->CreateClass (testClass, L"TestClass") == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (testClass->CreatePrimitiveProperty (premitiveProperty, L"TestProperty", PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
+
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
+    ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*testSchema));
+    ASSERT_EQ (SUCCESS, ecdb.Schemas().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
+    ecdb.SaveChanges ();
+
+    StandaloneECEnablerPtr enabler = testClass->GetDefaultStandaloneEnabler ();
+    ECN::StandaloneECInstancePtr testClassInstance = enabler->CreateInstance ();
+    testClassInstance->SetValue (L"TestProperty", ECValue (L"firstProperty"));
+
+    ECInstanceInserter inserter (ecdb, *testClass);
+    ASSERT_TRUE (inserter.IsValid ());
+    ECInstanceKey instanceKey;
+    auto insertStatus = inserter.Insert (instanceKey, *testClassInstance);
+    ASSERT_EQ (SUCCESS, insertStatus);
+
+    ecdb.CloseDb ();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------

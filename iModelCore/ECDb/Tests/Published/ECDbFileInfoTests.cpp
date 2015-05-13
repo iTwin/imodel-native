@@ -17,6 +17,19 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 Utf8CP GetTestSchemaXml();
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  5/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void deleteExistingFile (BeFileName filePath)
+    {
+    if (BeFileName::DoesPathExist (filePath.GetName ()))
+        {
+        // Delete any previously exported file
+        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (filePath.GetName ());
+        ASSERT_TRUE (BeFileNameStatus::Success == fileDeleteStatus);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbFileInfo, EmptyECDbHasFileInfoSchema)
@@ -54,7 +67,6 @@ TEST(ECDbFileInfo, EmptyECDbHasFileInfoSchema)
     }
 
     ASSERT_EQ(1, rowCount);
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -161,8 +173,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     BeFileName exportFilePath;
     BeTest::GetHost ().GetOutputRoot (exportFilePath);
     exportFilePath.AppendToPath(testFileNameW.c_str());
-    if (BeFileName::DoesPathExist(exportFilePath))
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(exportFilePath));
+    deleteExistingFile (exportFilePath);
 
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), testFileName));
 
@@ -184,15 +195,6 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
 }
 
-void deleteExistingFile(BeFileName filePath)
-{
-    if (BeFileName::DoesPathExist(filePath.GetName()))
-    {
-        // Delete any previously exported file
-        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(filePath.GetName());
-        ASSERT_TRUE(BeFileNameStatus::Success == fileDeleteStatus);
-    }
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  12/14
 //+---------------+---------------+---------------+---------------+---------------+------
