@@ -691,14 +691,14 @@ QvElem* Find (QvUnsizedKeyP* foundKey, double size, QvUnsizedKeyCR unsizedKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void  _OnCleanup (DgnElementCP host, HeapZone& zone) override
+virtual void  _OnCleanup (DgnElementCP host) override
     {
 #if defined (NEEDS_WORK_DGNITEM)
     for (Entry* thisEntry=m_entry; thisEntry; thisEntry=thisEntry->m_next)
         thisEntry->m_key.m_unsizedKey.ReleaseHandlerKey();
 #endif
 
-    QvElemSet<QvSizedKey>::_OnCleanup(host, zone);
+    QvElemSet<QvSizedKey>::_OnCleanup(host);
     }
 
 }; // QvElemCacheSet
@@ -765,7 +765,7 @@ void StrokeElementForCache::_SaveQvElem (QvElemP qvElem, double pixelSize, doubl
         {
         HeapZone& zone = m_element.GetHeapZone();
         cacheSet = new ((QvElemCacheSet*) zone.Alloc (sizeof(QvElemCacheSet))) QvElemCacheSet(zone);
-        m_element.AddAppData(s_cacheSetKey, cacheSet, zone);
+        m_element.AddAppData(s_cacheSetKey, cacheSet);
         }
 
     cacheSet->Add(QvSizedKey(pixelSize, sizeDependentRatio, unsizedKey), qvElem);

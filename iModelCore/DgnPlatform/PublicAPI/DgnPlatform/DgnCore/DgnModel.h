@@ -43,45 +43,6 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
         }
     };
 
-//=======================================================================================
-//! Iterate over the elements of a DgnModel.
-//! @note It is <b>not legal to add or delete elements to a DgnModel while iterating it</b>.
-//! @see DgnModel
-//! @bsiclass                                                     KeithBentley    10/00
-//=======================================================================================
-struct DgnElementIterator : std::iterator<std::input_iterator_tag, DgnElementP const>
-{
-private:
-    DgnElementMap const*          m_map;
-    DgnElementMap::const_iterator m_it;
-public:
-
-    //! Construct a blank DgnElementIterator.
-    DgnElementIterator() {Invalidate();}
-    void Invalidate() {m_map = NULL;}
-    bool IsValid() const {return NULL != m_map && m_it != m_map->end();}
-
-    DgnElementCP GetCurrentDgnElement() const {return IsValid() ? m_it->second.get() : NULL;}
-
-    //! Change the current DgnElementP pointed to by this iterator to toElm.
-    DGNPLATFORM_EXPORT DgnElementCP SetCurrentDgnElement (DgnElementCP toElm);
-
-    //! Set the current position of this iterator to the first element in DgnModel
-    DGNPLATFORM_EXPORT DgnElementCP GetFirstDgnElement (DgnModelCR elmList, bool wantDeleted=false);
-
-    //! Set the current position of this iterator to the next element in the DgnModel. If the iterator is currently
-    //! at the end of the DgnModel, then CurrElm() will return NULL.
-    //! @param[in] wantDeleted if false, the iterator will skip deleted elements.
-    DGNPLATFORM_EXPORT DgnElementCP GetNextDgnElement (bool wantDeleted=false);
-
-public:
-    DGNPLATFORM_EXPORT DgnElementIterator& operator++();
-    DGNPLATFORM_EXPORT bool operator==(DgnElementIterator const& rhs) const;
-    bool operator!=(DgnElementIterator const& rhs) const {return !(*this == rhs);}
-
-    //! Access the element data
-    DgnElementCP operator*() const {return GetCurrentDgnElement();}
-};
 
 //========================================================================================
 //! Application-defined object that is stored with a DgnModel. This object is notified as significant events occur
@@ -245,10 +206,10 @@ protected:
     DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnUpdateElement(DgnElementCR element, DgnElementR replacement);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnInsertElement(DgnElementR element);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementR element);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
-    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementR element, bool cancel);
+    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementR element, DgnElementR original);
     DGNPLATFORM_EXPORT virtual void _OnModelFillComplete();
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
@@ -312,7 +273,7 @@ public:
     //! @return the number of elements in this model.
     //! @note The model must be filled before calling this method.
     //! @see FillSections
-    DGNPLATFORM_EXPORT uint32_t CountElements() const;
+    uint32_t CountElements() const {return (uint32_t) m_elements.size();}
     /** @} */
 
     /** @name Finding Elements */
@@ -375,12 +336,11 @@ public:
     DGNPLATFORM_EXPORT DgnModelAppData* FindAppData(DgnModelAppData::Key const& key) const;
     /** @} */
 
-    typedef DgnElementIterator const_iterator;
-    typedef const_iterator iterator;    //!< only const iteration is possible
-
+    typedef DgnElementMap::const_iterator const_iterator;
+    DgnElementMap const& GetElements() const {return m_elements;}
     bool IsEmpty() const {return (begin() != end());}
-    DGNPLATFORM_EXPORT const_iterator begin() const;
-    DGNPLATFORM_EXPORT const_iterator end() const;
+    const_iterator begin() const {return m_elements.begin();}
+    const_iterator end() const {return m_elements.end();}
 };
 
 //=======================================================================================

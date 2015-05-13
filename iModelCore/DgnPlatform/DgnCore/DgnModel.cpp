@@ -34,12 +34,12 @@ DbResult DgnModels::InsertModel(Model& row)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::DeleteModel(DgnModelId modelId)
+DgnModelStatus DgnModels::DeleteModel(DgnModelId modelId)
     {
     Statement stmt;
     stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, modelId);
-    return BE_SQLITE_DONE == stmt.Step() ? SUCCESS : ERROR;
+    return BE_SQLITE_DONE == stmt.Step() ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_InvalidModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,10 +47,10 @@ BentleyStatus DgnModels::DeleteModel(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryModelId(Utf8CP name) const
     {
-    CachedStatementPtr statementPtr;
-    GetDgnDb().GetCachedStatement(statementPtr, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Name=?");
-    statementPtr->BindText(1, name, Statement::MakeCopy::No);
-    return (BE_SQLITE_ROW != statementPtr->Step()) ? DgnModelId() : statementPtr->GetValueId<DgnModelId>(0);
+    CachedStatementPtr stmt;
+    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Name=?");
+    stmt->BindText(1, name, Statement::MakeCopy::No);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -58,10 +58,10 @@ DgnModelId DgnModels::QueryModelId(Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryModelId(DgnElementId elementId)
     {
-    CachedStatementPtr statementPtr;
-    GetDgnDb().GetCachedStatement(statementPtr, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    statementPtr->BindId(1, elementId);
-    return (BE_SQLITE_ROW != statementPtr->Step()) ? DgnModelId() : statementPtr->GetValueId<DgnModelId>(0);
+    CachedStatementPtr stmt;
+    GetDgnDb().GetCachedStatement(stmt, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindId(1, elementId);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,7 +74,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
-        return  ERROR;
+        return ERROR;
 
     if (out) // this can be null to just test for the existence of a model by id
         {
@@ -87,7 +87,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(5));
         }
 
-    return  SUCCESS;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -476,19 +476,6 @@ void DgnModel::_OnModelFillComplete()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnModel::CountElements() const
-    {
-    uint32_t count = 0;
-
-    for (const_iterator it=begin(); it!=end(); ++it)
-        ++count;
-
-    return  count;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ClearRangeIndex()
@@ -536,33 +523,20 @@ void DgnModel::_OnInsertedElement(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnDeleteElement(DgnElementR element)
+DgnModelStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
     return m_readonly ? DGNMODEL_STATUS_ReadOnly : DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* "canceled" means that we're abandoning a rolled-back transaction. In that case, remove it from the list even if the list is filled.
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnDeletedElement(DgnElementR element, bool canceled)
+void DgnModel::_OnDeletedElement(DgnElementCR element)
     {
-    // if this list is marked as "filled", then we keep the deleted elements in the list so they 
-    // will remain owned by the list if the delete is subsequently undone.
-    if (!canceled && m_wasFilled)
-        return;
+    if (m_wasFilled)
+        m_elements.erase(element.GetElementId());
 
-    DgnElementId  id = element.GetElementId();
-    if (!id.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_elements.erase(id);
-
-    // if this is a cancel, then the element was dropped from the range index when it was deleted.
-    if (canceled || nullptr==m_rangeIndex)
+    if (nullptr==m_rangeIndex)
         return;
 
     GeometricElementCP geom = element._ToGeometricElement();
@@ -594,9 +568,6 @@ DgnModelStatus DgnModel::_OnUpdateElement(DgnElementCR element, DgnElementR repl
         BeAssert(false);
         return DGNMODEL_STATUS_WrongModel;
         }
-
-    if (element.IsDeleted())
-        return DGNMODEL_STATUS_ReplacingDeleted;
 
     if (IsReadOnly())
         return DGNMODEL_STATUS_ReadOnly;
@@ -859,93 +830,6 @@ QvCache* DgnModels::GetQvCache(bool createIfNecessary)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnElementIterator::GetFirstDgnElement(DgnModelCR model, bool wantDeleted)
-    {
-    m_map = &model.m_elements;
-    m_it  = m_map->begin();
-
-    DgnElementCP currElement = GetCurrentDgnElement();
-
-    if (currElement && (!wantDeleted && currElement->IsDeleted()))
-        currElement = GetNextDgnElement(wantDeleted);
-
-    return  currElement;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnElementIterator::GetNextDgnElement(bool wantDeleted)
-    {
-    if (!IsValid())
-        return  nullptr;
-    
-    while (true)
-        {
-        ++m_it;
-
-        DgnElementCP currElement = GetCurrentDgnElement();
-
-        if (!wantDeleted && currElement && currElement->IsDeleted())
-            continue;
-
-        return  currElement;
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP DgnElementIterator::SetCurrentDgnElement(DgnElementCP toElm)
-    {
-    if (!IsValid())
-        return  nullptr;
-
-    m_it = m_map->find(toElm->GetElementId());
-    return GetCurrentDgnElement();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIterator& DgnElementIterator::operator++ ()
-    {
-    GetNextDgnElement();
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnElementIterator::operator== (DgnElementIterator const& rhs) const
-    {
-    // two invalid iterator are equal
-    return (!IsValid() && !rhs.IsValid()) || (m_map == rhs.m_map && m_it == rhs.m_it);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIterator DgnModel::begin() const
-    {
-    DgnElementIterator it;
-    it.GetFirstDgnElement(*this);
-    return it;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIterator DgnModel::end() const
-    {
-    return DgnElementIterator();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d DgnModel::_GetGlobalOrigin() const
@@ -993,7 +877,7 @@ DgnFileStatus DgnModel::FillModel()
         return  DGNFILE_STATUS_Success;
 
     Statement stmt;
-    enum Column : int            {Id=0,ClassId=1,CategoryId=2,Code=3,ParentId=4};
+    enum Column : int {Id=0,ClassId=1,CategoryId=2,Code=3,ParentId=4};
     stmt.Prepare(m_dgndb, "SELECT Id,ECClassId,CategoryId,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
@@ -1075,4 +959,3 @@ AxisAlignedBox3d DgnModel::_QueryModelRange() const
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
     }
-

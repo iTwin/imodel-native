@@ -81,24 +81,24 @@ struct ScanCriteria : DgnRangeTree::Traverser
         enum IteratorState {ITERATING_GraphicElms = 2, ITERATING_HitEOF = 3};
 
     private:
-        DgnElementIterator  m_iter;
+        DgnModel::const_iterator m_iter;
         DgnModelP           m_model;
         IteratorState       m_state;
 
     public:                                  // Make sure this is not constructible in the published API
-        ElemIterator () {m_model = NULL; m_state = ITERATING_GraphicElms;}
-        ElemIterator (DgnModel* pModel);    // iterate this model only
-        ElemIterator (ElemIterator *source);
+        ElemIterator() {m_model = NULL; m_state = ITERATING_GraphicElms;}
+        ElemIterator(DgnModel* pModel);    // iterate this model only
+        ElemIterator(ElemIterator *source);
 
     public:
-        DgnElementCP GetCurrentDgnElement() {return m_iter.GetCurrentDgnElement();}
+        DgnElementCP GetCurrentDgnElement() {return m_iter->second.get();}
         IteratorState GetState () {return m_state;}
         DgnModelP GetModel () {return m_model;}
 
         DgnElementCP GetFirstDgnElement (DgnModelP pModel, bool wantDeleted=false);
         DgnElementCP GetFirstDgnElement () { return GetFirstDgnElement (m_model, false); }
         DgnElementCP GetNextDgnElement (bool wantDeleted=false);
-        void SetModel (DgnModelP dgnModel) {m_model = dgnModel; m_iter.Invalidate();}
+        void SetModel (DgnModelP dgnModel) {m_model = dgnModel; m_iter = m_model->end();}
         bool SetCurrentElm (DgnElementCP toElm);
         void SetAtEOF ();
         bool HitEOF () const {return m_state == ITERATING_HitEOF;}

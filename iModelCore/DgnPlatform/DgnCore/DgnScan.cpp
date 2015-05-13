@@ -625,12 +625,6 @@ linearScan:
             goto Accept;
             }
 
-        /* if element is deleted, ignore it */
-        if (currElRef->IsDeleted())
-            {
-            goto Reject;
-            }
-
         if (ScanTestResult::Fail == CheckElement (*currElRef, true))
             goto Reject;
 
@@ -688,7 +682,7 @@ ScanCriteria::ElemIterator::ElemIterator (DgnModelP dgnModel)
     {
     m_model = dgnModel;
     m_state = ITERATING_GraphicElms;
-    m_iter.Invalidate();
+    m_iter = m_model->end();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -707,10 +701,10 @@ DgnElementCP ScanCriteria::ElemIterator::GetFirstDgnElement (DgnModelP dgnModel,
     {
     m_model = dgnModel;
 
-    DgnElementCP  thisElm;
     m_state = ITERATING_GraphicElms;
-    if (NULL != (thisElm = m_iter.GetFirstDgnElement (*m_model, wantDeleted)))
-        return thisElm;
+    m_iter = m_model->begin();
+    if (m_iter != m_model->end())
+        return m_iter->second.get();
 
     m_state = ITERATING_HitEOF;
     return NULL;
@@ -721,13 +715,11 @@ DgnElementCP ScanCriteria::ElemIterator::GetFirstDgnElement (DgnModelP dgnModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCP ScanCriteria::ElemIterator::GetNextDgnElement (bool wantDeleted)
     {
-    DgnElementCP el;
-
     if (HitEOF ())          // this happens if caller keeps calling iterator after EOF has been reached
         return NULL;
 
-    if (NULL != (el = m_iter.GetNextDgnElement (wantDeleted)))
-        return  el;
+    if (m_model->end() != ++m_iter)
+        return m_iter->second.get();
 
     m_state = ITERATING_HitEOF;
     return  NULL;
@@ -754,19 +746,8 @@ bool ScanCriteria::ElemIterator::SetCurrentElm(DgnElementCP toElm)
     if (NULL == toList)
         return  false;
 
-    // quick case where list doesn't change
-    DgnElementCP curr=m_iter.GetCurrentDgnElement();
-    if ((NULL != curr) && (m_state != ITERATING_HitEOF) && (toList == getMyModel(curr)))
-        {
-        m_iter.SetCurrentDgnElement(toElm);
-        return  true;
-        }
-
-    m_state = ITERATING_GraphicElms;
-    m_model = toList;
-
-    m_iter.SetCurrentDgnElement (toElm);
-    return  true;
+    m_iter = toList->GetElements().find(toElm->GetElementId());
+    return m_iter != toList->end();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -774,7 +755,7 @@ bool ScanCriteria::ElemIterator::SetCurrentElm(DgnElementCP toElm)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScanCriteria::ElemIterator::SetAtEOF ()
     {
-    m_iter.Invalidate();
+    m_iter = m_model->end();
     m_state = ITERATING_HitEOF;
     }
 
@@ -792,7 +773,7 @@ ScanCriteria::ElemIterator& ScanCriteria::ElemIterator::operator++ ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCP ScanCriteria::ElemIterator::operator* () const
     {
-    return *m_iter;
+    return m_iter->second.get();
     }
 
 /*---------------------------------------------------------------------------------**//**

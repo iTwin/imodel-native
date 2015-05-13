@@ -57,10 +57,10 @@ void FreeAll (bool qvCacheDeleted)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _OnCleanup (DgnElementCP host, HeapZone& zone) override
+virtual void _OnCleanup (DgnElementCP host) override
     {
     FreeAll (false);
-    zone.Free (this, sizeof *this);
+    host->GetHeapZone().Free (this, sizeof *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
