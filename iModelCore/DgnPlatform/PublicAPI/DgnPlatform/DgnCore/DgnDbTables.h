@@ -952,6 +952,12 @@ public:
     //! @return Invalid if the element does not exist.
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
 
+    //! Gets the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId. 
+    //! @remarks This simply does a fast look up of the DgnClassId for the given DgnElementId. It
+    //! does not load the element into memory.
+    //! @return Invalid key if the element does not exist.
+    DGNPLATFORM_EXPORT DgnElementKey GetElementKey(DgnElementId id) const;
+
     //! Get a DgnElement by its DgnElementId, and dynamic_cast the result to a specific subclass of DgnElement.
     //! This tempated method is merely a shortcut to calling GetElement and dynamic_cast'ing the result to the class of the 
     //! specified template argument. 
