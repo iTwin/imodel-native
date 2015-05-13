@@ -1152,6 +1152,31 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
                     stmt->GetValueId<DgnElementId>(Column::ParentId)));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+DgnElementKey DgnElements::GetElementKey(DgnElementId elementId) const
+    {
+    if (!elementId.IsValid())
+        return DgnElementKey();
+
+    CachedECSqlStatementPtr stmt = m_dgndb.GetPreparedECSqlStatement("SELECT GetECClassId() FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return DgnElementKey();
+        }
+
+    stmt->BindId(1, elementId);
+    if (ECSqlStepStatus::HasRow == stmt->Step())
+        {
+        BeAssert(!stmt->IsValueNull(0));
+        return DgnElementKey(stmt->GetValueId<DgnClassId>(0), elementId);
+        }
+
+    return DgnElementKey();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
