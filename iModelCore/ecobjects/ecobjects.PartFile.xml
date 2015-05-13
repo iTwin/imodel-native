@@ -52,7 +52,10 @@
 
     <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
         <Bindings>
-            <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*</Files>
+            <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*xml</Files>
+            <Files SubPartDirectory="SeedData/ur-PK" ProductDirectoryName="ECObjectsTestSeedDataPK">Delivery/SeedData/ur-PK/*xml</Files>
+            <Files SubPartDirectory="SeedData/en-GB" ProductDirectoryName="ECObjectsTestSeedDataGB">Delivery/SeedData/en-GB/*xml</Files>
+            <Files SubPartDirectory="SeedData/it" ProductDirectoryName="ECObjectsTestSeedDataIT">Delivery/SeedData/it/*xml</Files>
         </Bindings>
     </Part>
 
@@ -186,6 +189,9 @@
         <ProductDirectory Name="libs"       LibType="Static"        Deliver="false"/>
 
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="SeedData/ur-PK"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="SeedData/en-GB"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="SeedData/it"/>
         <ProductDirectory Name="ECObjectsTestLoggingConfig"         Path=""/>
 
         <ProductDirectory Name="geomnativeassemblies"               Path=""/>

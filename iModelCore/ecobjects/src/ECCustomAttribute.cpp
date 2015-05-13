@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECCustomAttribute.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -195,6 +195,37 @@ bool      includeSupplementalAttributes
             return result;
         }
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Colin.Kerr                      05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsConsolidated(WStringCR className)
+    {
+    for(auto const& caIter : m_consolidatedCustomAttributes)
+        {
+        ECClassCR caClass = caIter->GetClass();
+        if (0 == className.compare(caClass.GetName()))
+            return caIter;
+        }
+    
+    IECInstancePtr customAttribute;
+    for(auto const& caIter : m_primaryCustomAttributes)
+        {
+        ECClassCR caClass = caIter->GetClass();
+        if(0 == className.compare(caClass.GetName()))
+            {
+            customAttribute = caIter;
+            break;
+            }
+        }
+
+    if (!customAttribute.IsValid())
+        return customAttribute;
+
+    IECInstancePtr caCopy = customAttribute->CreateCopyThroughSerialization();
+    SetConsolidatedCustomAttribute(*caCopy);
+    return caCopy;
     }
 
 /*---------------------------------------------------------------------------------**//**

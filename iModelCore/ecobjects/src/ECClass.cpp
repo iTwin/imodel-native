@@ -96,7 +96,15 @@ ECObjectsStatus ECClass::SetName (WStringCR name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECClass::GetDescription () const
     {
-    return m_description;        
+    return GetSchema().GetLocalizedStrings().GetClassDescription(this, m_description);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ECClass::GetInvariantDescription () const
+    {
+    return m_description;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,6 +120,14 @@ ECObjectsStatus ECClass::SetDescription (WStringCR description)
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECClass::GetDisplayLabel () const
+    {
+    return GetSchema().GetLocalizedStrings().GetClassDisplayLabel(this, GetInvariantDisplayLabel());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ECClass::GetInvariantDisplayLabel() const
     {
     return m_validatedName.GetDisplayLabel();
     }
@@ -527,9 +543,9 @@ bool copyCustomAttributes
         destProperty = destStruct;
         }
 
-    destProperty->SetDescription(sourceProperty->GetDescription());
+    destProperty->SetDescription(sourceProperty->GetInvariantDescription());
     if (sourceProperty->GetIsDisplayLabelDefined())
-        destProperty->SetDisplayLabel(sourceProperty->GetDisplayLabel());
+        destProperty->SetDisplayLabel(sourceProperty->GetInvariantDisplayLabel());
     destProperty->SetName(sourceProperty->GetName());
     destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
     if (copyCustomAttributes)
@@ -1291,9 +1307,9 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNodeR parentNo
     classNode = parentNode.AddEmptyElement (elementName);
     
     classNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetName().c_str());
-    classNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetDescription().c_str());
+    classNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        classNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetDisplayLabel().c_str());
+        classNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
     classNode->AddAttributeBooleanValue (IS_STRUCT_ATTRIBUTE, this->GetIsStruct());
     classNode->AddAttributeBooleanValue (IS_DOMAINCLASS_ATTRIBUTE, this->GetIsDomainClass());
@@ -1946,12 +1962,23 @@ bool ECRelationshipConstraint::IsRoleLabelDefined () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString const ECRelationshipConstraint::GetRoleLabel () const
     {
+    if(&(m_relClass->GetTarget()) == this)
+        return m_relClass->GetSchema().GetLocalizedStrings().GetRelationshipTargetRoleLabel(m_relClass, GetInvariantRoleLabel());
+    else
+        return m_relClass->GetSchema().GetLocalizedStrings().GetRelationshipSourceRoleLabel(m_relClass, GetInvariantRoleLabel());
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+WString const ECRelationshipConstraint::GetInvariantRoleLabel () const
+    {
     if (m_roleLabel.length() != 0)
         return m_roleLabel;
         
     if (&(m_relClass->GetTarget()) == this)
-        return m_relClass->GetDisplayLabel() + L" (Reversed)";
-    return m_relClass->GetDisplayLabel();
+        return m_relClass->GetInvariantDisplayLabel() + L" (Reversed)";
+    return m_relClass->GetInvariantDisplayLabel();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1972,7 +1999,7 @@ ECRelationshipConstraintR toRelationshipConstraint
 )
     {
     if (IsRoleLabelDefined())
-        toRelationshipConstraint.SetRoleLabel(GetRoleLabel());
+        toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel());
 
     toRelationshipConstraint.SetCardinality(GetCardinality());
     toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
