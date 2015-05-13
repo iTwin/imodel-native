@@ -108,7 +108,7 @@ DgnClassId DgnElement::GetItemClassId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnElement::_AddRef() const
+uint32_t DgnElement::AddRef() const
     {
     if (0 == m_refCount && IsInPool())
         GetDgnDb().Elements().OnReclaimed(*this);
@@ -119,7 +119,7 @@ uint32_t DgnElement::_AddRef() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnElement::_Release() const
+uint32_t DgnElement::Release() const
     {
     if (1 < m_refCount--)
         return m_refCount.load();

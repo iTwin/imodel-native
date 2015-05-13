@@ -126,10 +126,6 @@ public:
     void SetParentId(DgnElementId parent) {m_parentId=parent;}
     };
 
-private:
-    DGNPLATFORM_EXPORT virtual uint32_t _AddRef() const;
-    DGNPLATFORM_EXPORT virtual uint32_t _Release() const;
-
 protected:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -315,11 +311,11 @@ public:
 
     //! Increment the reference count of this DgnElement
     //! @note This call should always be paired with a corresponding subsequent call to #Release when the element is no longer referenced.
-    uint32_t AddRef() const {return _AddRef();}
+    DGNPLATFORM_EXPORT uint32_t AddRef() const;
 
     //! Decrement the reference count of this DgnElement. When the reference count goes to zero, the element becomes "garbage" and may be reclaimed later.
     //! @note This call must always follow a previous call to #AddRef.
-    uint32_t Release() const {return _Release();}
+    DGNPLATFORM_EXPORT uint32_t Release() const;
 
     /// @name Element Properties
     //@{
