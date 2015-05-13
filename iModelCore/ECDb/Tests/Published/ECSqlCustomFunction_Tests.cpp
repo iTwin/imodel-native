@@ -65,56 +65,52 @@ struct IntegerToBlobSqlFunction : ScalarFunction
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-// struct SumOfSquares : AggregateFunction, AggregateFunction::IAggregate
-//     {
-//     private:
+ struct SumOfSquares : AggregateFunction
+     {
+     private:
 
-//         double runningSum = 0;
-//         int valueToSet = 0;
-//         virtual void _StepAggregate (AggregateFunction::Context* ctx, int nArgs, DbValue* args) override
-//             {
-//             if (nArgs != 1)
-//                 {
-//                 valueToSet = 2;
-//                 return;
-//                 }
-//             if (args[0].IsNull ())
-//                 {
-//                 valueToSet = 2;
-//                 return;
-//                 }
+         double runningSum = 0;
+         int valueToSet = 0;
+         virtual void _StepAggregate (AggregateFunction::Context& ctx, int nArgs, DbValue* args) override
+             {
+             if (nArgs != 1)
+                 {
+                 valueToSet = 2;
+                 return;
+                 }
+             if (args[0].IsNull ())
+                 {
+                 valueToSet = 2;
+                 return;
+                 }
 
-//             double currentVal = std::pow (args[0].GetValueDouble (), 2);
-//             runningSum += currentVal;
-//             valueToSet = 1;
-//             }
+             double currentVal = std::pow (args[0].GetValueDouble (), 2);
+             runningSum += currentVal;
+             valueToSet = 1;
+             }
 
-//         virtual void _FinishAggregate (AggregateFunction::Context* ctx) override
-//             {
-//             switch (valueToSet)
-//                 {
-//                     case 1:
-//                         {
-//                         ctx->SetResultDouble (runningSum);
-//                         break;
-//                         }
-//                     case 2:
-//                         {
-//                         ctx->SetResultError ("SOS Function Expects one non NULL Parameter", -1);
-//                         break;
-//                         }/*
-//                     case 3:
-//                         {
-//                         ctx->SetResultDouble (0);
-//                         }*/
-//                     default:
-//                         break;
-//                 }
-//             }
+         virtual void _FinishAggregate (AggregateFunction::Context& ctx) override
+             {
+             switch (valueToSet)
+                 {
+                     case 1:
+                         {
+                         ctx.SetResultDouble (runningSum);
+                         break;
+                         }
+                     case 2:
+                         {
+                         ctx.SetResultError ("SOS Function Expects one non NULL Parameter", -1);
+                         break;
+                         }
+                     default:
+                         break;
+                 }
+             }
 
-//     public:
-//         SumOfSquares () : AggregateFunction ("SOS", 1, DbValueType::FloatVal, this) {}
-//     };
+     public:
+         SumOfSquares () : AggregateFunction ("SOS", 1, DbValueType::FloatVal) {}
+     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
@@ -307,48 +303,47 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-// 'struct BentleyG06::BeSQLite::EC::ECDb' has no member named 'AddAggregateFunction'
-// TEST_F (ECSqlTestFixture, ECSqlStatement_AggregateFunction)
-//     {
-//     SumOfSquares func;
-//     ECSqlStatement stmt;
-//     const int perClassRowCount = 3;
-//     auto& ecdb = SetUp ("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+ TEST_F (ECSqlTestFixture, ECSqlStatement_AggregateFunction)
+     {
+     SumOfSquares func;
+     ECSqlStatement stmt;
+     const int perClassRowCount = 3;
+     auto& ecdb = SetUp ("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
 
-//     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to fail with unregistered ECSql function";
-//     stmt.Finalize ();
+     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to fail with unregistered ECSql function";
+     stmt.Finalize ();
 
-//     ASSERT_EQ (0, ecdb.AddAggregateFunction (func));
+     ASSERT_EQ (0, ecdb.AddFunction (func));
 
-//     ASSERT_EQ ((int)ECSqlStatus::Success, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to succeed after adding custom ECSql function to Db";
-//     ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
-//     double actualSumOfSquares = stmt.GetValueDouble (0);
-//     stmt.Finalize ();
+     ASSERT_EQ ((int)ECSqlStatus::Success, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to succeed after adding custom ECSql function to Db";
+     ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
+     double actualSumOfSquares = stmt.GetValueDouble (0);
+     stmt.Finalize ();
 
-//     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT D FROM ecsql.P"));
-//     double expectedSumOfSquares = 0;
+     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT D FROM ecsql.P"));
+     double expectedSumOfSquares = 0;
 
-//     while (stmt.Step () != ECSqlStepStatus::Done)
-//         {
-//         expectedSumOfSquares += std::pow (stmt.GetValueDouble (0), 2);
-//         }
-//     //Verify that the value returned by the Custom ECSql function is the same is expected.
-//     ASSERT_EQ (expectedSumOfSquares, actualSumOfSquares);
-//     stmt.Finalize ();
+     while (stmt.Step () != ECSqlStepStatus::Done)
+         {
+         expectedSumOfSquares += std::pow (stmt.GetValueDouble (0), 2);
+         }
+     //Verify that the value returned by the Custom ECSql function is the same is expected.
+     ASSERT_EQ (expectedSumOfSquares, actualSumOfSquares);
+     stmt.Finalize ();
 
-//     ASSERT_EQ (0, ecdb.RemoveFunction (func));
-//     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P ")) << "ECSql Preparation expected to fail when custom ECSql function is removed from Db";
-//     stmt.Finalize ();
+     ASSERT_EQ (0, ecdb.RemoveFunction (func));
+     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P ")) << "ECSql Preparation expected to fail when custom ECSql function is removed from Db";
+     stmt.Finalize ();
 
-//     //Adding Custom ECSql function to the Db is expected to Succeed once it was removed 
-//     ASSERT_EQ (0, ecdb.AddAggregateFunction (func));
+     //Adding Custom ECSql function to the Db is expected to Succeed once it was removed 
+     ASSERT_EQ (0, ecdb.AddFunction (func));
 
-//     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS() FROM ecsql.P")) << "ECSql Prepration is expected to fail when no argument is passed to SOS";
-//     stmt.Finalize ();
+     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS() FROM ecsql.P")) << "ECSql Prepration is expected to fail when no argument is passed to SOS";
+     stmt.Finalize ();
 
-//     ASSERT_EQ ((int)ECSqlStatus::Success, (int)stmt.Prepare (ecdb, "SELECT SOS(NUll) FROM ecsql.P")) << "ECSql Prepration is expected to succeed when NULL is passed to SOS";
-//     ASSERT_TRUE (stmt.Step() == ECSqlStepStatus::Error)<< "Step is expected to fail if function is called with NULL argument";
-//     }
+     ASSERT_EQ ((int)ECSqlStatus::Success, (int)stmt.Prepare (ecdb, "SELECT SOS(NUll) FROM ecsql.P")) << "ECSql Prepration is expected to succeed when NULL is passed to SOS";
+     ASSERT_TRUE (stmt.Step() == ECSqlStepStatus::Error)<< "Step is expected to fail if function is called with NULL argument";
+     }
 
 /*
 //---------------------------------------------------------------------------------------

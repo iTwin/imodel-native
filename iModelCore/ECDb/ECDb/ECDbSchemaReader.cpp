@@ -294,7 +294,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaClassesFromDb (DbECSchemaEntryP
 
     DbECClassInfo info;
     info.ColsWhere = DbECClassInfo::COL_ECSchemaId;
-    info.ColsSelect = DbECClassInfo::COL_ECClassId;
+    info.ColsSelect = DbECClassInfo::COL_Id;
     info.m_ecSchemaId = ecSchemaKey->m_ecSchemaId;
     BeSQLite::CachedStatementPtr stmt = nullptr;
     r = ECDbSchemaPersistence::FindECClassInfo (stmt, m_db, info);
@@ -323,7 +323,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaClassesFromDb (DbECSchemaEntryP
 BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut, ECSchemaId ecSchemaId)
     {
     DbECSchemaInfo info;
-    info.ColsWhere = DbECSchemaInfo::COL_ECSchemaId;
+    info.ColsWhere = DbECSchemaInfo::COL_Id;
     info.ColsSelect =
         DbECSchemaInfo::COL_Name            |
         DbECSchemaInfo::COL_DisplayLabel    |
@@ -364,7 +364,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut
 BeSQLite::DbResult ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassId ecClassId, ECSchemaR ecSchemaIn)
     {
     DbECClassInfo info;
-    info.ColsWhere = DbECClassInfo::COL_ECClassId;
+    info.ColsWhere = DbECClassInfo::COL_Id;
     info.ColsSelect =
         DbECClassInfo::COL_Name                      |
         DbECClassInfo::COL_DisplayLabel              |
@@ -443,18 +443,17 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, E
     DbECPropertyInfo info;
     info.ColsWhere = DbECPropertyInfo::COL_ECClassId;
     info.ColsSelect =
-        DbECPropertyInfo::COL_Name            |
-        DbECPropertyInfo::COL_ECPropertyId    |
-        DbECPropertyInfo::COL_DisplayLabel    |
-        DbECPropertyInfo::COL_Description     |
-        DbECPropertyInfo::COL_IsArray         |
+        DbECPropertyInfo::COL_Name |
+        DbECPropertyInfo::COL_Id |
+        DbECPropertyInfo::COL_DisplayLabel |
+        DbECPropertyInfo::COL_Description |
+        DbECPropertyInfo::COL_IsArray |
         DbECPropertyInfo::COL_TypeECPrimitive |
-        DbECPropertyInfo::COL_TypeECStruct    |
-        DbECPropertyInfo::COL_TypeCustom      |
-        DbECPropertyInfo::COL_IsReadOnly      |
-        DbECPropertyInfo::COL_MinOccurs       |
-        DbECPropertyInfo::COL_MaxOccurs       |
-        DbECPropertyInfo::COL_TypeGeometry;
+        DbECPropertyInfo::COL_TypeECStruct |
+        DbECPropertyInfo::COL_TypeCustom |
+        DbECPropertyInfo::COL_IsReadOnly |
+        DbECPropertyInfo::COL_MinOccurs |
+        DbECPropertyInfo::COL_MaxOccurs;
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
     info.m_ecClassId = ecClassId;
@@ -698,7 +697,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECRelationConstraintClassesFromDb(ECRel
         if (ecRelationShipconstraintClass != nullptr)
             {
             CachedStatementPtr statement;
-            Utf8CP sql = "SELECT  P.NAME FROM ec_RelationshipConstraintClassProperty I INNER JOIN ec_Property P on p.[ECPropertyId] = i.RelationECPropertyId WHERE I.ECClassId = ? AND I.ECRelationshipEnd = ? AND I.RelationECClassId = ? ";
+            Utf8CP sql = "SELECT P.NAME FROM ec_RelationshipConstraintClassProperty I INNER JOIN ec_Property P on P.Id = I.RelationECPropertyId WHERE I.ECClassId = ? AND I.ECRelationshipEnd = ? AND I.RelationECClassId = ? ";
             m_db.GetCachedStatement(statement, sql);
             statement->BindInt64(1, ecClassId);
             statement->BindInt(2, relationshipEnd);
@@ -741,7 +740,7 @@ ECClassP ECDbSchemaReader::GetECClass(ECClassId ecClassId)
 ECClassP ECDbSchemaReader::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className)
     {
     BeSQLite::CachedStatementPtr stmt;
-    m_db.GetCachedStatement(stmt, "SELECT ECClassId FROM ec_Class JOIN ec_Schema WHERE ec_Class.ECSchemaId = ec_Schema.ECSchemaId AND (ec_Schema.Name = ?1 OR ec_Schema.NamespacePrefix = ?1) AND ec_Class.Name = ?2");
+    m_db.GetCachedStatement(stmt, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.ECSchemaId = s.Id AND (s.Name = ?1 OR s.NamespacePrefix = ?1) AND c.Name = ?2");
     stmt->BindText (1, schemaNameOrPrefix, Statement::MakeCopy::No);
     stmt->BindText (2, className, Statement::MakeCopy::No);
     DbResult r = stmt->Step();

@@ -853,11 +853,11 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap (NativeSqlBuilder& v
         switch (systemView)
             {
                 case SystemViewType::Class: //ECClass and ECStructs (all primary instances)
-                    classSql = "SELECT C.ECClassId FROM ec_Class C JOIN ec_ClassMap E USING (ECClassId) WHERE (E.MapStrategy  <> 3 AND E.MapStrategy  <> 8) AND C.IsRelationship <> 1"; break;
+                    classSql = "SELECT c.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ECClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsRelationship <> 1"; break;
                 case SystemViewType::RelationshipClass: //RelationshipOnly
-                    classSql = "SELECT C.ECClassId FROM ec_Class C JOIN ec_ClassMap E USING (ECClassId) WHERE (E.MapStrategy  <> 3 AND E.MapStrategy  <> 8) AND C.IsRelationship = 1"; break;
+                    classSql = "SELECT C.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ECClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsRelationship = 1"; break;
                 case SystemViewType::StructArray: //Structs only (all struct array instances)
-                    classSql = "SELECT C.ECClassId FROM ec_Class C JOIN ec_ClassMap E USING (ECClassId) WHERE (E.MapStrategy  <> 3 AND E.MapStrategy  <> 8) AND C.IsStruct = 1"; break;
+                    classSql = "SELECT C.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ECClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsStruct = 1"; break;
             }
 
         BeAssert (classSql != nullptr);

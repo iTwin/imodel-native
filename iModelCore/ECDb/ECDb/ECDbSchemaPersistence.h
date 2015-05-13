@@ -187,7 +187,7 @@ struct DbECSchemaInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_ECSchemaId      = 0x001,
+        COL_Id              = 0x001,
         COL_Name            = 0x002,
         COL_Description     = 0x004,
         COL_NamespacePrefix = 0x008,
@@ -213,7 +213,7 @@ struct DbECClassInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_ECClassId                 = 0x000001,
+        COL_Id                        = 0x000001,
         COL_Name                      = 0x000002,
         COL_Description               = 0x000004,
         COL_IsDomainClass             = 0x000008,
@@ -265,20 +265,19 @@ struct DbECPropertyInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_ECClassId            = 0x0001,
-        COL_ECPropertyId         = 0x0002,
+        COL_Id                   = 0x0001,
+        COL_ECClassId            = 0x0002,
         COL_Name                 = 0x0004,
         COL_DisplayLabel         = 0x0008,
         COL_Description          = 0x0010,
         COL_IsArray              = 0x0020,
         COL_TypeCustom           = 0x0040,
         COL_TypeECPrimitive      = 0x0080,
-        COL_TypeGeometry         = 0x0100,
-        COL_TypeECStruct         = 0x0200,
-        COL_ECIndex              = 0x1000,
-        COL_IsReadOnly           = 0x2000,
-        COL_MaxOccurs            = 0x4000,
-        COL_MinOccurs            = 0x8000,
+        COL_TypeECStruct         = 0x0100,
+        COL_ECIndex              = 0x0200,
+        COL_IsReadOnly           = 0x1000,
+        COL_MaxOccurs            = 0x2000,
+        COL_MinOccurs            = 0x4000,
 
         COL_ALL                  = 0xffffffff
         };
@@ -290,7 +289,6 @@ public:
     Utf8String    m_description; 
     bool          m_isArray;
     PrimitiveType m_typeECPrimitive;
-    Utf8String    m_typeGeometry;
     Utf8String    m_typeCustom;
     ECClassId     m_typeECStruct;
     uint32_t       m_minOccurs;

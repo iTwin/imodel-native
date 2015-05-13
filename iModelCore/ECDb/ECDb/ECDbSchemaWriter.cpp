@@ -69,7 +69,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECSchemaEntry (ECSchemaCR ecSchema, E
     DbECSchemaInfo info;
 
     info.ColsInsert =
-        DbECSchemaInfo::COL_ECSchemaId |
+        DbECSchemaInfo::COL_Id |
         DbECSchemaInfo::COL_Name |
         DbECSchemaInfo::COL_VersionMajor |
         DbECSchemaInfo::COL_VersionMinor |
@@ -102,7 +102,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECClassEntry (ECClassCR ecClass, ECCl
     DbECClassInfo info;
 
     info.ColsInsert =
-        DbECClassInfo::COL_ECClassId         |
+        DbECClassInfo::COL_Id                |
         DbECClassInfo::COL_ECSchemaId        |
         DbECClassInfo::COL_Name              |
         DbECClassInfo::COL_Description       |
@@ -169,8 +169,8 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECPropertyEntry (ECPropertyCR ecPrope
     {
     DbECPropertyInfo info;
     info.ColsInsert =
+        DbECPropertyInfo::COL_Id           |
         DbECPropertyInfo::COL_ECClassId    |
-        DbECPropertyInfo::COL_ECPropertyId |
         DbECPropertyInfo::COL_IsArray      |
         DbECPropertyInfo::COL_Description  |
         DbECPropertyInfo::COL_ECIndex      |
@@ -685,7 +685,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateECProperty (ECN::ECPropertyCR ecPrope
 
     //Following are changes that we do support in a property
     DbECPropertyInfo info;
-    info.ColsWhere = DbECPropertyInfo::COL_ECPropertyId;
+    info.ColsWhere = DbECPropertyInfo::COL_Id;
     info.m_ecPropertyId = ecProperty.GetId();
  
     if (auto n = propertyDN.GetChildById(DiffNodeId::DisplayLabel))
@@ -852,7 +852,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateECClass (ECN::ECClassCR ecClass, ECN:
 
     //Following are changes that we do support in a class
     DbECClassInfo info;
-    info.ColsWhere = DbECClassInfo::COL_ECClassId;
+    info.ColsWhere = DbECClassInfo::COL_Id;
     info.m_ecClassId = ecClass.GetId();
     if (auto n = classDN.GetChildById(DiffNodeId::DisplayLabel))
         {
@@ -1037,7 +1037,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateECRelationshipClass (ECN::ECRelations
         }
 
     DbECClassInfo info;
-    info.ColsWhere = DbECClassInfo::COL_ECClassId;
+    info.ColsWhere = DbECClassInfo::COL_Id;
     info.m_ecClassId = updateRelationshipClass.GetId();
     if (auto n = relationshipInfo.GetChildById(DiffNodeId::Strength))
         {
@@ -1264,7 +1264,7 @@ BeSQLite::DbResult ECDbSchemaWriter::Update (ECDiffR diff, ECDbSchemaReaderR sch
 
     //Following are changes that we do support in a class
     DbECSchemaInfo info;
-    info.ColsWhere = DbECSchemaInfo::COL_ECSchemaId;
+    info.ColsWhere = DbECSchemaInfo::COL_Id;
     info.m_ecSchemaId = updatedSchema.GetId();
     if (auto n = diffTree->GetChildById(DiffNodeId::DisplayLabel))
         {

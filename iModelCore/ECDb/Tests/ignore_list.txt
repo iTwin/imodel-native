@@ -13,8 +13,6 @@ ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-# TFS Item 211624
-ECInstanceInserterTests.CloseDbAfterInstanceInsertionUsingStandaloneEnabler
 # TFS Defect 140982
 ECDbRelationships.RelationshipProperties 
 ECDbRelationships.JoinTests
@@ -39,7 +37,6 @@ ECDbHintTests.RelationshipTest_AllowDuplicateRelationships
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
 ECDbSchemaManager.ImportSchemaWithSubclassesToBaseClassInExistingSchema
 
-ECDbFileInfo.ECFEmbeddedFileBackedInstanceSupport
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties

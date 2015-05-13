@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbClassDependencyAnalyzer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 void ECDbClassDependencyAnalyzer::DebugPrint(ECClassId classId)
     {
     //BeSQLite::CachedStatementPtr stmt;
-    //m_db.GetCachedStatement (stmt, "SELECT S.Name, C.Name FROM ec_Class C INNER JOIN ec_Schema S ON S.ECSchemaId = C.ECSchemaId WHERE C.ECClassId = ?");
+    //m_db.GetCachedStatement (stmt, "SELECT S.Name, C.Name FROM ec_Class C INNER JOIN ec_Schema S ON S.Id = C.ECSchemaId WHERE C.Id = ?");
     //stmt->BindInt64 (1, classId);
     //if (stmt->Step() == BE_SQLITE_ROW)
     //    {
@@ -34,7 +34,7 @@ BeSQLite::DbResult ECDbClassDependencyAnalyzer::ComputeClassDependency (std::vec
 
     DbResult r;
     BeSQLite::CachedStatementPtr stmt;
-    m_db.GetCachedStatement (stmt, "SELECT ECSchemaId, IsRelationship FROM ec_Class WHERE ECClassId = ?");
+    m_db.GetCachedStatement (stmt, "SELECT ECSchemaId, IsRelationship FROM ec_Class WHERE Id = ?");
     stmt->BindInt64 (1, ecClassId);
     if ((r = stmt->Step()) != BE_SQLITE_ROW)
         return r;
@@ -124,7 +124,7 @@ BeSQLite::DbResult ECDbClassDependencyAnalyzer::ComputePropertyTypeDependency (s
     {
     DbResult r;
     BeSQLite::CachedStatementPtr stmt;
-    m_db.GetCachedStatement (stmt, "SELECT ECPropertyId, TypeECStruct FROM ec_Property WHERE (ECClassId = ?)");
+    m_db.GetCachedStatement (stmt, "SELECT Id, TypeECStruct FROM ec_Property WHERE ECClassId = ?");
     stmt->BindInt64 (1, ecClassId);
 
     std::vector<ECClassId> classesToLoad;
