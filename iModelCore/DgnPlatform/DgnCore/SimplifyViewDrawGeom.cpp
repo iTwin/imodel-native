@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnCore/DgnRscFontStructures.h>
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  12/07

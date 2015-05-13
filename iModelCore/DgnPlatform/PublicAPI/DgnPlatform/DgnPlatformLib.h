@@ -19,6 +19,7 @@
 #include <BeSQLite/L10N.h>
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;
+typedef struct FT_LibraryRec_* FT_Library; // Shield users from freetype.h because they have a bad include scheme.
 
 #define T_HOST DgnPlatformLib::GetHost()
 
@@ -167,26 +168,45 @@ public:
 
         //! Allows hosts to provide required information for DgnFontManager, and gives them callback entry points for its events.
         struct FontAdmin : IHostObject
-            {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+        {
+        protected:
+            bool m_isInitialized;
+            BeSQLiteDbP m_lastResortFontDb;
+            DgnFonts* m_dbFonts;
+            DgnFontPtr m_lastResortTTFont;
+            DgnFontPtr m_lastResortRscFont;
+            DgnFontPtr m_lastResortShxFont;
+            bool m_triedToLoadFTLibrary;
+            FT_Library m_ftLibrary;
+        
+            DGNPLATFORM_EXPORT virtual BeFileName _GetLastResortFontDbPath();
+            DGNPLATFORM_EXPORT virtual BentleyStatus _EnsureLastResortFontDb();
+            DGNPLATFORM_EXPORT virtual DgnFontPtr _CreateLastResortFont(DgnFontType);
+        
+        public:
+            DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
+            FontAdmin() : m_isInitialized(false), m_lastResortFontDb(nullptr), m_dbFonts(nullptr), m_triedToLoadFTLibrary(false), m_ftLibrary(nullptr) {}
+            DGNPLATFORM_EXPORT virtual ~FontAdmin();
+            virtual int _GetVersion() const { return 1; } // Do not override!
+            virtual void _OnHostTermination(bool isProcessShutdown) override { delete this; }
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
-
-            DGNPLATFORM_EXPORT virtual BeFileName _GetFontPath();
-            virtual BeFileName _GetFontConfigurationFilePath () {return _GetFontPath().AppendToPath(L"MstnFontConfig.xml");}
-            virtual BeFileName _GetRscFontPaths () {return _GetFontPath();}
-            virtual BeFileName _GetShxFontPaths () {return _GetFontPath();}
-            virtual BeFileName _GetTrueTypeFontPaths () {return _GetFontPath();}
-            virtual BeFileName _GetLastResortRscFontFilePath() { return _GetFontPath().AppendToPath(L"LastResortFonts").AppendToPath(L"LastResortRscFont.rsc"); }
-            virtual BeFileName _GetLastResortShxFontFilePath() { return _GetFontPath().AppendToPath(L"LastResortFonts").AppendToPath(L"LastResortShxFont.shx"); }
-            virtual BeFileName _GetLastResortTrueTypeFontFilePath() { return _GetFontPath().AppendToPath(L"LastResortFonts").AppendToPath(L"LastResortTTFont.ttf"); }
-
-            virtual void _OnNoFontConfiguration (WCharCP filename) {}
-            virtual void _OnMissingRscFont (Utf8CP fontName) {}
-            virtual void _OnMissingShxFont (Utf8CP fontName) {}
-            virtual void _OnMissingTrueTypeFont (Utf8CP fontName) {}
-            };
+            virtual DgnFontCR _GetLastResortTrueTypeFont() { return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType)); }
+            DgnFontCR GetLastResortTrueTypeFont() { return _GetLastResortTrueTypeFont(); }
+            virtual DgnFontCR _GetLastResortRscFont() { return m_lastResortRscFont.IsValid() ? *m_lastResortRscFont : *(m_lastResortRscFont = _CreateLastResortFont(DgnFontType::Rsc)); }
+            DgnFontCR GetLastResortRscFont() { return _GetLastResortRscFont(); }
+            virtual DgnFontCR _GetLastResortShxFont() { return m_lastResortShxFont.IsValid() ? *m_lastResortShxFont : *(m_lastResortShxFont = _CreateLastResortFont(DgnFontType::Shx)); }
+            DgnFontCR GetLastResortShxFont() { return _GetLastResortShxFont(); }
+            virtual DgnFontCR _GetAnyLastResortFont() { return _GetLastResortTrueTypeFont(); }
+            DgnFontCR GetAnyLastResortFont() { return _GetAnyLastResortFont(); }
+            virtual DgnFontCR _GetDecoratorFont() { return _GetLastResortTrueTypeFont(); }
+            DgnFontCR GetDecoratorFont() { return _GetDecoratorFont(); }
+            DGNPLATFORM_EXPORT virtual DgnFontCR _ResolveFont(DgnFontCP);
+            DgnFontCR ResolveFont(DgnFontCP font) { return _ResolveFont(font); }
+            virtual bool _IsUsingAnRtlLocale() { return false; }
+            bool IsUsingAnRtlLocale() { return _IsUsingAnRtlLocale(); }
+            DGNPLATFORM_EXPORT virtual FT_Library _GetFreeTypeLibrary();
+            FT_Library GetFreeTypeLibrary() { return _GetFreeTypeLibrary(); }
+        };
 
         //! Allows interaction between the host and the LineStyleManager.
         struct LineStyleAdmin : IHostObject
@@ -430,9 +450,6 @@ public:
 
             //! @return The max number of components before a cell will be drawn "fast" when ViewFlags.fast_cell is enabled.
             virtual uint32_t _GetFastCellThreshold () {return 1;}
-
-            //! Gets the default (TrueType) font name to use for decorators. Defaults to L"MS Shell Dlg 2". This font should be the same or similar to that used in normal dialog boxes.
-            virtual Utf8String _GetDecoratorFontName () {return Utf8String ("MS Shell Dlg 2");}
 
             virtual bool _WantInvertBlackBackground() {return false;}
 
@@ -888,7 +905,6 @@ public:
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         SessionAdmin*           m_sessionAdmin;
         TxnAdmin*               m_txnAdmin;
-        DgnFontManagerP         m_fontManager;
         IACSManagerP            m_acsManager;
         LineStyleManagerP       m_lineStyleManager;
         FormatterAdmin*         m_formatterAdmin;
@@ -967,7 +983,6 @@ public:
             m_geoCoordAdmin = 0;
             m_sessionAdmin = 0;
             m_txnAdmin = 0;
-            m_fontManager = 0;
             m_acsManager = 0;
             m_lineStyleManager = 0;
             m_formatterAdmin = 0;
@@ -992,7 +1007,6 @@ public:
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         SessionAdmin&           GetSessionAdmin()          {return *m_sessionAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
-        DgnFontManagerR         GetDgnFontManager()        {return *m_fontManager;}
         IACSManagerR            GetAcsManager()            {return *m_acsManager;}
         LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}

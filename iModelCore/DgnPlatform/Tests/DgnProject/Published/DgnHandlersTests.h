@@ -12,7 +12,6 @@
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 #include "GenericDgnModelTestFixture.h"
 #include <UnitTests/BackDoor/DgnProject/DgnElementHelpers.h>
-#include <DgnPlatform/DgnCore/DgnFontManager.h>
 
 #define LOCALIZED_STR(str) str
 

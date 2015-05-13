@@ -1,0 +1,20 @@
+//--------------------------------------------------------------------------------------
+//     $Source: DgnCore/DgnFont.fbs $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//--------------------------------------------------------------------------------------
+
+namespace BentleyG06.DgnPlatform.FB;
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     03/2015
+//=======================================================================================
+table DgnRscFont
+{
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    header:[ubyte];
+    fractionMap:[ubyte];
+    glyphData:[ubyte];
+    glyphDataOffsets:[ubyte];
+    glyphHeaders:[ubyte];
+}

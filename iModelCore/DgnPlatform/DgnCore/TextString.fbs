@@ -1,0 +1,53 @@
+//--------------------------------------------------------------------------------------
+//     $Source: DgnCore/TextString.fbs $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//--------------------------------------------------------------------------------------
+
+namespace BentleyG06.DgnPlatform.FB;
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2015
+//=======================================================================================
+struct TextStringTransform
+{
+    form3d00:double;
+    form3d01:double;
+    form3d02:double;
+    form3d03:double;
+    form3d10:double;
+    form3d11:double;
+    form3d12:double;
+    form3d13:double;
+    form3d20:double;
+    form3d21:double;
+    form3d22:double;
+    form3d23:double;
+}
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2015
+//=======================================================================================
+table TextStringStyle
+{
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    color:uint;
+    fontId:uint;
+    isBold:bool;
+    isItalic:bool;
+    isUnderlined:bool;
+    height:double;
+    widthFactor:double;
+}
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2015
+//=======================================================================================
+table TextString
+{
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    text:string;
+    style:TextStringStyle;
+    transform:TextStringTransform;
+}

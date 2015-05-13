@@ -779,7 +779,7 @@ static void drawText (ViewContextR context, DPoint3dCR ptUl, Utf8StringCR string
     
     DPoint2d textScale;
     textScale.Init (10*pixels, 10*pixels);
-    TextStringPropertiesPtr props = TextStringProperties::Create (DgnFontManager::GetDefaultTrueTypeFont(), NULL, textScale);
+    TextStringPropertiesPtr props = TextStringProperties::Create (DgnFontManager::GetLastResortTrueTypeFont(), NULL, textScale);
     props->SetJustification (just);
 
     DPoint3d pt (ptUl);
