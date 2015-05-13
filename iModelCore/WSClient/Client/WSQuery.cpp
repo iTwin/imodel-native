@@ -40,8 +40,12 @@ WSQuery (schemaName, std::set<Utf8String> {className})
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSQuery::WSQuery (ECClassCR ecClass, bool polymorphic) 
-    : WSQuery (Utf8String (ecClass.GetSchema ().GetName ()), Utf8PrintfString ("%s%s", Utf8String (ecClass.GetName ()).c_str (), polymorphic ? "!poly" : ""))
+WSQuery::WSQuery (ECClassCR ecClass, bool polymorphic) :
+WSQuery
+(
+Utf8String (ecClass.GetSchema ().GetName ()),
+Utf8PrintfString ("%s%s", Utf8String (ecClass.GetName ()).c_str (), polymorphic ? "!poly" : "")
+)
     {
     }
 
@@ -267,7 +271,9 @@ const std::map<Utf8String, Utf8String>& WSQuery::GetCustomParameters () const
 void WSQuery::AppendOptionalParameter (Utf8StringR query, Utf8StringCR name, Utf8StringCR value)
     {
     if (name.empty () || value.empty ())
+        {
         return;
+        }
 
     AppendParameter (query, name, value);
     }
@@ -291,7 +297,9 @@ void WSQuery::AppendParameter (Utf8StringR query, Utf8StringCR name, Utf8StringC
 void WSQuery::AppendOptionalParameter (Utf8StringR query, Utf8StringCR name, uint32_t value)
     {
     if (0 == value)
+        {
         return;
+        }
 
     AppendOptionalParameter (query, name, Utf8PrintfString ("%lu", value));
     }
@@ -310,10 +318,14 @@ Utf8String WSQuery::ToQueryString () const
     AppendOptionalParameter (query, WSQUERY_OPTION_Top, m_top);
 
     for (auto pair : m_aliases)
+        {
         AppendOptionalParameter (query, pair.second, pair.first);
+        }
 
     for (auto pair : m_customParameters)
+        {
         AppendParameter (query, pair.first, pair.second);
+        }
 
     return query;
     }
@@ -334,5 +346,5 @@ bool WSQuery::operator== (const WSQuery& other) const
     return
         m_mainSchemaName == other.m_mainSchemaName &&
         m_classes == other.m_classes &&
-        ToQueryString() == other.ToQueryString();
+        ToQueryString () == other.ToQueryString ();
     }

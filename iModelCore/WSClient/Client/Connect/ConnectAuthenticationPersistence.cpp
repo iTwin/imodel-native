@@ -42,10 +42,13 @@ void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials
     if (!s_onUserChangedCallbacks.empty ())
         {
         auto oldCreds = GetCredentials ();
-        if (!oldCreds.GetUsername ().empty () && oldCreds.GetUsername () != credentials.GetUsername ())
+        if (!oldCreds.GetUsername ().empty () &&
+            oldCreds.GetUsername () != credentials.GetUsername ())
             {
             for (auto& listener : s_onUserChangedCallbacks)
+                {
                 listener ();
+                }
             }
         }
 

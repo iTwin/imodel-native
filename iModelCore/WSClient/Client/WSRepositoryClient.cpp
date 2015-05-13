@@ -36,17 +36,25 @@ m_serverClient (WSClient::Create (m_connection))
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-IWSRepositoryClientPtr WSRepositoryClient::Create
+std::shared_ptr<WSRepositoryClient> WSRepositoryClient::Create
 (
 Utf8StringCR serverUrl,
 Utf8StringCR repositoryId,
 HttpRequestHeadersCR defaultHeaders,
-BeFileNameCP defaultSchemaPath,
+IWSSchemaProviderPtr schemaProvider,
 IHttpHandlerPtr customHandler
 )
     {
-    auto configuration = std::make_shared<ClientConfiguration> (serverUrl, repositoryId, defaultHeaders, defaultSchemaPath, customHandler);
-    return std::shared_ptr<IWSRepositoryClient> (new WSRepositoryClient (std::make_shared<ClientConnection> (configuration)));
+    auto configuration = std::make_shared<ClientConfiguration> (serverUrl, repositoryId, defaultHeaders, schemaProvider, customHandler);
+    return std::shared_ptr<WSRepositoryClient> (new WSRepositoryClient (std::make_shared<ClientConnection> (configuration)));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::SetFileDownloadLimit (size_t limit)
+    {
+    m_fileDownloadQueue.SetLimit (limit);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -158,9 +166,12 @@ HttpRequest::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return m_connection->GetWebApiAndReturnResponse<WSFileResult> ([=] (WebApiPtr webApi)
+    return m_fileDownloadQueue.Push ([=]
         {
-        return webApi->SendGetFileRequest (objectId, filePath, eTag, downloadProgressCallback, cancellationToken);
+        return m_connection->GetWebApiAndReturnResponse<WSFileResult> ([=] (WebApiPtr webApi)
+            {
+            return webApi->SendGetFileRequest (objectId, filePath, eTag, downloadProgressCallback, cancellationToken);
+            }, cancellationToken);
         }, cancellationToken);
     }
 

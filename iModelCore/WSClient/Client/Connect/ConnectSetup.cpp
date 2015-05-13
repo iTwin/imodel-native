@@ -5,13 +5,11 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "ClientInternal.h"
 #include <WebServices/Client/Connect/ConnectSetup.h>
 #include "AuthenticationData.h"
 #include <MobileDgn/MobileDgnUi.h>
 #include <WebServices/Client/Connect/ConnectAuthenticationPersistence.h>
-#include "DatabaseHelper.h"
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Client/Connect/Connect.h>
 #include <WebServices/Client/Connect/ConnectSpaces.h>
@@ -23,6 +21,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 #define CONNECT_SIGNED_IN                           "BentleyConnect_SignedIn"
 #define BENTLEY_CONNECT_USERNAME                    "BentleyConnect_UserName"
+#define BENTLEY_CONNECT_DISPLAYUSERNAME             "BentleyConnect_DisplayUserName"
 
 bool GetCredentials (JsonValueCR messageDataObj, CredentialsR cred);
 bool GetToken (JsonValueCR messageDataObj, Utf8StringR token);
@@ -59,6 +58,24 @@ void ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
         // NOTE: Username is sent to the UI whether or not the signin was successful.
         MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_CONNECT_USERNAME, cred.GetUsername ().c_str ());
         }
+
+    if (!token.empty ())
+        {
+        // if we have a valid token build a display name for the user from the claims in the token
+        SamlToken sToken (token);
+
+        Utf8String displayUserName = "";
+        bmap<Utf8String, Utf8String> attributes;
+        BentleyStatus attributeStatus = sToken.GetAttributes(attributes);
+        if (SUCCESS == attributeStatus)
+            {
+            Utf8String givenName = attributes["givenname"];
+            Utf8String surName = attributes["surname"];
+            displayUserName = givenName + " " + surName;
+            }
+        MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str ());
+        }
+
     Json::Value csSetup;
     csSetup[CS_MESSAGE_FIELD_username] = cred.GetUsername ();
     csSetup[CS_MESSAGE_FIELD_password] = cred.GetPassword ();
