@@ -1068,7 +1068,9 @@ void DgnRangeTree::AddElement(Entry const& entry)
         m_root = AllocateLeafNode();
     
     BeAssert(!entry.m_elm->IsDeleted());
+#ifdef WIP_ELEMENT_UPDATE
     BeAssert(!((DRTInternalNodeP)m_root)->DropElement(entry, *this));
+#endif
 
     DRTLeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
