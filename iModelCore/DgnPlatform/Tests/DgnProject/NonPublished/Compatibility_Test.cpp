@@ -13,6 +13,8 @@
 #include <wchar.h>
 USING_NAMESPACE_BENTLEY
 
+#ifndef WIP_NOT_PORTABLE
+
 struct TypeNamePair
 {
     WString m_name;
@@ -131,3 +133,5 @@ INSTANTIATE_TEST_CASE_P(CompatibilityTests, CompatibilityFixture, ::testing::Val
     //TypeNamePair(sizeof(DMatrix3d), L"DMatrix3d "),
     TypeNamePair(sizeof(DMap4d), L"DMap4d")
 ));
+
+#endif // WIP_NOT_PORTABLE
