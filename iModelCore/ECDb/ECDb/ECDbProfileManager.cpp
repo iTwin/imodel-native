@@ -401,7 +401,7 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableECSchema (Db& db)
     auto stat = db.ExecuteSql (
         "CREATE TABLE ec_Schema "
         "("
-        "ECSchemaId INTEGER NOT NULL PRIMARY KEY, "
+        "Id INTEGER PRIMARY KEY, "
         "Name TEXT NOT NULL, "
         "DisplayLabel TEXT, "
         "Description TEXT, "
@@ -428,8 +428,8 @@ Db& db
     auto stat = db.ExecuteSql (
         "CREATE TABLE ec_Class "
         "("
-        "ECClassId INTEGER NOT NULL PRIMARY KEY, "
-        "ECSchemaId INTEGER NOT NULL REFERENCES ec_Schema(ECSchemaId) ON DELETE CASCADE, "
+        "Id INTEGER PRIMARY KEY, "
+        "ECSchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE, "
         "Name TEXT NOT NULL, "
         "DisplayLabel TEXT, "
         "Description TEXT, "
@@ -460,7 +460,7 @@ Db& db
         "CREATE Table ec_ClassMap"
         "("
         "Id INTEGER PRIMARY KEY,"
-        "ECClassId INTEGER  NOT NULL REFERENCES ec_Class (ECClassId) ON DELETE CASCADE,"
+        "ECClassId INTEGER NOT NULL REFERENCES ec_Class (Id) ON DELETE CASCADE,"
         "ParentId INTEGER REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
         "MapStrategy INTEGER NOT NULL"
         ");");
@@ -483,8 +483,8 @@ Db& db
     auto stat = db.ExecuteSql (
         "CREATE TABLE ec_BaseClass "
         "("
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
-        "BaseECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
+        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "BaseECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
         "ECIndex INTEGER NOT NULL, /*Location of baseclass in BaseClasses array*/ "
         "PRIMARY KEY (ECClassId, BaseECClassId)"
         ");");
@@ -509,7 +509,7 @@ Db& db
         "CREATE Table ec_PropertyPath"
         "("
         "Id INTEGER PRIMARY KEY,"
-        "RootECPropertyId INTEGER NOT NULL REFERENCES ec_Property (ECPropertyId) ON DELETE CASCADE,"
+        "RootECPropertyId INTEGER NOT NULL REFERENCES ec_Property (Id) ON DELETE CASCADE,"
         "AccessString TEXT NOT NULL"
         ");");
 
@@ -532,8 +532,8 @@ Db& db
     auto stat = db.ExecuteSql (
         "CREATE TABLE ec_Property "
         "("
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
-        "ECPropertyId INTEGER NOT NULL, "
+        "Id INTEGER PRIMARY KEY,"
+        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
         "Name TEXT NOT NULL, "
         "DisplayLabel TEXT, "
         "Description TEXT, "
@@ -541,12 +541,10 @@ Db& db
         "IsArray BOOL NOT NULL CHECK (IsArray IN (0, 1)), "
         "TypeCustom TEXT, "
         "TypeECPrimitive SMALLINT, "
-        "TypeGeometry TEXT, "
-        "TypeECStruct INTEGER REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
+        "TypeECStruct INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE, "
         "IsReadOnly BOOL NOT NULL CHECK (IsReadOnly IN (0, 1)), "
         "MinOccurs INTEGER,"
-        "MaxOccurs INTEGER,"
-        "PRIMARY KEY (ECPropertyId)"
+        "MaxOccurs INTEGER"
         ");");
 
     if (stat != BE_SQLITE_OK)
@@ -591,7 +589,7 @@ Db& db
     return db.ExecuteSql (
         "CREATE TABLE ec_RelationshipConstraint "
         "("
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
+        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
         "ECRelationshipEnd BOOL NOT NULL CHECK (ECRelationshipEnd IN (0, 1)), "
         "CardinalityLowerLimit INTEGER, "
         "CardinalityUpperLimit INTEGER, "
@@ -615,7 +613,7 @@ Db& db
         "("
         "ECClassId INTEGER NOT NULL, "
         "ECRelationshipEnd BOOL NOT NULL, "
-        "RelationECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
+        "RelationECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
         "PRIMARY KEY (ECClassId, ECRelationshipEnd, RelationECClassId), "
         "FOREIGN KEY (ECClassId, ECRelationshipEnd) "
         "REFERENCES ec_RelationshipConstraint(ECClassId, ECRelationshipEnd) ON DELETE CASCADE"
@@ -639,10 +637,8 @@ Db& db
         "RelationECClassId INTEGER NOT NULL, "
         "RelationECPropertyId INTEGER NOT NULL, "
         "PRIMARY KEY (ECClassId, ECRelationshipEnd, RelationECClassId, RelationECPropertyId), "
-        "FOREIGN KEY (ECClassId, ECRelationshipEnd, RelationECClassId) "
-        "REFERENCES ec_RelationshipConstraintClass (ECClassId, ECRelationshipEnd, RelationECClassId) ON DELETE CASCADE, "
-        "FOREIGN KEY (RelationECPropertyId) "
-        "REFERENCES ec_Property (ECPropertyId) ON DELETE CASCADE"
+        "FOREIGN KEY (ECClassId, ECRelationshipEnd, RelationECClassId) REFERENCES ec_RelationshipConstraintClass (ECClassId, ECRelationshipEnd, RelationECClassId) ON DELETE CASCADE, "
+        "FOREIGN KEY (RelationECPropertyId) REFERENCES ec_Property (Id) ON DELETE CASCADE"
         ");");
     }
 
@@ -660,7 +656,7 @@ Db& db
         "ContainerId INTEGER NOT NULL, "
         "ContainerType INTEGER NOT NULL, "
         "[Index] INTEGER NOT NULL, "
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId), "
+        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(Id), "
         "Instance TEXT, "
         "PRIMARY KEY (ContainerId, ContainerType, ECClassId)"
         ");");
@@ -677,8 +673,8 @@ Db& db
     {
     return db.ExecuteSql (
         "CREATE TABLE ec_SchemaReference ("
-        "ECSchemaId INTEGER REFERENCES ec_Schema(ECSchemaId) ON DELETE CASCADE, "
-        "ReferenceECSchemaId INTEGER REFERENCES ec_Schema(ECSchemaId) ON DELETE CASCADE"
+        "ECSchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE, "
+        "ReferenceECSchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE"
         ");");
     }
 

@@ -136,7 +136,7 @@ void ECDbMapPersistenceTests::WriteJsonDocumentToFile (rapidjson::StringBuffer& 
 void ECDbMapPersistenceTests::GetBaseClass (ECDbR db, rapidjson::Document& doc, rapidjson::Value& baseClassObject, int ecClassId)
     {
     BeSQLite::Statement sqlstmt;
-    auto status = sqlstmt.Prepare (db, "Select Name from ec_Class where ECClassId = (select BaseECClassId from ec_BaseClass where ECClassId=?)");
+    auto status = sqlstmt.Prepare (db, "Select Name from ec_Class where Id = (select BaseECClassId from ec_BaseClass where ECClassId=?)");
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
     sqlstmt.BindInt (1, ecClassId);
     if (sqlstmt.Step () == DbResult::BE_SQLITE_ROW)
@@ -156,7 +156,7 @@ void ECDbMapPersistenceTests::GetKeyProperty (ECDbR db, rapidjson::Document& doc
     BeSQLite::Statement statement;
     rapidjson::Value obj (rapidjson::kObjectType);
     rapidjson::Value keyProperty_array (rapidjson::kArrayType);
-    auto status = statement.Prepare (db, "select ec_Property.[Name] from ec_Property where ECPropertyId IN (select ec_RelationshipConstraintClassProperty.[RelationECPropertyId] from [ec_RelationshipConstraintClassProperty] where ECClassId = ? and RelationECClassId = ?)");
+    auto status = statement.Prepare (db, "select ec_Property.[Name] from ec_Property where Id IN (select ec_RelationshipConstraintClassProperty.[RelationECPropertyId] from [ec_RelationshipConstraintClassProperty] where ECClassId = ? and RelationECClassId = ?)");
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
     statement.BindInt (1, ecClassId);
     statement.BindInt (2, relationecClassId);
@@ -189,7 +189,7 @@ void ECDbMapPersistenceTests::GetRelationshipConstraintClasses (ECDbR db, rapidj
         {
         BeSQLite::Statement sqlstmt;
         int relationECClassId = sqlStatement.GetValueInt (1);
-        status = sqlstmt.Prepare (db, "SELECT Name FROM ec_Class WHERE ECClassId=?");
+        status = sqlstmt.Prepare (db, "SELECT Name FROM ec_Class WHERE Id=?");
         ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
         sqlstmt.BindInt (1, relationECClassId);
         if (sqlstmt.Step () == DbResult::BE_SQLITE_ROW)
@@ -221,7 +221,7 @@ void ECDbMapPersistenceTests::GetClassesPerSchemaId (ECDbR db, rapidjson::Docume
     {
     Utf8String classPath;
     BeSQLite::Statement sqlStatement;
-    auto status = sqlStatement.Prepare (db, "SELECT ECClassId,Name, DisplayLabel, Description, IsDomainClass, IsStruct, IsCustomAttribute, RelationStrength, RelationStrengthDirection, IsRelationship  FROM ec_Class where ECschemaId = ?");
+    auto status = sqlStatement.Prepare (db, "SELECT Id,Name, DisplayLabel, Description, IsDomainClass, IsStruct, IsCustomAttribute, RelationStrength, RelationStrengthDirection, IsRelationship  FROM ec_Class where ECschemaId = ?");
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
     sqlStatement.BindInt (1, ecSchemaId);
 
@@ -242,7 +242,7 @@ void ECDbMapPersistenceTests::GetClassesPerSchemaId (ECDbR db, rapidjson::Docume
                 Utf8String columnname = sqlStatement.GetColumnName (column);
                 Value jsonColumnName;
                 jsonColumnName.SetString (columnname.c_str (), doc.GetAllocator ());
-                if (columnname == "ECClassId")
+                if (columnname == "Id")
                     continue;
 
                 if (columnname == "IsRelationship")
@@ -297,14 +297,14 @@ void ECDbMapPersistenceTests::GetClassesPerSchemaId (ECDbR db, rapidjson::Docume
 void ECDbMapPersistenceTests::GetPropertiesPerClass (ECDbR db, rapidjson::Document& doc, rapidjson::Value& classArray, int ecClassId)
     {
     BeSQLite::Statement sqlStatement;
-    auto status = sqlStatement.Prepare (db, "SELECT Name, DisplayLabel, Description, IsArray, TypeCustom, TypeECPrimitive, TypeGeometry, TypeECStruct, IsReadOnly, MinOccurs, MaxOccurs FROM ec_Property where ECClassId = ?");
+    auto status = sqlStatement.Prepare (db, "SELECT Name, DisplayLabel, Description, IsArray, TypeCustom, TypeECPrimitive, TypeECStruct, IsReadOnly, MinOccurs, MaxOccurs FROM ec_Property where ECClassId = ?");
     sqlStatement.BindInt (1, ecClassId);
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
 
     while (sqlStatement.Step () == DbResult::BE_SQLITE_ROW)
         {
         rapidjson::Value row_obj (rapidjson::kObjectType);
-        for (int column = 0; column < 11; column++)
+        for (int column = 0; column < 10; column++)
             {
             BeSQLite::DbValueType columnType = sqlStatement.GetColumnType (column);
             if (columnType == BeSQLite::DbValueType::IntegerVal || columnType == BeSQLite::DbValueType::TextVal)
@@ -320,7 +320,7 @@ void ECDbMapPersistenceTests::GetPropertiesPerClass (ECDbR db, rapidjson::Docume
                 else
                     {
                     BeSQLite::Statement stmt;
-                    status = stmt.Prepare (db, "SELECT Name FROM ec_Class WHERE ECClassId = ?");
+                    status = stmt.Prepare (db, "SELECT Name FROM ec_Class WHERE Id = ?");
                     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
                     stmt.BindInt (1, sqlStatement.GetValueInt (column));
                     ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
@@ -344,7 +344,7 @@ void ECDbMapPersistenceTests::GetPropertiesPerClass (ECDbR db, rapidjson::Docume
 void ECDbMapPersistenceTests::GetSchemaObjectById (ECDbR db, rapidjson::Document& doc, rapidjson::Value& schemaObject, int ecSchemaId, bool mapClasses)
     {
     BeSQLite::Statement sqlStatement;
-    auto status = sqlStatement.Prepare (db, "SELECT Name, DisplayLabel, Description, NamespacePrefix, VersionMajor, VersionMinor FROM ec_Schema WHERE ECSchemaId = ?");
+    auto status = sqlStatement.Prepare (db, "SELECT Name, DisplayLabel, Description, NamespacePrefix, VersionMajor, VersionMinor FROM ec_Schema WHERE Id = ?");
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
     sqlStatement.BindInt (1, ecSchemaId);
     ASSERT_EQ (sqlStatement.Step (), DbResult::BE_SQLITE_ROW);
@@ -380,7 +380,7 @@ void ECDbMapPersistenceTests::GetSchemaObjectById (ECDbR db, rapidjson::Document
 void ECDbMapPersistenceTests::GetColumnsPerTable (ECDbR db, rapidjson::Document & doc, rapidjson::Value& columnArray, int TableId)
     {
     BeSQLite::Statement sqlStatement;
-    auto status = sqlStatement.Prepare (db, "SELECT ec_Column.[Id], ec_Column.[Name], ec_Column.[Type], ec_Column.[UserData] FROM  ec_Column WHERE ec_Column.[TableId] = ? ");
+    auto status = sqlStatement.Prepare (db, "SELECT ec_Column.[Id], ec_Column.[Name], ec_Column.[Type], ec_Column.UserData FROM ec_Column WHERE ec_Column.TableId = ? ");
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
     sqlStatement.BindInt (1, TableId);
 
@@ -404,7 +404,7 @@ void ECDbMapPersistenceTests::GetColumnsPerTable (ECDbR db, rapidjson::Document 
             }
 
         BeSQLite::Statement stmt;
-        status = stmt.Prepare (db, "SELECT ec_Class.[Name], ec_PropertyPath.[AccessString] FROM ec_PropertyMap JOIN ec_Class ON ec_Class.[ECClassId] = ec_propertyMap.[ClassMapId] JOIN ec_PropertyPath ON ec_PropertyPath.[Id] = ec_PropertyMap.[PropertyPathId] WHERE ec_PropertyMap.[ColumnId] = ?");
+        status = stmt.Prepare (db, "SELECT ec_Class.Name, ec_PropertyPath.AccessString FROM ec_PropertyMap JOIN ec_Class ON ec_Class.Id = ec_propertyMap.ClassMapId JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId WHERE ec_PropertyMap.ColumnId = ?");
         ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
         stmt.BindInt (1, columnId);
         rapidjson::Value Properties_obj (rapidjson::kObjectType);
@@ -431,7 +431,7 @@ void ECDbMapPersistenceTests::GetColumnsPerTable (ECDbR db, rapidjson::Document 
 void ECDbMapPersistenceTests::GetTableColumnsPerTableId (ECDbR db, rapidjson::Document& doc, rapidjson::Value& tableObject, int TableId)
     {
     BeSQLite::Statement sqlStatement;
-    auto status = sqlStatement.Prepare (db, "SELECT ec_Table.[Name], ec_Table.[IsOwnedByECDb], ec_Table.[IsVirtual] FROM ec_Table Where ec_Table.[Id] = ?");
+    auto status = sqlStatement.Prepare (db, "SELECT ec_Table.Name, ec_Table.[IsOwnedByECDb], ec_Table.[IsVirtual] FROM ec_Table Where ec_Table.[Id] = ?");
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
     sqlStatement.BindInt (1, TableId);
     ASSERT_EQ (sqlStatement.Step (), DbResult::BE_SQLITE_ROW);
@@ -483,7 +483,7 @@ TEST_F (ECDbMapPersistenceTests, DGNSchemaStructureMapPersistence)
     doc.SetObject ();
     rapidjson::Value schemas_Array (rapidjson::kArrayType);
     BeSQLite::Statement sqlStatment;
-    stat = sqlStatment.Prepare (ECDbMapPersistence, "SELECT ECSchemaId FROM ec_Schema ORDER BY ECSchemaId");
+    stat = sqlStatment.Prepare (ECDbMapPersistence, "SELECT Id FROM ec_Schema ORDER BY Id");
     ASSERT_EQ (stat, DbResult::BE_SQLITE_OK);
     while (sqlStatment.Step () == DbResult::BE_SQLITE_ROW)
         {

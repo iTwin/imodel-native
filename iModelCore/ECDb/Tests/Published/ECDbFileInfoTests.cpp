@@ -161,6 +161,8 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     BeFileName exportFilePath;
     BeTest::GetHost ().GetOutputRoot (exportFilePath);
     exportFilePath.AppendToPath(testFileNameW.c_str());
+    if (BeFileName::DoesPathExist(exportFilePath))
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(exportFilePath));
 
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), testFileName));
 

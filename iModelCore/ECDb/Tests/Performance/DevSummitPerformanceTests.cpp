@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/DevSummitPerformanceTests.cpp $
+|  $Source: Tests/Performance/DevSummitPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -32,19 +32,19 @@ struct PerformanceDevSummitTests : PerformanceTestFixture
             Utf8String ecSql;
             ecSql.Sprintf("SELECT ecc3.Name as ECClassName, ecs2.Name as ECSchemaName " 
                 "FROM " 
-                    "(SELECT ecc.[ECClassId], ecc.[ECSchemaId] " 
+                    "(SELECT ecc.Id ECClassId, ecc.ECSchemaId " 
                     "FROM ec_Class ecc " 
-                    "WHERE ecc.[IsDomainClass] = '1' AND ecc.[ECSchemaId] NOT IN " 
+                    "WHERE ecc.IsDomainClass = '1' AND ecc.ECSchemaId NOT IN " 
                         "( " 
                         "SELECT ca.ContainerId " 
                         "FROM ec_CustomAttribute ca " 
                         "WHERE ca.ECClassId = ( " 
-                                        "SELECT ecc2.ECClassId " 
+                                        "SELECT ecc2.Id " 
                                         "FROM ec_Class ecc2, ec_Schema " 
-                                        "WHERE ecc2.Name='SystemSchema' AND ecc2.ECSchemaId = ec_Schema.ECSchemaId AND ec_Schema.Name='Bentley_Standard_CustomAttributes') " 
+                                        "WHERE ecc2.Name='SystemSchema' AND ecc2.ECSchemaId = ec_Schema.Id AND ec_Schema.Name='Bentley_Standard_CustomAttributes') " 
                         ") " 
                     ") t1, ec_Class ecc3, ec_Schema ecs2 " 
-                "WHERE t1.[ECClassId] = ecc3.[ECClassId] AND t1.ECSchemaId = ecs2.[ECSchemaId] ");
+                "WHERE t1.ECClassId = ecc3.Id AND t1.ECSchemaId = ecs2.ECSchemaId ");
 
             ECSqlStatement ecStatement;
             ecStatement.Prepare(m_testProject.GetECDb(), ecSql.c_str());
