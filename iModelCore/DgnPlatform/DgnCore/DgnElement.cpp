@@ -245,79 +245,26 @@ void GeometricElement::SaveGeomStream(GeomStreamCP stream)
     m_geom = *stream;     // assign the new element (overwrites or reallocates)
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::MarkAsDeleted()
-    {
-    SetDeletedRef();
-    SetHilited(HILITED_None);
-    m_dgnModel.ElementChanged(*this, ELEMREF_CHANGE_REASON_Delete);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_DeleteInDb()
+DgnModelStatus DgnElement::_DeleteInDb() const
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    if (m_dgnModel.IsReadOnly())
-        return  DGNMODEL_STATUS_ReadOnly;
+    CachedStatementPtr stmt;
+    GetDgnDb().Elements().GetStatement(stmt, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindId(1, m_elementId);
 
-    // let handler reject deletion
-    if (ElementHandler::PRE_ACTION_Ok != m_elementHandler._OnElementDelete(*this))
-        return  DGNMODEL_STATUS_BadRequest;
-
-    MarkRefDeleted(m_dgnModel);
-
-    // to delete an element, we delete it from the Element table. Foreign keys and triggers cause all of the related
-    // tables to be cleaned up.
-    CachedStatementPtr deleteStmt;
-    DbResult status = m_dgndb.GetCachedStatement(deleteStmt, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    deleteStmt->BindId(1, elementId);
-    DbResult rc = deleteStmt->Step();
-
-    if (rc == BE_SQLITE_CONSTRAINT_FOREIGNKEY)
+    switch (stmt->Step())
         {
-        UnDeleteElement();
-        return  DGNMODEL_STATUS_ForeignKeyConstraint;
+        case BE_SQLITE_CONSTRAINT_FOREIGNKEY:
+            return  DGNMODEL_STATUS_ForeignKeyConstraint;
+
+        case BE_SQLITE_DONE:
+            return DGNMODEL_STATUS_Success;
         }
 
-    m_dgnModel.OnElementDeletedFromDb(*this, false);
-
-    if (rc != BE_SQLITE_DONE)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    m_elementHandler._OnElementDeleted(GetDgnDb(), m_elementId);
-#endif
-    return DGNMODEL_STATUS_Success;
+    return DGNMODEL_STATUS_ElementWriteError;
     }
-
-#if defined (NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::ReloadFromDb()
-    {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    m_dgnModel.ElementChanged(*this, ELEMREF_CHANGE_REASON_Modify);
-
-    DbElementReloader reloader(*this);
-    DgnModelStatus stat = reloader.ReloadElement();
-
-    if (DGNMODEL_STATUS_Success == stat)
-        m_dgnModel.OnElementModified(*this);
-
-    return  stat;
-#endif
-    return DGNMODEL_STATUS_Success;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
@@ -416,14 +363,6 @@ Utf8String DgnElement::_GenerateDefaultCode()
 
     Utf8String className(GetElementClass()->GetName());
     return Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_LoadFromDb()
-    {
-    return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

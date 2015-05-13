@@ -206,10 +206,10 @@ protected:
     DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnUpdateElement(DgnElementCR element, DgnElementR replacement);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnInsertElement(DgnElementR element);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementR element);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
-    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementR element, bool cancel);
+    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementR element, DgnElementR original);
     DGNPLATFORM_EXPORT virtual void _OnModelFillComplete();
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}

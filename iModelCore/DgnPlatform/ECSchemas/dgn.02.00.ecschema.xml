@@ -276,7 +276,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <ECIdColumn>Id</ECIdColumn>
             </ECDbClassHint>
         </ECCustomAttributes>
-        <!-- Loose grouping relationships between elements (replaces the v8 concept of named groups) -->
+        <!-- Loose grouping relationships between elements (e.g. named groups) -->
         <Source cardinality="(0,N)" polymorphic="True">
             <ECCustomAttributes>
                 <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">

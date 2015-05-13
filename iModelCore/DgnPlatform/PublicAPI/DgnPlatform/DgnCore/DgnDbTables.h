@@ -765,7 +765,7 @@ public:
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
-    DGNPLATFORM_EXPORT BentleyStatus DeleteModel(DgnModelId id);
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteModel(DgnModelId id);
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
     DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
 
@@ -900,11 +900,11 @@ private:
     void OnUnreferenced(DgnElementCR);
     void Destroy();
     void AddToPool(DgnElementR) const;
+    void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
-    void ReleaseAndCleanup(DgnElementCPtr& element);
     bool IsElementIdUsed(DgnElementId id) const;
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
@@ -922,8 +922,8 @@ public:
     DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
-    //! Look up an element within this DgnDb by its Id.
-    //! @return nullptr if the element does not exist or is not currently loaded.
+    //! Look up an element in the pool of loaded elements for this DgnDb.
+    //! @return nullptr if the is not in the pool.
     DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
 #endif
 

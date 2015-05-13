@@ -170,7 +170,7 @@ protected:
 
     AppDataEntry* FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry) const;
 
-    void SetInPool(bool val) {m_flags.m_inPool = val;}
+    void SetInPool(bool val) const {m_flags.m_inPool = val;}
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
     ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
 
@@ -178,12 +178,12 @@ protected:
              m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId), m_appData(nullptr) {}
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _LoadFromDb();
+                       virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb();
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
 
-    //! Virtual assignment operator.  If your subclass has member variables, it \em must override _InitFrom.
+    //! Virtual assignment operator.  If your subclass has member variables, it \em must override this method
     DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR other);
 
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
