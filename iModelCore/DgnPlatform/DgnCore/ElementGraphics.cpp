@@ -141,7 +141,7 @@ void ModifyDrawViewFlags (ViewFlagsR flags)
     flags.SetRenderMode (DgnRenderMode::SmoothShade);
 
     // Make sure linestyles drawn for drop...esp. when dropping linestyles!
-    flags.inhibitLineStyles = false;
+    flags.styles = true;
 
     // Make sure to display fill so that fill/gradient can be added to output...
     flags.fill = true;

@@ -76,28 +76,28 @@ private:
     DgnRenderMode m_renderMode;
 
 public:
-    uint32_t    fast_text:1;
-    uint32_t    line_wghts:1;               //!< Controls whether line weights are used (e.g. control whether elements with non-zero line weights draw normally, or as weight 0).
-    uint32_t    patterns:1;                 //!< Shows or hides pattern elements.
-    uint32_t    grid:1;                     //!< Shows or hides the grid. The grid settings are a design file setting.
-    uint32_t    fill:1;                     //!< Controls whether the fills on filled elements are displayed.
-    uint32_t    auxDisplay:1;               //!< Shows or hides the ACS triad.
-    uint32_t    camera:1;                   //!< Controls whether camera settings are applied to the view's frustum.
-    uint32_t    background:1;               //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
-    uint32_t    textureMaps:1;              //!< Controls whether to display texture maps for material assignments.
-    uint32_t    transparency:1;             //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
-    uint32_t    inhibitLineStyles:1;        //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines). Note the inversion.
-    uint32_t    patternDynamics:1;          //!< Controls whether associative pattern display in dynamics (performance optimization)
-    uint32_t    renderDisplayEdges:1;       //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
-    uint32_t    renderDisplayHidden:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
-    uint32_t    overrideBackground:1;       //!< Controls whether the view's custom background color is used. This is typically controlled through a display style.
-    uint32_t    noFrontClip:1;              //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    noBackClip:1;               //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    noClipVolume:1;             //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    renderDisplayShadows:1;     //!< Shows or hides shadows. This is typically controlled through a display style.
-    uint32_t    hiddenLineStyle:3;          //!< Controls the line style (only line codes 0-7 are allowed) of hidden lines in the shaded render mode. This is typically controlled through a display style.
-    uint32_t    inhibitRenderMaterials:1;   //!< Controls whether element materials are used (e.g. control whether elements with materials draw normally, or as if they have no material).
-    uint32_t    ignoreSceneLights:1;        //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
+    uint32_t    constructions:1;    //!< Shows or hides construction class geometry.
+    uint32_t    text:1;             //!< Shows or hides text.
+    uint32_t    dimensions:1;       //!< Shows or hides dimensions.
+    uint32_t    patterns:1;         //!< Shows or hides pattern geometry.
+    uint32_t    weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
+    uint32_t    styles:1;           //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines).
+    uint32_t    transparency:1;     //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
+    uint32_t    fill:1;             //!< Controls whether the fills on filled elements are displayed.
+    uint32_t    grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
+    uint32_t    acs:1;              //!< Shows or hides the ACS triad.
+    uint32_t    bgImage:1;          //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
+    uint32_t    bgColor:1;          //!< Controls whether the view's custom background color is used. This is typically controlled through a display style.
+
+    uint32_t    textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
+    uint32_t    materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
+    uint32_t    sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
+    uint32_t    visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
+    uint32_t    hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
+    uint32_t    shadows:1;          //!< Shows or hides shadows. This is typically controlled through a display style.
+    uint32_t    noFrontClip:1;      //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    noBackClip:1;       //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
 
     void SetRenderMode (DgnRenderMode value) {m_renderMode = value;}
     DgnRenderMode GetRenderMode() const {return m_renderMode;}

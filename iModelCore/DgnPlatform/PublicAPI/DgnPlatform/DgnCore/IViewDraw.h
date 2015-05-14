@@ -89,17 +89,25 @@ struct  IDgnOleDraw;
 
 enum class DrawExpense
 {
-    Medium     = 1,        //!<  Average for a element type that may be cached
-    High       = 2,        //!<  Cache it unless at risk of exhausting virtual address
+    Medium   = 1, //!<  Average for a element type that may be cached
+    High     = 2, //!<  Cache it unless at risk of exhausting virtual address
 };
 
 
-enum class FillDisplay        //!< Whether an element should be drawn with its internal area filled or not
+enum class FillDisplay //!< Whether an element should be drawn with its internal area filled or not
 {
-    Never    = 0,      //!< don't fill, even if fill attribute is on for the viewport
-    ByView   = 1,      //!< fill the element iff the fill attribute is on for the viewport
-    Always   = 2,      //!< always fill the element, even if the fill attribute is off for the viewport
-    Blanking = 3,      //!< always fill/always behind geometry that follows
+    Never    = 0, //!< don't fill, even if fill attribute is on for the viewport
+    ByView   = 1, //!< fill the element iff the fill attribute is on for the viewport
+    Always   = 2, //!< always fill the element, even if the fill attribute is off for the viewport
+    Blanking = 3, //!< always fill/always behind geometry that follows
+};
+
+enum class DgnGeometryClass
+{
+    Primary      = 0,
+    Construction = 1,
+    Dimension    = 2,
+    Pattern      = 3,
 };
 
 #define SCREENING_Full  0.0
@@ -400,6 +408,7 @@ double              m_elmTransparency;              //!< transparency, 1.0 == co
 double              m_netElmTransparency;           //!< net transparency for element/category.
 double              m_fillTransparency;             //!< fill transparency, 1.0 == completely transparent.
 double              m_netFillTransparency;          //!< net transparency for fill/category.
+DgnGeometryClass    m_geometryClass;                //!< geometry class
 MaterialCP          m_material;                     //!< render material
 
 LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
@@ -412,6 +421,24 @@ public:
 DGNPLATFORM_EXPORT ElemDisplayParams ();
 DGNPLATFORM_EXPORT explicit ElemDisplayParams (ElemDisplayParamsCR rhs);
 
+DGNPLATFORM_EXPORT double   GetNetTransparency () const;
+DGNPLATFORM_EXPORT double   GetNetFillTransparency () const;
+
+DGNPLATFORM_EXPORT int32_t  GetNetDisplayPriority () const; // Get net display priority (2d only).
+DGNPLATFORM_EXPORT void     SetNetDisplayPriority (int32_t priority); // RASTER USE ONLY!!!
+
+DGNPLATFORM_EXPORT bool     IsLineColorFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool     IsWeightFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool     IsLineStyleFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool     IsMaterialFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool     IsFillColorFromSubCategoryAppearance () const;
+
+DGNPLATFORM_EXPORT void     Resolve (ViewContextR); // Resolve effective values
+
+//__PUBLISH_SECTION_START__
+//__PUBLISH_CLASS_VIRTUAL__
+public:
+
 DGNPLATFORM_EXPORT void     Init ();
 DGNPLATFORM_EXPORT void     SetCategoryId (DgnCategoryId); // Setting the Category Id also sets the SubCategory to the default.
 DGNPLATFORM_EXPORT void     SetSubCategoryId (DgnSubCategoryId);
@@ -421,36 +448,23 @@ DGNPLATFORM_EXPORT void     SetLineColor (ColorDef color);
 DGNPLATFORM_EXPORT void     SetFillDisplay (FillDisplay display);
 DGNPLATFORM_EXPORT void     SetFillColor (ColorDef color);
 DGNPLATFORM_EXPORT void     SetGradient (GradientSymbP gradient);
+DGNPLATFORM_EXPORT void     SetGeometryClass (DgnGeometryClass);
+DGNPLATFORM_EXPORT void     SetTransparency (double transparency); // NOTE: Sets BOTH element and fill transparency...
+DGNPLATFORM_EXPORT void     SetFillTransparency (double transparency);
+DGNPLATFORM_EXPORT void     SetDisplayPriority (int32_t priority); // Set display priority (2d only).
 DGNPLATFORM_EXPORT void     SetMaterial (MaterialCP material);
 DGNPLATFORM_EXPORT void     SetPatternParams (PatternParamsP patternParams);
-
-DGNPLATFORM_EXPORT void     SetTransparency (double transparency); // NOTE: Sets BOTH element and fill transparency...
-DGNPLATFORM_EXPORT double   GetNetTransparency () const;
-DGNPLATFORM_EXPORT void     SetFillTransparency (double transparency);
-DGNPLATFORM_EXPORT double   GetNetFillTransparency () const;
-DGNPLATFORM_EXPORT void     SetDisplayPriority (int32_t priority); // Set display priority (2d only).
-DGNPLATFORM_EXPORT int32_t  GetNetDisplayPriority () const; // Get net display priority (2d only).
-DGNPLATFORM_EXPORT void     SetNetDisplayPriority (int32_t priority); // RASTER USE ONLY!!!
-
-DGNPLATFORM_EXPORT DgnCategoryId    GetCategoryId () const;
-DGNPLATFORM_EXPORT DgnSubCategoryId GetSubCategoryId () const;
-
-DGNPLATFORM_EXPORT bool IsLineColorFromSubCategoryAppearance () const;
-DGNPLATFORM_EXPORT bool IsWeightFromSubCategoryAppearance () const;
-DGNPLATFORM_EXPORT bool IsLineStyleFromSubCategoryAppearance () const;
-DGNPLATFORM_EXPORT bool IsMaterialFromSubCategoryAppearance () const;
-DGNPLATFORM_EXPORT bool IsFillColorFromSubCategoryAppearance () const;
-
-DGNPLATFORM_EXPORT void     Resolve (ViewContextR); // Resolve effective values
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-public:
 
 //! Compare two ElemDisplayParam.
 DGNPLATFORM_EXPORT bool operator==(ElemDisplayParamsCR rhs) const;
 //! copy operator
 DGNPLATFORM_EXPORT ElemDisplayParamsR operator=(ElemDisplayParamsCR rhs);
+
+//! Get element category
+DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const;
+
+//! Get element sub-category
+DGNPLATFORM_EXPORT DgnSubCategoryId GetSubCategoryId() const;
 
 //! Get element color
 DGNPLATFORM_EXPORT ColorDef GetLineColor() const;
@@ -462,28 +476,31 @@ DGNPLATFORM_EXPORT ColorDef GetFillColor() const;
 DGNPLATFORM_EXPORT FillDisplay GetFillDisplay() const;
 
 //! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptr.
-DGNPLATFORM_EXPORT GradientSymbCP GetGradient () const;
+DGNPLATFORM_EXPORT GradientSymbCP GetGradient() const;
+
+//! Get the geometry class.
+DGNPLATFORM_EXPORT DgnGeometryClass GetGeometryClass() const;
 
 //! Get the area pattern params.
-DGNPLATFORM_EXPORT PatternParamsCP GetPatternParams () const;
+DGNPLATFORM_EXPORT PatternParamsCP GetPatternParams() const;
 
 //! Get line style information.
-DGNPLATFORM_EXPORT LineStyleInfoCP GetLineStyle () const;
+DGNPLATFORM_EXPORT LineStyleInfoCP GetLineStyle() const;
 
 //! Get element weight.
-DGNPLATFORM_EXPORT uint32_t GetWeight () const;
+DGNPLATFORM_EXPORT uint32_t GetWeight() const;
 
 //! Get element transparency.
-DGNPLATFORM_EXPORT double GetTransparency () const;
+DGNPLATFORM_EXPORT double GetTransparency() const;
 
 //! Get fill/gradient transparency.
-DGNPLATFORM_EXPORT double GetFillTransparency () const;
+DGNPLATFORM_EXPORT double GetFillTransparency() const;
 
 //! Get render material.
-DGNPLATFORM_EXPORT MaterialCP GetMaterial () const;
+DGNPLATFORM_EXPORT MaterialCP GetMaterial() const;
 
 //! Get element display priority (2d only).
-DGNPLATFORM_EXPORT int32_t GetDisplayPriority () const;
+DGNPLATFORM_EXPORT int32_t GetDisplayPriority() const;
 
 }; // ElemDisplayParams
 

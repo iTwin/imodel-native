@@ -146,6 +146,7 @@ struct DgnCategories : DgnDbTable
             explicit Appearance(Utf8StringCR val) {FromJson(val);}
 
             void SetInvisible(bool val) {m_invisible=val;}
+            bool GetDontPlot() const {return m_dontPlot;}
             void SetDontPlot(bool val) {m_dontPlot=val;}
             bool GetDontSnap() const {return m_dontSnap;}
             void SetDontSnap(bool val) {m_dontSnap=val;}

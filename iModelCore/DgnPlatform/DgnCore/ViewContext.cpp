@@ -981,16 +981,16 @@ void ViewContext::_AddViewOverrides (OvrMatSymbR ovrMatSymb)
     if (NULL == viewFlags)
         return;
 
-    if (!viewFlags->line_wghts)
-        ovrMatSymb.SetWidth (1);
+    if (!viewFlags->weights)
+        ovrMatSymb.SetWidth(1);
 
-    if (viewFlags->inhibitLineStyles/* && !IS_LINECODE (m_currDisplayParams.GetLineStyle())*/)
-        ovrMatSymb.SetRasterPattern (GetIndexedLinePattern (0));
+    if (!viewFlags->styles/* && !IS_LINECODE (m_currDisplayParams.GetLineStyle())*/)
+        ovrMatSymb.SetRasterPattern (GetIndexedLinePattern(0));
 
     if (!viewFlags->transparency)
         {
-        ovrMatSymb.SetLineTransparency (0);
-        ovrMatSymb.SetFillTransparency (0);
+        ovrMatSymb.SetLineTransparency(0);
+        ovrMatSymb.SetFillTransparency(0);
         }
     }
 
@@ -2031,6 +2031,44 @@ bool ViewContext::IsMonochromeDisplayStyleActive()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnCategories::SubCategory::Appearance* appearanceIn) const
+    {
+    if (m_is3dView)
+        return 0;
+
+    // SubCategory display priority is combined with element priority to compute net display priority. 
+    int32_t netPriority = geomPriority;
+
+    if (nullptr == appearanceIn)
+        {
+        if (!subCategoryId.IsValid())
+            return netPriority;
+
+        DgnCategories::SubCategory::Appearance appearance;
+
+        if (nullptr != GetViewport())
+            appearance = GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
+        else
+            appearance = GetDgnDb().Categories().QuerySubCategory(subCategoryId).GetAppearance();
+
+        netPriority += appearance.GetDisplayPriority();
+        }
+    else
+        {
+        netPriority += appearanceIn->GetDisplayPriority();
+        }
+
+    int32_t displayRange[2];
+
+    if (GetDisplayPriorityRange (displayRange[0], displayRange[1]))
+        LIMIT_RANGE (displayRange[0], displayRange[1], netPriority);
+
+    return netPriority;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElemMatSymb::ElemMatSymb()
@@ -2328,6 +2366,7 @@ ElemDisplayParams::ElemDisplayParams (ElemDisplayParamsCR rhs)
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;       
+    m_geometryClass         = rhs.m_geometryClass;       
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
@@ -2352,7 +2391,8 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
     m_subCategoryId         = rhs.m_subCategoryId;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
-    m_weight                = rhs.m_weight;       
+    m_weight                = rhs.m_weight;
+    m_geometryClass         = rhs.m_geometryClass;       
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
@@ -2397,7 +2437,8 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
         return false;
 
     if (rhs.m_lineColor     != m_lineColor ||
-        rhs.m_weight        != m_weight)
+        rhs.m_weight        != m_weight ||
+        rhs.m_geometryClass != m_geometryClass)
         return false;
 
     if (rhs.m_fillColor             != m_fillColor ||
@@ -2437,44 +2478,6 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
 #endif
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnCategories::SubCategory::Appearance* appearanceIn) const
-    {
-    if (m_is3dView)
-        return 0;
-
-    // SubCategory display priority is combined with element priority to compute net display priority. 
-    int32_t netPriority = geomPriority;
-
-    if (nullptr == appearanceIn)
-        {
-        if (!subCategoryId.IsValid())
-            return netPriority;
-
-        DgnCategories::SubCategory::Appearance appearance;
-
-        if (nullptr != GetViewport())
-            appearance = GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
-        else
-            appearance = GetDgnDb().Categories().QuerySubCategory(subCategoryId).GetAppearance();
-
-        netPriority += appearance.GetDisplayPriority();
-        }
-    else
-        {
-        netPriority += appearanceIn->GetDisplayPriority();
-        }
-
-    int32_t displayRange[2];
-
-    if (GetDisplayPriorityRange (displayRange[0], displayRange[1]))
-        LIMIT_RANGE (displayRange[0], displayRange[1], netPriority);
-
-    return netPriority;
     }
 
 /*---------------------------------------------------------------------------------**//**
