@@ -115,10 +115,6 @@ struct TestElementHandler : DgnPlatform::ElementHandler
         DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
         GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
-#ifdef WIP_ITEM_HANDLER
-        geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
-#endif
-
         ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
 
         builder->Append(*computeShape());
@@ -540,6 +536,7 @@ TEST_F (TransactionManagerTests, ElementInstance)
     ASSERT_EQ( e1props.GetValue(v, TMTEST_TEST_ELEMENT_TestElementProperty) , ECN::ECOBJECTS_STATUS_Success );
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -669,6 +666,7 @@ TEST_F (TransactionManagerTests, ElementItem)
     " WHERE e.ECInstanceId=?"
 */
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15

@@ -406,8 +406,8 @@ BentleyStatus DgnElementDependencyGraph::CheckDirection(Edge const& edge)
     auto& models = m_db.Models();
     uint64_t sidx, tidx;
     DgnModelType stype, ttype;
-    models.QueryModelDependencyIndexAndType(sidx, stype, models.QueryModelId(edge.m_ein));
-    models.QueryModelDependencyIndexAndType(tidx, ttype, models.QueryModelId(edge.m_eout));
+    models.QueryModelDependencyIndexAndType(sidx, stype, m_db.Elements().QueryModelId(edge.m_ein));
+    models.QueryModelDependencyIndexAndType(tidx, ttype, m_db.Elements().QueryModelId(edge.m_eout));
     if (sidx > tidx || stype > ttype)
         ReportValidationError (*new DirectionValidationError(FmtEdge(edge)), &edge);
     return BSISUCCESS;

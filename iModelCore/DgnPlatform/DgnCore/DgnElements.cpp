@@ -149,8 +149,6 @@ protected:
     virtual ElemPurge _Purge(int64_t) override;
     virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
-
-    void AccessedNode(int i);
     void SortInto(ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc);
 
 public:
@@ -158,12 +156,12 @@ public:
 
     ElemIdInternalNode(ElemIdTree& root, ElemIdParent* parent) : ElemIdRangeNode(root, parent, false) {}
 
-    ElemIdRangeNodeCH GetEntryC(int i) const     {return m_children+i;}
-    ElemIdRangeNodeCH FirstEntryC()     const     {return GetEntryC(0);}
-    ElemIdRangeNodeCH LastEntryC()      const     {return GetEntryC(m_nEntries-1);}
-    ElemIdRangeNodeH  GetEntry(int i)            {return m_children+i;}
-    ElemIdRangeNodeH  FirstEntry()                {return GetEntry(0);}
-    ElemIdRangeNodeH  LastEntry()                 {return GetEntry(m_nEntries-1);}
+    ElemIdRangeNodeCH GetEntryC(int i) const {return m_children+i;}
+    ElemIdRangeNodeCH FirstEntryC() const {return GetEntryC(0);}
+    ElemIdRangeNodeCH LastEntryC() const {return GetEntryC(m_nEntries-1);}
+    ElemIdRangeNodeH GetEntry(int i) {return m_children+i;}
+    ElemIdRangeNodeH FirstEntry() {return GetEntry(0);}
+    ElemIdRangeNodeH LastEntry() {return GetEntry(m_nEntries-1);}
     ElemIdRangeNodeP ChooseBestNode(uint64_t key);
     bool Contains(ElemIdRangeNodeP child);
     void SplitInternalNode();
@@ -931,7 +929,7 @@ void DgnElements::OnUnreferenced(DgnElementCR el)
 void DgnElements::AddToPool(DgnElementR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
-    BeAssert(!element.IsInPool());
+    BeAssert(!element.IsPersistent());
     element.SetInPool(true);
 
     AllocatedMemory(element._GetMemSize());
@@ -1076,7 +1074,7 @@ void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params) const
+DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const
     {
     ElementHandlerP elHandler = ElementHandler::FindHandler(m_dgndb, params.m_classId);
     if (nullptr == elHandler)
@@ -1095,27 +1093,20 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params) 
     if (DGNMODEL_STATUS_Success != el->_LoadFromDb())
         return nullptr;
 
-    AddToPool(*el);
-    params.m_model._OnLoadedElement(*el);
+    if (makePersistent)
+        {
+        params.m_model._OnLoadedElement(*el);
+        AddToPool(*el);
+        }
+
     return el;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
+* @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
+DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    if (!elementId.IsValid())
-        return nullptr;
-
-    // since we can load elements on more than one thread, we need to check that the element doesn't already exist
-    // *with the lock held* before we load it. This avoids a race condition where an element is loaded on more than one thread.
-    BeDbMutexHolder _v(m_mutex);
-
-    DgnElementCP elRef = FindElement(elementId);
-    if (nullptr != elRef)
-        return elRef;
-
     CachedStatementPtr stmt;
     enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Code=3,ParentId=4};
     GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
@@ -1137,7 +1128,22 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
                     stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
                     stmt->GetValueText(Column::Code), 
                     elementId, 
-                    stmt->GetValueId<DgnElementId>(Column::ParentId)));
+                    stmt->GetValueId<DgnElementId>(Column::ParentId)), makePersistent);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
+    {
+    if (!elementId.IsValid())
+        return nullptr;
+
+    // since we can load elements on more than one thread, we need to check that the element doesn't already exist
+    // *with the lock held* before we load it. This avoids a race condition where an element is loaded on more than one thread.
+    BeDbMutexHolder _v(m_mutex);
+    DgnElementCP element = FindElement(elementId);
+    return (nullptr != element) ? element : LoadElement(elementId, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1229,7 +1235,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     {
     DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
-    if (element.GetElementId().IsValid() || element.IsInPool())
+    if (element.GetElementId().IsValid() || element.IsPersistent())
         {
         stat = DGNMODEL_STATUS_IdExists;
         return nullptr;
@@ -1278,12 +1284,13 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     {
     DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
-    if (replacement.IsInPool())
+    if (replacement.IsPersistent())
         {
         stat =  DGNMODEL_STATUS_WrongElement;
         return nullptr;
         }
 
+    // Get the original element so we can copy the new data into it.
     DgnElementCPtr orig = GetElement(replacement.GetElementId());
     if (!orig.IsValid())
         {
@@ -1299,18 +1306,24 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         return nullptr;
         }
 
-    stat = model._OnUpdateElement(element, replacement);
+    stat = model._OnUpdateElement(element, replacement); // let model know about the update BEFORE we overwrite original element
     if (DGNMODEL_STATUS_Success != stat)
-        return nullptr;
+        return nullptr; // model rejected proposed change
 
     uint32_t oldSize = element._GetMemSize(); // save current size
-    stat = element._CopyFrom(replacement);
-    if (DGNMODEL_STATUS_Success != stat)
-        return nullptr;
+    stat = element._CopyFrom(replacement);    // copy new data into original element
+    if (DGNMODEL_STATUS_Success == stat)
+        stat = element._UpdateInDb();
 
-    stat = element._UpdateInDb();
     if (DGNMODEL_STATUS_Success != stat)
+        {
+        // The update didn't work. We need to reload the original element and copy its state back. Then, tell the model about the failure
+        // so it can reverse any damage done in the "OnUpdate" call above.
+        DgnElementCPtr unmodified = LoadElement(element.GetElementId(), false);
+        element._CopyFrom(*unmodified);
+        model._OnUpdateElementFailed(element); // notify model the update failed
         return nullptr;
+        }
 
     element._ApplyScheduledChangesToInstances(replacement);
     element._ClearScheduledChangesToInstances();
@@ -1321,7 +1334,7 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (0 < sizeChange) // report the number or bytes the element grew.
         AllocatedMemory(sizeChange);
 
-    model._OnUpdatedElement(element, replacement);
+    model._OnUpdatedElement(element); // notify model that update finished successfully
     return &element;
     }
 
@@ -1331,7 +1344,7 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
 DgnModelStatus DgnElements::DeleteElement(DgnElementCR element)
     {
     DgnModelR model = element.GetDgnModel();
-    if (&model.GetDgnDb() != &m_dgndb || !element.IsInPool())
+    if (&model.GetDgnDb() != &m_dgndb || !element.IsPersistent())
         return DGNMODEL_STATUS_WrongElement;
 
     DgnModelStatus stat = model._OnDeleteElement(element);

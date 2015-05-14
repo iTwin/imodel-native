@@ -765,17 +765,16 @@ public:
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
+    //! Delete a model.
+    //! @note All elements from this model are deleted as well.
     DGNPLATFORM_EXPORT DgnModelStatus DeleteModel(DgnModelId id);
+
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
     DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
 
     //! Find the ModelId of the model with the specified name name.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(Utf8CP name) const;
-
-    //! Query for the DgnModelId of the model that owns the specified element.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId);
-
     //! Query for the dependency index and type of the specified model
     //! @param[out] didx    The model's DependencyIndex property value
     //! @param[out] mtype   The model's type
@@ -822,26 +821,6 @@ public:
     //! @return true if the model name is valid, false otherwise.
     //! @note Model names may also not start or end with a space.
     static bool IsValidName(Utf8StringCR name) {return DgnDbTable::IsValidName(name, GetIllegalCharacters());}
-};
-
-//=======================================================================================
-//! Each item has a row in the DgnItems table
-//=======================================================================================
-struct DgnItems : DgnDbTable
-{
-    friend struct DgnDb;
-
-private:
-    explicit DgnItems(DgnDbR db) : DgnDbTable(db) {}
-
-public:
-    //! Return the key of the item associated with the specified element.
-    //! @note an invalid key will be returned in the case of an error
-    //! @see ECInstanceKey::IsValid
-    DGNPLATFORM_EXPORT ElementItemKey QueryItemKey(DgnElementId);
-
-    //! Delete the item associated with the specified geometry aspect ID
-    DGNPLATFORM_EXPORT BentleyStatus DeleteItem(DgnElementId);
 };
 
 //=======================================================================================
@@ -904,7 +883,8 @@ private:
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     bool IsElementIdUsed(DgnElementId id) const;
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
@@ -921,11 +901,13 @@ public:
     DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
     DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
 
-#if !defined (DOCUMENTATION_GENERATOR)
     //! Look up an element in the pool of loaded elements for this DgnDb.
-    //! @return nullptr if the is not in the pool.
+    //! @return A pointer to the element, or nullptr if the is not in the pool.
+    //! @private
     DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
-#endif
+
+    //! Query the DgnModelId of the specified DgnElementId.
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId);
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -941,10 +923,10 @@ public:
     //! Shortcut to get the Totals.m_allocatedBytes member
     int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}
 
-    //! Get the statistics for the current state of the pool.
+    //! Get the statistics for the current state of the element pool.
     DGNPLATFORM_EXPORT Statistics GetStatistics() const;
 
-    //! Reset the statistics for the pool.
+    //! Reset the statistics for the element pool.
     DGNPLATFORM_EXPORT void ResetStatistics();
 
     //! Get a DgnElement from this DgnDb by its DgnElementId. 
@@ -1277,7 +1259,6 @@ public:
     DGNPLATFORM_EXPORT DgnFontId AcquireId(DgnFontCR);
 };
 
-
 /** @cond BENTLEY_SDK_Internal */
 //=======================================================================================
 // @bsiclass
@@ -1450,21 +1431,6 @@ public:
     //! @return ERROR if the DgnDb does not have a valid latitude and longitude, SUCCESS otherwise
     DGNPLATFORM_EXPORT BentleyStatus ConvertToGeoPoint(GeoPointR geoPoint, DPoint3dCR worldPoint) const;
 };
-
-//__PUBLISH_SECTION_END__
-
-//=======================================================================================
-// Used in persistence; do not change values.
-// These are string defines so that they can be easily concatenated into queries.
-// @bsiclass
-//=======================================================================================
-#define DGN_STYLE_TYPE_Line "1"
-#define DGN_STYLE_TYPE_AnnotationText "2"
-#define DGN_STYLE_TYPE_AnnotationFrame "3"
-#define DGN_STYLE_TYPE_AnnotationLeader "4"
-#define DGN_STYLE_TYPE_TextAnnotationSeed "5"
-
-//__PUBLISH_SECTION_START__
 
 //=======================================================================================
 // @bsiclass
