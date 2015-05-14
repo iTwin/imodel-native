@@ -471,7 +471,7 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
 
     FB::TextStringBuilder fbText(encoder);
     fbText.add_majorVersion(CURRENT_MAJOR_VERSION);
-    fbText.add_minorVersion(CURRENT_STYLE_MINOR_VERSION);
+    fbText.add_minorVersion(CURRENT_MINOR_VERSION);
     fbText.add_text(textValueOffset);
     fbText.add_style(fbStyleOffset);
     fbText.add_transform(reinterpret_cast<FB::TextStringTransform*>(const_cast<TransformP>(&textTransform)));
