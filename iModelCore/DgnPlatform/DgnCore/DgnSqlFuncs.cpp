@@ -195,9 +195,11 @@ struct DGN_placement_origin : PlacementFunc
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Get the placement angles
-//! @param placement   The DGN_placement object to query
-//! @return the placement angles
+/**
+    Get the placement angles
+    @param placement   The DGN_placement object to query
+    @return the placement angles
+*/
 DGN_angles DGN_placement_angles(DGN_placement placement);
 // __PUBLISH_SECTION_END__
 #endif
@@ -233,11 +235,16 @@ struct DGN_placement_angles : PlacementFunc
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Construct a DGN_angles from 3 values in degrees {Yaw, Pitch, Roll}.
-//! @param yaw The Yaw angle in degrees
-//! @param pitch The Pitch angle in degrees
-//! @param roll The Roll angle in degrees
-//! @return a DGN_angles object
+/**
+    Construct a DGN_angles from 3 values in degrees {Yaw, Pitch, Roll}.
+    @param yaw The Yaw angle in degrees
+    @param pitch The Pitch angle in degrees
+    @param roll The Roll angle in degrees
+    @return a DGN_angles object
+    <p><b>Example (C++)</b>
+    <p>Here is an example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_Angles.sampleCode
+*/
 DGN_angles DGN_angles(double yaw, double pitch, double roll);
 // __PUBLISH_SECTION_END__
 #endif
@@ -284,10 +291,15 @@ struct DGN_angles_value : ScalarFunction
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Return the maximum absolute difference among the angles in degrees.
-//! @param angle1 a DGN_angles object
-//! @param angle2 a DGN_angles object
-//! @return the maximum absolute difference among the angles in degrees.
+/**
+    Return the maximum absolute difference among the angles in degrees.
+    @param angle1 a DGN_angles object
+    @param angle2 a DGN_angles object
+    @return the maximum absolute difference among the angles in degrees.
+    <p><b>Example (C++)</b>
+    <p>Here is an example of usin DGN_angles_maxdiff to look for elements with a specific placement angle.
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_Angles.sampleCode
+*/
 double DGN_angles_maxdiff(DGN_angles angle1, DGN_angles angle2);
 // __PUBLISH_SECTION_END__
 #endif

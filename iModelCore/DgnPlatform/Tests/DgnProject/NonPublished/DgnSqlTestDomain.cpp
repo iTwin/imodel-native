@@ -78,6 +78,19 @@ ObstacleElement::ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Obstacles are always slabs 10 meters long, 1 meter high, and 1 cm thick
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ObstacleElement::SetSomeProperty(DgnDbR db, Utf8CP value)
+    {
+    ECSqlStatement setObstacleProperty;
+    setObstacleProperty.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " SET SomeProperty=? WHERE ECInstanceId=?");
+    setObstacleProperty.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    setObstacleProperty.BindId(2, GetElementId());
+    setObstacleProperty.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestPhysicalElement::Translate(DVec3dCR offset)
