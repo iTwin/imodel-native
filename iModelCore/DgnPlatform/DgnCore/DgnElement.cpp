@@ -93,16 +93,14 @@ void CachedInstances::_OnCleanup(DgnElementCP host)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2015
+* @bsimethod                                    Shaun.Sewall                    02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId DgnElement::GetItemClassId() const
+DgnModelId DgnElements::QueryModelId(DgnElementId elementId)
     {
-    if (!m_itemClassId.IsValid())
-        {
-        ElementItemKey itemKey = GetDgnDb().Items().QueryItemKey(GetElementId());
-        m_itemClassId = DgnClassId(itemKey.GetECClassId());
-        }
-    return m_itemClassId;
+    CachedStatementPtr stmt;
+    GetStatement(stmt, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindId(1, elementId);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -110,7 +108,7 @@ DgnClassId DgnElement::GetItemClassId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t DgnElement::AddRef() const
     {
-    if (0 == m_refCount && IsInPool())
+    if (0 == m_refCount && IsPersistent())
         GetDgnDb().Elements().OnReclaimed(*this);
 
     return ++m_refCount;
@@ -126,7 +124,7 @@ uint32_t DgnElement::Release() const
 
     BeAssert(m_refCount==0);
 
-    if (IsInPool())
+    if (IsPersistent())
         {
         // add to the DgnFile's unreferenced element count
         GetDgnDb().Elements().OnUnreferenced(*this);
@@ -333,7 +331,7 @@ void DgnElement::SetInSelectionSet(bool yesNo) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::~DgnElement()
     {
-    BeAssert(!IsInPool());
+    BeAssert(!IsPersistent());
     ClearAllAppData();
     }
 
@@ -698,13 +696,12 @@ DgnModelStatus DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return DGNMODEL_STATUS_Success;
 
-    if (!IsSameType(other) || &m_dgnModel != &other.m_dgnModel)
+    if (&m_dgnModel != &other.m_dgnModel)
         return DGNMODEL_STATUS_BadElement;
 
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
     m_parentId   = other.m_parentId;
-    m_itemClassId = other.m_itemClassId;
 
     return DGNMODEL_STATUS_Success;
     }
@@ -718,8 +715,9 @@ DgnModelStatus GeometricElement::_CopyFrom(DgnElementCR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    GeometricElementCP otherGeom = (GeometricElementCP) &other;
-    SaveGeomStream(&otherGeom->m_geom);
+    GeometricElementCP otherGeom = other.ToGeometricElement();
+    if (otherGeom)
+        SaveGeomStream(&otherGeom->m_geom);
     return DGNMODEL_STATUS_Success;
     }
 
@@ -732,8 +730,10 @@ DgnModelStatus DgnElement3d::_CopyFrom(DgnElementCR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement3dCP el3d = (DgnElement3dCP) &other;
-    m_placement = el3d->m_placement;
+    DgnElement3dCP el3d = other.ToElement3d();
+    if (el3d)
+        m_placement = el3d->m_placement;
+
     return DGNMODEL_STATUS_Success;
     }
 
@@ -746,8 +746,9 @@ DgnModelStatus DgnElement2d::_CopyFrom(DgnElementCR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement2dCP el2d = (DgnElement2dCP) &other;
-    m_placement = el2d->m_placement;
+    DgnElement2dCP el2d = other.ToElement2d();
+    if (el2d)
+        m_placement = el2d->m_placement;
     return DGNMODEL_STATUS_Success;
     }
 
@@ -1005,6 +1006,7 @@ static IECInstancePtr queryInstance(DgnDbR db, ECClassCP ecclass, EC::ECInstance
     stmt.Prepare(db, b.ToString().c_str());
     stmt.BindId(1, instanceId);
     stmt.Step();
+
     ECInstanceECSqlSelectAdapter selector(stmt);
     IECInstancePtr instance = selector.GetInstance();
     if (!instance.IsValid())
@@ -1070,11 +1072,13 @@ IECInstanceP DgnElement::GetItem(bool setModified) const
         {
         instances.m_itemChecked = true;
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
         if (GetItemClassId().IsValid())
             {
             ECClassCP itemClass = GetDgnDb().Schemas().GetECClass(GetItemClassId().GetValue());
             instances.m_item = CachedInstance(getDirectlyLinkedInstance(GetDgnDb(), itemClass, GetElementId(), bset<Utf8String>()));
             }
+#endif
         }
 
     if (instances.m_item.m_changeType == InstanceChangeType::Delete)
@@ -1311,9 +1315,11 @@ BentleyStatus CachedInstance::ApplyScheduledChangesToItem(DgnElementR el)
 
     if (m_changeType == InstanceChangeType::Write)
         {
+#if defined (NEEDS_WORK_ELEMENTS_API)
         //  There is 1 item. If we want to change its class, we must delete the existing one.
         if (el.GetItemClassId().IsValid() && el.GetItemClassId().GetValue() != m_instance->GetClass().GetId())
             el.GetDgnDb().Items().DeleteItem(el.GetElementId());
+#endif
         }
 
     //  Insert, update, or delete the item.
@@ -1321,11 +1327,13 @@ BentleyStatus CachedInstance::ApplyScheduledChangesToItem(DgnElementR el)
     if (BSISUCCESS != ApplyScheduledChange(outcome, el.GetDgnDb()))
         return BSIERROR;
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
     //  Update the DgnElement's ItemClassId member variable
     if (outcome == InstanceUpdateOutcome::Deleted)
         el.SetItemClassId(DgnClassId());
     else
         el.SetItemClassId(DgnClassId(m_instance->GetClass().GetId()));
+#endif
 
     // Note: the ElementOwnsItem relationship is created implicitly when we create the item with its ElementId column set to match the owning element's ID.
 
@@ -1459,3 +1467,8 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
 
     return range;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnElement::Update(DgnModelStatus* stat) {return GetDgnDb().Elements().Update(*this, stat);}

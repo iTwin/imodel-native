@@ -252,8 +252,6 @@ $(coreObjs)ImageUtilities$(oext): $(DgnCoreDir)ImageUtilities.cpp $(DgnCoreAPISr
 
 $(coreObjs)GeomPart$(oext) : $(DgnCoreDir)GeomPart.cpp $(DgnCoreAPISrc)GeomPart.h ${MultiCompileDepends}
 
-$(coreObjs)DgnItem$(oext) : $(DgnCoreDir)DgnItem.cpp $(DgnCoreAPISrc)DgnItem.h ${MultiCompileDepends}
-
 tools      = $(SrcRoot)DgnPlatform/Tools/ToolSubs/
 
 $(coreObjs)stringop$(oext)        : $(tools)charutil/stringop.cpp ${MultiCompileDepends} 

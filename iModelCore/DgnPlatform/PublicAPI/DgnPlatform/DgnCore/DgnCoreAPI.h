@@ -35,7 +35,6 @@
 #include "LineStyle.h"
 #include "LineStyleManager.h"
 #include "DgnEntity.h"
-#include "DgnItem.h"
 #include "DgnDb.h"
 #include "NotificationManager.h"
 #include "ScanCriteria.h"

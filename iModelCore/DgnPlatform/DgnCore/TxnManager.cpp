@@ -575,7 +575,7 @@ void ITxnManager::InitTempTables()
 void TxnSummary::AddAffectedElement(DgnElementId const& eid, DgnModelId mid, ChangeType changeType)
     {
     if (!mid.IsValid())
-        mid = m_dgndb.Models().QueryModelId(eid);
+        mid = m_dgndb.Elements().QueryModelId(eid);
 
     if (!m_addElementStatement.IsValid())
         m_dgndb.GetCachedStatement (m_addElementStatement, Utf8PrintfString("INSERT INTO %s (ElementId,ModelId,Op) VALUES(?,?,?)", GetChangedElementsTableName().c_str()));
