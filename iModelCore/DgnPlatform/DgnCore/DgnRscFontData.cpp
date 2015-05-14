@@ -88,7 +88,7 @@ BentleyStatus DgnRscDbFontData::_AddDataRef()
 
     if (1 != GetFB()->majorVersion())
         {
-        FONT_LOG.warningv("RSC font data is in an unsupported format from database for family '%s'. This font will be considered unresolved.", (int)m_familyName.c_str());
+        FONT_LOG.warningv("RSC font data is in an unsupported format from database for family '%s'. This font will be considered unresolved.", m_familyName.c_str());
         _ReleaseDataRef();
         return ERROR;
         }

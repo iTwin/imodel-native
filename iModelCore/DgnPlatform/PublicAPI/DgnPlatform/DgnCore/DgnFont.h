@@ -21,6 +21,7 @@ struct DgnGlyph
     typedef uint16_t T_Id; // The only real use of exposing this is for QuickVision. It should in reality be a QVwchar, but replicate here because we're below quickvision.
 
 public:
+    virtual ~DgnGlyph() {}
     virtual T_Id _GetId() const = 0;
     T_Id GetId() const { return _GetId(); }
     virtual DRange2d _GetRange() const = 0;
