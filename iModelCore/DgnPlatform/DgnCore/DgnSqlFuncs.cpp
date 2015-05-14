@@ -27,6 +27,7 @@ DgnSchemaDomain defines types and built-in functions that you can use in SQL sta
 //! @see DGN_point_value, DGN_point_distance
 struct DGN_point
 {
+protected:
     double x;   //!< The x-coordinate
     double y;   //!< The y-coordinate
     double z;   //!< The z-coordinate
@@ -36,6 +37,7 @@ struct DGN_point
 //! @see DGN_angles_value, DGN_angles_maxdiff
 struct DGN_angles
 {
+protected:
     double yaw;  //!< The Yaw angle in degrees
     double pitch;//!< The Yaw angle in degrees
     double roll; //!< The Yaw angle in degrees
@@ -45,6 +47,7 @@ struct DGN_angles
 //! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union
 struct DGN_bbox
 {
+protected:
     double XLow;  //!< The low X coordinate of the bounding box
     double YLow;  //!< The low Y coordinate of the bounding box
     double Zlow;  //!< The low Z coordinate of the bounding box
@@ -58,6 +61,7 @@ struct DGN_bbox
 //! @see DGN_placement_origin, DGN_placement_angles, DGN_placement_eabb, DGN_placement_aabb
 struct DGN_placement
 {
+protected:
     DGN_point origin;   //!< Origin
     DGN_angles angles;  //!< Angles
     DGN_bbox bbox;      //!< Element-aligned bounding box
@@ -461,10 +465,14 @@ struct DGN_bbox_areaxy : ScalarFunction
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Determine of two bounding boxes overlap
-//! @param bb1       The first bounding box
-//! @param bb2       The second bounding box
-//! @return 1 if bb1 overlaps bb2 or 0 if not.
+/**
+    Determine of two bounding boxes overlap
+    @param bb1       The first bounding box
+    @param bb2       The second bounding box
+    @return 1 if bb1 overlaps bb2 or 0 if not.
+    <p><b>Example (C++)</b>
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps.sampleCode
+*/
 int DGN_bbox_overlaps(DGN_bbox bb1, DGN_bbox bb2);
 // __PUBLISH_SECTION_END__
 #endif
@@ -542,9 +550,13 @@ struct DGN_bbox_value : ScalarFunction
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Aggregate function that unions a set of bounding boxes
-//! @return a bounding box that contains the aggregated range.
-DGN_bbox DGN_bbox_union(expression);
+/**
+    \em Aggregate function that computes the union of a series of bounding boxes
+    @return a bounding box that contains the aggregated range.
+    <p><b>Example (C++)</b>
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
+*/
+DGN_bbox DGN_bbox_union(DGN_bbox);
 // __PUBLISH_SECTION_END__
 #endif
 struct DGN_bbox_union : AggregateFunction

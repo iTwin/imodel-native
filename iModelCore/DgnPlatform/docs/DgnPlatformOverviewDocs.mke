@@ -18,14 +18,16 @@ docsBuildDir = $(buildDir)docs/
 docsPublishingInputDir = $(docsBuildDir)publishingInputDir/
 
 #Sample code extraction was already done previously
-extractedSampleCodeDir = $(docsBuildDir)extractedsamplecode/
+extractionInputDir = $(docsBuildDir)extractionInputDir/
+extractionOutputDir = $(docsBuildDir)extractedsamplecode/
 
 #Output folder for doc files that are ready for Doxygen
 readyForDoxygen = $(docsBuildDir)publisherOutput/
 
 always:
     !~@mkdir ${docsPublishingInputDir}
-    !~@mkdir ${extractedSampleCodeDir}
+    !~@mkdir ${extractionInputDir}
+    !~@mkdir ${extractionOutputDir}
     !~@mkdir ${readyForDoxygen}
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
@@ -40,6 +42,8 @@ always:
     PUBLISH_VERBOSE = -v3   # INFO_LEVEL_VeryInteresting
 %endif
 
+extractionsStampFileName = $(readyForDoxygen)extractionsStampFileName.stamp
+
 overviewStampFileName = $(readyForDoxygen)dgnPlatform.stamp
 
 $(overviewStampFileName) : $(_MakeFileSpec)
@@ -50,19 +54,27 @@ $(overviewStampFileName) : $(_MakeFileSpec)
 ##----------------------------------------------------------------------
 # Extract code samples from .h and .cpp files
 ##----------------------------------------------------------------------
+# Gather files that contain code samples into extractionInputDir
+$(extractionInputDir)DgnModel.cpp : $(baseDir)../DgnCore/DgnModel.cpp
+    $(LinkFirstDepToFirstTarget)
+    ~time
 
-    #   *** TBD *** 
+$(extractionInputDir)DgnSqlTest.cpp : $(baseDir)../Tests/DgnProject/NonPublished/DgnSqlTest.cpp
+    $(LinkFirstDepToFirstTarget)
+    ~time
 
+# Extract the samples into extractionOutputDir
+always:
+    PublishExtract.py -d${extractionInputDir} $(PUBLISH_VERBOSE) $(cleanopt) -o${extractionOutputDir} -s$(extractionsStampFileName) --noProvenance
 
 ##----------------------------------------------------------------------
 # "Publish" some .cpp files that contain doc
 ##----------------------------------------------------------------------
 
-# Gather .cpp files
+# Gather .cpp files into docsPublishingInputDir
 $(docsPublishingInputDir)DgnSqlFuncs.overviewPage $(overviewStampFileName) : $(baseDir)../DgnCore/DgnSqlFuncs.cpp
     $(LinkFirstDepToFirstTarget)
     ~time
-
 
 #TODO: These macros are not used by the DgnPlatform docs. 
 #Might be able to remove this once issue in PublishAPI.py was resolved that requires a macro file to be specified
@@ -76,7 +88,7 @@ $(docsBuildDir)macros.txt : $(_MakeFileSpec)
 # Extract docs and insert code samples
 # Inserts extracted code samples into the doc files
 always:
-    PublishAPI.py $(PUBLISH_VERBOSE) -o${readyForDoxygen} -d${docsPublishingInputDir} $(cleanopt) -x$(TARGET_PLATFORM) --insertFileDir=${extractedSampleCodeDir} --insertFileMacros=@$(docsBuildDir)macros.txt
+    PublishAPI.py $(PUBLISH_VERBOSE) -o${readyForDoxygen} -d${docsPublishingInputDir} $(cleanopt) -x$(TARGET_PLATFORM) --insertFileDir=${extractionOutputDir} --insertFileMacros=@$(docsBuildDir)macros.txt
 
 ##----------------------------------------------------------------------
 # Link in .overviewPages and other files that do not need publishing

@@ -115,6 +115,7 @@ TEST_F(SqlFunctionsTest, TestPoints)
         }
 
     //  Run some queries that check proximity of Robot1 to obstacles
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps.sampleCode
     Statement stmt;
     stmt.Prepare(*m_db, 
                     "SELECT o.id, o.placement "
@@ -125,6 +126,7 @@ TEST_F(SqlFunctionsTest, TestPoints)
                     "       (SELECT e.Id as id, g.Placement as placement"                                       
                     "        FROM dgn_Element e, dgn_ElementGeom g WHERE (e.ECClassId=? AND e.Id = g.ElementId)) o"  
                     " WHERE DGN_bbox_overlaps(DGN_placement_aabb(r1.Placement), DGN_placement_aabb(o.Placement))");
+    //__PUBLISH_EXTRACT_END__
     stmt.BindId(1, r1);
     stmt.BindId(2, ObstacleElement::QueryClassId(*m_db));
 
