@@ -11,9 +11,10 @@
 #include <Bentley/BeTest.h>
 #include <BeXml/BeXml.h>
 #include <wchar.h>
+
 USING_NAMESPACE_BENTLEY
 
-#ifndef WIP_NOT_PORTABLE
+#ifdef WIP_NOT_PORTABLE
 
 struct TypeNamePair
 {
