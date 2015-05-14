@@ -1666,6 +1666,20 @@ bool IsGeometryVisible()
     if (appearance.IsInvisible())
         return false;
 
+    switch (m_context.GetDrawPurpose())
+        {
+        case DrawPurpose::Plot:
+            if (appearance.GetDontPlot())
+                return false;
+            break;
+
+        case DrawPurpose::Pick:
+        case DrawPurpose::FenceAccept:
+            if (appearance.GetDontLocate()) // NOTE: Don't check GetDontSnap as we still need "not snappable" hit...
+                return false;
+            break;
+        }
+
     return true;
     }
 
