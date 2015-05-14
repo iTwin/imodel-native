@@ -6,12 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <Bentley/BeTest.h>
 #include <WebServices/Client/WSClient.h>
+
+BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
-
-BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+
