@@ -1492,7 +1492,7 @@ ColorDef ViewController::ResolveBGColor() const
     ColorDef bgColor = ColorDef::Black();
 
     // First, see if the view's background color override flag is on. If so, use it.
-    if (GetViewFlags().overrideBackground)
+    if (GetViewFlags().bgColor)
         {
         bgColor = GetBackgroundColor();
         }

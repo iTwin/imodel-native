@@ -946,14 +946,14 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
     bool useColor  = !elParams.IsLineColorFromSubCategoryAppearance();
     bool useWeight = !elParams.IsWeightFromSubCategoryAppearance();
 
-    if (useColor || useWeight || 0.0 != elParams.GetTransparency() || 0 != elParams.GetDisplayPriority())
+    if (useColor || useWeight || 0.0 != elParams.GetTransparency() || 0 != elParams.GetDisplayPriority() || DgnGeometryClass::Primary != elParams.GetGeometryClass())
         {
         FlatBufferBuilder fbb;
 
         auto mloc = FB::CreateBasicSymbology (fbb, useColor ? elParams.GetLineColor().GetValue() : 0, 
                                                    useWeight ? elParams.GetWeight() : 0,
                                                    elParams.GetTransparency(), elParams.GetDisplayPriority(), 
-                                                   useColor, useWeight);
+                                                   useColor, useWeight, (FB::GeometryClass) elParams.GetGeometryClass());
         fbb.Finish (mloc);
         Append (Operation (OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
@@ -1267,6 +1267,14 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElemDisplayParamsR elPar
             if (displayPriority != elParams.GetDisplayPriority())
                 {
                 elParams.SetDisplayPriority(displayPriority);
+                changed = true;
+                }
+
+            DgnGeometryClass geomClass = (DgnGeometryClass) ppfb->geomClass();
+
+            if (geomClass != elParams.GetGeometryClass())
+                {
+                elParams.SetGeometryClass(geomClass);
                 changed = true;
                 }
             break;
@@ -1627,6 +1635,40 @@ void CookElemDisplayParams()
     m_symbologyChanged = false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsGeometryVisible()
+    {
+    switch (m_context.GetCurrentDisplayParams()->GetGeometryClass())
+        {
+        case DgnGeometryClass::Construction:
+            if (!m_flags.constructions)
+                return false;
+            break;
+
+        case DgnGeometryClass::Dimension:
+            if (!m_flags.dimensions)
+                return false;
+            break;
+
+        case DgnGeometryClass::Pattern:
+            if (!m_flags.patterns)
+                return false;
+            break;
+        }
+
+    if (nullptr == m_context.GetViewport())
+        return true;
+
+    DgnCategories::SubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentDisplayParams()->GetSubCategoryId());
+
+    if (appearance.IsInvisible())
+        return false;
+
+    return true;
+    }
+
 }; // DrawState
 
 /*---------------------------------------------------------------------------------**//**
@@ -1693,6 +1735,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::PointPrimitive:
                 {
+                if (!state.IsGeometryVisible())
+                    break;
+
                 int         nPts;
                 int8_t      boundary;
                 DPoint3dCP  pts;
@@ -1721,6 +1766,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::ArcPrimitive:
                 {
+                if (!state.IsGeometryVisible())
+                    break;
+
                 DEllipse3d  arc;
                 int8_t      boundary;
 
@@ -1738,6 +1786,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::CurvePrimitive:
                 {
+                if (!state.IsGeometryVisible())
+                    break;
+
                 ICurvePrimitivePtr curvePrimitivePtr;
                 
                 if (!reader.Get (egOp, curvePrimitivePtr))
@@ -1753,6 +1804,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::CurveVector:
                 {
+                if (!state.IsGeometryVisible())
+                    break;
+
                 CurveVectorPtr curvePtr;
                 
                 if (!reader.Get (egOp, curvePtr))
@@ -1766,6 +1820,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::Polyface:
                 {
+                if (!state.IsGeometryVisible())
+                    break;
+
                 PolyfaceQueryCarrier meshData (0, false, 0, 0, nullptr, nullptr);
 
                 if (!reader.Get (egOp, meshData))
@@ -1779,6 +1836,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::SolidPrimitive:
                 {
+                if (!state.IsGeometryVisible())
+                    break;
+
                 ISolidPrimitivePtr solidPtr;
                 
                 if (!reader.Get (egOp, solidPtr))
@@ -1792,6 +1852,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::BsplineSurface:
                 {
+                if (!state.IsGeometryVisible())
+                    break;
+
                 MSBsplineSurfacePtr surfacePtr;
                 
                 if (!reader.Get (egOp, surfacePtr))
@@ -1806,6 +1869,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             case ElementGeomIO::OpCode::ParasolidBRep:
                 {
                 if (!useBRep)
+                    break;
+
+                if (!state.IsGeometryVisible())
                     break;
 
                 ISolidKernelEntityPtr entityPtr;
@@ -1826,6 +1892,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             case ElementGeomIO::OpCode::BRepPolyfaceExact:
                 {
                 if (useBRep)
+                    break;
+
+                if (!state.IsGeometryVisible())
                     break;
 
                 PolyfaceQueryCarrier meshData (0, false, 0, 0, nullptr, nullptr);
@@ -1857,6 +1926,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 if (!(isPick || isQVWireframe)) // NEEDSWORK: Assumes QVElems are per-view...otherwise must setup WF only matsymb like Vancouver...
                     break;
 
+                if (!state.IsGeometryVisible())
+                    break;
+
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector (egOp.m_data);
 
                 if (!curvePtr.IsValid())
@@ -1873,6 +1945,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 if (!(isPick || isQVWireframe)) // NEEDSWORK: Assumes QVElems are per-view...otherwise must setup WF only matsymb like Vancouver...
                     break;
 
+                if (!state.IsGeometryVisible())
+                    break;
+
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector (egOp.m_data);
 
                 if (!curvePtr.IsValid())
@@ -1886,13 +1961,17 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             
             case ElementGeomIO::OpCode::TextString:
                 {
+                if (!state.IsGeometryVisible())
+                    break;
+
                 TextString text;
+
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, context.GetDgnDb()))
                     break;
                 
                 state.CookElemDisplayParams();
-                context.GetIDrawGeom().DrawTextString(text);
-                
+
+                context.GetIDrawGeom().DrawTextString(text);                
                 break;
                 }
             

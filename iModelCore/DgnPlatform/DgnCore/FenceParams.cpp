@@ -76,8 +76,7 @@ virtual void    _SetDrawViewFlags (ViewFlagsCP flags) override
     {
     T_Super::_SetDrawViewFlags (flags);
 
-    // NOTE: Ignore linestyles for fence accept...
-    m_viewFlags.inhibitLineStyles = true;
+    m_viewFlags.styles = false; // NOTE: Ignore linestyles for fence accept...
 
     switch (m_fp->GetLocateInteriors ())
         {

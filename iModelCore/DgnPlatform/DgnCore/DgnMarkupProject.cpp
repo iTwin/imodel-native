@@ -123,14 +123,14 @@ void PhysicalRedlineViewController::SynchWithSubjectViewController ()
     // There can only be one set of view flags. It will be used to initialize the viewport and qv. 
     // *** EXPERIMENTAL: Here, I force a couple of flags to suit the redline view better. Does this cause too much of a change in the subject view??
     m_viewFlags = m_subjectView.GetViewFlags();
-    m_viewFlags.line_wghts = true;
-    m_viewFlags.auxDisplay = true;
+    m_viewFlags.weights = true;
+    m_viewFlags.acs = true;
     m_viewFlags.grid = true;
 
     // tricky: PhysicalRedlineViewController must seem to override the background color 
-    //          just so that its _GetBackgroundColor will be called by ResolveBGColor, 
-    //           so that it can forward the call to the subject viewcontroller.
-    m_viewFlags.overrideBackground = true;
+    //         just so that its _GetBackgroundColor will be called by ResolveBGColor, 
+    //         so that it can forward the call to the subject viewcontroller.
+    m_viewFlags.bgColor = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1778,7 +1778,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView (RedlineModelR rdlMod
     auto templateSheet = project->Views().LoadViewController(templateView, DgnViews::FillModels::No);
     if (templateSheet.IsValid())
         {
-        if (templateSheet->GetViewFlags().overrideBackground)
+        if (templateSheet->GetViewFlags().bgColor)
             controller->SetBackgroundColor (templateSheet->GetBackgroundColor());
         controller->SetDelta (templateSheet->GetDelta());
         controller->SetOrigin (templateSheet->GetOrigin());
