@@ -55,7 +55,8 @@ TestPhysicalElement::TestPhysicalElement(PhysicalModelR model, DgnCategoryId cat
     SetCode(elementCode);
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
     builder->Append(curve);
-    BeAssert( SUCCESS == builder->SetGeomStreamAndPlacement(*this) );
+    StatusInt status = builder->SetGeomStreamAndPlacement(*this);
+    BeAssert( SUCCESS == status );
     }
 
 /*---------------------------------------------------------------------------------**//**
