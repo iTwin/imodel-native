@@ -145,8 +145,8 @@ public:
 
     DGNPLATFORM_EXPORT ColorDef GetColor() const;
     DGNPLATFORM_EXPORT void SetColor(ColorDef);
-    DGNPLATFORM_EXPORT uint32_t GetFontId() const;
-    DGNPLATFORM_EXPORT void SetFontId(uint32_t);
+    DGNPLATFORM_EXPORT DgnFontId GetFontId() const;
+    DGNPLATFORM_EXPORT void SetFontId(DgnFontId);
     DGNPLATFORM_EXPORT double GetHeight() const;
     DGNPLATFORM_EXPORT void SetHeight(double);
     DGNPLATFORM_EXPORT double GetLineSpacingFactor() const;

@@ -221,6 +221,13 @@ int64_t           LineStyleManager::GetNumberFromName (WCharCP name, DgnDbP dgnF
     return GetNumberFromName(utf8.c_str(), dgnFile);
     }
 
+//=======================================================================================
+// Used in persistence; do not change values.
+// These are string defines so that they can be easily concatenated into queries.
+// @bsiclass
+//=======================================================================================
+#define DGN_STYLE_TYPE_Line "1"
+
 //-------------------------------------------------------------------------------   --------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------

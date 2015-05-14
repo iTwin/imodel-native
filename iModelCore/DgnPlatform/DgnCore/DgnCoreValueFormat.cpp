@@ -191,7 +191,7 @@ void AngleFormatter::ConcatUnitLabel (WStringR inString, AngleFormatter::AngleUn
         {
         case ANGLE_UNIT_Degrees:
             {
-            WChar degStr[] = { SPECIALCHAR_UnicodeDegree, 0 };
+            WChar degStr[] = { 0x00b0 /*degree*/, 0 };
             inString.append (degStr);
             break;
             }

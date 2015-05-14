@@ -1,7 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: DgnCore/Annotations/AnnotationTextStyle.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/Annotations/AnnotationTextStyle.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextStylePersistence.h>
@@ -12,8 +15,7 @@ USING_NAMESPACE_EC
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace flatbuffers;
 
-//*****************************************************************************************************************************************************************************************************
-//*****************************************************************************************************************************************************************************************************
+#define DGN_STYLE_TYPE_AnnotationText "2"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
@@ -177,8 +179,8 @@ ColorDef AnnotationTextStyle::GetColor() const { return ColorDef((uint32_t)getIn
 void AnnotationTextStyle::SetColor(ColorDef value) { setIntegerValue(m_data, AnnotationTextStyleProperty::ColorId, DEFAULT_COLORID_VALUE, value.GetValue()); }
 
 static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_FONTID_VALUE = 0;
-uint32_t AnnotationTextStyle::GetFontId() const { return (uint32_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE); }
-void AnnotationTextStyle::SetFontId(uint32_t value) { setIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE, value); }
+DgnFontId AnnotationTextStyle::GetFontId() const { return DgnFontId((uint32_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE)); }
+void AnnotationTextStyle::SetFontId(DgnFontId value) { setIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE, value.GetValue()); }
 
 static const AnnotationTextStylePropertyBag::T_Real DEFAULT_HEIGHT_VALUE = 1.0;
 double AnnotationTextStyle::GetHeight() const { return getRealValue(m_data, AnnotationTextStyleProperty::Height, DEFAULT_HEIGHT_VALUE); }
@@ -233,7 +235,7 @@ void AnnotationTextStyle::SetWidthFactor(double value) { setRealValue(m_data, An
 //---------------------------------------------------------------------------------------
 DgnFontCR AnnotationTextStyle::ResolveFont() const
     {
-    return DgnFontManager::ResolveFont(GetFontId(), *m_dgndb, DGNFONTVARIANT_DontCare);
+    return DgnFontManager::ResolveFont(m_dgndb->Fonts().FindFontById(GetFontId()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -437,8 +439,6 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
     return SUCCESS;
     }
 
-//*****************************************************************************************************************************************************************************************************
-//*****************************************************************************************************************************************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015

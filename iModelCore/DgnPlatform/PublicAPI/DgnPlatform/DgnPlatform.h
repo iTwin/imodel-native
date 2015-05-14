@@ -104,10 +104,20 @@ DGNPLATFORM_TYPEDEFS (DgnDb)
 DGNPLATFORM_TYPEDEFS (DgnElement)
 DGNPLATFORM_TYPEDEFS (DgnElement2d)
 DGNPLATFORM_TYPEDEFS (DgnElement3d)
+DGNPLATFORM_TYPEDEFS (DgnFont);
 DGNPLATFORM_TYPEDEFS (DgnGeomPart)
+DGNPLATFORM_TYPEDEFS (DgnGlyph);
+DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext);
+DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult);
 DGNPLATFORM_TYPEDEFS (DgnMarkupProject)
 DGNPLATFORM_TYPEDEFS (DgnModel)
 DGNPLATFORM_TYPEDEFS (DgnResourceURI)
+DGNPLATFORM_TYPEDEFS (DgnGlyph);
+DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext);
+DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult);
+DGNPLATFORM_TYPEDEFS (DgnRscFont);
+DGNPLATFORM_TYPEDEFS (DgnShxFont);
+DGNPLATFORM_TYPEDEFS (DgnTrueTypeFont);
 DGNPLATFORM_TYPEDEFS (DgnViewport)
 DGNPLATFORM_TYPEDEFS (DisplayStyle)
 DGNPLATFORM_TYPEDEFS (DisplayStyleFlags)
@@ -115,6 +125,7 @@ DGNPLATFORM_TYPEDEFS (DrawingElement)
 DGNPLATFORM_TYPEDEFS (GeomStream)
 DGNPLATFORM_TYPEDEFS (GeometricElement)
 DGNPLATFORM_TYPEDEFS (GradientSymb)
+DGNPLATFORM_TYPEDEFS (IDgnFontData);
 DGNPLATFORM_TYPEDEFS (IDrawGeom)
 DGNPLATFORM_TYPEDEFS (IElemTopology)
 DGNPLATFORM_TYPEDEFS (IRedrawOperation)
@@ -148,17 +159,12 @@ DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
 DGNPLATFORM_TYPEDEFS (DgnColorMap)
 DGNPLATFORM_TYPEDEFS (DgnDimStyle)
 DGNPLATFORM_TYPEDEFS (DgnDomain)
-DGNPLATFORM_TYPEDEFS (DgnFont)
-DGNPLATFORM_TYPEDEFS (DgnFontCatalog)
-DGNPLATFORM_TYPEDEFS (DgnFontManager)
 DGNPLATFORM_TYPEDEFS (DgnGestureEvent)
-DGNPLATFORM_TYPEDEFS (DgnGlyph)
 DGNPLATFORM_TYPEDEFS (DgnHost)
 DGNPLATFORM_TYPEDEFS (DgnModelInfo)
 DGNPLATFORM_TYPEDEFS (DgnModelIterator)
 DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
-DGNPLATFORM_TYPEDEFS (DgnShxFontManager)
 DGNPLATFORM_TYPEDEFS (DisplayPath)
 DGNPLATFORM_TYPEDEFS (DrawContext)
 DGNPLATFORM_TYPEDEFS (DrawingModel)
@@ -272,6 +278,7 @@ GEOCOORD_TYPEDEFS (DgnGCS)
 
 DGNPLATFORM_REF_COUNTED_PTR (DgnDb)
 DGNPLATFORM_REF_COUNTED_PTR (DgnElement)
+DGNPLATFORM_REF_COUNTED_PTR (DgnFont);
 DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
 DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
@@ -332,6 +339,8 @@ ECINSTANCE_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. S
 BEREPOSITORYBASED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
 BEREPOSITORYBASED_ID_CLASS(DgnRasterFileId)    //!< An Id that is assigned to a raster file.
 BEREPOSITORYBASED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
+
+BESERVER_ISSUED_ID_CLASS(DgnFontId);
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
@@ -664,6 +673,16 @@ enum DgnPlatformInvalidSymbology
 {
     INVALID_STYLE = 0x7fffff00,
 };
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     03/2015
+//=======================================================================================
+enum struct DgnFontType { TrueType = 1, Rsc = 2, Shx = 3 };
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     03/2015
+//=======================================================================================
+enum struct DgnFontStyle { Regular, Bold, Italic, BoldItalic };
 
 /** @endcond */
 

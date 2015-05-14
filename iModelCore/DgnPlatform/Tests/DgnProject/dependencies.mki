@@ -12,12 +12,11 @@
 %endif
 
 # Additional assets needed by DgnProject unit tests
-BEGTEST_ASSETS     + $(BuildContext)SubParts/ECSchemas/
-BEGTEST_ASSETS     + $(BuildContext)SubParts/UnitTests/assets/DgnProject/ECSchemas;ECSchemas
-BEGTEST_ASSETS     + $(BuildContext)SubParts/DgnPlatformLastResortFonts/;fonts/LastResortFonts
-BEGTEST_ASSETS     + $(BuildContext)SubParts/DgnPlatformFont/;fonts
-BEGTEST_ASSETS     + $(BuildContext)SubParts/BeIcu4cData/icudt53l.dat
-BEGTEST_ASSETS     + $(ProductRoot)BeTestDocuments/
+BEGTEST_ASSETS + $(BuildContext)SubParts/ECSchemas/
+BEGTEST_ASSETS + $(BuildContext)SubParts/UnitTests/assets/DgnProject/ECSchemas;ECSchemas
+BEGTEST_ASSETS + $(BuildContext)SubParts/DgnPlatformLastResortFonts/lastresortfonts
+BEGTEST_ASSETS + $(BuildContext)SubParts/BeIcu4cData/icudt55l.dat
+BEGTEST_ASSETS + $(ProductRoot)BeTestDocuments/
 
 # Required xliff files
-BEGTEST_XLIFFS     + $[@wildcard $(BuildContext)SubParts/xliffs/*.xliff]
+BEGTEST_XLIFFS + $[@wildcard $(BuildContext)SubParts/xliffs/*.xliff]

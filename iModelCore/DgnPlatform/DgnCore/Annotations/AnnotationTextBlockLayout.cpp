@@ -5,7 +5,6 @@
 
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
-#include <DgnPlatformInternal/DgnCore/PlatformTextServices.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -138,21 +137,22 @@ static DRange2d computeRangeForText(DRange2dP justificationRange, Utf8CP chars, 
     if (0 == numChars)
         return range;
 
-    DgnFontCR font = DgnFontManager::ResolveFont(effectiveStyle.GetFontId(), effectiveStyle.GetDgnProjectR(), DgnFontVariant::DGNFONTVARIANT_DontCare);
+    DgnFontCR font = effectiveStyle.ResolveFont();
     
-    DgnGlyphLayoutContext layoutContext(font, chars, numChars);
-    layoutContext.SetSize(DPoint2d::From(effectiveStyle.GetHeight(), (effectiveStyle.GetHeight() * effectiveStyle.GetWidthFactor())));
-    layoutContext.SetIsBold(effectiveStyle.IsBold());
-    layoutContext.SetShouldUseItalicTypeface(effectiveStyle.IsItalic() && DgnFontType::TrueType == font.GetType());
+    DgnGlyphLayoutContext layoutContext;
+    layoutContext.m_string = Utf8String(chars, numChars);
+    layoutContext.m_drawSize = DPoint2d::From(effectiveStyle.GetHeight(), (effectiveStyle.GetHeight() * effectiveStyle.GetWidthFactor()));
+    layoutContext.m_isBold = effectiveStyle.IsBold();
+    layoutContext.m_isItalic = (effectiveStyle.IsItalic() && DgnFontType::TrueType == font.GetType());
     
     DgnGlyphLayoutResult layoutResult;
-    if (UNEXPECTED_CONDITION(SUCCESS != font.LayoutGlyphs(layoutContext, layoutResult)))
+    if (UNEXPECTED_CONDITION(SUCCESS != font.LayoutGlyphs(layoutResult, layoutContext)))
         return range;
     
-    range = layoutResult.GetRangeR();
+    range = layoutResult.m_range;
 
     if (NULL != justificationRange)
-        *justificationRange = layoutResult.GetJustificationRangeR();
+        *justificationRange = layoutResult.m_justificationRange;
 
     // Completely ignore if both.
     if (AnnotationTextRunSubSuperScript::Neither != subSuperScript)
@@ -313,6 +313,10 @@ bool AnnotationLayoutRun::CanWrap() const
 //---------------------------------------------------------------------------------------
 bool AnnotationLayoutRun::Wrap(AnnotationLayoutRunPtr& leftOver, double availableWidth, bool shouldForceLeadingUnit)
     {
+#ifndef WIP_FONT
+    // WordBoundaryServices is removed; need to re-write to use ICU on every platform instead of using it to branch per-platform.
+    return false;
+#else
     leftOver = NULL;
     
     PRECONDITION(CanWrap(), false);
@@ -363,6 +367,7 @@ bool AnnotationLayoutRun::Wrap(AnnotationLayoutRunPtr& leftOver, double availabl
     SetNumChars(breakPosU8);
 
     return true;
+#endif
     }
 
 //---------------------------------------------------------------------------------------

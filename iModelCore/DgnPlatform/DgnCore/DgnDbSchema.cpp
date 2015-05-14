@@ -59,10 +59,7 @@ DbResult DgnDb::CreateProjectTables()
                                      "Permissions INT,"
                                      "CONSTRAINT names UNIQUE(Domain,Name)");
 
-    CreateTable(DGN_TABLE_Font,      "Id INTEGER PRIMARY KEY,"
-                                     "Type INT,"
-                                     "Name CHAR NOT NULL COLLATE NOCASE,"
-                                     "CONSTRAINT names UNIQUE(Type,Name)");
+    Fonts().DbFontMap().CreateFontTable();
 
     importDgnSchema(*this, false);
 

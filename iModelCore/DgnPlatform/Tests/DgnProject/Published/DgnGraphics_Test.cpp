@@ -407,7 +407,7 @@ TEST_F(DgnGraphicsTest3d, AddTextString)
     DPoint2d textScale;
     textScale.Init (5000.0, 5000.0);
     TextStringStylePtr style = TextStringStyle::Create();
-    style->SetFont(DgnFontManager::GetDefaultTrueTypeFont());
+    style->SetFont(DgnFontManager::GetLastResortTrueTypeFont());
     style->SetSize(textScale);
     
     TextStringPtr text = TextString::Create();

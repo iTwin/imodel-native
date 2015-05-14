@@ -23,7 +23,6 @@
 #include "ElementGeometry.h"
 #include "ElementGraphics.h"
 #include "FenceParams.h"
-#include "DgnFontManager.h"
 #include "GPArray.h"
 #include "HitPath.h"
 #include "IAuxCoordSys.h"
@@ -35,7 +34,6 @@
 #include "LineStyle.h"
 #include "LineStyleManager.h"
 #include "DgnEntity.h"
-#include "DgnItem.h"
 #include "DgnDb.h"
 #include "NotificationManager.h"
 #include "ScanCriteria.h"
@@ -47,6 +45,7 @@
 #include "ViewController.h"
 #include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
+#include "DgnFont.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"

@@ -7,6 +7,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform/DgnPlatform.h"
+#include "DgnFont.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -20,8 +21,10 @@ struct TextStringStyle : public RefCountedBase
 {
 //__PUBLISH_SECTION_END__
 private:
-    DEFINE_T_SUPER(RefCountedBase)
+    DEFINE_T_SUPER(RefCountedBase);
+    friend struct TextString;
     friend struct TextStyleInterop;
+    friend struct TextStringPersistence;
 
     ColorDef m_color;
     DgnFontCP m_font;
@@ -34,6 +37,7 @@ private:
     // **** ADDING MEMBERS? Consider updating: TextStyleInterop ****
     // *************************************************************
 
+    void Reset();
     void CopyFrom(TextStringStyleCR);
 
 public:
@@ -98,7 +102,8 @@ struct TextString : public RefCountedBase
 //__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase);
-    
+    friend struct TextStringPersistence;
+
     Utf8String m_text;
     TextStringStyle m_style;
     DPoint3d m_origin;
@@ -107,9 +112,10 @@ private:
     bool m_isValid;
     DRange2d m_range;
     bvector<DgnGlyphCP> m_glyphs;
-    bvector<GlyphCode> m_glyphCodes;
+    bvector<DgnGlyph::T_Id> m_glyphIds;
     bvector<DPoint3d> m_glyphOrigins;
 
+    void Reset();
     void CopyFrom(TextStringCR);
     void Update() const;
     void Update();
@@ -150,7 +156,7 @@ public:
     DGNPLATFORM_EXPORT DRange2dCR GetRange() const;
     DGNPLATFORM_EXPORT size_t GetNumGlyphs() const;
     DGNPLATFORM_EXPORT DgnGlyphCP const* GetGlyphs() const;
-    DGNPLATFORM_EXPORT GlyphCodeCP GetGlyphCodes() const;
+    DGNPLATFORM_EXPORT DgnGlyph::T_Id const* GetGlyphIds() const;
     DGNPLATFORM_EXPORT DPoint3dCP GetGlyphOrigins() const;
 
     DGNPLATFORM_EXPORT DPoint3d ComputeJustificationOrigin(HorizontalJustification, VerticalJustification) const;
