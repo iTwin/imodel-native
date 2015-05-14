@@ -27,7 +27,7 @@ bool GetCredentials (JsonValueCR messageDataObj, CredentialsR cred);
 bool GetToken (JsonValueCR messageDataObj, Utf8StringR token);
 Utf8String base64_scramble (Utf8String value, int multiplier);
 
-void ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
+void WebServices::ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
     {
     Credentials cred;
     bool validCredentials = GetCredentials (messageDataObj, cred);
