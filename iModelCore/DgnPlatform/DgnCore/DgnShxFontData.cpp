@@ -155,7 +155,7 @@ size_t DgnShxDbFontData::_Read(void* buffer, size_t size, size_t count)
     size_t requestedBytes = (size * count);
     size_t actuallyRead = std::min(remainingBytes, requestedBytes);
 
-    memcpy(buffer, &m_fontData[m_dataPosition], actuallyRead);
+    memcpy(buffer, &m_fontData[(size_t)m_dataPosition], actuallyRead);
     m_dataPosition += actuallyRead;
 
     return actuallyRead;

@@ -249,9 +249,9 @@ DgnGlyphCP DgnRscFont::FindGlyphCP(DgnGlyph::T_Id id) const
         if (SUCCESS != data->_ReadGlyphDataOffsets(glyphOffsetsBuffer))
             return nullptr;
 
-        RscFontHeader& fontHeader = *reinterpret_cast<RscFontHeader*>(&fontHeaderBuffer[0]);
-        RscGlyphHeader const* glyphHeaders = (RscGlyphHeader const*)glyphHeadersBuffer[0];
-        RscGlyphDataOffset const* glyphOffsets = (RscGlyphDataOffset const*)glyphOffsetsBuffer[0];
+        RscFontHeader const& fontHeader = *(RscFontHeader const*)&fontHeaderBuffer[0];
+        RscGlyphHeader const* glyphHeaders = (RscGlyphHeader const*)&glyphHeadersBuffer[0];
+        RscGlyphDataOffset const* glyphOffsets = (RscGlyphDataOffset const*)&glyphOffsetsBuffer[0];
         for (size_t iGlyph = 0; iGlyph < fontHeader.totalChars; ++iGlyph)
             m_glyphCache[glyphHeaders[iGlyph].code] = new DgnRscGlyph(glyphHeaders[iGlyph].code, fontHeader.ascender, fontHeader.filledFlag, glyphHeaders[iGlyph], glyphOffsets[iGlyph], *data);
         }
