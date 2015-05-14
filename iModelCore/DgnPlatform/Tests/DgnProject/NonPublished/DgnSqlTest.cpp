@@ -158,7 +158,7 @@ TEST_F(SqlFunctionsTest, TestPoints)
 
         RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
         ASSERT_TRUE( robot1.IsValid() );
-        RobotElementPtr robot1CC = dynamic_cast<RobotElement*>(robot1->CopyForEdit().get());
+        RobotElementPtr robot1CC = robot1->MakeCopy<RobotElement>();
         ASSERT_TRUE( robot1CC.IsValid() );
         robot1CC->Translate(DVec3d::FromStartEnd(robot1->GetPlacement().GetOrigin(), obstacle1->GetPlacement().GetOrigin()));
         ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
@@ -191,7 +191,7 @@ TEST_F(SqlFunctionsTest, TestPoints)
         ObstacleElementCPtr obstacle2 = m_db->Elements().Get<ObstacleElement>(o2);
 
         RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
-        RobotElementPtr robot1CC = dynamic_cast<RobotElement*>(robot1->CopyForEdit().get());
+        RobotElementPtr robot1CC = robot1->MakeCopy<RobotElement>();
         robot1CC->Translate(DVec3d::FromStartEnd(robot1->GetPlacement().GetOrigin(), obstacle2->GetPlacement().GetOrigin()));
         ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
 
@@ -217,7 +217,7 @@ TEST_F(SqlFunctionsTest, TestPoints)
     if (true)
         {
         RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
-        RobotElementPtr robot1CC = dynamic_cast<RobotElement*>(robot1->CopyForEdit().get());
+        RobotElementPtr robot1CC = robot1->MakeCopy<RobotElement>();
         robot1CC->Translate(DVec3d::FromStartEnd(robot1->GetPlacement().GetOrigin(), DPoint3d::From(o2x,o1y,0)));
         ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
 
