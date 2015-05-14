@@ -1,0 +1,108 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: Tests/DgnProject/NonPublished/DgnSqlTestDomain.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "DgnHandlersTests.h"
+
+#define DGN_SQL_TEST_SCHEMA_NAME   "DgnPlatformTest"
+#define DGN_SQL_TEST_SCHEMA_NAMEW L"DgnPlatformTest"
+#define DGN_SQL_TEST_ROBOT_CLASS   "Robot"
+#define DGN_SQL_TEST_OBSTACLE_CLASS "Obstacle"
+
+namespace DgnSqlTestNamespace {
+
+struct RobotElementHandler;
+struct ObstacleElementHandler;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      05/15
+//=======================================================================================
+struct TestPhysicalElement : PhysicalElement
+{
+protected:
+    TestPhysicalElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
+    TestPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, DgnClassId, DPoint3dCR origin, double yaw, ICurvePrimitiveR curve, Utf8CP elementCode);
+    static ICurvePrimitivePtr CreateBox (DPoint3dCR low, DPoint3dCR high);
+public:
+    void Translate(DVec3dCR);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      05/15
+//=======================================================================================
+struct RobotElement : TestPhysicalElement
+{
+private:
+    friend struct RobotElementHandler;
+    RobotElement(PhysicalElement::CreateParams const& params) : TestPhysicalElement(params) {;}
+    RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode);
+public:
+    //! Factory method that creates an instance of a RobotElement
+    //! @param[in] model Create the RobotElement in this PhysicalModel
+    //! @param[in] categoryId specifies the category for the RobotElement.
+    static RefCountedPtr<RobotElement> Create(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode)
+        {return new RobotElement(model, categoryId, origin, yaw, elementCode);}
+
+    //! Query the DgnClassId for the Robot ECClass in the specified DgnDb.
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_ROBOT_CLASS));}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      05/15
+//=======================================================================================
+struct ObstacleElement : TestPhysicalElement
+{
+private:
+    friend struct ObstacleElementHandler;
+    ObstacleElement(PhysicalElement::CreateParams const& params) : TestPhysicalElement(params) {;}
+    ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode);
+public:
+    //! Factory method that creates an instance of a ObstacleElement
+    //! @param[in] model Create the ObstacleElement in this PhysicalModel
+    //! @param[in] categoryId specifies the category for the ObstacleElement.
+    static RefCountedPtr<ObstacleElement> Create(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode)
+        {return new ObstacleElement(model, categoryId, origin, yaw, elementCode);}
+
+    //! Query the DgnClassId for the Obstacle ECClass in the specified DgnDb.
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_OBSTACLE_CLASS));}
+};
+
+typedef RefCountedPtr<RobotElement>     RobotElementPtr;
+typedef RefCountedPtr<ObstacleElement>  ObstacleElementPtr;
+typedef RefCountedCPtr<RobotElement>     RobotElementCPtr;
+typedef RefCountedCPtr<ObstacleElement>  ObstacleElementCPtr;
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson      01/15
+//=======================================================================================
+struct RobotElementHandler : ElementHandler
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS ("Robot", RobotElement, RobotElementHandler, ElementHandler, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson      01/15
+//=======================================================================================
+struct ObstacleElementHandler : ElementHandler
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS ("Obstacle", ObstacleElement, ObstacleElementHandler, ElementHandler, )
+};
+
+//=======================================================================================
+//! A test Domain
+// @bsiclass                                                     Sam.Wilson      01/15
+//=======================================================================================
+struct DgnSqlTestDomain : DgnDomain
+    {
+    DOMAIN_DECLARE_MEMBERS(DgnSqlTestDomain, )
+public:
+    DgnSqlTestDomain();
+
+    static void RegisterDomainAndImportSchema(DgnDbR, BeFileNameCR schemasDir);
+    };
+
+}; // namespace DgnSqlTestNamespace
+

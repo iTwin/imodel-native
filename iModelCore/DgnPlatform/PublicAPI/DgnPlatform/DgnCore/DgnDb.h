@@ -99,7 +99,7 @@ struct DgnVersion : BeSQLite::SchemaVersion
 
 //=======================================================================================
 //! A DgnDb is an in-memory object to access the information in a .dgndb database.
-//! @ingroup DgnProjectGroup
+//! @ingroup DgnDbGroup
 // @bsiclass
 //=======================================================================================
 struct DgnDb : RefCounted<BeSQLite::EC::ECDb>

@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DgnDbUnitTests.PartFile.xml" />
     <None Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -29,89 +28,45 @@
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
     <ClCompile Include="NonPublished\CopyContext_Test.cpp" />
     <ClCompile Include="NonPublished\DgnColors_Test.cpp" />
-    <ClCompile Include="NonPublished\DgnKeyString_Test.cpp" />
-    <ClCompile Include="NonPublished\DgnModelSelector_Test.cpp" />
-    <ClCompile Include="NonPublished\DgnModelTable_Test.cpp" />
-    <ClCompile Include="NonPublished\DgnModel_Test.cpp" />
-    <ClCompile Include="NonPublished\DgnProjectImporter_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnLevelTable_Test.cpp" />
     <ClCompile Include="NonPublished\DgnProject_Test.cpp" />
-    <ClCompile Include="NonPublished\DgnSessions_Test.cpp" />
     <ClCompile Include="NonPublished\DgnStyles_Test.cpp" />
     <ClCompile Include="NonPublished\DgnViews_Test.cpp" />
     <ClCompile Include="NonPublished\ECDbInstances_Test.cpp" />
-    <ClCompile Include="NonPublished\ECDbInstances_Test_Old.cpp" />
     <ClCompile Include="NonPublished\ElementAgenda_Test.cpp" />
-    <ClCompile Include="NonPublished\MeshHandlers_Test.cpp" />
+    <ClCompile Include="NonPublished\EntityAndItem_Test.cpp" />
     <ClCompile Include="NonPublished\MSElementDescr_Test.cpp" />
     <ClCompile Include="NonPublished\Polyface_Test.cpp" />
     <ClCompile Include="NonPublished\Raster_Test.cpp" />
     <ClCompile Include="NonPublished\RealityDataCache_Test.cpp" />
     <ClCompile Include="NonPublished\RefImportTest.cpp" />
-    <ClCompile Include="NonPublished\SharedCellHandler_Test.cpp" />
     <ClCompile Include="NonPublished\TransactionManager_Test.cpp" />
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
-    <ClCompile Include="NonPublished\XGraphics_Test.cpp" />
-    <ClCompile Include="Performance\CrudElementPerformance_Test.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
-    <ClCompile Include="Performance\RasterPerformance_Test.cpp" />
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
-    <ClCompile Include="Published\ArcHandlers_Test.cpp" />
-    <ClCompile Include="Published\Assembly_Test.cpp" />
     <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
-    <ClCompile Include="Published\BSplineCurveHandler_Test.cpp" />
-    <ClCompile Include="Published\BSplineSurfaceHandler_Test.cpp" />
-    <ClCompile Include="Published\CellHeaderHandler_Test.cpp" />
-    <ClCompile Include="Published\ChainHeaderHandler_Test.cpp" />
-    <ClCompile Include="Published\ColorBook_Test.cpp" />
-    <ClCompile Include="Published\ConeHandler_Test.cpp" />
-    <ClCompile Include="Published\CopyContext_Test.cpp" />
-    <ClCompile Include="Published\CurveHandler_Test.cpp" />
     <ClCompile Include="Published\DgnECNavigator_Test.cpp" />
-    <ClCompile Include="Published\DgnECPersistence_Test.cpp" />
-    <ClCompile Include="Published\DgnElementHelpers.cpp" />
     <ClCompile Include="Published\DgnGraphics_Test.cpp" />
-    <ClCompile Include="Published\DgnLinkTable_Test.cpp" />
-    <ClCompile Include="Published\DgnMaterials_Test.cpp" />
+    <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />
-    <ClCompile Include="Published\DgnProject_Test.cpp" />
     <ClCompile Include="Published\DgnResourceURI_Test.cpp" />
-    <ClCompile Include="Published\DgnTextStyle_Test.cpp" />
-    <ClCompile Include="Published\DimensionHandler_Test.cpp" />
-    <ClCompile Include="Published\DimensionStyle_Test.cpp" />
-    <ClCompile Include="Published\ECInstanceHolder_Test.cpp" />
-    <ClCompile Include="Published\ElementAgenda_Test.cpp" />
-    <ClCompile Include="Published\ElementCreateHelpers.cpp" />
     <ClCompile Include="Published\Font_Test.cpp" />
-    <ClCompile Include="Published\GroupedHoleHandler_Test.cpp" />
-    <ClCompile Include="Published\IAreaFillProperties_Test.cpp" />
     <ClCompile Include="Published\IEditInterface_Test.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
-    <ClCompile Include="Published\LightElement_Test.cpp" />
-    <ClCompile Include="Published\LinearHandlers_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
-    <ClCompile Include="Published\MeshHandlers_Test.cpp" />
-    <ClCompile Include="Published\MSElementDescr_Test.cpp" />
-    <ClCompile Include="Published\MultilineStyle_Test.cpp" />
-    <ClCompile Include="Published\Multiline_Test.cpp" />
-    <ClCompile Include="Published\Note_Test.cpp" />
+    <ClCompile Include="Published\NamedVolume_Test.cpp" />
     <ClCompile Include="Published\NotificationManager_Test.cpp" />
-    <ClCompile Include="Published\PublishedReferenceAttachmentsScenario_Test.cpp" />
     <ClCompile Include="Published\RealityDataCache_Test.cpp" />
-    <ClCompile Include="Published\Rtti_tests.cpp" />
-    <ClCompile Include="Published\SharedCellHandler_Test.cpp" />
-    <ClCompile Include="Published\SurfaceAndSolidHandlers_Test.cpp" />
     <ClCompile Include="Published\Tag_Test.cpp" />
     <ClCompile Include="Published\TextAnnotation_Test.cpp" />
-    <ClCompile Include="Published\TextBlock_Test.cpp" />
     <ClCompile Include="Published\UnitDefinition_Test.cpp" />
     <ClCompile Include="Published\UnitManager_Test.cpp" />
     <ClCompile Include="Published\valueformat_test.cpp" />
     <ClCompile Include="Published\ValueParse_Test.cpp" />
-    <ClCompile Include="Published\XmlFragment_Test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h" />
@@ -122,9 +77,7 @@
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />
-    <ClInclude Include="Published\DgnElementHelpers.h" />
     <ClInclude Include="Published\DgnHandlersTests.h" />
-    <ClInclude Include="Published\ElementCreateHelpers.h" />
     <ClInclude Include="Published\GenericDgnModelTestFixture.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
