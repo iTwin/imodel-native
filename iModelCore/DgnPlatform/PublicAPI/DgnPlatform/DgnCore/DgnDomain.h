@@ -14,12 +14,12 @@
 
 A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
 
-To connect your Domain's ECSChema with your C++ classes, create a subclass of DgnDomain. A DgnDomain is a singleton - that is, 
+To connect your Domain's ECSChema with your C++ classes, create a subclass of @ref DgnDomain. A DgnDomain is a singleton - that is, 
 there is only one instance of a DgnDomain subclass that applies to all DgnDbs for a session. You tell the DgnDbPlatform 
-about your DgnDomain by calling the static method DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name", 
+about your DgnDomain by calling the static method @ref DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name", 
 which must match the ECShema file name. That is how a DgnDomain is paired with its ECSchema.
 
-A DgnDomain holds an array of C++ singleton objects, each of which each derive from DgnDomain::Handler. A DgnDomain::Handler 
+A DgnDomain holds an array of C++ singleton objects, each of which each derive from @ref DgnDomain::Handler. A DgnDomain::Handler 
 holds the name of the ECClass it "handles". DgnDomain::Handlers are added to a DgnDomain by calling DgnDomain::RegisterHandler. 
 Note that DgnDomain::Handlers are singletons - they apply to all DgnDbs, and have no instance data. 
 
@@ -31,7 +31,7 @@ DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the 
 local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class 
 called DgnDomains, which is accessed through the method DgnDb::Domains().
 
-The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers. 
+The DgnDomain for the base "dgn" schema is is called @ref DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers. 
 
 */
 
@@ -378,6 +378,7 @@ public:
 
 //=======================================================================================
 //! The DgnDomain for the base "dgn" schema.
+//! @see DgnSchemaDomainSqlFunctions for a list of built-in functions that you can call in SQL statements.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct DgnSchemaDomain : DgnDomain

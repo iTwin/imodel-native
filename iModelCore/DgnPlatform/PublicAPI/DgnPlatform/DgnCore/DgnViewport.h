@@ -23,7 +23,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /**  @addtogroup DgnViewGroup
 
- A View is an abstract term to describe the way that applications display contents from a \ref DgnProjectGroup on a device like a screen. 
+ A View is an abstract term to describe the way that applications display contents from a \ref DgnDbGroup on a device like a screen. 
  <p>There are different types of views to show different types of DgnModels in application-specific ways.
  <p>A ViewController provides persistence and behavior to a type of view.
  <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.

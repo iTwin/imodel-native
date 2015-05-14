@@ -284,8 +284,7 @@ TEST(DgnDb, ProjectSchemaVersions)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Schema Version can be accessed and it is correct
-* @bsimethod                                    Majd.Uddin                   04/12
+* @bsimethod                                    Keith.Bentley
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DgnDb, DgnSqlFuncs)
     {
