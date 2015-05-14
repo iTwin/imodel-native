@@ -2320,8 +2320,7 @@ DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR
         }
 
     sqlite3session_delete(session);
-
-    //db.DetachDb("base");  -- gets error -- database 'base' is locked
+    db.DetachDb("base");
 
     return result;
     }
@@ -3868,7 +3867,7 @@ static bool isFileLockedBySQLite(BeFile& testfile)
         if (testfile.Read(buffer, nullptr, sizeof (buffer)) == BeFileStatus::SharingViolationError)
             {
             testfile.SetPointer(0, BeFileSeekOrigin::Begin);
-            LOG.errorv("embedFile got a SharingViolationError at 1meg. Apparently SQLite has this file locked.");
+            LOG.errorv("SQLite has this file locked.");
             return true;
             }
         } 
@@ -5130,7 +5129,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    John.Gooding    01/2013
 //=======================================================================================
-struct          MemoryLzmaOutStream : ILzmaOutputStream
+struct MemoryLzmaOutStream : ILzmaOutputStream
 {
 private:
     bvector<Byte>& m_out;
