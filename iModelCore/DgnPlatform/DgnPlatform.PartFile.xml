@@ -54,10 +54,13 @@
         </Bindings>
     </Part>
 
-    <!-- NOTE: just symlinks overview docs for consuming SDKs -->
     <Part Name="DgnPlatformOverviewDocs" BentleyBuildMakeFile="docs/DgnPlatformOverviewDocs.mke">
         <Bindings>
             <Directory SourceName="Docs/Source/DgnPlatform" SubPartDirectory="Docs/Source/DgnPlatform"/>
+            <!-- *** TBD doc images + files TBD ***
+            <Directory SourceName="Docs/Images/DgnPlatform" SubPartDirectory="Docs/Images/DgnPlatform"/>
+            <Directory SourceName="Docs/Files/DgnPlatform" SubPartDirectory="Docs/Files/DgnPlatform"/>
+            -->
         </Bindings>
     </Part>
 

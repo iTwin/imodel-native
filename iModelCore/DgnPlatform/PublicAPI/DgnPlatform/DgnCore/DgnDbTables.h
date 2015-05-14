@@ -261,6 +261,7 @@ struct DgnCategories : DgnDbTable
         //! @param[in] descr The category's description. May be nullptr.
         //! @param[in] label The display label for this category.  May be nullptr.
         //! @param[in] rank The category's rank
+        //! @param[in] id The Category's unique ID. This is normally assigned by the Insert function.
         Category(Utf8CP code, Scope scope, Utf8CP descr=nullptr, Utf8CP label=nullptr, Rank rank=Rank::User, DgnCategoryId id=DgnCategoryId()) {Init(id, code, scope, descr, label, rank);}
 
         Utf8CP GetCode() const {return m_code.c_str();} //!< The category code. Never empty. Unique. Not translated.
@@ -319,7 +320,6 @@ struct DgnCategories : DgnDbTable
         //! construct a SubCategoryIterator
         //! @param[in] db The database for the SubCategory table
         //! @param[in] category Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-        //! @param[in] whereClause an optional where clause
         SubCategoryIterator(DgnDbCR db, DgnCategoryId category) : DbTableIterator((BeSQLiteDbCR)db), m_categoryId(category) {}
 
         //! An entry in the table.
@@ -353,9 +353,9 @@ public:
     //@{
     //! Add a new category to the DgnDb.
     //! @param[in] row The definition of the category to create.
-    //! @param[in] the appearance for the default SubCategory for the new category
+    //! @param[in] appearance the appearance for the default SubCategory for the new category
     //! @return BE_SQLITE_OK if the category was added; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified DgnCategoryId and/or code is already used.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Category& row, SubCategory::Appearance const&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Category& row, SubCategory::Appearance const& appearance);
 
     //! Remove a category from the DgnDb.
     //! @param[in] id the id of the category to remove.

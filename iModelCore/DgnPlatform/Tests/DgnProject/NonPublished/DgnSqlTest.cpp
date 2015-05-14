@@ -115,6 +115,7 @@ TEST_F(SqlFunctionsTest, TestPoints)
         }
 
     //  Run some queries that check proximity of Robot1 to obstacles
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps.sampleCode
     Statement stmt;
     stmt.Prepare(*m_db, 
                     "SELECT o.id, o.placement "
@@ -125,6 +126,7 @@ TEST_F(SqlFunctionsTest, TestPoints)
                     "       (SELECT e.Id as id, g.Placement as placement"                                       
                     "        FROM dgn_Element e, dgn_ElementGeom g WHERE (e.ECClassId=? AND e.Id = g.ElementId)) o"  
                     " WHERE DGN_bbox_overlaps(DGN_placement_aabb(r1.Placement), DGN_placement_aabb(o.Placement))");
+    //__PUBLISH_EXTRACT_END__
     stmt.BindId(1, r1);
     stmt.BindId(2, ObstacleElement::QueryClassId(*m_db));
 
@@ -154,11 +156,9 @@ TEST_F(SqlFunctionsTest, TestPoints)
         {
         ObstacleElementCPtr obstacle1 = m_db->Elements().Get<ObstacleElement>(o1);
 
-        RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
-        ASSERT_TRUE( robot1.IsValid() );
-        RobotElementPtr robot1CC = dynamic_cast<RobotElement*>(robot1->CopyForEdit().get());
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
         ASSERT_TRUE( robot1CC.IsValid() );
-        robot1CC->Translate(DVec3d::FromStartEnd(robot1->GetPlacement().GetOrigin(), obstacle1->GetPlacement().GetOrigin()));
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), obstacle1->GetPlacement().GetOrigin()));
         ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
 
         stmt.Reset();
@@ -188,9 +188,9 @@ TEST_F(SqlFunctionsTest, TestPoints)
         {
         ObstacleElementCPtr obstacle2 = m_db->Elements().Get<ObstacleElement>(o2);
 
-        RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
-        RobotElementPtr robot1CC = dynamic_cast<RobotElement*>(robot1->CopyForEdit().get());
-        robot1CC->Translate(DVec3d::FromStartEnd(robot1->GetPlacement().GetOrigin(), obstacle2->GetPlacement().GetOrigin()));
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), obstacle2->GetPlacement().GetOrigin()));
         ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
 
         stmt.Reset();
@@ -214,9 +214,9 @@ TEST_F(SqlFunctionsTest, TestPoints)
     //  +-- -- -- -- -- -- --
     if (true)
         {
-        RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
-        RobotElementPtr robot1CC = dynamic_cast<RobotElement*>(robot1->CopyForEdit().get());
-        robot1CC->Translate(DVec3d::FromStartEnd(robot1->GetPlacement().GetOrigin(), DPoint3d::From(o2x,o1y,0)));
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), DPoint3d::From(o2x,o1y,0)));
         ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
 
         DgnElementIdSet overlaps;
