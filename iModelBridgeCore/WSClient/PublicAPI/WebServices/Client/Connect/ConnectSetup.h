@@ -13,6 +13,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-WSCLIENT_EXPORT void ConnectSetup (JsonValueCR messageDataObj, bool requireToken);
+WSCLIENT_EXPORT extern void ConnectSetup (JsonValueCR messageDataObj, bool requireToken);
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

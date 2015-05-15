@@ -15,7 +15,7 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-void Authenticate(JsonValueCR messageDataObj)
+void WebServices::Authenticate (JsonValueCR messageDataObj)
     {
     Utf8String username = messageDataObj[AuthenticationData::USERNAME].asString();
     Utf8String password = messageDataObj[AuthenticationData::PASSWORD].asString();
