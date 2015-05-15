@@ -358,26 +358,24 @@ struct Utf8String : public bastring
     //! Update this string to be equal to \a in. If \a in is NULL, clear this string.
     Utf8StringR AssignOrClear(Utf8CP in)
         {
-        if (NULL == in)
-            {
+        if (nullptr == in)
             clear();
-            return *this;
-            }
+        else
+            assign(in);
 
-        assign(in);
         return *this;
         }
 
     //! Replace all instances of a sub string. Returns the number of replacements made.
-    BENTLEYDLL_EXPORT size_t ReplaceAll (Utf8CP subStringToReplace, Utf8CP replacement);
+    BENTLEYDLL_EXPORT size_t ReplaceAll(Utf8CP subStringToReplace, Utf8CP replacement);
 
     //! Equivalent to tolower
     //! @note This function is dangerous to use on non-ASCII strings.
-    static char ToLowerChar (char c) {return (char)tolower(c);}
+    static char ToLowerChar(char c) {return (char)tolower(c);}
 
     //! Converts this string, in-place, to all lower case.
     //! @remarks This function can be very slow if the string contains non-ascii characters.
-    void ToLower ()
+    void ToLower()
         {
         if (IsAscii())
             std::transform (begin(), end(), begin(), ToLowerChar);
