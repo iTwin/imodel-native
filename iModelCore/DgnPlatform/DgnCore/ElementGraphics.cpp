@@ -1162,6 +1162,8 @@ void WireframeGeomUtil::Draw (ISolidKernelEntityCR entity, ViewContextR context,
     T_HOST.GetSolidsKernelAdmin()._OutputBodyAsWireframe (entity, context, includeEdges, includeFaceIso, attachments);
     }
 
+BEGIN_UNNAMED_NAMESPACE
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1250,6 +1252,8 @@ void SetSolidEntity (ISolidKernelEntityCR entity) {m_entity = &entity;}
 CurveVectorPtr GetCurveVector () {return m_curves;}
 
 }; // RuleCollector
+
+END_UNNAMED_NAMESPACE
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
