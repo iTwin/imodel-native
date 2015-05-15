@@ -46,6 +46,7 @@
     <ECClass typeName="Obstacle" isDomainClass="true">
         <BaseClass>dgn:PhysicalElement</BaseClass>
         <ECProperty propertyName="CanMove" typeName="boolean" />
+        <ECProperty propertyName="SomeProperty" typeName="string" />
     </ECClass>
 
 </ECSchema>
