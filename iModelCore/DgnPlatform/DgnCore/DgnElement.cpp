@@ -970,7 +970,7 @@ static void appendPropertiesToECSqlSelectClause(Utf8StringR ecsql, ECClassCR ecc
         classAliasStr.append(classAlias).append(".");
 
     //ECClassId needed in case of polymorphic selects
-    ecsql.append(classAliasStr).append("ECInstanceId, ").append(classAliasStr).append(".GetECClassId() AS ECClassId");
+    ecsql.append(classAliasStr).append("ECInstanceId, ").append(classAliasStr).append("GetECClassId() AS ECClassId");
 
     for (auto ecprop : ecclass.GetProperties())
         {
