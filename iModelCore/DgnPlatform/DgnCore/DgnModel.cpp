@@ -34,12 +34,12 @@ DbResult DgnModels::InsertModel(Model& row)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::DeleteModel(DgnModelId modelId)
+DgnModelStatus DgnModels::DeleteModel(DgnModelId modelId)
     {
     Statement stmt;
     stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, modelId);
-    return BE_SQLITE_DONE == stmt.Step() ? SUCCESS : ERROR;
+    return BE_SQLITE_DONE == stmt.Step() ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_InvalidModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,21 +47,10 @@ BentleyStatus DgnModels::DeleteModel(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryModelId(Utf8CP name) const
     {
-    CachedStatementPtr statementPtr;
-    GetDgnDb().GetCachedStatement(statementPtr, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Name=?");
-    statementPtr->BindText(1, name, Statement::MakeCopy::No);
-    return (BE_SQLITE_ROW != statementPtr->Step()) ? DgnModelId() : statementPtr->GetValueId<DgnModelId>(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnModels::QueryModelId(DgnElementId elementId)
-    {
-    CachedStatementPtr statementPtr;
-    GetDgnDb().GetCachedStatement(statementPtr, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    statementPtr->BindId(1, elementId);
-    return (BE_SQLITE_ROW != statementPtr->Step()) ? DgnModelId() : statementPtr->GetValueId<DgnModelId>(0);
+    CachedStatementPtr stmt;
+    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Name=?");
+    stmt->BindText(1, name, Statement::MakeCopy::No);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,7 +63,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
-        return  ERROR;
+        return ERROR;
 
     if (out) // this can be null to just test for the existence of a model by id
         {
@@ -87,7 +76,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(5));
         }
 
-    return  SUCCESS;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -484,6 +473,32 @@ void DgnModel::ClearRangeIndex()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::AddToRangeIndex(DgnElementCR element)
+    {
+    if (nullptr == m_rangeIndex)
+        return;
+
+    GeometricElementCP geom = element._ToGeometricElement();
+    if (nullptr != m_rangeIndex && nullptr != geom)
+        m_rangeIndex->AddGeomElement(*geom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
+    {
+    if (nullptr==m_rangeIndex)
+        return;
+
+    GeometricElementCP geom = element._ToGeometricElement();
+    if (nullptr != geom)
+        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->_GetRange3d(), *geom));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::RegisterElement(DgnElementCR element)
@@ -491,9 +506,7 @@ void DgnModel::RegisterElement(DgnElementCR element)
     if (m_wasFilled)
         m_elements.Add(element);
 
-    GeometricElementCP geom = element._ToGeometricElement();
-    if (nullptr != m_rangeIndex && nullptr != geom)
-        m_rangeIndex->AddGeomElement(*geom);
+    AddToRangeIndex(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -523,52 +536,20 @@ void DgnModel::_OnInsertedElement(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnDeleteElement(DgnElementR element)
+DgnModelStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
     return m_readonly ? DGNMODEL_STATUS_ReadOnly : DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* "canceled" means that we're abandoning a rolled-back transaction. In that case, remove it from the list even if the list is filled.
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnDeletedElement(DgnElementR element, bool canceled)
+void DgnModel::_OnDeletedElement(DgnElementCR element)
     {
-    // if this list is marked as "filled", then we keep the deleted elements in the list so they 
-    // will remain owned by the list if the delete is subsequently undone.
-    if (!canceled && m_wasFilled)
-        return;
+    if (m_wasFilled)
+        m_elements.erase(element.GetElementId());
 
-    DgnElementId  id = element.GetElementId();
-    if (!id.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_elements.erase(id);
-
-    // if this is a cancel, then the element was dropped from the range index when it was deleted.
-    if (canceled || nullptr==m_rangeIndex)
-        return;
-
-    GeometricElementCP geom = element._ToGeometricElement();
-    if (nullptr != geom)
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->_GetRange3d(), *geom));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnUpdatedElement(DgnElementR element, DgnElementR replacement)
-    {
-    GeometricElementCP geom = element._ToGeometricElement();
-    if (nullptr != m_rangeIndex && nullptr != geom)
-        {
-        GeometricElementCP replaceGeom = replacement._ToGeometricElement();
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(replaceGeom->_GetRange3d(), *geom));
-        m_rangeIndex->AddGeomElement(*geom);
-        }
+    RemoveFromRangeIndex(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -588,7 +569,24 @@ DgnModelStatus DgnModel::_OnUpdateElement(DgnElementCR element, DgnElementR repl
     if (element.m_classId != replacement.m_classId)
         return DGNMODEL_STATUS_WrongClass;
 
+    RemoveFromRangeIndex(element); // we need to do this BEFORE the update so we can find the element in the range tree
     return DGNMODEL_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnUpdatedElement(DgnElementCR element)
+    {
+    AddToRangeIndex(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnUpdateElementFailed(DgnElementCR element)
+    {
+    AddToRangeIndex(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,13 +888,15 @@ DgnFileStatus DgnModel::FillModel()
         return  DGNFILE_STATUS_Success;
 
     Statement stmt;
-    enum Column : int            {Id=0,ClassId=1,CategoryId=2,Code=3,ParentId=4};
+    enum Column : int {Id=0,ClassId=1,CategoryId=2,Code=3,ParentId=4};
     stmt.Prepare(m_dgndb, "SELECT Id,ECClassId,CategoryId,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     SetFilled();
 
     auto& elements = m_dgndb.Elements();
+    BeDbMutexHolder _v(elements.m_mutex);
+
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnElementId id(stmt.GetValueId<DgnElementId>(Column::Id));
@@ -908,7 +908,7 @@ DgnFileStatus DgnModel::FillModel()
             stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
             stmt.GetValueText(Column::Code), 
             id,
-            stmt.GetValueId<DgnElementId>(Column::ParentId)));
+            stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
         }
 
     _OnModelFillComplete();
@@ -955,11 +955,13 @@ ModelHandlerP ModelHandler::FindHandler(DgnDb const& db, DgnClassId handlerId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnModel::_QueryModelRange() const
     {
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
     Statement stmt;
     stmt.Prepare(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
                            DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
                            DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g"
                           " WHERE e.ModelId=? AND e.Id=g.ElementId");
+    //__PUBLISH_EXTRACT_END__
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();
@@ -972,4 +974,3 @@ AxisAlignedBox3d DgnModel::_QueryModelRange() const
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
     }
-

@@ -171,11 +171,11 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
-    DgnFontCR ttFont = DgnFontManager::GetDefaultTrueTypeFont();
-    ASSERT_TRUE(!ttFont.IsMissing());
+    DgnFontCR ttFont = DgnFontManager::GetLastResortTrueTypeFont();
+    ASSERT_TRUE(ttFont.IsResolved());
 
-    uint32_t ttFontId = 0;
-    ASSERT_TRUE(SUCCESS == project.Fonts().AcquireFontNumber(ttFontId, ttFont));
+    DgnFontId ttFontId = project.Fonts().AcquireId(ttFont);
+    ASSERT_TRUE(ttFontId.IsValid());
 
     AnnotationTextStylePtr docStyle = AnnotationTextStyle::Create(project);
     docStyle->SetName("docStyle");

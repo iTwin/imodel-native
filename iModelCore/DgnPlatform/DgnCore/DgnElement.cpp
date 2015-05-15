@@ -93,24 +93,22 @@ void CachedInstances::_OnCleanup(DgnElementCP host)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2015
+* @bsimethod                                    Shaun.Sewall                    02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId DgnElement::GetItemClassId() const
+DgnModelId DgnElements::QueryModelId(DgnElementId elementId)
     {
-    if (!m_itemClassId.IsValid())
-        {
-        ElementItemKey itemKey = GetDgnDb().Items().QueryItemKey(GetElementId());
-        m_itemClassId = DgnClassId(itemKey.GetECClassId());
-        }
-    return m_itemClassId;
+    CachedStatementPtr stmt;
+    GetStatement(stmt, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindId(1, elementId);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnElement::_AddRef() const
+uint32_t DgnElement::AddRef() const
     {
-    if (0 == m_refCount && IsInPool())
+    if (0 == m_refCount && IsPersistent())
         GetDgnDb().Elements().OnReclaimed(*this);
 
     return ++m_refCount;
@@ -119,14 +117,14 @@ uint32_t DgnElement::_AddRef() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnElement::_Release() const
+uint32_t DgnElement::Release() const
     {
     if (1 < m_refCount--)
         return m_refCount.load();
 
     BeAssert(m_refCount==0);
 
-    if (IsInPool())
+    if (IsPersistent())
         {
         // add to the DgnFile's unreferenced element count
         GetDgnDb().Elements().OnUnreferenced(*this);
@@ -245,79 +243,26 @@ void GeometricElement::SaveGeomStream(GeomStreamCP stream)
     m_geom = *stream;     // assign the new element (overwrites or reallocates)
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::MarkAsDeleted()
-    {
-    SetDeletedRef();
-    SetHilited(HILITED_None);
-    m_dgnModel.ElementChanged(*this, ELEMREF_CHANGE_REASON_Delete);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_DeleteInDb()
+DgnModelStatus DgnElement::_DeleteInDb() const
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    if (m_dgnModel.IsReadOnly())
-        return  DGNMODEL_STATUS_ReadOnly;
+    CachedStatementPtr stmt;
+    GetDgnDb().Elements().GetStatement(stmt, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindId(1, m_elementId);
 
-    // let handler reject deletion
-    if (ElementHandler::PRE_ACTION_Ok != m_elementHandler._OnElementDelete(*this))
-        return  DGNMODEL_STATUS_BadRequest;
-
-    MarkRefDeleted(m_dgnModel);
-
-    // to delete an element, we delete it from the Element table. Foreign keys and triggers cause all of the related
-    // tables to be cleaned up.
-    CachedStatementPtr deleteStmt;
-    DbResult status = m_dgndb.GetCachedStatement(deleteStmt, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    deleteStmt->BindId(1, elementId);
-    DbResult rc = deleteStmt->Step();
-
-    if (rc == BE_SQLITE_CONSTRAINT_FOREIGNKEY)
+    switch (stmt->Step())
         {
-        UnDeleteElement();
-        return  DGNMODEL_STATUS_ForeignKeyConstraint;
+        case BE_SQLITE_CONSTRAINT_FOREIGNKEY:
+            return  DGNMODEL_STATUS_ForeignKeyConstraint;
+
+        case BE_SQLITE_DONE:
+            return DGNMODEL_STATUS_Success;
         }
 
-    m_dgnModel.OnElementDeletedFromDb(*this, false);
-
-    if (rc != BE_SQLITE_DONE)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    m_elementHandler._OnElementDeleted(GetDgnDb(), m_elementId);
-#endif
-    return DGNMODEL_STATUS_Success;
+    return DGNMODEL_STATUS_ElementWriteError;
     }
-
-#if defined (NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::ReloadFromDb()
-    {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-    m_dgnModel.ElementChanged(*this, ELEMREF_CHANGE_REASON_Modify);
-
-    DbElementReloader reloader(*this);
-    DgnModelStatus stat = reloader.ReloadElement();
-
-    if (DGNMODEL_STATUS_Success == stat)
-        m_dgnModel.OnElementModified(*this);
-
-    return  stat;
-#endif
-    return DGNMODEL_STATUS_Success;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
@@ -386,7 +331,7 @@ void DgnElement::SetInSelectionSet(bool yesNo) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::~DgnElement()
     {
-    BeAssert(!IsInPool());
+    BeAssert(!IsPersistent());
     ClearAllAppData();
     }
 
@@ -416,14 +361,6 @@ Utf8String DgnElement::_GenerateDefaultCode()
 
     Utf8String className(GetElementClass()->GetName());
     return Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_LoadFromDb()
-    {
-    return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -759,13 +696,12 @@ DgnModelStatus DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return DGNMODEL_STATUS_Success;
 
-    if (!IsSameType(other) || &m_dgnModel != &other.m_dgnModel)
+    if (&m_dgnModel != &other.m_dgnModel)
         return DGNMODEL_STATUS_BadElement;
 
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
     m_parentId   = other.m_parentId;
-    m_itemClassId = other.m_itemClassId;
 
     return DGNMODEL_STATUS_Success;
     }
@@ -779,8 +715,9 @@ DgnModelStatus GeometricElement::_CopyFrom(DgnElementCR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    GeometricElementCP otherGeom = (GeometricElementCP) &other;
-    SaveGeomStream(&otherGeom->m_geom);
+    GeometricElementCP otherGeom = other.ToGeometricElement();
+    if (otherGeom)
+        SaveGeomStream(&otherGeom->m_geom);
     return DGNMODEL_STATUS_Success;
     }
 
@@ -793,8 +730,10 @@ DgnModelStatus DgnElement3d::_CopyFrom(DgnElementCR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement3dCP el3d = (DgnElement3dCP) &other;
-    m_placement = el3d->m_placement;
+    DgnElement3dCP el3d = other.ToElement3d();
+    if (el3d)
+        m_placement = el3d->m_placement;
+
     return DGNMODEL_STATUS_Success;
     }
 
@@ -807,8 +746,9 @@ DgnModelStatus DgnElement2d::_CopyFrom(DgnElementCR other)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    DgnElement2dCP el2d = (DgnElement2dCP) &other;
-    m_placement = el2d->m_placement;
+    DgnElement2dCP el2d = other.ToElement2d();
+    if (el2d)
+        m_placement = el2d->m_placement;
     return DGNMODEL_STATUS_Success;
     }
 
@@ -1070,6 +1010,7 @@ static IECInstancePtr queryInstance(DgnDbR db, ECClassCP ecclass, EC::ECInstance
     stmt.Prepare(db, b.ToString().c_str());
     stmt.BindId(1, instanceId);
     stmt.Step();
+
     ECInstanceECSqlSelectAdapter selector(stmt);
     IECInstancePtr instance = selector.GetInstance();
     if (!instance.IsValid())
@@ -1135,11 +1076,13 @@ IECInstanceP DgnElement::GetItem(bool setModified) const
         {
         instances.m_itemChecked = true;
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
         if (GetItemClassId().IsValid())
             {
             ECClassCP itemClass = GetDgnDb().Schemas().GetECClass(GetItemClassId().GetValue());
             instances.m_item = CachedInstance(getDirectlyLinkedInstance(GetDgnDb(), itemClass, GetElementId(), bset<Utf8String>()));
             }
+#endif
         }
 
     if (instances.m_item.m_changeType == InstanceChangeType::Delete)
@@ -1373,9 +1316,11 @@ BentleyStatus CachedInstance::ApplyScheduledChangesToItem(DgnElementR el)
 
     if (m_changeType == InstanceChangeType::Write)
         {
+#if defined (NEEDS_WORK_ELEMENTS_API)
         //  There is 1 item. If we want to change its class, we must delete the existing one.
         if (el.GetItemClassId().IsValid() && el.GetItemClassId().GetValue() != m_instance->GetClass().GetId())
             el.GetDgnDb().Items().DeleteItem(el.GetElementId());
+#endif
         }
 
     //  Insert, update, or delete the item.
@@ -1383,11 +1328,13 @@ BentleyStatus CachedInstance::ApplyScheduledChangesToItem(DgnElementR el)
     if (BSISUCCESS != ApplyScheduledChange(outcome, el.GetDgnDb()))
         return BSIERROR;
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
     //  Update the DgnElement's ItemClassId member variable
     if (outcome == InstanceUpdateOutcome::Deleted)
         el.SetItemClassId(DgnClassId());
     else
         el.SetItemClassId(DgnClassId(m_instance->GetClass().GetId()));
+#endif
 
     // Note: the ElementOwnsItem relationship is created implicitly when we create the item with its ElementId column set to match the owning element's ID.
 
@@ -1521,3 +1468,8 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
 
     return range;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnElement::Update(DgnModelStatus* stat) {return GetDgnDb().Elements().Update(*this, stat);}

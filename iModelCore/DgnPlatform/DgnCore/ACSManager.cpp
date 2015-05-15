@@ -1309,7 +1309,7 @@ StatusInt       IACSManager::Delete (WCharCP name, DgnModelP modelRef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            IACSManager::DisplayCurrent (DgnViewportP viewport, bool isCursorView)
     {
-    if (GetInhibitCurrentACSDisplay () || !viewport || !viewport->GetViewFlags()->auxDisplay)
+    if (GetInhibitCurrentACSDisplay () || !viewport || !viewport->GetViewFlags()->acs)
         return;
 
     IAuxCoordSysP   acs = GetActive (*viewport);

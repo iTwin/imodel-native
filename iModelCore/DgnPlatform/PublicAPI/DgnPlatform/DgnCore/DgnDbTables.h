@@ -59,9 +59,9 @@
 #define DGN_RELNAME_ModelDrivesModel           "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
-#include "DgnFontManager.h"
 #include "UnitDefinition.h"
 #include "DgnLink.h"
+#include "DgnFont.h"
 #include "DgnCoreEvent.h"
 #include "DgnElement.h"
 #include <Bentley/HeapZone.h>
@@ -146,6 +146,7 @@ struct DgnCategories : DgnDbTable
             explicit Appearance(Utf8StringCR val) {FromJson(val);}
 
             void SetInvisible(bool val) {m_invisible=val;}
+            bool GetDontPlot() const {return m_dontPlot;}
             void SetDontPlot(bool val) {m_dontPlot=val;}
             bool GetDontSnap() const {return m_dontSnap;}
             void SetDontSnap(bool val) {m_dontSnap=val;}
@@ -260,6 +261,7 @@ struct DgnCategories : DgnDbTable
         //! @param[in] descr The category's description. May be nullptr.
         //! @param[in] label The display label for this category.  May be nullptr.
         //! @param[in] rank The category's rank
+        //! @param[in] id The Category's unique ID. This is normally assigned by the Insert function.
         Category(Utf8CP code, Scope scope, Utf8CP descr=nullptr, Utf8CP label=nullptr, Rank rank=Rank::User, DgnCategoryId id=DgnCategoryId()) {Init(id, code, scope, descr, label, rank);}
 
         Utf8CP GetCode() const {return m_code.c_str();} //!< The category code. Never empty. Unique. Not translated.
@@ -318,7 +320,6 @@ struct DgnCategories : DgnDbTable
         //! construct a SubCategoryIterator
         //! @param[in] db The database for the SubCategory table
         //! @param[in] category Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-        //! @param[in] whereClause an optional where clause
         SubCategoryIterator(DgnDbCR db, DgnCategoryId category) : DbTableIterator((BeSQLiteDbCR)db), m_categoryId(category) {}
 
         //! An entry in the table.
@@ -352,9 +353,9 @@ public:
     //@{
     //! Add a new category to the DgnDb.
     //! @param[in] row The definition of the category to create.
-    //! @param[in] the appearance for the default SubCategory for the new category
+    //! @param[in] appearance the appearance for the default SubCategory for the new category
     //! @return BE_SQLITE_OK if the category was added; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified DgnCategoryId and/or code is already used.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Category& row, SubCategory::Appearance const&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Category& row, SubCategory::Appearance const& appearance);
 
     //! Remove a category from the DgnDb.
     //! @param[in] id the id of the category to remove.
@@ -765,17 +766,16 @@ public:
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
-    DGNPLATFORM_EXPORT BentleyStatus DeleteModel(DgnModelId id);
+    //! Delete a model.
+    //! @note All elements from this model are deleted as well.
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteModel(DgnModelId id);
+
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
     DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
 
     //! Find the ModelId of the model with the specified name name.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(Utf8CP name) const;
-
-    //! Query for the DgnModelId of the model that owns the specified element.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId);
-
     //! Query for the dependency index and type of the specified model
     //! @param[out] didx    The model's DependencyIndex property value
     //! @param[out] mtype   The model's type
@@ -822,26 +822,6 @@ public:
     //! @return true if the model name is valid, false otherwise.
     //! @note Model names may also not start or end with a space.
     static bool IsValidName(Utf8StringCR name) {return DgnDbTable::IsValidName(name, GetIllegalCharacters());}
-};
-
-//=======================================================================================
-//! Each item has a row in the DgnItems table
-//=======================================================================================
-struct DgnItems : DgnDbTable
-{
-    friend struct DgnDb;
-
-private:
-    explicit DgnItems(DgnDbR db) : DgnDbTable(db) {}
-
-public:
-    //! Return the key of the item associated with the specified element.
-    //! @note an invalid key will be returned in the case of an error
-    //! @see ECInstanceKey::IsValid
-    DGNPLATFORM_EXPORT ElementItemKey QueryItemKey(DgnElementId);
-
-    //! Delete the item associated with the specified geometry aspect ID
-    DGNPLATFORM_EXPORT BentleyStatus DeleteItem(DgnElementId);
 };
 
 //=======================================================================================
@@ -900,11 +880,12 @@ private:
     void OnUnreferenced(DgnElementCR);
     void Destroy();
     void AddToPool(DgnElementR) const;
+    void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApplied(TxnSummary const&);
     void OnChangesetCanceled(TxnSummary const&);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params) const;
-    void ReleaseAndCleanup(DgnElementCPtr& element);
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     bool IsElementIdUsed(DgnElementId id) const;
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
@@ -921,11 +902,13 @@ public:
     DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
     DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    //! Look up an element within this DgnDb by its Id.
-    //! @return nullptr if the element does not exist or is not currently loaded.
+    //! Look up an element in the pool of loaded elements for this DgnDb.
+    //! @return A pointer to the element, or nullptr if the is not in the pool.
+    //! @private
     DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
-#endif
+
+    //! Query the DgnModelId of the specified DgnElementId.
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId);
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -941,10 +924,10 @@ public:
     //! Shortcut to get the Totals.m_allocatedBytes member
     int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}
 
-    //! Get the statistics for the current state of the pool.
+    //! Get the statistics for the current state of the element pool.
     DGNPLATFORM_EXPORT Statistics GetStatistics() const;
 
-    //! Reset the statistics for the pool.
+    //! Reset the statistics for the element pool.
     DGNPLATFORM_EXPORT void ResetStatistics();
 
     //! Get a DgnElement from this DgnDb by its DgnElementId. 
@@ -1129,89 +1112,153 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   09/13
+// @bsiclass                                                    Jeff.Marker     03/2015
 //=======================================================================================
-struct DgnFonts : DgnDbTable
+struct DgnFonts : NonCopyableClass
 {
-private:
-    mutable T_FontNumberMap     m_fontNumberMap;
-    mutable bool                m_fontNumberMapLoaded;
-    mutable bool                m_embeddedFontsLoaded;
-    mutable T_FontCatalogMap    m_embeddedFonts;
-    mutable T_FontCatalogMap    m_missingFonts;
+    typedef bmap<DgnFontId,DgnFontPtr> T_FontMap;
 
-    friend struct DgnDb;
-
-    // Ensures the font number map is loaded as a side effect.
-    T_FontNumberMap const& FontNumberMap() const;
-    explicit DgnFonts(DgnDbR db);
-
-private:
-    DgnFonts();
-    DgnFonts(DgnFonts const&); // no copying
-
-public:
-    struct Iterator : BeSQLite::DbTableIterator
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     03/2015
+    //=======================================================================================
+    struct DbFontMapDirect : NonCopyableClass
     {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db){}
+    private:
+        friend DgnFonts;
+        DgnFonts& m_dbFonts;
 
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        DbFontMapDirect(DgnFonts& dbFonts) : m_dbFonts(dbFonts) {}
+    
+    public:
+        struct Iterator : public BeSQLite::DbTableIterator
         {
         private:
-            friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            DgnFonts& m_dbFonts;
+
         public:
-            DGNPLATFORM_EXPORT uint32_t GetFontId() const;
-            DGNPLATFORM_EXPORT DgnFontType GetFontType() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            bool IsValid() const {return m_isValid && (nullptr!=m_sql->GetSqlStatementP());}
-            Entry const& operator*() const {return *this;}
+            Iterator(DgnFonts& dbFonts) : BeSQLite::DbTableIterator(dbFonts.m_db), m_dbFonts(dbFonts) {}
+
+            struct Entry : public DbTableIterator::Entry, public std::iterator<std::input_iterator_tag,Entry const>
+            {
+            private:
+                friend struct Iterator;
+                Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+
+            public:
+                DGNPLATFORM_EXPORT DgnFontId GetId() const;
+                DGNPLATFORM_EXPORT DgnFontType GetType() const;
+                DGNPLATFORM_EXPORT Utf8CP GetName() const;
+                Entry const& operator*() const { return *this; }
+            };
+
+            typedef Entry const_iterator;
+            DGNPLATFORM_EXPORT const_iterator begin() const;
+            const_iterator end() const { return Entry(NULL, false); }
+            DGNPLATFORM_EXPORT size_t QueryCount() const;
+        };
+        
+        bool DoesFontTableExist() const { return m_dbFonts.m_db.TableExists(m_dbFonts.m_tableName.c_str()); }
+        DGNPLATFORM_EXPORT BentleyStatus CreateFontTable();
+        DGNPLATFORM_EXPORT DgnFontPtr QueryById(DgnFontId) const;
+        DGNPLATFORM_EXPORT DgnFontPtr QueryByTypeAndName(DgnFontType, Utf8CP) const;
+        DGNPLATFORM_EXPORT DgnFontId QueryIdByTypeAndName(DgnFontType, Utf8CP) const;
+        DGNPLATFORM_EXPORT bool ExistsById(DgnFontId) const;
+        DGNPLATFORM_EXPORT bool ExistsByTypeAndName(DgnFontType, Utf8CP) const;
+        DGNPLATFORM_EXPORT BentleyStatus Insert(DgnFontCR, DgnFontId&);
+        DGNPLATFORM_EXPORT BentleyStatus Update(DgnFontCR, DgnFontId);
+        DGNPLATFORM_EXPORT BentleyStatus Delete(DgnFontId);
+        Iterator MakeIterator() const { return Iterator(m_dbFonts); }
         };
 
-    typedef Entry const_iterator;
-    typedef Entry iterator;
-    DGNPLATFORM_EXPORT size_t QueryCount() const;
-    DGNPLATFORM_EXPORT const_iterator begin() const;
-    const_iterator end() const {return Entry(nullptr, false);}
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     03/2015
+    //=======================================================================================
+    struct DbFaceDataDirect : NonCopyableClass
+    {
+        struct FaceKey
+        {
+            DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_Regular;
+            DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_Bold;
+            DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_Italic;
+            DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_BoldItalic;
+            
+            DgnFontType m_type;
+            Utf8String m_familyName;
+            Utf8String m_faceName;
+
+            FaceKey() : m_type((DgnFontType)0) {}
+            FaceKey(DgnFontType type, Utf8CP familyName, Utf8CP faceName) : m_type(type), m_familyName(familyName), m_faceName(faceName) {}
+            bool Equals(FaceKey const& rhs) const { return ((rhs.m_type == m_type) && m_familyName.EqualsI(rhs.m_familyName) && m_faceName.EqualsI(rhs.m_faceName)); }
+        };
+
+        typedef uint64_t DataId;
+        typedef FaceKey const& FaceKeyCR;
+        typedef uint32_t FaceSubId;
+        typedef bmap<FaceSubId, FaceKey> T_FaceMap;
+        typedef T_FaceMap const& T_FaceMapCR;
+        
+        struct Iterator : public BeSQLite::DbTableIterator
+        {
+        private:
+            DgnFonts& m_dbFonts;
+
+        public:
+            Iterator(DgnFonts& dbFonts) : BeSQLite::DbTableIterator(dbFonts.m_db), m_dbFonts(dbFonts) {}
+
+            struct Entry : public DbTableIterator::Entry, public std::iterator<std::input_iterator_tag,Entry const>
+            {
+            private:
+                friend struct Iterator;
+                Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+
+            public:
+                DGNPLATFORM_EXPORT uint64_t GetId() const;
+                DGNPLATFORM_EXPORT T_FaceMap GenerateFaceMap() const;
+                Entry const& operator*() const { return *this; }
+            };
+
+            typedef Entry const_iterator;
+            DGNPLATFORM_EXPORT const_iterator begin() const;
+            const_iterator end() const { return Entry(NULL, false); }
+            DGNPLATFORM_EXPORT size_t QueryCount() const;
+        };
+
+    private:
+        friend DgnFonts;
+        DgnFonts& m_dbFonts;
+
+        DbFaceDataDirect(DgnFonts& dbFonts) : m_dbFonts(dbFonts) {}
+
+    public:
+        DGNPLATFORM_EXPORT BentleyStatus QueryById(bvector<Byte>&, DataId);
+        DGNPLATFORM_EXPORT BentleyStatus QueryByFace(bvector<Byte>&, FaceSubId&, FaceKeyCR);
+        DGNPLATFORM_EXPORT bool Exists(FaceKeyCR);
+        DGNPLATFORM_EXPORT BentleyStatus Insert(ByteCP, size_t dataSize, T_FaceMapCR);
+        DGNPLATFORM_EXPORT BentleyStatus Delete(FaceKeyCR);
+        Iterator MakeIterator() const { return Iterator(m_dbFonts); }
     };
-//__PUBLISH_SECTION_END__
-    //! Attempts to find a missing font object by the given type and name.
-    DGNPLATFORM_EXPORT DgnFontCP GetMissingFont(DgnFontType fontType, Utf8CP fontName) const;
 
-    //! First attempts to get a missing font object by the given type and name; if it does not exist, one is created.
-    //! v8FontNumber is optional, and is only used with DgnFontType is RSC.
-    DGNPLATFORM_EXPORT DgnFontCP GetOrCreateMissingFont(DgnFontType, Utf8CP fontName, uint32_t v8FontNumber = (uint32_t)-1) const;
+private:
+    DbFontMapDirect m_dbFontMap;
+    DbFaceDataDirect m_dbFaceData;
+    BeSQLiteDbR m_db;
+    Utf8String m_tableName;
+    bool m_isFontMapLoaded;
+    T_FontMap m_fontMap;
 
-    // *** DO NOT USE *** Use AcquireFontNumber instead. This is a low-level method to support DgnV8ProjectImpoter.
-    DGNPLATFORM_EXPORT BentleyStatus InsertFontNumberMappingDirect(uint32_t id, DgnFontType, Utf8CP name);
+    void Update();
 
-    // *** DO NOT USE *** This is used to coordinate with the DgnV8 importer.
-    DGNPLATFORM_EXPORT bool IsFontNumberMapLoaded() const;
+public:
+    DgnFonts(BeSQLiteDbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
-//__PUBLISH_SECTION_START__
-
-/** @cond BENTLEY_SDK_Publisher */
-    //! Embeds the given font in this DgnDb.
-    DGNPLATFORM_EXPORT DgnFontCP EmbedFont(DgnFontCR);
-
-    //! Provides a DgnDb-specific font number for the given font. A new number is added if a mapping does not already exist.
-    DGNPLATFORM_EXPORT BentleyStatus AcquireFontNumber(uint32_t& acquiredID, DgnFontCR);
-
-    //! Queries the DgnDb font map to resolve a font to a number. If a mapping does not already exist, one is <b>not</b> added.
-    DGNPLATFORM_EXPORT BentleyStatus FindFontNumber(uint32_t* foundID, DgnFontCR) const;
-
-    //! Queries the DgnDb font map to resolve a number to a font. If a mapping does not already exist, one is <b>not</b> added.
-    DGNPLATFORM_EXPORT DgnFontCP FindFont(uint32_t fontNumber) const;
-
-    //! Gets a collection of this DgnDb's embedded fonts. This DgnDb owns these font objects.
-    DGNPLATFORM_EXPORT T_FontCatalogMap const& EmbeddedFonts() const;
-/** @endcond */
-
-    //! Get an iterator over the fonts in this DgnDb.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+    DbFontMapDirect& DbFontMap() { return m_dbFontMap; }
+    DbFaceDataDirect& DbFaceData() { return m_dbFaceData; }
+    void Invalidate() { m_isFontMapLoaded = false; m_fontMap.clear(); }
+    DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
+    DGNPLATFORM_EXPORT DgnFontCP FindFontByTypeAndName(DgnFontType, Utf8CP) const;
+    DGNPLATFORM_EXPORT DgnFontId FindId(DgnFontCR) const;
+    DGNPLATFORM_EXPORT DgnFontId AcquireId(DgnFontCR);
 };
-
 
 /** @cond BENTLEY_SDK_Internal */
 //=======================================================================================
@@ -1385,21 +1432,6 @@ public:
     //! @return ERROR if the DgnDb does not have a valid latitude and longitude, SUCCESS otherwise
     DGNPLATFORM_EXPORT BentleyStatus ConvertToGeoPoint(GeoPointR geoPoint, DPoint3dCR worldPoint) const;
 };
-
-//__PUBLISH_SECTION_END__
-
-//=======================================================================================
-// Used in persistence; do not change values.
-// These are string defines so that they can be easily concatenated into queries.
-// @bsiclass
-//=======================================================================================
-#define DGN_STYLE_TYPE_Line "1"
-#define DGN_STYLE_TYPE_AnnotationText "2"
-#define DGN_STYLE_TYPE_AnnotationFrame "3"
-#define DGN_STYLE_TYPE_AnnotationLeader "4"
-#define DGN_STYLE_TYPE_TextAnnotationSeed "5"
-
-//__PUBLISH_SECTION_START__
 
 //=======================================================================================
 // @bsiclass

@@ -37,8 +37,8 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this), m_colors(*this), m_categories(*this), m_domains(*this), m_styles(*this), m_views(*this),
-                 m_geomParts(*this), m_units(*this), m_models(*this), m_items(*this), m_elements(*this), 
+DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_colors(*this), m_categories(*this), m_domains(*this), m_styles(*this), m_views(*this),
+                 m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
                  m_materials(*this), m_links(*this), m_ecsqlCache(50, "DgnDb")
     {
     m_txnManager = NULL;
@@ -236,7 +236,6 @@ DgnFileStatus DgnDb::CompactFile()
 
     return DGNFILE_STATUS_Success;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12

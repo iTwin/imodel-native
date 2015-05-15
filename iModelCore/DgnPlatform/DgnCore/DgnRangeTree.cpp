@@ -1066,7 +1066,9 @@ void DgnRangeTree::AddElement(Entry const& entry)
     if (nullptr == m_root)
         m_root = AllocateLeafNode();
     
+#ifdef WIP_ELEMENT_UPDATE
     BeAssert(!((DRTInternalNodeP)m_root)->DropElement(entry, *this));
+#endif
 
     DRTLeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
@@ -2387,11 +2389,11 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
     if (m_existing.FindElementById(elementId))
         return;
 
-    DgnElementCPtr el = m_dgndb.Elements().GetElement(elementId);
+    DgnElements& pool = m_dgndb.Elements();
+    DgnElementCPtr el = pool.GetElement(elementId);
     if (el.IsValid())
         {
         GeometricElementCP geomElem = el->ToGeometricElement();
-
         if (nullptr != geomElem)
             {
             m_drewElementThisPass = true;
@@ -2399,23 +2401,22 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
             }
         }
 
-    DgnElements& pool = m_dgndb.Elements();
-    if (pool.GetTotalAllocated() > (int64_t)m_elementReleaseTrigger)
-        {
-        pool.ReleaseAndCleanup(el);  //  This also clears the reference so el is not valid after this call.
+    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
+        return;
 
-        //  Purging the element does not purge the symbols so it may be necessary to do a full purge
-        if (pool.GetTotalAllocated() > (int64_t)m_purgeTrigger)
-            {
-            pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
+    pool.DropFromPool(*el);
 
-            //  The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
-            //  When that is true, we leave it to QueryViewController::_DrawView to try to clean up.  This logic just tries to recover from the
-            //  growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
-            uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
-            m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
-            }
-        }
+    // Purging the element does not purge the symbols so it may be necessary to do a full purge
+    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
+        return;
+
+    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
+
+    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
+    // When that is true, we leave it to QueryViewController::_DrawView to try to clean up.  This logic just tries to recover from the
+    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
+    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
+    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
     }
 
 /*---------------------------------------------------------------------------------**//**

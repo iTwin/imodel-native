@@ -19,6 +19,7 @@ Classes for creating and opening a DgnDb.
 
 A DgnDb is a database that holds graphic and non-graphic data. A DgnDb object is used to access the database.
 
+@ref Overview_BIS
 */
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -99,7 +100,7 @@ struct DgnVersion : BeSQLite::SchemaVersion
 
 //=======================================================================================
 //! A DgnDb is an in-memory object to access the information in a .dgndb database.
-//! @ingroup DgnProjectGroup
+//! @ingroup DgnDbGroup
 // @bsiclass
 //=======================================================================================
 struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
@@ -133,7 +134,6 @@ protected:
     DgnCategories       m_categories;
     DgnStyles           m_styles;
     DgnModels           m_models;
-    DgnItems            m_items;
     DgnElements         m_elements;
     DgnUnits            m_units;
     DgnViews            m_views;
@@ -200,7 +200,6 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult GetNextServerIssuedId (BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, uint32_t minimumId=1);
 
     DGNPLATFORM_EXPORT DgnModels& Models() const;                   //!< Information about models for this DgnDb
-    DGNPLATFORM_EXPORT DgnItems& Items() const;                     //!< Information about geometry aspects for this DgnDb
     DGNPLATFORM_EXPORT DgnElements& Elements() const;               //!< Information about graphic elements for this DgnDb
     DGNPLATFORM_EXPORT DgnViews& Views() const;                     //!< Information about views for this DgnDb
     DGNPLATFORM_EXPORT DgnCategories& Categories() const;           //!< Information about categories for this DgnDb

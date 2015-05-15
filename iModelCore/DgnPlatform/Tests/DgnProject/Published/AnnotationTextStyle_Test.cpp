@@ -54,7 +54,7 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\
     Utf8String description = "MyDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
     uint32_t colorId = 11;                                                                      STYLE_PTR->SetColor(ColorDef(colorId));\
-    uint32_t fontId = 21;                                                                       STYLE_PTR->SetFontId(fontId);\
+    DgnFontId fontId(21);                                                                       STYLE_PTR->SetFontId(fontId);\
     double height = 31.31;                                                                      STYLE_PTR->SetHeight(height);\
     bool isBold = true;                                                                         STYLE_PTR->SetIsBold(isBold);\
     bool isItalic = true;                                                                       STYLE_PTR->SetIsItalic(isItalic);\
@@ -96,7 +96,7 @@ TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
     EXPECT_TRUE(style->GetName().empty());
     EXPECT_TRUE(style->GetDescription().empty());
     EXPECT_TRUE(0 == style->GetColor().GetValue());
-    EXPECT_TRUE(0 == style->GetFontId());
+    EXPECT_TRUE(!style->GetFontId().IsValid());
     EXPECT_TRUE(1.0 == style->GetHeight());
     EXPECT_TRUE(!style->IsBold());
     EXPECT_TRUE(!style->IsItalic());

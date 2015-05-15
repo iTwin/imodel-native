@@ -1569,7 +1569,7 @@ bool ViewContext::_WantAreaPatterns ()
     {
     ViewFlagsCP viewFlags = GetViewFlags();
 
-    if (!viewFlags || !viewFlags->patterns || (!viewFlags->patternDynamics && DrawPurpose::Dynamics == GetDrawPurpose()))
+    if (!viewFlags || !viewFlags->patterns)
         return false;
 
     return true;

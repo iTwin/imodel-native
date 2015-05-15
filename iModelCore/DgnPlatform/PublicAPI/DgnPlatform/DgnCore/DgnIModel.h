@@ -57,7 +57,7 @@ public:
     //! @param[in] progress the interface to call to report progress.  May be NULL.
     //! @remarks See BeSQLite::DbEmbeddedFileTable::ExportDbFile for information about the expected BeSQLite::DbResult error codes.
     //! @if BENTLEY_SDK_Publisher
-    //!     @ingroup DgnProjectGroup
+    //!     @ingroup DgnDbGroup
     //! @endif
     DGNPLATFORM_EXPORT static DgnFileStatus Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirectory, Utf8CP dbName, BeFileNameCR imodelFile, bool overwriteExisting, BeSQLite::ICompressProgressTracker* progress = NULL);
 

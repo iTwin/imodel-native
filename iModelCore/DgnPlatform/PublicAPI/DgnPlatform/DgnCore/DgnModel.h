@@ -204,13 +204,14 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);
     DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnUpdateElement(DgnElementCR element, DgnElementR replacement);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnUpdateElement(DgnElementCR original, DgnElementR replacement);
+    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR element);
+    DGNPLATFORM_EXPORT virtual void _OnUpdateElementFailed(DgnElementCR original);
     DGNPLATFORM_EXPORT virtual DgnModelStatus _OnInsertElement(DgnElementR element);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementR element);
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
-    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementR element, bool cancel);
-    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementR element, DgnElementR original);
+    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnModelFillComplete();
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
@@ -223,6 +224,8 @@ protected:
     void AllocateRangeIndex() const;
     void ClearRangeIndex();
     void ReleaseAllElements();
+    void AddToRangeIndex(DgnElementCR);
+    void RemoveFromRangeIndex(DgnElementCR);
 
 public:
     //! Add graphics to the scene.
