@@ -83,6 +83,86 @@ void SqlFunctionsTest::InsertElement(PhysicalElementR pelem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SqlFunctionsTest, placement_areaxy)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"placement_areaxy.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+
+    double o1y = 5.0;
+    double o2x = 5.0;
+    DPoint3d o1origin = DPoint3d::From(0,o1y,0);
+    DPoint3d o2origin = DPoint3d::From(o2x,0,0);
+
+    ObstacleElementPtr obstacleAt0 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "obstacleAt0");
+    InsertElement(*obstacleAt0);
+    obstacleAt0->SetSomeProperty(*m_db, "B");
+
+    ObstacleElementPtr obstacle2At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "obstacle2At90");
+    InsertElement(*obstacle2At90);
+    obstacle2At90->SetSomeProperty(*m_db, "A");
+
+    // Example of passing the wrong object to a SQL function
+    if (true)
+        {
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_error.sampleCode
+        //  This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
+        Statement stmt;
+        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_placement_angles(Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
+        DbResult rc = stmt.Step();
+        ASSERT_EQ( BE_SQLITE_ERROR , rc );
+        printf ("SQLite error: %s", m_db->GetLastError()); // displays "SQLite error: Illegal input to DGN_bbox_areaxy"
+        //__PUBLISH_EXTRACT_END__
+        }
+
+    //  The X-Y area is width (X) time depth (Y)
+    double obstacleXyArea = obstacleAt0->GetPlacement().GetElementBox().GetWidth() * obstacleAt0->GetPlacement().GetElementBox().GetDepth();
+
+    m_db->SaveChanges();
+
+    //  Get the areas of the obstacles individually and sum them up 
+    double totalAreaXy = 0.0;
+        {
+        Statement stmt;
+        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_placement_eabb(Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
+
+        DbResult rc;
+        while (BE_SQLITE_ROW == (rc = stmt.Step()))
+            {
+            double areaxy = stmt.GetValueDouble(0);
+            ASSERT_EQ( obstacleXyArea , areaxy );
+            totalAreaXy += areaxy;
+            }
+
+        ASSERT_EQ( BE_SQLITE_DONE , rc ) << (Utf8CP)Utf8PrintfString("SQLite error: %s", m_db->GetLastError());
+        EXPECT_DOUBLE_EQ( 2*obstacleXyArea , totalAreaXy );
+        }
+
+    //  Compute the sum of the areas using SUM -- should get the same result
+    if (true)
+        {
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
+        Statement stmt;
+        stmt.Prepare(*m_db, "SELECT SUM(DGN_bbox_areaxy(DGN_placement_eabb(Placement))) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
+        //__PUBLISH_EXTRACT_END__
+
+        ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+        ASSERT_EQ( totalAreaXy , stmt.GetValueDouble(0) );
+        }
+
+    //  Do the same with a sub-selection
+    if (true)
+        {
+        Statement stmt;
+        stmt.Prepare(*m_db, "SELECT SUM(area) FROM (SELECT DGN_bbox_areaxy(DGN_placement_eabb(Placement)) AS area FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) ")");
+
+        ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+        ASSERT_EQ( totalAreaXy , stmt.GetValueDouble(0) );
+        }
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, placement_angles)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"placement_angles.idgndb", BeSQLite::Db::OPEN_ReadWrite);
@@ -141,11 +221,13 @@ TEST_F(SqlFunctionsTest, placement_angles)
 #ifndef DONT_USE_ECSQL
     if (true)
         {
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
         ECSqlStatement estmt;
         estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM " 
                                 DGN_SCHEMA(DGN_CLASSNAME_ElementGeom) " AS g,"
                                 DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " AS o"
                              " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90.0,0,0)) < 1.0)");
+        //__PUBLISH_EXTRACT_END__
         ASSERT_EQ( EC::ECSqlStepStatus::HasRow , estmt.Step() );
         ASSERT_EQ( elem2At90->GetElementId() , estmt.GetValueId<DgnElementId>(0) );
         ASSERT_EQ( EC::ECSqlStepStatus::Done, estmt.Step() );
