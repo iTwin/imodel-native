@@ -727,13 +727,13 @@ bool            fullPath    // fullPath arg is ignored for intersect paths!
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IntersectPath::SetHilited (ElementHiliteState  newState) const
+void IntersectPath::SetHilited (DgnElement::Hilited newState) const
     {
     SnapPath::SetHilited (newState);
 
     // when we're turning on the hilite flag, we need to set the second path to "dashed hilite"
-    if (HILITED_Normal == newState)
-        newState = HILITED_Dashed;
+    if (DgnElement::Hilited::Normal == newState)
+        newState = DgnElement::Hilited::Dashed;
 
     m_secondPath->SetHilited (newState);
     }
@@ -753,10 +753,10 @@ void            IntersectPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode,
 
     // NOTE: When we're flashing, the hilite flags are not necessarily set on the elementRefs. So to get the second path
     //       drawn with dashed symbology, we need to turn on its "dashed hilite" flag temporarily, and then restore it.
-    ElementHiliteState currHilite = tmpSnapPath.IsHilited ();
+    DgnElement::Hilited currHilite = tmpSnapPath.IsHilited ();
 
     if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapPath.SetHilited (HILITED_Dashed);
+        tmpSnapPath.SetHilited (DgnElement::Hilited::Dashed);
 
     tmpSnapPath.SetComponentMode (GetComponentMode ()); // Set correct component flash mode...
     tmpSnapPath.DrawInVp (vp, drawMode, drawPurpose, stopFlag);
