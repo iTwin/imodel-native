@@ -104,6 +104,7 @@
     <ClInclude Include="Published\WebServices\PassportTests.h" />
     <ClInclude Include="Published\WebServices\UsageTrackingTests.h" />
     <ClInclude Include="Published\WebServices\MockWSSchemaProvider.h" />
+    <ClInclude Include="Published\ValuePrinter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -239,6 +240,7 @@
     <ClCompile Include="Published\WebServices\MobileTrackingTests.cpp" />
     <ClCompile Include="Published\WebServices\PassportTests.cpp" />
     <ClCompile Include="Published\WebServices\UsageTrackingTests.cpp" />
+    <ClCompile Include="Published\ValuePrinter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />

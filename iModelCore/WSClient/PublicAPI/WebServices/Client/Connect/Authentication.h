@@ -16,6 +16,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-WSCLIENT_EXPORT void Authenticate(JsonValueCR messageDataObj);
+WSCLIENT_EXPORT extern void Authenticate(JsonValueCR messageDataObj);
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
