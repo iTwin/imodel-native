@@ -11,6 +11,94 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                              Muhammad Hassan                         05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
+    {
+    ECDbTestProject testproject;
+    auto& ecdb = testproject.Create ("ECSqlStatementCacheTest.ecdb", L"TestSchema.01.00.ecschema.xml", false);
+
+    Utf8CP ecSqlInsert = "INSERT INTO TS.Settings (FormateName, FormateVersion) VALUES (?, ?)";
+    Utf8CP ecSqlSelect = "SELECT FormateName, FormateVersion FROM TS.Settings";
+
+    ECSqlStatementCache cache (3);
+    ASSERT_TRUE (cache.IsEmpty ());
+
+        {
+        CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlInsert);
+        ASSERT_TRUE (stmt != nullptr);
+        ASSERT_TRUE (stmt->IsPrepared ());
+        ASSERT_EQ (stmt->BindText (1, "Hello", IECSqlBinder::MakeCopy::No), ECSqlStatus::Success) << "Binding string value failed";
+        ASSERT_EQ (stmt->BindInt (2, 1), ECSqlStatus::Success) << "Binding Integer Value failed";
+        ASSERT_TRUE (stmt->Step () == ECSqlStepStatus::Done);
+        }
+
+    ASSERT_EQ (cache.Size (), 1);
+
+        {
+        CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlSelect);
+        ASSERT_EQ (stmt->Step (), ECSqlStepStatus::HasRow);
+        Utf8String formateName = stmt->GetValueText (0);
+        ASSERT_EQ (formateName, "Hello");
+        ASSERT_EQ (stmt->GetValueInt (1), 1);
+        }
+
+    ASSERT_EQ (cache.Size (), 2) << "Cache is expected to have two ECSqlStatements";
+
+        {
+        CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlInsert);
+        ASSERT_EQ (stmt->BindText (1, "World", IECSqlBinder::MakeCopy::No), ECSqlStatus::Success) << "Binding string value failed";
+        ASSERT_EQ (stmt->BindInt (2, 2), ECSqlStatus::Success) << "Binding Integer Value failed";
+        ASSERT_TRUE (stmt->Step () == ECSqlStepStatus::Done);
+        }
+    //get existing cached statement so size of cache should remain the same i.e 2
+    ASSERT_EQ (cache.Size (), 2) << "Cache is expected to have two ECSqlStatements";
+
+    //Again accessing ECSqlSelect from cache and the size of cache should not change
+        {
+        size_t rowCount = 0;
+        CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlSelect);
+        while (stmt->Step () != ECSqlStepStatus::Done)
+            {
+            rowCount++;
+            }
+        ASSERT_EQ (rowCount, 2) << "row count returned doesn't match the no of rows inserted";
+        }
+
+    ASSERT_EQ (cache.Size (), 2) << "Cache is expected to have two ECSqlStatements";
+    cache.Empty ();
+    ASSERT_EQ (cache.Size (), 0) << "cache size should be 0 after it is cleared";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                              Muhammad Hassan                         05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ECSqlStatementCacheTests, VerifyCacheSizeMustNotExceedLimit)
+    {
+    ECDbTestProject testproject;
+    auto& ecdb = testproject.Create ("ECSqlStatementCacheTest.ecdb", L"TestSchema.01.00.ecschema.xml", false);
+
+    Utf8CP ecSql1 = "INSERT INTO TS.Settings VALUES (?, ?)";
+    Utf8CP ecSql2 = "SELECT * FROM TS.Settings";
+    Utf8CP ecSql3 = "SELECT * FROM TS.FileInfo";
+
+    ECSqlStatementCache cache (2);
+    CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSql1);//insert first ECSql to cache
+    ASSERT_TRUE (stmt != nullptr);
+    ASSERT_EQ (cache.Size (), 1);
+
+    stmt = cache.GetPreparedStatement (ecdb, ecSql2);//insert 2nd ECSql to cache
+    ASSERT_TRUE (stmt != nullptr);
+    ASSERT_EQ (cache.Size (), 2);
+
+    stmt = cache.GetPreparedStatement (ecdb, ecSql3);//insert 3rd ECSql to cache
+    ASSERT_TRUE (stmt != nullptr);
+    ASSERT_EQ (cache.Size (), 2) << "cache size exceeded the limit";
+
+    cache.Empty ();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  02/15
 //+---------------+---------------+---------------+---------------+---------------+------
