@@ -1011,11 +1011,15 @@ BentleyStatus CachedInstance::ApplyScheduledChange(InstanceUpdateOutcome& outcom
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-static Utf8String getPropertiesList(ECClassCR ecclass, bset<Utf8String> const& ignoreList)
+static Utf8String getPropertiesList(ECClassCR ecclass, bset<Utf8String> const& ignoreList, Utf8CP classAlias = nullptr)
     {
     Utf8String props;
 
-    props.append("ECInstanceId");   // so that I'll always have at least one valid property
+    Utf8String classAliasStr;
+    if (classAlias != nullptr)
+        classAliasStr.append(classAlias).append(".");
+
+    props.append(classAliasStr).append("ECInstanceId");   // so that I'll always have at least one valid property
 
     for (auto ecprop : ecclass.GetProperties())
         {
@@ -1026,7 +1030,7 @@ static Utf8String getPropertiesList(ECClassCR ecclass, bset<Utf8String> const& i
         if (!props.empty())
             props.append(",");
 
-        props.append(propName.c_str());
+        props.append(classAliasStr).append(propName.c_str());
         }
 
     return props;
@@ -1192,10 +1196,11 @@ bvector<IECInstancePtr> DgnElement::GetAspects(ECClassCP aspectClass) const
         return instances;
         }
 
-    Utf8String aspectProps = getPropertiesList(*aspectClass, bset<Utf8String>());
+    Utf8CP aspectAlias = "a";
+    Utf8String aspectProps = getPropertiesList(*aspectClass, bset<Utf8String>(), aspectAlias);
 
     ECSqlSelectBuilder b;
-    b.Select(aspectProps.c_str()).From(*aspectClass, "a", false).Join(*GetElementClass(), "e", false).Using(*elementOwnsAspectRelationship).WhereSourceEndIs("e", "?");
+    b.Select(aspectProps.c_str()).From(*aspectClass, aspectAlias, false).Join(*GetElementClass(), "e", false).Using(*elementOwnsAspectRelationship).WhereSourceEndIs("e", "?");
     ECSqlStatement stmt;
     stmt.Prepare(GetDgnDb(), b.ToString().c_str());
     stmt.BindId(1, GetElementId());
@@ -1209,11 +1214,7 @@ bvector<IECInstancePtr> DgnElement::GetAspects(ECClassCP aspectClass) const
             continue;
             }
 
-        // ***WIP - how to find ECInstanceId of selected instance??
-        ECValue idValue;
-        instance->GetValue(idValue, L"ECInstanceId");
-        setInstanceId(*instance, EC::ECInstanceId(idValue.GetLong()));
-
+        BeAssert(!instance->GetInstanceId().empty());
         instances.push_back(instance);
         }
 
