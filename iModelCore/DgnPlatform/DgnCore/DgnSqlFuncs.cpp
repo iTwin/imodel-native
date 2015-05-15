@@ -136,7 +136,7 @@ struct DGN_placement_aabb : PlacementFunc
     <p><b>Example (C++)</b>
     <p>Here is an example of using DGN_placement_eabb to sum up element areas. Note that we want to use 
     \em element-aligned bounding boxes in this query, rather than \a axis-aligned bounding boxes.
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
 */
 DGN_bbox DGN_placement_eabb(DGN_placement placement);
 // __PUBLISH_SECTION_END__
@@ -256,7 +256,7 @@ struct DGN_placement_angles : PlacementFunc
     @return a DGN_angles object
     <p><b>Example (C++)</b>
     <p>Here is an example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_Angles.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
 */
 DGN_angles DGN_angles(double yaw, double pitch, double roll);
 // __PUBLISH_SECTION_END__
@@ -277,10 +277,15 @@ struct DGN_angles : ScalarFunction
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Get a member of a DGN_angles object
-//! @param angles   The DGN_angles object to query
-//! @param member   The index of the member to get: 0 - Yaw, 1 - Pitch, 2 - Roll 
-//! @return the selected angle (in degrees), or an error if member is out of range or if \a angles is not a DGN_angles object
+/**
+    Get a member of a DGN_angles object
+    @param angles   The DGN_angles object to query
+    @param member   The index of the member to get: 0 - Yaw, 1 - Pitch, 2 - Roll 
+    @return the selected angle (in degrees), or an error if member is out of range or if \a angles is not a DGN_angles object
+    <p><b>Example (C++)</b>
+    <p>Here is an example of checking the yaw angle of elements:
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
+*/
 double DGN_angles_value(DGN_angles angles, int member);
 // __PUBLISH_SECTION_END__
 #endif

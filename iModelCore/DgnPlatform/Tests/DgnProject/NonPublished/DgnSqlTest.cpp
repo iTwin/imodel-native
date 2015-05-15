@@ -190,6 +190,19 @@ TEST_F(SqlFunctionsTest, placement_angles)
     ASSERT_EQ( elem1At90->GetElementId() , stmt.GetValueId<DgnElementId>(0) );
     ASSERT_EQ( BE_SQLITE_DONE, stmt.Step() );
 
+    if (true)
+        {
+        //  Do the same by checking the yaw angle directly
+        Statement stmt2;
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
+        stmt2.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE ABS(DGN_angles_value(DGN_placement_angles(g.Placement), 0) - 90) < 1.0");
+        //__PUBLISH_EXTRACT_END__
+
+        ASSERT_EQ( BE_SQLITE_ROW , stmt2.Step() );
+        ASSERT_EQ( elem1At90->GetElementId() , stmt2.GetValueId<DgnElementId>(0) );
+        ASSERT_EQ( BE_SQLITE_DONE, stmt2.Step() );
+        }
+    
     //  Create anoter element @ 90 degrees
     ObstacleElementPtr elem2At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "elem2At90");
     InsertElement(*elem2At90);
@@ -432,8 +445,6 @@ TEST_F(SqlFunctionsTest, bbox_overlaps)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, bbox_union)
     {
-    ScopedDgnHost autoDgnHost;
-
     DgnDbTestDgnManager tdm (L"04_Plant.i.idgndb", __FILE__, Db::OPEN_Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
     DgnDbP dgndb = tdm.GetDgnProjectP();
 
@@ -451,7 +462,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
     ASSERT_TRUE(result.IsValid());
 
     stmt.Finalize();
-    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_Angles.sampleCode
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
     stmt.Prepare(*dgndb, "SELECT count(*) FROM "
                          DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(0,0,90)) < 1.0");
     //__PUBLISH_EXTRACT_END__
