@@ -212,6 +212,8 @@ struct DGN_placement_origin : PlacementFunc
     Get the placement angles
     @param placement   The DGN_placement object to query
     @return the placement angles
+    <p><b>Example (C++)</b>
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
 */
 DGN_angles DGN_placement_angles(DGN_placement placement);
 // __PUBLISH_SECTION_END__
@@ -280,7 +282,7 @@ struct DGN_angles : ScalarFunction
 /**
     Get a member of a DGN_angles object
     @param angles   The DGN_angles object to query
-    @param member   The index of the member to get: 0 - Yaw, 1 - Pitch, 2 - Roll 
+    @param member   The index of the member to get: Yaw=0, Pitch=1, Roll=2 
     @return the selected angle (in degrees), or an error if member is out of range or if \a angles is not a DGN_angles object
     <p><b>Example (C++)</b>
     <p>Here is an example of checking the yaw angle of elements:
@@ -569,7 +571,7 @@ struct DGN_bbox_contains : ScalarFunction
 // __PUBLISH_SECTION_START__
 //! Get a member of a DGN_bbox object
 //! @param bb       a bounding box
-//! @param member   The index of the member to get: 0 - XLow, 1 - YLow, 2 - ZLow, 3 - XHigh, 4 - YHigh, 5 - ZHigh
+//! @param member   The index of the member to get: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
 //! @return the the requested member of the bounding box or an error if member is out of range or bb is not a DGN_bbox object.
 double DGN_bbox_value(DGN_bbox bb, int member);
 // __PUBLISH_SECTION_END__
@@ -672,7 +674,7 @@ struct DGN_point_distance : ScalarFunction
 // __PUBLISH_SECTION_START__
 //! Get a member of a DGN_Point object.
 //! @param point    The point to query
-//! @param member   The index of the coordinate to get: 0 - x, 1 - y, 2 - z
+//! @param member   The index of the coordinate to get: X=0, Y=1, Z=2
 //! @return a coordindate of the point (in meters) or an error if \a which is out of range or \a point is not a point object
 double DGN_point_value(DGN_point point, int member);
 // __PUBLISH_SECTION_END__
