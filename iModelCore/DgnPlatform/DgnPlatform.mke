@@ -185,8 +185,6 @@ $(coreObjs)DgnCore$(oext): $(DgnCoreDir)DgnCore.cpp $(DgnCoreDir)DgnCoreDLLInlin
 
 $(coreObjs)HandlerTypeInfo$(oext): $(DgnCoreDir)HandlerTypeInfo.cpp $(contextDepends) $(HandlerDepends) ${MultiCompileDepends}
 
-$(coreObjs)ViewHandler$(oext): $(DgnCoreDir)ViewHandler.cpp $(contextDepends) ${MultiCompileDepends} $(DgnCoreAPISrc)SimplifyViewDrawGeom.h
-
 $(coreObjs)ViewContext$(oext): $(DgnCoreDir)ViewContext.cpp   $(DgnCoreAPISrc)DisplayPath.h $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h $(DgnCoreAPISrc)ScanCriteria.h $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
 
 $(coreObjs)SymbolContext$(oext): $(DgnCoreDir)SymbolContext.cpp   $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h  $(LevelApiDepends) ${MultiCompileDepends}

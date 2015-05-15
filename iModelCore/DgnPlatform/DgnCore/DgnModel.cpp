@@ -600,6 +600,7 @@ DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const
     return m_rangeIndex;
     }
 
+#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
 /*---------------------------------------------------------------------------------**//**
 * Called whenever the geom for an element (could possibly have) changed.
 * If a cached presentation of the geom is stored on the DgnElementP, delete it. Also
@@ -608,7 +609,6 @@ DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ElementChanged(DgnElement& elRef, DgnElementChangeReason reason)
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
     // if there are qvElems on this DgnElementP, delete them
     elRef.ForceElemChanged(false, reason);
 
@@ -616,8 +616,8 @@ void DgnModel::ElementChanged(DgnElement& elRef, DgnElementChangeReason reason)
         return;
 
     OnElementModify((DgnElementR) elRef);
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11

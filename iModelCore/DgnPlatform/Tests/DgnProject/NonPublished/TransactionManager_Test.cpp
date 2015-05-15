@@ -127,7 +127,7 @@ struct TestElementHandler : DgnPlatform::ElementHandler
 
     DgnModelStatus DeleteElement (DgnDbR db, DgnElementId eid)
         {
-        return db.Elements().DeleteElement (eid);
+        return db.Elements().Delete(eid);
         }
 };
 
@@ -515,6 +515,7 @@ TEST_F (TransactionManagerTests, CRUD)
     monitor.Clear();
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * Test of element instance access
 * @bsimethod                                    Sam.Wilson      01/15
@@ -536,7 +537,6 @@ TEST_F (TransactionManagerTests, ElementInstance)
     ASSERT_EQ( e1props.GetValue(v, TMTEST_TEST_ELEMENT_TestElementProperty) , ECN::ECOBJECTS_STATUS_Success );
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/

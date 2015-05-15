@@ -1149,7 +1149,7 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-DgnElementKey DgnElements::GetElementKey(DgnElementId elementId) const
+DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
     {
     CachedStatementPtr stmt;
     GetStatement(stmt, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
@@ -1228,6 +1228,34 @@ DgnElementId DgnElements::MakeNewElementId()
     return DgnElementId(val.m_luid.u);
     }
 
+
+struct OnDeleteCaller   {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDelete(el);}   };
+struct OnDeletedCaller  {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}   };
+struct OnInsertCaller   {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInsert(el);}   };
+struct OnInsertedCaller {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(el);} };
+struct OnUpdateCaller
+    {
+    DgnElementCR m_orig;
+    OnUpdateCaller(DgnElementCR orig) : m_orig(orig){}
+    bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdate(m_orig, el);}   
+    };
+struct OnUpdatedCaller  {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(el);}  };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class T> static void DgnElements::CallAppData(T const& caller, DgnElementCR el)
+    {
+    for (DgnElement::AppDataEntry* prev=nullptr, *next, *thisEntry=el.m_appData; thisEntry; thisEntry=next)
+        {
+        next = thisEntry->m_next;
+        if (caller.Process(*thisEntry->m_obj, el))
+            el.FreeAppDataEntry(prev, *thisEntry);
+        else
+            prev = thisEntry;
+        }
+    }    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1256,6 +1284,8 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
+    CallAppData(OnInsertCaller(), element);
+
     DgnElementPtr newElement = element.CopyForEdit();
     if (!newElement.IsValid())
         {
@@ -1269,11 +1299,13 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
         return nullptr;
 
     element.m_elementId = newElement->m_elementId; // set this on input element so caller can see it
-    newElement->_ApplyScheduledChangesToInstances(element);
+
     AddToPool(*newElement);
 
     newElement->_OnInserted();
     model._OnInsertedElement(*newElement);
+    CallAppData(OnInsertedCaller(), element);
+
     return newElement;
     }
 
@@ -1310,6 +1342,8 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr; // model rejected proposed change
 
+    CallAppData(OnUpdateCaller(element), replacement);
+
     uint32_t oldSize = element._GetMemSize(); // save current size
     stat = element._CopyFrom(replacement);    // copy new data into original element
     if (DGNMODEL_STATUS_Success == stat)
@@ -1325,9 +1359,6 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         return nullptr;
         }
 
-    element._ApplyScheduledChangesToInstances(replacement);
-    element._ClearScheduledChangesToInstances();
-
     int32_t sizeChange = element._GetMemSize() - oldSize; // figure out whether the element data is larger now than before
     BeAssert(0 <= sizeChange); // we never shrink
 
@@ -1335,13 +1366,15 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         AllocatedMemory(sizeChange);
 
     model._OnUpdatedElement(element); // notify model that update finished successfully
+    CallAppData(OnUpdatedCaller(), element);
+
     return &element;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElements::DeleteElement(DgnElementCR element)
+DgnModelStatus DgnElements::Delete(DgnElementCR element)
     {
     DgnModelR model = element.GetDgnModel();
     if (&model.GetDgnDb() != &m_dgndb || !element.IsPersistent())
@@ -1351,9 +1384,13 @@ DgnModelStatus DgnElements::DeleteElement(DgnElementCR element)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
+    CallAppData(OnDeleteCaller(), element);
+
     stat = element._DeleteInDb();
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
+
+    CallAppData(OnDeletedCaller(), element);
 
     DropFromPool(element);
     model._OnDeletedElement(element);
@@ -1390,6 +1427,17 @@ DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
     stmt->BindId(1, elementId);
 
     return (ECSqlStepStatus::HasRow != stmt->Step()) ? DateTime() : stmt->GetValueDateTime(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    02/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId DgnElements::QueryModelId(DgnElementId elementId)
+    {
+    CachedStatementPtr stmt;
+    GetStatement(stmt, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindId(1, elementId);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
 
 //---------------------------------------------------------------------------------------

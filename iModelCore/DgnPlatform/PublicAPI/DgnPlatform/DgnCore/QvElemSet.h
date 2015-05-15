@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-template <class _QvKey> struct QvElemSet : DgnElementAppData
+template <class _QvKey> struct QvElemSet : DgnElement::AppData
 {
 protected:
     struct  Entry
@@ -34,8 +34,6 @@ protected:
 
     HeapZone&   m_zone;
     Entry*      m_entry;
-
-    virtual WCharCP   _GetName () override {return L"QvElemSet";}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
@@ -57,12 +55,13 @@ void FreeAll (bool qvCacheDeleted)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _OnCleanup (DgnElementCP host) override
+virtual void _OnCleanup (DgnElementCR host) override
     {
     FreeAll (false);
-    host->GetHeapZone().Free (this, sizeof *this);
+    host.GetHeapZone().Free (this, sizeof *this);
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -77,6 +76,7 @@ virtual bool _OnElemChanged (DgnElementP host, bool qvCacheDeleted, DgnElementCh
 
     return  true;
     }
+#endif
 
 public:
     QvElemSet (HeapZone& zone) : m_zone(zone) {m_entry = NULL;}

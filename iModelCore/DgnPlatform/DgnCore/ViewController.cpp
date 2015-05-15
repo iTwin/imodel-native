@@ -336,7 +336,7 @@ DbResult ViewController::Load()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_SaveToSettings (JsonValueR settings) const
     {
-    m_viewFlags.ToBaseJson (settings[VIEW_SETTING_Flags]);
+    m_viewFlags.ToBaseJson(settings[VIEW_SETTING_Flags]);
 
     // only save background color if viewflag is on
     if (m_viewFlags.bgColor)
@@ -1827,4 +1827,32 @@ void ViewController2d::_SaveToSettings (JsonValueR settings) const
     JsonUtils::DPoint2dToJson (area2d[VIEW_SETTING_Origin], m_origin);
     JsonUtils::DPoint2dToJson (area2d[VIEW_SETTING_Delta], m_delta);
     area2d[VIEW_SETTING_RotAngle] = m_rotAngle;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ViewController::_VisitHit (HitPathCR hit, ViewContextR context) const
+    {
+    GeometricElementCP element = (nullptr != hit.GetHeadElem() ? hit.GetHeadElem()->ToGeometricElement() : nullptr);
+
+    if (nullptr == element)
+        return ERROR;
+
+    ViewContext::ContextMark mark(&context);
+
+    // Allow element sub-class involvement for flashing sub-entities...
+    if (element->_DrawHit (hit, context))
+        return SUCCESS;
+
+    return context.VisitElement(*element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_DrawView (ViewContextR context) 
+    {
+    for (auto modelId : m_viewedModels)
+        context.VisitDgnModel (m_dgndb.Models().GetModel(modelId));
     }

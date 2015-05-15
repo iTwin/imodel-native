@@ -142,7 +142,7 @@ void ViewContext::NpcToView(DPoint3dP viewVec, DPoint3dCP npcVec, int nPts) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::NpcToFrustum(DPoint3dP frustumPts, DPoint3dCP npcPts, int nPts) const
+void ViewContext::NpcToFrustum(DPoint3dP frustumPts, DPoint3dCP npcPts, int nPts) const
     {
     m_frustumToNpc.M1.multiplyAndRenormalize(frustumPts, npcPts, nPts);
     }
@@ -150,7 +150,7 @@ void            ViewContext::NpcToFrustum(DPoint3dP frustumPts, DPoint3dCP npcPt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::InitDisplayPriorityRange()
+void ViewContext::InitDisplayPriorityRange()
     {
     m_displayPriorityRange[0] = (m_is3dView ? 0 : -MAX_HW_DISPLAYPRIORITY);
     m_displayPriorityRange[1] = (m_is3dView ? 0 : MAX_HW_DISPLAYPRIORITY);
@@ -159,7 +159,7 @@ void            ViewContext::InitDisplayPriorityRange()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ViewContext::_InitContextForView()
+StatusInt ViewContext::_InitContextForView()
     {
     BeAssert(0 == GetTransClipDepth());
 
@@ -184,12 +184,6 @@ StatusInt       ViewContext::_InitContextForView()
     m_displayStyleStackMark = 0;
 
     SetDgnDb(GetViewport()->GetViewController().GetDgnDb());
-
-#if defined (NEEDS_WORK_DGNITEM)
-    if (NULL != m_currentDisplayStyle)
-        m_currentDisplayStyle->OnFrustumChange(*_GetViewTarget(), *this);
-#endif
-
     return SUCCESS;
     }
 
@@ -239,7 +233,7 @@ void ViewContext::_PushFrustumClip()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_InitScanRangeAndPolyhedron()
+void ViewContext::_InitScanRangeAndPolyhedron()
     {
     // set up scanner search criteria
     _InitScanCriteria();
@@ -657,7 +651,7 @@ inline bool Equal (QvSizedKey const& other) const
     }
 };
 
-static DgnElementAppData::Key s_cacheSetKey;
+static DgnElement::AppData::Key s_cacheSetKey;
 /*=================================================================================**//**
 * @bsiclass                                                     Keith.Bentley   12/06
 +===============+===============+===============+===============+===============+======*/
@@ -691,13 +685,8 @@ QvElem* Find (QvUnsizedKeyP* foundKey, double size, QvUnsizedKeyCR unsizedKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void  _OnCleanup (DgnElementCP host) override
+virtual void  _OnCleanup (DgnElementCR host) override
     {
-#if defined (NEEDS_WORK_DGNITEM)
-    for (Entry* thisEntry=m_entry; thisEntry; thisEntry=thisEntry->m_next)
-        thisEntry->m_key.m_unsizedKey.ReleaseHandlerKey();
-#endif
-
     QvElemSet<QvSizedKey>::_OnCleanup(host);
     }
 
@@ -1065,7 +1054,7 @@ void ViewContext::CookDisplayParams()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::ResetContextOverrides()
+void ViewContext::ResetContextOverrides()
     {
     m_rasterDisplayParams.SetFlags (ViewContext::RasterDisplayParams::RASTER_PARAM_None); // NEEDSWORK_RASTER_DISPLAY - Not sure how this fits into new continuous update approach?!?
 
@@ -1788,16 +1777,15 @@ void ViewContext::_DrawStyledBSplineCurve2d (MSBsplineCurveCR bcurve, double zDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 DMatrix4d ViewContext::GetViewToLocal() const
     {
-    DMatrix4d       viewToLocal = GetFrustumToView().M1;
-    Transform       frustumToLocalTransform;
+    DMatrix4d  viewToLocal = GetFrustumToView().M1;
+    Transform  frustumToLocalTransform;
 
-    if (SUCCESS == GetCurrFrustumToLocalTrans (frustumToLocalTransform) && !
-        frustumToLocalTransform.IsIdentity())
+    if (SUCCESS == GetCurrFrustumToLocalTrans(frustumToLocalTransform) && !frustumToLocalTransform.IsIdentity())
         {
-        DMatrix4d       frustumToLocal = DMatrix4d::From (frustumToLocalTransform);
-
-        viewToLocal.productOf (&frustumToLocal, &viewToLocal);
+        DMatrix4d frustumToLocal = DMatrix4d::From(frustumToLocalTransform);
+        viewToLocal.productOf(&frustumToLocal, &viewToLocal);
         }
+
     return viewToLocal;
     }
 
@@ -1806,16 +1794,15 @@ DMatrix4d ViewContext::GetViewToLocal() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DMatrix4d ViewContext::GetLocalToView() const
     {
-    DMatrix4d       localToView    = GetFrustumToView().M0;
-    Transform       localToFrustumTransform;
+    DMatrix4d localToView    = GetFrustumToView().M0;
+    Transform localToFrustumTransform;
 
-    if (SUCCESS == GetCurrLocalToFrustumTrans (localToFrustumTransform) && !
-        localToFrustumTransform.IsIdentity())
+    if (SUCCESS == GetCurrLocalToFrustumTrans(localToFrustumTransform) && !localToFrustumTransform.IsIdentity())
         {
-        DMatrix4d   localToFrustum = DMatrix4d::From (localToFrustumTransform);
-
-        localToView.productOf (&localToView, &localToFrustum);
+        DMatrix4d   localToFrustum = DMatrix4d::From(localToFrustumTransform);
+        localToView.productOf(&localToView, &localToFrustum);
         }
+
     return localToView;
     }
 
@@ -1903,6 +1890,7 @@ void ViewContext::RasterDisplayParams::SetFlags(uint32_t flags)
     {
     m_flags = flags;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1911,6 +1899,7 @@ void ViewContext::RasterDisplayParams::SetContrast(int8_t value)
     m_contrast = value;
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Contrast;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1919,6 +1908,7 @@ void ViewContext::RasterDisplayParams::SetBrightness(int8_t value)
     m_brightness = value;
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Brightness;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1927,6 +1917,7 @@ void ViewContext::RasterDisplayParams::SetGreyscale(bool value)
     m_greyScale = value;
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_GreyScale;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1935,6 +1926,7 @@ void ViewContext::RasterDisplayParams::SetApplyBinaryWhiteOnWhiteReversal(bool v
     m_applyBinaryWhiteOnWhiteReversal = value;
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_ApplyBinaryWhiteOnWhiteReversal;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1943,6 +1935,7 @@ void ViewContext::RasterDisplayParams::SetEnableGrid(bool value)
     m_enableGrid = value;
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_EnableGrid;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1951,6 +1944,7 @@ void ViewContext::RasterDisplayParams::SetBackgroundColor(ColorDef value)
     m_backgroundColor = value;
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_BackgroundColor;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2298,17 +2292,17 @@ void ElemMatSymb::SetMaterial (MaterialCP material, ViewContextP seedContext)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElemMatSymb::ElemMatSymb (ElemMatSymbCR rhs)
     {
-    m_lineColor         =       rhs.m_lineColor;
-    m_fillColor         =       rhs.m_fillColor;
-    m_elementStyle      =       rhs.m_elementStyle;
-    m_isFilled          =       rhs.m_isFilled;
-    m_isBlankingRegion  =       rhs.m_isBlankingRegion;
-    m_extSymbID         =       rhs.m_extSymbID;
-    m_material          =       rhs.m_material;
-    m_rasterWidth       =       rhs.m_rasterWidth;
-    m_rasterPat         =       rhs.m_rasterPat;
-    m_lStyleSymb        =       rhs.m_lStyleSymb;
-    m_gradient          =       rhs.m_gradient;
+    m_lineColor         = rhs.m_lineColor;
+    m_fillColor         = rhs.m_fillColor;
+    m_elementStyle      = rhs.m_elementStyle;
+    m_isFilled          = rhs.m_isFilled;
+    m_isBlankingRegion  = rhs.m_isBlankingRegion;
+    m_extSymbID         = rhs.m_extSymbID;
+    m_material          = rhs.m_material;
+    m_rasterWidth       = rhs.m_rasterWidth;
+    m_rasterPat         = rhs.m_rasterPat;
+    m_lStyleSymb        = rhs.m_lStyleSymb;
+    m_gradient          = rhs.m_gradient;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2316,17 +2310,17 @@ ElemMatSymb::ElemMatSymb (ElemMatSymbCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
     {
-    m_lineColor         =       rhs.m_lineColor;
-    m_fillColor         =       rhs.m_fillColor;
-    m_elementStyle      =       rhs.m_elementStyle;
-    m_isFilled          =       rhs.m_isFilled;
-    m_isBlankingRegion  =       rhs.m_isBlankingRegion;
-    m_extSymbID         =       rhs.m_extSymbID;
-    m_material          =       rhs.m_material;
-    m_rasterWidth       =       rhs.m_rasterWidth;
-    m_rasterPat         =       rhs.m_rasterPat;
-    m_lStyleSymb        =       rhs.m_lStyleSymb;
-    m_gradient          =       rhs.m_gradient;
+    m_lineColor         = rhs.m_lineColor;
+    m_fillColor         = rhs.m_fillColor;
+    m_elementStyle      = rhs.m_elementStyle;
+    m_isFilled          = rhs.m_isFilled;
+    m_isBlankingRegion  = rhs.m_isBlankingRegion;
+    m_extSymbID         = rhs.m_extSymbID;
+    m_material          = rhs.m_material;
+    m_rasterWidth       = rhs.m_rasterWidth;
+    m_rasterPat         = rhs.m_rasterPat;
+    m_lStyleSymb        = rhs.m_lStyleSymb;
+    m_gradient          = rhs.m_gradient;
     return *this;
     }
 
