@@ -892,11 +892,16 @@ BentleyStatus CachedInstance::ApplyScheduledReplace(DgnDbR db)
     {
     if (m_instance->GetInstanceId().empty())
         {
+        //WIP_ASPECT_API: Remove the assertion as we don't have control over the ECInstances passed by apps. They can indeed
+        //have an empty instance id if they were created from scratch as standalone instances
         BeAssert(false);
         return BSIERROR;
         }
     
     ECInstanceUpdater updater(db, *m_instance);
+    if (!updater.IsValid())
+        return BSIERROR;
+
     return updater.Update(*m_instance);
     }
 
@@ -905,12 +910,19 @@ BentleyStatus CachedInstance::ApplyScheduledReplace(DgnDbR db)
 //---------------------------------------------------------------------------------------
 BentleyStatus CachedInstance::ApplyScheduledInsert(DgnDbR db)
     {
-    ECInstanceId newId;
-    ECInstanceId* useNewId = ECInstanceIdHelper::FromString(newId, m_instance->GetInstanceId().c_str()) ? &newId : nullptr;
-
-    ECInstanceKey newkey;
     ECInstanceInserter inserter(db, m_instance->GetClass());
-    return inserter.Insert(newkey, *m_instance,(useNewId == nullptr), useNewId);
+    if (!inserter.IsValid())
+        return BSIERROR;
+
+    //if valid instance id is set on the ECInstance use it (-> instance is an item). Otherwise let ECDb generate a new one
+    //WIP_ASPECT_API: ECInstanceID string conversion is called twice in the workflow. Once here and once in the Insert method.
+    //Maybe a better way is to be explicit and add a flag on CachedInstance when the id on the instance is expected to be a
+    //valid one (item/elementgeom...) and when not (other aspects).
+    ECInstanceId extractedECInstanceId;
+    const bool extractedIdIsValid = ECInstanceIdHelper::FromString(extractedECInstanceId, m_instance->GetInstanceId().c_str());
+    const bool autogenerateECInstanceId = !extractedIdIsValid;
+    //generated id is set as instance id in m_instance
+    return inserter.Insert(*m_instance, autogenerateECInstanceId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -951,15 +963,14 @@ BentleyStatus CachedInstance::ApplyScheduledChange(InstanceUpdateOutcome& outcom
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  04/2015
 //---------------------------------------------------------------------------------------
-static Utf8String getPropertiesList(ECClassCR ecclass, bset<Utf8String> const& ignoreList, Utf8CP classAlias = nullptr)
+static void appendPropertiesToECSqlSelectClause(Utf8StringR ecsql, ECClassCR ecclass, bset<Utf8String> const& ignoreList, Utf8CP classAlias = nullptr)
     {
-    Utf8String props;
-
     Utf8String classAliasStr;
     if (classAlias != nullptr)
         classAliasStr.append(classAlias).append(".");
 
-    props.append(classAliasStr).append("ECInstanceId");   // so that I'll always have at least one valid property
+    //ECClassId needed in case of polymorphic selects
+    ecsql.append(classAliasStr).append("ECInstanceId, ").append(classAliasStr).append(".GetECClassId() AS ECClassId");
 
     for (auto ecprop : ecclass.GetProperties())
         {
@@ -967,13 +978,8 @@ static Utf8String getPropertiesList(ECClassCR ecclass, bset<Utf8String> const& i
         if (ignoreList.find(propName) != ignoreList.end())
             continue;
 
-        if (!props.empty())
-            props.append(",");
-
-        props.append(classAliasStr).append(propName.c_str());
+        ecsql.append(", ").append(classAliasStr).append(propName.c_str());
         }
-
-    return props;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1002,23 +1008,17 @@ static IECInstancePtr queryInstance(DgnDbR db, ECClassCP ecclass, EC::ECInstance
     if (nullptr == ecclass)
         return nullptr;
 
-    Utf8String props = getPropertiesList(*ecclass, ignoreList);
+    Utf8String ecsql("SELECT ");
+    appendPropertiesToECSqlSelectClause(ecsql, *ecclass, ignoreList);
+    ecsql.append(" FROM ONLY ").append(ECSqlBuilder::ToECSqlSnippet(*ecclass)).append(" WHERE ECInstanceId=?");
 
-    ECSqlSelectBuilder b;
-    b.Select(props.c_str()).From(*ecclass, false).Where("ECInstanceId=?");
     ECSqlStatement stmt;
-    stmt.Prepare(db, b.ToString().c_str());
+    stmt.Prepare(db, ecsql.c_str());
     stmt.BindId(1, instanceId);
     stmt.Step();
 
     ECInstanceECSqlSelectAdapter selector(stmt);
-    IECInstancePtr instance = selector.GetInstance();
-    if (!instance.IsValid())
-        return nullptr;
-
-    setInstanceId(*instance, instanceId);
-
-    return instance;
+    return selector.GetInstance();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1129,7 +1129,9 @@ bvector<IECInstancePtr> DgnElement::GetAspects(ECClassCP aspectClass) const
     {
     bvector<IECInstancePtr> instances;
 
-    if (nullptr == aspectClass)
+    //WIP_ASPECT_API: If Element hasn't been persisted yet, it is assumed that no persisted aspects should exist either.
+    //WIP_ASPECT_API: Sam, is this assumption correct? And if yes, it is correct to return an empty vector?
+    if (!IsPersistent() || nullptr == aspectClass)
         return instances;
 
     ECRelationshipClassCP elementOwnsAspectRelationship = (ECRelationshipClassCP)GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsAspects);
@@ -1140,12 +1142,15 @@ bvector<IECInstancePtr> DgnElement::GetAspects(ECClassCP aspectClass) const
         }
 
     Utf8CP aspectAlias = "a";
-    Utf8String aspectProps = getPropertiesList(*aspectClass, bset<Utf8String>(), aspectAlias);
 
-    ECSqlSelectBuilder b;
-    b.Select(aspectProps.c_str()).From(*aspectClass, aspectAlias, false).Join(*GetElementClass(), "e", false).Using(*elementOwnsAspectRelationship).WhereSourceEndIs("e", "?");
+    Utf8String ecsql("SELECT ");
+    appendPropertiesToECSqlSelectClause(ecsql, *aspectClass, bset<Utf8String>(), aspectAlias);
+    ecsql.append(" FROM ONLY ").append(ECSqlBuilder::ToECSqlSnippet(*aspectClass)).append(" ").append(aspectAlias);
+    ecsql.append(" JOIN ONLY ").append(ECSqlBuilder::ToECSqlSnippet(*GetElementClass())).append(" e USING ").append(ECSqlBuilder::ToECSqlSnippet(*elementOwnsAspectRelationship));
+    ecsql.append(" WHERE SourceECInstanceId=?");
+    
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), b.ToString().c_str());
+    stmt.Prepare(GetDgnDb(), ecsql.c_str());
     stmt.BindId(1, GetElementId());
     while(stmt.Step() == ECSqlStepStatus::HasRow)
         {
@@ -1289,7 +1294,8 @@ static BentleyStatus insertRelationship(DgnDbR db, DgnElementKeyCR sourceElement
     statementPtr->BindInt64(1, sourceElement.GetECClassId());
     statementPtr->BindId  (2, sourceElement.GetECInstanceId());
     statementPtr->BindInt64(3, targetInstance.GetClass().GetId());
-    statementPtr->BindText(4, Utf8String(targetInstance.GetInstanceId()).c_str(), EC::IECSqlBinder::MakeCopy::Yes);
+    Utf8String targetInstanceIdStr(targetInstance.GetInstanceId()); //save string copy in ECSql if the Utf8String is a local var instead of a temp variable
+    statementPtr->BindText(4, targetInstanceIdStr.c_str(), IECSqlBinder::MakeCopy::No);
 
     if (ECSqlStepStatus::Done != statementPtr->Step())
         return BentleyStatus::ERROR;
