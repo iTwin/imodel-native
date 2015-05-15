@@ -83,9 +83,94 @@ void SqlFunctionsTest::InsertElement(PhysicalElementR pelem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SqlFunctionsTest, TestPoints)
+TEST_F(SqlFunctionsTest, placement_angles)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TestPoints.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"placement_angles.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+
+    double o1y = 5.0;
+    double o2x = 5.0;
+    DPoint3d o1origin = DPoint3d::From(0,o1y,0);
+    DPoint3d o2origin = DPoint3d::From(o2x,0,0);
+
+    //  Create an element @ 0 degrees
+    ObstacleElementPtr elemAt0 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "elemAt0");
+    InsertElement(*elemAt0);
+    elemAt0->SetSomeProperty(*m_db, "B");
+
+    //  Create an element @ 90 degrees
+    ObstacleElementPtr elem1At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "elem1At90");
+    InsertElement(*elem1At90);
+    elem1At90->SetSomeProperty(*m_db, "A");
+
+    //  Verify that only one is found with a placement angle of 90
+    Statement stmt;
+    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90,0,0)) < 1.0");
+
+    ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+    ASSERT_EQ( elem1At90->GetElementId() , stmt.GetValueId<DgnElementId>(0) );
+    ASSERT_EQ( BE_SQLITE_DONE, stmt.Step() );
+
+    //  Create anoter element @ 90 degrees
+    ObstacleElementPtr elem2At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "elem2At90");
+    InsertElement(*elem2At90);
+    elem2At90->SetSomeProperty(*m_db, "B");
+
+    //  Verify that 2 are now found @ 90
+    if (true)
+        {
+        DgnElementIdSet ids;
+        stmt.Reset();
+        ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+        ids.insert(stmt.GetValueId<DgnElementId>(0));
+        ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+        ids.insert(stmt.GetValueId<DgnElementId>(0));
+        ASSERT_EQ( BE_SQLITE_DONE, stmt.Step() );
+        ASSERT_TRUE( ids.Contains(elem1At90->GetElementId())  );
+        ASSERT_TRUE( ids.Contains(elem2At90->GetElementId())  );
+        }
+
+    //  Only one should be found with a placement angle of 0
+    stmt.Finalize();
+    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(0,0,0)) < 1.0");
+
+    ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+    ASSERT_EQ( elemAt0->GetElementId() , stmt.GetValueId<DgnElementId>(0) );
+    ASSERT_EQ( BE_SQLITE_DONE, stmt.Step() );
+
+    //  Now add an additional where clause, so that we find only elem2At90
+#ifndef DONT_USE_ECSQL
+    if (true)
+        {
+        ECSqlStatement estmt;
+        estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM " 
+                                DGN_SCHEMA(DGN_CLASSNAME_ElementGeom) " AS g,"
+                                DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " AS o"
+                             " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90.0,0,0)) < 1.0)");
+        ASSERT_EQ( EC::ECSqlStepStatus::HasRow , estmt.Step() );
+        ASSERT_EQ( elem2At90->GetElementId() , estmt.GetValueId<DgnElementId>(0) );
+        ASSERT_EQ( EC::ECSqlStepStatus::Done, estmt.Step() );
+        }
+#else
+    if (true)
+        {
+        Statement estmt;
+        estmt.Prepare(*m_db, "SELECT o.Id FROM " 
+                                DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g,"
+                                DGN_TABLE(DGN_CLASSNAME_Element) " AS o"
+                             " WHERE (o.Id=g.ElementId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90.0,0,0)) < 1.0)");
+        ASSERT_EQ( BE_SQLITE_ROW , estmt.Step() );
+        ASSERT_EQ( elem2At90->GetElementId() , estmt.GetValueId<DgnElementId>(0) );
+        ASSERT_EQ( BE_SQLITE_DONE, estmt.Step() );
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SqlFunctionsTest, bbox_overlaps)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"bbox_overlaps.idgndb", BeSQLite::Db::OPEN_ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -259,3 +344,48 @@ TEST_F(SqlFunctionsTest, TestPoints)
         ASSERT_EQ( BE_SQLITE_DONE , stmt2.Step() );
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SqlFunctionsTest, bbox_union)
+    {
+    ScopedDgnHost autoDgnHost;
+
+    DgnDbTestDgnManager tdm (L"04_Plant.i.idgndb", __FILE__, Db::OPEN_Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
+    DgnDbP dgndb = tdm.GetDgnProjectP();
+
+    Statement stmt;
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
+    stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
+                    " AS g WHERE e.ModelId=2 AND e.id=g.ElementId");
+    //__PUBLISH_EXTRACT_END__
+    auto rc = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, rc);
+
+    int resultSize = stmt.GetColumnBytes(0);
+    ASSERT_EQ(sizeof(DRange3d), resultSize);
+    BoundingBox3dCR result = *(BoundingBox3dCP)stmt.GetValueBlob(0);
+    ASSERT_TRUE(result.IsValid());
+
+    stmt.Finalize();
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_Angles.sampleCode
+    stmt.Prepare(*dgndb, "SELECT count(*) FROM "
+                         DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(0,0,90)) < 1.0");
+    //__PUBLISH_EXTRACT_END__
+
+    rc = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, rc);
+    int count = stmt.GetValueInt(0);
+    ASSERT_NE(count, 0);
+
+    stmt.Finalize();
+    stmt.Prepare(*dgndb, "SELECT count(*) FROM "
+                         DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_value(DGN_placement_angles(g.Placement),2) < 90");
+
+    rc = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, rc);
+    count = stmt.GetValueInt(0);
+    ASSERT_NE(count, 0);
+    }
+

@@ -955,13 +955,11 @@ ModelHandlerP ModelHandler::FindHandler(DgnDb const& db, DgnClassId handlerId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnModel::_QueryModelRange() const
     {
-    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
     Statement stmt;
     stmt.Prepare(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
                            DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
                            DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g"
                           " WHERE e.ModelId=? AND e.Id=g.ElementId");
-    //__PUBLISH_EXTRACT_END__
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();
