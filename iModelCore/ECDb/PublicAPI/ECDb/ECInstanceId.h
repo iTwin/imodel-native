@@ -136,13 +136,18 @@ public:
     };
 
 //=======================================================================================
+//! A set of ECInstanceIds
 //! @ingroup ECDbGroup
-//@bsiclass                                                 Ramanujam.Raman      02/2014
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceIdSet : bset<ECInstanceId>, BeSQLite::VirtualSet
-    {
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const override;
-    };
+{
+private:
+    virtual bool _IsInSet(int nVals, DbValue const* vals) const
+        {
+        BeAssert(nVals == 1);
+        return this->end() != this->find(ECInstanceId(vals[0].GetValueInt64()));
+        }
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

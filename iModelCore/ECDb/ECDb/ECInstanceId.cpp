@@ -51,16 +51,4 @@ bool ECInstanceIdHelper::FromString (ECInstanceId& ecInstanceId, WCharCP ecInsta
     return false;
     }
 
-//*****************************************************************************************
-// ECInstanceIdSet
-//*****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   04/14
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECInstanceIdSet::_IsInSet (int nVals, DbValue const* vals) const
-    {
-    BeAssert (nVals == 1);
-    return this->end () != this->find (ECInstanceId (vals[0].GetValueInt64 ()));
-    }
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
