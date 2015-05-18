@@ -2660,6 +2660,9 @@ public:
     //! Identical to ExecuteSql, but does not log errors nor check implicit transactions
     BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0);
 
+    //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
+    BE_SQLITE_EXPORT Utf8String ExplainQueryPlan(DbResult* err, Utf8CP sql);
+
     //! Create a new table in this Db.
     //! @param[in] tableName The name for the new table.
     //! @param[in] ddl The column definition sql for this table (should not include parentheses).
