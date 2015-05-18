@@ -796,6 +796,7 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb D
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(PhysicalElementHandler::GetHandler());
     RegisterHandler(DrawingElementHandler::GetHandler());
+    RegisterHandler(ElementGroupHandler::GetHandler());
     RegisterDefaultDependencyHandlers();
 
     RegisterTableHandler(DgnSchemaTableHandler::Element::GetHandler());
