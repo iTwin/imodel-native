@@ -119,6 +119,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingElementHandler : ElementHandler
     ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, DrawingElementHandler, ElementHandler, DGNPLATFORM_EXPORT)
 };
 
+/*=================================================================================**//**
+* @bsiclass                                                     Shaun.Sewall    05/2015
++===============+===============+===============+===============+===============+======*/
+struct EXPORT_VTABLE_ATTRIBUTE ElementGroupHandler : ElementHandler
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, ElementGroupHandler, ElementHandler, DGNPLATFORM_EXPORT)
+};
+
 /// @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

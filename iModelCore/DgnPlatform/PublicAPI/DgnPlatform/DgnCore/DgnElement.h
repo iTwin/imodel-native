@@ -69,11 +69,13 @@ public:
     DgnClassId      m_classId;
     DgnCategoryId   m_categoryId;
     Utf8CP          m_code;
+    Utf8CP          m_label;
     DgnElementId    m_id;
     DgnElementId    m_parentId;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-                m_model(model), m_classId(classId), m_categoryId(category), m_code(code), m_id(id), m_parentId(parent) {}
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+                m_model(model), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
 
+    void SetLabel(Utf8CP label) {m_label = label;}
     void SetCode(Utf8CP code) {m_code = code;}
     void SetParentId(DgnElementId parent) {m_parentId=parent;}
     };
@@ -135,6 +137,7 @@ protected:
     DgnClassId      m_classId;
     DgnCategoryId   m_categoryId;
     Utf8String      m_code;
+    Utf8String      m_label;
     mutable Flags   m_flags;
     mutable AppDataEntry* m_appData;
 
@@ -145,13 +148,21 @@ protected:
     ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
+    //! Override to load the properties added by the DgnElement subclass. @note Must call T_Super::_LoadFromDb
                        virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
+    //! Override to insert the properties added by the DgnElement subclass. @note Must call T_Super::_InsertInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
+    //! Override to update the properties added by the DgnElement subclass. @note Must call T_Super::_UpdateInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
+    //! Override to do any additional processing on delete. @note Must call T_Super::_DeleteInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
-
-    //! Virtual assignment operator.  If your subclass has member variables, it \em must override this method
+    //! Virtual assignment operator.  If your subclass has member variables, it \em must override this method @note If overriden must call T_Super::_CopyFrom
     DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR other);
+
+    //! Get the display label (for use in the GUI) for this DgnElement. 
+    //! The default implementation returns the label if set or the code if the label is not set.
+    //! Override if the DgnElement subclass needs to generate the display label in a different way.
+    virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode();}
 
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
     virtual void _OnInserted() {}
@@ -160,15 +171,17 @@ protected:
     virtual DgnElement2dCP _ToElement2d() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
+    virtual ElementGroupCP _ToElementGroup() const {return nullptr;}
 
     explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId), m_appData(nullptr) {}
+             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_appData(nullptr) {}
 
 public:
     DgnModelStatus CopyFrom(DgnElementCR rhs) {return _CopyFrom(rhs);}
     DGNPLATFORM_EXPORT void AddRef() const;
     DGNPLATFORM_EXPORT void Release() const;
 
+    //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Utf8String _GenerateDefaultCode();
 
     GeometricElementCP ToGeometricElement() const {return _ToGeometricElement();}
@@ -176,6 +189,7 @@ public:
     DgnElement2dCP ToElement2d() const {return _ToElement2d();}
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}
+    ElementGroupCP ToElementGroup() const {return _ToElementGroup();}
 
     GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());}
     DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}
@@ -296,6 +310,20 @@ public:
 
     //! Set the code of this DgnElement.
     void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
+
+    //! Get the optional label (user-friendly name) of this DgnElement.
+    //! @return the label or nullptr
+    Utf8CP GetLabel() const {return m_label.c_str();}
+
+    //! Set the label (user-friendly name) of this DgnElement.
+    void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
+
+    //! Get the display label (for use in the GUI) for this DgnElement.
+    //! @note The default implementation returns the label if set or the code if the label is not set.
+    //! @see GetLabel
+    //! @see GetCode
+    //! @see _GetDisplayLabel
+    Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
     static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
 };
@@ -477,8 +505,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement3dCR m_placement;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(model, classId, category, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(model, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
     };
@@ -534,8 +562,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement2dCR m_placement;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(model, classId, category, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(model, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
     };
@@ -567,6 +595,20 @@ protected:
 
 public:
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Shaun.Sewall    05/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+    friend struct ElementGroupHandler;
+
+protected:
+    ElementGroupCP _ToElementGroup() const override {return this;}
+
+    explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
