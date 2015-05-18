@@ -57,7 +57,7 @@ protected:
 };
 
 //! An object that contains an origin and rotation angles, plus a bounding box.
-//! You can obtain an element's placement by selecting the Placement column of the dgn_ElementGeom table.
+//! You can obtain an element's placement by selecting the placement column of the dgn_ElementGeom table.
 //! @see DGN_placement_origin, DGN_placement_angles, DGN_placement_eabb, DGN_placement_aabb
 struct DGN_placement
 {
@@ -81,13 +81,13 @@ struct PlacementFunc : ScalarFunction
 };
 
 //=======================================================================================
-// Get the AxisAlignedBox3d from a Placement
+// Get the AxisAlignedBox3d from a placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Get the axis-aligned bounding box from a Placement
+    Get the axis-aligned bounding box from a placement
     @param placement   The DGN_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
@@ -124,13 +124,13 @@ struct DGN_placement_aabb : PlacementFunc
 };
 
 //=======================================================================================
-// Get the ElementAlignedBox3d from a Placement
+// Get the ElementAlignedBox3d from a placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Get the element-aligned bounding box from a Placement
+    Get the element-aligned bounding box from a placement
     @param placement   The DGN_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
@@ -166,14 +166,16 @@ struct DGN_placement_eabb : PlacementFunc
 };
 
 //=======================================================================================
-// Get the DPoint3d Origin fron a Placement
+// Get the DPoint3d Origin fron a placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Get the placement origin
-//! @param placement   The DGN_placement object to query
-//! @return the origin in world coordinates
+/**
+    Get the placement origin
+    @param placement   The DGN_placement object to query
+    @return the origin in world coordinates
+*/
 DGN_point DGN_placement_origin(DGN_placement placement);
 // __PUBLISH_SECTION_END__
 #endif
@@ -203,7 +205,7 @@ struct DGN_placement_origin : PlacementFunc
 };
 
 //=======================================================================================
-// Get the YawPitchRollAngles fron a Placement
+// Get the YawPitchRollAngles fron a placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
@@ -251,7 +253,7 @@ struct DGN_placement_angles : PlacementFunc
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Construct a DGN_angles from 3 values in degrees {Yaw, Pitch, Roll}.
+    Construct a DGN_angles from 3 values
     @param yaw The Yaw angle in degrees
     @param pitch The Pitch angle in degrees
     @param roll The Roll angle in degrees
@@ -348,7 +350,7 @@ struct DGN_angles_maxdiff : ScalarFunction
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Create a bounding box from 6 values <em>in this order</em>: {XLow, YLow, Zlow, XHigh, YHigh, ZHigh}.
+    Create a bounding box from 6 values
     All coordinates are in meters.
     @param XLow     The low X coordinate of the bounding box
     @param YLow     The low Y coordinate of the bounding box
@@ -529,7 +531,11 @@ struct DGN_bbox_areaxy : ScalarFunction
     @return 1 if bb1 overlaps bb2 or 0 if not.
     @see DGN_bbox_contains
     <p><b>Example (C++)</b>
+    <p>Here is an example of checking for bounding box overlaps.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps.sampleCode
+    <p>
+    <p>Here is the same example using the DgnDb R-Tree. That will make the search run fast even on a very large Db.
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps_rtree.sampleCode
 */
 int DGN_bbox_overlaps(DGN_bbox bb1, DGN_bbox bb2);
 // __PUBLISH_SECTION_END__
@@ -585,10 +591,12 @@ struct DGN_bbox_contains : ScalarFunction
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Get a member of a DGN_bbox object
-//! @param bb       a bounding box
-//! @param member   The index of the member to get: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
-//! @return the the requested member of the bounding box; or an error if member is out of range or bb is not a DGN_bbox object.
+/**
+    Get a member of a DGN_bbox object
+    @param bb       a bounding box
+    @param member   The index of the member to get: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
+    @return the the requested member of the bounding box; or an error if member is out of range or bb is not a DGN_bbox object.
+*/
 double DGN_bbox_value(DGN_bbox bb, int member);
 // __PUBLISH_SECTION_END__
 #endif
@@ -660,10 +668,12 @@ struct DGN_bbox_union : AggregateFunction
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Compute the distance between two DGN_Points, in meters.
-//! @param point1   A point 
-//! @param point2   A second point 
-//! @return the distance between the two points; or an error if either input is not a DGN_point object
+/**
+    Compute the distance between two DGN_Points, in meters.
+    @param point1   A point 
+    @param point2   A second point 
+    @return the distance between the two points; or an error if either input is not a DGN_point object
+*/
 double DGN_point_distance(DGN_point point1, DGN_point point2);
 // __PUBLISH_SECTION_END__
 #endif
@@ -688,10 +698,12 @@ struct DGN_point_distance : ScalarFunction
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-//! Get a member of a DGN_Point object.
-//! @param point    The point to query
-//! @param member   The index of the coordinate to get: X=0, Y=1, Z=2
-//! @return a coordindate of the point in meters; or an error if \a member is out of range or \a point is not a point object
+/**
+    Get a member of a DGN_Point object.
+    @param point    The point to query
+    @param member   The index of the coordinate to get: X=0, Y=1, Z=2
+    @return a coordindate of the point in meters; or an error if \a member is out of range or \a point is not a point object
+*/
 double DGN_point_value(DGN_point point, int member);
 // __PUBLISH_SECTION_END__
 #endif

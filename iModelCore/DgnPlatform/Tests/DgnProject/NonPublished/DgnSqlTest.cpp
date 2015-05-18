@@ -354,6 +354,97 @@ TEST_F(SqlFunctionsTest, bbox_overlaps)
         ASSERT_EQ( BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
         }
 
+    if (true)   
+        {
+        // do the same thing, using the r-tree to speed up the query
+        // Note: DGN_bbox_value indices are: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
+        #define DISPLAY_QUERY_PLAN
+        #ifdef DISPLAY_QUERY_PLAN
+            if (true)
+                {
+                Statement queryPlan;
+                queryPlan.Prepare (*m_db, 
+                    "EXPLAIN QUERY PLAN"
+                    " SELECT e.Id as id, g.Placement as placement"                                       
+                    " FROM dgn_Element e, dgn_ElementGeom g, dgn_PrjRTree rt"
+                    " WHERE rt.MaxX >= ?1 AND rt.MinX <= ?2"        // find the rt nodes the overlap a specified bounding box
+                    "   AND rt.MaxY >= ?3 AND rt.MinY <= ?4"
+                    "   AND rt.MaxZ >= ?5 AND rt.MinZ <= ?6"
+                    "   AND rt.ElementId=e.Id"                      // for all elements in candidate rt nodes
+                    "   AND e.Id = g.ElementId"                     // choose the elements with placement bbs that overlap the specified bounding box
+                    "   AND DGN_bbox_overlaps(DGN_placement_aabb(g.Placement), DGN_bbox(?1, ?2, ?3, ?4, ?5, ?6))"
+                    "   AND e.ECClassId=?7"                         //                      and that are of a specific class
+                    );
+                while (BE_SQLITE_ROW == queryPlan.Step())
+                    {
+                    printf("%d %d %d %s\n", queryPlan.GetValueInt(0), queryPlan.GetValueInt(1), queryPlan.GetValueInt(2), queryPlan.GetValueText(3));
+                    }
+                }
+
+                /* Won't work
+            Statement queryPlan;
+            queryPlan.Prepare (*m_db, 
+                "EXPLAIN QUERY PLAN"
+                " SELECT DISTINCT o.id"
+                " FROM "    //  r1 - the id and placement of a particular robot
+                "       (SELECT e.Id as id, DGN_placement_aabb(g.Placement) as abb" 
+                "        FROM dgn_Element e, dgn_ElementGeom g WHERE (e.Id = ? AND e.Id = g.ElementId)) r1"
+                "     ,"    //  o  - the id and placement of all obstacles
+                "       (SELECT e.Id as id, g.Placement as placement"                                       
+                "        FROM dgn_Element e, dgn_ElementGeom g WHERE (e.ECClassId=? AND e.Id = g.ElementId)) o"  
+                "     ,"    // rt  - the 3-D range tree
+                "        dgn_PrjRTree rt" 
+                " WHERE "
+                "       rt.MaxX >= DGN_bbox_value(r1.abb,0) AND rt.MinX <= DGN_bbox_value(r1.abb,3)"    // RT node maxx >= r1.minx AND RT node minx <= r1.maxx
+                "   AND rt.MaxY >= DGN_bbox_value(r1.abb,1) AND rt.MinY <= DGN_bbox_value(r1.abb,4)"    // RT node maxy >= r1.miny AND RT node miny <= r1.maxy
+                "   AND rt.MaxZ >= DGN_bbox_value(r1.abb,2) AND rt.MinZ <= DGN_bbox_value(r1.abb,5)"    // RT node maxz >= r1.minz AND RT node minz <= r1.maxz
+                "   AND DGN_bbox_overlaps(r1.abb, DGN_placement_aabb(o.Placement))"
+                "   AND rt.ElementId = o.Id"
+                );
+            queryPlan.BindId(1, r1);
+            queryPlan.BindId(2, ObstacleElement::QueryClassId(*m_db));
+            while (BE_SQLITE_ROW == queryPlan.Step())
+                {
+                printf("%d %d %d %s\n", queryPlan.GetValueInt(0), queryPlan.GetValueInt(1), queryPlan.GetValueInt(2), queryPlan.GetValueText(3));
+                }
+                */
+        #endif
+
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps_rtree.sampleCode
+        // Note: DGN_bbox_value indices are: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
+        //          In this query, we bind the parameters in the same order, but starting at 1:
+        //                                   XLow=1, YLow=2, Zlow=3, XHigh=4, YHigh=5, ZHigh=6
+        Statement stmt2;
+        stmt2.Prepare(*m_db, 
+            " SELECT e.Id as id, g.Placement as placement"                                       
+            " FROM dgn_Element e, dgn_ElementGeom g, dgn_PrjRTree rt"
+            " WHERE rt.MaxX >= ?1 AND rt.MinX <= ?4"        // find the rt nodes the overlap a specified bounding box
+            "   AND rt.MaxY >= ?2 AND rt.MinY <= ?5"
+            "   AND rt.MaxZ >= ?3 AND rt.MinZ <= ?6"
+            "   AND rt.ElementId=e.Id"                      //  for all elements in those nodes
+            "   AND e.Id = g.ElementId"                     //      choose the elements with placement bbs that overlap the specified bounding box
+            "   AND DGN_bbox_overlaps(DGN_placement_aabb(g.Placement), DGN_bbox(?1, ?2, ?3, ?4, ?5, ?6))"
+            "   AND e.ECClassId=?7"                         //                          and that are of a specific class
+            );
+        RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
+
+        stmt2.BindDouble(1, r1aabb.low.x);
+        stmt2.BindDouble(2, r1aabb.low.y);
+        stmt2.BindDouble(3, r1aabb.low.z);
+        stmt2.BindDouble(4, r1aabb.high.x);
+        stmt2.BindDouble(5, r1aabb.high.y);
+        stmt2.BindDouble(6, r1aabb.high.z);
+        stmt2.BindId(7, ObstacleElement::QueryClassId(*m_db));
+        //__PUBLISH_EXTRACT_END__
+        ASSERT_EQ( BE_SQLITE_ROW, stmt2.Step() );
+
+        DgnElementId ofoundId = stmt2.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1 , ofoundId );
+
+        ASSERT_EQ( BE_SQLITE_DONE , stmt2.Step() ) << L"Expected only 1 overlap";
+        }
+
     //  Move Robot1 over, so that it touches Obstacle2 but not Obstacle1
     //
     //  |
