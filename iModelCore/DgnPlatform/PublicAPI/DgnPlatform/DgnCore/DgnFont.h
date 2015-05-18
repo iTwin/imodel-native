@@ -184,20 +184,25 @@ private:
     Metadata m_metadata;
     typedef bmap<DgnGlyph::T_Id, DgnGlyphCP> T_GlyphCache;
     mutable T_GlyphCache m_glyphCache;
+    mutable DgnGlyphCP m_defaultGlyph;
+    mutable bool m_isDefaultGlyphAllocated;
     mutable bool m_hasLoadedGlyphs;
     typedef bpair<uint8_t, uint8_t> T_FractionMapKey;
     typedef bmap<T_FractionMapKey, DgnGlyph::T_Id> T_FractionMap;
     mutable T_FractionMap m_fractions;
     mutable bool m_hasLoadedFractions;
 
+    void LoadGlyphs() const;
     DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
+    DgnGlyphCP GetDefaultGlyphCP() const;
     DgnGlyph::T_Id FindFractionGlyphCode(uint8_t numerator, uint8_t denominator) const;
     DgnGlyph::T_Id Ucs4CharToFontChar(uint32_t, CharCP codePageString, bvector<Byte>& localeBuffer) const;
     bvector<DgnGlyph::T_Id> Utf8ToFontChar(Utf8StringCR) const;
 
 public:
-    DgnRscFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Rsc, name, data), m_hasLoadedGlyphs(false), m_hasLoadedFractions(false) {}
+    DgnRscFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Rsc, name, data), m_defaultGlyph(nullptr), m_isDefaultGlyphAllocated(false), m_hasLoadedGlyphs(false), m_hasLoadedFractions(false) {}
     DgnRscFont(DgnRscFontCR rhs) : DgnFont(rhs) {}
+    DGNPLATFORM_EXPORT virtual ~DgnRscFont();
     DgnRscFontR operator=(DgnRscFontCR rhs) { DgnFont::operator=(rhs); return *this; }
     DGNPLATFORM_EXPORT DgnFontPtr Create(Utf8CP name, IDgnFontDataP data);
     DGNPLATFORM_EXPORT virtual DgnFontPtr _Clone() const override;

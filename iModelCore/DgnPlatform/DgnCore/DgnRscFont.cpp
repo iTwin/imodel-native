@@ -14,6 +14,18 @@
 DgnFontPtr DgnRscFont::Create(Utf8CP name, IDgnFontDataP data) { return new DgnRscFont(name, data); }
 DgnFontPtr DgnRscFont::_Clone() const { return new DgnRscFont(*this); }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+DgnRscFont::~DgnRscFont()
+    {
+    for (T_GlyphCache::reference cacheEntry : m_glyphCache)
+        DELETE_AND_CLEAR(cacheEntry.second);
+    
+    if (m_isDefaultGlyphAllocated)
+        DELETE_AND_CLEAR(m_defaultGlyph);
+    }
+
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     03/2015
 //=======================================================================================
@@ -29,6 +41,8 @@ private:
     DRange2d m_exactRange;
     bool m_isBlank;
     
+    DgnRscGlyph();
+
 public:
     DgnRscGlyph(T_Id, double ascender, bool isFilled, RscGlyphHeader const&, RscGlyphDataOffset const&, IDgnRscFontData&);
 
@@ -37,7 +51,30 @@ public:
     virtual DRange2d _GetExactRange() const override { return m_exactRange; }
     virtual BentleyStatus _FillGpa(GPArrayR) const override;
     virtual bool _IsBlank() const override { return m_isBlank; }
+    static DgnRscGlyph* CreateUnitSpaceGlyph();
+    void SetWidthDirect(double width, double exactWidth) { m_range.high.x = width; m_exactRange.high.x = exactWidth; }
 };
+
+//---------------------------------------------------------------------------------------
+// In the absence of a blank/space glyph, this "default" glyph serves as a unit cube to use in its place.
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+DgnRscGlyph* DgnRscGlyph::CreateUnitSpaceGlyph() { return new DgnRscGlyph(); }
+DgnRscGlyph::DgnRscGlyph() :
+    m_glyphId(0), m_ascenderScaleFactor(1.0 / 1.0), m_isFilled(false), m_glyphDataOffset({0, 0}), m_data(nullptr)
+    {
+    m_range.low.x = 0.0;
+    m_range.low.y = 0.0;
+    m_range.high.x = 1.0;
+    m_range.high.y = 1.0;
+
+    m_exactRange.low.x = 0.0;
+    m_exactRange.low.y = 0.0;
+    m_exactRange.high.x = 1.0;
+    m_exactRange.high.y = 1.0;
+
+    m_isBlank = false;
+    }
 
 //---------------------------------------------------------------------------------------
 // We have to read the glyph headers to get glyphs code and information to begin with, so read the data up-front instead of lazier evaluation.
@@ -150,7 +187,8 @@ static bool fixDirection(DPoint2dP pts, size_t nPts, RscGlyphElementType ptType)
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnRscGlyph::_FillGpa(GPArrayR gpa) const
     {
-    if (0 == m_glyphDataOffset.size)
+    // Can be null when no default glyph exists and layout needs a blank unit cube glyph.
+    if ((nullptr == m_data) || (0 == m_glyphDataOffset.size))
         return SUCCESS;
 
     bvector<Byte> glyphDataBuffer;
@@ -225,42 +263,66 @@ BentleyStatus DgnRscGlyph::_FillGpa(GPArrayR gpa) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-DgnGlyphCP DgnRscFont::FindGlyphCP(DgnGlyph::T_Id id) const
+void DgnRscFont::LoadGlyphs() const
     {
     // Because we have to load and O(n) iterate the glyph header blob to even know what glyphs are in the file, do it once up-front instead of repeatedly for each glyph.
     // The glyphs will still load their glyph geometry data on-demand.
-    if (!m_hasLoadedGlyphs)
-        {
-        m_hasLoadedGlyphs = true;
-        
-        IDgnRscFontData* data = (IDgnRscFontData*)m_data;
-        if (nullptr == data)
-            return nullptr;
+    if (m_hasLoadedGlyphs)
+        return;
 
-        bvector<Byte> fontHeaderBuffer;
-        if (SUCCESS != data->_ReadFontHeader(fontHeaderBuffer))
-            return nullptr;
-        
-        bvector<Byte> glyphHeadersBuffer;
-        if (SUCCESS != data->_ReadGlyphHeaders(glyphHeadersBuffer))
-            return nullptr;
+    m_hasLoadedGlyphs = true;
 
-        bvector<Byte> glyphOffsetsBuffer;
-        if (SUCCESS != data->_ReadGlyphDataOffsets(glyphOffsetsBuffer))
-            return nullptr;
+    IDgnRscFontData* data = (IDgnRscFontData*)m_data;
+    if (nullptr == data)
+        return;
 
-        RscFontHeader const& fontHeader = *(RscFontHeader const*)&fontHeaderBuffer[0];
-        RscGlyphHeader const* glyphHeaders = (RscGlyphHeader const*)&glyphHeadersBuffer[0];
-        RscGlyphDataOffset const* glyphOffsets = (RscGlyphDataOffset const*)&glyphOffsetsBuffer[0];
-        for (size_t iGlyph = 0; iGlyph < fontHeader.totalChars; ++iGlyph)
-            m_glyphCache[glyphHeaders[iGlyph].code] = new DgnRscGlyph(glyphHeaders[iGlyph].code, fontHeader.ascender, fontHeader.filledFlag, glyphHeaders[iGlyph], glyphOffsets[iGlyph], *data);
-        }
+    bvector<Byte> fontHeaderBuffer;
+    if (SUCCESS != data->_ReadFontHeader(fontHeaderBuffer))
+        return;
+
+    bvector<Byte> glyphHeadersBuffer;
+    if (SUCCESS != data->_ReadGlyphHeaders(glyphHeadersBuffer))
+        return;
+
+    bvector<Byte> glyphOffsetsBuffer;
+    if (SUCCESS != data->_ReadGlyphDataOffsets(glyphOffsetsBuffer))
+        return;
+
+    RscFontHeader const& fontHeader = *(RscFontHeader const*)&fontHeaderBuffer[0];
+    RscGlyphHeader const* glyphHeaders = (RscGlyphHeader const*)&glyphHeadersBuffer[0];
+    RscGlyphDataOffset const* glyphOffsets = (RscGlyphDataOffset const*)&glyphOffsetsBuffer[0];
+    for (size_t iGlyph = 0; iGlyph < fontHeader.totalChars; ++iGlyph)
+        m_glyphCache[glyphHeaders[iGlyph].code] = new DgnRscGlyph(glyphHeaders[iGlyph].code, fontHeader.ascender, fontHeader.filledFlag, glyphHeaders[iGlyph], glyphOffsets[iGlyph], *data);
     
+    m_defaultGlyph = FindGlyphCP(fontHeader.defaultChar);
+    if (nullptr == m_defaultGlyph)
+        {
+        m_defaultGlyph = DgnRscGlyph::CreateUnitSpaceGlyph();
+        m_isDefaultGlyphAllocated = true;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+DgnGlyphCP DgnRscFont::FindGlyphCP(DgnGlyph::T_Id id) const
+    {
+    LoadGlyphs();
+
     T_GlyphCache::const_iterator foundGlyph = m_glyphCache.find(id);
     if (m_glyphCache.end() != foundGlyph)
         return foundGlyph->second;
     
     return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+DgnGlyphCP DgnRscFont::GetDefaultGlyphCP() const
+    {
+    LoadGlyphs();
+    return m_defaultGlyph;
     }
 
 //---------------------------------------------------------------------------------------
@@ -440,19 +502,38 @@ BentleyStatus DgnRscFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGlyphLa
     //  and to serve both TextString and TextBlock through a single code path. This does mean that some extraneous information
     //  is potentially computed, but should be cheap compared to the overall layout operation.
 
-    //result.m_range;
-    //result.m_exactRange;
-    //result.m_justificationRange;
-    //result.m_glyphs;
-    //result.m_glyphOrigins;
-
     // RSC glyphs codes are encoded as 16-bit multi-byte locale. In other words, we have to take each Unicode character, convert to locale, and make a uint16_t entry for each (single byte or otherwise).
     bvector<DgnGlyph::T_Id> fontChars = Utf8ToFontChar(context.m_string);
+    
+    // Sometimes need to reserve a special blank glyph because if an RSC font does not provide a space glyph, it must be adjusted based on the previous character.
+    unique_ptr<DgnRscGlyph> blankGlyph;
     
     // Acquire the glyphs.
     result.m_glyphs.reserve(fontChars.size());
     for (DgnGlyph::T_Id fontChar : fontChars)
-        result.m_glyphs.push_back(FindGlyphCP(fontChar));
+        {
+        DgnGlyph const* glyph = FindGlyphCP(fontChar);
+        
+        // Per RSC rules, if the glyph doesn't exist...
+        if (nullptr == glyph)
+            {
+            // If no space character, assign to a local copy that will be our running variable space character.
+            if (' ' == fontChar)
+                {
+                if (!blankGlyph)
+                    blankGlyph.reset(DgnRscGlyph::CreateUnitSpaceGlyph());
+                
+                glyph = blankGlyph.get();
+                }
+            // Otherwise substitute with the default glyph.
+            else
+                {
+                glyph = GetDefaultGlyphCP();
+                }
+            }
+        
+        result.m_glyphs.push_back(glyph);
+        }
 
     // Right-justified text needs to ignore trailing blanks.
     size_t numNonBlankGlyphs = result.m_glyphs.size();
@@ -469,8 +550,9 @@ BentleyStatus DgnRscFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGlyphLa
     for (size_t iGlyph = 0; iGlyph < result.m_glyphs.size(); ++iGlyph)
         {
         DgnGlyphCP glyph = result.m_glyphs[iGlyph];
-        if (nullptr == glyph)
-            continue;
+        
+        // For RSC, at this point, glyphs should not be NULL; they should have been remapped to the default or blank glyph.
+        BeAssert(nullptr != glyph);
 
         result.m_glyphOrigins.push_back(DPoint3d::From(penPosition));
 
@@ -488,7 +570,24 @@ BentleyStatus DgnRscFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGlyphLa
             result.m_justificationRange.Extend(&glyphRange.low, 2);
 
         penPosition.x += (glyphRange.XLength());
+
+        // Update variable space glyph if it's being used.
+        if (blankGlyph)
+            blankGlyph->SetWidthDirect(glyph->GetRange().high.x, glyph->GetExactRange().high.x);
         }
 
+    // Fake space glyphs have variable widths and are allocated temporarily by this function...
+    // I don't think it's worth the overhead to ref-count every glyph just to accommodate this weird RSC behavior.
+    // The real information is already captured in glyph origins and ranges.
+    // I believe the best compromise is to leave NULL glyphs in the output glyph vector in this scenario instead of complicating memory management.
+    if (blankGlyph)
+        {
+        for (DgnGlyphCP& glyph : result.m_glyphs)
+            {
+            if (blankGlyph.get() == glyph)
+                glyph = nullptr;
+            }
+        }
+    
     return SUCCESS;
     }

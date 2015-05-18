@@ -159,7 +159,7 @@ BentleyStatus DgnRscDbFontData::_ReadGlyphData(bvector<Byte>& buffer, size_t off
         return ERROR;
 
     buffer.clear();
-    ByteCP start = rscFontData->glyphHeaders()->Data() + offset;
+    ByteCP start = rscFontData->glyphData()->Data() + offset;
     ByteCP end = start + size;
     std::copy(start, end, std::back_inserter(buffer));
 
