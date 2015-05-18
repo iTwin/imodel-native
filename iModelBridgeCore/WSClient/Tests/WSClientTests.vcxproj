@@ -262,13 +262,14 @@
     <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx86\build\WSClient\PublishedApi\;$(OutRoot)Winx86\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx86\BuildContexts\BeGTest\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>bb  reb wsclientunittests begtestexe -x64 -s</NMakeBuildCommandLine>
-    <NMakeOutput>%bsiout%winx64\product\begtest\bin\begtest.exe</NMakeOutput>
-    <NMakeReBuildCommandLine>bb  reb wsclientunittests begtestexe -x64</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\begtest.exe</NMakeOutput>
+    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p  WSClientUnitTests b</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\MobileDgn\PublicAPI\;$(OutRoot)Winx64\BuildContexts\MobileDgn\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\MobileDgn\BackDoorMobileDgnUnitTests\PublicAPI\;$(SrcRoot)MobileDgn\PublicAPI\</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(TEMP)</IntDir>
+    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>bb  reb wsclientunittests begtestexe -x86 -s</NMakeBuildCommandLine>
