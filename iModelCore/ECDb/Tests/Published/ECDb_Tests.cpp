@@ -11,6 +11,46 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  07/13
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST (ECDbTests, CloseECDbWithFinalizedStatements)
+    {
+    Utf8String ecdbPath;
+        {
+        ECDbTestProject project;
+        project.Create ("ecdbclosetests.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+        ecdbPath = Utf8String (project.GetECDbPath ());
+        }
+
+        //Test with finalized BeSQLite statement
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OPEN_Readonly)));
+
+        BeSQLite::Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT * FROM ec_Schema"));
+
+        stmt.Finalize();
+        ecdb.CloseDb();
+        }
+
+        //Test with finalized ECSqlStatement
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OPEN_Readonly)));
+
+        ECSqlStatement stmt;
+        ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(ecdb, "SELECT FirstName FROM stco.Employee"));
+
+        stmt.Finalize();
+        ecdb.CloseDb();
+        }
+
+        //Testing to close the db with unfinalized statements is hard to do as the database remains open. We don't want that to happen as artefacts of the ATPs
+    }
+
+
 //=======================================================================================
 // @bsiclass                                     Krischan.Eberle                  01/15
 //=======================================================================================
