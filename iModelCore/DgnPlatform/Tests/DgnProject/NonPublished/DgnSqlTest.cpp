@@ -260,6 +260,282 @@ TEST_F(SqlFunctionsTest, placement_angles)
 #endif
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SqlFunctionsTest, spatialQuery)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"spatialQuery.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+
+    double o1y = 5.0;
+    double o2x = 5.0;
+    DPoint3d o1origin = DPoint3d::From(0,o1y,0);
+    DPoint3d o2origin = DPoint3d::From(o2x,0,0);
+
+    DgnElementId r1, o1, o1a, o2, o2a;
+        {
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, "Robot1");
+        InsertElement(*robot1);
+
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "Obstacle1");
+        InsertElement(*obstacle1);
+        obstacle1->SetTestItem(*m_db, "SomeKindOfObstacle");
+
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "Obstacle1a");
+        InsertElement(*obstacle1a);
+        obstacle1a->SetTestItem(*m_db, "SomeOtherKindOfObstacle");
+
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "Obstacle2");
+        InsertElement(*obstacle2);
+        obstacle2->SetTestItem(*m_db, "SomeKindOfObstacle");
+
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "Obstacle2a");
+        InsertElement(*obstacle2a);
+        obstacle2a->SetTestItem(*m_db, "SomeOtherKindOfObstacle");
+
+        // Double-check that we created the robots and obstacles, as expected
+        ASSERT_EQ( RobotElement::QueryClassId(*m_db)    , robot1->GetElementClassId() );
+        ASSERT_EQ( ObstacleElement::QueryClassId(*m_db) , obstacle1->GetElementClassId() );
+
+        m_db->SaveChanges();
+
+        r1 = robot1->GetElementId();
+        o1 = obstacle1->GetElementId();
+        o1a = obstacle1a->GetElementId();
+        o2 = obstacle2->GetElementId();
+        o2a = obstacle2a->GetElementId();
+        }
+
+    RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
+
+
+#ifdef CANT_USE_ECSQL // 1. ?n bindings are not supported, 2. dgn_PrjRTree is not in the ecschema
+    ECSqlStatement stmt;
+    stmt.Prepare(*m_db, 
+        "SELECT item.ECInstanceId, item.TestItemProperty FROM"
+        "  (SELECT g.ECInstanceId FROM"
+        "     (SELECT rt.ElementId FROM dgn_PrjRTree rt "                           // FROM R-Tree
+        "        WHERE rt.MaxX >= ?1 AND rt.MinX <= ?4"                             //  select Elements in nodes that overlap bbox
+        "          AND rt.MaxY >= ?2 AND rt.MinY <= ?5"
+        "          AND rt.MaxZ >= ?3 AND rt.MinZ <= ?6) rt_res"                     //  (call this result set "rt_res")
+        "     ,"
+        "      dgn.ElementGeom g WHERE g.ECInstanceId=rt_res.ECInstanceId"      // JOIN ElementGeom
+        "          AND DGN_bbox_overlaps(DGN_placement_aabb(g.Placement), DGN_bbox(?1, ?2, ?3, ?4, ?5, ?6))"  // select geoms that overlap bbox
+        "  ) geom_res"                                                          //   (call this result set "geom_res")
+        "  ,"
+        "  DgnPlatformTest.Obstacle obstacle,"                                  // JOIN Obstacle
+        "  DgnPlatformTest.TestItem item "                                      // JOIN TestItem
+        "       WHERE obstacle.ECInstanceId = geom_res.ECInstanceId"            //      only Obstacles
+        "        AND item.Elementid = obstacle.ECInstanceId AND item.TestItemProperty = ?7" //    ... with certain items
+        );
+#else
+    Utf8CP sql = 
+        "SELECT item.ElementId, item.x01 FROM"
+        "  (SELECT g.ElementId FROM"
+        "     (SELECT rt.ElementId FROM dgn_PrjRTree rt "                       //          FROM R-Tree
+        "        WHERE rt.MaxX >= ?1 AND rt.MinX <= ?4"                         //           select Elements in nodes that overlap bbox
+        "          AND rt.MaxY >= ?2 AND rt.MinY <= ?5"
+        "          AND rt.MaxZ >= ?3 AND rt.MinZ <= ?6) rt_res"                 //           (call this result set "rt_res")
+        "     ,"
+        "      dgn_ElementGeom g WHERE g.ElementId=rt_res.ElementId"            //      JOIN ElementGeom
+        "          AND DGN_bbox_overlaps(DGN_placement_aabb(g.Placement), DGN_bbox(?1, ?2, ?3, ?4, ?5, ?6))"  // select geoms that overlap bbox
+        "  ) geom_res"                                                          //      (call this result set "geom_res")
+        "  , dgn_Element e"                                                     // JOIN Element
+        "  , dgn_ElementItem item "                                             // JOIN ElementItem
+        "       WHERE e.Id = geom_res.ElementId AND e.ECClassId=?7"             //  select only Obstacles
+        "        AND item.ElementId = e.Id AND item.x01 = ?8"                  //                     ... with certain items
+    ;
+
+    //printf ("%s\n", m_db->ExplainQueryPlan(nullptr, sql));
+
+    Statement stmt;
+    stmt.Prepare(*m_db, sql);
+
+#endif
+
+    //  Initial placement
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                   ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |R1                 V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
+        stmt.BindDouble(1, r1aabb.low.x);
+        stmt.BindDouble(2, r1aabb.low.y);
+        stmt.BindDouble(3, r1aabb.low.z);
+        stmt.BindDouble(4, r1aabb.high.x);
+        stmt.BindDouble(5, r1aabb.high.y);
+        stmt.BindDouble(6, r1aabb.high.z);
+        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(8, "SomeKindOfObstacle", Statement::MakeCopy::No);
+
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |R1                 ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                   V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        ObstacleElementCPtr obstacle1 = m_db->Elements().Get<ObstacleElement>(o1);
+
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), obstacle1->GetPlacement().GetOrigin()));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindDouble(1, r1aabb.low.x);
+        stmt.BindDouble(2, r1aabb.low.y);
+        stmt.BindDouble(3, r1aabb.low.z);
+        stmt.BindDouble(4, r1aabb.high.x);
+        stmt.BindDouble(5, r1aabb.high.y);
+        stmt.BindDouble(6, r1aabb.high.z);
+        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(8, "SomeKindOfObstacle", Statement::MakeCopy::No);
+
+        ASSERT_EQ( BE_SQLITE_ROW, stmt.Step() );
+
+        DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1 , ofoundId );
+        ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
+
+        //  Query for the other kind of obstacle
+        stmt.Reset();
+        stmt.ClearBindings();
+        r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindDouble(1, r1aabb.low.x);
+        stmt.BindDouble(2, r1aabb.low.y);
+        stmt.BindDouble(3, r1aabb.low.z);
+        stmt.BindDouble(4, r1aabb.high.x);
+        stmt.BindDouble(5, r1aabb.high.y);
+        stmt.BindDouble(6, r1aabb.high.z);
+        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(8, "SomeOtherKindOfObstacle", Statement::MakeCopy::No);
+
+        ASSERT_EQ( BE_SQLITE_ROW, stmt.Step() );
+
+        ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1a , ofoundId );
+        ASSERT_STREQ( "SomeOtherKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
+
+        //  Query should fail if I specify an item that is not found on any kind of obstacle
+        stmt.Reset();
+        stmt.ClearBindings();
+        r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindDouble(1, r1aabb.low.x);
+        stmt.BindDouble(2, r1aabb.low.y);
+        stmt.BindDouble(3, r1aabb.low.z);
+        stmt.BindDouble(4, r1aabb.high.x);
+        stmt.BindDouble(5, r1aabb.high.y);
+        stmt.BindDouble(6, r1aabb.high.z);
+        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(8, "no kind of obstacle", Statement::MakeCopy::No);
+
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    //  Move Robot1 over, so that it touches Obstacle2 but not Obstacle1
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                   ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                R1 V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        ObstacleElementCPtr obstacle2 = m_db->Elements().Get<ObstacleElement>(o2);
+
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), obstacle2->GetPlacement().GetOrigin()));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindDouble(1, r1aabb.low.x);
+        stmt.BindDouble(2, r1aabb.low.y);
+        stmt.BindDouble(3, r1aabb.low.z);
+        stmt.BindDouble(4, r1aabb.high.x);
+        stmt.BindDouble(5, r1aabb.high.y);
+        stmt.BindDouble(6, r1aabb.high.z);
+        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(8, "SomeKindOfObstacle", Statement::MakeCopy::No);
+        ASSERT_EQ( BE_SQLITE_ROW, stmt.Step() );
+
+        DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o2 , ofoundId );
+        ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
+        }
+
+    //  Move Robot1 so that it touches both Obstacle1 and Obstacle1
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                R1 ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                   V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), DPoint3d::From(o2x,o1y,0)));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        DgnElementIdSet overlaps;
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindDouble(1, r1aabb.low.x);
+        stmt.BindDouble(2, r1aabb.low.y);
+        stmt.BindDouble(3, r1aabb.low.z);
+        stmt.BindDouble(4, r1aabb.high.x);
+        stmt.BindDouble(5, r1aabb.high.y);
+        stmt.BindDouble(6, r1aabb.high.z);
+        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(8, "SomeKindOfObstacle", Statement::MakeCopy::No);
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            overlaps.insert (stmt.GetValueId<DgnElementId>(0));
+            ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+            }
+        ASSERT_EQ( 2 , overlaps.size() );
+        ASSERT_TRUE( overlaps.Contains(o1) );
+        ASSERT_TRUE( overlaps.Contains(o2) );
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -352,6 +628,46 @@ TEST_F(SqlFunctionsTest, bbox_overlaps)
         ASSERT_TRUE( foundPlacement.GetOrigin().IsEqual( obstacle1->GetPlacement().GetOrigin() ) );
 
         ASSERT_EQ( BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
+        }
+
+    if (true)   
+        {
+        // do the same thing, using the r-tree to speed up the query
+        // Note: DGN_bbox_value indices are: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
+
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps_rtree.sampleCode
+        // Note: DGN_bbox_value indices are: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
+        //          In this query, we bind the parameters in the same order, but starting at 1:
+        //                                   XLow=1, YLow=2, Zlow=3, XHigh=4, YHigh=5, ZHigh=6
+        Statement stmt2;
+        stmt2.Prepare(*m_db, 
+            " SELECT e.Id as id, g.Placement as placement"                                       
+            " FROM dgn_Element e, dgn_ElementGeom g, dgn_PrjRTree rt"
+            " WHERE rt.MaxX >= ?1 AND rt.MinX <= ?4"        // find the rt nodes the overlap a specified bounding box
+            "   AND rt.MaxY >= ?2 AND rt.MinY <= ?5"
+            "   AND rt.MaxZ >= ?3 AND rt.MinZ <= ?6"
+            "   AND rt.ElementId=e.Id"                      //  for all elements in those nodes
+            "   AND e.Id = g.ElementId"                     //      choose the elements with placement bbs that overlap the specified bounding box
+            "   AND DGN_bbox_overlaps(DGN_placement_aabb(g.Placement), DGN_bbox(?1, ?2, ?3, ?4, ?5, ?6))"
+            "   AND e.ECClassId=?7"                         //                          and that are of a specific class
+            );
+        RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
+
+        stmt2.BindDouble(1, r1aabb.low.x);
+        stmt2.BindDouble(2, r1aabb.low.y);
+        stmt2.BindDouble(3, r1aabb.low.z);
+        stmt2.BindDouble(4, r1aabb.high.x);
+        stmt2.BindDouble(5, r1aabb.high.y);
+        stmt2.BindDouble(6, r1aabb.high.z);
+        stmt2.BindId(7, ObstacleElement::QueryClassId(*m_db));
+        //__PUBLISH_EXTRACT_END__
+        ASSERT_EQ( BE_SQLITE_ROW, stmt2.Step() );
+
+        DgnElementId ofoundId = stmt2.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1 , ofoundId );
+
+        ASSERT_EQ( BE_SQLITE_DONE , stmt2.Step() ) << L"Expected only 1 overlap";
         }
 
     //  Move Robot1 over, so that it touches Obstacle2 but not Obstacle1
