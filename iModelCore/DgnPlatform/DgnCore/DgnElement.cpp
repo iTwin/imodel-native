@@ -36,67 +36,25 @@ void DgnElement::Release() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppDataEntry* DgnElement::FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry) const
-    {
-    AppDataEntry* next = thisEntry.m_next;
-
-    if (prev)
-        prev->m_next = next;
-    else
-        m_appData = next;
-
-    thisEntry.ClearEntry(*this);
-    GetHeapZone().Free(&thisEntry, sizeof(AppDataEntry));
-
-    return  next;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData* DgnElement::FindAppData(AppData::Key const& key) const
     {
-    for (AppDataEntry* thisEntry = m_appData; thisEntry; thisEntry = thisEntry->m_next)
-        {
-        if (thisEntry->m_key < &key) // entries are sorted by key
-            continue;
-
-        return (thisEntry->m_key == &key) ? thisEntry->m_obj : nullptr;
-        }
-
-    return nullptr;
+    auto entry = m_appData.find(&key);
+    return entry==m_appData.end() ? nullptr : entry->second.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnElement::AddAppData(AppData::Key const& key, AppData* obj) const
+void DgnElement::AddAppData(AppData::Key const& key, AppData* obj) const
     {
-    AppDataEntry* prevEntry = nullptr;
-    AppDataEntry* nextEntry = m_appData;
-    for (; nextEntry; prevEntry=nextEntry, nextEntry=nextEntry->m_next)
-        {
-        if (nextEntry->m_key < &key) // sort them by key
-            continue;
+    auto entry = m_appData.Insert(&key, obj);
+    if (entry.second)
+        return;
 
-        if (nextEntry->m_key != &key)
-            break;
-
-        nextEntry->SetEntry(obj, *this);      // already exists, just change it
-        return SUCCESS;
-        }
-
-    AppDataEntry* newEntry = (AppDataEntry*) GetHeapZone().Alloc(sizeof(AppDataEntry));
-    newEntry->Init(key, obj, nextEntry);
-
-    if (prevEntry)
-        prevEntry->m_next = newEntry;
-    else
-        m_appData = newEntry;
-
-    return  SUCCESS;
+    // we already had appdata for this key. Clean up old and save new.
+    entry.first->second = obj;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,19 +62,7 @@ StatusInt DgnElement::AddAppData(AppData::Key const& key, AppData* obj) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnElement::DropAppData(AppData::Key const& key) const
     {
-    for (AppDataEntry* prev=nullptr, *thisEntry=m_appData; thisEntry; prev=thisEntry, thisEntry=thisEntry->m_next)
-        {
-        if (thisEntry->m_key < &key) // entries are sorted by key
-            continue;
-
-        if (thisEntry->m_key != &key)
-            break;
-
-        FreeAppDataEntry(prev, *thisEntry);
-        return  SUCCESS;
-        }
-
-    return  ERROR;
+    return 0==m_appData.erase(&key) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,8 +70,7 @@ StatusInt DgnElement::DropAppData(AppData::Key const& key) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::ClearAllAppData()
     {
-    for (AppDataEntry* thisEntry=m_appData; thisEntry; )
-        thisEntry = FreeAppDataEntry(nullptr, *thisEntry);
+    m_appData.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -195,7 +140,7 @@ T_QvElemSet* GeometricElement::GetQvElems(bool createIfNotPresent) const
         return  nullptr;
 
     HeapZone& zone = GetHeapZone();
-    qvElems = new((T_QvElemSet*) zone.Alloc(sizeof(T_QvElemSet))) T_QvElemSet(zone);
+    qvElems = new T_QvElemSet(zone);
 
     AddAppData(s_qvElemsKey, qvElems);
     return  qvElems;

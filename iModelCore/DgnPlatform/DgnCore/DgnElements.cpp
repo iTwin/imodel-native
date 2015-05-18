@@ -1229,30 +1229,39 @@ DgnElementId DgnElements::MakeNewElementId()
     }
 
 
-struct OnDeleteCaller   {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDelete(el);}   };
-struct OnDeletedCaller  {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}   };
-struct OnInsertCaller   {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInsert(el);}   };
-struct OnInsertedCaller {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(el);} };
+struct OnDeleteCaller   {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDelete(el);}   };
+struct OnDeletedCaller  {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}  };
+struct OnInsertCaller   {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInsert(el);}   };
+struct OnInsertedCaller
+    {
+    DgnElementCR m_newEl;
+    OnInsertedCaller(DgnElementCR newEl) : m_newEl(newEl){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(m_newEl);}   
+    };
 struct OnUpdateCaller
     {
-    DgnElementCR m_orig;
-    OnUpdateCaller(DgnElementCR orig) : m_orig(orig){}
-    bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdate(m_orig, el);}   
+    DgnElementCR m_orig, m_updated;
+    OnUpdateCaller(DgnElementCR orig, DgnElementCR updated) : m_orig(orig), m_updated(updated){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdate(m_orig, m_updated);}   
     };
-struct OnUpdatedCaller  {bool Process(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(el);}  };
+struct OnUpdatedCaller
+    {
+    DgnElementCR m_orig, m_updated;
+    OnUpdatedCaller(DgnElementCR orig, DgnElementCR updated) : m_orig(orig), m_updated(updated){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_orig, m_updated);}   
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<class T> void DgnElements::CallAppData(T const& caller, DgnElementCR el)
     {
-    for (DgnElement::AppDataEntry* prev=nullptr, *next, *thisEntry=el.m_appData; thisEntry; thisEntry=next)
+    for (auto entry=el.m_appData.begin(); entry!=el.m_appData.end(); )
         {
-        next = thisEntry->m_next;
-        if (caller.Process(*thisEntry->m_obj, el))
-            el.FreeAppDataEntry(prev, *thisEntry);
+        if (caller(*entry->second, el))
+            entry = el.m_appData.erase(entry);
         else
-            prev = thisEntry;
+            ++entry;
         }
     }    
 
@@ -1304,7 +1313,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
 
     newElement->_OnInserted();
     model._OnInsertedElement(*newElement);
-    CallAppData(OnInsertedCaller(), element);
+    CallAppData(OnInsertedCaller(*newElement), element);
 
     return newElement;
     }
@@ -1342,7 +1351,9 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr; // model rejected proposed change
 
-    CallAppData(OnUpdateCaller(element), replacement);
+    // we need to call the pre/post update events on BOTH sets of appdata
+    CallAppData(OnUpdateCaller(element, replacement), element);
+    CallAppData(OnUpdateCaller(element, replacement), replacement);
 
     uint32_t oldSize = element._GetMemSize(); // save current size
     stat = element._CopyFrom(replacement);    // copy new data into original element
@@ -1359,6 +1370,10 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         return nullptr;
         }
 
+    // we need to call the pre/post update events on BOTH sets of appdata
+    CallAppData(OnUpdatedCaller(element, replacement), element);
+    CallAppData(OnUpdatedCaller(element, replacement), replacement);
+
     int32_t sizeChange = element._GetMemSize() - oldSize; // figure out whether the element data is larger now than before
     BeAssert(0 <= sizeChange); // we never shrink
 
@@ -1366,8 +1381,6 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         AllocatedMemory(sizeChange);
 
     model._OnUpdatedElement(element); // notify model that update finished successfully
-    CallAppData(OnUpdatedCaller(), element);
-
     return &element;
     }
 

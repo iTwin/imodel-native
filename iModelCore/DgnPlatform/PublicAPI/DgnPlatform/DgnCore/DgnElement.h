@@ -79,37 +79,50 @@ public:
     };
 
     //! Create a subclass of this to store non-persistent information on a DgnElement.
-    struct AppData
+    struct AppData : RefCountedBase
     {
-        virtual ~AppData() {}
-
-        //! A unique identifier for this type of DgnElementAppData. Use a static instance of this class.
+        //! A unique identifier for this type of DgnElementAppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
 
-        //! Called to clean up owned resources and delete the app data.
-        //! @param[in]  el the DgnElement holding this AppData 
-        virtual void _OnCleanup(DgnElementCR el) = 0;
+        //! Called before this AppData's element is Inserted.
+        //! @param[in]  el the DgnElement holding this AppData
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual bool _OnInsert(DgnElementCR el)  {return false;}
+
+        //! Called after this AppData's element was Inserted.
+        //! @param[in]  el the new persistent DgnElement that was Inserted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note el will \not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
+        //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
         virtual bool _OnInserted(DgnElementCR el){return false;}
-        virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR update)  {return false;}
-        virtual bool _OnUpdated(DgnElementCR el) {return false;}
+
+        //! Called before this AppData's element is Updated.
+        //! @param[in] orig the original DgnElement
+        //! @param[in] modified the modified DgnElement about to replace orig
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
+        virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR modified)  {return false;}
+
+        //! Called after this AppData's element was Updated.
+        //! @param[in] orig the original DgnElement
+        //! @param[in] modified the modified DgnElement
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
+        virtual bool _OnUpdated(DgnElementCR orig, DgnElementCR modified) {return false;}
+
+        //! Called before this AppData's element is Deleted.
+        //! @param[in]  el the DgnElement to be deleted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual bool _OnDelete(DgnElementCR el)  {return false;}
+
+        //! Called after this AppData's element was Deleted.
+        //! @param[in]  el the DgnElement that was deleted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual bool _OnDeleted(DgnElementCR el) {return false;}
     };
 
 protected:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-    struct AppDataEntry
-        {
-        AppData::Key const* m_key;
-        AppData*            m_obj;
-        AppDataEntry*       m_next;
-
-        void Init(AppData::Key const& key, AppData* obj, AppDataEntry* next) {m_key = &key; m_obj = obj; m_next = next;}
-        void ClearEntry(DgnElementCR el) {if (nullptr == m_obj) return; m_obj->_OnCleanup(el); m_obj=nullptr;}
-        void SetEntry(AppData* obj, DgnElementCR el) {ClearEntry(el); m_obj = obj;}
-        };
 
     struct Flags
         {
@@ -132,12 +145,10 @@ protected:
     DgnCategoryId   m_categoryId;
     Utf8String      m_code;
     mutable Flags   m_flags;
-    mutable AppDataEntry* m_appData;
-
-    AppDataEntry* FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry) const;
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     void SetInPool(bool val) const {m_flags.m_inPool = val;}
-                                                
+
     DGNPLATFORM_EXPORT virtual ~DgnElement();
                        virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
@@ -157,7 +168,7 @@ protected:
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
 
     explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId), m_appData(nullptr) {}
+             m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId) {}
 
 public:
     DgnModelStatus CopyFrom(DgnElementCR rhs) {return _CopyFrom(rhs);}
@@ -237,7 +248,7 @@ public:
     //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
     //! @param[in] appData The appData object to attach to this element.
-    DGNPLATFORM_EXPORT StatusInt AddAppData(AppData::Key const& key, AppData* appData) const;
+    DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* appData) const;
 
     //! Drop Application data from this element.
     //! @param[in] key the key for the AppData to drop.

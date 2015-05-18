@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
 
 #include <Bentley/WString.h>
 #include "DgnPlatform.h"
@@ -23,12 +24,9 @@ typedef struct FT_LibraryRec_* FT_Library; // Shield users from freetype.h becau
 
 #define T_HOST DgnPlatformLib::GetHost()
 
-DGNPLATFORM_TYPEDEFS (ElementHandlerLoader)
-DGNPLATFORM_TYPEDEFS (DgnHost)
+DGNPLATFORM_TYPEDEFS(DgnHost)
 
-//__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-//__PUBLISH_SECTION_END__
 
 /*=================================================================================**//**
 @addtogroup DgnPlatformHost
@@ -67,7 +65,6 @@ DgnPlatformLib::Host::Terminate before it exits.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 
-//__PUBLISH_SECTION_START__
 //=======================================================================================
 //! @private
 //=======================================================================================
@@ -165,6 +162,43 @@ public:
             //! Examples of required assets include fonts, ECSchemas, and localization resources.
             DGNPLATFORM_EXPORT BeFileNameCR GetDgnPlatformAssetsDirectory();
             };
+
+        //=======================================================================================
+        // @bsiclass                                                    Keith.Bentley   07/13
+        //=======================================================================================
+        struct TxnAdmin : DgnHost::IHostObject
+        {
+            typedef bvector<TxnMonitorP> TxnMonitors;
+
+        protected:
+            TxnMonitors m_monitors;
+            template <typename CALLER> void CallMonitors(CALLER const& caller);
+
+        public:
+            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
+            virtual bool _OnPromptReverseAll() {return true;}
+            virtual void _RestartTool()  {}
+            virtual void _OnNothingToUndo() {}
+            virtual void _OnPrepareForUndoRedo(){}
+            virtual void _OnNothingToRedo(){}
+            DGNPLATFORM_EXPORT virtual void _OnTxnBoundary(TxnSummaryCR);
+            DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo);
+            DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo);
+            DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo);
+
+            //! @name Transaction Monitors
+            //@{
+            //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
+            //! @param monitor a monitor to add
+            DGNPLATFORM_EXPORT void AddTxnMonitor(TxnMonitor& monitor);
+
+            //! Drop a TxnMonitor.
+            //! @param monitor a monitor to drop
+            DGNPLATFORM_EXPORT void DropTxnMonitor(TxnMonitor& monitor);
+            //@}
+        };
 
         //! Allows hosts to provide required information for DgnFontManager, and gives them callback entry points for its events.
         struct FontAdmin : IHostObject
