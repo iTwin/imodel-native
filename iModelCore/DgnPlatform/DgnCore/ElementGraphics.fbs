@@ -11,6 +11,7 @@ namespace BentleyG06.DgnPlatform.FB;
 enum GradientMode : byte {None, Linear, Curved, Cylindrical, Spherical, Hemispherical}
 enum BoundaryType : byte {None, Open, Closed}
 enum FillDisplay : byte {None, ByView, Always, Blanking}
+enum GeometryClass : byte {Primary, Construction, Dimension, Pattern}
 
 //=======================================================================================
 // @bsiclass                                                    
@@ -90,6 +91,7 @@ table BasicSymbology
     displayPriority:int; // contributes to net display priority, not an override. (2d only)
     useColor:ubyte;
     useWeight:ubyte;
+    geomClass:GeometryClass;
 
     } // BasicSymbology
 

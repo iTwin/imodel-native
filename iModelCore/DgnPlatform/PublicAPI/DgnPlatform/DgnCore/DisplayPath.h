@@ -60,8 +60,8 @@ public:
 
     DGNPLATFORM_EXPORT virtual void Dump (WCharCP label) const;
     DGNPLATFORM_EXPORT void         GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const;
-    DGNPLATFORM_EXPORT virtual void SetHilited (ElementHiliteState) const;
-    DGNPLATFORM_EXPORT ElementHiliteState IsHilited () const;
+    DGNPLATFORM_EXPORT virtual void SetHilited (DgnElement::Hilited) const;
+    DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited () const;
 
     DGNPLATFORM_EXPORT void         SetPathElem (DgnElementP oObj, int index);
     DGNPLATFORM_EXPORT void         RemovePathElemFromHead ();

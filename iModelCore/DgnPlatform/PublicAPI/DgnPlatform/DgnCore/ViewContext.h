@@ -451,7 +451,7 @@ protected:
     bool                    m_drawingClipElements;
     uint32_t                m_displayStyleStackMark;
     EdgeMaskState           m_edgeMaskState;
-    ElementHiliteState      m_hiliteState;
+    DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
     IElemTopologyP          m_currElemTopo;
     DgnGeomPartId           m_currGeomPart;
@@ -551,7 +551,7 @@ public:
     void SetIntermediatePaintsBlocked (bool blockIntermediatePaints) {m_blockIntermediatePaints = blockIntermediatePaints;}
     void SetRasterPlane (uint32_t plane) {m_rasterPlane = plane;}
     void ResetRasterPlane () {m_rasterPlane = RasterPlane_Any;}
-    ElementHiliteState         GetCurrHiliteState () {return m_hiliteState;}
+    DgnElement::Hilited GetCurrHiliteState () {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     DGNPLATFORM_EXPORT bool        SetWantMaterials (bool wantMaterials);

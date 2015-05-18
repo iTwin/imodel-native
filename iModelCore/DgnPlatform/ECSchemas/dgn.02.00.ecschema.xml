@@ -270,13 +270,13 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Priority" typeName="int" description="The priority of this dependency, relative to other EntityDrivesEntity instances. Note that EntityHasChildEntities dependencies always take priority over EntityDrivesEntity dependencies."/>
     </ECRelationshipClass>
 
+    <!-- Loose grouping relationships between elements -->
     <ECRelationshipClass typeName="ElementGroupsElements" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <ECIdColumn>Id</ECIdColumn>
             </ECDbClassHint>
         </ECCustomAttributes>
-        <!-- Loose grouping relationships between elements (e.g. named groups) -->
         <Source cardinality="(0,N)" polymorphic="True">
             <ECCustomAttributes>
                 <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -284,7 +284,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <ECClassIdColumn>GroupElementClassId</ECClassIdColumn>
                 </ECDbRelationshipConstraintHint>
             </ECCustomAttributes>
-            <Class class="Element" />
+            <Class class="ElementGroup" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
             <ECCustomAttributes>
@@ -381,6 +381,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>Element2d</BaseClass>
     </ECClass>
 
+    <ECClass typeName="ElementGroup" isDomainClass="True">
+        <BaseClass>Element</BaseClass>
+    </ECClass>
+    
     <!-- Abstract -->
     <ECClass typeName="ElementAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
         <!-- An ElementAspect is related to an Element with a relationship of strength="embedding" (ElementAspect is deleted if the Element is deleted) -->

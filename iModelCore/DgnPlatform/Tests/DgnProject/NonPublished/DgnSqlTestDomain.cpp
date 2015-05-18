@@ -55,7 +55,8 @@ TestPhysicalElement::TestPhysicalElement(PhysicalModelR model, DgnCategoryId cat
     SetCode(elementCode);
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
     builder->Append(curve);
-    BeAssert( SUCCESS == builder->SetGeomStreamAndPlacement(*this) );
+    StatusInt status = builder->SetGeomStreamAndPlacement(*this);
+    BeAssert( SUCCESS == status );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,6 +75,19 @@ RobotElement::RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoin
 ObstacleElement::ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode)
     : TestPhysicalElement(model, categoryId, QueryClassId(model.GetDgnDb()), origin, yaw, *CreateBox(DPoint3d::From(0,0,0), DPoint3d::From(10,0.1,1)), elementCode) 
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Obstacles are always slabs 10 meters long, 1 meter high, and 1 cm thick
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ObstacleElement::SetSomeProperty(DgnDbR db, Utf8CP value)
+    {
+    ECSqlStatement setObstacleProperty;
+    setObstacleProperty.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " SET SomeProperty=? WHERE ECInstanceId=?");
+    setObstacleProperty.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    setObstacleProperty.BindId(2, GetElementId());
+    setObstacleProperty.Step();
     }
 
 /*---------------------------------------------------------------------------------**//**

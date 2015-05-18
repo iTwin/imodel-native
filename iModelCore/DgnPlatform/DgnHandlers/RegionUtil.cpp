@@ -371,15 +371,15 @@ void            RegionGraphicsDrawGeom::_SetDrawViewFlags (ViewFlagsCP flags)
     m_viewFlags.SetRenderMode (DgnRenderMode::Wireframe);
 
     // Apply overrides to flags...
-    m_viewFlags.inhibitLineStyles = true;
-    m_viewFlags.fill              = false;
-    m_viewFlags.patterns          = false;
+    m_viewFlags.styles = false;
+    m_viewFlags.fill = false;
+    m_viewFlags.patterns = false;
 
     // Only turn off text, otherwise find text based on current view attribute...
     if (m_interiorText)
         return;
 
-    m_viewFlags.fast_text         = true;
+    m_viewFlags.text = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1206,7 +1206,7 @@ void            RegionGraphicsContext::InitRegionParams (RegionParams& params)
     {
     params.SetType (m_operation);
     params.SetFloodParams (m_regionLoops, m_gapTolerance);
-    params.SetInteriorText (!GetViewFlags ()->fast_text, m_output.GetTextMarginFactor ());
+    params.SetInteriorText (GetViewFlags ()->text, m_output.GetTextMarginFactor ());
     params.SetAssociative (true);
 
     if (NULL != m_output.GetFlattenBoundary ())

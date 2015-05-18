@@ -141,7 +141,7 @@ void ModifyDrawViewFlags (ViewFlagsR flags)
     flags.SetRenderMode (DgnRenderMode::SmoothShade);
 
     // Make sure linestyles drawn for drop...esp. when dropping linestyles!
-    flags.inhibitLineStyles = false;
+    flags.styles = true;
 
     // Make sure to display fill so that fill/gradient can be added to output...
     flags.fill = true;
@@ -1162,6 +1162,8 @@ void WireframeGeomUtil::Draw (ISolidKernelEntityCR entity, ViewContextR context,
     T_HOST.GetSolidsKernelAdmin()._OutputBodyAsWireframe (entity, context, includeEdges, includeFaceIso, attachments);
     }
 
+BEGIN_UNNAMED_NAMESPACE
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1250,6 +1252,8 @@ void SetSolidEntity (ISolidKernelEntityCR entity) {m_entity = &entity;}
 CurveVectorPtr GetCurveVector () {return m_curves;}
 
 }; // RuleCollector
+
+END_UNNAMED_NAMESPACE
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
