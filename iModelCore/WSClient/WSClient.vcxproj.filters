@@ -254,8 +254,18 @@
     <ClInclude Include="PublicAPI\WebServices\WebServices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Client\Logging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Client\ClientPolicy.mki" />
+    <None Include="Client\Client.mke" />
+    <None Include="Client\prewire.mke" />
+    <None Include="Client\xliffs.mke" />
+    <None Include="Client\Connect\Connect.mki" />
   </ItemGroup>
 </Project>
