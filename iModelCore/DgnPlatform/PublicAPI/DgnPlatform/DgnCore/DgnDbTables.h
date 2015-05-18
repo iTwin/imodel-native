@@ -1009,6 +1009,7 @@ private:
 public:
     DgnGeomPartId GetHighestGeomPartId();
     DgnGeomPartId MakeNewGeomPartId();
+    static BentleyStatus Draw(DgnGeomPartId, ViewContextR, DgnCategoryId, ViewFlagsCR);
 
 public:
     // WIP: waiting for IGeometryExt deserialization to be hooked up!
