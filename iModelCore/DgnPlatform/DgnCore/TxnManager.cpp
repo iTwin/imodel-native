@@ -1059,10 +1059,13 @@ BentleyStatus ITxnManager::SaveUndoMark(Utf8CP name)
     return  SUCCESS;
     }
 
+void ITxnManager::SetTxnSource(uint64_t source) {m_txnSource = source;}
+void ITxnManager::SetTxnDescription(Utf8CP descr) {m_txnDescr.assign(descr);}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnAdmin::AddTxnMonitor (TxnMonitor& monitor)
+void DgnPlatformLib::Host::TxnAdmin::AddTxnMonitor(TxnMonitor& monitor)
     {
     m_monitors.push_back(&monitor);
     }
@@ -1070,15 +1073,26 @@ void TxnAdmin::AddTxnMonitor (TxnMonitor& monitor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnAdmin::DropTxnMonitor (TxnMonitor& monitor)
+void DgnPlatformLib::Host::TxnAdmin::DropTxnMonitor (TxnMonitor& monitor)
     {
     auto it = std::find(m_monitors.begin(), m_monitors.end(), &monitor);
     if (it != m_monitors.end())
         *it = NULL; // removed from list by CallMonitors
     }
 
-void ITxnManager::SetTxnSource(uint64_t source) {m_txnSource = source;}
-void ITxnManager::SetTxnDescription(Utf8CP descr) {m_txnDescr.assign(descr);}
+template <typename CALLER> void DgnPlatformLib::Host::TxnAdmin::CallMonitors(CALLER const& caller)
+    {
+    for (auto curr = m_monitors.begin(); curr!=m_monitors.end(); )
+        {
+        if (*curr == NULL)
+            curr = m_monitors.erase(curr);
+        else
+            {
+            try {caller(**curr); ++curr;}
+            catch (...) {}
+            }
+        }
+    }
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/13
@@ -1126,7 +1140,7 @@ struct UndoRedoFinishedCaller
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnAdmin::_OnTxnBoundary (TxnSummaryCR summary)
+void DgnPlatformLib::Host::TxnAdmin::_OnTxnBoundary (TxnSummaryCR summary)
     {
     CallMonitors (TxnBoundaryCaller(summary));
     }
@@ -1134,7 +1148,7 @@ void TxnAdmin::_OnTxnBoundary (TxnSummaryCR summary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnAdmin::_OnTxnReverse (TxnSummaryCR summary, TxnDirection isUndo)
+void DgnPlatformLib::Host::TxnAdmin::_OnTxnReverse (TxnSummaryCR summary, TxnDirection isUndo)
     {
     CallMonitors (TxnReverseCaller(summary, isUndo));
     }
@@ -1142,7 +1156,7 @@ void TxnAdmin::_OnTxnReverse (TxnSummaryCR summary, TxnDirection isUndo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnAdmin::_OnTxnReversed (TxnSummaryCR summary, TxnDirection isUndo)
+void DgnPlatformLib::Host::TxnAdmin::_OnTxnReversed (TxnSummaryCR summary, TxnDirection isUndo)
     {
     CallMonitors (TxnReversedCaller(summary, isUndo));
     }
@@ -1150,7 +1164,7 @@ void TxnAdmin::_OnTxnReversed (TxnSummaryCR summary, TxnDirection isUndo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnAdmin::_OnUndoRedoFinished (DgnDbR project, TxnDirection isUndo)
+void DgnPlatformLib::Host::TxnAdmin::_OnUndoRedoFinished (DgnDbR project, TxnDirection isUndo)
     {
     CallMonitors (UndoRedoFinishedCaller (project, isUndo));
     }

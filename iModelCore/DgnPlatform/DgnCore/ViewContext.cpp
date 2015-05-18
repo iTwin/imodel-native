@@ -682,14 +682,6 @@ QvElem* Find (QvUnsizedKeyP* foundKey, double size, QvUnsizedKeyCR unsizedKey)
     return nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void  _OnCleanup (DgnElementCR host) override
-    {
-    QvElemSet<QvSizedKey>::_OnCleanup(host);
-    }
-
 }; // QvElemCacheSet
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,7 +745,7 @@ void StrokeElementForCache::_SaveQvElem (QvElemP qvElem, double pixelSize, doubl
     if (nullptr == cacheSet)
         {
         HeapZone& zone = m_element.GetHeapZone();
-        cacheSet = new ((QvElemCacheSet*) zone.Alloc (sizeof(QvElemCacheSet))) QvElemCacheSet(zone);
+        cacheSet = new QvElemCacheSet(zone);
         m_element.AddAppData(s_cacheSetKey, cacheSet);
         }
 
