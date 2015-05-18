@@ -71,5 +71,26 @@ public:
     DGNPLATFORM_EXPORT void UnregisterSymbolProvider (ECN::IECSymbolProviderCR provider);
     };
 
+//=======================================================================================
+// Context that defines the DgnDb to use.
+// @bsiclass                                                     Bill.Steinbock  05/2015
+//=======================================================================================
+struct DgnDbExpressionContext : SymbolExpressionContext
+    {
+    private:
+        DgnDbCR m_db;
+
+        Utf8CP  GetPath() const;
+        ECValue GetName() const;
+
+    protected:
+        DGNPLATFORM_EXPORT DgnDbExpressionContext(DgnDbCR db);
+        DGNPLATFORM_EXPORT DgnDbCR GetDgnDb();
+
+    public:
+        DGNPLATFORM_EXPORT static DgnDbExpressionContextPtr Create(DgnDbCR db);
+    };
+
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
