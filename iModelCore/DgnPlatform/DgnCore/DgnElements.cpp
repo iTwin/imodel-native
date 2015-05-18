@@ -1108,8 +1108,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
     CachedStatementPtr stmt;
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Code=3,ParentId=4};
-    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
+    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1126,6 +1126,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
     return LoadElement(DgnElement::CreateParams(*dgnModel, 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
+                    stmt->GetValueText(Column::Label), 
                     stmt->GetValueText(Column::Code), 
                     elementId, 
                     stmt->GetValueId<DgnElementId>(Column::ParentId)), makePersistent);
@@ -1456,23 +1457,22 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                    03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnElements::InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey)
+BentleyStatus DgnElements::InsertElementGroupHasMembers(DgnElementKeyCR elementGroupKey, DgnElementKeyCR memberElementKey)
     {
-    if (!groupElementKey.IsValid() || !memberElementKey.IsValid())
+    if (!elementGroupKey.IsValid() || !memberElementKey.IsValid())
         return BentleyStatus::ERROR;
 
     CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement
-        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupsElements) 
+        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers) 
         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
 
     if (!statementPtr.IsValid())
         return BentleyStatus::ERROR;
 
-    statementPtr->BindInt64(1, groupElementKey.GetECClassId());
-    statementPtr->BindId   (2, groupElementKey.GetECInstanceId());
+    statementPtr->BindInt64(1, elementGroupKey.GetECClassId());
+    statementPtr->BindId   (2, elementGroupKey.GetECInstanceId());
     statementPtr->BindInt64(3, memberElementKey.GetECClassId());
     statementPtr->BindId   (4, memberElementKey.GetECInstanceId());
 
     return (ECSqlStepStatus::Done != statementPtr->Step()) ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
     }
-

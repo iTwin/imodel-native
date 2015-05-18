@@ -201,14 +201,15 @@ DgnModelStatus DgnElement::_InsertInDb()
         m_code = _GenerateDefaultCode();
 
     CachedStatementPtr stmt;
-    enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Code=5,ParentId=6};
-    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Code,ParentId) VALUES(?,?,?,?,?,?)");
+    enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Label=5,Code=6,ParentId=7};
+    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId) VALUES(?,?,?,?,?,?,?)");
 
     stmt->BindId(Column::ElementId, m_elementId);
     stmt->BindId(Column::ECClassId, m_classId);
     stmt->BindId(Column::ModelId, m_dgnModel.GetModelId());
     stmt->BindId(Column::CategoryId, m_categoryId);
-    stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(Column::Label, GetLabel(), Statement::MakeCopy::No);
+    stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
     stmt->BindId(Column::ParentId, m_parentId);
 
     return stmt->Step() != BE_SQLITE_DONE ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
@@ -220,12 +221,13 @@ DgnModelStatus DgnElement::_InsertInDb()
 DgnModelStatus DgnElement::_UpdateInDb()
     {
     CachedStatementPtr stmt;
-    enum Column : int       {CategoryId=1,Code=2,ParentId=3,ElementId=4};
-    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Code=?,ParentId=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,ElementId=5};
+    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=? WHERE Id=?");
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
-    stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(Column::Label, GetLabel(), Statement::MakeCopy::No);
+    stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindId(Column::ElementId, m_elementId);
 
@@ -530,6 +532,7 @@ DgnModelStatus DgnElement::_CopyFrom(DgnElementCR other)
 
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
+    m_label      = other.m_label;
     m_parentId   = other.m_parentId;
 
     return DGNMODEL_STATUS_Success;
@@ -594,7 +597,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(m_dgnModel, m_classId, m_categoryId, m_code.c_str(), m_elementId, m_parentId));
+    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(m_dgnModel, m_classId, m_categoryId, GetLabel(), GetCode(), m_elementId, m_parentId));
     newEl->_CopyFrom(*this);
     return newEl;
     }

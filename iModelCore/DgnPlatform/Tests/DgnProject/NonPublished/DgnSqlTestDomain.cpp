@@ -83,11 +83,32 @@ ObstacleElement::ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ObstacleElement::SetSomeProperty(DgnDbR db, Utf8CP value)
     {
-    ECSqlStatement setObstacleProperty;
-    setObstacleProperty.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " SET SomeProperty=? WHERE ECInstanceId=?");
-    setObstacleProperty.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    setObstacleProperty.BindId(2, GetElementId());
-    setObstacleProperty.Step();
+    ECSqlStatement updateStmt;
+    updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " SET SomeProperty=? WHERE ECInstanceId=?");
+    updateStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    updateStmt.BindId(2, GetElementId());
+    updateStmt.Step();
+    ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , updateStmt.Step() );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Obstacles are always slabs 10 meters long, 1 meter high, and 1 cm thick
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ObstacleElement::SetTestItem(DgnDbR db, Utf8CP value)
+    {
+    ECSqlStatement insertStmt;
+    insertStmt.Prepare(db, "INSERT INTO " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_ITEM_CLASS_NAME " (TestItemProperty,ECInstanceId) VALUES(?,?)");
+    insertStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    insertStmt.BindId(2, GetElementId());
+    if (insertStmt.Step() != BeSQLite::EC::ECSqlStepStatus::Done)
+        {
+        ECSqlStatement updateStmt;
+        updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_ITEM_CLASS_NAME " SET TestItemProperty=? WHERE ECInstanceId=?");
+        updateStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        updateStmt.BindId(2, GetElementId());
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , updateStmt.Step() );
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
