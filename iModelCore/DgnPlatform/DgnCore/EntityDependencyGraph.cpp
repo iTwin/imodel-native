@@ -21,7 +21,7 @@ DPILOG_DEFINE(ElementDependencyGraph)
 static int s_debugGraph = 0;
 static bool s_debugGraph_showElementIds;
 
-DOMAIN_DEFINE_MEMBERS(DgnElementDrivesElementDependencyHandler)
+HANDLER_DEFINE_MEMBERS(DgnElementDrivesElementDependencyHandler)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
