@@ -18,15 +18,6 @@ BENTLEY_API_TYPEDEFS (HeapZone);
 
 #include <Bentley/BeAssert.h>
 
-enum ElementHiliteState
-{
-    HILITED_None         = 0,
-    HILITED_Normal       = 1,
-    HILITED_Bold         = 2,
-    HILITED_Dashed       = 3,
-    HILITED_Background   = 4,
-};
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
@@ -65,19 +56,28 @@ public:
     //! Parameters for creating new DgnElements
     struct CreateParams
     {
-    DgnModelR       m_model;
-    DgnClassId      m_classId;
-    DgnCategoryId   m_categoryId;
-    Utf8CP          m_code;
-    Utf8CP          m_label;
-    DgnElementId    m_id;
-    DgnElementId    m_parentId;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-                m_model(model), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
+        DgnModelR       m_model;
+        DgnClassId      m_classId;
+        DgnCategoryId   m_categoryId;
+        Utf8CP          m_code;
+        Utf8CP          m_label;
+        DgnElementId    m_id;
+        DgnElementId    m_parentId;
+        CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+                    m_model(model), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
 
-    void SetLabel(Utf8CP label) {m_label = label;}
-    void SetCode(Utf8CP code) {m_code = code;}
-    void SetParentId(DgnElementId parent) {m_parentId=parent;}
+        void SetLabel(Utf8CP label) {m_label = label;}
+        void SetCode(Utf8CP code) {m_code = code;}
+        void SetParentId(DgnElementId parent) {m_parentId=parent;}
+    };
+
+    enum class Hilited : uint8_t
+    {
+        None         = 0,
+        Normal       = 1,
+        Bold         = 2,
+        Dashed       = 3,
+        Background   = 4,
     };
 
     //! Create a subclass of this to store non-persistent information on a DgnElement.
@@ -85,22 +85,18 @@ public:
     {
         virtual ~AppData() {}
 
-        //=======================================================================================
-        //! A unique identifier for this type of DgnElementAppData. A static instance of
-        //! DgnElement::AppData::Key should be declared to hold the identifier.
-        //! @bsiclass
-        //=======================================================================================
+        //! A unique identifier for this type of DgnElementAppData. Use a static instance of this class.
         struct Key : NonCopyableClass {};
 
         //! Called to clean up owned resources and delete the app data.
-        //! @param[in]  host            DgnElementP that app data was added to.
+        //! @param[in]  el the DgnElement holding this AppData 
         virtual void _OnCleanup(DgnElementCR el) = 0;
         virtual bool _OnInsert(DgnElementCR el)  {return false;}
         virtual bool _OnInserted(DgnElementCR el){return false;}
         virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR update)  {return false;}
         virtual bool _OnUpdated(DgnElementCR el) {return false;}
         virtual bool _OnDelete(DgnElementCR el)  {return false;}
-        virtual bool _OnDeleted(DgnElementCR el)  {return false;}
+        virtual bool _OnDeleted(DgnElementCR el) {return false;}
     };
 
 protected:
@@ -123,7 +119,7 @@ protected:
         uint32_t m_editable:1;
         uint32_t m_inPool:1;
         uint32_t m_inSelectionSet:1;
-        uint32_t m_hiliteState:3;
+        uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
         uint32_t m_mark1:1;                        // used by applications
         uint32_t m_mark2:1;                        // used by applications
@@ -144,9 +140,7 @@ protected:
     AppDataEntry* FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry) const;
 
     void SetInPool(bool val) const {m_flags.m_inPool = val;}
-    virtual uint32_t _GetMemSize() const {return sizeof(*this);}
-    ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
-
+                                                
     DGNPLATFORM_EXPORT virtual ~DgnElement();
     //! Override to load the properties added by the DgnElement subclass. @note Must call T_Super::_LoadFromDb
                        virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
@@ -156,6 +150,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
     //! Override to do any additional processing on delete. @note Must call T_Super::_DeleteInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
+                       virtual uint32_t _GetMemSize() const {return sizeof(*this);}
     //! Virtual assignment operator.  If your subclass has member variables, it \em must override this method @note If overriden must call T_Super::_CopyFrom
     DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR other);
 
@@ -180,6 +175,7 @@ public:
     DgnModelStatus CopyFrom(DgnElementCR rhs) {return _CopyFrom(rhs);}
     DGNPLATFORM_EXPORT void AddRef() const;
     DGNPLATFORM_EXPORT void Release() const;
+    uint32_t GetRefCount() const {return m_refCount.load();}
 
     //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Utf8String _GenerateDefaultCode();
@@ -204,12 +200,11 @@ public:
     void SetMark2(bool yesNo) const {if (m_flags.m_mark2==yesNo) return; m_flags.m_mark2 = yesNo;}
     bool IsMarked1() const {return true == m_flags.m_mark1;}
     bool IsMarked2() const {return true == m_flags.m_mark2;}
-    ElementHiliteState IsHilited() const {return (ElementHiliteState) m_flags.m_hiliteState;}
-    void SetHilited(ElementHiliteState newState) const {m_flags.m_hiliteState = newState;}
+    Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;}
+    void SetHilited(Hilited newState) const {m_flags.m_hilited = (uint8_t) newState;}
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const;
 
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
-    uint32_t GetRefCount() const {return m_refCount.load();}
 
     DGNPLATFORM_EXPORT void ClearAllAppData();
 
@@ -253,19 +248,19 @@ public:
     DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
 
     //! Add Application Data to this element.
-    //! @param[in] key The AppData's key. If an DgnElementAppData with this key already exists on this element, it is dropped and
+    //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
     //! @param[in] appData The appData object to attach to this element.
     DGNPLATFORM_EXPORT StatusInt AddAppData(AppData::Key const& key, AppData* appData) const;
 
     //! Drop Application data from this element.
-    //! @param[in] key the key for the DgnElementAppData to drop.
+    //! @param[in] key the key for the AppData to drop.
     //! @return SUCCESS if an entry with \a key is found and dropped.
     DGNPLATFORM_EXPORT StatusInt DropAppData(AppData::Key const& key) const;
 
     //! Find DgnElementAppData on this element by key.
-    //! @param[in] key The key for the DgnElementAppData of interest.
-    //! @return the DgnElementAppData for key \a key, or nullptr.
+    //! @param[in] key The key for the AppData of interest.
+    //! @return the AppData for key \a key, or nullptr.
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     /** @} */
 
@@ -288,7 +283,7 @@ public:
     //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this DgnElement
     DgnElementKey GetElementKey() const {return DgnElementKey(GetElementClassId(), GetElementId());}
 
-    //! Get the ECClass for this DgnElement
+    //! Get a pointer to the ECClass for this DgnElement
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Query the DgnClassId for the dgn.Element ECClass in the specified DgnDb.

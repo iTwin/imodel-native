@@ -1245,7 +1245,7 @@ struct OnUpdatedCaller  {bool Process(DgnElement::AppData& app, DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class T> static void DgnElements::CallAppData(T const& caller, DgnElementCR el)
+template<class T> void DgnElements::CallAppData(T const& caller, DgnElementCR el)
     {
     for (DgnElement::AppDataEntry* prev=nullptr, *next, *thisEntry=el.m_appData; thisEntry; thisEntry=next)
         {

@@ -64,7 +64,7 @@ ViewContext::ViewContext()
     m_ignoreViewRange           = false;
     m_displayStyleStackMark     = 0;
     m_edgeMaskState             = EdgeMaskState_None;
-    m_hiliteState               = HILITED_None;
+    m_hiliteState               = DgnElement::Hilited::None;
     m_isCameraOn                = false;
     m_frustumTransClipDepth     = 0;
     m_edgeMaskState             = EdgeMaskState_None;

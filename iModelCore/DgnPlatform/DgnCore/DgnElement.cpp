@@ -207,7 +207,7 @@ T_QvElemSet* GeometricElement::GetQvElems(bool createIfNotPresent) const
 void DgnElement::SetInSelectionSet(bool yesNo) const
     {
     m_flags.m_inSelectionSet = yesNo;
-    SetHilited(yesNo ? HILITED_Normal : HILITED_None);
+    SetHilited(yesNo ? DgnElement::Hilited::Normal : DgnElement::Hilited::None);
     }
 
 /*---------------------------------------------------------------------------------**//**
