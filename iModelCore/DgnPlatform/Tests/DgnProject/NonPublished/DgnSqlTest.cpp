@@ -310,9 +310,8 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 
 	// Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
 	
-    // parameters
-    // 1) :bbox     2) testPoint    3) maxDistance  4) :ecClass 5) propertyValue
-    Utf8CP sql = 
+    Statement stmt;
+    stmt.Prepare(*m_db, 
         "SELECT item.ElementId, item.x01 FROM"
         "  (SELECT g.ElementId FROM"
         "     (SELECT rt.ElementId FROM dgn_PrjRTree rt "                       //          FROM R-Tree
@@ -327,12 +326,7 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
         "  , dgn_ElementItem item "                                             // JOIN ElementItem
         "       WHERE e.Id = geom_res.ElementId AND e.ECClassId=:ecClass"       //  select only Obstacles
         "        AND item.ElementId = e.Id AND item.x01 = :propertyValue"       //                     ... with certain items
-    ;
-
-    //printf ("%s\n", m_db->ExplainQueryPlan(nullptr, sql));
-
-    Statement stmt;
-    stmt.Prepare(*m_db, sql);
+        );
 
     //  Initial placement
     //
@@ -453,29 +447,18 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
 	// Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
 	
-    // parameters
-    // 1) :bbox     2) :ecClass 3) propertyValue
-    Utf8CP sql = 
+    Statement stmt;
+    stmt.Prepare(*m_db, 
         "SELECT item.ElementId, item.x01 FROM"
-        "  (SELECT g.ElementId FROM"
-        "     (SELECT rt.ElementId FROM dgn_PrjRTree rt "                       //          FROM R-Tree
-        "        WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)"  // select Elements in nodes that overlap bbox
-        "          AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
-        "          AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)) rt_res" // (call this result set "rt_res")
-        "     ,"
-        "      dgn_ElementGeom g WHERE g.ElementId=rt_res.ElementId"            //      JOIN ElementGeom
-        "          AND DGN_bbox_overlaps(DGN_placement_aabb(g.Placement), :bbox)"  //       select geoms that overlap bbox
-        "  ) geom_res"                                                          //      (call this result set "geom_res")
+        "  (SELECT rt.ElementId FROM dgn_PrjRTree rt "                          //          FROM R-Tree
+        "     WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)"  // select Elements in nodes that overlap bbox
+        "       AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
+        "       AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)) rt_res" // (call this result set "rt_res")
         "  , dgn_Element e"                                                     // JOIN Element
         "  , dgn_ElementItem item "                                             // JOIN ElementItem
-        "       WHERE e.Id = geom_res.ElementId AND e.ECClassId=:ecClass"       //  select only Obstacles
+        "       WHERE e.Id = rt_res.ElementId AND e.ECClassId=:ecClass"         //  select only Obstacles
         "        AND item.ElementId = e.Id AND item.x01 = :propertyValue"       //                     ... with certain items
-    ;
-
-    //printf ("%s\n", m_db->ExplainQueryPlan(nullptr, sql));
-
-    Statement stmt;
-    stmt.Prepare(*m_db, sql);
+        );
 
     //  Initial placement
     //
