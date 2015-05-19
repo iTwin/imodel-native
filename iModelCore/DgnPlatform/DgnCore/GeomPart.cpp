@@ -327,7 +327,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
 
     DgnGeomPartPtr geomPartPtr = new DgnGeomPart(selectStmt->GetValueText(0));
 
-    ElementGeometryCollection collection(geometryBlob.GetDataCP(), header.m_size);
+    ElementGeometryCollection collection(m_dgndb, geometryBlob.GetDataCP(), header.m_size);
 
     for (ElementGeometryPtr geom : collection)
         geomPartPtr->GetGeometryR().push_back (geom);
@@ -336,6 +336,56 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     return geomPartPtr;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Brien.Bastings              05/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnGeomParts::Draw (DgnGeomPartId geomPartId, ViewContextR context, DgnCategoryId categoryId, ViewFlagsCR flags)
+    {
+    if (!geomPartId.IsValid())
+        return ERROR;
+
+    if (context.GetCurrentDisplayParams()->GetCategoryId() != categoryId)
+        return ERROR;
+
+    HighPriorityOperationBlock hpo;
+   
+    auto& elements = context.GetDgnDb().Elements();
+
+    BeSQLite::CachedStatementPtr selectStmt;
+    elements.GetStatement(selectStmt, "SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
+    selectStmt->BindId(1, geomPartId);
+
+    DbResult result = selectStmt->Step();
+    if (BE_SQLITE_ROW != result)
+        return ERROR;
+
+    SnappyFromBlob& snappy = elements.GetSnappyFrom();
+    
+    if (ZIP_SUCCESS != snappy.Init (context.GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
+        return ERROR;
+
+    GeomBlobHeader header (snappy);
+    if ((GeomBlobHeader::DB_GeomSignature06 != header.m_signature) || 0 == header.m_size)
+        {
+        BeAssert (false);
+        return ERROR;
+        }
+
+    ScopedArray<Byte, 8192> geometryBlob(header.m_size);
+    uint32_t actuallyRead;
+    snappy.ReadAndFinish(geometryBlob.GetData(), header.m_size, actuallyRead);
+
+    if (actuallyRead != header.m_size)
+        return ERROR;
+
+    ElementGeomIO::Collection collection(geometryBlob.GetDataCP(), header.m_size);
+
+    context.SetDgnGeomPartId (geomPartId); // Announce geom part id for picking, etc.
+    collection.Draw(context, categoryId, flags);
+    context.SetDgnGeomPartId (DgnGeomPartId());
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2015

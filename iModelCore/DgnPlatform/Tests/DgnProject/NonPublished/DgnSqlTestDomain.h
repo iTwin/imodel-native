@@ -11,6 +11,9 @@
 #define DGN_SQL_TEST_SCHEMA_NAMEW L"DgnPlatformTest"
 #define DGN_SQL_TEST_ROBOT_CLASS   "Robot"
 #define DGN_SQL_TEST_OBSTACLE_CLASS "Obstacle"
+#define DGN_SQL_TEST_TEST_ITEM_CLASS_NAME                       "TestItem"
+#define DGN_SQL_TEST_TEST_ITEM_TestItemProperty               L"TestItemProperty"
+#define DGN_SQL_TEST_TEST_ITEM_TestItemPropertyA               "TestItemProperty"
 
 namespace DgnSqlTestNamespace {
 
@@ -71,6 +74,9 @@ public:
 
     //! Set the value of the "SomeProperty" property
     void SetSomeProperty(DgnDbR db, Utf8CP value);
+
+    //! An Obstacle can have an associated "TestItem". This method sets the value of the TestItem, inserting the item if necessary.
+    void SetTestItem(DgnDbR db, Utf8CP itemPropertyValue);
 };
 
 typedef RefCountedPtr<RobotElement>     RobotElementPtr;
