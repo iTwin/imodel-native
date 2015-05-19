@@ -986,9 +986,6 @@ public:
     //! If you have a DgnElement, call GetElementKey on it rather than using this method.
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
 
-    //! Insert an ElementGroupHasMembers relationship between the specified ElementGroup and the member Element
-    DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupHasMembers(DgnElementKeyCR elementGroupKey, DgnElementKeyCR memberElementKey);
-
     //! Add element-loaded-from-db event listener.
     DGNPLATFORM_EXPORT void AddListener(Listener* listener);
 

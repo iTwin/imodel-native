@@ -604,6 +604,9 @@ public:
 };
 
 //=======================================================================================
+//! ElementGroup is the base class for "logical" group membership.
+//! "Logical" group membership implies a referencing (not an owning) relationship.
+//! ElementGroup can be subclassed for custom grouping behavior.
 // @bsiclass                                                    Shaun.Sewall    05/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
@@ -614,7 +617,32 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 protected:
     ElementGroupCP _ToElementGroup() const override {return this;}
 
+    //! Called when a member is about to be inserted into this ElementGroup
+    //! Override and return something other than DGNMODEL_STATUS_Success to prevent the member from being inserted into this ElementGroup.
+    virtual DgnModelStatus _OnMemberInsert(DgnElementCR member) const {return DGNMODEL_STATUS_Success;}
+    //! Called after a member has been inserted into this ElementGroup
+    //! Override if additional processing is required after a member is inserted.
+    virtual void _OnMemberInserted(DgnElementCR member) const {}
+
+    //! Called when a member is about to be deleted from this ElementGroup
+    //! Override and return something other than DGNMODEL_STATUS_Success to prevent the member from being deleted from this ElementGroup.
+    virtual DgnModelStatus _OnMemberDelete(DgnElementCR member) const {return DGNMODEL_STATUS_Success;}
+    //! Called after a member has been deleted from this ElementGroup
+    //! Override if additional processing is required after a member is deleted.
+    virtual void _OnMemberDeleted(DgnElementCR member) const {}
+
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Inserts a ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
+    //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)
+    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
+    DGNPLATFORM_EXPORT DgnModelStatus InsertMember(DgnElementCR) const;
+    //! Deletes the ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
+    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteMember(DgnElementCR) const;
+    //! Query for the set of members in this ElementGroup
+    DGNPLATFORM_EXPORT DgnElementIdSet QueryMembers() const;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
