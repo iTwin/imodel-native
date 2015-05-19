@@ -2279,6 +2279,14 @@ ElemDisplayParamsCR ElementGeometryCollection::GetElemDisplayParams()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnGeomPartId ElementGeometryCollection::GetDgnGeomPartId()
+    {
+    return m_context->GetDgnGeomPartId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransformCR ElementGeometryCollection::GetElementToWorld()
