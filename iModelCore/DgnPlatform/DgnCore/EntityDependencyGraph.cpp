@@ -113,11 +113,6 @@ struct DgnElementDependencyGraph::EdgeQueue : DgnElementDependencyGraph::TableAp
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnElementDrivesElementDependencyHandler::GetDescription() {return _GetDescription();}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  01/15
 //---------------------------------------------------------------------------------------
