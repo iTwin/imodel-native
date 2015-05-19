@@ -94,10 +94,8 @@ struct PlacementFunc : ScalarFunction
     @param placement   The DGN_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
-    <p>Here is an example of using DGN_placement_aabb to detect overlapping areas. Note that we must to use 
-    \em axis-aligned bounding boxes in this query, because we want to be able to compare the ranges of different
-    elements in world coordinates.
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps.sampleCode
+    Note that it only makes sense to union or compare axis-aligned bounding boxes.
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
 */
 DGN_bbox DGN_placement_aabb(DGN_placement placement);
 // __PUBLISH_SECTION_END__
@@ -620,6 +618,7 @@ struct DGN_bbox_value : ScalarFunction
     \em Aggregate function that computes the union of a series of bounding boxes
     @return a bounding box that contains the aggregated range.
     <p><b>Example (C++)</b>
+    Note that it only makes sense to union axis-aligned bounding boxes.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
 */
 DGN_bbox DGN_bbox_union(DGN_bbox);
