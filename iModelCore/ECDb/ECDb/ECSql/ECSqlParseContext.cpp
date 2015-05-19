@@ -63,6 +63,8 @@ ECSqlStatus ECSqlParseContext::TryResolveClass (shared_ptr<ClassNameExp::Info>& 
         }
 
     auto map = m_ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*resolvedClass);
+    if (map == nullptr)
+        return ECSqlStatus::ProgrammerError;
 
     auto policy = ECDbPolicyManager::GetClassPolicy (*map, IsValidInECSqlPolicyAssertion::Get ());
     if (!policy.IsSupported ())
@@ -74,7 +76,6 @@ ECSqlStatus ECSqlParseContext::TryResolveClass (shared_ptr<ClassNameExp::Info>& 
 
     return ECSqlStatus::Success;
     }
-
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                03/2014

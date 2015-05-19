@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Exp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -41,38 +41,6 @@ Exp::Collection& Exp::GetChildrenR () const
     return m_children;
     }
 
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::IsSelectStatement () const
-    {
-    return GetType () == Exp::Type::Select;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::IsInsertStatement () const
-    {
-    return GetType () == Exp::Type::Insert;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::IsUpdateStatement () const
-    {
-    return GetType () == Exp::Type::Update;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::IsDeleteStatement () const
-    {
-    return GetType () == Exp::Type::Delete;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013

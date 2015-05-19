@@ -17,7 +17,7 @@ void ExtractPropertyRefs (ECSqlPrepareContext& ctx, Exp const* exp)
     if (exp == nullptr)
         return;
 
-    if (exp->GetType () == Exp::Type::PropertyName)
+    if (exp->GetType () == Exp::Type::PropertyName && !static_cast<PropertyNameExp const*>(exp)-> IsPropertyRef())
         {
         auto propertyName = static_cast<PropertyNameExp const*>(exp);
         ctx.GetSelectionOptionsR ().AddProperty (propertyName->GetPropertyMap ().GetPropertyAccessString());
@@ -32,7 +32,7 @@ void ExtractPropertyRefs (ECSqlPrepareContext& ctx, Exp const* exp)
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SelectStatementExp const& exp)
+ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelectStatementExp const& exp)
     {
     BeAssert (exp.IsComplete ());
 
@@ -109,29 +109,50 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SelectStatem
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, UnionStatementExp const& exp)
+ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStatementExp const& exp)
     {
-    BeAssert(exp.IsComplete() && exp.GetLhs() != nullptr && exp.GetRhs() != nullptr);
+    auto st = Prepare (ctx, exp.GetCurrent ());
+    if (st != ECSqlStatus::Success || !exp.IsCompound())
+        return st;
 
-    ExpCP lhsExp = exp.GetLhs();
-    ECSqlStatus stat;
-    if (lhsExp->IsSelectStatement())
-        stat = Prepare(ctx, *static_cast<SelectStatementExp const*> (lhsExp));
-    else
+    auto lhs = exp.GetSelection ();
+    ctx.PushScope (exp);
+    switch (exp.GetOP ())
         {
-        BeAssert(lhsExp->GetType() == Exp::Type::Union);
-        stat = Prepare(ctx, *static_cast<UnionStatementExp const*> (lhsExp));
+        case SelectStatementExp::Operator::Except:
+            ctx.GetSqlBuilderR ().Append (" EXCEPT "); break;
+        case SelectStatementExp::Operator::Intersect:
+            ctx.GetSqlBuilderR ().Append (" INTERSECT "); break;
+        case SelectStatementExp::Operator::Union:
+            ctx.GetSqlBuilderR ().Append (" UNION "); break;
+        default:
+            BeAssert (false && "Error");
+            return ECSqlStatus::ProgrammerError;    
         }
 
-    if (stat != ECSqlStatus::Success)
-        return stat;
+    if (exp.IsAll ())
+        ctx.GetSqlBuilderR ().Append ("ALL ");
 
-    NativeSqlBuilder& sqlBuilder = ctx.GetSqlBuilderR();
-    sqlBuilder.Append(" UNION ");
-    if (exp.IsUnionAll())
-        sqlBuilder.Append(" ALL ");
+    st = Prepare (ctx, *exp.GetNext ());
 
-    return Prepare(ctx, *exp.GetRhs());
+    auto rhs = exp.GetNext ()->GetSelection ();
+    if (rhs->GetChildrenCount () != lhs->GetChildrenCount ())
+        {
+        return ctx.SetError (ECSqlStatus::UserError, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type");
+        }
+
+    for (size_t i = 0; i < rhs->GetChildrenCount (); i++)
+        {
+        auto rhsP = static_cast <DerivedPropertyExp const*>(rhs->GetChildren ()[i]);
+        auto lhsP = static_cast <DerivedPropertyExp const*>(lhs->GetChildren ()[i]);
+
+        if (!rhsP->GetExpression ()->GetTypeInfo ().Equals (lhsP->GetExpression ()->GetTypeInfo ()))
+            {
+            return ctx.SetError (ECSqlStatus::UserError, "Type of expression %s in UNION/EXCEPT/INTERSECT is not same as respective expression %s", lhsP->ToECSql().c_str(), rhs->ToECSql().c_str());
+            }
+        }
+    ctx.PopScope ();
+    return st;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

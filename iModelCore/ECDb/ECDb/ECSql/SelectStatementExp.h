@@ -290,9 +290,9 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
-struct SelectStatementExp : QueryExp
+struct SingleSelectStatementExp : QueryExp
     {
-DEFINE_EXPR_TYPE(Select) 
+DEFINE_EXPR_TYPE(SingleSelect) 
 private:
     SqlSetQuantifier m_selectionType;
     size_t m_fromClauseIndex;
@@ -316,7 +316,7 @@ protected:
         }
 
 public :
-    SelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, 
+    SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, 
         std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp);
 
     FromExp const* GetFrom()       const { return GetChild<FromExp> (m_fromClauseIndex);}
@@ -365,33 +365,11 @@ public :
     virtual Utf8String ToECSql() const override;
     };
 
-
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      03/2013
-//+===============+===============+===============+===============+===============+======
-struct UnionStatementExp : Exp
-    {
-    DEFINE_EXPR_TYPE(Union)
-private:
-    size_t m_lhsExpIndex;
-    size_t m_rhsExpIndex;
-    bool m_isUnionAll;
-
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    virtual Utf8String _ToString() const override { return "Union"; }
-
-public:
-    UnionStatementExp(bool isUnionAll, std::unique_ptr<Exp> lhs, std::unique_ptr<SelectStatementExp> rhs);
-    bool IsUnionAll() const { return m_isUnionAll; }
-    Exp const* GetLhs() const { return GetChild<Exp>(m_lhsExpIndex); }
-    SelectStatementExp const* GetRhs() const { return GetChild<SelectStatementExp>(m_rhsExpIndex); }
-    virtual Utf8String ToECSql() const override;
-    };
-
 //********* QueryExp subclasses ***************************
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
+struct SelectStatementExp;
 struct SubqueryExp : QueryExp
     {
     DEFINE_EXPR_TYPE(Subquery)
@@ -404,85 +382,122 @@ private:
         }
 
 protected:
-    virtual DerivedPropertyExp const* _FindProperty(Utf8StringCR propertyName) const override
-        {
-        return GetQuery ()->FindProperty(propertyName);
-        }
-    virtual SelectClauseExp const* _GetSelection() const override
-        {
-        return GetQuery ()->GetSelection();
-        }
+    virtual DerivedPropertyExp const* _FindProperty (Utf8StringCR propertyName) const override;
+    virtual SelectClauseExp const* _GetSelection () const override;
 public:
-    SubqueryExp () : QueryExp () {}
-    explicit SubqueryExp(QueryExp* subquery)
-        : QueryExp ()
-        {
-        AddChild (std::unique_ptr<Exp> (subquery));
-        }
-
-    QueryExp const* GetQuery () const { return GetChild<QueryExp> (0);}
+    explicit SubqueryExp (std::unique_ptr<SelectStatementExp> selectExp);
+    SelectStatementExp const* GetQuery () const { return GetChild<SelectStatementExp> (0); }
     virtual Utf8String ToECSql() const override;
     };
 
 
 //=======================================================================================
-//! @bsiclass                                                Affan.Khan      05/2013
+//! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
-struct NonJoinQueryExp: QueryExp
-    {    
-    DEFINE_EXPR_TYPE(NonJoinQuery) 
-private:
-    NonJoinQueryOperator m_op;
-    bool m_all;
-
-    static Utf8CP OperatorToString (NonJoinQueryOperator op)
+struct SelectStatementExp : QueryExp
+    {
+    DEFINE_EXPR_TYPE (Select)
+    enum class Operator
         {
-        switch(op)
+        None, //TopLevel/First
+        Union,
+        Intersect,
+        Except
+        };
+
+    private:
+        Operator m_operator;
+        bool m_isAll;
+        virtual Utf8String _ToString () const override
             {
-            case NonJoinQueryOperator::Union:
-                return "UNION";
-            case NonJoinQueryOperator::Intersect:
-                return "INTERSECT";
-            case NonJoinQueryOperator::Except:
-                return "EXCEPT";
-
+            return "SelectStatementExp";
             }
-        BeAssert(false && "case not handled");
-        return nullptr;
-        }
 
-    virtual Utf8String _ToString () const override
-        {
-        Utf8String str ("NonJoinQuery [Operator: ");
-        str.append (OperatorToString (m_op)).append ("]");
-        return str;
-        }
+        virtual DerivedPropertyExp const* _FindProperty (Utf8StringCR propertyName) const override
+            {
+            return GetCurrent().FindProperty (propertyName);
+            }
+        virtual SelectClauseExp const* _GetSelection () const override
+            {
+            return  GetCurrent ().GetSelection ();
+            }
+    public:
+    //SingleSelectStatementExp const& GetLhs
+        SelectStatementExp (std::unique_ptr<SingleSelectStatementExp> lhs)
+            :m_isAll (false), m_operator (Operator::None)
+            {
+            BeAssert (lhs != nullptr);
+            AddChild (std::move (lhs));
+            }
 
-protected:
-    virtual DerivedPropertyExp const* _FindProperty(Utf8StringCR propertyName) const override
-        {
-        return GetLeftQuery ()->FindProperty(propertyName);
-        }
-    virtual SelectClauseExp const* _GetSelection() const override
-        {
-        return GetRightQuery ()->GetSelection();
-        }
+        SelectStatementExp (std::unique_ptr<SingleSelectStatementExp> lhs, Operator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs)
+            :m_isAll (isAll), m_operator (op)
+            {
+            BeAssert (lhs != nullptr);
+            BeAssert (rhs != nullptr);
+            BeAssert (op != Operator::None);
 
-public:
-    NonJoinQueryExp(QueryExp* leftQuery, NonJoinQueryOperator op, bool all, QueryExp* rightQuery)
-        : QueryExp (), m_op(op), m_all(all)
-        {
-        AddChild (std::unique_ptr<Exp> (leftQuery));
-        AddChild (std::unique_ptr<Exp> (rightQuery));
-        }
+            AddChild (std::move (lhs));
+            AddChild (std::move (rhs));
+            }
+        SingleSelectStatementExp const& GetCurrent () const 
+            { 
+            return *GetChild<SingleSelectStatementExp> (0);
+            }
+        SelectStatementExp const* GetNext () const 
+            { 
+            if (IsCompound ())
+                return GetChild<SelectStatementExp> (1);
 
-    QueryExp const* GetLeftQuery() const { return GetChild<QueryExp> (0);}
-    QueryExp const* GetRightQuery() const { return GetChild<QueryExp> (1);};
-    NonJoinQueryOperator GetOperator() const { return m_op;}
-    bool IsAll() const { return m_all;}
+            return nullptr;
+            }
+        bool IsAll ()const { return m_isAll; }
+        Operator GetOP () const { return m_operator; }
+        const std::vector<SingleSelectStatementExp const*> GetStatements () const
+            {
+            std::vector<SingleSelectStatementExp const*> statements;
+            auto current = this;
+            while (current != nullptr)
+                {
+                statements.push_back (&GetCurrent ());
+                current = GetNext ();
+                }
 
-    virtual Utf8String ToECSql() const override;
+            return statements;
+            }
+
+        bool IsCompound () const { return m_operator != Operator::None; }
+        virtual Utf8String ToECSql () const override
+            {
+            if (IsCompound ())
+                {
+                return GetCurrent ().ToECSql () + " " + OPToString (m_operator) + (m_isAll ? " ALL " : " ") + GetNext ()->ToECSql ();
+                }
+
+            return  GetCurrent ().ToECSql ();
+            }
+        
+        static Utf8CP OPToString (Operator op)
+            {
+            switch (op)
+                {
+                case Operator::Union:
+                    return "UNION";
+                case Operator::Intersect:
+                    return "INTERSECT";
+                case Operator::Except:
+                    return "EXCEPT";
+                default:
+                    BeAssert (false && "Programmer error");
+                    return nullptr;
+                }
+            }
     };
+
+
+
+
+
 
 //********* SubqueryRefExp ***************************
 

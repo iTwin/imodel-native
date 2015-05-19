@@ -33,6 +33,7 @@ private:
     ECN::ECSchemaR GetSchemaR () const;
     ECSqlStatus SetBackReferenceToPropertyPath(ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
 
+
 public:
     DynamicSelectClauseECClass ();
     DynamicSelectClauseECClass (DynamicSelectClauseECClass const& rhs);

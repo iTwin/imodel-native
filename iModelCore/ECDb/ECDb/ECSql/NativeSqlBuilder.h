@@ -41,7 +41,7 @@ public:
 private:
     Utf8String m_nativeSql;
     std::vector<ECSqlParameterIndex> m_parameterIndexMappings;
-
+    std::vector<Utf8String> m_stack;
 public:
     NativeSqlBuilder ();
     explicit NativeSqlBuilder (Utf8CP initialStr);
@@ -55,6 +55,28 @@ public:
     NativeSqlBuilder& Append (NativeSqlBuilder const& builder, bool appendTrailingSpace = false);
     NativeSqlBuilder& Append (Utf8CP str, bool appendTrailingSpace = false);
 
+    void Push (bool clear = true)
+        {
+        m_stack.push_back (m_nativeSql);
+
+        if (clear)
+            m_nativeSql.clear ();
+        }
+
+    Utf8String Pop ()
+        {
+        Utf8String r;
+        if (m_stack.empty ())
+            {
+            BeAssert (false && "Nothing to pop");
+            return r;
+            }
+
+        r = m_nativeSql;
+        m_nativeSql = m_stack.back ();
+        m_stack.pop_back ();
+        return r;
+        }
     //!@param[in] separator The separator used to separate the items in @p builderList. If nullptr is passed,
     //!                     the items will be separated by comma.
     NativeSqlBuilder& Append (List const& builderList, Utf8CP separator = nullptr);

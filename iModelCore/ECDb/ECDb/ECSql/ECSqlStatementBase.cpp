@@ -395,7 +395,6 @@ ECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement (ECDbCR ecdb
     switch (parseTree.GetType ())
         {
         case Exp::Type::Select:
-        case Exp::Type::Union:
             m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlSelectPreparedStatement (ecdb, GetEventManagerR (), GetStatusContextR ()));
             break;
 

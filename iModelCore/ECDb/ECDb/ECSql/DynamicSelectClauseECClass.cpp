@@ -128,6 +128,16 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
         }
 
     auto propertyNameExp = static_cast<PropertyNameExp const*>(selectClauseItemExp.GetExpression());
+    if (propertyNameExp->IsPropertyRef ())
+        {
+        auto endPointPropertyName = propertyNameExp->GetPropertyRef ()->GetEndPointPropertyNameIfAny ();
+        if (endPointPropertyName == nullptr)
+            return ECSqlStatus::Success;
+
+        propertyNameExp = endPointPropertyName;
+        }
+
+
     auto ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(ecdb.GetSchemaLocater ());
     auto bscaKey = SchemaKey(L"Bentley_Standard_CustomAttributes", 1, 0);

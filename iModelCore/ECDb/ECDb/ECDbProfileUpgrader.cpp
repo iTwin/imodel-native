@@ -216,6 +216,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas (ECDbR ecdb, bool upd
 
     //import / update if already existing
     ECDbSchemaManager::ImportOptions options (false, updateSchema);
+    options.SetSupportLegacySchemas ();
     auto importStat = ecdb.Schemas ().ImportECSchemas (context->GetCache (), options);
 
     timer.Stop ();

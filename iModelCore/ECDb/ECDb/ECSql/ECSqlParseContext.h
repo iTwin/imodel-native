@@ -27,7 +27,6 @@ private:
     bmap<WString, std::shared_ptr<ClassNameExp::Info>> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex;
     bmap<Utf8CP, int, CompareUtf8> m_ecsqlParameterNameToIndexMapping;
-
     IClassMap::View m_classMapViewMode;
     ECSqlStatusContext& m_status;
 public:
@@ -52,10 +51,11 @@ public:
     ECSqlStatus GetStatus () const { return m_status.GetStatus ();}
     ECSqlStatus SetError (ECSqlStatus status, Utf8CP fmt, ...);
     ECSqlStatusContext& GetStatusContext () const {return m_status;}
-
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses (ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd, bool* containAnyClass);
     bool IsEndClassOfRelationship (ECN::ECClassCR searchClass, ECN::ECRelationshipEnd searchEnd, ECN::ECRelationshipClassCR relationshipClass);
     };
+
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

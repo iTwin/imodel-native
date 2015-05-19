@@ -103,7 +103,7 @@ public:
         ExpCR m_exp;
         ECSqlType m_ecsqlType;
         ExpScope const* m_parent;
-
+        int m_nativeSqlSelectClauseColumnCount;
         ECSqlType DetermineECSqlType (ExpCR exp) const;
 
     public:
@@ -113,7 +113,9 @@ public:
         ExpCR GetExp () const;
         
         bool IsRootScope () const;
-
+        //SELECT only
+        void IncrementNativeSqlSelectClauseColumnCount (size_t value);
+        int GetNativeSqlSelectClauseColumnCount () const;
         ECSqlType GetECSqlType () const { return m_ecsqlType; }
         };
 
@@ -133,6 +135,9 @@ public:
 
         size_t Depth () const;
         ExpScope const& Current () const;
+        ExpScope& CurrentR ();
+
+
         };
  
 private:
@@ -147,7 +152,7 @@ private:
     ExpScopeStack m_scopes;
     SelectionOptions m_selectionOptions;
     //SELECT only
-    int m_nativeSqlSelectClauseColumnCount;
+ 
     static bool FindLastParameterIndexBeforeWhereClause (int& index, Exp const& statementExp, WhereExp const* whereExp);
 public:
     ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& ecsqlStatement);
@@ -179,11 +184,12 @@ public:
     void SetNativeStatementIsNoop (bool flag) { m_nativeStatementIsNoop = flag; }
     void SetNativeNothingToUpdate(bool flag){ m_nativeNothingToUpdate = flag; }
     
-    //SELECT only
-    void IncrementNativeSqlSelectClauseColumnCount (size_t value);
-    int GetNativeSqlSelectClauseColumnCount () const;
+
 
     ExpScope const& GetCurrentScope () const {return m_scopes.Current();}
+    ExpScope& GetCurrentScopeR ()  {return m_scopes.CurrentR();}
+
+
     void PushScope (ExpCR exp) { m_scopes.Push (exp); }
     void PopScope () {m_scopes.Pop();}
 

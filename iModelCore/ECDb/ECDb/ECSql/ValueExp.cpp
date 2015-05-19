@@ -638,6 +638,9 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECSqlParseContext& ctx, 
         s_builtinFunctionNonDefaultReturnTypes["UNICODE"] = ECN::PRIMITIVETYPE_Long;
         s_builtinFunctionNonDefaultReturnTypes["UPPER"] = ECN::PRIMITIVETYPE_String;
         s_builtinFunctionNonDefaultReturnTypes["ZEROBLOB"] = ECN::PRIMITIVETYPE_Binary;
+
+        //Functions built-into BeSQLite
+        s_builtinFunctionNonDefaultReturnTypes["INVIRTUALSET"] = ECN::PRIMITIVETYPE_Boolean;
         }
 
     auto it = s_builtinFunctionNonDefaultReturnTypes.find(functionName);

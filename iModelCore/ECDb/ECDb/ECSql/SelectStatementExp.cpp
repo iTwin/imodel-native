@@ -13,6 +13,32 @@ using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//*************************** SubqueryExp ******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SubqueryExp::SubqueryExp (std::unique_ptr<SelectStatementExp> selectExp)
+: QueryExp ()
+    {
+    AddChild (std::move (selectExp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+DerivedPropertyExp const* SubqueryExp::_FindProperty (Utf8StringCR propertyName) const 
+    {
+    return GetQuery ()->FindProperty (propertyName);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SelectClauseExp const* SubqueryExp::_GetSelection () const 
+    {
+    return GetQuery ()->GetSelection ();
+    }
+
 //*************************** AllOrAnyExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -418,22 +444,8 @@ ValueExp const* LimitOffsetExp::GetOffsetExp () const
     return GetChild<ValueExp> ((size_t) m_offsetExpIndex);
     }
 
-//*************************** NonJoinQueryExp ******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//virtual
-Utf8String NonJoinQueryExp::ToECSql() const
-    {
-    Utf8String tmp;
-    tmp.append(GetLeftQuery ()->ToECSql());
-    tmp.append(" ");
-    tmp.append(OperatorToString(m_op));
-    if (m_all)
-        tmp.append(" ALL ");
-    tmp.append(GetRightQuery ()->ToECSql());
-    return tmp;
-    }
+
+
 
 
 //************************* OrderBySpecExp *******************************************
@@ -608,11 +620,11 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing (ECSqlParseContext& c
     return FinalizeParseStatus::Completed;
     }
 
-//*************************** SelectStatementExp ******************************************
+//*************************** SingleSelectStatementExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-SelectStatementExp::SelectStatementExp (SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp ) 
+SingleSelectStatementExp::SingleSelectStatementExp (SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp ) 
     : QueryExp (), m_selectionType (selectionType), m_whereClauseIndex (UNSET_CHILDINDEX),  m_orderByClauseIndex (UNSET_CHILDINDEX), m_groupByClauseIndex (UNSET_CHILDINDEX), m_havingClauseIndex (UNSET_CHILDINDEX), m_limitOffsetClauseIndex (UNSET_CHILDINDEX), m_finalizeParsingArgCache (nullptr)
     {
     //WARNING: Do not change the order of following
@@ -637,7 +649,7 @@ SelectStatementExp::SelectStatementExp (SqlSetQuantifier selectionType, std::uni
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DerivedPropertyExp const* SelectStatementExp::_FindProperty(Utf8StringCR propertyName) const
+DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8StringCR propertyName) const
     {
     for(auto selectClauseExp : GetSelection ()->GetChildren ())
         {
@@ -664,7 +676,7 @@ DerivedPropertyExp const* SelectStatementExp::_FindProperty(Utf8StringCR propert
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -683,7 +695,7 @@ Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing (ECSqlParseContext
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String SelectStatementExp::_ToString() const 
+Utf8String SingleSelectStatementExp::_ToString() const 
     {
     Utf8String str ("Select [Modifier: ");
     str.append (ExpHelper::ToString (m_selectionType)).append ("]");
@@ -693,7 +705,7 @@ Utf8String SelectStatementExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String SelectStatementExp::ToECSql() const 
+Utf8String SingleSelectStatementExp::ToECSql() const 
     {
     Utf8String tmp ("SELECT ");
 
@@ -741,8 +753,11 @@ Utf8String SelectStatementExp::ToECSql() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus SubqueryExp::_FinalizeParsing( ECSqlParseContext& ctx, FinalizeParseMode mode )
     {
-    ctx.SetError (ECSqlStatus::InvalidECSql, "Nested SELECT statements are not yet supported.");
-    return FinalizeParseStatus::Error;
+    //ctx.SetError (ECSqlStatus::InvalidECSql, "Nested SELECT statements are not yet supported.");i
+    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+        return FinalizeParseStatus::NotCompleted;
+
+    return FinalizeParseStatus::Completed;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -833,40 +848,7 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing (ECSqlParseContext& 
     return FinalizeParseStatus::Completed;
     }
 
-//****************************** UnionStatementExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                       04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-UnionStatementExp::UnionStatementExp(bool isUnionAll, std::unique_ptr<Exp> lhs, std::unique_ptr<SelectStatementExp> rhs)
-    : Exp(), m_isUnionAll(isUnionAll)
-    {
-    m_lhsExpIndex = AddChild(move(lhs));
-    m_rhsExpIndex = AddChild(move(rhs));
-    }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                       04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus UnionStatementExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
-    {
-    ctx.SetError(ECSqlStatus::InvalidECSql, "UNION not supported yet by ECSQL.");
-    return FinalizeParseStatus::Error;
-    }
-
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                       04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String UnionStatementExp::ToECSql() const
-    {
-    Utf8String ecsql = GetLhs()->ToECSql();
-    ecsql.append(" UNION ");
-    if (m_isUnionAll)
-        ecsql.append("ALL ");
-
-    ecsql.append(GetRhs()->ToECSql());
-    return move(ecsql);
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

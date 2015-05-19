@@ -70,7 +70,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BuiltinFunctions)
             {"SELECT UNICODE('K') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT UPPER(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
-            {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)}
+            {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
+            //BeSQLite built-in functions
+            {"SELECT NULL FROM ecsql.P WHERE InVirtualSet(?,123)", ExpectedResult(ECN::PRIMITIVETYPE_Boolean, false)},
         };
 
 

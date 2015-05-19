@@ -75,7 +75,7 @@ public:
     static ECSqlStatus PrepareQueryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, QueryExp const* exp);
     static ECSqlStatus PrepareRelationshipJoinExp (ECSqlPrepareContext& ctx, RelationshipJoinExp const* exp);
     static ECSqlStatus PrepareSelectClauseExp (ECSqlPrepareContext& ctx, SelectClauseExp const* exp);
-    static ECSqlStatus PrepareSubqueryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryExp const* exp);
+    static ECSqlStatus PrepareSubqueryExp (ECSqlPrepareContext& ctx, SubqueryExp const* exp);
     static ECSqlStatus PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, SubqueryRefExp const* exp);
     static ECSqlStatus PrepareSubqueryTestExp (ECSqlPrepareContext& ctx, SubqueryTestExp const* exp);
     static ECSqlStatus PrepareSubqueryValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const* exp);

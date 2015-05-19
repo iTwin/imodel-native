@@ -199,7 +199,7 @@ using namespace connectivity;
 %type <pParseNode> rollback_statement select_statement_into opt_all_distinct
 %type <pParseNode> /*update_statement_positioned*/ assignment_commalist assignment
 %type <pParseNode> update_statement_searched target_commalist target opt_where_clause ec_data_type
-%type <pParseNode> select_statement selection table_exp from_clause table_ref_commalist table_ref
+%type <pParseNode> single_select_statement selection table_exp from_clause table_ref_commalist table_ref
 %type <pParseNode> where_clause opt_group_by_clause opt_having_clause
 %type <pParseNode> search_condition predicate comparison_predicate comparison_predicate_part_2 between_predicate between_predicate_part_2
 %type <pParseNode> like_predicate opt_escape test_for_null null_predicate_part_2 in_predicate in_predicate_part_2 character_like_predicate_part_2 other_like_predicate_part_2
@@ -210,11 +210,10 @@ using namespace connectivity;
 %type <pParseNode> derived_column as_clause table_name num_primary term num_value_exp
 %type <pParseNode> value_exp_primary num_value_fct unsigned_value_spec cast_spec fct_spec  scalar_subquery
 %type <pParseNode> position_exp extract_exp length_exp general_value_spec
-%type <pParseNode> general_set_fct set_fct_type query_exp non_join_query_exp joined_table relationship_join op_relationship_direction
-%type <pParseNode> non_join_query_term non_join_query_primary simple_table
+%type <pParseNode> general_set_fct set_fct_type joined_table relationship_join op_relationship_direction
 %type <pParseNode> row_value_constructor_commalist row_value_constructor  row_value_constructor_elem
 /* %type <pParseNode> row_value_const_list*/
-%type <pParseNode> qualified_join value_exp query_term join_type outer_join_type join_condition boolean_term unary_predicate
+%type <pParseNode> qualified_join value_exp join_type outer_join_type join_condition boolean_term unary_predicate
 %type <pParseNode> boolean_factor truth_value boolean_test boolean_primary named_columns_join join_spec
 %type <pParseNode> cast_operand cast_target factor datetime_value_exp /*interval_value_exp*/ datetime_term datetime_factor
 %type <pParseNode> datetime_primary datetime_value_fct /*time_zone time_zone_specifier interval_term */ interval_qualifier
@@ -224,9 +223,9 @@ using namespace connectivity;
 %type <pParseNode> form_conversion char_translation bit_value_fct bit_substring_fct
 %type <pParseNode> /*bit_concatenation*/ bit_value_exp bit_factor bit_primary collate_clause char_value_fct unique_spec value_exp_commalist in_predicate_value unique_test update_source
 %type <pParseNode> date_function_0Argument  function_name12 function_name0 
-%type <pParseNode> all query_primary sql_not for_length upper_lower comparison /* column_val */  cross_union /*opt_schema_element_list*/
+%type <pParseNode> all sql_not for_length upper_lower comparison /* column_val */  cross_union /*opt_schema_element_list*/
 %type <pParseNode> /*op_authorization op_schema*/ nil_fkt schema_element base_table_def base_table_element base_table_element_commalist
-%type <pParseNode> column_def union_statement
+%type <pParseNode> column_def select_statement
 %type <pParseNode> function_args_commalist function_arg
 %type <pParseNode> catalog_name schema_name table_node function_name table_primary_as_range_column opt_as
 %type <pParseNode> case_expression else_clause result_expression result case_abbreviation case_specification searched_when_clause simple_when_clause searched_case simple_case
@@ -246,7 +245,10 @@ using namespace connectivity;
 %type <pParseNode> opt_window_frame_clause opt_window_partition_clause opt_existing_window_name window_specification opt_window_frame_exclusion opt_window_clause opt_offset
 %type <pParseNode> opt_fetch_first_row_count fetch_first_clause offset_row_count fetch_first_row_count first_or_next row_or_rows opt_result_offset_clause result_offset_clause
 /* LIMIT and OFFSET */
-%type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_fetch_first_clause opt_only ecclassid_fct_spec
+%type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_fetch_first_clause opt_only ecclassid_fct_spec union_op
+
+
+
 %%
 
 /* Parse Tree an OSQLParser zurueckliefern
@@ -488,7 +490,7 @@ column_ref_commalist:
     ;
 
 view_def:
-        SQL_TOKEN_CREATE SQL_TOKEN_VIEW table_node opt_column_ref_commalist SQL_TOKEN_AS select_statement opt_with_check_option
+        SQL_TOKEN_CREATE SQL_TOKEN_VIEW table_node opt_column_ref_commalist SQL_TOKEN_AS single_select_statement opt_with_check_option
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
@@ -613,12 +615,16 @@ manipulative_statement:
     |       select_statement_into
 /*    |       update_statement_positioned*/
     |       update_statement_searched
-    |        union_statement
+    |        select_statement
     ;
 
-union_statement:
-            select_statement
-    |        union_statement SQL_TOKEN_UNION all select_statement
+select_statement:
+        single_select_statement 
+            {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            }
+    |    single_select_statement union_op all select_statement
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -626,6 +632,12 @@ union_statement:
             $$->append($3);
             $$->append($4);
         }
+    ;
+
+union_op:
+    SQL_TOKEN_INTERSECT
+    | SQL_TOKEN_UNION
+    | SQL_TOKEN_EXCEPT
     ;
 commit_statement:
         SQL_TOKEN_COMMIT SQL_TOKEN_WORK
@@ -800,15 +812,9 @@ opt_where_clause:
 
     /* query expressions */
 
-query_term:
-        non_join_query_term
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-        }
-    ;
+
 /* SELECT STATEMENT */
-select_statement:
+single_select_statement:
         SQL_TOKEN_SELECT opt_all_distinct selection table_exp
         {
             $$ = SQL_NEW_RULE;
@@ -817,6 +823,7 @@ select_statement:
             $$->append($3);
             $$->append($4);
         }
+        | values_or_query_spec 
     ;
 
 selection:
@@ -1452,7 +1459,7 @@ unique_test:
             $$->append($2);}
     ;
 subquery:
-        '(' query_exp ')'
+        '(' select_statement ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
@@ -1744,7 +1751,7 @@ general_value_spec:
     ;
 fct_spec:
         general_set_fct
-    |   fold
+  /*  |   fold */
     |    function_name '(' ')'
         {
             $$ = SQL_NEW_RULE;
@@ -2392,60 +2399,12 @@ named_columns_join:
             $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
         }
     ;
-simple_table:
-        select_statement
-      | values_or_query_spec
-      ;
 
-non_join_query_primary:
-        simple_table
-      | '(' non_join_query_exp ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($2);
-            $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-      ;
-non_join_query_term:
-        non_join_query_primary
-    |    query_term SQL_TOKEN_INTERSECT all query_primary
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);
-        }
-    ;
-query_primary:
-        non_join_query_primary
-    ;
-non_join_query_exp:
-        non_join_query_term
-      | query_exp SQL_TOKEN_UNION all query_term
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);
-        }
-      | query_exp SQL_TOKEN_EXCEPT all query_term
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);
-        }
-    ;
+
 all:
     /* empty*/ {$$ = SQL_NEW_RULE;}
     |    SQL_TOKEN_ALL
-    ;
-query_exp:
-        non_join_query_exp /*[^')']*/
+    
     ;
 scalar_subquery:
         subquery
@@ -2490,7 +2449,7 @@ cast_spec:
     ;
 value_exp_primary:
         unsigned_value_spec
-      | fct_spec
+      | fct_spec 
       | ecclassid_fct_spec 
 	  | column_ref
       | scalar_subquery

@@ -385,12 +385,12 @@ public:
         SubqueryValue,
         UnaryPredicate,
         UnaryValue,
-        Union,
         Update,
         Value,
         ValueBinary,
         ValueExpList,
-        Where
+        Where,        
+        SingleSelect,
         };
 
     struct Collection : NonCopyableClass
@@ -556,17 +556,12 @@ public:
     Collection const& GetChildren () const;
     size_t GetChildrenCount() const { return m_children.size();}
 
-    bool IsSelectStatement () const;
-    bool IsInsertStatement () const;
-    bool IsUpdateStatement () const;
-    bool IsDeleteStatement () const;
-
     //! Converts this expression into an ECSQL snippet.
     //! The child expressions are considered in this conversion.
     //! @return ECSQL snippet representing this expression graph
     virtual Utf8String ToECSql() const = 0;
     
-    //! Returns a string description of this expression without recursing into its child expressions.
+    //! Returns a string description of this expression without recursion into its child expressions.
     //! @return string description of this expression
     Utf8String ToString () const;
 

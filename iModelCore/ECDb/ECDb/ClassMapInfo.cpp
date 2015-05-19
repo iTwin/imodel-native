@@ -10,6 +10,8 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+
 //**********************************************************************************************
 // ClassMapInfoFactory
 //**********************************************************************************************
@@ -180,7 +182,6 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy ()
     return EvaluateInheritedMapStrategy ();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -209,6 +210,23 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
         if (excludeFromColumnsReuse && enableColumnReuse)
             {
             GetMapStrategyR().AddOption(Strategy::DisableReuseColumnsForThisClass);
+            }
+
+        if (GetECClass ().GetIsStruct () && !m_parentClassMap->GetClass().GetIsStruct())
+            {
+            WString msg;
+            msg.append (L"Struct classes cannot be included in 'TablePerHierarchy' that has a none-struct class as its root. Struct Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
+            LOG.warning (msg.c_str ());
+            m_strategy = Strategy::TableForThisClass;
+            m_parentClassMap = nullptr;
+            }
+        else if (!GetECClass ().GetIsStruct () && m_parentClassMap->GetClass ().GetIsStruct ())
+            {
+            WString msg;
+            msg.append (L"Regular classes cannot be included in 'TablePerHierarchy' that has a struct class as its root. Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
+            LOG.warning (msg.c_str ());
+            m_strategy = Strategy::TableForThisClass;
+            m_parentClassMap = nullptr;
             }
         }
 

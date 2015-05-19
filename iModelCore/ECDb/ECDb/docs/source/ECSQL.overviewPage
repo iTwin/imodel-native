@@ -150,8 +150,9 @@
     <c>SELECT h.AssetID FROM stco.Hardware h<br>JOIN stco.Employee e USING stco.HardwareUsedByEmployee<br>WHERE e.FirstName = 'John' AND e.Lastname = 'Smith'</c>|Determines all hardware items that employee John Smith uses
     <c>SELECT manager.FirstName FROM stco.Employee manager<br>JOIN stco.Employee report USING stco.ManagerReports <b>FORWARD</b><br>WHERE report.FirstName = ? AND report.LastName = ?</c>|Determines the manager for a given employee
     <c>SELECT report.FirstName FROM stco.Employee report<br>JOIN stco.Employee manager USING stco.ManagerReports <b>REVERSE</b><br>WHERE manager.FirstName = ? AND manager.LastName = ?</c>|Determines all direct reports for a given manager
+    <c>DELETE FROM myschema.Document WHERE ECInstanceId IN (SELECT ECInstanceId FROM myschema.Document JOIN myschema.Folder USING myschema.FolderHasDocuments WHERE folder.ECInstanceId = 42)</c>|Delete all documents in the folder with ECInstanceId 42
 
-    @note The last two ECSQL examples show how to use the ECSQL keywords @c @b FORWARD and @c @b REVERSE for cases where it is ambiguous
+    @note The examples show how to use the ECSQL keywords @c @b FORWARD and @c @b REVERSE for cases where it is ambiguous
     whether the FROM or JOIN class is the source or target end of an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass". 
     In that example the manager is the source and the report the target constraint of the relationship @c ManagerReports
     (see <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>).
@@ -209,6 +210,19 @@
     <c>SELECT AssetID FROM <b>ONLY</b> stco.Computer</c>|Non-polymorphic query: Selects all computers excluding its subclasses, i.e. selects computers, but no laptops
     <c>SELECT AssetID FROM stco.Desk</c>|Selects all desks and would include its subclasses, but it has none.
     <c>SELECT AssetID FROM <b>ONLY</b> stco.Desk</c>|@c ONLY does not have any effect here as @c Desk does not have any subclasses.
+
+    @section ECSqlSetOperations Using ECSQL Set operations
+
+    ECSQL supports the set operations UNION, INTERSECT and EXCEPT.
+
+    ECSQL|Description
+    -----|-----------
+    <c>SELECT AssetID FROM stco.Computer <b>UNION</b> SELECT AssetID FROM stco.Desk</c>|Selects all Computers (and subclasses) and all Desks
+    <c>SELECT AssetID FROM ONLY stco.Computer <b>UNION</b> SELECT AssetID FROM stco.Desk</c>|Selects all Computers (and none of its subclasses) and all Desks
+    <c>SELECT AssetID FROM stco.Hardware <b>EXCEPT</b> SELECT AssetID FROM stco.Computer</c>|Selects all Hardware and all its subclasses except for Computers and all its subclasses
+    <c>SELECT AssetID FROM stco.Hardware <b>EXCEPT</b> SELECT AssetID FROM ONLY stco.Computer</c>|Selects all Hardware and all its subclasses except for Computers (and not its subclasses)
+
+    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">ECSQL Example ECSchema</a> on which the above examples are based.
 
     @section ECSQLSamplesSQLiteFunctions Using SQLite SQL Functions
     Any built-in or custom SQLite SQL function can be used in ECSQL to operate on the primitive types

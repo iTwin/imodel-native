@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ExpScope::ExpScope (ExpCR exp, ExpScope const* parent) 
-    : m_exp (exp), m_parent (parent)
+: m_exp (exp), m_parent (parent), m_nativeSqlSelectClauseColumnCount (0)
     {
     m_ecsqlType = DetermineECSqlType (exp);
     }
@@ -52,7 +52,8 @@ ECSqlType ECSqlPrepareContext::ExpScope::DetermineECSqlType (ExpCR exp) const
     {
     switch (exp.GetType ())
         {
-            case Exp::Type::Select:
+        case Exp::Type::SingleSelect:
+        case Exp::Type::Select:
                 return ECSqlType::Select;
             case Exp::Type::Insert:
                 return ECSqlType::Insert;
@@ -105,7 +106,14 @@ ECSqlPrepareContext::ExpScope const& ECSqlPrepareContext::ExpScopeStack::Current
     BeAssert (!m_scopes.empty ());
     return m_scopes.back ();
     }
-
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR () 
+    {
+    BeAssert (!m_scopes.empty ());
+    return m_scopes.back ();
+    }
 
 //****************************** ECSqlPrepareContext ********************
 //-----------------------------------------------------------------------------------------
@@ -113,7 +121,7 @@ ECSqlPrepareContext::ExpScope const& ECSqlPrepareContext::ExpScopeStack::Current
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext (ECDbCR ecdb, ECSqlStatementBase& preparedStatment)
 : m_ecdb (ecdb), m_ecsqlStatement (preparedStatment), m_parentCtx (nullptr), m_parentArrayProperty (nullptr), 
-m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeSqlSelectClauseColumnCount(0), m_nativeNothingToUpdate(false)
+m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -121,14 +129,14 @@ m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeSqlSelectCl
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo (nullptr), m_nativeStatementIsNoop (false), m_nativeSqlSelectClauseColumnCount (0), m_nativeNothingToUpdate(false)
+m_parentColumnInfo (nullptr), m_nativeStatementIsNoop (false), m_nativeNothingToUpdate(false)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo)
-    : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(&parentArrayProperty), m_parentColumnInfo(parentColumnInfo), m_nativeStatementIsNoop(false), m_nativeSqlSelectClauseColumnCount(0), m_nativeNothingToUpdate(false)
+    : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(&parentArrayProperty), m_parentColumnInfo(parentColumnInfo), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -162,18 +170,16 @@ Utf8CP ECSqlPrepareContext::GetNativeSql () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECSqlPrepareContext::GetNativeSqlSelectClauseColumnCount () const 
+int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount () const 
     {
-    PRECONDITION(m_scopes.Depth () == 1, m_nativeSqlSelectClauseColumnCount); //Safeguard against accidental use in code. BuildContext should be nested
     return m_nativeSqlSelectClauseColumnCount;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::IncrementNativeSqlSelectClauseColumnCount (size_t value)
+void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount (size_t value)
     {
-    BeAssert (m_scopes.Depth () == 1);
     m_nativeSqlSelectClauseColumnCount += static_cast<int> (value);
     }
 

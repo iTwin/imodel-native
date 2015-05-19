@@ -1350,7 +1350,7 @@ namespace connectivity
             struct
                 {
                 OSQLParseNode::Rule eRule;      // the parse node's ID for the rule
-                Utf8String          sRuleName;  // the name of the rule ("select_statement")
+                Utf8String          sRuleName;  // the name of the rule ("single_select_statement")
                 }   aRuleDescriptions[] =
                 {
                     {OSQLParseNode::all_or_any_predicate, "all_or_any_predicate"},
@@ -1455,7 +1455,7 @@ namespace connectivity
                     {OSQLParseNode::scalar_exp_commalist, "scalar_exp_commalist"},
                     {OSQLParseNode::schema_name, "schema_name"},
                     {OSQLParseNode::search_condition, "search_condition"},
-                    {OSQLParseNode::select_statement, "select_statement"},
+                    {OSQLParseNode::single_select_statement, "single_select_statement"},
                     {OSQLParseNode::select_sublist, "select_sublist"},
                     {OSQLParseNode::selection, "selection"},
                     {OSQLParseNode::sql_not, "sql_not"},
@@ -1469,7 +1469,7 @@ namespace connectivity
                     {OSQLParseNode::term, "term"},
                     {OSQLParseNode::test_for_null, "test_for_null"},
                     {OSQLParseNode::unary_predicate, "unary_predicate"},
-                    {OSQLParseNode::union_statement, "union_statement"},
+                    {OSQLParseNode::select_statement, "select_statement"},
                     {OSQLParseNode::unique_test, "unique_test"},
                     {OSQLParseNode::update_statement_positioned, "update_statement_positioned"},
                     {OSQLParseNode::update_statement_searched, "update_statement_searched"},

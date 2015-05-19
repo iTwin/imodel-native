@@ -67,15 +67,6 @@ ECSqlStatus ECSqlPreparer::Prepare (Utf8StringR nativeSql, ECSqlPrepareContext& 
             break;
             }
 
-        case Exp::Type::Union:
-            {
-            status = ECSqlSelectPreparer::Prepare(context, static_cast<UnionStatementExp const&> (ecsqlParseTree));
-            if (status != ECSqlStatus::Success)
-                return status;
-
-            break;
-            }
-
         default:
             return context.SetError (ECSqlStatus::ProgrammerError, "Programmer error in ECSqlPreparer::Preparer.");
         }
@@ -629,7 +620,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareDerivedPropertyExp (NativeSqlBuilder::List&
     if (innerExp == nullptr)
         return ctx.SetError (ECSqlStatus::ProgrammerError, "DerivedPropertyExp::GetExpression is not expected to return null during preparation.");
 
-    const auto startColumnIndex = ctx.GetNativeSqlSelectClauseColumnCount (); 
+    const auto startColumnIndex = ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount (); 
     
     auto snippetCountBefore = nativeSqlSnippets.size ();
     if (IsNullExp (*innerExp))
@@ -642,11 +633,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareDerivedPropertyExp (NativeSqlBuilder::List&
         if (status != ECSqlStatus::Success)
             return status;
         }
+    
 
-    ctx.IncrementNativeSqlSelectClauseColumnCount (nativeSqlSnippets.size () - snippetCountBefore);
 
     if (ctx.GetCurrentScope ().IsRootScope ())
         {
+        ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount (nativeSqlSnippets.size () - snippetCountBefore);
         auto status = ECSqlFieldFactory::CreateField (ctx, exp, startColumnIndex);
         if (status != ECSqlStatus::Success)
             return status;
@@ -1234,16 +1226,27 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp (ECSqlPrepareContext& ctx, SelectClauseExp const* selectClause)
     {
+    std::vector<Exp const*> selection (selectClause->GetChildren ().begin (), selectClause->GetChildren ().end ());
     NativeSqlBuilder::List selectClauseNativeSqlSnippets;
-    for (auto derivedPropExp : selectClause->GetChildren ())
+    bool first = true;
+    for (auto derivedPropExp : selection)
         {
+        selectClauseNativeSqlSnippets.clear ();
         auto status = PrepareDerivedPropertyExp (selectClauseNativeSqlSnippets, ctx, static_cast<DerivedPropertyExp const*> (derivedPropExp));
         if (status != ECSqlStatus::Success)
             return status;
+
+        if (selectClauseNativeSqlSnippets.empty ())
+            continue;
+
+        if (first)
+            first = false;
+        else
+            ctx.GetSqlBuilderR ().AppendComma ();
+
+        ctx.GetSqlBuilderR ().Append (selectClauseNativeSqlSnippets);
         }
 
-    ctx.GetSqlBuilderR ().Append (selectClauseNativeSqlSnippets);
-   
     return ResolveChildStatementsBinding(ctx);
     }
 
@@ -1373,9 +1376,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp (ECSqlPrepareContext& ctx, SubqueryExp const* exp )
     {
-    return PrepareQueryExp (nativeSqlSnippets, ctx, exp);
+    ctx.GetSqlBuilderR ().AppendParenLeft ();
+    auto stat = ECSqlSelectPreparer::Prepare (ctx, *exp->GetQuery ());
+    ctx.GetSqlBuilderR ().AppendParenRight ();
+    return stat;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1383,8 +1389,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp (NativeSqlBuilder::List& native
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, SubqueryRefExp const* exp)
-    {
-    return ctx.SetError (ECSqlStatus::InvalidECSql, "SubqueryRef expression not yet supported.");
+    {   
+
+    auto status = PrepareSubqueryExp (ctx, exp->GetSubquery ());
+    if (status != ECSqlStatus::Success)
+        return status;
+
+    if (!exp->GetAlias ().empty ())
+        ctx.GetSqlBuilderR ().AppendSpace ().AppendQuoted (exp->GetAlias ().c_str ());
+
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1402,7 +1416,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp (ECSqlPrepareContext& ctx, 
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const* exp)
     {
-    return PrepareSubqueryExp (nativeSqlSnippets, ctx, exp->GetQuery ());
+    Utf8String a = ctx.GetSqlBuilder ().ToString ();
+    ctx.GetSqlBuilderR ().Push (true);
+    auto st = PrepareSubqueryExp ( ctx, exp->GetQuery ());
+    nativeSqlSnippets.push_back (NativeSqlBuilder (ctx.GetSqlBuilderR ().Pop ().c_str ()));
+    return st;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1686,14 +1704,14 @@ ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext
                 ctx.SetError (ECSqlStatus::ProgrammerError, "Expecting single column");
                 }
 
-            if (ctx.GetNativeSqlSelectClauseColumnCount() > 0)
+            if (ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount() > 0)
                 ctx.GetSqlBuilderR().AppendComma();
 
             ctx.GetSqlBuilderR ().Append (nativeSqlSnippets);
 
             arrayField->GetBinder().SetSourceStatementType (ECSqlPrimitiveBinder::StatementType::Sqlite);
-            arrayField->GetBinder().SetSourceColumnIndex (ctx.GetNativeSqlSelectClauseColumnCount());
-            ctx.IncrementNativeSqlSelectClauseColumnCount (static_cast<int>(nativeSqlSnippets.size ()));
+            arrayField->GetBinder().SetSourceColumnIndex (ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
+            ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount (static_cast<int>(nativeSqlSnippets.size ()));
             }           
         }
     return ECSqlStatus::Success;

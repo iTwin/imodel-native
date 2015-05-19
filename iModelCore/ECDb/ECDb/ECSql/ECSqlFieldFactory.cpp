@@ -36,15 +36,8 @@ int startColumnIndex
 
     const bool isPropertyNameExp = propertyNameExp != nullptr;
     //if a column alias was specified always create a dynamic property for it, even if expression is a property name expression
-    if (isPropertyNameExp && derivedProperty->GetColumnAlias ().empty ())
-        {
-        auto linkProperty = propertyNameExp->GetDerivedPropertyExpInSubqueryRefExp();
-
-        if (linkProperty)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Nested SELECTs are not supported yet.");
-        else
-            ecsqlColumnInfo = CreateECSqlColumnInfoFromPropertyNameExp (ctx, *propertyNameExp);
-        }
+    if (isPropertyNameExp && derivedProperty->GetColumnAlias ().empty () && !propertyNameExp->IsPropertyRef ())
+        ecsqlColumnInfo = CreateECSqlColumnInfoFromPropertyNameExp (ctx, *propertyNameExp);
     else
         {
         ECPropertyCP generatedProperty = nullptr;
@@ -57,7 +50,7 @@ int startColumnIndex
 
         ecsqlColumnInfo = CreateECSqlColumnInfoFromGeneratedProperty (ctx, *generatedProperty);
         }
-
+    
     auto const& valueTypeInfo = valueExp->GetTypeInfo ();
     BeAssert (valueTypeInfo.GetKind () != ECSqlTypeInfo::Kind::Unset);
 
@@ -174,7 +167,14 @@ PropertyNameExp const* propertyName
         else
             return ctx.SetError(ECSqlStatus::ProgrammerError, "For struct properties we only support inline mapping %s", Utf8String (propertyMap.GetPropertyAccessString()).c_str ());
         }
-
+    if (propertyName->GetClassRefExp ()->GetType () == Exp::Type::SubqueryRef)
+        {        
+        auto& propertyMap = propertyName->GetPropertyMap ();
+        if (auto structPropertyMap = dynamic_cast<PropertyMapToInLineStructCP>(&propertyMap))
+            return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
+        else
+            return ctx.SetError (ECSqlStatus::ProgrammerError, "For struct properties we only support inline mapping %s", Utf8String (propertyMap.GetPropertyAccessString ()).c_str ());
+        }
     return ctx.SetError(ECSqlStatus::InvalidECSql, "Nested SELECTs are not supported yet.");
     }
 

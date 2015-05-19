@@ -17,18 +17,19 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const* exp)
     {
     BeAssert (exp != nullptr);
-    auto expInSubqueryRef = exp->GetDerivedPropertyExpInSubqueryRefExp ();
-    if (expInSubqueryRef != nullptr)
+    if (exp->IsPropertyRef ())
+        {
         return PrepareInSubqueryRef (nativeSqlSnippets, ctx, *exp);
+        }
 
     auto const& propMap = exp->GetPropertyMap ();
     auto const& currentScope = ctx.GetCurrentScope ();
 
     if (!NeedsPreparation (currentScope, propMap))
             return ECSqlStatus::Success;
-
+    //a 
     const auto currentScopeECSqlType = currentScope.GetECSqlType ();
-
+    // bb as P
     //in SQLite table aliases are only allowed for SELECT statements
     auto classIdentifier = currentScopeECSqlType == ECSqlType::Select ? exp->GetClassRefExp ()->GetId ().c_str () : nullptr;
     //auto classNameExpr =  dynamic_cast<ClassNameExp const*>(exp->GetClassRefExp ());
@@ -42,7 +43,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativ
     auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType);
 
     nativeSqlSnippets.insert (nativeSqlSnippets.end (), propNameNativeSqlSnippets.begin (), propNameNativeSqlSnippets.end ());
-
+    
     return ECSqlStatus::Success;
     }
 
@@ -80,11 +81,52 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation (ECSqlPrepareContext::ExpSco
 //static
 ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const& exp)
     {
-    //auto classRef = static_cast<SubQueryRefExp*>(propertyName->GetResolvedClassRef());
-    // only when 
-    //auto newProperty = ctx.CreateProperty(*propertyName, derivedExp->GetName());
+    auto propertyRef = const_cast<PropertyNameExp&>(exp).GetPropertyRefP ();
+    auto& derviedPropertyExp = propertyRef->LinkedTo();
+    if (derviedPropertyExp.GetName ().empty ())
+        {
+        BeAssert ("Nested expression must have a name/alias" && false);
+        return ECSqlStatus::ProgrammerError;
+        }
 
-    return ctx.SetError (ECSqlStatus::InvalidECSql, "Subqueries not yet supported.");
+    auto valueExp = derviedPropertyExp.GetExpression ();
+    //1. Exp-> PropertyName    useSameColumnNames
+    //2. Exp-> ValueExpr       useAlias
+    //3. Exp-> ScalarQuery     useAlias
+    switch (valueExp->GetType ())
+        {
+        case Exp::Type::PropertyName:
+            {     
+            auto propertyName = static_cast <PropertyNameExp const*>(valueExp);
+            if (!propertyName->IsPropertyRef ())
+                {
+                auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select);
+                propertyRef->GetNativeSqlSnippetsR ().insert ( propertyRef->GetNativeSqlSnippetsR ().end(), snippets.begin (), snippets.end ());
+                }
+            else
+                {
+                auto const& snippets = propertyName->GetPropertyRef ()->GetNativeSqlSnippets ();
+                propertyRef->GetNativeSqlSnippetsR ().insert ( propertyRef->GetNativeSqlSnippetsR ().end(), snippets.begin (), snippets.end ());
+                }
+
+            for (auto const& snippet : propertyRef->GetNativeSqlSnippets ())
+                {
+                NativeSqlBuilder sqlSnippet;
+                sqlSnippet.Append (snippet);
+                nativeSqlSnippets.push_back (sqlSnippet);
+                }
+           break;
+            }
+        case Exp::Type::SubqueryValue:
+            BeAssert (false && "NotSupported");
+            return ECSqlStatus::ProgrammerError;
+            break;
+        default:
+            break;
+        }
+
+    
+    return ECSqlStatus::Success;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

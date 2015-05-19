@@ -55,10 +55,6 @@ unique_ptr<Exp> ECSqlParser::Parse (Utf8CP ecsql, ECSqlParseContext& parseContex
     unique_ptr<Exp> rootExp = nullptr;
     switch (ecsqlParseTree->getKnownRuleID())
         {
-        case OSQLParseNode::select_statement:
-            rootExp = parse_select_statement(parseContext, ecsqlParseTree);
-            break;
-
         case OSQLParseNode::insert_statement:
             rootExp = parse_insert_statement(parseContext, ecsqlParseTree);
             break;
@@ -71,8 +67,8 @@ unique_ptr<Exp> ECSqlParser::Parse (Utf8CP ecsql, ECSqlParseContext& parseContex
             rootExp = parse_delete_statement_searched(parseContext, ecsqlParseTree);
             break;
 
-        case OSQLParseNode::union_statement:
-            rootExp = parse_union_statement(parseContext, ecsqlParseTree);
+        case OSQLParseNode::select_statement:
+            rootExp = parse_select_statement(parseContext, ecsqlParseTree);
             break;
 
         case OSQLParseNode::manipulative_statement:
@@ -101,7 +97,7 @@ unique_ptr<Exp> ECSqlParser::Parse (Utf8CP ecsql, ECSqlParseContext& parseContex
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<SelectStatementExp> ECSqlParser::parse_select_statement (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+unique_ptr<SingleSelectStatementExp> ECSqlParser::parse_single_select_statement (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
     {
     if (!ctx.IsSuccess())
         return nullptr;
@@ -151,8 +147,8 @@ unique_ptr<SelectStatementExp> ECSqlParser::parse_select_statement (ECSqlParseCo
 
     if (selection != nullptr && from_clause != nullptr)
         {
-        return unique_ptr<SelectStatementExp>(
-                        new SelectStatementExp (
+        return unique_ptr<SingleSelectStatementExp>(
+                        new SingleSelectStatementExp (
                             opt_all_distinct, 
                             move (selection), 
                             move (from_clause),
@@ -1100,16 +1096,9 @@ unique_ptr<ClassRefExp> ECSqlParser::parse_table_ref (ECSqlParseContext& ctx, OS
         {
         auto subquery = parse_subquery(ctx, second);
         auto range_variable = parseNode->getChild(2/*range_variable*/);
-        auto opt_column_commalist = parseNode->getChild(2/*opt_column_commalist*/);
         auto alias = Utf8String();
         if (range_variable->count() > 0)
             alias = range_variable->getChild(1/*SQL_TOKEN_NAME*/)->getTokenValue();
-        if (opt_column_commalist->count() > 0)
-            {
-            BeAssert (false && "Range column not supported");
-            //WIP_ECSQL:Right error code?
-            ctx.SetError (ECSqlStatus::ProgrammerError, "Range column not supported");
-            }
    
          if (!ctx.IsSuccess())
                 return nullptr;
@@ -1795,152 +1784,11 @@ unique_ptr<SubqueryExp> ECSqlParser::parse_subquery (ECSqlParseContext& ctx, OSQ
         ctx.SetError (ECSqlStatus::ProgrammerError, "Wrong grammar. Expecting subquery");
         return nullptr;
         }
-    auto query_expr = parse_query_exp (ctx, parseNode->getChild(1/*query_exp*/));
+    auto compound_select = parse_select_statement (ctx, parseNode->getChild(1/*query_exp*/));
     if (ctx.IsSuccess())
-        return unique_ptr<SubqueryExp>(new SubqueryExp(query_expr.release()));
+        return unique_ptr<SubqueryExp> (new SubqueryExp (std::move(compound_select)));
+
     return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<QueryExp> ECSqlParser::parse_query_term (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
-    {
-    if(!SQL_ISRULE(parseNode, query_term))
-        {
-        BeAssert (false && "Wrong grammar. Expecting query_term");
-        ctx.SetError (ECSqlStatus::ProgrammerError, "Wrong grammar. Expecting query_term");
-        return nullptr;
-        }
-    auto term = parseNode->getChild(0/*non_join_query_term*/);
-
-    switch(term->getKnownRuleID())
-        {
-        case OSQLParseNode::non_join_query_term:
-            return parse_non_join_query_term(ctx, term);
-        case OSQLParseNode::non_join_query_primary:
-            return parse_non_join_query_primary(ctx, term);
-        case OSQLParseNode::select_statement:
-            return unique_ptr<QueryExp>(parse_select_statement(ctx, term).release());
-        case OSQLParseNode::values_or_query_spec:
-            {
-            BeAssert (false && "values_or_query_spec is not supported");
-            ctx.SetError (ECSqlStatus::ProgrammerError, "values_or_query_spec is not supported");
-            return nullptr;
-            }            
-        }
-
-    BeAssert (false && "Invalid grammar");
-    ctx.SetError (ECSqlStatus::ProgrammerError, "Invalid grammar"); 
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<QueryExp> ECSqlParser::parse_query_exp (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
-    {
-    switch(parseNode->getKnownRuleID())
-        {
-        case OSQLParseNode::non_join_query_term:
-            return parse_non_join_query_term(ctx, parseNode);
-        case OSQLParseNode::non_join_query_exp:
-            return parse_non_join_query_exp(ctx, parseNode);
-        case OSQLParseNode::non_join_query_primary:
-            return parse_non_join_query_primary(ctx, parseNode);
-        case OSQLParseNode::select_statement:
-            return unique_ptr<QueryExp>(parse_select_statement(ctx, parseNode).release());
-        case OSQLParseNode::values_or_query_spec:
-            {
-            BeAssert (false && "values_or_query_spec is not supported");
-            ctx.SetError (ECSqlStatus::ProgrammerError, "values_or_query_spec is not supported");
-            return nullptr;
-            }            
-        }
-
-    BeAssert (false && "Invalid grammar");
-    ctx.SetError (ECSqlStatus::ProgrammerError, "Invalid grammar");
-    return nullptr; 
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<QueryExp> ECSqlParser::parse_non_join_query_exp (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
-    {
-    if(SQL_ISRULE(parseNode, non_join_query_exp))
-        { 
-        if (parseNode->count() == 4)
-            {
-            auto query_exp = parse_query_exp(ctx, parseNode->getChild(0/*query_exp*/));
-            auto non_join_query_operator = parse_non_join_query_operator(ctx, parseNode->getChild(1));
-            bool all = parse_all(ctx, parseNode->getChild(2));
-            auto query_term = parse_query_term(ctx, parseNode->getChild(3/*query_term*/));
-            if (ctx.IsSuccess())
-                return unique_ptr<QueryExp>(new NonJoinQueryExp(query_exp.release(), non_join_query_operator,all, query_term.release()));
-            return nullptr;
-            }
-        }
-
-    BeAssert (false && "Invalid grammar");
-    ctx.SetError (ECSqlStatus::ProgrammerError, "Invalid grammar");
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<QueryExp> ECSqlParser::parse_non_join_query_term (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
-    {
-    if(SQL_ISRULE(parseNode, non_join_query_term))
-        { 
-        if (parseNode->count() == 4)
-            {
-            auto query_exp = parse_query_exp(ctx, parseNode->getChild(0/*query_exp*/));
-            auto non_join_query_operator = parse_non_join_query_operator(ctx, parseNode->getChild(1));
-            auto all = parse_all(ctx, parseNode->getChild(2));
-            auto query_term = parse_non_join_query_primary(ctx, parseNode->getChild(3/*query_term*/));
-            if (ctx.IsSuccess())
-                return unique_ptr<QueryExp>(new NonJoinQueryExp(query_exp.release(), non_join_query_operator,all, query_term.release()));
-            return nullptr;
-            }
-        }
-
-    BeAssert (false && "Invalid grammar");
-    ctx.SetError (ECSqlStatus::ProgrammerError, "Invalid grammar");
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<QueryExp> ECSqlParser::parse_non_join_query_primary (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
-    {   
-    if(SQL_ISRULE(parseNode, non_join_query_term))
-        {
-        return parse_non_join_query_exp(ctx, parseNode->getChild(1/*non_join_query_exp*/));
-        }
-
-    BeAssert (false && "Invalid grammar");
-    ctx.SetError (ECSqlStatus::ProgrammerError, "Invalid grammar");
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-NonJoinQueryOperator ECSqlParser::parse_non_join_query_operator(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
-    {
-    switch(parseNode->getTokenID())
-        {
-        case SQL_TOKEN_UNION: return NonJoinQueryOperator::Union;
-        case SQL_TOKEN_INTERSECT:return NonJoinQueryOperator::Intersect;
-        case SQL_TOKEN_EXCEPT:return NonJoinQueryOperator::Except;
-        }
-
-    BeAssert (false && "Invalid grammar. Expected UNION, INTERSECT or EXCEPT");
-    ctx.SetError (ECSqlStatus::ProgrammerError, "invalid grammar. Expected UNION, INTERSECT or EXCEPT");
-    return NonJoinQueryOperator::Union;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2218,6 +2066,20 @@ SqlSetQuantifier ECSqlParser::parse_opt_all_distinct (ECSqlParseContext& ctx, OS
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SelectStatementExp::Operator  ECSqlParser::parse_compound_select_op (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+    {
+    if (SQL_ISTOKEN (parseNode, UNION))
+        return SelectStatementExp::Operator::Union;
+    else if (SQL_ISTOKEN (parseNode, INTERSECT))
+        return SelectStatementExp::Operator::Intersect;
+    else if (SQL_ISTOKEN (parseNode, EXCEPT))
+        return SelectStatementExp::Operator::Except;
+
+    return SelectStatementExp::Operator::None;
+    }
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 unique_ptr<UnaryPredicateExp> ECSqlParser::parse_unary_predicate(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
@@ -2237,36 +2099,43 @@ unique_ptr<UnaryPredicateExp> ECSqlParser::parse_unary_predicate(ECSqlParseConte
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  04/2015
+// @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<UnionStatementExp> ECSqlParser::parse_union_statement(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+std::unique_ptr<SelectStatementExp> ECSqlParser::parse_select_statement (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
     {
-    if (!SQL_ISRULE(parseNode, union_statement) || parseNode->count() != 4)
+    if (!SQL_ISRULE (parseNode, select_statement))
         {
-        BeAssert(false && "Invalid grammar. Expecting union_statement with four child nodes");
-        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. Expecting union_statement with four child nodes.");
+        BeAssert(false && "Invalid grammar. Expecting select_statement with four child nodes");
+        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. Expecting select_statement with four child nodes.");
         return nullptr;
         }
 
-    OSQLParseNode const* lhsNode = parseNode->getChild(0);
-    BeAssert(lhsNode->isRule());
-    const OSQLParseNode::Rule lhsNodeRule = lhsNode->getKnownRuleID();
-    unique_ptr<Exp> lhsExp = nullptr;
-    if (lhsNodeRule == OSQLParseNode::select_statement)
-        lhsExp = parse_select_statement(ctx, lhsNode);
-    else if (lhsNodeRule == OSQLParseNode::union_statement)
-        lhsExp = parse_union_statement(ctx, lhsNode);
-    else
+    if (parseNode->count () == 1)
         {
-        BeAssert(false && "wrong grammar. LHS of union statement can only be of select_statement or union_statement");
-        ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. LHS of union statement can only be of select_statement or union_statement.");
-        return nullptr;
+        auto single_select = parse_single_select_statement (ctx, parseNode->getChild (0));
+        if (single_select == nullptr)
+            return nullptr;
+
+        return std::unique_ptr<SelectStatementExp> (new SelectStatementExp (std::move (single_select)));
+        }
+    else if (parseNode->count () == 4)
+        {
+        auto single_select = parse_single_select_statement (ctx, parseNode->getChild (0));
+        if (single_select == nullptr)
+            return nullptr;
+
+        SelectStatementExp::Operator op = parse_compound_select_op (ctx, parseNode->getChild (1));
+        bool all = parse_all (ctx, parseNode->getChild (2));
+        auto compound_select = parse_select_statement (ctx, parseNode->getChild (3));
+        if (compound_select == nullptr)
+            return nullptr;
+
+        return std::unique_ptr<SelectStatementExp> (new SelectStatementExp (std::move (single_select), op, all, std::move (compound_select)));
         }
 
-    bool all = parse_all(ctx, parseNode->getChild(2));
-    unique_ptr<SelectStatementExp> rhsExp = parse_select_statement(ctx, parseNode->getChild(3));
-
-    return unique_ptr<UnionStatementExp>(new UnionStatementExp(all, move(lhsExp), move(rhsExp)));
+    BeAssert (false && "Invalid grammar. Expecting select_statement with four child nodes or exactly one child");
+    ctx.SetError (ECSqlStatus::ProgrammerError, "Invalid grammar. Expecting select_statement with four child nodes or exactly one child");
+    return nullptr;
     }
 
 

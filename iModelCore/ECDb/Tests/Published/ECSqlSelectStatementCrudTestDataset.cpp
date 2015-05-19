@@ -892,7 +892,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (int rowCountPerClass
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 4);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (101, (select ECInstanceId from ecsql.P where ECInstanceId = 102))";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 2);;
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = :id";
@@ -2657,10 +2657,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::SubqueryTests( int rowCountPerClass )
     ECSqlTestDataset dataset;
 
     Utf8CP ecsql = "SELECT ECInstanceId FROM ecsql.P WHERE ECInstanceId < (SELECT avg(ECInstanceId) FROM ecsql.P)";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass/2);
 
     ecsql = "SELECT ECInstanceId FROM (SELECT * FROM ecsql.P)";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     return dataset;
     }
@@ -2673,22 +2673,22 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ECSqlTestDataset dataset;
 
     Utf8CP ecsql = "SELECT ECInstanceId FROM ecsql.P UNION SELECT ECInstanceId FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass*2);;
 
     ecsql = "SELECT ECInstanceId FROM ecsql.P UNION ALL SELECT ECInstanceId FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass*2);
 
     ecsql = "SELECT B, Bi, I, L, S, P2D, P3D FROM ecsql.P UNION ALL SELECT B, Bi, I, L, S, P2D, P3D FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 7, rowCountPerClass*2);
 
     ecsql = "SELECT PStructProp FROM ecsql.PSA UNION SELECT PStructProp FROM ecsql.SAStruct";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, 1);
 
-    ecsql = "SELECT B_Array, Bi_Array, D_Array, Dt_Array, I_Array, S_Array, P2D_Array, P3D_Array FROM ecsql.PSA UNION ALL B_Array, Bi_Array, D_Array, Dt_Array, I_Array, S_Array, P2D_Array, P3D_Array FROM ecsql.PA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ecsql = "SELECT B_Array, Bi_Array, D_Array, Dt_Array, I_Array, S_Array, P2D_Array, P3D_Array FROM ecsql.PSA UNION ALL SELECT B_Array, Bi_Array, D_Array, Dt_Array, I_Array, S_Array, P2D_Array, P3D_Array FROM ecsql.PA";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 8, rowCountPerClass*2);
 
     ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT PStruct_Array FROM ecsql.SAStruct";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1,  20);
 
     ecsql = "SELECT S FROM ecsql.P UNION SELECT Dt FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);

@@ -21,10 +21,10 @@ private:
     //static class
     ECSqlSelectPreparer ();
     ~ECSqlSelectPreparer ();
-
+    static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, SingleSelectStatementExp const& exp);
 public:
+
     static ECSqlStatus Prepare(ECSqlPrepareContext& ctx, SelectStatementExp const& exp);
-    static ECSqlStatus Prepare(ECSqlPrepareContext& ctx, UnionStatementExp const& exp);
     };
 
 
