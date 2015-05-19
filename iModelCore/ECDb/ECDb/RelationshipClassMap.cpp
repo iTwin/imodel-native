@@ -1003,37 +1003,37 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfoCR mapInfo)
         case RelationshipClassMapInfo::CardinalityType::OneToOne:
             {
             if (createOnSource)
-                AddIndicesToRelationshipEnds (RIDX_SourceOnly, true /*createUniqueIndex*/);
+                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, true /*createUniqueIndex*/);
 
             if (createOnTarget)
-                AddIndicesToRelationshipEnds (RIDX_TargetOnly, true /*createUniqueIndex*/);
+                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, true /*createUniqueIndex*/);
             break;
             }
         case RelationshipClassMapInfo::CardinalityType::OneToMany:
             {
             if (createOnSource)
-                AddIndicesToRelationshipEnds (RIDX_SourceOnly, false);
+                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
 
             if (createOnTarget)
-                AddIndicesToRelationshipEnds (RIDX_TargetOnly, enforceUniqueness);
+                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, enforceUniqueness);
             break;
             }
         case RelationshipClassMapInfo::CardinalityType::ManyToOne:
             {
             if (createOnSource)
-                AddIndicesToRelationshipEnds (RIDX_SourceOnly, enforceUniqueness);
+                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, enforceUniqueness);
 
             if (createOnTarget)
-                AddIndicesToRelationshipEnds (RIDX_TargetOnly, false);
+                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
             break;
             }
         case RelationshipClassMapInfo::CardinalityType::ManyToMany:
             {
             if (createOnSource)
-                AddIndicesToRelationshipEnds (RIDX_SourceOnly, false);
+                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
 
             if (createOnTarget)
-                AddIndicesToRelationshipEnds (RIDX_TargetOnly, false);
+                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
 
             /*
             * Make the entire relationship instance unique unless the user wants otherwise
@@ -1049,12 +1049,12 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfoCR mapInfo)
             if (preferredDirection == RelationshipClassMapInfo::PreferredDirection::TargetToSource)
                 {
                 if (createOnSource)
-                    AddIndicesToRelationshipEnds (RIDX_TargetToSource, addUniqueIndex); // unique index starting with target
+                    AddIndicesToRelationshipEnds(RelationshipIndexSpec::TargetAndSource, addUniqueIndex); // unique index starting with target
                 }
             else
                 {
                 if (createOnTarget)
-                    AddIndicesToRelationshipEnds (RIDX_SourceToTarget, addUniqueIndex); // unique index starting with target
+                    AddIndicesToRelationshipEnds(RelationshipIndexSpec::SourceAndTarget, addUniqueIndex); // unique index starting with target
                 }
 
             break;
@@ -1070,28 +1070,37 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfoCR mapInfo)
 ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec spec, bool isUniqueIndex)
     {
     // Setup name of the index
-    Utf8String name = "idx_ECRel_";
+    Utf8String name;
+    if (isUniqueIndex)
+        name.append("uix_");
+    else
+        name.append("ix_");
+
+    if (isUniqueIndex)
+        name.append("unique_");
+
+    //add class full name as subclasses of the relationship might require different indices
+    WStringCR nsPrefix = GetClass().GetSchema().GetNamespacePrefix();
+    name.append(!nsPrefix.empty() ? Utf8String(nsPrefix) : Utf8String(GetClass().GetSchema().GetName())).append("_").append(Utf8String(GetClass().GetName())).append("_");
+   
     switch(spec)
         {
-        case RIDX_SourceOnly:
-            name.append ("Source_");
+        case RelationshipIndexSpec::Source:
+            name.append ("Source");
             break;
-        case RIDX_TargetOnly:
-            name.append ("Target_");
+        case RelationshipIndexSpec::Target:
+            name.append ("Target");
             break;
-        case RIDX_SourceToTarget:
-            name.append ("SourceToTarget_");
+        case RelationshipIndexSpec::SourceAndTarget:
+            name.append ("Source_Target");
             break;
-        case RIDX_TargetToSource:
-            name.append ("TargetToSource_");
+        case RelationshipIndexSpec::TargetAndSource:
+            name.append ("Target_Source");
             break;
         default:
             break;
         }
-    if (isUniqueIndex)
-        name.append ("Unique_");
     
-    name.append (GetTable ().GetName());
     auto existingIndex = GetTable().GetDbDefR ().FindIndexP (name.c_str ());
     if (existingIndex)
         {
@@ -1144,22 +1153,22 @@ void RelationshipClassLinkTableMap::AddIndicesToRelationshipEnds (RelationshipIn
    
     switch(spec)
         {
-        case RIDX_SourceOnly:
+        case RelationshipIndexSpec::Source:
             {
             AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
             break;
             }
-        case RIDX_TargetOnly:
+        case RelationshipIndexSpec::Target:
             {
             AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
             break;
             }
-        case RIDX_SourceToTarget:
+        case RelationshipIndexSpec::SourceAndTarget:
             {
             AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
             break;
             }
-        case RIDX_TargetToSource:
+        case RelationshipIndexSpec::TargetAndSource:
             {
             AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, sourceECInstanceIdColumn, sourceECClassIdColumn);
             break;

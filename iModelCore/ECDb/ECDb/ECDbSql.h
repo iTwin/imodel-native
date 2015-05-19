@@ -154,16 +154,17 @@ struct NameGenerator
         Utf8String m_format;
 
     public:
-        NameGenerator (Utf8CP format = "ecdb_%s")
-            :m_format (format), m_uniqueIdGenerator (1)
-            {}
+        explicit NameGenerator (Utf8CP format = "ecdb_%s")
+            :m_format (format), m_uniqueIdGenerator (1) {}
+
+        ~NameGenerator() {}
 
         void Generate (Utf8StringR generatedName)
             {
             generatedName.clear ();
-            generatedName.Sprintf (m_format.c_str (), m_uniqueIdGenerator++);
+            generatedName.Sprintf (m_format.c_str (), m_uniqueIdGenerator);
+            m_uniqueIdGenerator++;
             }
-        ~NameGenerator () {}
     };
 
 //======================================================================================

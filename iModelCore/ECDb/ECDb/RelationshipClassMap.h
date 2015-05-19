@@ -135,12 +135,12 @@ public:
 struct RelationshipClassLinkTableMap : RelationshipClassMap
 {
 private:
-    enum RelationshipIndexSpec
+    enum class RelationshipIndexSpec
         {
-        RIDX_SourceOnly ,
-        RIDX_TargetOnly,
-        RIDX_SourceToTarget,
-        RIDX_TargetToSource,
+        Source,
+        Target,
+        SourceAndTarget,
+        TargetAndSource,
         };
 
 private:
