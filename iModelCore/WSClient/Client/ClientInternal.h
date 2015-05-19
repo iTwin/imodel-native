@@ -26,6 +26,7 @@
 #include "ClientConfiguration.h"
 #include "ClientConnection.h"
 #include "ServerInfoProvider.h"
+#include "Logging.h"
 #include "Utils.h"
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN

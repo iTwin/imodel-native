@@ -148,6 +148,7 @@ AsyncTaskPtr<void> ChunkedUploadRequest::SendHandshakeAndContinue (std::shared_p
 
     request.SetCancellationToken (cuRequest->m_cancellationToken);
 
+    LOG.debugv ("ChunkedUpload::SendHandshake %s", cuRequest->m_etag.c_str ());
     return request.PerformAsync ()
     ->Then ([=] (HttpResponse& response)
         {
@@ -228,6 +229,7 @@ void ChunkedUploadRequest::SendChunkAndContinue (std::shared_ptr<ChunkedUploadRe
     request.SetConnectionTimeoutSeconds (WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds (WSRepositoryClient::Timeout::Transfer::Upload);
 
+    LOG.debugv ("ChunkedUpload::SendChunk %s", cuRequest->m_etag.c_str ());
     request.PerformAsync ()->Then ([=] (HttpResponse& response)
         {
         cuRequest->m_data->response = response;

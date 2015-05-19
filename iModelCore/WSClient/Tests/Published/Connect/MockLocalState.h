@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <Bentley/BeTest.h>
 #include <MobileDgn/MobileDgnApplication.h>
 
 using namespace ::testing;
