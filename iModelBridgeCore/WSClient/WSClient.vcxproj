@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p  WebServicesClient b</NMakeReBuildCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include;$(IncludePath)</IncludePath>
+    <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(TEMP)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(TEMP)\$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Client\ChunkedUploadRequest.cpp" />
+    <ClCompile Include="Client\ClientConfiguration.cpp" />
+    <ClCompile Include="Client\ClientConnection.cpp" />
+    <ClCompile Include="Client\ClientInternal.cpp" />
+    <ClCompile Include="Client\Connect\Authentication.cpp" />
+    <ClCompile Include="Client\Connect\AuthenticationData.cpp" />
+    <ClCompile Include="Client\Connect\Connect.cpp" />
+    <ClCompile Include="Client\Connect\ConnectAuthenticationHandler.cpp" />
+    <ClCompile Include="Client\Connect\ConnectAuthenticationPersistence.cpp" />
+    <ClCompile Include="Client\Connect\ConnectSetup.cpp" />
+    <ClCompile Include="Client\Connect\ConnectSpaces.cpp" />
+    <ClCompile Include="Client\Connect\ConnectTokenProvider.cpp" />
+    <ClCompile Include="Client\Connect\SamlToken.cpp" />
+    <ClCompile Include="Client\MobileTracking.cpp" />
+    <ClCompile Include="Client\ObjectId.cpp" />
+    <ClCompile Include="Client\Passport.cpp" />
+    <ClCompile Include="Client\Response\WSCreateObjectResponse.cpp" />
+    <ClCompile Include="Client\Response\WSFileResponse.cpp" />
+    <ClCompile Include="Client\Response\WSObjectsReader.cpp" />
+    <ClCompile Include="Client\Response\WSObjectsReaderV1.cpp" />
+    <ClCompile Include="Client\Response\WSObjectsReaderV2.cpp" />
+    <ClCompile Include="Client\Response\WSObjectsResponse.cpp" />
+    <ClCompile Include="Client\ServerInfoProvider.cpp" />
+    <ClCompile Include="Client\UrlProvider.cpp" />
+    <ClCompile Include="Client\UsageTracking.cpp" />
+    <ClCompile Include="Client\Utils.cpp" />
+    <ClCompile Include="Client\WebApi\WebApi.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV1.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV1BentleyConnect.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV2.cpp" />
+    <ClCompile Include="Client\WSClient.cpp" />
+    <ClCompile Include="Client\WSError.cpp" />
+    <ClCompile Include="Client\WSInfo.cpp" />
+    <ClCompile Include="Client\WSQuery.cpp" />
+    <ClCompile Include="Client\WSRepository.cpp" />
+    <ClCompile Include="Client\WSRepositoryClient.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Client\ClientConfiguration.h" />
+    <ClInclude Include="Client\ClientConnection.h" />
+    <ClInclude Include="Client\ClientInternal.h" />
+    <ClInclude Include="Client\Connect\AuthenticationData.h" />
+    <ClInclude Include="Client\Connect\Connect.xliff.h" />
+    <ClInclude Include="Client\Logging.h" />
+    <ClInclude Include="Client\ServerInfoProvider.h" />
+    <ClInclude Include="Client\Utils.h" />
+    <ClInclude Include="Client\WebApi\WebApi.h" />
+    <ClInclude Include="Client\WebApi\WebApiV1.h" />
+    <ClInclude Include="Client\WebApi\WebApiV1BentleyConnect.h" />
+    <ClInclude Include="Client\WebApi\WebApiV2.h" />
+    <ClInclude Include="Client\WSError.xliff.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\ChunkedUploadRequest.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\Authentication.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\Connect.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectAuthenticationHandler.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectMessaging.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectSetup.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectSpaces.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\IConnectAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\IConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Connect\SamlToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\MobileTracking.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\ObjectId.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Passport.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSCreateObjectResponse.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSFileResponse.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReader.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV1.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV2.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsResponse.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\UrlProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\UsageTracking.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WebServicesClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSError.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSQuery.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSRepository.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSRepositoryClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="WSClient.PartFile.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Client\Client.mke" />
+    <None Include="Client\ClientPolicy.mki" />
+    <None Include="Client\Connect\Connect.mki" />
+    <None Include="Client\prewire.mke" />
+    <None Include="Client\xliffs.mke" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

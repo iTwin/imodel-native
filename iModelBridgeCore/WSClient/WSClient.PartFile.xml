@@ -52,6 +52,7 @@
         <Bindings>
             <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
                 Delivery/xliffs/WSError_en.xliff
+                Delivery/xliffs/Connect_en.xliff
             </Files>
         </Bindings>
     </Part>
