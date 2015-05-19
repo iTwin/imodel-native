@@ -707,4 +707,154 @@ TEST_F (ECDbHintTests, UniqueIndexesSupportFor1to1RelationshipWithTablePerHierar
 
     ecdb.CloseDb ();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbHintTests, InstanceInsertionForRelationshipsMappedToSameTable)
+    {
+    ECDbTestProject testproject;
+    ECDbR ecdb = testproject.Create ("RelationshipsWithMappingHintTablePerHierarchy_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", false);
+
+    ASSERT_TRUE (ecdb.TableExists ("tph_TPHOwnsTPH"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_TPHhasClassA"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_TPHhasClassB"));
+
+    ECSchemaCP schema = ecdb.Schemas ().GetECSchema ("TablePerHierarchy", true);
+    ASSERT_TRUE (schema != nullptr) << "Couldn't locate Schema TablerPerHierarchy";
+
+    ECClassCP TPH = schema->GetClassCP (L"TPH");
+    ASSERT_TRUE (TPH != nullptr) << "Couldn't locate class TPH from schema";
+    ECClassCP classA = schema->GetClassCP (L"ClassA");
+    ASSERT_TRUE (classA != nullptr) << "Couldn't locate classA from Schema";
+    ECClassCP classB = schema->GetClassCP (L"ClassB");
+    ASSERT_TRUE (classB != nullptr) << "Couldn't locate classB from Schema";
+
+    //Insert Instances for class TPH
+    ECN::StandaloneECInstancePtr TPHInstance1 = TPH->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECN::StandaloneECInstancePtr TPHInstance2 = TPH->GetDefaultStandaloneEnabler ()->CreateInstance ();
+
+    TPHInstance1->SetValue (L"TPH", ECValue ("tph_string1"));
+    TPHInstance2->SetValue (L"TPH", ECValue ("tph_string2"));
+
+    ECInstanceInserter inserter (ecdb, *TPH);
+    ASSERT_TRUE (inserter.IsValid ());
+
+    auto stat = inserter.Insert (*TPHInstance1, true);
+    ASSERT_TRUE (stat == SUCCESS);
+    stat = inserter.Insert (*TPHInstance2, true);
+    ASSERT_TRUE (stat == SUCCESS);
+
+    //Insert Instances for ClassA
+    ECN::StandaloneECInstancePtr ClassAInstance1 = classA->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECN::StandaloneECInstancePtr ClassAInstance2 = classA->GetDefaultStandaloneEnabler ()->CreateInstance ();
+
+    ClassAInstance1->SetValue (L"ClassA", ECValue ("ClassA_string1"));
+    ClassAInstance2->SetValue (L"ClassA", ECValue ("ClassA_string2"));
+
+    ECInstanceInserter classAinserter (ecdb, *classA);
+    ASSERT_TRUE (classAinserter.IsValid ());
+
+    stat = classAinserter.Insert (*ClassAInstance1, true);
+    ASSERT_TRUE (stat == SUCCESS);
+    stat = classAinserter.Insert (*ClassAInstance2, true);
+    ASSERT_TRUE (stat == SUCCESS);
+
+    //Insert Instances for ClassB
+    ECN::StandaloneECInstancePtr ClassBInstance1 = classB->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECN::StandaloneECInstancePtr ClassBInstance2 = classB->GetDefaultStandaloneEnabler ()->CreateInstance ();
+
+    ClassBInstance1->SetValue (L"ClassB", ECValue ("ClassB_string1"));
+    ClassBInstance2->SetValue (L"ClassB", ECValue ("ClassB_string2"));
+
+    ECInstanceInserter classBinserter (ecdb, *classB);
+    ASSERT_TRUE (classBinserter.IsValid ());
+
+    stat = classBinserter.Insert (*ClassBInstance1, true);
+    ASSERT_TRUE (stat == SUCCESS);
+    stat = classBinserter.Insert (*ClassBInstance2, true);
+    ASSERT_TRUE (stat == SUCCESS);
+
+    //Get Relationship Classes
+    ECRelationshipClassCP TPHownsTPH = schema->GetClassCP (L"TPHOwnsTPH")->GetRelationshipClassCP ();
+    ASSERT_TRUE (TPHownsTPH != nullptr);
+    ECRelationshipClassCP TPHhasClassA = schema->GetClassCP (L"TPHhasClassA")->GetRelationshipClassCP ();
+    ASSERT_TRUE (TPHhasClassA != nullptr);
+    ECRelationshipClassCP TPHhasClassB = schema->GetClassCP (L"TPHhasClassB")->GetRelationshipClassCP ();
+    ASSERT_TRUE (TPHhasClassB != nullptr);
+
+        {//Insert Instances for Relationship TPHOwnsTPH
+        ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*TPHownsTPH)->CreateRelationshipInstance ();
+        ECInstanceInserter relationshipinserter (ecdb, *TPHownsTPH);
+        ASSERT_TRUE (relationshipinserter.IsValid ());
+
+            {//Inserting 1st Instance
+            relationshipInstance->SetSource (TPHInstance1.get ());
+            relationshipInstance->SetTarget (TPHInstance2.get ());
+            relationshipInstance->SetInstanceId (L"source->target");
+            ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
+            }
+                {//Inserting 2nd Instance
+                relationshipInstance->SetSource (TPHInstance2.get ());
+                relationshipInstance->SetTarget (TPHInstance1.get ());
+                relationshipInstance->SetInstanceId (L"source->target");
+                ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
+                    }
+        }
+
+            {//Insert Instances for Relationship TPHhasClassA
+            ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*TPHhasClassA)->CreateRelationshipInstance ();
+            ECInstanceInserter relationshipinserter (ecdb, *TPHhasClassA);
+            ASSERT_TRUE (relationshipinserter.IsValid ());
+
+                {//Inserting 1st Instance
+                relationshipInstance->SetSource (TPHInstance1.get ());
+                relationshipInstance->SetTarget (ClassAInstance1.get ());
+                relationshipInstance->SetInstanceId (L"source->target");
+                ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
+                }
+                    {//Inserting 2nd Instance
+                    relationshipInstance->SetSource (TPHInstance2.get ());
+                    relationshipInstance->SetTarget (ClassAInstance2.get ());
+                    relationshipInstance->SetInstanceId (L"source->target");
+                    ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
+                        }
+                }
+
+                {//Insert Instances for Relationship TPHhasClassB
+                ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*TPHhasClassB)->CreateRelationshipInstance ();
+                ECInstanceInserter relationshipinserter (ecdb, *TPHhasClassB);
+                ASSERT_TRUE (relationshipinserter.IsValid ());
+
+                    {//Inserting 1st Instance
+                    relationshipInstance->SetSource (TPHInstance1.get ());
+                    relationshipInstance->SetTarget (ClassBInstance1.get ());
+                    relationshipInstance->SetInstanceId (L"source->target");
+                    ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
+                    }
+                        {//Inserting 2nd Instance
+                        relationshipInstance->SetSource (TPHInstance2.get ());
+                        relationshipInstance->SetTarget (ClassBInstance2.get ());
+                        relationshipInstance->SetInstanceId (L"source->target");
+                        ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
+                            }
+            }
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM tph.TPH"));
+    int rowCount = 0;
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        rowCount++;
+        }
+    ASSERT_EQ (rowCount, 6) << "Insert count doesn't match the No of rows returned";
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM tph.TPHOwnsTPH"));
+    rowCount = 0;
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        rowCount++;
+        }
+    ASSERT_EQ (rowCount, 6) << "No of row returned doesn't match the no of Instances inserted for Relationship Classes";
+    }
 END_ECDBUNITTESTS_NAMESPACE
