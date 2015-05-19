@@ -43,7 +43,10 @@ protected:
     double roll; //!< The Yaw angle in degrees
 };
 
-//! An object that contains two points, specifying a range. If the box represents a range in a 2-D model, then the z-coordinates will be zero. All coordinates are in meters.
+//! An object that defines a range.
+//! If the box represents a range in a 3-D model, then the box will have 8 corners and will have width(X), depth(Y), and height(Z). 
+//! If the box represents a range in a 2-D model, then the box will still have 8 corners but the z-coordinates will be all be zero, and the height will be zero.
+//! All coordinates are in meters.
 //! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union
 struct DGN_bbox
 {
@@ -525,17 +528,11 @@ struct DGN_bbox_areaxy : ScalarFunction
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Determine of two bounding boxes overlap
+    Determine if the areas enclosed by two 3-D bounding boxes overlap
     @param bb1       The first bounding box
     @param bb2       The second bounding box
-    @return 1 if bb1 overlaps bb2 or 0 if not.
+    @return 1 if the boxes overlap or 0 if not.
     @see DGN_bbox_contains
-    <p><b>Example (C++)</b>
-    <p>Here is an example of checking for bounding box overlaps.
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps.sampleCode
-    <p>
-    <p>Here is the same example using the DgnDb R-Tree. That will make the search run fast even on a very large Db.
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_overlaps_rtree.sampleCode
 */
 int DGN_bbox_overlaps(DGN_bbox bb1, DGN_bbox bb2);
 // __PUBLISH_SECTION_END__
