@@ -37,8 +37,8 @@ struct EdgeStatusAccessor
         uint32_t    m_flags;
         };
 
-    explicit EdgeStatusAccessor(DgnElementDependencyGraph::EdgeStatus s) : m_flags((uint32_t)s) {;}
-    explicit EdgeStatusAccessor(uint32_t s) : m_flags(s) {;}
+    explicit EdgeStatusAccessor(DgnElementDependencyGraph::EdgeStatus s) : m_flags((uint32_t)s) {}
+    explicit EdgeStatusAccessor(uint32_t s) : m_flags(s) {}
     DgnElementDependencyGraph::EdgeStatus ToEdgeStatus() const {return (DgnElementDependencyGraph::EdgeStatus)m_flags;}
     };
 
@@ -112,11 +112,6 @@ struct DgnElementDependencyGraph::EdgeQueue : DgnElementDependencyGraph::TableAp
     };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnElementDrivesElementDependencyHandler::GetDescription() {return _GetDescription();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  01/15

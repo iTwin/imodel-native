@@ -149,7 +149,7 @@ struct IProgressiveDisplay : IRefCounted
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
-struct RtreeViewFilter : BeSQLite::RTreeMatchFunction::Tester
+struct RtreeViewFilter : BeSQLite::RTreeAcceptFunction::Tester
     {
     bool                    m_doSkewtest;
     Frustum                 m_frustum;
@@ -250,7 +250,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct DgnDbRTreeFitFilter : BeSQLite::RTreeMatchFunction::Tester
+struct DgnDbRTreeFitFilter : BeSQLite::RTreeAcceptFunction::Tester
     {
     DRange3d m_fitRange;
     DRange3d m_lastRange;
