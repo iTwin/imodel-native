@@ -309,27 +309,8 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-
-#ifdef CANT_USE_ECSQL // 1. ?n bindings are not supported, 2. dgn_PrjRTree is not in the ecschema
-    ECSqlStatement stmt;
-    stmt.Prepare(*m_db, 
-        "SELECT item.ECInstanceId, item.TestItemProperty FROM"
-        "  (SELECT g.ECInstanceId FROM"
-        "     (SELECT rt.ElementId FROM dgn_PrjRTree rt "                           // FROM R-Tree
-        "        WHERE rt.MaxX >= ?1 AND rt.MinX <= ?4"                             //  select Elements in nodes that overlap bbox
-        "          AND rt.MaxY >= ?2 AND rt.MinY <= ?5"
-        "          AND rt.MaxZ >= ?3 AND rt.MinZ <= ?6) rt_res"                     //  (call this result set "rt_res")
-        "     ,"
-        "      dgn.ElementGeom g WHERE g.ECInstanceId=rt_res.ECInstanceId"      // JOIN ElementGeom
-        "          AND DGN_bbox_overlaps(DGN_placement_aabb(g.Placement), DGN_bbox(?1, ?2, ?3, ?4, ?5, ?6))"  // select geoms that overlap bbox
-        "  ) geom_res"                                                          //   (call this result set "geom_res")
-        "  ,"
-        "  DgnPlatformTest.Obstacle obstacle,"                                  // JOIN Obstacle
-        "  DgnPlatformTest.TestItem item "                                      // JOIN TestItem
-        "       WHERE obstacle.ECInstanceId = geom_res.ECInstanceId"            //      only Obstacles
-        "        AND item.Elementid = obstacle.ECInstanceId AND item.TestItemProperty = ?7" //    ... with certain items
-        );
-#else
+	// Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
+	
     Utf8CP sql = 
         "SELECT item.ElementId, item.x01 FROM"
         "  (SELECT g.ElementId FROM"
@@ -351,8 +332,6 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     Statement stmt;
     stmt.Prepare(*m_db, sql);
-
-#endif
 
     //  Initial placement
     //
