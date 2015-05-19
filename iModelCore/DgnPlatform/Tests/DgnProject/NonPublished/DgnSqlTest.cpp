@@ -400,6 +400,223 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SqlFunctionsTest, spatialQueryECSql)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"spatialQueryECSql.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+
+    double o1y = 5.0;
+    double o2x = 5.0;
+    DPoint3d o1origin = DPoint3d::From(0,o1y,0);
+    DPoint3d o2origin = DPoint3d::From(o2x,0,0);
+
+    DgnElementId r1, o1, o1a, o2, o2a;
+        {
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, "Robot1");
+        InsertElement(*robot1);
+
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "Obstacle1");
+        InsertElement(*obstacle1);
+        obstacle1->SetTestItem(*m_db, "SomeKindOfObstacle");
+
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "Obstacle1a");
+        InsertElement(*obstacle1a);
+        obstacle1a->SetTestItem(*m_db, "SomeOtherKindOfObstacle");
+
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "Obstacle2");
+        InsertElement(*obstacle2);
+        obstacle2->SetTestItem(*m_db, "SomeKindOfObstacle");
+
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "Obstacle2a");
+        InsertElement(*obstacle2a);
+        obstacle2a->SetTestItem(*m_db, "SomeOtherKindOfObstacle");
+
+        // Double-check that we created the robots and obstacles, as expected
+        ASSERT_EQ( RobotElement::QueryClassId(*m_db)    , robot1->GetElementClassId() );
+        ASSERT_EQ( ObstacleElement::QueryClassId(*m_db) , obstacle1->GetElementClassId() );
+
+        m_db->SaveChanges();
+
+        r1 = robot1->GetElementId();
+        o1 = obstacle1->GetElementId();
+        o1a = obstacle1a->GetElementId();
+        o2 = obstacle2->GetElementId();
+        o2a = obstacle2a->GetElementId();
+        }
+
+    RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
+
+	// Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
+	
+    ECSqlStatement stmt;
+    stmt.Prepare(*m_db, 
+        "SELECT TestItem.ECInstanceId, TestItem.TestItemProperty FROM dgn.ElementRTree rt, DgnPlatformTest.Obstacle, DgnPlatformTest.TestItem"
+        "     WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)"
+        "       AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
+        "       AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)"
+        "       AND Obstacle.ECInstanceId = rt.ECInstanceId"
+        "       AND TestItem.ECInstanceId = rt.ECInstanceId AND TestItem.TestItemProperty = :propertyValue"
+        );
+
+    //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
+    auto qplan = m_db->ExplainQueryPlan(nullptr, stmt.GetNativeSql());
+    auto scanRt = qplan.find("SCAN TABLE dgn_PrjRTree VIRTUAL TABLE INDEX");
+    auto searchItem = qplan.find("SEARCH TABLE dgn_ElementItem USING INTEGER PRIMARY KEY");
+    auto searchElement = qplan.find ("SEARCH TABLE dgn_Element USING INTEGER PRIMARY KEY");
+    ASSERT_NE( Utf8String::npos , scanRt );
+    ASSERT_NE( Utf8String::npos , searchItem );
+    ASSERT_NE( Utf8String::npos , searchElement );
+    ASSERT_LT( scanRt , searchItem );
+    ASSERT_LT( scanRt , searchElement );
+
+    //  Initial placement: Robot1 is not touching any obstacle
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                   ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |R1                 V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step());
+        }
+
+    //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |R1                 ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                   V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        ObstacleElementCPtr obstacle1 = m_db->Elements().Get<ObstacleElement>(o1);
+
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), obstacle1->GetPlacement().GetOrigin()));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+
+        DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1 , ofoundId );
+        ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+
+        //  Query for the other kind of obstacle
+        stmt.Reset();
+        stmt.ClearBindings();
+        r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeOtherKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+
+        ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1a , ofoundId );
+        ASSERT_STREQ( "SomeOtherKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+
+        //  Query should fail if I specify an item that is not found on any kind of obstacle
+        stmt.Reset();
+        stmt.ClearBindings();
+        r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "no kind of obstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step());
+        }
+
+    //  Move Robot1 over, so that it touches Obstacle2 but not Obstacle1
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                   ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                R1 V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        ObstacleElementCPtr obstacle2 = m_db->Elements().Get<ObstacleElement>(o2);
+
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), obstacle2->GetPlacement().GetOrigin()));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+
+        DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o2 , ofoundId );
+        ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+        }
+
+    //  Move Robot1 so that it touches both Obstacle1 and Obstacle1
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                R1 ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                   V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), DPoint3d::From(o2x,o1y,0)));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        DgnElementIdSet overlaps;
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        while (BeSQLite::EC::ECSqlStepStatus::HasRow == stmt.Step())
+            {
+            overlaps.insert (stmt.GetValueId<DgnElementId>(0));
+            ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+            }
+        ASSERT_EQ( 2 , overlaps.size() );
+        ASSERT_TRUE( overlaps.Contains(o1) );
+        ASSERT_TRUE( overlaps.Contains(o2) );
+        }    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, spatialQuery)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"spatialQuery.idgndb", BeSQLite::Db::OPEN_ReadWrite);
