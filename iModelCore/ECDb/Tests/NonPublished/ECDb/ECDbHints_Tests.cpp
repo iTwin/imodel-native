@@ -658,4 +658,53 @@ TEST_F (ECDbHintTests, TestInValidMapStrategyValue)
     auto importStatus = ecdb.Schemas ().ImportECSchemas (readContext->GetCache ());
     ASSERT_TRUE (importStatus == BentleyStatus::ERROR)<< "Schema import successful instead of returning error";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbHintTests, UniqueIndexesSupportFor1to1RelationshipWithTablePerHierarchy)
+    {
+    ECDbTestProject testproject;
+    ECDbR ecdb = testproject.Create ("PartialIndexWithMultipleRelationshipInSameTable_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", false);
+
+    BeSQLite::Statement stmt;
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Id from ec_Class where ec_Class.[Name] = ?"));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (1, "TPHhasClassA", Statement::MakeCopy::No));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
+
+    Utf8String whereClauseValue;
+    ASSERT_EQ (SUCCESS, whereClauseValue.Sprintf ("ECClassId = %d", stmt.GetValueInt (0)));
+    stmt.Finalize ();
+
+    //verify that entry in the ec_Index table exists for relationship table TPHhasClassA
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT ec_Index.[Name], ec_Index.[IsUnique] from ec_Index where ec_Index.[WhereClause] = ?"));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (1, whereClauseValue, Statement::MakeCopy::No));
+    while (DbResult::BE_SQLITE_ROW == stmt.Step ())
+        {
+        ASSERT_EQ (1, stmt.GetValueInt (1)) << "Index value for 1:1 Relationship is not Unique";
+        Utf8String indexName = stmt.GetValueText (0);
+        ASSERT_TRUE (indexName == "idx_ECRel_Source_Unique_tph_TPHOwnsTPH" || "idx_ECRel_Target_Unique_tph_TPHOwnsTPH");
+        }
+    stmt.Finalize ();
+
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Id from ec_Class where ec_Class.[Name] = ?"));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (1, "TPHhasClassB", Statement::MakeCopy::No));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
+
+    ASSERT_EQ (SUCCESS, whereClauseValue.Sprintf ("ECClassId = %d", stmt.GetValueInt (0)));
+    stmt.Finalize ();
+
+    //verify that entry in ec_Index table also exists for relationship table TPHhasClassB
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT ec_Index.[Name], ec_Index.[IsUnique] from ec_Index where ec_Index.[WhereClause] = ?"));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (1, whereClauseValue, Statement::MakeCopy::No));
+    while (DbResult::BE_SQLITE_ROW == stmt.Step ())
+        {
+        ASSERT_EQ (1, stmt.GetValueInt (1)) << "Index value for 1:1 Relationship is not Unique";
+        Utf8String indexName = stmt.GetValueText (0);
+        ASSERT_TRUE (indexName == "uix_unique_tph_TPHhasClassB_Source" || "uix_unique_tph_TPHhasClassB_Target");
+        }
+    stmt.Finalize ();
+
+    ecdb.CloseDb ();
+    }
 END_ECDBUNITTESTS_NAMESPACE
