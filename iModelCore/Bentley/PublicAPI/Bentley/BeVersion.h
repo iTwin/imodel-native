@@ -66,6 +66,7 @@ public:
     int CompareTo (BeVersionCR other, Mask mask=VERSION_All) const { return (GetInt64 (mask)==other.GetInt64 (mask)) ? 0 : (GetInt64 (mask) > other.GetInt64 (mask) ? 1 : -1); }
 
     bool operator == (BeVersionCR rhs) const {return CompareTo (rhs) == 0;}
+    bool operator != (BeVersionCR rhs) const {return CompareTo (rhs) != 0;}
     bool operator < (BeVersionCR rhs) const  {return CompareTo (rhs) < 0;}
     bool operator <= (BeVersionCR rhs) const {return CompareTo (rhs) <= 0;}
     bool operator > (BeVersionCR rhs) const  {return CompareTo (rhs) > 0;}
