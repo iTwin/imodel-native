@@ -21,7 +21,9 @@
 #define DGN_CLASSNAME_Element             "Element"
 #define DGN_CLASSNAME_ElementAspect       "ElementAspect"
 #define DGN_CLASSNAME_ElementGeom         "ElementGeom"
+#define DGN_CLASSNAME_ElementGroup        "ElementGroup"
 #define DGN_CLASSNAME_ElementItem         "ElementItem"
+#define DGN_CLASSNAME_ElementGroup        "ElementGroup"
 #define DGN_CLASSNAME_GeomPart            "GeomPart"
 #define DGN_CLASSNAME_Category            "Category"
 #define DGN_CLASSNAME_Link                "Link"
@@ -49,14 +51,14 @@
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define DGN_RELNAME_CategoryOwnsSubCategories  "CategoryOwnsSubCategories"
-#define DGN_RELNAME_ElementDrivesElement       "ElementDrivesElement"
-#define DGN_RELNAME_ElementHasLinks            "ElementHasLinks"
-#define DGN_RELNAME_ElementGeomUsesParts       "ElementGeomUsesParts"
-#define DGN_RELNAME_ElementGroupsElements      "ElementGroupsElements"
-#define DGN_RELNAME_ElementOwnsAspects         "ElementOwnsAspects"
-#define DGN_RELNAME_ElementOwnsItem            "ElementOwnsItem"
-#define DGN_RELNAME_ModelDrivesModel           "ModelDrivesModel"
+#define DGN_RELNAME_CategoryOwnsSubCategories   "CategoryOwnsSubCategories"
+#define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
+#define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
+#define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
+#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
+#define DGN_RELNAME_ElementOwnsAspects          "ElementOwnsAspects"
+#define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
+#define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
 #include "UnitDefinition.h"
@@ -984,8 +986,8 @@ public:
     //! If you have a DgnElement, call GetElementKey on it rather than using this method.
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
 
-    //! Insert an ElementGroupsElements relationship between the specified element and the member element
-    DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey);
+    //! Insert an ElementGroupHasMembers relationship between the specified ElementGroup and the member Element
+    DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupHasMembers(DgnElementKeyCR elementGroupKey, DgnElementKeyCR memberElementKey);
 
     //! Add element-loaded-from-db event listener.
     DGNPLATFORM_EXPORT void AddListener(Listener* listener);
@@ -1008,6 +1010,7 @@ private:
 public:
     DgnGeomPartId GetHighestGeomPartId();
     DgnGeomPartId MakeNewGeomPartId();
+    static BentleyStatus Draw(DgnGeomPartId, ViewContextR, DgnCategoryId, ViewFlagsCR);
 
 public:
     // WIP: waiting for IGeometryExt deserialization to be hooked up!

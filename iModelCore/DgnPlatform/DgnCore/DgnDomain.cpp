@@ -144,6 +144,10 @@ DbResult DgnDomains::SyncWithSchemas()
         registeredDomains.erase(thisDomain); // so we know we've already found it.
         }
 
+    // if we're opening a readonly database, we know we can't add any new dependencies on a registered but unknown domain. Stop now.
+    if (m_dgndb.IsReadonly())
+        return BE_SQLITE_OK;
+
     // any that are left are new and need to be added to the database
     for (auto iter : registeredDomains)
         {
@@ -157,6 +161,39 @@ DbResult DgnDomains::SyncWithSchemas()
         }
 
     return BE_SQLITE_OK;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* Before you can register a Handler, all of its superclass Handlers must be registered.
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnDomain::VerifySuperclass(Handler& handler) 
+    {
+    Handler* superclass = handler.GetSuperClass();
+    if (&DgnDomain::Handler::GetHandler() == superclass) // Handler is always "registered"
+        return SUCCESS;
+
+    if (nullptr == superclass || (nullptr == superclass->GetDomain().FindHandler(superclass->m_ecClassName.c_str())))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return VerifySuperclass(*superclass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnDomain::RegisterHandler(Handler& handler) 
+    {
+    if (SUCCESS != VerifySuperclass(handler))
+        return ERROR;
+
+    handler.SetDomain(*this); 
+    m_handlers.push_back(&handler);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -393,7 +430,7 @@ ElementHandler::Extension* DgnDomain::Handler::FindExtension (Extension::Token& 
     if (NULL != found)
         return  &found->m_extension;
 
-    return  m_superClass ? m_superClass->FindExtension(id) : NULL;
+    return  m_superClass ? m_superClass->FindExtension(id) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -402,7 +439,7 @@ ElementHandler::Extension* DgnDomain::Handler::FindExtension (Extension::Token& 
 DgnDomain::Handler* DgnDomain::Handler::z_CreateInstance()
     {
     DgnDomain::Handler* instance= new DgnDomain::Handler();
-    instance->SetSuperClass ((DgnDomain::Handler*) 0);
+    instance->SetSuperClass ((DgnDomain::Handler*) nullptr);
     return instance;
     }
 

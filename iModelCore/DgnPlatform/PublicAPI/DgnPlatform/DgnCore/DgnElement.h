@@ -60,11 +60,13 @@ public:
         DgnClassId      m_classId;
         DgnCategoryId   m_categoryId;
         Utf8CP          m_code;
+        Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
-        CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-                    m_model(model), m_classId(classId), m_categoryId(category), m_code(code), m_id(id), m_parentId(parent) {}
+        CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+                    m_model(model), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
 
+        void SetLabel(Utf8CP label) {m_label = label;}
         void SetCode(Utf8CP code) {m_code = code;}
         void SetParentId(DgnElementId parent) {m_parentId=parent;}
     };
@@ -79,37 +81,50 @@ public:
     };
 
     //! Create a subclass of this to store non-persistent information on a DgnElement.
-    struct AppData
+    struct AppData : RefCountedBase
     {
-        virtual ~AppData() {}
-
-        //! A unique identifier for this type of DgnElementAppData. Use a static instance of this class.
+        //! A unique identifier for this type of DgnElementAppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
 
-        //! Called to clean up owned resources and delete the app data.
-        //! @param[in]  el the DgnElement holding this AppData 
-        virtual void _OnCleanup(DgnElementCR el) = 0;
+        //! Called before this AppData's element is Inserted.
+        //! @param[in]  el the DgnElement holding this AppData
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual bool _OnInsert(DgnElementCR el)  {return false;}
+
+        //! Called after this AppData's element was Inserted.
+        //! @param[in]  el the new persistent DgnElement that was Inserted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note el will \not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
+        //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
         virtual bool _OnInserted(DgnElementCR el){return false;}
-        virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR update)  {return false;}
-        virtual bool _OnUpdated(DgnElementCR el) {return false;}
+
+        //! Called before this AppData's element is Updated.
+        //! @param[in] orig the original DgnElement
+        //! @param[in] modified the modified DgnElement about to replace orig
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
+        virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR modified)  {return false;}
+
+        //! Called after this AppData's element was Updated.
+        //! @param[in] orig the original DgnElement
+        //! @param[in] modified the modified DgnElement
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
+        virtual bool _OnUpdated(DgnElementCR orig, DgnElementCR modified) {return false;}
+
+        //! Called before this AppData's element is Deleted.
+        //! @param[in]  el the DgnElement to be deleted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual bool _OnDelete(DgnElementCR el)  {return false;}
+
+        //! Called after this AppData's element was Deleted.
+        //! @param[in]  el the DgnElement that was deleted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual bool _OnDeleted(DgnElementCR el) {return false;}
     };
 
 protected:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-    struct AppDataEntry
-        {
-        AppData::Key const* m_key;
-        AppData*            m_obj;
-        AppDataEntry*       m_next;
-
-        void Init(AppData::Key const& key, AppData* obj, AppDataEntry* next) {m_key = &key; m_obj = obj; m_next = next;}
-        void ClearEntry(DgnElementCR el) {if (nullptr == m_obj) return; m_obj->_OnCleanup(el); m_obj=nullptr;}
-        void SetEntry(AppData* obj, DgnElementCR el) {ClearEntry(el); m_obj = obj;}
-        };
 
     struct Flags
         {
@@ -131,22 +146,29 @@ protected:
     DgnClassId      m_classId;
     DgnCategoryId   m_categoryId;
     Utf8String      m_code;
+    Utf8String      m_label;
     mutable Flags   m_flags;
-    mutable AppDataEntry* m_appData;
-
-    AppDataEntry* FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry) const;
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     void SetInPool(bool val) const {m_flags.m_inPool = val;}
-                                                
+
     DGNPLATFORM_EXPORT virtual ~DgnElement();
+    //! Override to load the properties added by the DgnElement subclass. @note Must call T_Super::_LoadFromDb
                        virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
+    //! Override to insert the properties added by the DgnElement subclass. @note Must call T_Super::_InsertInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
+    //! Override to update the properties added by the DgnElement subclass. @note Must call T_Super::_UpdateInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
+    //! Override to do any additional processing on delete. @note Must call T_Super::_DeleteInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
                        virtual uint32_t _GetMemSize() const {return sizeof(*this);}
-
-    //! Virtual assignment operator.  If your subclass has member variables, it \em must override this method
+    //! Virtual assignment operator.  If your subclass has member variables, it \em must override this method @note If overriden must call T_Super::_CopyFrom
     DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR other);
+
+    //! Get the display label (for use in the GUI) for this DgnElement. 
+    //! The default implementation returns the label if set or the code if the label is not set.
+    //! Override if the DgnElement subclass needs to generate the display label in a different way.
+    virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode();}
 
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
     virtual void _OnInserted() {}
@@ -155,9 +177,10 @@ protected:
     virtual DgnElement2dCP _ToElement2d() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
+    virtual ElementGroupCP _ToElementGroup() const {return nullptr;}
 
     explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId), m_appData(nullptr) {}
+             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId) {}
 
 public:
     DgnModelStatus CopyFrom(DgnElementCR rhs) {return _CopyFrom(rhs);}
@@ -165,6 +188,7 @@ public:
     DGNPLATFORM_EXPORT void Release() const;
     uint32_t GetRefCount() const {return m_refCount.load();}
 
+    //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Utf8String _GenerateDefaultCode();
 
     GeometricElementCP ToGeometricElement() const {return _ToGeometricElement();}
@@ -172,6 +196,7 @@ public:
     DgnElement2dCP ToElement2d() const {return _ToElement2d();}
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}
+    ElementGroupCP ToElementGroup() const {return _ToElementGroup();}
 
     GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());}
     DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}
@@ -237,7 +262,7 @@ public:
     //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
     //! @param[in] appData The appData object to attach to this element.
-    DGNPLATFORM_EXPORT StatusInt AddAppData(AppData::Key const& key, AppData* appData) const;
+    DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* appData) const;
 
     //! Drop Application data from this element.
     //! @param[in] key the key for the AppData to drop.
@@ -291,6 +316,20 @@ public:
 
     //! Set the code of this DgnElement.
     void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
+
+    //! Get the optional label (user-friendly name) of this DgnElement.
+    //! @return the label or nullptr
+    Utf8CP GetLabel() const {return m_label.c_str();}
+
+    //! Set the label (user-friendly name) of this DgnElement.
+    void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
+
+    //! Get the display label (for use in the GUI) for this DgnElement.
+    //! @note The default implementation returns the label if set or the code if the label is not set.
+    //! @see GetLabel
+    //! @see GetCode
+    //! @see _GetDisplayLabel
+    Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
     static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
 };
@@ -472,8 +511,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement3dCR m_placement;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(model, classId, category, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(model, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
     };
@@ -529,8 +568,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement2dCR m_placement;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(model, classId, category, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(model, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
     };
@@ -562,6 +601,20 @@ protected:
 
 public:
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Shaun.Sewall    05/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+    friend struct ElementGroupHandler;
+
+protected:
+    ElementGroupCP _ToElementGroup() const override {return this;}
+
+    explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

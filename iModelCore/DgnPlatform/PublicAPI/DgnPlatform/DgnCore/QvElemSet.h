@@ -32,8 +32,11 @@ protected:
         Entry (_QvKey const& key, QvElem* qvElem, Entry* next) : m_key (key), m_qvElem (qvElem), m_next (next) {}
         };
 
+
     HeapZone&   m_zone;
     Entry*      m_entry;
+
+    ~QvElemSet() {FreeAll (false);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
@@ -51,32 +54,6 @@ void FreeAll (bool qvCacheDeleted)
         m_zone.Free (thisEntry, sizeof (Entry));
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _OnCleanup (DgnElementCR host) override
-    {
-    FreeAll (false);
-    host.GetHeapZone().Free (this, sizeof *this);
-    }
-
-#if defined (NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _OnElemChanged (DgnElementP host, bool qvCacheDeleted, DgnElementChangeReason) override
-    {
-    if (qvCacheDeleted)
-        {
-        // we just deleted the qv cache. We need to clear the entries (but don't delete them - that happens in _OnCleanup)
-        for (Entry* thisEntry=m_entry; thisEntry; thisEntry=thisEntry->m_next)
-            thisEntry->Clear();
-        }
-
-    return  true;
-    }
-#endif
 
 public:
     QvElemSet (HeapZone& zone) : m_zone(zone) {m_entry = NULL;}

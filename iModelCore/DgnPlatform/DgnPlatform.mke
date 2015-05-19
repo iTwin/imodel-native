@@ -461,7 +461,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
                             $(ContextSubpartsLibs)$(BentleyGeomLib) \
                             $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
-                            $(ContextSubpartsLibs)$(libprefix)freetype2$(stlibext) \
+                            $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext)
 
 %if $(TARGET_PLATFORM)!="WinRT"

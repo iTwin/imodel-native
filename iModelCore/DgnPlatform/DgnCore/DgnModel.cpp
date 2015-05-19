@@ -888,8 +888,8 @@ DgnFileStatus DgnModel::FillModel()
         return  DGNFILE_STATUS_Success;
 
     Statement stmt;
-    enum Column : int {Id=0,ClassId=1,CategoryId=2,Code=3,ParentId=4};
-    stmt.Prepare(m_dgndb, "SELECT Id,ECClassId,CategoryId,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
+    stmt.Prepare(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     SetFilled();
@@ -906,6 +906,7 @@ DgnFileStatus DgnModel::FillModel()
         elements.LoadElement(DgnElement::CreateParams(*this,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
+            stmt.GetValueText(Column::Label), 
             stmt.GetValueText(Column::Code), 
             id,
             stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
