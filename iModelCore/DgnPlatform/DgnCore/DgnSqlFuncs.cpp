@@ -94,7 +94,6 @@ struct PlacementFunc : ScalarFunction
     @param placement   The DGN_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
-    Note that when computing a union, it only makes sense to use \em axis-aligned bounding boxes, not \em element-aligned bounding boxes.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
 */
 DGN_bbox DGN_placement_aabb(DGN_placement placement);
@@ -135,8 +134,6 @@ struct DGN_placement_aabb : PlacementFunc
     @param placement   The DGN_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
-    <p>Here is an example of using DGN_placement_eabb to sum up element areas. Note that we must to use 
-    \em element-aligned bounding boxes in this query, rather than \a axis-aligned bounding boxes.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
 */
 DGN_bbox DGN_placement_eabb(DGN_placement placement);
@@ -260,7 +257,6 @@ struct DGN_placement_angles : PlacementFunc
     @param roll The Roll angle in degrees
     @return a DGN_angles object
     <p><b>Example (C++)</b>
-    <p>Here is an example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
 */
 DGN_angles DGN_angles(double yaw, double pitch, double roll);
@@ -288,7 +284,6 @@ struct DGN_angles : ScalarFunction
     @param member   The index of the member to get: Yaw=0, Pitch=1, Roll=2 
     @return the selected angle (in degrees); or an error if member is out of range or if \a angles is not a DGN_angles object
     <p><b>Example (C++)</b>
-    <p>Here is an example of checking the yaw angle of elements:
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
 */
 double DGN_angles_value(DGN_angles angles, int member);
@@ -320,9 +315,6 @@ struct DGN_angles_value : ScalarFunction
     @param angle2 a DGN_angles object
     @return the maximum absolute difference among the angles in degrees.
     <p><b>Example (C++)</b>
-    <p>Here is an example of using DGN_angles_maxdiff to look for elements with a specific placement angle. 
-        This example also shows how to combine tests on geometry and business properties in a single query. 
-        This example uses ECSql.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
 */
 double DGN_angles_maxdiff(DGN_angles angle1, DGN_angles angle2);
@@ -496,10 +488,9 @@ struct DGN_bbox_volume : ScalarFunction
     @see DGN_bbox_volume
     @see DGN_bbox_depth, DGN_bbox_width
     <p><b>Example (C++)</b>
-    <p>Here is an example of summing up X-Y areas. Note that you could add a WHERE clause to limit the query to a subset of elements.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
     <p>
-    <p>Here is an example of passing the wrong type of object to DGN_bbox_areaxy and getting an error.
+    <p>Here is an example of an \em incorrect call to DGN_bbox_areaxy
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_error.sampleCode
 */
 double DGN_bbox_areaxy(DGN_bbox bb);
@@ -618,7 +609,6 @@ struct DGN_bbox_value : ScalarFunction
     \em Aggregate function that computes the union of a series of bounding boxes
     @return a bounding box that contains the aggregated range.
     <p><b>Example (C++)</b>
-    Note that when computing a union, it only makes sense to use \em axis-aligned bounding boxes, not \em element-aligned bounding boxes.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
 */
 DGN_bbox DGN_bbox_union(DGN_bbox);
@@ -695,10 +685,10 @@ struct DGN_point_distance : ScalarFunction
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Compute the minimun distance from a point to a bounding box, in meters.
+    Compute the minimum distance from a point to a bounding box, in meters.
     @param point    A point 
     @param bbox     A bounding box
-    @return the distance between the two points; or an error if either input is not a DGN_point object
+    @return the distance from the point to the closest point on the bbox; or an error if either input is of the wrong type.
 */
 double DGN_point_min_distance_to_bbox(DGN_point point, DGN_bbox bbox);
 // __PUBLISH_SECTION_END__

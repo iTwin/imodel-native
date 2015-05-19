@@ -104,13 +104,15 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     if (true)
         {
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_error.sampleCode
-        //  This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
+        // This is an example of passing the wrong type of object to DGN_bbox_areaxy and getting an error.
+        // This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
+        // Note that the error is detected when you try to step the statement, not when you prepare it.
         Statement stmt;
         stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_placement_angles(Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
-        DbResult rc = stmt.Step();
+        DbResult rc = stmt.Step(); // rc will be BE_SQLITE_ERROR, and m_db->GetLastError() will return "Illegal input to DGN_bbox_areaxy"
+        //__PUBLISH_EXTRACT_END__
         ASSERT_EQ( BE_SQLITE_ERROR , rc );
         BeTest::Log("SqlFunctionsTest", BeTest::PRIORITY_INFO, Utf8PrintfString("SQLite error: %s\n", m_db->GetLastError())); // displays "SQLite error: Illegal input to DGN_bbox_areaxy"
-        //__PUBLISH_EXTRACT_END__
         }
 
     //  The X-Y area is width (X) time depth (Y)
@@ -140,6 +142,8 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     if (true)
         {
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
+        // This is an example of using DGN_placement_eabb to sum up element areas. Note that we must to use 
+        // element-aligned bounding boxes in this query, rather than axis-aligned bounding boxes.
         Statement stmt;
         stmt.Prepare(*m_db, "SELECT SUM(DGN_bbox_areaxy(DGN_placement_eabb(Placement))) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
         //__PUBLISH_EXTRACT_END__
@@ -195,6 +199,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
         //  Do the same by checking the yaw angle directly
         Statement stmt2;
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
+        // This query uses DGN_angles_value to extract the Yaw angle of an element's placement, in order to compare it with 90.
         stmt2.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE ABS(DGN_angles_value(DGN_placement_angles(g.Placement), 0) - 90) < 1.0");
         //__PUBLISH_EXTRACT_END__
 
@@ -235,6 +240,10 @@ TEST_F(SqlFunctionsTest, placement_angles)
     if (true)
         {
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
+        // This query looks for "Obstacles" that are oriented at 90 degrees in the X-Y plane.
+        // It is an example of using DGN_angles_maxdiff to look for elements with a specific placement angle. 
+        // This example also shows how to combine tests on geometry and business properties in a single query. 
+        // This example uses ECSql.
         ECSqlStatement estmt;
         estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM " 
                                 DGN_SCHEMA(DGN_CLASSNAME_ElementGeom) " AS g,"
@@ -839,6 +848,8 @@ TEST_F(SqlFunctionsTest, bbox_union)
 
     Statement stmt;
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
+    // This is an example of accumlating the union of bounding boxes.
+    // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
     stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
                     " AS g WHERE e.ModelId=2 AND e.id=g.ElementId");
     //__PUBLISH_EXTRACT_END__
@@ -852,6 +863,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
 
     stmt.Finalize();
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
+    // An example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
     stmt.Prepare(*dgndb, "SELECT count(*) FROM "
                          DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(0,0,90)) < 1.0");
     //__PUBLISH_EXTRACT_END__
