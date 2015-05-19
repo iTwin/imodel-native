@@ -75,19 +75,22 @@ public:
 // Context that defines the DgnDb to use.
 // @bsiclass                                                     Bill.Steinbock  05/2015
 //=======================================================================================
-struct DgnDbExpressionContext : SymbolExpressionContext
+struct DgnDbExpressionContext : ECN::SymbolExpressionContext
     {
     private:
         DgnDbCR m_db;
 
         Utf8CP  GetPath() const;
-        ECValue GetName() const;
+        ECN::ECValue GetName() const;
 
     protected:
+        // Create an ECExpression context that allows access to DgnDb.
         DGNPLATFORM_EXPORT DgnDbExpressionContext(DgnDbCR db);
+        // Get the DgnDb associated with the Context.
         DGNPLATFORM_EXPORT DgnDbCR GetDgnDb();
 
     public:
+        // Create an ECExpression context that allows access to DgnDb.
         DGNPLATFORM_EXPORT static DgnDbExpressionContextPtr Create(DgnDbCR db);
     };
 
