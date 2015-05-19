@@ -721,6 +721,53 @@ struct DGN_point_value : ScalarFunction
     DGN_point_value() : ScalarFunction("DGN_point_value", 2, DbValueType::FloatVal) {}
 };
 
+
+//=======================================================================================
+// Get one of the values of a DPoint3d by index: {X=0, Y=1, Z=2}
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+#ifdef DOCUMENTATION_GENERATOR
+// __PUBLISH_SECTION_START__
+/**
+    A rtree MATCH function that accepts objects that overlap an aabb.
+*/
+void DGN_rtree_aabb_overlap(DGN_aabb);
+// __PUBLISH_SECTION_END__
+#endif
+struct DGN_rtree_aabb_overlap : RTreeMatchFunction
+{
+    int _TestRange(QueryInfo const& info) override
+        {
+        if (info.m_nParam != 1)
+            return BE_SQLITE_ERROR;
+
+        info.m_within = Within::Outside;
+
+        RTree3dValCP bounds = (RTree3dValCP) info.m_param;
+        RTree3dValCP pt = (RTree3dValCP) info.m_coords;
+
+        bool passedTest = (info.m_parentWithin == Within::Inside) ? true : bounds->Intersects(*pt);
+        if (!passedTest)
+            return BE_SQLITE_OK;
+
+        if (info.m_level>0)
+            {
+            // For nodes, return 'level-score'.
+            info.m_score = info.m_level;
+            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : bounds->Contains(*pt) ? Within::Inside : Within::Partly;
+            }
+        else
+            {
+            // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
+            info.m_score = 0;
+            info.m_within = Within::Partly;
+            }
+        return BE_SQLITE_OK;
+        }
+
+    DGN_rtree_aabb_overlap() : RTreeMatchFunction("DGN_rtree_aabb_overlap", 1) {}
+};
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -751,8 +798,16 @@ void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
                           new DGN_point_value
                           };
 
+    static RTreeMatchFunction* s_matchFuncs[] = 
+                         {
+                         new DGN_rtree_aabb_overlap
+                         };
+
     for (DbFunction* func : s_funcs)
         db.AddFunction(*func);
+
+    for (RTreeMatchFunction* func : s_matchFuncs)
+        db.AddRTreeMatchFunction(*func);
     }
 
 

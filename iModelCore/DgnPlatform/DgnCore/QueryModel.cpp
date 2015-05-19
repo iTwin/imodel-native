@@ -265,15 +265,15 @@ void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dVi
 
         rtreeRange.FromRange(elRef->ToGeometricElement()->_GetRange3d());
 
-        RTreeMatchFunction::Tester::QueryInfo info;
+        RTreeAcceptFunction::Tester::QueryInfo info;
         info.m_nCoord = 6;
         info.m_coords = &rtreeRange.m_minx;
-        info.m_parentWithin = info.m_within = RTreeMatchFunction::Tester::Within::Partly;
+        info.m_parentWithin = info.m_within = RTreeAcceptFunction::Tester::Within::Partly;
         info.m_parentScore  = info.m_score  = 1.0;
         info.m_rowid = curr.GetValue();
         info.m_level = 0;
         filter._TestRange(info);
-        if (RTreeMatchFunction::Tester::Within::Outside != info.m_within)
+        if (RTreeAcceptFunction::Tester::Within::Outside != info.m_within)
             filter.RangeAccept(curr.GetValueUnchecked());
         }
     }
