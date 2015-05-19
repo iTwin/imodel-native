@@ -23,7 +23,6 @@
 #define DGN_CLASSNAME_ElementGeom         "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup        "ElementGroup"
 #define DGN_CLASSNAME_ElementItem         "ElementItem"
-#define DGN_CLASSNAME_ElementGroup        "ElementGroup"
 #define DGN_CLASSNAME_GeomPart            "GeomPart"
 #define DGN_CLASSNAME_Category            "Category"
 #define DGN_CLASSNAME_Link                "Link"
