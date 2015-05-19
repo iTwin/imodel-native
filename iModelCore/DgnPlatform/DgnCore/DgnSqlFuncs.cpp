@@ -24,7 +24,7 @@ DgnSchemaDomain defines types and built-in functions that you can use in SQL sta
 //  They are here to represent the SQL extension functions, so that Doyxgen will generate doc for them.
 
 //! A point in the DgnDb's Cartesian coordinate system. All coordinates are in meters. If the point represents a location in a 2D model, then the z-coordinate will be zero.
-//! @see DGN_point_value, DGN_point_distance
+//! @see DGN_point_value, DGN_point_distance, DGN_point_min_distance_to_bbox 
 struct DGN_point
 {
 protected:
@@ -47,7 +47,7 @@ protected:
 //! If the box represents a range in a 3-D model, then the box will have 8 corners and will have width(X), depth(Y), and height(Z). 
 //! If the box represents a range in a 2-D model, then the box will still have 8 corners but the z-coordinates will be all be zero, and the height will be zero.
 //! All coordinates are in meters.
-//! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union
+//! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union, DGN_point_min_distance_to_bbox
 struct DGN_bbox
 {
 protected:
@@ -689,6 +689,36 @@ struct DGN_point_distance : ScalarFunction
 };
 
 //=======================================================================================
+// Get the minimun distance from a point to a bounding box
+// @bsiclass                                                   Sam.Wilson   05/15
+//=======================================================================================
+#ifdef DOCUMENTATION_GENERATOR
+// __PUBLISH_SECTION_START__
+/**
+    Compute the minimun distance from a point to a bounding box, in meters.
+    @param point    A point 
+    @param bbox     A bounding box
+    @return the distance between the two points; or an error if either input is not a DGN_point object
+*/
+double DGN_point_min_distance_to_bbox(DGN_point point, DGN_bbox bbox);
+// __PUBLISH_SECTION_END__
+#endif
+struct DGN_point_min_distance_to_bbox : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(DPoint3d) ||
+            args[1].GetValueBytes() != sizeof(DRange3d))
+            return SetInputError(ctx);
+
+        DPoint3d& pt   = *((DPoint3d*)(args[0].GetValueBlob()));
+        DRange3d& bbox = *((DRange3d*)(args[1].GetValueBlob()));
+        ctx.SetResultDouble(bbox.DistanceOutside(pt));
+        }
+    DGN_point_min_distance_to_bbox() : ScalarFunction("DGN_point_min_distance_to_bbox", 2, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
 // Get one of the values of a DPoint3d by index: {X=0, Y=1, Z=2}
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
@@ -744,6 +774,7 @@ void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
                           new DGN_placement_eabb,
                           new DGN_placement_origin,
                           new DGN_point_distance,
+                          new DGN_point_min_distance_to_bbox,
                           new DGN_point_value
                           };
 
