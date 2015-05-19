@@ -20,9 +20,27 @@ enum class PointCloudView
     Iso
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Jean-Francois.Cote              03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote               4/2015
+//=====================================================================================
+struct MemoryStruct
+    {
+    void*   memory;
+    size_t  size;
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote               4/2015
+//=====================================================================================
+struct MemoryStructTest
+    {
+    char*   memory;
+    size_t  size;
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote               4/2015
+//=====================================================================================
 struct RealityDataHandler : public RefCountedBase
 {
 public:
@@ -38,10 +56,9 @@ protected:
     virtual StatusInt  _GetThumbnail(HBITMAP *pThumbnailBmp) const = 0;
 };
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Jean-Francois.Cote              03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote               4/2015
+//=====================================================================================
 struct RasterDataHandler : public RealityDataHandler
 {
 public:
@@ -65,10 +82,9 @@ private:
     WCharCP m_filename;
 };
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Jean-Francois.Cote              03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote               4/2015
+//=====================================================================================
 struct PointCloudDataHandler : public RealityDataHandler
 {
 public:
@@ -95,5 +111,32 @@ private:
     uint32_t        m_cloudHandle;
 };
 
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote               4/2015
+//=====================================================================================
+struct WMSDataHandler : public RealityDataHandler
+{
+public:
+    REALITYDATAPLATFORM_EXPORT static RefCountedPtr<RealityDataHandler> Create(WCharCP url, WCharCP outFilename);
+
+protected:
+    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
+    virtual StatusInt _GetThumbnail(HBITMAP *pThumbnailBmp) const override;
+
+    WMSDataHandler(StatusInt& status, WCharCP url, WCharCP outFilename);
+    virtual ~WMSDataHandler();
+
+private:
+    StatusInt ExtractFootprint(DRange2dP pFootprint) const;
+    StatusInt ExtractThumbnail() const;
+
+    StatusInt GetFromServer(Utf8StringR url) const;
+
+    bool Initialize();
+    void Terminate();
+
+    WCharCP m_url;
+    WCharCP m_outFilename;
+};
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
