@@ -581,7 +581,7 @@ struct DGN_bbox_contains : ScalarFunction
     Get a member of a DGN_bbox object
     @param bb       a bounding box
     @param member   The index of the member to get: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
-    @return the the requested member of the bounding box; or an error if member is out of range or bb is not a DGN_bbox object.
+    @return the requested member of the bounding box; or an error if member is out of range or bb is not a DGN_bbox object.
 */
 double DGN_bbox_value(DGN_bbox bb, int member);
 // __PUBLISH_SECTION_END__
@@ -688,7 +688,7 @@ struct DGN_point_distance : ScalarFunction
     Compute the minimum distance from a point to a bounding box, in meters.
     @param point    A point 
     @param bbox     A bounding box
-    @return the distance from the point to the closest point on the bbox; or an error if either input is of the wrong type.
+    @return the distance from \a point to the closest point on \a bbox; or an error if either input is of the wrong type.
 */
 double DGN_point_min_distance_to_bbox(DGN_point point, DGN_bbox bbox);
 // __PUBLISH_SECTION_END__
