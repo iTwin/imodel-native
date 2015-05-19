@@ -740,3 +740,82 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
 DgnElementCPtr DgnElement::Update(DgnModelStatus* stat) {return GetDgnDb().Elements().Update(*this, stat);}
 DgnElementCPtr DgnElement::Insert(DgnModelStatus* stat) {return GetDgnDb().Elements().Insert(*this, stat);}
 DgnModelStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*this);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus ElementGroup::InsertMember(DgnElementCR member) const
+    {
+    if (!GetElementId().IsValid() || !member.GetElementId().IsValid())
+        return DGNMODEL_STATUS_InvalidId;
+
+    DgnModelStatus status = _OnMemberInsert(member); // give subclass a chance to reject member insert
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement
+        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers) 
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
+
+    if (!statement.IsValid())
+        return DGNMODEL_STATUS_BadRequest;
+
+    statement->BindId(1, GetElementClassId());
+    statement->BindId(2, GetElementId());
+    statement->BindId(3, member.GetElementClassId());
+    statement->BindId(4, member.GetElementId());
+
+    if (ECSqlStepStatus::Done != statement->Step())
+        return DGNMODEL_STATUS_BadRequest;
+    
+    _OnMemberInserted(member); // notify subclass that member was inserted
+    return DGNMODEL_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus ElementGroup::DeleteMember(DgnElementCR member) const
+    {
+    if (!GetElementId().IsValid() || !member.GetElementId().IsValid())
+        return DGNMODEL_STATUS_InvalidId;
+
+    DgnModelStatus status = _OnMemberDelete(member); // give subclass a chance to reject member delete
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    CachedStatementPtr statement;
+    GetDgnDb().Elements().GetStatement(statement, "DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=? AND MemberId=?");
+
+    if (!statement.IsValid())
+        return DGNMODEL_STATUS_BadRequest;
+
+    statement->BindId(1, GetElementId());
+    statement->BindId(2, member.GetElementId());
+
+    if (BE_SQLITE_DONE != statement->Step())
+        return DGNMODEL_STATUS_BadRequest;
+    
+    _OnMemberDeleted(member); // notify subclass that member was deleted
+    return DGNMODEL_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet ElementGroup::QueryMembers() const
+    {
+    CachedStatementPtr statement;
+    GetDgnDb().Elements().GetStatement(statement, "SELECT MemberId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=?");
+
+    if (!statement.IsValid())
+        return DgnElementIdSet();
+
+    statement->BindId(1, GetElementId());
+
+    DgnElementIdSet elementIdSet;
+    while (BE_SQLITE_ROW == statement->Step())
+        elementIdSet.insert(statement->GetValueId<DgnElementId>(0));
+
+    return elementIdSet;
+    }
