@@ -23,7 +23,6 @@
 #define DGN_CLASSNAME_ElementGeom         "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup        "ElementGroup"
 #define DGN_CLASSNAME_ElementItem         "ElementItem"
-#define DGN_CLASSNAME_ElementGroup        "ElementGroup"
 #define DGN_CLASSNAME_GeomPart            "GeomPart"
 #define DGN_CLASSNAME_Category            "Category"
 #define DGN_CLASSNAME_Link                "Link"
@@ -1010,10 +1009,12 @@ public:
     static BentleyStatus Draw(DgnGeomPartId, ViewContextR, DgnCategoryId, ViewFlagsCR);
 
 public:
-    // WIP: waiting for IGeometryExt deserialization to be hooked up!
-    //! Query for a geometry part by ID.
+    //! Load a geometry part by ID.
     //! @param[in] geomPartId the ID of the geometry part to load
     DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
+
+    //! Query for a DgnGeomPartId by code.
+    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(Utf8CP code);
 
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert
