@@ -275,10 +275,10 @@ struct ITxnManager
 
       public:
         //! Return the severity of the error
-        DGNPLATFORM_EXPORT ValidationErrorSeverity GetSeverity() const;
+        ValidationErrorSeverity GetSeverity() const {return _GetSeverity();}
 
         //! Return a human-readable, localized description of the error
-        DGNPLATFORM_EXPORT Utf8String GetDescription() const;
+        Utf8String GetDescription() const {return _GetDescription();}
     };
 
     typedef RefCountedPtr<IValidationError> IValidationErrorPtr;
