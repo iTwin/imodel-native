@@ -1139,7 +1139,7 @@ protected:
     DbFunction(Utf8CP name, int nArgs, DbValueType returnType) : m_name(name), m_nArgs(nArgs), m_returnType(returnType) {}
 
 public:
-    virtual bool _IsAggregate() = 0;
+    virtual bool _IsAggregate() {return false;}
     virtual ~DbFunction() {}
     Utf8CP GetName() const {return m_name.c_str();} //!< Get the name of this function
     int GetNumArgs() const {return m_nArgs;}    //!< Get the number of arguments to this function
@@ -1157,7 +1157,6 @@ public:
 //=======================================================================================
 struct ScalarFunction : DbFunction
 {
-    bool _IsAggregate() override {return false;}
     virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
 
     //! Initializes a new ScalarFunction instance
@@ -1188,52 +1187,63 @@ struct AggregateFunction : DbFunction
 };
 
 //=======================================================================================
-//! An aggregate function for queries using the range tree.
-// @bsiclass                                                    Keith.Bentley   12/11
+//! A user-defined implementation of the SQLite sqlite3_rtree_query_callback function for using the MATCH keyword for RTree queries.
+//! See https://www.sqlite.org/rtree.html for implementation details.
+// @bsiclass                                                    Keith.Bentley   05/15
 //=======================================================================================
-struct RTreeMatchFunction : AggregateFunction
+struct RTreeMatchFunction : DbFunction
 {
-    //! This class becomes the callback for an SQL statement that uses a RTree vtable via the "MATCH rTreeMatch(1)" syntax.
-    //! It's constructor registers itself as the callback object and it's destructor unregisters itself.
-    struct Tester
+    enum class Within : int
     {
-        enum class Within : int
-        {
-            Outside = 0,
-            Partly = 1,
-            Inside = 2,
-        };
+        Outside = 0,
+        Partly = 1,
+        Inside = 2,
+    };
 
-        //=======================================================================================
-        //! This is a copy of sqlite3_rtree_query_info
-        // @bsiclass                                                    Keith.Bentley   04/14
-        //=======================================================================================
-        struct QueryInfo
-        {
-            void*   m_context;
-            int     m_nParam;
-            double* m_param;
-            void*   m_user;
-            void    (*m_xDelUser)(void*);
-            double* m_coords;
-            unsigned int* m_nQueue;
-            int     m_nCoord;
-            int     m_level;
-            int     m_maxLevel;
-            int64_t m_rowid;
-            double  m_parentScore;
-            Within  m_parentWithin;
-            mutable Within m_within;
-            mutable double m_score;
-        };
+    //=======================================================================================
+    //! This is a copy of sqlite3_rtree_query_info
+    // @bsiclass                                                    Keith.Bentley   04/14
+    //=======================================================================================
+    struct QueryInfo
+    {
+        void*   m_context;
+        int     m_nParam;
+        double* m_param;
+        void*   m_user;
+        void    (*m_xDelUser)(void*);
+        double* m_coords;
+        unsigned int* m_nQueue;
+        int     m_nCoord;
+        int     m_level;
+        int     m_maxLevel;
+        int64_t m_rowid;
+        double  m_parentScore;
+        Within  m_parentWithin;
+        mutable Within m_within;
+        mutable double m_score;
+    };
 
-    BeSQLiteDbR m_db;
-
-    BE_SQLITE_EXPORT Tester(BeSQLiteDbR db);
     //! this method is called for every internal and leaf node in an sqlite rtree vtable.
     //! @see sqlite3_rtree_query_callback.
     virtual int _TestRange(QueryInfo const&) = 0;
-    virtual void _StepRange(AggregateFunction::Context&, int nArgs, DbValue* args) = 0;
+
+    RTreeMatchFunction(Utf8CP name, int nArgs) : DbFunction(name, nArgs, DbValueType::NullVal) {}
+};
+
+//=======================================================================================
+//! An aggregate function for queries using the range tree.
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct RTreeAcceptFunction : AggregateFunction
+{
+    //! This class becomes the callback for an SQL statement that uses a RTree vtable via the "MATCH rTreeMatch(1)" syntax.
+    //! It's constructor registers itself as the callback object and it's destructor unregisters itself.
+    struct Tester : RTreeMatchFunction
+    {
+    BeSQLiteDbR m_db;
+
+    BE_SQLITE_EXPORT Tester(BeSQLiteDbR db);
+    virtual void _StepRange(DbFunction::Context&, int nArgs, DbValue* args) = 0;
 
     //! Perform the RTree search by calling "Step" on the supplied statement. This object becomes the callback function for the "rTreeMatch(1)" sql function
     //! (e.g. "SELECT id FROM rtree_vtable WHERE id MATCH rTreeMatch(1)"
@@ -1247,11 +1257,10 @@ protected:
     void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override {m_rangeTest->_StepRange(ctx, nArgs, args);}
 
 public:
-    RTreeMatchFunction() : AggregateFunction("rTreeAccept", 1) {m_rangeTest = nullptr;}
+    RTreeAcceptFunction() : AggregateFunction("rTreeAccept", 1) {m_rangeTest = nullptr;}
 
     void SetTester(Tester* tester) {m_rangeTest=tester;}
     Tester* GetTester() const {return m_rangeTest;}
-
 };
 
 //=======================================================================================
@@ -2190,7 +2199,7 @@ struct DbFile
     friend struct Db;
     friend struct Statement;
     friend struct Savepoint;
-    friend struct RTreeMatchFunction::Tester;
+    friend struct RTreeAcceptFunction::Tester;
 
 private:
     size_t  m_repositoryIdRlvIndex;
@@ -2216,7 +2225,7 @@ protected:
     typedef DbTxns::iterator DbTxnIter;
     DbTxns          m_txns;
 
-    mutable RTreeMatchFunction m_rtreeMatch;
+    mutable RTreeAcceptFunction m_rtreeMatch;
     mutable struct
         {
         bool m_readonly:1;
@@ -2227,7 +2236,7 @@ protected:
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode);
     ~DbFile();
     void InitRTreeMatch() const;
-    void SetRTreeMatch(RTreeMatchFunction::Tester* tester) const;
+    void SetRTreeMatch(RTreeAcceptFunction::Tester* tester) const;
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit);
     DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl, bool temp);
@@ -2258,6 +2267,7 @@ protected:
     BE_SQLITE_EXPORT DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId);
     BE_SQLITE_EXPORT int AddFunction(DbFunction& function) const;
+    BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& function) const;
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction&) const;
     BE_SQLITE_EXPORT RepositoryLocalValueCache& GetRLVCache();
 };
@@ -2485,7 +2495,7 @@ protected:
 
     friend struct Statement;
     friend struct Savepoint;
-    friend struct RTreeMatchFunction::Tester;
+    friend struct RTreeAcceptFunction::Tester;
     friend struct BeSQLiteProfileManager;
     DbResult QueryDbIds();
     DbResult SaveBeDbGuid();
@@ -2856,6 +2866,8 @@ public:
 
     //! Remove a previously added DbFunction from this Db. See sqlite3_create_function for return values.
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction& func) const;
+
+    BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& func) const;
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeDbGuid);
     BE_SQLITE_EXPORT DbResult ChangeRepositoryId(BeRepositoryId);

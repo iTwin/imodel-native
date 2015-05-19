@@ -1247,6 +1247,14 @@ int Db::AddFunction(DbFunction& func) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int Db::AddRTreeMatchFunction(RTreeMatchFunction& func) const
+    {
+    return m_dbFile->AddRTreeMatchFunction(func);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Db::RemoveFunction(DbFunction& func) const
@@ -2175,6 +2183,23 @@ int DbFile::AddFunction(DbFunction& function) const
             isAgg ? aggregateStep  : nullptr, 
             isAgg ? aggregateFinal : nullptr, 
             nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static int rTreeMatch(RTreeMatchFunction::QueryInfo* info)
+    {
+    RTreeMatchFunction* func = (RTreeMatchFunction*) info->m_context;
+    return func->_TestRange(*info);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int DbFile::AddRTreeMatchFunction(RTreeMatchFunction& func) const
+    {
+    return sqlite3_rtree_query_callback(m_sqlDb, func.GetName(), (int(*)(sqlite3_rtree_query_info*)) rTreeMatch, &func, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4570,9 +4595,9 @@ size_t DbEmbeddedFileTable::Iterator::QueryCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int rTreeMatch(RTreeMatchFunction::Tester::QueryInfo* info)
+static int rTreeAcceptMatch(RTreeAcceptFunction::Tester::QueryInfo* info)
     {
-    RTreeMatchFunction* agg = (RTreeMatchFunction*) info->m_context;
+    RTreeAcceptFunction* agg = (RTreeAcceptFunction*) info->m_context;
     return agg->GetTester()->_TestRange(*info);
     }
 
@@ -4585,7 +4610,8 @@ void DbFile::InitRTreeMatch() const
         return;
     m_flags.m_rtreeMatchValid = true;
 
-    int stat = sqlite3_rtree_query_callback(m_sqlDb, "rTreeMatch", (int(*)(sqlite3_rtree_query_info*)) rTreeMatch, &m_rtreeMatch, nullptr);
+    // we can't use AddRTreeMatchFunction here because we need the extra level of indirection of the pointer-to-match.
+    int stat = sqlite3_rtree_query_callback(m_sqlDb, "rTreeMatch", (int(*)(sqlite3_rtree_query_info*)) rTreeAcceptMatch, &m_rtreeMatch, nullptr);
     BeAssert(BE_SQLITE_OK == stat);
 
     stat = AddFunction(m_rtreeMatch);
@@ -4595,18 +4621,18 @@ void DbFile::InitRTreeMatch() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SetRTreeMatch(RTreeMatchFunction::Tester* tester) const
+void DbFile::SetRTreeMatch(RTreeAcceptFunction::Tester* tester) const
     {
     BeAssert(m_flags.m_rtreeMatchValid);
     BeAssert(nullptr == m_rtreeMatch.GetTester() || nullptr == tester);
     m_rtreeMatch.SetTester(tester);
     }
 
-RTreeMatchFunction::Tester::Tester(BeSQLiteDbR db) : m_db(db){db.GetDbFile()->InitRTreeMatch();}
+RTreeAcceptFunction::Tester::Tester(BeSQLiteDbR db) : m_db(db), RTreeMatchFunction("rTreeMatch", 1) {db.GetDbFile()->InitRTreeMatch();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult RTreeMatchFunction::Tester::StepRTree(Statement& stmt)
+DbResult RTreeAcceptFunction::Tester::StepRTree(Statement& stmt)
     {
     m_db.m_dbFile->SetRTreeMatch(this);
     DbResult rc = stmt.Step();

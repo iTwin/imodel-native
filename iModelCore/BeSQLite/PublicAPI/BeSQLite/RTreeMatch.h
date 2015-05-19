@@ -84,7 +84,7 @@ typedef RTree3dVal*       RTree3dValP;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct RTree3dBoundsTest : RTreeMatchFunction::Tester
+struct RTree3dBoundsTest : RTreeAcceptFunction::Tester
 {
     RTree3dVal  m_bounds;
 
