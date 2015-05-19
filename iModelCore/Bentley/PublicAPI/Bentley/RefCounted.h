@@ -106,6 +106,8 @@ private:
     T* m_p;
 
 public:
+    typedef T element_type;
+
     RefCountedPtr() : m_p(nullptr) {}
     ~RefCountedPtr() {if (m_p != nullptr) m_p->Release ();}
     RefCountedPtr(T* p, bool add_ref = true) : m_p(p) {if (m_p != nullptr && add_ref) m_p->AddRef ();}
@@ -144,6 +146,8 @@ private:
     T const* m_p;
 
 public:
+    typedef T element_type;
+
     RefCountedCPtr() : m_p(nullptr) {}
     ~RefCountedCPtr() {if (m_p != nullptr) m_p->Release ();}
     RefCountedCPtr(T const* p, bool add_ref = true) : m_p(p){if (m_p != nullptr && add_ref) m_p->AddRef ();}
