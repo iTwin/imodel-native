@@ -1453,26 +1453,3 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId)
     stmt->BindId(1, elementId);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                    03/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnElements::InsertElementGroupHasMembers(DgnElementKeyCR elementGroupKey, DgnElementKeyCR memberElementKey)
-    {
-    if (!elementGroupKey.IsValid() || !memberElementKey.IsValid())
-        return BentleyStatus::ERROR;
-
-    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement
-        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers) 
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
-
-    if (!statementPtr.IsValid())
-        return BentleyStatus::ERROR;
-
-    statementPtr->BindInt64(1, elementGroupKey.GetECClassId());
-    statementPtr->BindId   (2, elementGroupKey.GetECInstanceId());
-    statementPtr->BindInt64(3, memberElementKey.GetECClassId());
-    statementPtr->BindId   (4, memberElementKey.GetECInstanceId());
-
-    return (ECSqlStepStatus::Done != statementPtr->Step()) ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
-    }

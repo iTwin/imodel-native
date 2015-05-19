@@ -986,9 +986,6 @@ public:
     //! If you have a DgnElement, call GetElementKey on it rather than using this method.
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
 
-    //! Insert an ElementGroupHasMembers relationship between the specified ElementGroup and the member Element
-    DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupHasMembers(DgnElementKeyCR elementGroupKey, DgnElementKeyCR memberElementKey);
-
     //! Add element-loaded-from-db event listener.
     DGNPLATFORM_EXPORT void AddListener(Listener* listener);
 
@@ -1010,6 +1007,7 @@ private:
 public:
     DgnGeomPartId GetHighestGeomPartId();
     DgnGeomPartId MakeNewGeomPartId();
+    static BentleyStatus Draw(DgnGeomPartId, ViewContextR, DgnCategoryId, ViewFlagsCR);
 
 public:
     // WIP: waiting for IGeometryExt deserialization to be hooked up!

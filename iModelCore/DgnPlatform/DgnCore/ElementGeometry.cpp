@@ -17,23 +17,23 @@ using namespace flatbuffers;
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometry::GetLocalCoordinateFrame (TransformR localToWorld) const
     {
-    switch (GetGeometryType ())
+    switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
             {
-            ICurvePrimitivePtr curve = GetAsICurvePrimitive ();
+            ICurvePrimitivePtr curve = GetAsICurvePrimitive();
 
-            if (!curve->FractionToFrenetFrame (0.0, localToWorld))
+            if (!curve->FractionToFrenetFrame(0.0, localToWorld))
                 {
                 DPoint3d point;
 
-                if (curve->GetStartPoint (point))
+                if (curve->GetStartPoint(point))
                     {
-                    localToWorld.InitFrom (point);
+                    localToWorld.InitFrom(point);
                     return true;
                     }
 
-                localToWorld.InitIdentity ();
+                localToWorld.InitIdentity();
                 return false;
                 }
 
@@ -42,19 +42,19 @@ bool ElementGeometry::GetLocalCoordinateFrame (TransformR localToWorld) const
 
         case GeometryType::CurveVector:
             {
-            CurveVectorPtr curves = GetAsCurveVector ();
+            CurveVectorPtr curves = GetAsCurveVector();
 
-            if (!curves->GetAnyFrenetFrame (localToWorld))
+            if (!curves->GetAnyFrenetFrame(localToWorld))
                 {
                 DPoint3d point;
 
-                if (curves->GetStartPoint (point))
+                if (curves->GetStartPoint(point))
                     {
-                    localToWorld.InitFrom (point);
+                    localToWorld.InitFrom(point);
                     return true;
                     }
 
-                localToWorld.InitIdentity ();
+                localToWorld.InitIdentity();
                 return false;
                 }
 
@@ -64,11 +64,11 @@ bool ElementGeometry::GetLocalCoordinateFrame (TransformR localToWorld) const
         case GeometryType::SolidPrimitive:
             {
             Transform          worldToLocal;
-            ISolidPrimitivePtr solidPrimitive = GetAsISolidPrimitive ();
+            ISolidPrimitivePtr solidPrimitive = GetAsISolidPrimitive();
 
-            if (!solidPrimitive->TryGetConstructiveFrame (localToWorld, worldToLocal))
+            if (!solidPrimitive->TryGetConstructiveFrame(localToWorld, worldToLocal))
                 {
-                localToWorld.InitIdentity ();
+                localToWorld.InitIdentity();
                 return false;
                 }
 
@@ -77,63 +77,62 @@ bool ElementGeometry::GetLocalCoordinateFrame (TransformR localToWorld) const
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr polyface = GetAsPolyfaceHeader ();
+            PolyfaceHeaderPtr polyface = GetAsPolyfaceHeader();
 
             double      area;
             DPoint3d    centroid;
             RotMatrix   axes;
             DVec3d      momentXYZ;
 
-            if (!polyface->ComputePrincipalAreaMoments (area, centroid, axes, momentXYZ))
+            if (!polyface->ComputePrincipalAreaMoments(area, centroid, axes, momentXYZ))
                 {
-                localToWorld.InitIdentity ();
+                localToWorld.InitIdentity();
                 return false;
                 }
 
-            localToWorld.InitFrom (axes, centroid);
+            localToWorld.InitFrom(axes, centroid);
             break;
             }
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr surface = GetAsMSBsplineSurface ();
+            MSBsplineSurfacePtr surface = GetAsMSBsplineSurface();
 
             double      area;
             DPoint3d    centroid;
             RotMatrix   axes;
             DVec3d      momentXYZ;
 
-            if (!surface->ComputePrincipalAreaMoments (area, (DVec3dR) centroid, axes, momentXYZ))
+            if (!surface->ComputePrincipalAreaMoments(area, (DVec3dR) centroid, axes, momentXYZ))
                 {
-                localToWorld.InitIdentity ();
+                localToWorld.InitIdentity();
                 return false;
                 }
 
-            localToWorld.InitFrom (axes, centroid);
+            localToWorld.InitFrom(axes, centroid);
             break;
             }
         
         case GeometryType::SolidKernelEntity:
             {
-            ISolidKernelEntityPtr entity = GetAsISolidKernelEntity ();
+            ISolidKernelEntityPtr entity = GetAsISolidKernelEntity();
 
             // The entity transform (after removing SWA scale) can be used for localToWorld (solid kernel to uors)...
-            localToWorld = entity->GetEntityTransform ();
+            localToWorld = entity->GetEntityTransform();
             break;
             }
 
         case GeometryType::TextString:
             {
             TextStringCR text = *GetAsTextString();
-            localToWorld.InitFrom(text.GetOrientation(), text.GetOrigin());
-            
+            localToWorld.InitFrom(text.GetOrientation(), text.GetOrigin());            
             break;
             }
         
         default:
             {
-            localToWorld.InitIdentity ();
-            BeAssert (false);
+            localToWorld.InitIdentity();
+            BeAssert(false);
 
             return false;
             }
@@ -143,10 +142,10 @@ bool ElementGeometry::GetLocalCoordinateFrame (TransformR localToWorld) const
     DPoint3d    origin;
     RotMatrix   rMatrix;
 
-    localToWorld.GetTranslation (origin);
-    localToWorld.GetMatrix (rMatrix);
-    rMatrix.SquareAndNormalizeColumns (rMatrix, 0, 1);
-    localToWorld.InitFrom (rMatrix, origin);
+    localToWorld.GetTranslation(origin);
+    localToWorld.GetMatrix(rMatrix);
+    rMatrix.SquareAndNormalizeColumns(rMatrix, 0, 1);
+    localToWorld.InitFrom(rMatrix, origin);
 
     return true;
     }
@@ -156,11 +155,11 @@ bool ElementGeometry::GetLocalCoordinateFrame (TransformR localToWorld) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometry::GetLocalRange (DRange3dR localRange, TransformR localToWorld) const
     {
-    if (!GetLocalCoordinateFrame (localToWorld))
+    if (!GetLocalCoordinateFrame(localToWorld))
         return false;
 
-    if (localToWorld.IsIdentity ())
-        return GetRange (localRange);
+    if (localToWorld.IsIdentity())
+        return GetRange(localRange);
     
     ElementGeometryPtr clone;
     
@@ -169,10 +168,10 @@ bool ElementGeometry::GetLocalRange (DRange3dR localRange, TransformR localToWor
         {
         ISolidKernelEntityPtr geom;
 
-        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (geom, *GetAsISolidKernelEntity()))
+        if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(geom, *GetAsISolidKernelEntity()))
             return false;
 
-        clone = new ElementGeometry (geom);
+        clone = new ElementGeometry(geom);
         }
     else
         {
@@ -181,10 +180,10 @@ bool ElementGeometry::GetLocalRange (DRange3dR localRange, TransformR localToWor
 
     Transform   worldToLocal;
 
-    worldToLocal.InverseOf (localToWorld);
-    clone->TransformInPlace (worldToLocal);
+    worldToLocal.InverseOf(localToWorld);
+    clone->TransformInPlace(worldToLocal);
 
-    return clone->GetRange (localRange);
+    return clone->GetRange(localRange);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -276,52 +275,56 @@ bool ElementGeometry::GetRange (DRange3dR range, TransformCP transform) const
     {
     range.Init ();
 
-    switch (GetGeometryType ())
+    switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
             {
-            ICurvePrimitivePtr geom = GetAsICurvePrimitive ();
+            ICurvePrimitivePtr geom = GetAsICurvePrimitive();
 
             return getRange(*geom, range, transform);
             }
 
         case GeometryType::CurveVector:
             {
-            CurveVectorPtr geom = GetAsCurveVector ();
+            CurveVectorPtr geom = GetAsCurveVector();
 
             return getRange(*geom, range, transform);
             }
 
         case GeometryType::SolidPrimitive:
             {
-            ISolidPrimitivePtr geom = GetAsISolidPrimitive ();
+            ISolidPrimitivePtr geom = GetAsISolidPrimitive();
 
             return getRange(*geom, range, transform);
             }
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader ();
+            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader();
 
             return getRange(*geom, range, transform);
             }
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface ();
+            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface();
 
             return getRange(*geom, range, transform);
             }
         
         case GeometryType::SolidKernelEntity:
             {
-            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity ();
+            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity();
 
             return getRange(*geom, range, transform);
             }
 
         case GeometryType::TextString:
-            return getRange(*GetAsTextString(), range, transform);
+            {
+            TextStringPtr geom = GetAsTextString();
+
+            return getRange(*geom, range, transform);
+            }
 
         default:
             {
@@ -336,50 +339,50 @@ bool ElementGeometry::GetRange (DRange3dR range, TransformCP transform) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometry::TransformInPlace (TransformCR transform)
     {
-    switch (GetGeometryType ())
+    switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
             {
-            ICurvePrimitivePtr geom = GetAsICurvePrimitive ();
+            ICurvePrimitivePtr geom = GetAsICurvePrimitive();
 
-            return geom->TransformInPlace (transform);
+            return geom->TransformInPlace(transform);
             }
 
         case GeometryType::CurveVector:
             {
-            CurveVectorPtr geom = GetAsCurveVector ();
+            CurveVectorPtr geom = GetAsCurveVector();
 
-            return geom->TransformInPlace (transform);
+            return geom->TransformInPlace(transform);
             }
 
         case GeometryType::SolidPrimitive:
             {
-            ISolidPrimitivePtr geom = GetAsISolidPrimitive ();
+            ISolidPrimitivePtr geom = GetAsISolidPrimitive();
 
-            return geom->TransformInPlace (transform);
+            return geom->TransformInPlace(transform);
             }
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader ();
+            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader();
 
-            geom->Transform (transform);
+            geom->Transform(transform);
 
             return true;
             }
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface ();
+            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface();
 
-            return (SUCCESS == geom->TransformSurface (transform) ? true : false);
+            return (SUCCESS == geom->TransformSurface(transform) ? true : false);
             }
         
         case GeometryType::SolidKernelEntity:
             {
-            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity ();
+            ISolidKernelEntityPtr geom = GetAsISolidKernelEntity();
 
-            geom->PreMultiplyEntityTransformInPlace (transform); // Just change entity transform...
+            geom->PreMultiplyEntityTransformInPlace(transform); // Just change entity transform...
 
             return true;
             }
@@ -408,7 +411,7 @@ bool ElementGeometry::TransformInPlace (TransformCR transform)
 
         default:
             {
-            BeAssert (false);
+            BeAssert(false);
             return false;
             }
         }
@@ -419,27 +422,27 @@ bool ElementGeometry::TransformInPlace (TransformCR transform)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometryPtr ElementGeometry::Clone () const
     {
-    switch (GetGeometryType ())
+    switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
             {
             ICurvePrimitivePtr geom = GetAsICurvePrimitive()->Clone();
 
-            return new ElementGeometry (geom);
+            return new ElementGeometry(geom);
             }
 
         case GeometryType::CurveVector:
             {
             CurveVectorPtr geom = GetAsCurveVector()->Clone();
 
-            return new ElementGeometry (geom);
+            return new ElementGeometry(geom);
             }
 
         case GeometryType::SolidPrimitive:
             {
             ISolidPrimitivePtr geom = GetAsISolidPrimitive()->Clone();
 
-            return new ElementGeometry (geom);
+            return new ElementGeometry(geom);
             }
 
         case GeometryType::Polyface:
@@ -448,7 +451,7 @@ ElementGeometryPtr ElementGeometry::Clone () const
 
             geom->CopyFrom (*GetAsPolyfaceHeader());
 
-            return new ElementGeometry (geom);
+            return new ElementGeometry(geom);
             }
 
         case GeometryType::BsplineSurface:
@@ -457,14 +460,14 @@ ElementGeometryPtr ElementGeometry::Clone () const
 
             geom->CopyFrom (*GetAsMSBsplineSurface());
 
-            return new ElementGeometry (geom);
+            return new ElementGeometry(geom);
             }
         
         case GeometryType::SolidKernelEntity:
             {
             ISolidKernelEntityPtr geom = GetAsISolidKernelEntity()->Clone();
 
-            return new ElementGeometry (geom);
+            return new ElementGeometry(geom);
             }
 
         case GeometryType::TextString:
@@ -476,7 +479,7 @@ ElementGeometryPtr ElementGeometry::Clone () const
 
         default:
             {
-            BeAssert (false);
+            BeAssert(false);
             return nullptr;
             }
         }
@@ -556,8 +559,8 @@ void ElementGeomIO::Iterator::ToNext()
 void ElementGeomIO::Writer::Append (Operation const& egOp)
     {
     uint32_t paddedDataSize = (egOp.m_dataSize + 7) & ~7; // 8 byte aligned...
-    size_t  egOpSize = sizeof (egOp.m_opCode) + sizeof (egOp.m_dataSize) + paddedDataSize;
-    size_t  currSize = m_buffer.size();
+    size_t   egOpSize = sizeof (egOp.m_opCode) + sizeof (egOp.m_dataSize) + paddedDataSize;
+    size_t   currSize = m_buffer.size();
 
     m_buffer.resize (currSize + egOpSize);
 
@@ -919,23 +922,12 @@ void ElementGeomIO::Writer::Append (DgnSubCategoryId subCategory, TransformCR ge
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Writer::Append (DgnGeomPartId geomPart)
     {
-#if defined (NOT_NOW)
-    DPoint3d            origin;
-    RotMatrix           rMatrix;
-    YawPitchRollAngles  angles;
-
-    partToWorld.GetTranslation (origin);
-    partToWorld.GetMatrix (rMatrix);
-
-    YawPitchRollAngles::TryFromRotMatrix (angles, rMatrix);
-
     FlatBufferBuilder fbb;
 
-    auto mloc = FB::CreateBeginPart (fbb, geomPart.GetValueUnchecked(), subCategory.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Radians(), angles.GetPitch().Radians(), angles.GetRoll().Radians());
+    auto mloc = FB::CreateGeomPart (fbb, geomPart.GetValueUnchecked());
 
     fbb.Finish (mloc);
-    Append (Operation (OpCode::StartGeomPart, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
-#endif
+    Append (Operation (OpCode::GeomPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1202,21 +1194,11 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, DgnGeomPartId& geomPart)
     if (OpCode::GeomPartInstance != egOp.m_opCode)
         return false;
 
-#if defined (NOT_NOW)
-    auto ppfb = flatbuffers::GetRoot<FB::BeginPart>(egOp.m_data);
+    auto ppfb = flatbuffers::GetRoot<FB::GeomPart>(egOp.m_data);
 
     geomPart = DgnGeomPartId (ppfb->geomPartId());
-    subCategory = DgnSubCategoryId (ppfb->subCategoryId());
-
-    DPoint3d            origin = *((DPoint3dCP) ppfb->origin());
-    YawPitchRollAngles  angles = YawPitchRollAngles::FromRadians (ppfb->yaw(), ppfb->pitch(), ppfb->roll());
-
-    partToWorld = angles.ToTransform (origin);
 
     return true;
-#else
-    return false;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1523,7 +1505,6 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
 +===============+===============+===============+===============+===============+======*/
 struct DrawState
 {
-//DgnGeomPartId       m_geomPart;
 Transform           m_geomToWorld;
 ViewContextR        m_context;
 ViewFlagsCR         m_flags;
@@ -1541,17 +1522,11 @@ void Begin (DgnSubCategoryId subCategory, TransformCR geomToWorld)
     {
     End(); // Pop state from a previous Begin (if any). Calls aren't required to be paired...
 
-//    m_geomPart    = geomPart;
     m_geomToWorld = geomToWorld;
 
-//    m_context.SetDgnGeomPartId (m_geomPart); // Announce geom part id for picking, etc.
-
-#if defined (NOT_NOW_DRAW_CHANGES)
-    // Begin new QvElem...
-#else
+    // NEEDSWORK: Draw changes - Begin new QvElem...
     if (m_geomToWorldPushed = !m_geomToWorld.IsIdentity())
         m_context.PushTransform (m_geomToWorld);
-#endif
 
     SetElemDisplayParams (subCategory);
     }
@@ -1561,16 +1536,11 @@ void Begin (DgnSubCategoryId subCategory, TransformCR geomToWorld)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void End()
     {
-#if defined (NOT_NOW_DRAW_CHANGES)
-    // Complete/Save/Draw QvElem pushing/popping partToWorld...
-#else
+    // NEEDSWORK: Draw changes - Complete/Save/Draw QvElem pushing/popping partToWorld...
     if (m_geomToWorldPushed)
         m_context.PopTransformClip();
-#endif
-    m_geomToWorldPushed = false;
-//    m_geomPart.Invalidate();
 
-//    m_context.SetDgnGeomPartId (m_geomPart);
+    m_geomToWorldPushed = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1597,12 +1567,6 @@ void SetElemDisplayParams (DgnSubCategoryId subCategory)
         return;
 
     DgnCategoryId  category = dispParams.GetCategoryId(); // Preserve current category...
-
-#if defined (NEEDS_WORK_ELEMENT_REFACTOR)
-    // WIP: not sure we should support drawing from PhysicalGeometry any longer
-    if (!category.IsValid())
-        category = m_context.GetDgnDb().Categories().QueryCategoryId(subCategory);
-#endif
 
     dispParams.Init();
     dispParams.SetCategoryId (category);
@@ -1709,16 +1673,6 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 break;
                 }
 
-            case ElementGeomIO::OpCode::GeomPartInstance:
-                {
-#if defined (NEEDSWORK)
-                m_context.SetDgnGeomPartId (m_geomPart); // Announce geom part id for picking, etc.
-                // DRAW PART...
-                m_context.SetDgnGeomPartId (DgnGeomPartId());
-#endif
-                break;
-                }
-
             case ElementGeomIO::OpCode::BeginSubCategory:
                 {
                 DgnSubCategoryId subCategory;
@@ -1744,6 +1698,17 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                     break;
 
                 state.ChangedElemDisplayParams();
+                break;
+                }
+
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                {
+                DgnGeomPartId geomPartId;
+
+                if (!reader.Get (egOp, geomPartId))
+                    break;
+
+                DgnGeomParts::Draw(geomPartId, context, category, flags);
                 break;
                 }
 
@@ -1810,7 +1775,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 state.CookElemDisplayParams();
 
-                CurveVectorPtr  curvePtr = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // Only open stored as curve primitive for element...
+                CurveVectorPtr  curvePtr = CurveVector::Create (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // Only open stored as curve primitive for element...
 
                 context.GetIDrawGeom().DrawCurveVector (*curvePtr, false);
                 break;
@@ -2134,12 +2099,36 @@ void ElementGeometryCollection::Iterator::ToNext()
             return;
             }
 
+        if (m_partGeometry.IsValid())
+            {
+            for (ElementGeometryPtr elemGeom : m_partGeometry->GetGeometry())
+                {
+                if (!elemGeom.IsValid())
+                    continue;
+
+                if (!m_elementGeometry.IsValid())
+                    {
+                    m_elementGeometry = elemGeom;
+                    break;
+                    }
+                
+                if (elemGeom.get() == m_elementGeometry.get())
+                    m_elementGeometry = nullptr;
+                }
+
+            if (m_elementGeometry.IsValid())
+                return;
+
+            m_context->SetDgnGeomPartId(DgnGeomPartId());
+            m_partGeometry = nullptr;
+            }
+
         uint32_t        opCode = *((uint32_t *) (m_data));
         uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
         uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
         size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
 
-        ElementGeomIO::Operation egOp = ElementGeomIO::Operation ((ElementGeomIO::OpCode) (opCode), dataSize, data);
+        ElementGeomIO::Operation egOp = ElementGeomIO::Operation((ElementGeomIO::OpCode) (opCode), dataSize, data);
         ElementGeomIO::Reader reader(m_context->GetDgnDb());
 
         m_data += egOpSize;
@@ -2150,30 +2139,13 @@ void ElementGeometryCollection::Iterator::ToNext()
             case ElementGeomIO::OpCode::Header:
                 break;
 
-            case ElementGeomIO::OpCode::GeomPartInstance:
-                {
-#if defined (NEEDSWORK)
-                if (nullptr == m_context)
-                    m_context->SetDgnGeomPartId (m_geomPart); // Announce geom part id for picking, etc.
-
-                // DRAW PART...NEEDSWORK...
-
-                if (nullptr == m_context)
-                    m_context->SetDgnGeomPartId (DgnGeomPartId());
-#endif
-                break;
-                }
-
             case ElementGeomIO::OpCode::BeginSubCategory:
                 {
                 Transform        geomToWorld;
                 DgnSubCategoryId subCategory;
 
-                if (!reader.Get (egOp, subCategory, geomToWorld))
+                if (!reader.Get(egOp, subCategory, geomToWorld))
                     break;
-
-                if (nullptr == m_context)
-                    break; // ElemDisplayParams not required...
 
                 if (nullptr != m_context->GetCurrLocalToFrustumTransformCP())
                     m_context->PopTransformClip(); // Pop previous sub-category/transform...
@@ -2187,8 +2159,8 @@ void ElementGeometryCollection::Iterator::ToNext()
                     category = m_context->GetDgnDb().Categories().QueryCategoryId(subCategory);
 
                 elParams.Init();
-                elParams.SetCategoryId (category);
-                elParams.SetSubCategoryId (subCategory);
+                elParams.SetCategoryId(category);
+                elParams.SetSubCategoryId(subCategory);
                 break;
                 }
 
@@ -2198,9 +2170,31 @@ void ElementGeometryCollection::Iterator::ToNext()
             case ElementGeomIO::OpCode::Pattern:
             case ElementGeomIO::OpCode::Material:
                 {
-                if (nullptr != m_context)
-                    reader.Get (egOp, *m_context->GetCurrentDisplayParams()); // Update active ElemDisplayParams...
+                reader.Get(egOp, *m_context->GetCurrentDisplayParams()); // Update active ElemDisplayParams...
                 break;
+                }
+
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                {
+                DgnGeomPartId geomPartId;
+
+                if (!reader.Get(egOp, geomPartId))
+                    break;
+
+                DgnGeomPartPtr partGeometry = m_context->GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
+
+                if (!partGeometry.IsValid())
+                    break;
+
+                m_elementGeometry = partGeometry->GetGeometry().front();
+
+                if (!m_elementGeometry.IsValid())
+                    break; // Ignore failure...
+
+                m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
+                m_context->SetDgnGeomPartId(geomPartId);
+                m_partGeometry = partGeometry;
+                return;
                 }
 
             case ElementGeomIO::OpCode::ParasolidBRep:
@@ -2208,14 +2202,13 @@ void ElementGeometryCollection::Iterator::ToNext()
                 if (!m_useBRep)
                     break;
 
-                if (!reader.Get (egOp, m_elementGeometry) || !m_elementGeometry.IsValid())
+                if (!reader.Get(egOp, m_elementGeometry) || !m_elementGeometry.IsValid())
                     {
                     m_useBRep = false; // BRep unavailable - start returning BRepPolyface geometry...
                     break;
                     }
 
-                if (nullptr != m_context)
-                    m_context->GetCurrentDisplayParams()->Resolve (*m_context); // Resolve sub-category appearance...
+                m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
                 return;
                 }
 
@@ -2234,11 +2227,10 @@ void ElementGeometryCollection::Iterator::ToNext()
 
             default:
                 {
-                if (!reader.Get (egOp, m_elementGeometry) || !m_elementGeometry.IsValid())
+                if (!reader.Get(egOp, m_elementGeometry) || !m_elementGeometry.IsValid())
                     break; // Ignore non-geometry opCode (or failures)...
 
-                if (nullptr != m_context)
-                    m_context->GetCurrentDisplayParams()->Resolve (*m_context); // Resolve sub-category appearance...
+                m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
                 return;
                 }
             }
@@ -2325,12 +2317,12 @@ TransformCR ElementGeometryCollection::GetGeometryToElement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryCollection::ElementGeometryCollection (uint8_t const* data, size_t dataSize)
+ElementGeometryCollection::ElementGeometryCollection (DgnDbR dgnDb, uint8_t const* data, size_t dataSize)
     {
     m_data = data;
     m_dataSize = dataSize;
     m_elemToWorld.InitIdentity();
-    m_context = nullptr;
+    m_context = new ElementGeometryCollectionContext(dgnDb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2431,12 +2423,33 @@ bool ElementGeometryBuilder::Append (ElemDisplayParamsCR elParams)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCR geomToElement)
     {
-    // NEEDSWORK: Need to get geometry to update range, etc...
-    //            Should we require a placement to have been specified already?!?
-//    m_writer.Append(subCategoryId, partToWorld);
-//    m_writer.Append(geomPartId);
+    if (!m_havePlacement)
+        return false; // geomToElement must be relative to an already defined placement (i.e. not computed placement from CreateWorld)...
 
-    return false;
+    DgnGeomPartPtr geomPart = m_model.GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
+
+    if (!geomPart.IsValid())
+        return false;
+
+    DRange3d localRange;
+
+    for (ElementGeometryPtr geom : geomPart->GetGeometry())
+        {
+        if (!geom.IsValid())
+            continue;
+
+        DRange3d range;
+
+        if (!geom->GetRange(range))
+            continue;
+
+        localRange.Extend(range);
+        }
+
+    OnNewGeom (localRange, &geomToElement);
+    m_writer.Append(geomPartId);
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
