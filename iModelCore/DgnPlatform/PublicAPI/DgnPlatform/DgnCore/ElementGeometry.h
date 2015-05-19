@@ -278,6 +278,7 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     size_t              m_totalDataSize;
     ViewContextP        m_context;
     ElementGeometryPtr  m_elementGeometry;
+    DgnGeomPartPtr      m_partGeometry;
     bool                m_useBRep;
 
     DGNPLATFORM_EXPORT void ToNext ();
@@ -318,7 +319,7 @@ DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToElement();
 
-DGNPLATFORM_EXPORT ElementGeometryCollection (uint8_t const* data, size_t dataSize);
+DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, uint8_t const* data, size_t dataSize);
 DGNPLATFORM_EXPORT ElementGeometryCollection (GeometricElementCR element);
 DGNPLATFORM_EXPORT ~ElementGeometryCollection ();
 
@@ -383,7 +384,7 @@ DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);
 
 DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
 DGNPLATFORM_EXPORT bool Append (ElemDisplayParamsCR);
-DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement);
+DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement); //! Placement must already be specified, not valid for CreateWorld.
 DGNPLATFORM_EXPORT bool Append (ElementGeometryCR);
 DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
 DGNPLATFORM_EXPORT bool Append (CurveVectorCR);

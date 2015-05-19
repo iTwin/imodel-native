@@ -17,6 +17,52 @@ USING_NAMESPACE_EC
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+Utf8CP DgnDbExpressionContext::GetPath() const
+    {
+    return m_db.GetDbFileName();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+ECValue DgnDbExpressionContext::GetName() const
+    {
+    return ECValue(m_db.GetFileName().GetFileNameWithoutExtension().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+DgnDbExpressionContext::DgnDbExpressionContext(DgnDbCR db) : m_db(db), SymbolExpressionContext(NULL)
+    {
+    SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create(NULL);
+
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnDbExpressionContext, Utf8CP>(L"Path", *this, &DgnDbExpressionContext::GetPath));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnDbExpressionContext, ECValue>(L"Name", *this, &DgnDbExpressionContext::GetName));
+
+    AddSymbol (*ContextSymbol::CreateContextSymbol(L"DgnDb", *methodContext));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+DgnDbCR DgnDbExpressionContext::GetDgnDb()
+    {
+    return m_db;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+DgnDbExpressionContextPtr DgnDbExpressionContext::Create(DgnDbCR db) 
+    { 
+    return new DgnDbExpressionContext(db); 
+    }
+
+
 // Extract a single argument from the list at the specified index
 template<typename T>
 static bool ExtractArg (T& str, ECN::EvaluationResultVector const& args, size_t index, bool allowNull)
