@@ -24,6 +24,7 @@ struct PointPrimitive2d;
 struct ArcPrimitive;
 struct BRepData;
 struct BeginSubCategory;
+struct GeomPart;
 struct BasicSymbology;
 struct AreaFill;
 
@@ -406,6 +407,35 @@ inline flatbuffers::Offset<BeginSubCategory> CreateBeginSubCategory(flatbuffers:
   builder_.add_yaw(yaw);
   builder_.add_subCategoryId(subCategoryId);
   builder_.add_origin(origin);
+  return builder_.Finish();
+}
+
+struct GeomPart : private flatbuffers::Table {
+  int64_t geomPartId() const { return GetField<int64_t>(4, 0); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int64_t>(verifier, 4 /* geomPartId */) &&
+           verifier.EndTable();
+  }
+  bool has_geomPartId() const { return CheckField(4); }
+};
+
+struct GeomPartBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_geomPartId(int64_t geomPartId) { fbb_.AddElement<int64_t>(4, geomPartId, 0); }
+  GeomPartBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  GeomPartBuilder &operator=(const GeomPartBuilder &);
+  flatbuffers::Offset<GeomPart> Finish() {
+    auto o = flatbuffers::Offset<GeomPart>(fbb_.EndTable(start_, 1));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<GeomPart> CreateGeomPart(flatbuffers::FlatBufferBuilder &_fbb,
+   int64_t geomPartId = 0) {
+  GeomPartBuilder builder_(_fbb);
+  builder_.add_geomPartId(geomPartId);
   return builder_.Finish();
 }
 

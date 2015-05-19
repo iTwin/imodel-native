@@ -83,6 +83,15 @@ table BeginSubCategory
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
+table GeomPart
+    {
+    geomPartId:long; // only reason to use flatbuffers is to make it easier if we need to add more info down the road...
+
+    } // GeomPart
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
 table BasicSymbology
     {
     color:uint;
