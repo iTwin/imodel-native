@@ -109,15 +109,15 @@ DG_INLINE ColorDef DgnViewport::GetHiliteColor() const {return _GetHiliteColor()
 DG_INLINE StatusInt DgnViewport::RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return _RefreshViewport(always, synchHealingFromBs, stopFlag);}
 DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, fixedRepetitions);}
 
-DG_INLINE DPoint3d        ViewController::GetOrigin() const            {return _GetOrigin();}
-DG_INLINE DVec3d          ViewController::GetDelta() const             {return _GetDelta();}
-DG_INLINE RotMatrix       ViewController::GetRotation() const           {return _GetRotation();}
+DG_INLINE DPoint3d        ViewController::GetOrigin() const {return _GetOrigin();}
+DG_INLINE DVec3d          ViewController::GetDelta() const {return _GetDelta();}
+DG_INLINE RotMatrix       ViewController::GetRotation() const {return _GetRotation();}
 DG_INLINE void            ViewController::SetOrigin(DPoint3dCR val) {_SetOrigin(val);}
 DG_INLINE void            ViewController::SetDelta(DVec3dCR val) {_SetDelta(val);}
 DG_INLINE void            ViewController::SetRotation(RotMatrixCR val) {_SetRotation(val);}
-DG_INLINE double          ViewController::GetAspectRatioSkew() const   {return _GetAspectRatioSkew();}
-DG_INLINE ColorDef     ViewController::GetBackgroundColor() const    {return _GetBackgroundColor();}
-DG_INLINE void            ViewController::SetBackgroundColor(ColorDef color)    {m_backgroundColor = color; m_viewFlags.overrideBackground=1;}
+DG_INLINE double          ViewController::GetAspectRatioSkew() const {return _GetAspectRatioSkew();}
+DG_INLINE ColorDef        ViewController::GetBackgroundColor() const {return _GetBackgroundColor();}
+DG_INLINE void            ViewController::SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_viewFlags.bgColor=1;}
 DG_INLINE void            ViewController::AdjustAspectRatio(double windowAspect, bool expandView) {_AdjustAspectRatio(windowAspect, expandView);}
 DG_INLINE bool            ViewController::IsLoaded() const { return m_baseModelId.IsValid();}
 DG_INLINE void            ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff) {_ChangeCategoryDisplay(categoryId, onOff);}
@@ -476,6 +476,7 @@ DG_INLINE GradientSymbCP    ElemDisplayParams::GetGradient() const {return m_gra
 DG_INLINE PatternParamsCP   ElemDisplayParams::GetPatternParams() const {return m_pattern.get();}
 DG_INLINE LineStyleInfoCP   ElemDisplayParams::GetLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return m_styleInfo.get();}
 DG_INLINE uint32_t          ElemDisplayParams::GetWeight() const {BeAssert(m_appearanceOverrides.m_weight || m_resolved); return m_weight;}
+DG_INLINE DgnGeometryClass  ElemDisplayParams::GetGeometryClass() const {return m_geometryClass;}
 DG_INLINE MaterialCP        ElemDisplayParams::GetMaterial() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material;}
 DG_INLINE double            ElemDisplayParams::GetTransparency() const {return m_elmTransparency;}
 DG_INLINE double            ElemDisplayParams::GetFillTransparency() const {return m_fillTransparency;}
@@ -490,6 +491,7 @@ DG_INLINE void              ElemDisplayParams::SetFillDisplay(FillDisplay displa
 DG_INLINE void              ElemDisplayParams::SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
 DG_INLINE void              ElemDisplayParams::SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}
 DG_INLINE void              ElemDisplayParams::SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
+DG_INLINE void              ElemDisplayParams::SetGeometryClass (DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
 DG_INLINE void              ElemDisplayParams::SetMaterial(MaterialCP material) {m_appearanceOverrides.m_material = true; m_material = material;}
 DG_INLINE void              ElemDisplayParams::SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency;}
 DG_INLINE void              ElemDisplayParams::SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;}
@@ -534,8 +536,6 @@ DG_INLINE DRay3d          IPickGeom::GetBoresite() const { return _GetBoresite()
 DG_INLINE StatusInt     ViewController::VisitHit(HitPathCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
 DG_INLINE void          ViewController::DrawView(ViewContextR context) {return _DrawView(context);}
 DG_INLINE DgnDbR        ITxnManager::GetDgnDb() {return m_dgndb;}
-DG_INLINE Utf8String    ITxnManager::IValidationError::GetDescription() const {return _GetDescription();}
-DG_INLINE               ITxnManager::ValidationErrorSeverity ITxnManager::IValidationError::GetSeverity() const {return _GetSeverity();}
 
 DG_INLINE SnapPathP     SnapContext::GetSnapPath() {return m_snapPath;}
 DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}

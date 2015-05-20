@@ -273,7 +273,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
             ViewContext::ContextMark mark (&context);
             SetOverrideMatSymb (context);
             ViewFlags flags = *context.GetViewFlags();
-            flags.renderDisplayHidden = flags.renderDisplayEdges = true;
+            flags.hiddenEdges = flags.visibleEdges = true;
             context.SetViewFlags (&flags);
             PushClipsForInContextViewPass (context, drawing); 
             drawing.DrawView (context);

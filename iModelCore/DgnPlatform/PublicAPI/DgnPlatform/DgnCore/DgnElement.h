@@ -10,74 +10,17 @@
 
 /** @addtogroup DgnElementGroup
 
-Classes for working with elements in memory.
-
-Elements must be loaded from @ref DgnDbGroup and cached in memory before they can be accessed.
-Element are loaded and cached using DgnDb::Elements() methods or using QueryModel's.
+Classes for working with DgnElements in memory.
 
 */
 
 BENTLEY_API_TYPEDEFS (HeapZone);
 
 #include <Bentley/BeAssert.h>
-#include <ECObjects/ECInstance.h>
-#include <ECObjects/ECSchema.h>
-
-enum ElementHiliteState
-{
-    HILITED_None         = 0,
-    HILITED_Normal       = 1,
-    HILITED_Bold         = 2,
-    HILITED_Dashed       = 3,
-    HILITED_Background   = 4,
-};
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
-
-//=======================================================================================
-// @bsiclass                                                     Keith.Bentley   06/08
-//=======================================================================================
-enum DgnElementChangeReason
-{
-    ELEMREF_CHANGE_REASON_Delete        = 1,
-    ELEMREF_CHANGE_REASON_Modify        = 2,
-    ELEMREF_CHANGE_REASON_ClearQVData   = 5,
-};
-
-//=======================================================================================
-//! Create a subclass of this to store non-persistent information on a DgnElement.
-//! @bsiclass
-//=======================================================================================
-struct DgnElementAppData
-{
-    virtual ~DgnElementAppData() {}
-
-    //=======================================================================================
-    //! A unique identifier for this type of DgnElementAppData. A static instance of
-    //! DgnElementAppData::Key should be declared to hold the identifier.
-    //! @bsiclass
-    //=======================================================================================
-    struct Key : BeSQLite::AppDataKey {};
-
-    //! Return a name for this type of app data.
-    //! @remarks Strictly for debugging, does not need to be implemented or localized.
-    //! @return The name string or nullptr.
-    virtual WCharCP _GetName() {return nullptr;}
-
-    //! Called to clean up owned resources and delete the app data.
-    //! @param[in]  host            DgnElementP that app data was added to.
-    virtual void _OnCleanup(DgnElementCP host) = 0;
-
-    //! Called to allow app data to react to changes to the persistent element it was added to.
-    //! @param[in]  host            DgnElementP that app data was added to.
-    //! @param[in]  qvCacheDeleted  Specific to app data used to cache the display representation.
-    //!                             of the element. Clearing the qvCache invalidates QvElems stored in app data.
-    //! @param[in]  reason          Why _OnElementChanged is being called.
-    //! @return true to drop this app data entry from the element.
-    virtual bool _OnElemChanged(DgnElementP host, bool qvCacheDeleted, DgnElementChangeReason reason) {return false;}
-};
 
 template <class _QvKey> struct QvElemSet;
 //=======================================================================================
@@ -113,32 +56,75 @@ public:
     //! Parameters for creating new DgnElements
     struct CreateParams
     {
-    DgnModelR       m_model;
-    DgnClassId      m_classId;
-    DgnCategoryId   m_categoryId;
-    Utf8CP          m_code;
-    DgnElementId    m_id;
-    DgnElementId    m_parentId;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-                m_model(model), m_classId(classId), m_categoryId(category), m_code(code), m_id(id), m_parentId(parent) {}
+        DgnModelR       m_model;
+        DgnClassId      m_classId;
+        DgnCategoryId   m_categoryId;
+        Utf8CP          m_code;
+        Utf8CP          m_label;
+        DgnElementId    m_id;
+        DgnElementId    m_parentId;
+        CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+                    m_model(model), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
 
-    void SetCode(Utf8CP code) {m_code = code;}
-    void SetParentId(DgnElementId parent) {m_parentId=parent;}
+        void SetLabel(Utf8CP label) {m_label = label;}
+        void SetCode(Utf8CP code) {m_code = code;}
+        void SetParentId(DgnElementId parent) {m_parentId=parent;}
+    };
+
+    enum class Hilited : uint8_t
+    {
+        None         = 0,
+        Normal       = 1,
+        Bold         = 2,
+        Dashed       = 3,
+        Background   = 4,
+    };
+
+    //! Create a subclass of this to store non-persistent information on a DgnElement.
+    struct AppData : RefCountedBase
+    {
+        //! A unique identifier for this type of DgnElementAppData. Use a static instance of this class to identify your AppData.
+        struct Key : NonCopyableClass {};
+
+        //! Called before this AppData's element is Inserted.
+        //! @param[in]  el the DgnElement holding this AppData
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        virtual bool _OnInsert(DgnElementCR el)  {return false;}
+
+        //! Called after this AppData's element was Inserted.
+        //! @param[in]  el the new persistent DgnElement that was Inserted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note el will \not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
+        //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
+        virtual bool _OnInserted(DgnElementCR el){return false;}
+
+        //! Called before this AppData's element is Updated.
+        //! @param[in] orig the original DgnElement
+        //! @param[in] modified the modified DgnElement about to replace orig
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
+        virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR modified)  {return false;}
+
+        //! Called after this AppData's element was Updated.
+        //! @param[in] orig the original DgnElement
+        //! @param[in] modified the modified DgnElement
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
+        virtual bool _OnUpdated(DgnElementCR orig, DgnElementCR modified) {return false;}
+
+        //! Called before this AppData's element is Deleted.
+        //! @param[in]  el the DgnElement to be deleted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        virtual bool _OnDelete(DgnElementCR el)  {return false;}
+
+        //! Called after this AppData's element was Deleted.
+        //! @param[in]  el the DgnElement that was deleted
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        virtual bool _OnDeleted(DgnElementCR el) {return false;}
     };
 
 protected:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-    struct AppDataEntry
-        {
-        DgnElementAppData::Key const* m_key;
-        DgnElementAppData*            m_obj;
-        AppDataEntry*                 m_next;
-
-        void Init(DgnElementAppData::Key const& key, DgnElementAppData* obj, AppDataEntry* next) {m_key = &key; m_obj = obj; m_next = next;}
-        void ClearEntry(DgnElementCP el) {if (nullptr == m_obj) return; m_obj->_OnCleanup(el); m_obj=nullptr;}
-        void SetEntry(DgnElementAppData* obj, DgnElementCP el) {ClearEntry(el); m_obj = obj;}
-        };
 
     struct Flags
         {
@@ -146,7 +132,7 @@ protected:
         uint32_t m_editable:1;
         uint32_t m_inPool:1;
         uint32_t m_inSelectionSet:1;
-        uint32_t m_hiliteState:3;
+        uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
         uint32_t m_mark1:1;                        // used by applications
         uint32_t m_mark2:1;                        // used by applications
@@ -160,23 +146,29 @@ protected:
     DgnClassId      m_classId;
     DgnCategoryId   m_categoryId;
     Utf8String      m_code;
+    Utf8String      m_label;
     mutable Flags   m_flags;
-    mutable AppDataEntry* m_appData;
-
-    AppDataEntry* FreeAppDataEntry(AppDataEntry* prev, AppDataEntry& thisEntry) const;
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     void SetInPool(bool val) const {m_flags.m_inPool = val;}
-    virtual uint32_t _GetMemSize() const {return sizeof(*this);}
-    ECN::IECInstanceR GetSubclassProperties(bool setModifiedFlag) const;
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
+    //! Override to load the properties added by the DgnElement subclass. @note Must call T_Super::_LoadFromDb
                        virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
+    //! Override to insert the properties added by the DgnElement subclass. @note Must call T_Super::_InsertInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
+    //! Override to update the properties added by the DgnElement subclass. @note Must call T_Super::_UpdateInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
+    //! Override to do any additional processing on delete. @note Must call T_Super::_DeleteInDb
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
-
-    //! Virtual assignment operator.  If your subclass has member variables, it \em must override this method
+                       virtual uint32_t _GetMemSize() const {return sizeof(*this);}
+    //! Virtual assignment operator.  If your subclass has member variables, it \em must override this method @note If overriden must call T_Super::_CopyFrom
     DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR other);
+
+    //! Get the display label (for use in the GUI) for this DgnElement. 
+    //! The default implementation returns the label if set or the code if the label is not set.
+    //! Override if the DgnElement subclass needs to generate the display label in a different way.
+    virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode();}
 
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
     virtual void _OnInserted() {}
@@ -185,21 +177,18 @@ protected:
     virtual DgnElement2dCP _ToElement2d() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
-
-    bvector<ECN::IECInstancePtr> GetAspects(ECN::ECClassCP ecclass) const;
-    template<typename RTYPE, bool SETMODIFIED>  bvector<RTYPE> GetAspects(DgnClassId aspectClass) const;
-    ECN::IECInstanceP GetItem(bool setModifiedFlag) const;
+    virtual ElementGroupCP _ToElementGroup() const {return nullptr;}
 
     explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_code(params.m_code), m_parentId(params.m_parentId), m_appData(nullptr) {}
+             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId) {}
 
 public:
     DgnModelStatus CopyFrom(DgnElementCR rhs) {return _CopyFrom(rhs);}
-    DGNPLATFORM_EXPORT uint32_t AddRef() const;
-    DGNPLATFORM_EXPORT uint32_t Release() const;
+    DGNPLATFORM_EXPORT void AddRef() const;
+    DGNPLATFORM_EXPORT void Release() const;
+    uint32_t GetRefCount() const {return m_refCount.load();}
 
-    DGNPLATFORM_EXPORT virtual BentleyStatus _ApplyScheduledChangesToInstances(DgnElementR);
-    DGNPLATFORM_EXPORT void _ClearScheduledChangesToInstances();
+    //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Utf8String _GenerateDefaultCode();
 
     GeometricElementCP ToGeometricElement() const {return _ToGeometricElement();}
@@ -207,6 +196,7 @@ public:
     DgnElement2dCP ToElement2d() const {return _ToElement2d();}
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}
+    ElementGroupCP ToElementGroup() const {return _ToElementGroup();}
 
     GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());}
     DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}
@@ -221,15 +211,12 @@ public:
     void SetMark2(bool yesNo) const {if (m_flags.m_mark2==yesNo) return; m_flags.m_mark2 = yesNo;}
     bool IsMarked1() const {return true == m_flags.m_mark1;}
     bool IsMarked2() const {return true == m_flags.m_mark2;}
-    ElementHiliteState IsHilited() const {return (ElementHiliteState) m_flags.m_hiliteState;}
-    void SetHilited(ElementHiliteState newState) const {m_flags.m_hiliteState = newState;}
+    Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;}
+    void SetHilited(Hilited newState) const {m_flags.m_hilited = (uint8_t) newState;}
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const;
 
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
-    uint32_t GetRefCount() const {return m_refCount.load();}
 
-    DGNPLATFORM_EXPORT void ForceElemChanged(bool qvCacheCleared, DgnElementChangeReason);
-    DGNPLATFORM_EXPORT void ForceElemChangedPost();
     DGNPLATFORM_EXPORT void ClearAllAppData();
 
     //! Test if the element is in the selection set
@@ -241,38 +228,51 @@ public:
     //! Set this element's undisplayed flag
     void SetUndisplayedFlag(bool yesNo) {m_flags.m_undisplayed = yesNo;}
 
-    //! Make a writeable copy of this DgnElement so that the copy may be edited.
+    //! Make a writable copy of this DgnElement so that the copy may be edited.
     //! @return a DgnElementPtr that holds the copy of this element.
     //! @note This method may only be used on a DgnElement this is the readonly persistent element returned by DgnElements::GetElement, and then
     //! only one editing copy of this element at a time may exist. If another copy is extant, this method will return an invalid DgnElementPtr.
     DGNPLATFORM_EXPORT DgnElementPtr CopyForEdit() const;
 
+    //! Make a writable copy of this DgnElement so that the copy may be edited.
+    //! This is merely a templated shortcut to dynamic_cast the return of #CopyForEdit to a subclass of DgnElement.
     template<class T> RefCountedPtr<T> MakeCopy() const {return dynamic_cast<T*>(CopyForEdit().get());}
 
+    //! Update the persistent state of a DgnElement in the DgnDb from a modified copy of it.
+    //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el, stat);
     DGNPLATFORM_EXPORT DgnElementCPtr Update(DgnModelStatus* stat=nullptr);
 
+    //! Insert this DgnElement into the DgnDb.
+    //! This is merely a shortcut for el.GetDgnDb().Elements().Insert(el, stat);
+    DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnModelStatus* stat=nullptr);
+
+    //! Delete this DgnElement from the DgnDb,
+    //! This is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
+    DGNPLATFORM_EXPORT DgnModelStatus Delete() const;
+
+    //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
-    /** @name DgnElementAppData Management */
+    /** @name AppData Management */
     /** @{ */
     //! Get the HeapZone for the this element.
     DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
 
     //! Add Application Data to this element.
-    //! @param[in] key The AppData's key. If an DgnElementAppData with this key already exists on this element, it is dropped and
+    //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
     //! @param[in] appData The appData object to attach to this element.
-    DGNPLATFORM_EXPORT StatusInt AddAppData(DgnElementAppData::Key const& key, DgnElementAppData* appData) const;
+    DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* appData) const;
 
     //! Drop Application data from this element.
-    //! @param[in] key the key for the DgnElementAppData to drop.
+    //! @param[in] key the key for the AppData to drop.
     //! @return SUCCESS if an entry with \a key is found and dropped.
-    DGNPLATFORM_EXPORT StatusInt DropAppData(DgnElementAppData::Key const& key) const;
+    DGNPLATFORM_EXPORT StatusInt DropAppData(AppData::Key const& key) const;
 
     //! Find DgnElementAppData on this element by key.
-    //! @param[in] key The key for the DgnElementAppData of interest.
-    //! @return the DgnElementAppData for key \a key, or nullptr.
-    DGNPLATFORM_EXPORT DgnElementAppData* FindAppData(DgnElementAppData::Key const& key) const;
+    //! @param[in] key The key for the AppData of interest.
+    //! @return the AppData for key \a key, or nullptr.
+    DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     /** @} */
 
     //! Get the DgnModel of this element.
@@ -285,7 +285,7 @@ public:
     DgnElementId GetElementId() const {return m_elementId;}
 
     //! Invalidate the ElementId of this element. This can be used to insert a copy of this element.
-    void InvalidateElementId()  {m_elementId = DgnElementId();}
+    void InvalidateElementId() {m_elementId = DgnElementId();}
 
     //! Get the DgnClassId for this DgnElement
     //! @see DgnElement::QueryClassId
@@ -294,7 +294,7 @@ public:
     //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this DgnElement
     DgnElementKey GetElementKey() const {return DgnElementKey(GetElementClassId(), GetElementId());}
 
-    //! Get the ECClass for this DgnElement
+    //! Get a pointer to the ECClass for this DgnElement
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Query the DgnClassId for the dgn.Element ECClass in the specified DgnDb.
@@ -317,93 +317,19 @@ public:
     //! Set the code of this DgnElement.
     void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
 
-    /// @name Element Properties
-    //@{
+    //! Get the optional label (user-friendly name) of this DgnElement.
+    //! @return the label or nullptr
+    Utf8CP GetLabel() const {return m_label.c_str();}
 
-    //! Get the properties of this Element, other than the properties defined by dgn.Element.
-    //! Note that the base class properties, including ElementId, ClassId, CategoryId, and Code, are accessed directly through member functions on DgnElement.
-    //! @return an instance that holds the element's subclass properties. The instance will be empty if there are no subclass properties.
-    //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
-    //! @note The returned instance is read-only.
-    //! @see GetSubclassPropertiesR
-    DGNPLATFORM_EXPORT ECN::IECInstanceCR GetSubclassProperties() const;
+    //! Set the label (user-friendly name) of this DgnElement.
+    void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
 
-    //! Get the properties of this Element, other than the properties defined by dgn.Element.
-    //! Note that the base class properties, including ElementId, ClassId, CategoryId, and Code, are accessed directly through member functions on DgnElement.
-    //! @return an instance that holds the element's subclass properties. The instance will be empty if there are no subclass properties.
-    //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
-    //! @note The returned instance is read-write. You can modify its properties.
-    //! @see GetSubclassProperties, CancelSubclassPropertiesChange
-    DGNPLATFORM_EXPORT ECN::IECInstanceR GetSubclassPropertiesR();
-
-    //@}
-
-    /// @name Element Aspects
-    //@{
-
-    //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
-    //! @see GetItemP, SetItem, RemoveItem
-    DGNPLATFORM_EXPORT ECN::IECInstanceCP GetItem() const;
-
-    //! Get a writable copy of the ElementItem associated with this element, if any.
-    //! @return a pointer to a read-write instance that holds the ElementItem's properties, or nullptr if the element has no Item.
-    //! @note The returned instance can be used to read and/or modify the ElementItem's properties.
-    //! @note This DgnElement controls the lifetime of the returned instance. Do not attempt to delete it.
-    //! @see GetItem, SetItem, RemoveItem, CancelItemChange
-    DGNPLATFORM_EXPORT ECN::IECInstanceP GetItemP();
-
-    //! Get copies of all existing or pending ElementAspects of the specified class that are associated with this element.
-    //! @param[in] aspectClass      The ECClass of the ElementAspect to query
-    //! @return zero or more ElementAspect instances. The vector will be empty if the element has no ElementAspect of the specified class. The vector
-    //! will hold multiple instances if the element has more than aspect of the specified class.
-    //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
-    //! @see GetItemcp for a direct way to access the ElementItem.
-    //! @see GetAspectsP, AddAspect, RemoveAspect
-    DGNPLATFORM_EXPORT bvector<ECN::IECInstanceCP> GetAspects(DgnClassId aspectClass) const;
-
-    //! Get writable copies of all existing or pending ElementAspects of the specified class that are associated with this element.
-    //! @param[in] aspectClass      The ECClass of the ElementAspect to query
-    //! @return zero or more ElementAspect instances. The vector will be empty if the element has no ElementAspect of the specified class. The vector
-    //! will hold multiple instances if the element has more than aspect of the specified class.
-    //! @note GetAspectsP returns instances that can be used to read and/or modify the aspects' properties.
-    //! @note This DgnElement controls the lifetime of the returned instances. Do not attempt to delete them.
-    //! @see GetItemP for a direct way to access the ElementItem.
-    //! @see GetAspects, AddAspect, RemoveAspect, CancelAspectChange
-    DGNPLATFORM_EXPORT bvector<ECN::IECInstanceP> GetAspectsP(DgnClassId aspectClass);
-
-    //! Set the ElementItem associated with this element.
-    //! If the element does not currently have an ElementItem, then the supplied instance will be used to insert one.
-    //! Otherwise, the supplied instance will be used to update the existing ElementItem.
-    //! The change is buffered in memory and is applied to the database when the element itself is inserted or replaced.
-    //! @note DgnElement will increment the reference count on the supplied instance and then hold onto it.
-    //! @note This method invalidates pointers returned by GetItemP and GetItem
-    //! @see GetItemP, CancelItemChange
-    DGNPLATFORM_EXPORT void SetItem(ECN::IECInstanceR itemInstance);
-
-    //! Specify that the element's ElementItem should be deleted.
-    //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.
-    //! @note This DgnElement will release its reference to the ElementItem instance that it is currently holding, if any.
-    //! @note This method invalidates pointers returned by GetItemP and GetItem
-    DGNPLATFORM_EXPORT void RemoveItem();
-
-    //! Add or update an aspect of this element.
-    //! The change is buffered in memory and is applied to the database when the element itself is inserted or replaced.
-    //! @param[in] instance      The new state of the aspect
-    //! @note DgnElement will increment the reference count on the supplied instance and then hold onto it.
-    //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
-    //! @see SetItem for a direct way to insert or update the ElementItem.
-    //! @see GetAspectsP, CancelAspectChange, RemoveAspect
-    DGNPLATFORM_EXPORT void AddAspect(ECN::IECInstanceR instance);
-
-    //! Specify that an aspect of this element should be deleted.
-    //! The deletion is buffered in memory and is applied to the database when the element itself is replaced.
-    //! @param[in] aspectClass      The ECClass of the ElementAspect to be deleted
-    //! @param[in] aspectId         The ID of the ElementAspect to be deleted
-    //! @note This DgnElement will release its reference to the ElementAspect instance that it is currently holding, if any.
-    //! @note This method invalidates pointers returned by GetAspectsP and GetAspects
-    //! @see RemoveItem for a direct way to delete the ElementItem.
-    DGNPLATFORM_EXPORT void RemoveAspect(DgnClassId aspectClass, BeSQLite::EC::ECInstanceId aspectId);
-    //@}
+    //! Get the display label (for use in the GUI) for this DgnElement.
+    //! @note The default implementation returns the label if set or the code if the label is not set.
+    //! @see GetLabel
+    //! @see GetCode
+    //! @see _GetDisplayLabel
+    Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
     static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
 };
@@ -543,7 +469,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
 protected:
     GeomStream m_geom;
-    
+
     uint32_t _GetMemSize() const override {return sizeof(*this) + m_geom.GetAllocSize();}
     DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb() override;
@@ -585,8 +511,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement3dCR m_placement;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(model, classId, category, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(model, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
     };
@@ -642,8 +568,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement2dCR m_placement;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(model, classId, category, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(model, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
     };
@@ -675,6 +601,48 @@ protected:
 
 public:
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+};
+
+//=======================================================================================
+//! ElementGroup is the base class for "logical" group membership.
+//! "Logical" group membership implies a referencing (not an owning) relationship.
+//! ElementGroup can be subclassed for custom grouping behavior.
+// @bsiclass                                                    Shaun.Sewall    05/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+    friend struct ElementGroupHandler;
+
+protected:
+    ElementGroupCP _ToElementGroup() const override {return this;}
+
+    //! Called when a member is about to be inserted into this ElementGroup
+    //! Override and return something other than DGNMODEL_STATUS_Success to prevent the member from being inserted into this ElementGroup.
+    virtual DgnModelStatus _OnMemberInsert(DgnElementCR member) const {return DGNMODEL_STATUS_Success;}
+    //! Called after a member has been inserted into this ElementGroup
+    //! Override if additional processing is required after a member is inserted.
+    virtual void _OnMemberInserted(DgnElementCR member) const {}
+
+    //! Called when a member is about to be deleted from this ElementGroup
+    //! Override and return something other than DGNMODEL_STATUS_Success to prevent the member from being deleted from this ElementGroup.
+    virtual DgnModelStatus _OnMemberDelete(DgnElementCR member) const {return DGNMODEL_STATUS_Success;}
+    //! Called after a member has been deleted from this ElementGroup
+    //! Override if additional processing is required after a member is deleted.
+    virtual void _OnMemberDeleted(DgnElementCR member) const {}
+
+    explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Inserts a ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
+    //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)
+    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
+    DGNPLATFORM_EXPORT DgnModelStatus InsertMember(DgnElementCR) const;
+    //! Deletes the ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
+    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
+    DGNPLATFORM_EXPORT DgnModelStatus DeleteMember(DgnElementCR) const;
+    //! Query for the set of members in this ElementGroup
+    DGNPLATFORM_EXPORT DgnElementIdSet QueryMembers() const;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

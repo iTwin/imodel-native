@@ -36,16 +36,16 @@ The DgnDomain for the base "dgn" schema is is called @ref DgnSchemaDomain. It is
 */
 
 #define DOMAIN_DECLARE_MEMBERS(__classname__,__exporter__) \
-    private:   __exporter__ static __classname__*& z_PeekInstance(); \
-                            static __classname__* z_CreateInstance(); \
-    public:    __exporter__ static __classname__& GetDomain() {return z_Get##__classname__##Instance();}\
-               __exporter__ static __classname__& z_Get##__classname__##Instance();
+    private:   __exporter__ static __classname__*& z_PeekDomain(); \
+                            static __classname__* z_CreateDomain(); \
+    public:    __exporter__ static __classname__& GetDomain() {return z_Get##__classname__##Domain();}\
+               __exporter__ static __classname__& z_Get##__classname__##Domain();
 
 // This macro must be included within the source file that implements a DgnDomain
 #define DOMAIN_DEFINE_MEMBERS(__classname__) \
-    __classname__*  __classname__::z_CreateInstance() {__classname__* instance= new __classname__(); return instance;}\
-    __classname__*& __classname__::z_PeekInstance() {static __classname__* s_instance = 0; return s_instance;}\
-    __classname__&  __classname__::z_Get##__classname__##Instance(){__classname__*& instance=z_PeekInstance(); if (nullptr==instance) instance=z_CreateInstance(); return *instance;}
+    __classname__*  __classname__::z_CreateDomain() {__classname__* instance= new __classname__(); return instance;}\
+    __classname__*& __classname__::z_PeekDomain() {static __classname__* s_instance = 0; return s_instance;}\
+    __classname__&  __classname__::z_Get##__classname__##Domain(){__classname__*& instance=z_PeekDomain(); if (nullptr==instance) instance=z_CreateDomain(); return *instance;}
 
 // This macro must be included within the class declaration of a DgnDomain::Handler.
 #define DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
@@ -220,6 +220,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         //! @remarks To override this method, simply copy the following line into your handler.
         virtual uint32_t _GetApiVersion() {return API_VERSION;}
 
+        Handler* GetSuperClass() const {return m_superClass;}
+
         //! Get the name of the ECClass handled by this Handler
         Utf8CP GetClassName() const {return m_ecClassName.c_str();}
 
@@ -235,9 +237,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual ElementHandlerP _ToElementHandler() {return nullptr;} //!< dynamic_cast this Handler to an ElementHandler
         virtual ModelHandlerP _ToModelHandler() {return nullptr;}     //!< dynamic_cast this Handler to a ModelHandler
         virtual ViewHandlerP _ToViewHandler() {return nullptr;}       //!< dynamic_cast this Handler to a ViewHandler
-#ifdef WIP_ITEM_HANDLER
-        virtual ElementItemHandlerP _ToElementItemHandler() {return nullptr;}     //!< dynamic_cast this Handler to a ElementItemHandler
-#endif
 
         #if !defined (DOCUMENTATION_GENERATOR)
         static Handler& z_GetHandlerInstance();
@@ -271,6 +270,7 @@ protected:
     bvector<Handler*> m_handlers;
     bvector<TableHandler*> m_tableHandlers;
     virtual ~DgnDomain() {}
+    BentleyStatus VerifySuperclass(Handler& handler);
 
     BeSQLite::DbResult LoadHandlers(DgnDbR) const;
 
@@ -307,7 +307,7 @@ public:
     DGNPLATFORM_EXPORT Handler* FindHandler(Utf8CP className) const;
 
     //! Register a handler with this DgnDomain.
-    void RegisterHandler(Handler& handler) {handler.SetDomain(*this); m_handlers.push_back(&handler);}
+    DGNPLATFORM_EXPORT BentleyStatus RegisterHandler(Handler& handler);
 
     //! Register a table handler with this DgnDomain.
     void RegisterTableHandler(TableHandler& handler) {handler.SetDomain(*this); m_tableHandlers.push_back(&handler);}

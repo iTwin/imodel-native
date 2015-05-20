@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-template <class _QvKey> struct QvElemSet : DgnElementAppData
+template <class _QvKey> struct QvElemSet : DgnElement::AppData
 {
 protected:
     struct  Entry
@@ -32,10 +32,11 @@ protected:
         Entry (_QvKey const& key, QvElem* qvElem, Entry* next) : m_key (key), m_qvElem (qvElem), m_next (next) {}
         };
 
+
     HeapZone&   m_zone;
     Entry*      m_entry;
 
-    virtual WCharCP   _GetName () override {return L"QvElemSet";}
+    ~QvElemSet() {FreeAll (false);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
@@ -52,30 +53,6 @@ void FreeAll (bool qvCacheDeleted)
         thisEntry->~Entry ();
         m_zone.Free (thisEntry, sizeof (Entry));
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _OnCleanup (DgnElementCP host) override
-    {
-    FreeAll (false);
-    host->GetHeapZone().Free (this, sizeof *this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _OnElemChanged (DgnElementP host, bool qvCacheDeleted, DgnElementChangeReason) override
-    {
-    if (qvCacheDeleted)
-        {
-        // we just deleted the qv cache. We need to clear the entries (but don't delete them - that happens in _OnCleanup)
-        for (Entry* thisEntry=m_entry; thisEntry; thisEntry=thisEntry->m_next)
-            thisEntry->Clear();
-        }
-
-    return  true;
     }
 
 public:

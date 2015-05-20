@@ -277,7 +277,7 @@ void    DisplayPath::SetCursorIndex (int index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementHiliteState  DisplayPath::IsHilited () const
+DgnElement::Hilited DisplayPath::IsHilited () const
     {
     int     cursor = GetCursorIndex ();
 
@@ -287,15 +287,15 @@ ElementHiliteState  DisplayPath::IsHilited () const
     DgnElemRefArray::const_iterator elem = m_path.begin ();
 
     if (elem == m_path.end() || cursor < 0)
-        return HILITED_None;
+        return DgnElement::Hilited::None;
 
     for (int i=0; i <= cursor; i++, elem++)
         {
-        ElementHiliteState  hiliteState = (*elem)->ToGeometricElement()->IsHilited();
+        DgnElement::Hilited hiliteState = (*elem)->ToGeometricElement()->IsHilited();
 
         switch (hiliteState)
             {
-            case HILITED_None:
+            case DgnElement::Hilited::None:
                 // Keep looking...need to find Normal/Bold/Dashed on a component!
                 break;
 
@@ -304,13 +304,13 @@ ElementHiliteState  DisplayPath::IsHilited () const
             }
         }
 
-    return HILITED_None;
+    return DgnElement::Hilited::None;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayPath::SetHilited (ElementHiliteState newState) const
+void DisplayPath::SetHilited (DgnElement::Hilited newState) const
     {
     DgnElementP  cursorElem = GetCursorElem();
 
@@ -319,7 +319,7 @@ void DisplayPath::SetHilited (ElementHiliteState newState) const
         return;
 
     // KLUDGE: Preserve any alternative hilite state (i.e. HILITED_Bold) already set on this element...
-    if (HILITED_None == newState || HILITED_None == cursorElem->ToGeometricElement()->IsHilited())
+    if (DgnElement::Hilited::None == newState || DgnElement::Hilited::None == cursorElem->ToGeometricElement()->IsHilited())
         {
         cursorElem->SetHilited(newState);
         }

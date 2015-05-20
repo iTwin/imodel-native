@@ -11,6 +11,7 @@ namespace BentleyG06.DgnPlatform.FB;
 enum GradientMode : byte {None, Linear, Curved, Cylindrical, Spherical, Hemispherical}
 enum BoundaryType : byte {None, Open, Closed}
 enum FillDisplay : byte {None, ByView, Always, Blanking}
+enum GeometryClass : byte {Primary, Construction, Dimension, Pattern}
 
 //=======================================================================================
 // @bsiclass                                                    
@@ -82,6 +83,15 @@ table BeginSubCategory
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
+table GeomPart
+    {
+    geomPartId:long; // only reason to use flatbuffers is to make it easier if we need to add more info down the road...
+
+    } // GeomPart
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
 table BasicSymbology
     {
     color:uint;
@@ -90,6 +100,7 @@ table BasicSymbology
     displayPriority:int; // contributes to net display priority, not an override. (2d only)
     useColor:ubyte;
     useWeight:ubyte;
+    geomClass:GeometryClass;
 
     } // BasicSymbology
 

@@ -600,6 +600,7 @@ DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const
     return m_rangeIndex;
     }
 
+#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
 /*---------------------------------------------------------------------------------**//**
 * Called whenever the geom for an element (could possibly have) changed.
 * If a cached presentation of the geom is stored on the DgnElementP, delete it. Also
@@ -608,7 +609,6 @@ DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ElementChanged(DgnElement& elRef, DgnElementChangeReason reason)
     {
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
     // if there are qvElems on this DgnElementP, delete them
     elRef.ForceElemChanged(false, reason);
 
@@ -616,8 +616,8 @@ void DgnModel::ElementChanged(DgnElement& elRef, DgnElementChangeReason reason)
         return;
 
     OnElementModify((DgnElementR) elRef);
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
@@ -888,8 +888,8 @@ DgnFileStatus DgnModel::FillModel()
         return  DGNFILE_STATUS_Success;
 
     Statement stmt;
-    enum Column : int {Id=0,ClassId=1,CategoryId=2,Code=3,ParentId=4};
-    stmt.Prepare(m_dgndb, "SELECT Id,ECClassId,CategoryId,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
+    stmt.Prepare(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     SetFilled();
@@ -906,6 +906,7 @@ DgnFileStatus DgnModel::FillModel()
         elements.LoadElement(DgnElement::CreateParams(*this,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
+            stmt.GetValueText(Column::Label), 
             stmt.GetValueText(Column::Code), 
             id,
             stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
@@ -955,13 +956,11 @@ ModelHandlerP ModelHandler::FindHandler(DgnDb const& db, DgnClassId handlerId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnModel::_QueryModelRange() const
     {
-    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
     Statement stmt;
     stmt.Prepare(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
                            DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
                            DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g"
                           " WHERE e.ModelId=? AND e.Id=g.ElementId");
-    //__PUBLISH_EXTRACT_END__
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();

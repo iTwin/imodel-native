@@ -131,13 +131,7 @@ void DgnSchemaTableHandler::Element::_OnAdd (TxnSummary& summary, BeSQLite::Chan
     DgnModelId elementModelId;
 
     GetElementChangeInfo(elementId, elementClassId, elementModelId, summary.GetDgnDb(), change, TxnSummary::ChangeType::Add);
-
     RecordElementChange(summary, TxnSummary::ChangeType::Add, elementId, elementModelId);
-
-#ifdef WIP_HANDLER_REFACTOR
-    PhysicalElementHandlerR elementHandler = HandlerRegistry::GetPhysicalElementHandler (summary.GetDgnDb(), elementClassId);
-    elementHandler._OnElementInserted (summary.GetDgnDb(), DgnElementKey (elementClassId, elementId));
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -150,13 +144,7 @@ void DgnSchemaTableHandler::Element::_OnDelete (TxnSummary& summary, BeSQLite::C
     DgnModelId elementModelId;
 
     GetElementChangeInfo (elementId, elementClassId, elementModelId, summary.GetDgnDb(), change, TxnSummary::ChangeType::Delete);
-
     RecordElementChange (summary, TxnSummary::ChangeType::Delete, elementId, elementModelId);
-
-#ifdef WIP_HANDLER_REFACTOR
-    PhysicalElementHandlerR elementHandler = HandlerRegistry::GetPhysicalElementHandler (summary.GetDgnDb(), elementClassId);
-    elementHandler._OnElementDeleted (summary.GetDgnDb(), DgnElementKey (elementClassId, elementId));
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -171,95 +159,7 @@ void DgnSchemaTableHandler::Element::_OnUpdate (TxnSummary& summary, BeSQLite::C
     GetElementChangeInfo (elementId, elementClassId, elementModelId, summary.GetDgnDb(), change, TxnSummary::ChangeType::Mod);
 
     RecordElementChange (summary, TxnSummary::ChangeType::Mod, elementId, elementModelId);
-
-#ifdef WIP_HANDLER_REFACTOR
-    PhysicalElementHandlerR elementHandler = HandlerRegistry::GetPhysicalElementHandler (summary.GetDgnDb(), elementClassId);
-    elementHandler._OnElementUpdated (summary.GetDgnDb(), DgnElementKey (elementClassId, elementId));
-#endif
     }
-
-#if defined (WIP_ELEMENTGEOM_REFACTOR)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
-void ElementGeomTableHandler::_OnAdd (TxnSummary& summary, TxnElementSummary*, BeSQLite::Changes::Change const& change) const 
-    {
-    DgnElementId elementId (change.GetValue(0, Changes::Change::Stage::New).GetValueInt64()); // element.Id == item.Id
-    RecordOwningElementChange (summary, TxnSummary::ChangeType::Add, elementId);
-
-    PhysicalGeomKey geomKey = summary.GetDgnDb().Items().QueryGeomKey (elementId);
-
-    ElementItemHandlerR itemHandler = HandlerRegistry::GetElementItemHandler (summary.GetDgnDb(), geomKey.GetECClassId());
-    itemHandler._OnGeomInserted (summary.GetDgnDb(), geomKey);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
-void ElementGeomTableHandler::_OnDelete (TxnSummary& summary, TxnElementSummary*, BeSQLite::Changes::Change const& change) const 
-    {
-    DgnElementId elementId (change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64()); // element.Id == item.Id
-    RecordOwningElementChange (summary, TxnSummary::ChangeType::Delete, elementId);
-
-    PhysicalGeomKey geomKey = summary.GetDgnDb().Items().QueryGeomKey (elementId);
-
-    ElementItemHandlerR itemHandler = HandlerRegistry::GetElementItemHandler (summary.GetDgnDb(), geomKey.GetECClassId());
-    itemHandler._OnGeomDeleted (summary.GetDgnDb(), geomKey);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
-void ElementGeomTableHandler::_OnUpdate (TxnSummary& summary, TxnElementSummary*, BeSQLite::Changes::Change const& change) const 
-    {
-    DgnElementId elementId (change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64()); // element.Id == item.Id
-    RecordOwningElementChange (summary, TxnSummary::ChangeType::Mod, elementId);
-
-    PhysicalGeomKey geomKey = summary.GetDgnDb().Items().QueryGeomKey (elementId);
-
-    ElementItemHandlerR itemHandler = HandlerRegistry::GetElementItemHandler (summary.GetDgnDb(), geomKey.GetECClassId());
-    itemHandler._OnGeomUpdated (summary.GetDgnDb(), geomKey);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomTableHandler::AddElementChange(bset<DgnElementId>& elSet, BeSQLite::Changes::Change const& change, bool useNew) const
-    {
-    Changes::Change::Stage stage = useNew ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
-
-    DgnElementId elementId(change.GetValue(0, stage).GetValueInt64());
-    if (!elementId.IsValid())
-        {
-        BeAssert (false);
-        return;
-        }
-
-    elSet.insert (elementId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Called when an element in the physical table has been modified. We want to union the pre-changed and post-changed
-* range values into the transaction summary.
-* @bsimethod                                    Keith.Bentley                   07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomTableHandler::_OnUpdate(TxnSummary& summary, TxnElementSummary* poolSummary, BeSQLite::Changes::Change const& change) const
-    {
-    if (NULL == poolSummary)
-        return;
-
-    // get the post-changed state of the element, loading it if neccessary
-    DgnElementId elementId(change.GetOldValue(0).GetValueInt64());
-    auto elRef = summary.GetDgnDb().Elements().GetElementById(elementId);
-    if (!elRef.IsValid())
-        {
-        BeAssert (false);
-        return;
-        }
-
-    poolSummary->m_replacedElements.insert (elRef.get()); // *** NEEDS WORK: who is keeping this elementref alive?
-    }
-#endif
 
 
 //---------------------------------------------------------------------------------------
@@ -744,6 +644,7 @@ HANDLER_DEFINE_MEMBERS(PhysicalModelHandler)
 HANDLER_DEFINE_MEMBERS(WebMercatorModelHandler)
 HANDLER_DEFINE_MEMBERS(StreetMapModelHandler)
 HANDLER_DEFINE_MEMBERS(ElementHandler)
+HANDLER_DEFINE_MEMBERS(ElementGroupHandler)
 HANDLER_DEFINE_MEMBERS(PhysicalElementHandler)
 HANDLER_DEFINE_MEMBERS(DrawingElementHandler)
 HANDLER_DEFINE_MEMBERS(ViewHandler)
@@ -796,6 +697,7 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb D
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(PhysicalElementHandler::GetHandler());
     RegisterHandler(DrawingElementHandler::GetHandler());
+    RegisterHandler(ElementGroupHandler::GetHandler());
     RegisterHandler(PointCloudBaseModelHandler::GetHandler());
 
     RegisterDefaultDependencyHandlers();

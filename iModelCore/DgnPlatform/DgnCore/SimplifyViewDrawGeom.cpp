@@ -105,12 +105,8 @@ SimplifyViewDrawGeom::SimplifyViewDrawGeom (bool addFacetNormals, bool addFacetP
     {
     m_context = NULL;
 
-    memset (&m_viewFlags, 0, sizeof (m_viewFlags));
-
-    m_viewFlags.patterns          = true;
-    m_viewFlags.line_wghts        = true;
-    m_viewFlags.inhibitLineStyles = true;       // don't want linestyles for range calculation - they're added later.
-    m_viewFlags.transparency      = true;       // This should be enabled?!? Change from SS3 - BB
+    m_viewFlags.InitDefaults();
+    m_viewFlags.styles = false; // don't want linestyles for range calculation - they're added later.
 
     m_defaultFacetOptions = IFacetOptions::New ();
     setDefaultFacetOptions (m_defaultFacetOptions.get (), 0.0, addFacetNormals, addFacetParams);

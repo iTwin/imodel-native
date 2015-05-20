@@ -24,22 +24,13 @@ struct DgnElementDependencyGraph;
  The Transaction Manager enables you to save changes, journal transactionable changes during a session, and to organize
  changes into units called transactions.
 
- <h2>Making and Saving Changes</h2>
- ITxn is the API for making and saving changes. See ITxnManager::GetCurrentTxn for how to get the current transaction.
-
- Use the Transaction Manager in order to add, save changes to, or to delete DgnModels and DgnElement instances and their contents.
-
  <h2>Transactions</h2>
 
  ITxnManager is the API for managing transactions.
 
  A transaction is defined as a set of changes that are treated as a unit. All changes and deletions are made as part of a transaction.
- Most transactions are undoable and can be reversed or reinstated as a unit. Undoable transactions support \ref TxnMonitor listeners.
 
  The Transaction Manager implements the ITxnManager interface. This interface has methods to query the current transaction, and to reverse, cancel, or reinstate transactions.
-
- All changes are made in the context of the current transaction. There is always a current transaction running. You don't have to start
- or create one. ITxnManager::GetCurrentTxn returns the current transaction.
 
  ITxnManager::CloseCurrentTxn defines a \em boundary that ends the current transaction and starts a new one.
  Setting a transaction boundary validates the preceding changes. Validating an undoable transaction also notifies \ref TxnMonitor listeners.
@@ -284,10 +275,10 @@ struct ITxnManager
 
       public:
         //! Return the severity of the error
-        DGNPLATFORM_EXPORT ValidationErrorSeverity GetSeverity() const;
+        ValidationErrorSeverity GetSeverity() const {return _GetSeverity();}
 
         //! Return a human-readable, localized description of the error
-        DGNPLATFORM_EXPORT Utf8String GetDescription() const;
+        Utf8String GetDescription() const {return _GetDescription();}
     };
 
     typedef RefCountedPtr<IValidationError> IValidationErrorPtr;
@@ -519,59 +510,6 @@ public:
     //@}
 };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/13
-//=======================================================================================
-struct TxnAdmin : DgnHost::IHostObject
-    {
-//__PUBLISH_SECTION_END__
-    typedef bvector<TxnMonitorP> TxnMonitors;
-protected:
-    TxnMonitors m_monitors;
-
-    template <typename CALLER> void CallMonitors(CALLER const& caller)
-        {
-        try {
-            for (auto curr = m_monitors.begin(); curr!=m_monitors.end(); )
-                {
-                if (*curr == NULL)
-                    curr = m_monitors.erase(curr);
-                else
-                    {caller(**curr); ++curr;}
-                }
-            }
-        catch (...) {}
-        }
-
-public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-    
-    virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-    virtual bool _OnPromptReverseAll() {return true;}
-    virtual void _RestartTool()  {}
-    virtual void _OnNothingToUndo() {}
-    virtual void _OnPrepareForUndoRedo(){}
-    virtual void _OnNothingToRedo(){}
-
-    DGNPLATFORM_EXPORT virtual void _OnTxnBoundary(TxnSummaryCR);
-    DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo);
-    DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo);
-    DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-    //! @name Transaction Monitors
-    //@{
-    //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
-    //! @param monitor a monitor to add
-    DGNPLATFORM_EXPORT void AddTxnMonitor(TxnMonitor& monitor);
-
-    //! Drop a TxnMonitor.
-    //! @param monitor a monitor to drop
-    DGNPLATFORM_EXPORT void DropTxnMonitor(TxnMonitor& monitor);
-    //@}
-
-    };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -451,7 +451,7 @@ private:
 
 public: // WIP_PUBLIC_VIRTUAL - these methods should be protected and start with _
     virtual DisplayPathType GetPathType () const override{return DisplayPathType::Intersection;}
-    DGNPLATFORM_EXPORT virtual void SetHilited (ElementHiliteState) const override;
+    DGNPLATFORM_EXPORT virtual void SetHilited (DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool IsSamePath (DisplayPathCP otherPath, bool fullPath) const override;
     virtual SnapPath* Clone () const override;
 

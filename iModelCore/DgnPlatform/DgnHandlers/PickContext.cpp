@@ -121,10 +121,10 @@ static bool edgesVisible (HitPathCP hit)
         {
         case DgnRenderMode::SolidFill:
         case DgnRenderMode::HiddenLine:
-            return viewFlags.renderDisplayHidden;
+            return viewFlags.hiddenEdges;
 
         case DgnRenderMode::SmoothShade:
-            return viewFlags.renderDisplayEdges && viewFlags.renderDisplayHidden;
+            return viewFlags.visibleEdges && viewFlags.hiddenEdges;
 
         default:
             return true;
@@ -314,7 +314,7 @@ void PickOutput::AddSurfaceHit (DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
             case DgnRenderMode::SolidFill:
             case DgnRenderMode::HiddenLine:
                 {
-                if (!viewFlags.renderDisplayHidden)
+                if (!viewFlags.hiddenEdges)
                     break; // Accept, hidden edges are never displayed...
 
 #if defined (NEEDS_WORK_DGNITEM)
@@ -332,7 +332,7 @@ void PickOutput::AddSurfaceHit (DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
                     return; // Reject, nothing is hidden by transparent display style. NOTE: Ignores viewFlags.transparecy...
 #endif
 
-                if (!(viewFlags.renderDisplayEdges && viewFlags.renderDisplayHidden))
+                if (!(viewFlags.visibleEdges && viewFlags.hiddenEdges))
                     break; // Accept, hidden edges are never displayed...
 
 #if defined (NEEDS_WORK_DGNITEM)

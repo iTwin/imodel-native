@@ -1108,8 +1108,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
     CachedStatementPtr stmt;
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Code=3,ParentId=4};
-    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
+    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1126,6 +1126,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
     return LoadElement(DgnElement::CreateParams(*dgnModel, 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
+                    stmt->GetValueText(Column::Label), 
                     stmt->GetValueText(Column::Code), 
                     elementId, 
                     stmt->GetValueId<DgnElementId>(Column::ParentId)), makePersistent);
@@ -1149,7 +1150,7 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-DgnElementKey DgnElements::GetElementKey(DgnElementId elementId) const
+DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
     {
     CachedStatementPtr stmt;
     GetStatement(stmt, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
@@ -1228,6 +1229,43 @@ DgnElementId DgnElements::MakeNewElementId()
     return DgnElementId(val.m_luid.u);
     }
 
+
+struct OnDeleteCaller   {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDelete(el);}   };
+struct OnDeletedCaller  {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}  };
+struct OnInsertCaller   {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInsert(el);}   };
+struct OnInsertedCaller
+    {
+    DgnElementCR m_newEl;
+    OnInsertedCaller(DgnElementCR newEl) : m_newEl(newEl){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(m_newEl);}   
+    };
+struct OnUpdateCaller
+    {
+    DgnElementCR m_orig, m_updated;
+    OnUpdateCaller(DgnElementCR orig, DgnElementCR updated) : m_orig(orig), m_updated(updated){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdate(m_orig, m_updated);}   
+    };
+struct OnUpdatedCaller
+    {
+    DgnElementCR m_orig, m_updated;
+    OnUpdatedCaller(DgnElementCR orig, DgnElementCR updated) : m_orig(orig), m_updated(updated){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_orig, m_updated);}   
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class T> void DgnElements::CallAppData(T const& caller, DgnElementCR el)
+    {
+    for (auto entry=el.m_appData.begin(); entry!=el.m_appData.end(); )
+        {
+        if (caller(*entry->second, el))
+            entry = el.m_appData.erase(entry);
+        else
+            ++entry;
+        }
+    }    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1256,6 +1294,8 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
 
+    CallAppData(OnInsertCaller(), element);
+
     DgnElementPtr newElement = element.CopyForEdit();
     if (!newElement.IsValid())
         {
@@ -1269,11 +1309,13 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
         return nullptr;
 
     element.m_elementId = newElement->m_elementId; // set this on input element so caller can see it
-    newElement->_ApplyScheduledChangesToInstances(element);
+
     AddToPool(*newElement);
 
     newElement->_OnInserted();
     model._OnInsertedElement(*newElement);
+    CallAppData(OnInsertedCaller(*newElement), element);
+
     return newElement;
     }
 
@@ -1310,6 +1352,10 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr; // model rejected proposed change
 
+    // we need to call the pre/post update events on BOTH sets of appdata
+    CallAppData(OnUpdateCaller(element, replacement), element);
+    CallAppData(OnUpdateCaller(element, replacement), replacement);
+
     uint32_t oldSize = element._GetMemSize(); // save current size
     stat = element._CopyFrom(replacement);    // copy new data into original element
     if (DGNMODEL_STATUS_Success == stat)
@@ -1325,8 +1371,9 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         return nullptr;
         }
 
-    element._ApplyScheduledChangesToInstances(replacement);
-    element._ClearScheduledChangesToInstances();
+    // we need to call the pre/post update events on BOTH sets of appdata
+    CallAppData(OnUpdatedCaller(element, replacement), element);
+    CallAppData(OnUpdatedCaller(element, replacement), replacement);
 
     int32_t sizeChange = element._GetMemSize() - oldSize; // figure out whether the element data is larger now than before
     BeAssert(0 <= sizeChange); // we never shrink
@@ -1341,7 +1388,7 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElements::DeleteElement(DgnElementCR element)
+DgnModelStatus DgnElements::Delete(DgnElementCR element)
     {
     DgnModelR model = element.GetDgnModel();
     if (&model.GetDgnDb() != &m_dgndb || !element.IsPersistent())
@@ -1351,9 +1398,13 @@ DgnModelStatus DgnElements::DeleteElement(DgnElementCR element)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
+    CallAppData(OnDeleteCaller(), element);
+
     stat = element._DeleteInDb();
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
+
+    CallAppData(OnDeletedCaller(), element);
 
     DropFromPool(element);
     model._OnDeletedElement(element);
@@ -1392,26 +1443,13 @@ DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
     return (ECSqlStepStatus::HasRow != stmt->Step()) ? DateTime() : stmt->GetValueDateTime(0);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                    03/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnElements::InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    02/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId DgnElements::QueryModelId(DgnElementId elementId)
     {
-    if (!groupElementKey.IsValid() || !memberElementKey.IsValid())
-        return BentleyStatus::ERROR;
-
-    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement
-        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupsElements) 
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
-
-    if (!statementPtr.IsValid())
-        return BentleyStatus::ERROR;
-
-    statementPtr->BindInt64(1, groupElementKey.GetECClassId());
-    statementPtr->BindId   (2, groupElementKey.GetECInstanceId());
-    statementPtr->BindInt64(3, memberElementKey.GetECClassId());
-    statementPtr->BindId   (4, memberElementKey.GetECInstanceId());
-
-    return (ECSqlStepStatus::Done != statementPtr->Step()) ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
+    CachedStatementPtr stmt;
+    GetStatement(stmt, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    stmt->BindId(1, elementId);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
-

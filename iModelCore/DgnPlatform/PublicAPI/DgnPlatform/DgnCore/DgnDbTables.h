@@ -21,6 +21,7 @@
 #define DGN_CLASSNAME_Element             "Element"
 #define DGN_CLASSNAME_ElementAspect       "ElementAspect"
 #define DGN_CLASSNAME_ElementGeom         "ElementGeom"
+#define DGN_CLASSNAME_ElementGroup        "ElementGroup"
 #define DGN_CLASSNAME_ElementItem         "ElementItem"
 #define DGN_CLASSNAME_GeomPart            "GeomPart"
 #define DGN_CLASSNAME_Category            "Category"
@@ -49,14 +50,14 @@
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define DGN_RELNAME_CategoryOwnsSubCategories  "CategoryOwnsSubCategories"
-#define DGN_RELNAME_ElementDrivesElement       "ElementDrivesElement"
-#define DGN_RELNAME_ElementHasLinks            "ElementHasLinks"
-#define DGN_RELNAME_ElementGeomUsesParts       "ElementGeomUsesParts"
-#define DGN_RELNAME_ElementGroupsElements      "ElementGroupsElements"
-#define DGN_RELNAME_ElementOwnsAspects         "ElementOwnsAspects"
-#define DGN_RELNAME_ElementOwnsItem            "ElementOwnsItem"
-#define DGN_RELNAME_ModelDrivesModel           "ModelDrivesModel"
+#define DGN_RELNAME_CategoryOwnsSubCategories   "CategoryOwnsSubCategories"
+#define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
+#define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
+#define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
+#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
+#define DGN_RELNAME_ElementOwnsAspects          "ElementOwnsAspects"
+#define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
+#define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
 #include "UnitDefinition.h"
@@ -146,6 +147,7 @@ struct DgnCategories : DgnDbTable
             explicit Appearance(Utf8StringCR val) {FromJson(val);}
 
             void SetInvisible(bool val) {m_invisible=val;}
+            bool GetDontPlot() const {return m_dontPlot;}
             void SetDontPlot(bool val) {m_dontPlot=val;}
             bool GetDontSnap() const {return m_dontSnap;}
             void SetDontSnap(bool val) {m_dontSnap=val;}
@@ -228,7 +230,7 @@ struct DgnCategories : DgnDbTable
         DgnCategoryId GetCategoryId() const {return m_categoryId;} //!< This SubCategory's DgnCategoryId
         DgnSubCategoryId GetSubCategoryId() const {return m_subCategoryId;} //!< The DgnSubCategoryId
         Appearance const& GetAppearance() const {return m_appearance;} //!< The Appearance for this SubCategory.
-        Appearance& GetAppearanceR() {return m_appearance;} //!< Get a writeable reference to the Appearance for this SubCategory.
+        Appearance& GetAppearanceR() {return m_appearance;} //!< Get a writable reference to the Appearance for this SubCategory.
         void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the SubCategory display label.
         void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);} //!< Set the SubCategory description. @param val the new description. May be nullptr.
         void SetCode(Utf8CP val) {m_code = val;} //!< Set the SubCategory code. @param val the new code for this SubCategory. Must not be nullptr. Must be unique per category. Default SubCategories may not be recoded.
@@ -875,6 +877,7 @@ private:
     BeSQLite::SnappyToBlob      m_snappyTo;
     mutable BeSQLite::BeDbMutex m_mutex;
 
+    template<class T> static void CallAppData(T const& caller, DgnElementCR el);
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
@@ -929,36 +932,42 @@ public:
     //! Reset the statistics for the element pool.
     DGNPLATFORM_EXPORT void ResetStatistics();
 
-    //! Get a DgnElement from this DgnDb by its DgnElementId. 
-    //! @remarks The element is loaded if necessary.
+    //! Get a DgnElement from this DgnDb by its DgnElementId.
+    //! @remarks The element is loaded from the database if necessary.
     //! @return Invalid if the element does not exist.
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
 
-    //! Gets the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId. 
-    //! @remarks This simply does a fast look up of the DgnClassId for the given DgnElementId. It
-    //! does not load the element into memory.
-    //! @return Invalid key if the element does not exist.
-    DGNPLATFORM_EXPORT DgnElementKey GetElementKey(DgnElementId id) const;
-
     //! Get a DgnElement by its DgnElementId, and dynamic_cast the result to a specific subclass of DgnElement.
-    //! This tempated method is merely a shortcut to calling GetElement and dynamic_cast'ing the result to the class of the 
-    //! specified template argument. 
+    //! This is merely a templated shortcut to dynamic_cast the return of #GetElement to a subclass of DgnElement.
     template<class T> RefCountedCPtr<T> Get(DgnElementId id) const {return dynamic_cast<T const*>(GetElement(id).get());}
 
+    //! Get an editable copy of an element by DgnElementId.
+    //! @return Invalid if the element does not exist, or if it cannot be edited.
     template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
 
-    //! Insert the supplied DgnElement into this DgnDb.
-    //! @param[in] element The element to add.
-    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if result is valid, error status otherwise.
-    //! @return DGNMODEL_STATUS_Success if the element was successfully added, error status otherwise.
+    //! Insert a copy of the supplied DgnElement into this DgnDb.
+    //! @param[in] element The DgnElement to insert.
+    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if the insert was successful, error status otherwise.
+    //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
     template<class T> RefCountedCPtr<T> Insert(T& element, DgnModelStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
+    //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
+    //! @param[in] element The modified copy of element to update.
+    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if the update was successful, error status otherwise.
+    //! @return RefCountedCPtr to the modified persistent element. Will be invalid if the update failed.
     template<class T> RefCountedCPtr<T> Update(T& element, DgnModelStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
 
-    DGNPLATFORM_EXPORT DgnModelStatus DeleteElement(DgnElementCR);
+    //! Delete a DgnElement from this DgnDb.
+    //! @param[in] element The element to delete.
+    //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
+    DGNPLATFORM_EXPORT DgnModelStatus Delete(DgnElementCR element);
 
-    DgnModelStatus DeleteElement(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? DeleteElement(*el) : DGNMODEL_STATUS_ElementNotFound;}
+    //! Delete a DgnElement from this DgnDb by DgnElementId.
+    //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
+    //! @note This method is merely a shortcut to #GetElement(id) and then #Delete(element)
+    DgnModelStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DGNMODEL_STATUS_ElementNotFound;}
 
+    //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
 
     //! Update the last modified timestamp of the specified element
@@ -970,8 +979,11 @@ public:
     //! Query the last modified time from the specified element
     DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
 
-    //! Insert an ElementGroupsElements relationship between the specified element and the member element
-    DGNPLATFORM_EXPORT BentleyStatus InsertElementGroupsElements(DgnElementKeyCR groupElementKey, DgnElementKeyCR memberElementKey);
+    //! Query the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId.
+    //! @return Invalid key if the element does not exist.
+    //! @remarks This queries the database for the DgnClassId for the given DgnElementId. It does not check if the element is loaded, nor does it load the element into memory.
+    //! If you have a DgnElement, call GetElementKey on it rather than using this method.
+    DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
 
     //! Add element-loaded-from-db event listener.
     DGNPLATFORM_EXPORT void AddListener(Listener* listener);
@@ -994,12 +1006,15 @@ private:
 public:
     DgnGeomPartId GetHighestGeomPartId();
     DgnGeomPartId MakeNewGeomPartId();
+    static BentleyStatus Draw(DgnGeomPartId, ViewContextR, DgnCategoryId, ViewFlagsCR);
 
 public:
-    // WIP: waiting for IGeometryExt deserialization to be hooked up!
-    //! Query for a geometry part by ID.
+    //! Load a geometry part by ID.
     //! @param[in] geomPartId the ID of the geometry part to load
     DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
+
+    //! Query for a DgnGeomPartId by code.
+    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(Utf8CP code);
 
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert
@@ -1127,7 +1142,7 @@ struct DgnFonts : NonCopyableClass
         DgnFonts& m_dbFonts;
 
         DbFontMapDirect(DgnFonts& dbFonts) : m_dbFonts(dbFonts) {}
-    
+
     public:
         struct Iterator : public BeSQLite::DbTableIterator
         {
@@ -1155,7 +1170,7 @@ struct DgnFonts : NonCopyableClass
             const_iterator end() const { return Entry(NULL, false); }
             DGNPLATFORM_EXPORT size_t QueryCount() const;
         };
-        
+
         bool DoesFontTableExist() const { return m_dbFonts.m_db.TableExists(m_dbFonts.m_tableName.c_str()); }
         DGNPLATFORM_EXPORT BentleyStatus CreateFontTable();
         DGNPLATFORM_EXPORT DgnFontPtr QueryById(DgnFontId) const;
@@ -1180,7 +1195,7 @@ struct DgnFonts : NonCopyableClass
             DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_Bold;
             DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_Italic;
             DGNPLATFORM_EXPORT static const Utf8CP FACE_NAME_BoldItalic;
-            
+
             DgnFontType m_type;
             Utf8String m_familyName;
             Utf8String m_faceName;
@@ -1195,7 +1210,7 @@ struct DgnFonts : NonCopyableClass
         typedef uint32_t FaceSubId;
         typedef bmap<FaceSubId, FaceKey> T_FaceMap;
         typedef T_FaceMap const& T_FaceMapCR;
-        
+
         struct Iterator : public BeSQLite::DbTableIterator
         {
         private:

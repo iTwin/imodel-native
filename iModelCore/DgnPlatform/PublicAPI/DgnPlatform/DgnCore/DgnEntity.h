@@ -20,12 +20,10 @@ struct DgnElementDependencyGraph;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElementDrivesElementDependencyHandler : DgnDomain::Handler
 {
-    DOMAINHANDLER_DECLARE_MEMBERS (DGN_RELNAME_ElementDrivesElement, DgnElementDrivesElementDependencyHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS(DGN_RELNAME_ElementDrivesElement, DgnElementDrivesElementDependencyHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
 protected:
     friend struct DgnElementDependencyGraph;
-
-//    virtual Utf8CP _GetHandlerType() override {return "ElementDependency";}
 
     //! Called by DgnElementDependencyGraph after the source DgnElement's content has changed. 
     //! This base class implementation of _OnRootChanged calls ITxnManager::ReportValidationError to indicate a missing handler.
@@ -46,15 +44,9 @@ protected:
     //! @param[in] source               The ECRelationship's Source DgnElement
     //! @param[in] target               The ECRelationship's Target DgnElement
     //! @param[in] summary              Summary of all DgnElements that were *directly* changed, plus all dependencies that failed.
-    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR summary) {;}
-
-    //! Should return a human-readable string, for debugging purposes. 
-    virtual Utf8String _GetDescription() {return "";}
+    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR summary) {}
 
 public:
-    //! Get a human-readable description of this handler, for debugging purposes. Not necessarily translated.
-    DGNPLATFORM_EXPORT Utf8String GetDescription();
-
     //! Looks up a registered DgnElementDrivesElementDependencyHandler by its ECRelationship class ID.
     //! @param[in] db               The DgnDb in which the handler and ECRelationship reside. 
     //! @param[out] classId         The ID of the particular ElementDrivesElement ECRelationshipClass

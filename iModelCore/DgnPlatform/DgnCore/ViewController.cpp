@@ -27,25 +27,29 @@ static Utf8CP VIEW_SETTING_Rotation              = "rotation";
 static Utf8CP VIEW_SETTING_SubCategories         = "subCategories";
 static Utf8CP VIEW_SubCategoryId                 = "subCategoryId";
 
+static Utf8CP VIEWFLAG_construction              = "construct";
 static Utf8CP VIEWFLAG_noText                    = "noText";
-static Utf8CP VIEWFLAG_noWeight                  = "noWeight";
+static Utf8CP VIEWFLAG_noDimension               = "noDim";
 static Utf8CP VIEWFLAG_noPattern                 = "noPattern";
-static Utf8CP VIEWFLAG_grid                      = "grid";
-static Utf8CP VIEWFLAG_fill                      = "fill";
-static Utf8CP VIEWFLAG_acs                       = "acs";
-static Utf8CP VIEWFLAG_renderMode                = "renderMode";
-static Utf8CP VIEWFLAG_noTextureMap              = "noTxMap";
+static Utf8CP VIEWFLAG_noWeight                  = "noWeight";
+static Utf8CP VIEWFLAG_noStyle                   = "noStyle";
 static Utf8CP VIEWFLAG_noTransparency            = "noTransp";
-static Utf8CP VIEWFLAG_noLineStyle               = "noLineStyle";
-static Utf8CP VIEWFLAG_renderEdges               = "edges";
-static Utf8CP VIEWFLAG_hidden                    = "hidden";
+static Utf8CP VIEWFLAG_fill                      = "fill";
+static Utf8CP VIEWFLAG_grid                      = "grid";
+static Utf8CP VIEWFLAG_acs                       = "acs";
+static Utf8CP VIEWFLAG_useBgImage                = "noBgImage";
+static Utf8CP VIEWFLAG_useBgColor                = "useBgColor";
+
+static Utf8CP VIEWFLAG_noTexture                 = "noTexture";
+static Utf8CP VIEWFLAG_noMaterial                = "noMaterial";
+static Utf8CP VIEWFLAG_noSceneLight              = "noSceneLight";
+static Utf8CP VIEWFLAG_visibleEdges              = "visEdges";
+static Utf8CP VIEWFLAG_hiddenEdges               = "hidEdges";
+static Utf8CP VIEWFLAG_shadows                   = "shadows";
 static Utf8CP VIEWFLAG_frontClip                 = "frontClip";
 static Utf8CP VIEWFLAG_backClip                  = "backClip";
 static Utf8CP VIEWFLAG_noClipVolume              = "noClipVol";
-static Utf8CP VIEWFLAG_shadows                   = "shadows";
-static Utf8CP VIEWFLAG_hlStyle                   = "hlStyle";
-static Utf8CP VIEWFLAG_noSceneLight              = "noSceneLight";
-static Utf8CP VIEWFLAG_useBgColor                = "useBgColor";
+static Utf8CP VIEWFLAG_renderMode                = "renderMode";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
@@ -126,15 +130,18 @@ void ViewFlags::FromBaseJson(JsonValueCR val)
     {
     memset (this, 0, sizeof(*this));
 
-    fast_text = val[VIEWFLAG_noText].asBool();
-    line_wghts = !val[VIEWFLAG_noWeight].asBool();
+    constructions = val[VIEWFLAG_construction].asBool();
+    text = !val[VIEWFLAG_noText].asBool();
+    dimensions = !val[VIEWFLAG_noDimension].asBool();
     patterns = !val[VIEWFLAG_noPattern].asBool();
-    grid = val[VIEWFLAG_grid].asBool();
-    fill = val[VIEWFLAG_fill].asBool();
+    weights = !val[VIEWFLAG_noWeight].asBool();
+    styles = !val[VIEWFLAG_noStyle].asBool();
     transparency = !val[VIEWFLAG_noTransparency].asBool();
-    overrideBackground = val[VIEWFLAG_useBgColor].asBool();
-    inhibitLineStyles = val[VIEWFLAG_noLineStyle].asBool();
-    auxDisplay = val[VIEWFLAG_acs].asBool();
+    fill = val[VIEWFLAG_fill].asBool();
+    grid = val[VIEWFLAG_grid].asBool();
+    acs = val[VIEWFLAG_acs].asBool();
+    bgImage = val[VIEWFLAG_useBgImage].asBool();
+    bgColor = val[VIEWFLAG_useBgColor].asBool();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,16 +149,17 @@ void ViewFlags::FromBaseJson(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::From3dJson(JsonValueCR val)
     {
-    textureMaps = !val[VIEWFLAG_noTextureMap].asBool();
-    renderDisplayEdges = val[VIEWFLAG_renderEdges].asBool();
-    renderDisplayHidden = val[VIEWFLAG_hidden].asBool();
+    textures = !val[VIEWFLAG_noTexture].asBool();
+    materials = !val[VIEWFLAG_noMaterial].asBool();
+    sceneLights = val[VIEWFLAG_noSceneLight].asBool();
+    visibleEdges = val[VIEWFLAG_visibleEdges].asBool();
+    hiddenEdges = val[VIEWFLAG_hiddenEdges].asBool();
+    shadows = val[VIEWFLAG_shadows].asBool();
     noFrontClip = !val[VIEWFLAG_frontClip].asBool();
     noBackClip  = !val[VIEWFLAG_backClip].asBool();
     noClipVolume = val[VIEWFLAG_noClipVolume].asBool();
-    renderDisplayShadows = val[VIEWFLAG_shadows].asBool();
-    ignoreSceneLights = val[VIEWFLAG_noSceneLight].asBool();
+
     m_renderMode = DgnRenderMode(val[VIEWFLAG_renderMode].asUInt());
-    hiddenLineStyle = val[VIEWFLAG_hlStyle].asUInt();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -159,33 +167,35 @@ void ViewFlags::From3dJson(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::ToBaseJson (JsonValueR val) const
     {
-    if (fast_text) val[VIEWFLAG_noText] = true;
-    if (!line_wghts) val[VIEWFLAG_noWeight] = true;
+    if (constructions) val[VIEWFLAG_construction] = true;
+    if (!text) val[VIEWFLAG_noText] = true;
+    if (!dimensions) val[VIEWFLAG_noDimension] = true;
     if (!patterns) val[VIEWFLAG_noPattern] = true;
-    if (grid) val[VIEWFLAG_grid] = true;
-    if (fill) val[VIEWFLAG_fill] = true;
+    if (!weights) val[VIEWFLAG_noWeight] = true;
+    if (!styles) val[VIEWFLAG_noStyle] = true;
     if (!transparency) val[VIEWFLAG_noTransparency] = true;
-    if (overrideBackground) val[VIEWFLAG_useBgColor] = true;
-    if (inhibitLineStyles) val[VIEWFLAG_noLineStyle] = true;
-    if (auxDisplay) val[VIEWFLAG_acs] = true;
+    if (fill) val[VIEWFLAG_fill] = true;
+    if (grid) val[VIEWFLAG_grid] = true;
+    if (acs) val[VIEWFLAG_acs] = true;
+    if (bgImage) val[VIEWFLAG_useBgImage] = true;
+    if (bgColor) val[VIEWFLAG_useBgColor] = true;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::To3dJson (JsonValueR val) const
     {
-    if (!textureMaps) val[VIEWFLAG_noTextureMap] = true;
-    if (renderDisplayEdges) val[VIEWFLAG_renderEdges] = true;
-    if (renderDisplayHidden) val[VIEWFLAG_hidden] = true;
+    if (!textures) val[VIEWFLAG_noTexture] = true;
+    if (!materials) val[VIEWFLAG_noMaterial] = true;
+    if (!sceneLights) val[VIEWFLAG_noSceneLight] = true;
+    if (visibleEdges) val[VIEWFLAG_visibleEdges] = true;
+    if (hiddenEdges) val[VIEWFLAG_hiddenEdges] = true;
+    if (shadows) val[VIEWFLAG_shadows] = true;
     if (!noFrontClip) val[VIEWFLAG_frontClip] = true;
     if (!noBackClip) val[VIEWFLAG_backClip] = true;
     if (noClipVolume) val[VIEWFLAG_noClipVolume] = true;
-    if (renderDisplayShadows) val[VIEWFLAG_shadows] = true;
-    if (ignoreSceneLights) val[VIEWFLAG_noSceneLight] = true;
 
     val[VIEWFLAG_renderMode] = (uint8_t) m_renderMode;
-    if (0 != hiddenLineStyle)
-        val[VIEWFLAG_hlStyle] = hiddenLineStyle;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -276,16 +286,13 @@ void ViewController::_RestoreFromSettings (JsonValueCR settings)
     else
         m_viewFlags.FromBaseJson(settings[VIEW_SETTING_Flags]);
 
-    if (m_viewFlags.overrideBackground)
+    if (m_viewFlags.bgColor)
         {
         if (!settings.isMember(VIEW_SETTING_BackgroundColor))
-            m_viewFlags.overrideBackground = false;
+            m_viewFlags.bgColor = false;
         else
-            {
             m_backgroundColor = ColorDef(settings[VIEW_SETTING_BackgroundColor].asUInt());
-            }
         }
-
 
     LoadCategories(settings);
     }
@@ -329,10 +336,10 @@ DbResult ViewController::Load()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_SaveToSettings (JsonValueR settings) const
     {
-    m_viewFlags.ToBaseJson (settings[VIEW_SETTING_Flags]);
+    m_viewFlags.ToBaseJson(settings[VIEW_SETTING_Flags]);
 
     // only save background color if viewflag is on
-    if (m_viewFlags.overrideBackground)
+    if (m_viewFlags.bgColor)
         settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
 
     m_viewedCategories.ToJson(settings[VIEW_SETTING_Categories]);
@@ -1647,9 +1654,18 @@ void PhysicalViewController::SetAuxCoordinateSystem (IAuxCoordSysP acs)
 void ViewFlags::InitDefaults()
     {
     memset (this, 0, sizeof(ViewFlags));
-    line_wghts  = true;
-    patterns    = true;
-    fill        = true;
+
+    text = true;
+    dimensions = true;
+    patterns = true;
+    weights = true;
+    styles = true;
+    transparency = true;
+    fill = true;
+
+    textures = true;
+    materials = true;
+    sceneLights = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1811,4 +1827,32 @@ void ViewController2d::_SaveToSettings (JsonValueR settings) const
     JsonUtils::DPoint2dToJson (area2d[VIEW_SETTING_Origin], m_origin);
     JsonUtils::DPoint2dToJson (area2d[VIEW_SETTING_Delta], m_delta);
     area2d[VIEW_SETTING_RotAngle] = m_rotAngle;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ViewController::_VisitHit (HitPathCR hit, ViewContextR context) const
+    {
+    GeometricElementCP element = (nullptr != hit.GetHeadElem() ? hit.GetHeadElem()->ToGeometricElement() : nullptr);
+
+    if (nullptr == element)
+        return ERROR;
+
+    ViewContext::ContextMark mark(&context);
+
+    // Allow element sub-class involvement for flashing sub-entities...
+    if (element->_DrawHit (hit, context))
+        return SUCCESS;
+
+    return context.VisitElement(*element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_DrawView (ViewContextR context) 
+    {
+    for (auto modelId : m_viewedModels)
+        context.VisitDgnModel (m_dgndb.Models().GetModel(modelId));
     }

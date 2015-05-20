@@ -24,6 +24,7 @@ struct PointPrimitive2d;
 struct ArcPrimitive;
 struct BRepData;
 struct BeginSubCategory;
+struct GeomPart;
 struct BasicSymbology;
 struct AreaFill;
 
@@ -69,6 +70,20 @@ inline const char **EnumNamesFillDisplay() {
 }
 
 inline const char *EnumNameFillDisplay(FillDisplay e) { return EnumNamesFillDisplay()[e]; }
+
+enum GeometryClass {
+  GeometryClass_Primary = 0,
+  GeometryClass_Construction = 1,
+  GeometryClass_Dimension = 2,
+  GeometryClass_Pattern = 3
+};
+
+inline const char **EnumNamesGeometryClass() {
+  static const char *names[] = { "Primary", "Construction", "Dimension", "Pattern", nullptr };
+  return names;
+}
+
+inline const char *EnumNameGeometryClass(GeometryClass e) { return EnumNamesGeometryClass()[e]; }
 
 MANUALLY_ALIGNED_STRUCT(8) DPoint3d {
  private:
@@ -395,6 +410,35 @@ inline flatbuffers::Offset<BeginSubCategory> CreateBeginSubCategory(flatbuffers:
   return builder_.Finish();
 }
 
+struct GeomPart : private flatbuffers::Table {
+  int64_t geomPartId() const { return GetField<int64_t>(4, 0); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int64_t>(verifier, 4 /* geomPartId */) &&
+           verifier.EndTable();
+  }
+  bool has_geomPartId() const { return CheckField(4); }
+};
+
+struct GeomPartBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_geomPartId(int64_t geomPartId) { fbb_.AddElement<int64_t>(4, geomPartId, 0); }
+  GeomPartBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  GeomPartBuilder &operator=(const GeomPartBuilder &);
+  flatbuffers::Offset<GeomPart> Finish() {
+    auto o = flatbuffers::Offset<GeomPart>(fbb_.EndTable(start_, 1));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<GeomPart> CreateGeomPart(flatbuffers::FlatBufferBuilder &_fbb,
+   int64_t geomPartId = 0) {
+  GeomPartBuilder builder_(_fbb);
+  builder_.add_geomPartId(geomPartId);
+  return builder_.Finish();
+}
+
 struct BasicSymbology : private flatbuffers::Table {
   uint32_t color() const { return GetField<uint32_t>(4, 0); }
   uint32_t weight() const { return GetField<uint32_t>(6, 0); }
@@ -402,6 +446,7 @@ struct BasicSymbology : private flatbuffers::Table {
   int32_t displayPriority() const { return GetField<int32_t>(10, 0); }
   uint8_t useColor() const { return GetField<uint8_t>(12, 0); }
   uint8_t useWeight() const { return GetField<uint8_t>(14, 0); }
+  GeometryClass geomClass() const { return static_cast<GeometryClass>(GetField<int8_t>(16, 0)); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, 4 /* color */) &&
@@ -410,6 +455,7 @@ struct BasicSymbology : private flatbuffers::Table {
            VerifyField<int32_t>(verifier, 10 /* displayPriority */) &&
            VerifyField<uint8_t>(verifier, 12 /* useColor */) &&
            VerifyField<uint8_t>(verifier, 14 /* useWeight */) &&
+           VerifyField<int8_t>(verifier, 16 /* geomClass */) &&
            verifier.EndTable();
   }
   bool has_color() const { return CheckField(4); }
@@ -418,6 +464,7 @@ struct BasicSymbology : private flatbuffers::Table {
   bool has_displayPriority() const { return CheckField(10); }
   bool has_useColor() const { return CheckField(12); }
   bool has_useWeight() const { return CheckField(14); }
+  bool has_geomClass() const { return CheckField(16); }
 };
 
 struct BasicSymbologyBuilder {
@@ -429,10 +476,11 @@ struct BasicSymbologyBuilder {
   void add_displayPriority(int32_t displayPriority) { fbb_.AddElement<int32_t>(10, displayPriority, 0); }
   void add_useColor(uint8_t useColor) { fbb_.AddElement<uint8_t>(12, useColor, 0); }
   void add_useWeight(uint8_t useWeight) { fbb_.AddElement<uint8_t>(14, useWeight, 0); }
+  void add_geomClass(GeometryClass geomClass) { fbb_.AddElement<int8_t>(16, static_cast<int8_t>(geomClass), 0); }
   BasicSymbologyBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   BasicSymbologyBuilder &operator=(const BasicSymbologyBuilder &);
   flatbuffers::Offset<BasicSymbology> Finish() {
-    auto o = flatbuffers::Offset<BasicSymbology>(fbb_.EndTable(start_, 6));
+    auto o = flatbuffers::Offset<BasicSymbology>(fbb_.EndTable(start_, 7));
     return o;
   }
 };
@@ -443,12 +491,14 @@ inline flatbuffers::Offset<BasicSymbology> CreateBasicSymbology(flatbuffers::Fla
    double transparency = 0,
    int32_t displayPriority = 0,
    uint8_t useColor = 0,
-   uint8_t useWeight = 0) {
+   uint8_t useWeight = 0,
+   GeometryClass geomClass = GeometryClass_Primary) {
   BasicSymbologyBuilder builder_(_fbb);
   builder_.add_transparency(transparency);
   builder_.add_displayPriority(displayPriority);
   builder_.add_weight(weight);
   builder_.add_color(color);
+  builder_.add_geomClass(geomClass);
   builder_.add_useWeight(useWeight);
   builder_.add_useColor(useColor);
   return builder_.Finish();

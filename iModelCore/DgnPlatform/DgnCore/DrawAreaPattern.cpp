@@ -705,14 +705,12 @@ double          patternScale
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      05/2007
 +===============+===============+===============+===============+===============+======*/
-struct GeometryMapPatternAppData : DgnElementAppData
+struct GeometryMapPatternAppData : DgnElement::AppData
 {
 MaterialPtr     m_material;
 
 GeometryMapPatternAppData (MaterialPtr material) : m_material (material) {}
 MaterialCP GetMaterial () {return m_material.get ();}
-
-virtual void _OnCleanup (DgnElementCP host) override {m_material = NULL;}
 };
     
 /*---------------------------------------------------------------------------------**//**
@@ -1569,7 +1567,7 @@ bool ViewContext::_WantAreaPatterns ()
     {
     ViewFlagsCP viewFlags = GetViewFlags();
 
-    if (!viewFlags || !viewFlags->patterns || (!viewFlags->patternDynamics && DrawPurpose::Dynamics == GetDrawPurpose()))
+    if (!viewFlags || !viewFlags->patterns)
         return false;
 
     return true;
