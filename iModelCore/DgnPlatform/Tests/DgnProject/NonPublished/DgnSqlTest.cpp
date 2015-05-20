@@ -317,8 +317,8 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-	// Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
-	
+    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
+    
     Statement stmt;
     stmt.Prepare(*m_db, 
         "SELECT item.ElementId, item.x01 FROM"
@@ -335,6 +335,7 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
         "  , dgn_ElementItem item "                                             // JOIN ElementItem
         "       WHERE e.Id = geom_res.ElementId AND e.ECClassId=:ecClass"       //  select only Obstacles
         "        AND item.ElementId = e.Id AND item.x01 = :propertyValue"       //                     ... with certain items
+
         );
 
     //  Initial placement
@@ -454,8 +455,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-	// Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
-	
+    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
     ECSqlStatement stmt;
     stmt.Prepare(*m_db, 
         "SELECT TestItem.ECInstanceId, TestItem.TestItemProperty FROM dgn.ElementRTree rt, DgnPlatformTest.Obstacle, DgnPlatformTest.TestItem"
@@ -671,8 +671,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-	// Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
-	
+    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
     Statement stmt;
     stmt.Prepare(*m_db, 
         "SELECT item.ElementId, item.x01 FROM"
