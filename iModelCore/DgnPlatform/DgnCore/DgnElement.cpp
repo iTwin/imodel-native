@@ -293,15 +293,32 @@ DgnModelStatus GeometricElement::_InsertInDb()
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
+    DgnDbR dgnDb = GetDgnDb();
     CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId) VALUES(?,?,?)");
+    dgnDb.Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId) VALUES(?,?,?)");
     stmt->BindId(3, m_elementId);
 
     stat = _BindPlacement(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
         return DGNMODEL_STATUS_Success;
 
-    return (DGNMODEL_STATUS_Success != stat) ? stat : DoInsertOrUpdate(*stmt);
+    if (DGNMODEL_STATUS_Success == stat)
+        stat = WriteGeomStream(*stmt, dgnDb);
+
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    // Insert element uses geom part relationships for geom parts referenced in geom stream...
+    ECIdSet<DgnGeomPartId> parts;
+    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(parts, dgnDb);
+
+    for (DgnGeomPartId partId : parts)
+        {
+        if (BentleyStatus::SUCCESS != dgnDb.GeomParts().InsertElementGeomUsesParts(m_elementId, partId))
+            stat = DGNMODEL_STATUS_ElementWriteError;
+        }
+
+    return stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -313,23 +330,69 @@ DgnModelStatus GeometricElement::_UpdateInDb()
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
+    DgnDbR dgnDb = GetDgnDb();
     CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=? WHERE ElementId=?");
+    dgnDb.Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=? WHERE ElementId=?");
     stmt->BindId(3, m_elementId);
 
     stat = _BindPlacement(*stmt);
     if (DGNMODEL_STATUS_NoGeometry == stat)
         return DGNMODEL_STATUS_Success;
 
-    return (DGNMODEL_STATUS_Success != stat) ? stat : DoInsertOrUpdate(*stmt);
+    if (DGNMODEL_STATUS_Success == stat)
+        stat = WriteGeomStream(*stmt, dgnDb);
+
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    // Update element uses geom part relationships for geom parts referenced in geom stream...
+    dgnDb.Elements().GetStatement(stmt, "SELECT GeomPartId FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts) " WHERE ElementId=?");
+    stmt->BindId(1, m_elementId);
+
+    ECIdSet<DgnGeomPartId> partsOld;
+    while (BE_SQLITE_ROW == stmt->Step())
+        partsOld.insert(stmt->GetValueId<DgnGeomPartId>(0));
+
+    ECIdSet<DgnGeomPartId> partsNew;
+    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(partsNew, dgnDb);
+
+    if (partsOld.empty() && partsNew.empty())
+        return stat;
+
+    bset<DgnGeomPartId> partsToRemove;
+    std::set_difference(partsOld.begin(), partsOld.end(), partsNew.begin(), partsNew.end(), std::inserter(partsToRemove, partsToRemove.end()));
+
+    if (!partsToRemove.empty())
+        {
+        dgnDb.Elements().GetStatement(stmt, "DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts) " WHERE ElementId=? AND GeomPartId=?");
+        stmt->BindId(1, m_elementId);
+
+        for (DgnGeomPartId partId : partsToRemove)
+            {
+            stmt->BindId(2, partId);
+            if (BE_SQLITE_DONE != stmt->Step())
+                stat = DGNMODEL_STATUS_BadRequest;
+            }
+        }
+
+    bset<DgnGeomPartId> partsToAdd;
+    std::set_difference(partsNew.begin(), partsNew.end(), partsOld.begin(), partsOld.end(), std::inserter(partsToAdd, partsToAdd.end()));
+
+    for (DgnGeomPartId partId : partsToAdd)
+        {
+        if (BentleyStatus::SUCCESS != dgnDb.GeomParts().InsertElementGeomUsesParts(m_elementId, partId))
+            stat = DGNMODEL_STATUS_ElementWriteError;
+        }
+
+    return stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt)
+DgnModelStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
     {
-    SnappyToBlob& snappy = GetDgnDb().Elements().GetSnappyTo();
+    SnappyToBlob& snappy = dgnDb.Elements().GetSnappyTo();
 
     snappy.Init();
     if (0 < m_geom.GetSize())
@@ -354,7 +417,7 @@ DgnModelStatus GeometricElement::DoInsertOrUpdate(Statement& stmt)
     if (1 == snappy.GetCurrChunk())
         return DGNMODEL_STATUS_Success;
 
-    StatusInt status = snappy.SaveToRow(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
+    StatusInt status = snappy.SaveToRow(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
     return(SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
 

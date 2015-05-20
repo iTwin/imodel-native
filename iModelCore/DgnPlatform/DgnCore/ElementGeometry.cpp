@@ -1500,6 +1500,27 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomIO::Collection::GetGeomPartIds (ECIdSet<DgnGeomPartId>& parts, DgnDbR dgnDb) const
+    {
+    ElementGeomIO::Reader reader(dgnDb);
+
+    for (auto const& egOp : *this)
+        {
+        if (ElementGeomIO::OpCode::GeomPartInstance != egOp.m_opCode)
+            continue;
+
+        DgnGeomPartId geomPartId;
+
+        if (!reader.Get(egOp, geomPartId))
+            continue;
+
+        parts.insert(geomPartId);
+        }
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  02/2015
 +===============+===============+===============+===============+===============+======*/
@@ -1659,7 +1680,8 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
     bool        isQVWireframe = (isQVis && DgnRenderMode::Wireframe == flags.GetRenderMode());
     bool        isPick = (nullptr != context.GetIPickGeom());
     bool        useBRep = !(isQVis || isPick);
-    DrawState   state (context, flags);
+    DrawState   state(context, flags);
+
     ElementGeomIO::Reader reader(context.GetDgnDb());
 
     for (auto const& egOp : *this)
@@ -1668,8 +1690,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             {
             case ElementGeomIO::OpCode::Header:
                 {
-                // Verify that this is first opcode or something...
-                state.InitDisplayParams (category);
+                // Current display params is already setup when displaying a geom part...DON'T INITIALIZE!!!
+                if (!context.GetDgnGeomPartId().IsValid())
+                    state.InitDisplayParams(category);
                 break;
                 }
 
@@ -1678,13 +1701,13 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 DgnSubCategoryId subCategory;
                 Transform        geomToWorld;
 
-                if (!reader.Get (egOp, subCategory, geomToWorld))
+                if (!reader.Get(egOp, subCategory, geomToWorld))
                     {
                     state.End();
                     break;
                     }
 
-                state.Begin (subCategory, geomToWorld);
+                state.Begin(subCategory, geomToWorld);
                 break;
                 }
 
@@ -1694,7 +1717,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             case ElementGeomIO::OpCode::Pattern:
             case ElementGeomIO::OpCode::Material:
                 {
-                if (!reader.Get (egOp, *context.GetCurrentDisplayParams()))
+                if (!reader.Get(egOp, *context.GetCurrentDisplayParams()))
                     break;
 
                 state.ChangedElemDisplayParams();
@@ -1705,8 +1728,10 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 {
                 DgnGeomPartId geomPartId;
 
-                if (!reader.Get (egOp, geomPartId))
+                if (!reader.Get(egOp, geomPartId))
                     break;
+
+                state.CookElemDisplayParams();
 
                 DgnGeomParts::Draw(geomPartId, context, category, flags);
                 break;
@@ -1721,7 +1746,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 int8_t      boundary;
                 DPoint3dCP  pts;
                 
-                if (!reader.Get (egOp, pts, nPts, boundary))
+                if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
                 state.CookElemDisplayParams();
@@ -1729,15 +1754,15 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        context.GetIDrawGeom().DrawPointString3d (nPts, pts, nullptr);
+                        context.GetIDrawGeom().DrawPointString3d(nPts, pts, nullptr);
                         break;
 
                     case FB::BoundaryType_Open:
-                        context.GetIDrawGeom().DrawLineString3d (nPts, pts, nullptr);
+                        context.GetIDrawGeom().DrawLineString3d(nPts, pts, nullptr);
                         break;
 
                     case FB::BoundaryType_Closed:
-                        context.GetIDrawGeom().DrawShape3d (nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), nullptr);
+                        context.GetIDrawGeom().DrawShape3d(nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), nullptr);
                         break;
                     }
                 break;
@@ -1751,15 +1776,15 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 DEllipse3d  arc;
                 int8_t      boundary;
 
-                if (!reader.Get (egOp, arc, boundary))
+                if (!reader.Get(egOp, arc, boundary))
                     break;
 
                 state.CookElemDisplayParams();
 
                 if (FB::BoundaryType_Closed != boundary)
-                    context.GetIDrawGeom().DrawArc3d (arc, false, false, nullptr);
+                    context.GetIDrawGeom().DrawArc3d(arc, false, false, nullptr);
                 else
-                    context.GetIDrawGeom().DrawArc3d (arc, true, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), nullptr);
+                    context.GetIDrawGeom().DrawArc3d(arc, true, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), nullptr);
                 break;
                 }
 
@@ -1770,14 +1795,14 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 ICurvePrimitivePtr curvePrimitivePtr;
                 
-                if (!reader.Get (egOp, curvePrimitivePtr))
+                if (!reader.Get(egOp, curvePrimitivePtr))
                     break;
 
                 state.CookElemDisplayParams();
 
-                CurveVectorPtr  curvePtr = CurveVector::Create (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // Only open stored as curve primitive for element...
+                CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // Only open stored as curve primitive for element...
 
-                context.GetIDrawGeom().DrawCurveVector (*curvePtr, false);
+                context.GetIDrawGeom().DrawCurveVector(*curvePtr, false);
                 break;
                 }
 
@@ -1788,12 +1813,12 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 CurveVectorPtr curvePtr;
                 
-                if (!reader.Get (egOp, curvePtr))
+                if (!reader.Get(egOp, curvePtr))
                     break;
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawCurveVector (*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay());
+                context.GetIDrawGeom().DrawCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay());
                 break;
                 }
 
@@ -1802,14 +1827,14 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 if (!state.IsGeometryVisible())
                     break;
 
-                PolyfaceQueryCarrier meshData (0, false, 0, 0, nullptr, nullptr);
+                PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
 
-                if (!reader.Get (egOp, meshData))
+                if (!reader.Get(egOp, meshData))
                     break;
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawPolyface (meshData, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay());
+                context.GetIDrawGeom().DrawPolyface(meshData, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay());
                 break;
                 };
 
@@ -1820,12 +1845,12 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 ISolidPrimitivePtr solidPtr;
                 
-                if (!reader.Get (egOp, solidPtr))
+                if (!reader.Get(egOp, solidPtr))
                     break;
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawSolidPrimitive (*solidPtr);
+                context.GetIDrawGeom().DrawSolidPrimitive(*solidPtr);
                 break;
                 }
 
@@ -1836,12 +1861,12 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 MSBsplineSurfacePtr surfacePtr;
                 
-                if (!reader.Get (egOp, surfacePtr))
+                if (!reader.Get(egOp, surfacePtr))
                     break;
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawBSplineSurface (*surfacePtr);
+                context.GetIDrawGeom().DrawBSplineSurface(*surfacePtr);
                 break;
                 }
 
@@ -1855,7 +1880,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 ISolidKernelEntityPtr entityPtr;
 
-                if (!reader.Get (egOp, entityPtr))
+                if (!reader.Get(egOp, entityPtr))
                     {
                     useBRep = false;
                     break;
@@ -1863,7 +1888,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawBody (*entityPtr);
+                context.GetIDrawGeom().DrawBody(*entityPtr);
                 break;
                 }
 
@@ -1876,9 +1901,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 if (!state.IsGeometryVisible())
                     break;
 
-                PolyfaceQueryCarrier meshData (0, false, 0, 0, nullptr, nullptr);
+                PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
 
-                if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (egOp.m_data, meshData))
+                if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData))
                     break;
 
                 state.CookElemDisplayParams();
@@ -1888,14 +1913,14 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                     {
                     PolyfaceHeaderPtr clone = BentleyApi::PolyfaceHeader::New();
 
-                    clone->CopyFrom (meshData);
-                    clone->MarkInvisibleEdges (10.0); // This is "clever" and hopefully temporary...
+                    clone->CopyFrom(meshData);
+                    clone->MarkInvisibleEdges(10.0); // This is "clever" and hopefully temporary...
 
-                    context.GetIDrawGeom().DrawPolyface (*clone);
+                    context.GetIDrawGeom().DrawPolyface(*clone);
                     }
                 else
                     {
-                    context.GetIDrawGeom().DrawPolyface (meshData);
+                    context.GetIDrawGeom().DrawPolyface(meshData);
                     }
                 break;
                 }
@@ -1908,14 +1933,14 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 if (!state.IsGeometryVisible())
                     break;
 
-                CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector (egOp.m_data);
+                CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
 
                 if (!curvePtr.IsValid())
                     break;
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawCurveVector (*curvePtr, false);
+                context.GetIDrawGeom().DrawCurveVector(*curvePtr, false);
                 break;
                 }
 
@@ -1927,14 +1952,14 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 if (!state.IsGeometryVisible())
                     break;
 
-                CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector (egOp.m_data);
+                CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
 
                 if (!curvePtr.IsValid())
                     break;
 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawCurveVector (*curvePtr, false);
+                context.GetIDrawGeom().DrawCurveVector(*curvePtr, false);
                 break;
                 }
             
@@ -2191,7 +2216,9 @@ void ElementGeometryCollection::Iterator::ToNext()
                 if (!m_elementGeometry.IsValid())
                     break; // Ignore failure...
 
-                m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
+                if (DrawPurpose::NotSpecified != m_context->GetDrawPurpose())
+                    m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
+
                 m_context->SetDgnGeomPartId(geomPartId);
                 m_partGeometry = partGeometry;
                 return;
@@ -2208,7 +2235,8 @@ void ElementGeometryCollection::Iterator::ToNext()
                     break;
                     }
 
-                m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
+                if (DrawPurpose::NotSpecified != m_context->GetDrawPurpose())
+                    m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
                 return;
                 }
 
@@ -2230,7 +2258,8 @@ void ElementGeometryCollection::Iterator::ToNext()
                 if (!reader.Get(egOp, m_elementGeometry) || !m_elementGeometry.IsValid())
                     break; // Ignore non-geometry opCode (or failures)...
 
-                m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
+                if (DrawPurpose::NotSpecified != m_context->GetDrawPurpose())
+                    m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
                 return;
                 }
             }
@@ -2254,10 +2283,10 @@ public:
 
 virtual ~ElementGeometryCollectionContext () {delete (m_output);}
 
-ElementGeometryCollectionContext (DgnDbR db)
+ElementGeometryCollectionContext (DgnDbR db, DrawPurpose purpose = DrawPurpose::CaptureGeometry)
     {
     m_output = new SimplifyViewDrawGeom();
-    m_purpose = DrawPurpose::CaptureGeometry;
+    m_purpose = purpose;
     m_wantMaterials = true; // Setup material in ElemDisplayParams...
 
     SetBlockAsynchs (true);
@@ -2276,6 +2305,14 @@ ElementGeometryCollectionContext (DgnDbR db)
 ElemDisplayParamsCR ElementGeometryCollection::GetElemDisplayParams()
     {
     return *m_context->GetCurrentDisplayParams();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnGeomPartId ElementGeometryCollection::GetDgnGeomPartId()
+    {
+    return m_context->GetDgnGeomPartId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2322,7 +2359,7 @@ ElementGeometryCollection::ElementGeometryCollection (DgnDbR dgnDb, uint8_t cons
     m_data = data;
     m_dataSize = dataSize;
     m_elemToWorld.InitIdentity();
-    m_context = new ElementGeometryCollectionContext(dgnDb);
+    m_context = new ElementGeometryCollectionContext(dgnDb, DrawPurpose::NotSpecified);
     }
 
 /*---------------------------------------------------------------------------------**//**

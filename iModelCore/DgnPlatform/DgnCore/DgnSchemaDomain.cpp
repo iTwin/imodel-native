@@ -17,13 +17,13 @@ struct Element : DgnDomain::TableHandler
     TABLEHANDLER_DECLARE_MEMBERS(DGN_TABLE(DGN_CLASSNAME_Element), Element, DGNPLATFORM_EXPORT)
 
 private:
-    void AddElementChange (bset<DgnElementId>& elSet, BeSQLite::Changes::Change const& change, bool useNew) const;
-    virtual void _OnAdd (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override;
-    virtual void _OnDelete (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override;
-    virtual void _OnUpdate (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override;
+    void AddElementChange(bset<DgnElementId>& elSet, BeSQLite::Changes::Change const& change, bool useNew) const;
+    virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override;
+    virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override;
+    virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override;
 
-    void GetElementChangeInfo (DgnElementId&, DgnClassId&, DgnModelId&, DgnDbR, BeSQLite::Changes::Change const&, TxnSummary::ChangeType) const;
-    void RecordElementChange (TxnSummary&, TxnSummary::ChangeType, DgnElementId, DgnModelId) const;
+    void GetElementChangeInfo(DgnElementId&, DgnClassId&, DgnModelId&, DgnDbR, BeSQLite::Changes::Change const&, TxnSummary::ChangeType) const;
+    void RecordElementChange(TxnSummary&, TxnSummary::ChangeType, DgnElementId, DgnModelId) const;
 };
 
 //=======================================================================================
@@ -34,9 +34,9 @@ struct ElementDrivesElement : DgnDomain::TableHandler
 protected:
     TABLEHANDLER_DECLARE_MEMBERS(DGN_TABLE(DGN_RELNAME_ElementDrivesElement), ElementDrivesElement, DGNPLATFORM_EXPORT)
 
-    virtual void _OnAdd (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override    {UpdateSummary(summary,change,TxnSummary::ChangeType::Add);}
-    virtual void _OnUpdate (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override {UpdateSummary(summary,change,TxnSummary::ChangeType::Mod);}
-    virtual void _OnDelete (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override {UpdateSummary(summary,change,TxnSummary::ChangeType::Delete);}
+    virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override    {UpdateSummary(summary,change,TxnSummary::ChangeType::Add);}
+    virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override {UpdateSummary(summary,change,TxnSummary::ChangeType::Mod);}
+    virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override {UpdateSummary(summary,change,TxnSummary::ChangeType::Delete);}
 
     void UpdateSummary(TxnSummary& summary, BeSQLite::Changes::Change change, TxnSummary::ChangeType changeType) const
         {
@@ -54,17 +54,17 @@ struct ModelDrivesModel : DgnDomain::TableHandler
 protected:
     TABLEHANDLER_DECLARE_MEMBERS(DGN_TABLE(DGN_RELNAME_ModelDrivesModel), ModelDrivesModel, DGNPLATFORM_EXPORT)
 
-    virtual void _OnAdd (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override 
+    virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override 
         {
         summary.SetModelDependencyChanges(); 
         CheckDirection(summary, change.GetNewValue(0).GetValueId<EC::ECInstanceId>());
         }
-    virtual void _OnUpdate (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override 
+    virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override 
         {
         summary.SetModelDependencyChanges();
         CheckDirection(summary, change.GetOldValue(0).GetValueId<EC::ECInstanceId>());
         }
-    virtual void _OnDelete (TxnSummary& summary, BeSQLite::Changes::Change const& change) const override {summary.SetModelDependencyChanges();}
+    virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) const override {summary.SetModelDependencyChanges();}
     void CheckDirection(TxnSummary&, EC::ECInstanceId) const;
 };
 
@@ -124,11 +124,11 @@ void DgnSchemaTableHandler::Element::GetElementChangeInfo(DgnElementId& elementI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014
 //---------------------------------------------------------------------------------------
-void DgnSchemaTableHandler::Element::_OnAdd (TxnSummary& summary, BeSQLite::Changes::Change const& change) const 
+void DgnSchemaTableHandler::Element::_OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) const 
     {
     DgnElementId elementId;
-    DgnClassId elementClassId;
-    DgnModelId elementModelId;
+    DgnClassId   elementClassId;
+    DgnModelId   elementModelId;
 
     GetElementChangeInfo(elementId, elementClassId, elementModelId, summary.GetDgnDb(), change, TxnSummary::ChangeType::Add);
     RecordElementChange(summary, TxnSummary::ChangeType::Add, elementId, elementModelId);
@@ -137,11 +137,11 @@ void DgnSchemaTableHandler::Element::_OnAdd (TxnSummary& summary, BeSQLite::Chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014
 //---------------------------------------------------------------------------------------
-void DgnSchemaTableHandler::Element::_OnDelete (TxnSummary& summary, BeSQLite::Changes::Change const& change) const 
+void DgnSchemaTableHandler::Element::_OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) const 
     {
     DgnElementId elementId;
-    DgnClassId elementClassId;
-    DgnModelId elementModelId;
+    DgnClassId   elementClassId;
+    DgnModelId   elementModelId;
 
     GetElementChangeInfo (elementId, elementClassId, elementModelId, summary.GetDgnDb(), change, TxnSummary::ChangeType::Delete);
     RecordElementChange (summary, TxnSummary::ChangeType::Delete, elementId, elementModelId);
@@ -150,17 +150,15 @@ void DgnSchemaTableHandler::Element::_OnDelete (TxnSummary& summary, BeSQLite::C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014
 //---------------------------------------------------------------------------------------
-void DgnSchemaTableHandler::Element::_OnUpdate (TxnSummary& summary, BeSQLite::Changes::Change const& change) const 
+void DgnSchemaTableHandler::Element::_OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) const 
     {
     DgnElementId elementId;
-    DgnClassId elementClassId;
-    DgnModelId elementModelId;
+    DgnClassId   elementClassId;
+    DgnModelId   elementModelId;
 
     GetElementChangeInfo (elementId, elementClassId, elementModelId, summary.GetDgnDb(), change, TxnSummary::ChangeType::Mod);
-
     RecordElementChange (summary, TxnSummary::ChangeType::Mod, elementId, elementModelId);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  03/2015
@@ -172,7 +170,7 @@ void DgnSchemaTableHandler::ModelDrivesModel::CheckDirection(TxnSummary& summary
     stmt.BindId(1, relid);
     if (stmt.Step() != BE_SQLITE_ROW)
         {
-        BeAssert(false && "model was just added or modified -- it has to exist!");
+        BeAssert(false); // model was just added or modified -- it has to exist!
         return;
         }
     DgnModelId rootModel = stmt.GetValueId<DgnModelId>(0);
