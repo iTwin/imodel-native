@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__BENTLEY_INTERNAL_ONLY__
+//__PUBLISH_SECTION_START__
 
 DGNPLATFORM_REF_COUNTED_PTR(PointCloudBaseModel)
 
