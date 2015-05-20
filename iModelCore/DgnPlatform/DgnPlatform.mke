@@ -42,6 +42,7 @@ RealityDataHandlerDepends = $(DgnCoreAPISrc)DgnViewport.h $(DgnCoreAPISrc)Realit
 
 WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 
+PointCloudBaseModelDepends = $(DgnCoreAPISrc)PointCloudBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 
 txnManagerDepends = $(DgnCoreAPISrc)ITxnManager.h
 RmgrToolsPublicApi=$(BuildContext)PublicAPI/RmgrTools/
@@ -166,6 +167,8 @@ $(coreObjs)RealityDataHandlers$(oext):    $(DgnCoreDir)RealityDataHandlers.cpp $
 $(coreObjs)RealityDataCache$(oext) : $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)WebMercator$(oext):    $(DgnCoreDir)WebMercator.cpp $(contextDepends) $(WebMercatorDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
+
+$(coreObjs)PointCloudBaseModel$(oext):  $(DgnCoreDir)PointCloudBaseModel.cpp $(contextDepends) $(PointCloudBaseModelDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)TextString$(oext):    $(DgnCoreDir)TextString.cpp $(contextDepends) $(DgnCoreAPISrc)TextString.h $(DgnCoreAPISrc)DgnFont.h $(HandlerDepends) ${MultiCompileDepends}
 

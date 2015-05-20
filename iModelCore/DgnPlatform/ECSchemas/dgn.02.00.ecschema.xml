@@ -73,6 +73,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>WebMercatorModel</BaseClass>
     </ECClass>
 
+    <ECClass typeName="PointCloudBaseModel" isDomainClass="True" >
+        <BaseClass>PhysicalModel</BaseClass>
+    </ECClass>
+
     <ECClass typeName="Category" isDomainClass="True" >
         <ECCustomAttributes>
             <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">

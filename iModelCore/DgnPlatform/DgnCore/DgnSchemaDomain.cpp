@@ -747,6 +747,7 @@ HANDLER_DEFINE_MEMBERS(ElementHandler)
 HANDLER_DEFINE_MEMBERS(PhysicalElementHandler)
 HANDLER_DEFINE_MEMBERS(DrawingElementHandler)
 HANDLER_DEFINE_MEMBERS(ViewHandler)
+HANDLER_DEFINE_MEMBERS(PointCloudBaseModelHandler)
 
 HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
 HANDLER_EXTENSION_DEFINE_MEMBERS(ViewHandlerOverride)
@@ -795,6 +796,8 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb D
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(PhysicalElementHandler::GetHandler());
     RegisterHandler(DrawingElementHandler::GetHandler());
+    RegisterHandler(PointCloudBaseModelHandler::GetHandler());
+
     RegisterDefaultDependencyHandlers();
 
     RegisterTableHandler(DgnSchemaTableHandler::Element::GetHandler());
