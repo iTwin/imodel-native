@@ -1,6 +1,6 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: PointoolsLibs/PointoolsLibsCommon/VS2012/GL/GL.mke $
+#     $Source: PointoolsLibs/PointoolsLibsCommon/VS2012/Boost_1_5_7/BoostHeaders_1_5_7.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -11,10 +11,8 @@ PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/AssertPolicy.mki
 
 DeliveryDir=$(OutBuildContexts)PointoolsLibs_VS2012/Delivery/
 
-VendorAPIDir = $(OutBuildContexts)PointoolsLibs_VS2012/VendorAPI/GL
+VendorApiDir = $(OutBuildContexts)PointoolsLibs_VS2012/VendorAPI/Boost_1_5_7/boost
 
 always:
-    @CreateSymLinks.py -f"$(VendorAPIDir)\glext.h=${PointoolsLibs}\GL\Include\glext.h"
-    @CreateSymLinks.py -f"$(VendorAPIDir)\wglext.h=${PointoolsLibs}\GL\Include\wglext.h"
-
+    @CreateSymLinks.py   -d"$(VendorApiDir)=${SrcRoot}/libsrc/boost_1.57.0_headers/boost"
 
