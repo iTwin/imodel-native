@@ -36,8 +36,8 @@
 * 
 * @section DgnMarkupProjectGroup_PhysicalRedlines Physical vs. non-physical redlines.
 * Suppose you want to draw redlines  on top of a map. The extent of the map is so great that no single view will show it very well. 
-* You want to be able to zoom in and out and pan around and draw your redlines all over the place. So, you want the redline 
-* view to show you a live view of the map, overlaid by a live view of the redline model. In this case, you need a "physical" redline 
+* You want to be able to zoom in and out and pan around and draw your redlines at any location in the map. Therefore, you want the redline 
+* view to show you a live view of the map, combined with a live view of the redline model. In this case, you need a "physical" redline 
 * model and view. It's called "physical" because in this case the redline model itself is a (3-D) PhysicalModel, and the associated 
 * ViewController is derived from PhysicalViewController. In the normal (non-physical) redline case, the redline view shows you a 
 * static image of a view of the DgnDb or some other static image. The redline model in that case is a (2-D) SheetModel, and the 
@@ -311,11 +311,22 @@ public:
 };
 
 //=======================================================================================
-//! Displays a PhysicalRedlineModel on top of another view.
-//! A PhysicalRedlineViewController is always paired with a PhysicalViewController. 
-//! PhysicalRedlineViewController implements the Decorator pattern. http://en.wikipedia.org/wiki/Decorator_pattern
-//! PhysicalRedlineViewController overrides _DrawView to draw the PhysicalRedlineModel and then forwards the call to the subject PhysicalViewController.
-//! PhysicalRedlineViewController overrides the various get and set methods on ViewController to keep itself and the subject PhysicalViewController in synch.
+//! Displays a PhysicalRedlineModel in conjunction with the display of another view controller.
+//!@remarks
+//! PhysicalRedlineViewController is a normal physical view in most respects, and its PhysicalRedlineModel is its target model.
+//! 
+//! PhysicalRedlineViewController is unusual in that it also tries work in sync with another view controller.
+//! This other controller is called the "subject view controller." It must be be supplied in the PhysicalRedlineViewController constructor.
+//! A PhysicalRedlineViewController actually has no view parameters of its own. Instead, it adopts the view parameters of the subject view controller on the fly. 
+//! PhysicalRedlineViewController overrides _DrawView to draw its own PhysicalRedlineModel. It then forwards the draw request to the subject view controller.
+//! A PhysicalRedlineViewController handles most viewing-related queries by applying them to itself and then forwarding them to the subject view controller, so that
+//! the two view controllers are always in sync.
+//! 
+//! <h4>Locating and Editing</h4>
+//! Locates and edits are normally directed to the PhysicalRedlineModel, since that is the normal target model of a PhysicalRedlineViewController.
+//! If an app wants to re-direct locates and/or edits to the target of the subject view controller instead, it should PhysicalRedlineViewController::SetTargetModel
+//! in order to change the PhysicalRedlineViewController's target model.
+//!
 //! @see @ref DgnMarkupProjectGroup_PhysicalRedlines
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
@@ -370,9 +381,9 @@ protected:
     virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
     virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size)  override;
 
-    #ifdef WIP_RDL_QUERYVIEWS
+#ifdef WIP_PhysicalRedlineViewController
     // QueryViewController
-    virtual bool _WantElementLoadStart (DgnViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
+    virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
     virtual void _DrawView (ViewContextR context) override;
     virtual uint32_t _GetMaxElementsToLoad () override;
     virtual BeSQLite::DbResult _Load() override;
@@ -381,8 +392,8 @@ protected:
     virtual int32_t _GetMaxElementFactor() override;
     virtual double _GetMinimumSizePixels (DrawPurpose updateType) override;
     virtual uint64_t _GetMaxElementMemory () override;
+#endif
     // END QueryViewController
-    #endif
 
     void SynchWithSubjectViewController();
 #endif // DOCUMENTATION_GENERATOR
@@ -391,13 +402,12 @@ public:
     DGNPLATFORM_EXPORT PhysicalRedlineViewController (PhysicalRedlineModel& model, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId = DgnViewId());
 
     DGNPLATFORM_EXPORT ~PhysicalRedlineViewController ();
-#if defined (NEEDS_WORK_VIEW_HANDLER_REFACTOR)
+
     //! Create a new redline view in the database
     //! @return The newly created view controller
     //! @param[in] model the physical redline model to display
     //! @param[in] subjectView the subject view to display underneath the physical redline model
     DGNPLATFORM_EXPORT static PhysicalRedlineViewControllerPtr InsertView (PhysicalRedlineModel& model, PhysicalViewController& subjectView);
-#endif
 };
 
 //=======================================================================================

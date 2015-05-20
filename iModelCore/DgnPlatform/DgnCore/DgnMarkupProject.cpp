@@ -1285,6 +1285,12 @@ PhysicalRedlineModelP PhysicalRedlineModel::CreateModel (DgnMarkupProjectR marku
     DgnModelId modelId = markupProject.CreateModelPhaseI (name, DgnModelType::PhysicalRedline);
 
     PhysicalRedlineModelP rdlModel = Open (markupProject, modelId);
+    if (NULL == rdlModel)
+        {
+        DGNCORELOG->error("PhysicalRedlineModel::CreateModel failed");
+        BeAssert(false && "PhysicalRedlineModel::CreateModel failed");
+        return NULL;
+        }
 
     UnitDefinition mu = subjectViewTargetModel.GetProperties().GetMasterUnit();
     UnitDefinition su = subjectViewTargetModel.GetProperties().GetSubUnit();

@@ -7,6 +7,16 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson  05/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SheetModelHandler : ModelHandler
+{
+    MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SheetModel, SheetModel, SheetModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
+};
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
 struct DgnSchemaTableHandler
 {
 //=======================================================================================
@@ -643,6 +653,7 @@ HANDLER_DEFINE_MEMBERS(ModelHandler)
 HANDLER_DEFINE_MEMBERS(PhysicalModelHandler)
 HANDLER_DEFINE_MEMBERS(WebMercatorModelHandler)
 HANDLER_DEFINE_MEMBERS(StreetMapModelHandler)
+HANDLER_DEFINE_MEMBERS(SheetModelHandler)
 HANDLER_DEFINE_MEMBERS(ElementHandler)
 HANDLER_DEFINE_MEMBERS(ElementGroupHandler)
 HANDLER_DEFINE_MEMBERS(PhysicalElementHandler)
@@ -692,6 +703,7 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb D
     RegisterHandler(PhysicalModelHandler::GetHandler());
     RegisterHandler(WebMercatorModelHandler::GetHandler());
     RegisterHandler(StreetMapModelHandler::GetHandler());
+    RegisterHandler(SheetModelHandler::GetHandler());
     RegisterHandler(ElementHandler::GetHandler());
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(PhysicalElementHandler::GetHandler());

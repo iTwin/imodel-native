@@ -21,8 +21,11 @@ DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
 DGNPLATFORM_TYPEDEFS (SectioningViewController)
 DGNPLATFORM_TYPEDEFS (SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+struct SheetModelHandler;
 
 typedef bset<DgnElementP> T_StdDgnElementSet;
 
@@ -377,6 +380,8 @@ protected:
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
 
+    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnInsertElement(DgnElementR element);
+
 public:
     void SetGlobalOrigin(DPoint2dCR org) {m_globalOrigin = org;}
 
@@ -481,18 +486,56 @@ public:
     };
 
 //=======================================================================================
-//! @private
+//! A sheet model is a 2-D model that has the following characteristics:
+//! -- Has fixed extents (is not infinite).
+//! -- Does not correspond to any location in physical space.
+//! -- Likewise, locations and distances in the SheetModel have no physical meaning, except measurements of the sheet itself.
+//! -- Its units are generally "paper" units, e.g., inches or mm. Its units bear no relation to the units of the physical models that may be portrayed on the sheet.
+//! -- Like any 2-D model, a sheet model can contain only planar geometry and annotations.
+//! -- Can embed \em views of other models. Embedded views are pictures only.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct SheetModel : DgnModel2d
     {
     DEFINE_T_SUPER(DgnModel2d)
-protected:
-    DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
-    SheetModelCP _ToSheetModel() const override {return this;}
+
+    friend struct SheetModelHandler;
 
 public:
-    SheetModel(CreateParams const& params) : T_Super(params) {}
+    enum class Units {Millimeters, Inches, Custom};
+
+protected:
+    DPoint2d        m_size;
+
+    DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
+    SheetModelCP _ToSheetModel() const override {return this;}
+    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
+
+    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
+    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
+
+    //! construct a SheetModel object, prior to loading it from a Db
+    DGNPLATFORM_EXPORT SheetModel(CreateParams const& params);
+
+    //! construct a SheetModel object, as part of creating a new SheetModel in the Db.
+    //! @param db       The DgnDb that will hold the new model
+    //! @param name     The name of the new model
+    //! @param size     The fixed extents of the sheet (expressed in the specified units)
+    //! @param units    The sheet's units.
+    //! @note if \a units is Units::Custom, then you must follow up with a call to set the "WorkingUnits" on the model's properties.
+    DGNPLATFORM_EXPORT SheetModel(DgnDbR db, Utf8CP name, DPoint2dCR size, Units units);
+
+public:
+    //! construct a SheetModel object, as part of creating a new SheetModel in the Db.
+    //! @param db       The DgnDb that will hold the new model
+    //! @param name     The name of the new model
+    //! @param size     The fixed extents of the sheet (expressed in the specified units)
+    //! @param units    The sheet's units.
+    //! @note if \a units is Units::Custom, then you must follow up with a call to set the "WorkingUnits" on the model's properties.
+    DGNPLATFORM_EXPORT static SheetModelPtr Create(DgnDbR db, Utf8CP name, DPoint2dCR size, Units units) {return new SheetModel(db,name,size,units);}
+
+    //! get the sheet size
+    DPoint2d GetSize() const {return m_size;}
     };
 
 
