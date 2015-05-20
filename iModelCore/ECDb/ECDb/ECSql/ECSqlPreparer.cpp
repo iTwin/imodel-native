@@ -410,29 +410,36 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
 
     ECDbSqlTable const* table = nullptr;
-    std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();
-    if (!exp->IsPolymorphic() || nonVirtualPartitionIndices.empty())
+    if (currentScopeECSqlType == ECSqlType::Insert)
         {
-        HorizontalPartition const& horizPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
-        table = &horizPartition.GetTable();
+        //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
+        BeAssert(!exp->IsPolymorphic());
+        table = &classMap.GetTable();
         }
     else
         {
-        BeAssert(currentScopeECSqlType != ECSqlType::Insert && "ECSQL INSERT does not support polymorphism. This should have been caught by the parsing code already.");
+        std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();
+        if (!exp->IsPolymorphic() || nonVirtualPartitionIndices.empty())
+            {
+            HorizontalPartition const& horizPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
+            table = &horizPartition.GetTable();
+            }
+        else
+            {
+            if (nonVirtualPartitionIndices.size() > 1)
+                return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.",
+                ExpHelper::ToString(currentScopeECSqlType));
 
-        if (nonVirtualPartitionIndices.size() > 1)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.", 
-                                ExpHelper::ToString(currentScopeECSqlType));
+            BeAssert(classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]) != nullptr);
+            HorizontalPartition const* partition = classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]);
 
-        BeAssert(classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]) != nullptr);
-        HorizontalPartition const* partition = classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]);
-        
-        //WIP: We need to fix deletion of subclasses' struct array entries for polymorphic delete. Until then we hard-fail
-        //on attempts to polymorphic DELETES if the class has subclasses
-        if (currentScopeECSqlType == ECSqlType::Delete && partition->GetClassIds().size() > 1)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL DELETE is not yet supported.");
+            //WIP: We need to fix deletion of subclasses' struct array entries for polymorphic delete. Until then we hard-fail
+            //on attempts to polymorphic DELETES if the class has subclasses
+            if (currentScopeECSqlType == ECSqlType::Delete && partition->GetClassIds().size() > 1)
+                return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL DELETE is not yet supported.");
 
-        table = &partition->GetTable();
+            table = &partition->GetTable();
+            }
         }
 
     BeAssert(table != nullptr);
