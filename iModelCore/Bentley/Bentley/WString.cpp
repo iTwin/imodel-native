@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/WString.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -325,3 +325,42 @@ void Utf8String::ToUpper()
     clear();
     BeStringUtilities::WCharToUtf8(*this, wstr.c_str());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+bool Utf8String::Contains(Utf8StringCR other) const
+    {
+    return Contains(other.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+bool Utf8String::Contains(Utf8CP other) const
+    {
+    size_type position = this->find(other);
+    return (Utf8String::npos != position);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+bool Utf8String::ContainsI(Utf8StringCR other) const
+    {
+    return Contains(other.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+bool Utf8String::ContainsI(Utf8CP other) const
+    {
+    Utf8String thisLower(this->c_str());
+    thisLower.ToLower();
+    Utf8String otherLower(other);
+    otherLower.ToLower();
+    return thisLower.Contains(otherLower.c_str());
+    }
+
+

@@ -355,6 +355,16 @@ struct Utf8String : public bastring
     BENTLEYDLL_EXPORT void TrimEnd();
     //! Removes all instances of any of the given characters from the left and right sides.
     BENTLEYDLL_EXPORT void Trim (Utf8CP trimCharacters);
+
+    //! Test for whether this string contains another string. @param other The other string. @return true if this string contains the other string. 
+    BENTLEYDLL_EXPORT bool Contains(Utf8StringCR other) const;
+    //! Test for whether this string contains another string. @param other The other string. @return true if this string contains the other string. 
+    BENTLEYDLL_EXPORT bool Contains(Utf8CP other) const;
+    //! Test for whether this string contains another string, ignoring case. @param other The other string. @return true if this string contains the other string. 
+    BENTLEYDLL_EXPORT bool ContainsI(Utf8StringCR other) const;
+    //! Test for whether this string contains another string, ignoring case. @param other The other string. @return true if this string contains the other string. 
+    BENTLEYDLL_EXPORT bool ContainsI(Utf8CP other) const;
+
     //! Update this string to be equal to \a in. If \a in is NULL, clear this string.
     Utf8StringR AssignOrClear(Utf8CP in)
         {
