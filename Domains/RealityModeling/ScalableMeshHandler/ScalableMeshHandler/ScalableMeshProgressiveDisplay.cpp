@@ -16,6 +16,8 @@ static ::DPoint3d const s_npcViewBox[8] =
         { 1, 1, 1 }
     };
 
+#define MRDTM_GUI_TO_VIEW_POINT_DENSITY(guiValue) exp((guiValue - 99.81) / -14.32)
+
 bool GetVisibleAreaForView(DPoint3d** areaPt, int& nbPts, const DPoint3d viewBox[], DRange3d& dtmRange, DRange3d& dtmIntersectionRange)
     {
     // Work out which bit of the triangulation is displayed on screen.    
@@ -146,25 +148,30 @@ IProgressiveDisplay::Completion ScalableMeshProgressiveDisplay::_Process(ViewCon
     return IProgressiveDisplay::Completion::Finished;
     }
 
+static double s_guiPointDensity = 60.0;
+
 void ScalableMeshProgressiveDisplay::_GetMeshNodes(bvector<IMrDTMNodePtr>& meshNodes, ViewContextR context)
     {
     ScalableMeshDrawingInfoPtr currentDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
-
+    
     if ((m_previousDrawingInfoForMeshPtr != nullptr) &&
         (m_previousDrawingInfoForMeshPtr->GetDrawPurpose() != DrawPurpose::UpdateDynamic) &&
-        (meshNodes.size() > 0))
+        (m_meshNodes.size() > 0))
         {
         //If the m_dtmPtr equals 0 it could mean that the last data request to the STM was cancelled, so start a new request even
         //if the view has not changed.
         if (m_previousDrawingInfoForMeshPtr->HasAppearanceChanged(currentDrawingInfoPtr) == false)
+            {
+            meshNodes.insert(meshNodes.begin(), m_meshNodes.begin(), m_meshNodes.end());
             return;
+            }        
         }
-
+       
     m_previousDrawingInfoForMeshPtr = currentDrawingInfoPtr;
 
-
+    //NEEDS_WORK_SM : When camera is on the matrix doesn't behave as expected.
     DMatrix4d localToView(context.GetLocalToView());
-
+    
     DPoint3d viewBox[8];
     Transform    ltf, ftl;
     context.NpcToFrustum(viewBox, s_npcViewBox, 8);
@@ -194,7 +201,7 @@ void ScalableMeshProgressiveDisplay::_GetMeshNodes(bvector<IMrDTMNodePtr>& meshN
         {
         return;
         }
-
+    
     BeAssert(m_mrDtmViewDependentMeshQueryPtr != 0);
 
     int status = SUCCESS;
@@ -207,11 +214,11 @@ void ScalableMeshProgressiveDisplay::_GetMeshNodes(bvector<IMrDTMNodePtr>& meshN
         //with no DrawPurpose::Update draw following.
         if ((context.GetDrawPurpose() == DrawPurpose::UpdateDynamic))
             {
-            viewDependentQueryParams->SetMinScreenPixelsPerPoint(exp((100 - 99.81) / -14.32) * 2);
+            viewDependentQueryParams->SetMinScreenPixelsPerPoint(MRDTM_GUI_TO_VIEW_POINT_DENSITY(20));
             }
         else
             {
-            viewDependentQueryParams->SetMinScreenPixelsPerPoint(exp((100 - 99.81) / -14.32));
+            viewDependentQueryParams->SetMinScreenPixelsPerPoint(MRDTM_GUI_TO_VIEW_POINT_DENSITY(s_guiPointDensity));
             }
 
         //Inflate the viewbox in 2D so the Z range equals the Z range of the MrDTM.
@@ -247,6 +254,13 @@ void ScalableMeshProgressiveDisplay::_GetMeshNodes(bvector<IMrDTMNodePtr>& meshN
         if (fencePts != NULL) free(fencePts);
 
         assert(status != SUCCESS || meshNodes.size() > 0);
+
+        m_meshNodes.clear();
+
+        if (meshNodes.size() > 0)
+            {
+            m_meshNodes.insert(m_meshNodes.begin(), meshNodes.begin(), meshNodes.end());
+            }        
         }
     }
 
@@ -276,16 +290,9 @@ void ScalableMeshProgressiveDisplay::DrawView(ViewContextR context)
             {
             context.GetIViewDraw().DrawQvElem(qvElem);
             }
-        else
+        else   
             {
-            unchachedMeshNodes.push_back(meshNodes[nodeInd]);
-
-            IMrDTMMeshPtr mrdtmMeshPtr(meshNodes[nodeInd]->GetMesh(false));
-
-            if (mrdtmMeshPtr != 0)
-                {
-                CreateQvElemForMesh(mrdtmMeshPtr, m_model, context, meshNodes[nodeInd]->GetNodeId());
-                }
+            unchachedMeshNodes.push_back(meshNodes[nodeInd]);            
             }
         }
 

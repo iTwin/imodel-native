@@ -38,6 +38,8 @@ class ScalableMeshProgressiveDisplay : IProgressiveDisplay
         ScalableMeshModel& m_model;
         ScalableMeshDrawingInfoPtr m_previousDrawingInfoForMeshPtr;
         IMrDTMMeshQueryPtr m_mrDtmViewDependentMeshQueryPtr;
+        bvector<IMrDTMNodePtr> m_meshNodes;                                       
+
         void _GetMeshNodes(bvector<IMrDTMNodePtr>& meshNodes, ViewContextR context);
     protected:
         virtual Completion _Process(ViewContextR) override;
@@ -80,11 +82,13 @@ class ScalableMeshDrawingInfo : public RefCountedBase
 
         bool HasAppearanceChanged(const ScalableMeshDrawingInfoPtr& scalableMeshDrawingInfoP)
             {
+            /*NEEDS_WORK_SM : CameraInfo is very different than ViewInfo in Vancouver.
             if (!m_viewInfo.IsValid() != scalableMeshDrawingInfoP->m_viewInfo.IsValid())
                 return  false;
 
             if (m_viewInfo.IsValid())
                 return  true;
+                */
             const bool areEquivalent = m_viewInfo.GetEyePoint().IsEqual(scalableMeshDrawingInfoP->m_viewInfo.GetEyePoint()) && m_viewInfo.GetLensAngle() == scalableMeshDrawingInfoP->m_viewInfo.GetLensAngle() && m_viewInfo.GetFocusDistance() == scalableMeshDrawingInfoP->m_viewInfo.GetFocusDistance();
 
             return !areEquivalent ||
