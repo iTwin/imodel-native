@@ -9,7 +9,7 @@
 
 //  temp table names used by TxnSummary and ElementGraphTxnMonitor
 #define DGN_TABLE_TxnElements       DGN_TABLE_PREFIX "TxnElements"
-#define DGN_TABLE_TxnElementDeps     DGN_TABLE_PREFIX "TxnElementDeps"
+#define DGN_TABLE_TxnElementDeps    DGN_TABLE_PREFIX "TxnElementDeps"
 
 DPILOG_DEFINE(TxnManager)
 

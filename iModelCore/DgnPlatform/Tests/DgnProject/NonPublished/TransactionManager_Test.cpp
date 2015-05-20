@@ -35,8 +35,6 @@ struct ABCHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
 
     bvector<EC::ECInstanceId> m_relIds;
 
-    Utf8String _GetDescription() override {return "The ABC rule";}
-
     void _OnRootChanged (DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR) override
         {
         if (s_abcShouldFail)

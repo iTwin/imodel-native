@@ -24,7 +24,7 @@ DgnSchemaDomain defines types and built-in functions that you can use in SQL sta
 //  They are here to represent the SQL extension functions, so that Doyxgen will generate doc for them.
 
 //! A point in the DgnDb's Cartesian coordinate system. All coordinates are in meters. If the point represents a location in a 2D model, then the z-coordinate will be zero.
-//! @see DGN_point_value, DGN_point_distance
+//! @see DGN_point_value, DGN_point_distance, DGN_point_min_distance_to_bbox 
 struct DGN_point
 {
 protected:
@@ -47,7 +47,7 @@ protected:
 //! If the box represents a range in a 3-D model, then the box will have 8 corners and will have width(X), depth(Y), and height(Z). 
 //! If the box represents a range in a 2-D model, then the box will still have 8 corners but the z-coordinates will be all be zero, and the height will be zero.
 //! All coordinates are in meters.
-//! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union
+//! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union, DGN_point_min_distance_to_bbox
 struct DGN_bbox
 {
 protected:
@@ -94,7 +94,6 @@ struct PlacementFunc : ScalarFunction
     @param placement   The DGN_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
-    Note that it only makes sense to union or compare axis-aligned bounding boxes.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
 */
 DGN_bbox DGN_placement_aabb(DGN_placement placement);
@@ -135,8 +134,6 @@ struct DGN_placement_aabb : PlacementFunc
     @param placement   The DGN_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
-    <p>Here is an example of using DGN_placement_eabb to sum up element areas. Note that we want to use 
-    \em element-aligned bounding boxes in this query, rather than \a axis-aligned bounding boxes.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
 */
 DGN_bbox DGN_placement_eabb(DGN_placement placement);
@@ -260,7 +257,6 @@ struct DGN_placement_angles : PlacementFunc
     @param roll The Roll angle in degrees
     @return a DGN_angles object
     <p><b>Example (C++)</b>
-    <p>Here is an example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
 */
 DGN_angles DGN_angles(double yaw, double pitch, double roll);
@@ -288,7 +284,6 @@ struct DGN_angles : ScalarFunction
     @param member   The index of the member to get: Yaw=0, Pitch=1, Roll=2 
     @return the selected angle (in degrees); or an error if member is out of range or if \a angles is not a DGN_angles object
     <p><b>Example (C++)</b>
-    <p>Here is an example of checking the yaw angle of elements:
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
 */
 double DGN_angles_value(DGN_angles angles, int member);
@@ -320,9 +315,6 @@ struct DGN_angles_value : ScalarFunction
     @param angle2 a DGN_angles object
     @return the maximum absolute difference among the angles in degrees.
     <p><b>Example (C++)</b>
-    <p>Here is an example of using DGN_angles_maxdiff to look for elements with a specific placement angle. 
-        This example also shows how to combine tests on geometry and business properties in a single query. 
-        This example uses ECSql.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
 */
 double DGN_angles_maxdiff(DGN_angles angle1, DGN_angles angle2);
@@ -496,10 +488,9 @@ struct DGN_bbox_volume : ScalarFunction
     @see DGN_bbox_volume
     @see DGN_bbox_depth, DGN_bbox_width
     <p><b>Example (C++)</b>
-    <p>Here is an example of summing up X-Y areas. Note that you could add a WHERE clause to limit the query to a subset of elements.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
     <p>
-    <p>Here is an example of passing the wrong type of object to DGN_bbox_areaxy and getting an error.
+    <p>Here is an example of an \em incorrect call to DGN_bbox_areaxy
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_error.sampleCode
 */
 double DGN_bbox_areaxy(DGN_bbox bb);
@@ -590,7 +581,7 @@ struct DGN_bbox_contains : ScalarFunction
     Get a member of a DGN_bbox object
     @param bb       a bounding box
     @param member   The index of the member to get: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
-    @return the the requested member of the bounding box; or an error if member is out of range or bb is not a DGN_bbox object.
+    @return the requested member of the bounding box; or an error if member is out of range or bb is not a DGN_bbox object.
 */
 double DGN_bbox_value(DGN_bbox bb, int member);
 // __PUBLISH_SECTION_END__
@@ -618,7 +609,6 @@ struct DGN_bbox_value : ScalarFunction
     \em Aggregate function that computes the union of a series of bounding boxes
     @return a bounding box that contains the aggregated range.
     <p><b>Example (C++)</b>
-    Note that it only makes sense to union axis-aligned bounding boxes.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
 */
 DGN_bbox DGN_bbox_union(DGN_bbox);
@@ -689,6 +679,36 @@ struct DGN_point_distance : ScalarFunction
 };
 
 //=======================================================================================
+// Get the minimun distance from a point to a bounding box
+// @bsiclass                                                   Sam.Wilson   05/15
+//=======================================================================================
+#ifdef DOCUMENTATION_GENERATOR
+// __PUBLISH_SECTION_START__
+/**
+    Compute the minimum distance from a point to a bounding box, in meters.
+    @param point    A point 
+    @param bbox     A bounding box
+    @return the distance from \a point to the closest point on \a bbox; or an error if either input is of the wrong type.
+*/
+double DGN_point_min_distance_to_bbox(DGN_point point, DGN_bbox bbox);
+// __PUBLISH_SECTION_END__
+#endif
+struct DGN_point_min_distance_to_bbox : ScalarFunction
+{
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        if (args[0].GetValueBytes() != sizeof(DPoint3d) ||
+            args[1].GetValueBytes() != sizeof(DRange3d))
+            return SetInputError(ctx);
+
+        DPoint3d& pt   = *((DPoint3d*)(args[0].GetValueBlob()));
+        DRange3d& bbox = *((DRange3d*)(args[1].GetValueBlob()));
+        ctx.SetResultDouble(bbox.DistanceOutside(pt));
+        }
+    DGN_point_min_distance_to_bbox() : ScalarFunction("DGN_point_min_distance_to_bbox", 2, DbValueType::FloatVal) {}
+};
+
+//=======================================================================================
 // Get one of the values of a DPoint3d by index: {X=0, Y=1, Z=2}
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
@@ -715,6 +735,53 @@ struct DGN_point_value : ScalarFunction
         ctx.SetResultDouble(pt[member]);
         }
     DGN_point_value() : ScalarFunction("DGN_point_value", 2, DbValueType::FloatVal) {}
+};
+
+
+//=======================================================================================
+// Get one of the values of a DPoint3d by index: {X=0, Y=1, Z=2}
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+#ifdef DOCUMENTATION_GENERATOR
+// __PUBLISH_SECTION_START__
+/**
+    A rtree MATCH function that accepts objects that overlap an aabb.
+*/
+void DGN_rtree_aabb_overlap(DGN_aabb);
+// __PUBLISH_SECTION_END__
+#endif
+struct DGN_rtree_aabb_overlap : RTreeMatchFunction
+{
+    int _TestRange(QueryInfo const& info) override
+        {
+        if (info.m_nParam != 1)
+            return BE_SQLITE_ERROR;
+
+        info.m_within = Within::Outside;
+
+        RTree3dValCP bounds = (RTree3dValCP) info.m_param;
+        RTree3dValCP pt = (RTree3dValCP) info.m_coords;
+
+        bool passedTest = (info.m_parentWithin == Within::Inside) ? true : bounds->Intersects(*pt);
+        if (!passedTest)
+            return BE_SQLITE_OK;
+
+        if (info.m_level>0)
+            {
+            // For nodes, return 'level-score'.
+            info.m_score = info.m_level;
+            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : bounds->Contains(*pt) ? Within::Inside : Within::Partly;
+            }
+        else
+            {
+            // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
+            info.m_score = 0;
+            info.m_within = Within::Partly;
+            }
+        return BE_SQLITE_OK;
+        }
+
+    DGN_rtree_aabb_overlap() : RTreeMatchFunction("DGN_rtree_aabb_overlap", 1) {}
 };
 
 END_UNNAMED_NAMESPACE
@@ -744,11 +811,20 @@ void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
                           new DGN_placement_eabb,
                           new DGN_placement_origin,
                           new DGN_point_distance,
+                          new DGN_point_min_distance_to_bbox,
                           new DGN_point_value
                           };
 
+    static RTreeMatchFunction* s_matchFuncs[] = 
+                         {
+                         new DGN_rtree_aabb_overlap
+                         };
+
     for (DbFunction* func : s_funcs)
         db.AddFunction(*func);
+
+    for (RTreeMatchFunction* func : s_matchFuncs)
+        db.AddRTreeMatchFunction(*func);
     }
 
 
