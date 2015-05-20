@@ -931,10 +931,8 @@ enum class DrawPurpose
     FenceAccept                = 30,
     RegionFlood                = 31, //! Collect graphics to find closed regions/flood...
     FitView                    = 32,
-    XGraphicsCreate            = 34,
     ExportVisibleEdges         = 36,
     InterferenceDetection      = 37,
-    CutXGraphicsCreate         = 38,
     ModelFacet                 = 39,
     Measure                    = 40,
     VisibilityCalculation      = 41,

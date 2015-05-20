@@ -477,7 +477,7 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
     virtual DgnModelStatus _BindPlacement(BeSQLite::Statement&) = 0;
     GeometricElementCP _ToGeometricElement() const override {return this;}
-    DgnModelStatus DoInsertOrUpdate(BeSQLite::Statement&);
+    DgnModelStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {}
 
 public:

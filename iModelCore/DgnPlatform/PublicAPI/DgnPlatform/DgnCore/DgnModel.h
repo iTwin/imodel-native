@@ -27,8 +27,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 struct SheetModelHandler;
 
-typedef bset<DgnElementP> T_StdDgnElementSet;
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
