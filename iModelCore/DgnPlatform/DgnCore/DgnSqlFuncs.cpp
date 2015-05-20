@@ -737,7 +737,6 @@ struct DGN_point_value : ScalarFunction
     DGN_point_value() : ScalarFunction("DGN_point_value", 2, DbValueType::FloatVal) {}
 };
 
-
 //=======================================================================================
 // Get one of the values of a DPoint3d by index: {X=0, Y=1, Z=2}
 // @bsiclass                                                    Keith.Bentley   04/15
@@ -747,7 +746,7 @@ struct DGN_point_value : ScalarFunction
 /**
     A rtree MATCH function that accepts objects that overlap an aabb.
 */
-void DGN_rtree_aabb_overlap(DGN_aabb);
+void DGN_rtree_overlap(DGN_aabb);
 // __PUBLISH_SECTION_END__
 #endif
 struct DGN_rtree_aabb_overlap : RTreeMatchFunction
@@ -759,7 +758,7 @@ struct DGN_rtree_aabb_overlap : RTreeMatchFunction
 
         info.m_within = Within::Outside;
 
-        RTree3dValCP bounds = (RTree3dValCP) info.m_param;
+        RTree3dValCP bounds = (RTree3dValCP) ((DbValue*)info.m_param)->GetValueBlob();
         RTree3dValCP pt = (RTree3dValCP) info.m_coords;
 
         bool passedTest = (info.m_parentWithin == Within::Inside) ? true : bounds->Intersects(*pt);

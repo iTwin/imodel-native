@@ -436,7 +436,7 @@ void ITxnManager::CheckTxnBoundary()
 
     if (0 == changeset.GetSize())
         {
-        BeAssert(false && "We should have already checked for no changes");
+        BeAssert(false); // We should have already checked for no changes
         return;
         }
 
@@ -479,28 +479,12 @@ void ITxnManager::CheckTxnBoundary()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ITxnManager::IValidationErrorPtr> ITxnManager::GetValidationErrors() const
+void ITxnManager::ReportValidationError(ValidationError& e)
     {
-    return m_validationErrors;
-    }
+    m_validationErrors.push_back(e);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t ITxnManager::GetValidationErrorCount() const
-    {
-    return m_validationErrors.size();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ITxnManager::ReportValidationError (IValidationError& e)
-    {
-    m_validationErrors.push_back (&e);
-
-    auto sev = (e.GetSeverity() == ValidationErrorSeverity::Fatal)? "Fatal": "Warning";
-    LOG.errorv("Validation error. Severity:%s Class:[%s] Description:[%s]", sev, typeid(e).name(), e.GetDescription().c_str());
+    auto sev = (e.GetSeverity() == ValidationError::Severity::Fatal)? "Fatal": "Warning";
+    LOG.errorv("Validation error. Severity:%s Class:[%s] Description:[%s]", sev, typeid(e).name(), e.GetDescription());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -510,7 +494,7 @@ bool ITxnManager::HasAnyFatalValidationErrors() const
     {
     for (auto const& e : m_validationErrors)
         {
-        if (e->GetSeverity() == ValidationErrorSeverity::Fatal)
+        if (e.GetSeverity() == ValidationError::Severity::Fatal)
             return true;
         }
     return false;

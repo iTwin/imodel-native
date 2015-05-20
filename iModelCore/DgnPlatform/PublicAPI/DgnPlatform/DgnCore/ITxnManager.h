@@ -168,7 +168,6 @@ struct ITxnOptions
         }
     };
 
-//__PUBLISH_SECTION_END__
 
 #if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
@@ -244,8 +243,6 @@ struct UndoDb : BeSQLite::Db
         };
 };
 
-//__PUBLISH_SECTION_START__
-
 //=======================================================================================
 //! This class provides a transaction mechanism for handling changes to Elements in DgnDbs.
 //! 
@@ -260,44 +257,26 @@ struct UndoDb : BeSQLite::Db
 //=======================================================================================
 struct ITxnManager
 {
-    enum class ValidationErrorSeverity
+    //! A general purpose validation error
+    struct ValidationError
+    {
+        enum class Severity
         {
         Fatal,      //!< Validation could not be completed, and the transaction should be rolled back.
         Warning,    //!< Validation was completed. Consistency checks may have failed. The results should be reviewed.
         };
 
-    //! Base class for validation errors. 
-    struct IValidationError : IRefCounted
-    {
-      protected:
-        virtual Utf8String _GetDescription() const = 0;
-        virtual ValidationErrorSeverity _GetSeverity() const = 0;
+        Utf8String  m_description;
+        Severity    m_severity;
 
-      public:
+        ValidationError(Severity sev, Utf8CP desc) : m_severity(sev), m_description(desc) {;}
+
         //! Return the severity of the error
-        ValidationErrorSeverity GetSeverity() const {return _GetSeverity();}
+        Severity GetSeverity() const {return m_severity;}
 
         //! Return a human-readable, localized description of the error
-        Utf8String GetDescription() const {return _GetDescription();}
+        Utf8CP GetDescription() const {return m_description.c_str();}
     };
-
-    typedef RefCountedPtr<IValidationError> IValidationErrorPtr;
-
-    //! A general purpose validation error
-    struct ValidationError : RefCounted<IValidationError>
-    {
-        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-        Utf8String m_description;
-        ValidationErrorSeverity m_severity;
-
-        virtual Utf8String _GetDescription() const {return m_description;}
-        virtual ValidationErrorSeverity _GetSeverity() const {return m_severity;}
-        
-        ValidationError(ValidationErrorSeverity sev, Utf8StringCR desc) : m_severity(sev), m_description(desc) {;}
-    };
-
-//__PUBLISH_SECTION_END__
 
     friend struct TxnIter;
 
@@ -316,7 +295,7 @@ protected:
     bool            m_callRestartFunc;
     bool            m_inDynamics;
     bool            m_doChangePropagation;
-    bvector<IValidationErrorPtr> m_validationErrors; //!< Validation errors detected on the last boundary check
+    bvector<ValidationError> m_validationErrors; //!< Validation errors detected on the last boundary check
 
     void SetActive(bool newValue) {m_isActive = newValue;}
     void SetUndoInProgress(bool);
@@ -331,6 +310,7 @@ protected:
     StatusInt ReinstateActions(RevTxn& revTxn);
     bool PrepareForUndo();
     StatusInt ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg);
+
     enum class HowToCleanUpElements {CallApplied, CallCancelled};
     BeSQLite::DbResult ApplyChangeSetInternal(BeSQLite::ChangeSet& changeset, TxnId txnId, Utf8StringCR txnDescr, uint64_t txnSource, TxnDirection isUndo, HowToCleanUpElements);
     BentleyStatus ComputeIndirectChanges(BeSQLite::ChangeSet&);
@@ -358,10 +338,7 @@ public:
     //! @return the result of calling changeset.ApplyChanges
     DGNPLATFORM_EXPORT BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnId txnId, Utf8StringCR txnDescr, uint64_t txnSource, TxnDirection isUndo);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
-
     //! @name The Current Transaction
     //@{
 
@@ -375,13 +352,13 @@ public:
     DGNPLATFORM_EXPORT void CloseCurrentTxn();
 
     //! TxnMonitors may call this to report a validation error. If the severity of the validation error is set to ValidationErrorSeverity::Fatal, then the transaction will be cancelled.
-    DGNPLATFORM_EXPORT void ReportValidationError(IValidationError&);
+    DGNPLATFORM_EXPORT void ReportValidationError(ValidationError&);
 
     //! Query the number of validation errors that were reported during the last boundary check.
-    DGNPLATFORM_EXPORT size_t GetValidationErrorCount() const;
+    size_t GetValidationErrorCount() const {return m_validationErrors.size();}
 
     //! Query the validation errors that were reported during the last boundary check.
-    DGNPLATFORM_EXPORT bvector<IValidationErrorPtr> GetValidationErrors() const;
+    bvector<ValidationError> const& GetValidationErrors() const {return m_validationErrors;}
 
     //! Query if any Fatal validation errors were reported during the last boundary check.
     DGNPLATFORM_EXPORT bool HasAnyFatalValidationErrors() const;
