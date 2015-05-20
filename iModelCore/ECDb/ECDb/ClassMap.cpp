@@ -351,7 +351,8 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfoCR mapInfo, IClassMap const* p
             mapInfo.GetTableName (),
             mapInfo.IsMapToVirtualTable (),
             mapInfo.GetECInstanceIdColumnName (),
-            IClassMap::IsMapToSecondaryTableStrategy (m_ecClass), mapInfo.GetMapStrategy().IsMapToExistingTable()); // could be existing or to-be-created
+            IClassMap::IsMapToSecondaryTableStrategy (m_ecClass), 
+            mapInfo.GetMapStrategy().IsMapToExistingTable()); // could be existing or to-be-created
 
         if (!EXPECTED_CONDITION (table != nullptr))
             return MapStatus::Error;

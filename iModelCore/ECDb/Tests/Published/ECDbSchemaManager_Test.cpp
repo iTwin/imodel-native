@@ -519,6 +519,10 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
     auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"RelationshipConstraintHintOnSubclasses.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
 
+    //Importing the DGN ECSchema requires the dgn_PrjRTree table to pre-exist (Which a DgnDb file ensures). So
+    //we add the table manually here
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_PrjRTree USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ);"));
+
     Utf8CP testSchemaXml =
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
