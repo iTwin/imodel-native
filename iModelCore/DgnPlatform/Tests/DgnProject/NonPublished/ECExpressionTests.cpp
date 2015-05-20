@@ -394,18 +394,26 @@ TEST_F (DgpLiteralExpressionTests, DgnMiscSymbols)
         EXPECT_EQ (now.GetYear (), result.GetECValue ()->GetDateTime ().GetYear ());
         }
 
+#if defined (BENTLEYCONFIG_OS_WINDOWS) // Windows && WinRT
+    #define DIRSEP            L"\\"
+#elif defined (BENTLEYCONFIG_OS_UNIX)
+    #define DIRSEP            L"/"
+#else
+    #error unknown platform
+#endif
+
     // path
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetDirectoryName(\"c:\\dir\\subdir\\filename.ext\")",             ECValue(L"c:\\dir\\subdir"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetDirectoryName(\"c:\\dir\\subdir\\filename.ext\")",             ECValue(L"c:" DIRSEP L"dir" DIRSEP L"subdir"));
     TestExpressionEquals (requiredSymbolSets, L"System.Path.GetExtension(\"c:\\dir\\subdir\\filename.ext\")",                 ECValue(L".ext"));
     TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileNameWithoutExtension(\"c:\\dir\\subdir\\filename.ext\")",  ECValue(L"filename"));
     TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileName(\"c:\\dir\\subdir\\filename.ext\")",                  ECValue(L"filename.ext"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\")",                                           ECValue(L"c:\\dir"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\", \"subdir\")",                               ECValue(L"c:\\dir\\subdir"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\", \"subdir\\\", \"filename.ext\")",           ECValue(L"c:\\dir\\subdir\\filename.ext"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\")",                                           ECValue(L"c:" DIRSEP L"dir"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\", \"subdir\")",                               ECValue(L"c:" DIRSEP L"dir" DIRSEP L"subdir"));
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\", \"subdir\\\", \"filename.ext\")",           ECValue(L"c:" DIRSEP L"dir" DIRSEP L"subdir" DIRSEP L"filename.ext"));
 
     WString fileName (L"c:\\dir\\subdir\\filename.ext");
     auto instance = CreateInstance (fileName);       // set "s" property
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetDirectoryName(this.s)",             ECValue(L"c:\\dir\\subdir"), instance.get());
+    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetDirectoryName(this.s)",             ECValue(L"c:" DIRSEP L"dir" DIRSEP L"subdir"), instance.get());
     TestExpressionEquals (requiredSymbolSets, L"System.Path.GetExtension(this.s)",                 ECValue(L".ext"),            instance.get());
     TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileNameWithoutExtension(this.s)",  ECValue(L"filename"),        instance.get());
     TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileName(this.s)",                  ECValue(L"filename.ext"),    instance.get());
