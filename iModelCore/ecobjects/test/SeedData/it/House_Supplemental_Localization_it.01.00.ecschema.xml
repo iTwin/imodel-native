@@ -15,7 +15,7 @@
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00@Standard:House.01.00:ExtendedInfo.Purpose:01ea096e</Key>
+                    <Key>Standard:House.01.00@Standard:House.01.00:ExtendedInfo:Purpose:01ea096e</Key>
                     <Value>**A whole House**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
@@ -95,42 +95,42 @@
                     <IsGUID>True</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:RoomHasDoor.Target@Standard:House.01.00:ExtendedInfo.Purpose:4f8d0b2c</Key>
+                    <Key>Standard:House.01.00:RoomHasDoor.Target@Standard:House.01.00:ExtendedInfo:Purpose:4f8d0b2c</Key>
                     <Value>2c0b8d4f-978a-8596-0f71-42c728661140</Value>
                     <IsGUID>True</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo.Purpose:1cacc09b</Key>
+                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo:Purpose:1cacc09b</Key>
                     <Value>**To enter and leave house**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo.ContentInfo[0].Description:dfb41915</Key>
+                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo:ContentInfo[0].Description:dfb41915</Key>
                     <Value>**Should have wood**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo.ContentInfo[0].DisplayName:e8002c16</Key>
+                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo:ContentInfo[0].DisplayName:e8002c16</Key>
                     <Value>**wood**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo.ContentInfo[1].Description:d8b5fe22</Key>
+                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo:ContentInfo[1].Description:d8b5fe22</Key>
                     <Value>**Should be painted brown**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo.ContentInfo[1].DisplayName:9166eeff</Key>
+                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo:ContentInfo[1].DisplayName:9166eeff</Key>
                     <Value>**brown**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo.ExtraInfo[0]:c7d8a6d7</Key>
+                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo:ExtraInfo[0]:c7d8a6d7</Key>
                     <Value>**box**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo.ExtraInfo[1]:c45b9404</Key>
+                    <Key>Standard:House.01.00:Door@Standard:House.01.00:ExtendedInfo:ExtraInfo[1]:c45b9404</Key>
                     <Value>**squar**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
@@ -150,8 +150,23 @@
                     <IsGUID>True</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Length@Standard:House.01.00:ExtendedInfo.Purpose:f68feb34</Key>
+                    <Key>Standard:House.01.00:Door:Length@Standard:House.01.00:ExtendedInfo:Purpose:f68feb34</Key>
                     <Value>**Length of door**</Value>
+                    <IsGUID>False</IsGUID>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>Standard:House.01.00:Door:Length@Standard:EditorCustomAttributes.01.02:StandardValues:ValueMap[0].DisplayString:6eef6648</Key>
+                    <Value>**None**</Value>
+                    <IsGUID>False</IsGUID>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>Standard:House.01.00:Door:Length@Standard:EditorCustomAttributes.01.02:StandardValues:ValueMap[1].DisplayString:733fd2b4</Key>
+                    <Value>**Constant**</Value>
+                    <IsGUID>False</IsGUID>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>Standard:House.01.00:Door:Length@Standard:EditorCustomAttributes.01.02:StandardValues:ValueMap[2].DisplayString:bdd1e466</Key>
+                    <Value>**Tapered**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
@@ -170,7 +185,7 @@
                     <IsGUID>True</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Width@Standard:House.01.00:ExtendedInfo.Purpose:bd808f23</Key>
+                    <Key>Standard:House.01.00:Door:Width@Standard:House.01.00:ExtendedInfo:Purpose:bd808f23</Key>
                     <Value>**Width of door**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
@@ -180,42 +195,42 @@
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo.Purpose:2b56c8b7</Key>
+                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo:Purpose:2b56c8b7</Key>
                     <Value>**Height of door**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo.ContentInfo[0].DisplayName:7fdac498</Key>
+                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo:ContentInfo[0].DisplayName:7fdac498</Key>
                     <Value>**Door Item 1**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo.ContentInfo[0].Description:c0d6c974</Key>
+                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo:ContentInfo[0].Description:c0d6c974</Key>
                     <Value>**Door has item 1**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo.ContentInfo[1].Description:973ab776</Key>
+                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo:ContentInfo[1].Description:973ab776</Key>
                     <Value>**Door has item 2**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo.ContentInfo[1].DisplayName:45c87cae</Key>
+                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo:ContentInfo[1].DisplayName:45c87cae</Key>
                     <Value>**Door Item 2**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo.ExtraInfo[0]:3dcf5166</Key>
+                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo:ExtraInfo[0]:3dcf5166</Key>
                     <Value>**Asif**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo.ExtraInfo[1]:8e51a2f9</Key>
+                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo:ExtraInfo[1]:8e51a2f9</Key>
                     <Value>**Kamran**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo.ExtraInfo[2]:ff03dd1e</Key>
+                    <Key>Standard:House.01.00:Door:Height@Standard:House.01.00:ExtendedInfo:ExtraInfo[2]:ff03dd1e</Key>
                     <Value>**Jamil**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
@@ -225,7 +240,7 @@
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:Door:Thickness@Standard:House.01.00:ExtendedInfo.Purpose:c4b3302f</Key>
+                    <Key>Standard:House.01.00:Door:Thickness@Standard:House.01.00:ExtendedInfo:Purpose:c4b3302f</Key>
                     <Value>**Thickness of door**</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
@@ -240,7 +255,7 @@
                     <IsGUID>True</IsGUID>
                 </LocalizationData>
                 <LocalizationData>
-                    <Key>Standard:House.01.00:RoomHasDoor.Source@Standard:House.01.00:ExtendedInfo.Purpose:a8ac33c0</Key>
+                    <Key>Standard:House.01.00:RoomHasDoor.Source@Standard:House.01.00:ExtendedInfo:Purpose:a8ac33c0</Key>
                     <Value>c033aca8-9c3f-d093-45f2-610694ce35d4</Value>
                     <IsGUID>True</IsGUID>
                 </LocalizationData>

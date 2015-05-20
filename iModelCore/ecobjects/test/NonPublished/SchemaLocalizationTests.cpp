@@ -108,6 +108,7 @@ void VerifyLocalized(ECSchemaPtr testSchema, WCharCP prePostFix)
     // Property
     doorLengthProp = testSchema->GetClassCP(L"Door")->GetPropertyP(lengthString, false);
     VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Length of door", L"ExtendedInfo", L"Purpose", prePostFix);
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Constant", L"StandardValues", L"ValueMap[1].DisplayString", prePostFix);
     }
 
 void VerifyNotLocalized(ECSchemaPtr testSchema)
@@ -170,6 +171,7 @@ void VerifyNotLocalized(ECSchemaPtr testSchema)
     VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), L"This is a door", L"ExtendedInfo", L"Purpose");
     // Property
     VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Length of door", L"ExtendedInfo", L"Purpose");
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Constant", L"StandardValues", L"ValueMap[1].DisplayString");
     }
 
 //---------------------------------------------------------------------------------------//
@@ -251,9 +253,10 @@ TEST_F(SchemaLocalizationTests, CustomStringsNotOverridden)
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, PK);
-    testSchema->SetDisplayLabel(L"Banana");
-    EXPECT_STREQ(L"Banana", testSchema->GetDisplayLabel().c_str());
-    EXPECT_STREQ(L"Banana", testSchema->GetInvariantDisplayLabel().c_str());
+
+    //testSchema->SetDisplayLabel(L"Banana");
+    //EXPECT_STREQ(L"Banana", testSchema->GetDisplayLabel().c_str());
+    //EXPECT_STREQ(L"Banana", testSchema->GetInvariantDisplayLabel().c_str());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

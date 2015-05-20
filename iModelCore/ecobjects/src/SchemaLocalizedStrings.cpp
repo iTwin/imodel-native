@@ -220,8 +220,9 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
 
     // Length of the string Standard:[SchemaFullName]:  10 is for the chars 'Standard::'
     size_t prefixLength = 10 + primarySchema.GetFullSchemaName().length();
-    WString lastContainerAccessor;
-    IECCustomAttributeContainerP lastContainer;
+    WString lastContainerAccessor = L""; // This is the container accessor for the primary schema
+    WString lastCaClassName;
+    IECCustomAttributeContainerP caContainer = &primarySchema;
     IECInstancePtr caInstance;
     for (auto const& it : caStrings)
         {
@@ -234,16 +235,24 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
             continue;
             }
         
-        if (0 != containerAccessor.CompareTo(lastContainerAccessor))
+        if (!containerAccessor.Equals(lastContainerAccessor))
             {
             lastContainerAccessor = WString(containerAccessor);
-            lastContainer = GetContainerAndCA(caInstance, containerAccessor, caClassName, primarySchema);
+            lastCaClassName = L"";
+            caContainer = GetContainer(containerAccessor, primarySchema);
+            }
+        
+        if (!caClassName.Equals(lastCaClassName))
+            {
+            lastCaClassName = WString(caClassName);
+            caInstance = caContainer->GetLocalAttributeAsConsolidated(caClassName);
             if (!caInstance.IsValid())
                 {
                 LOG.errorv(L"Cannot apply the localized string '%ls' because the custom attribute or container cannot be found given the key '%ls'", it.second.second, it.first);
                 continue;
                 }
             }
+        
         // have ECValue hold the copy because we're not going to hold onto CA strings
         ECValueAccessor accessor;
         if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor(accessor, *caInstance, caPropertyAccessor.c_str()) ||
@@ -323,7 +332,8 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<WString, bpair<size_t, 
     return true;
     }
 
-IECCustomAttributeContainerP SchemaLocalizedStrings::GetContainerAndCA(IECInstancePtr& caInstance, WStringCR containerAccessor, WStringCR caClassName, ECSchemaR primarySchema)
+
+IECCustomAttributeContainerP SchemaLocalizedStrings::GetContainer(WStringCR containerAccessor, ECSchemaR primarySchema)
     {
     WString className;
     WString relEndPoint;
@@ -347,9 +357,7 @@ IECCustomAttributeContainerP SchemaLocalizedStrings::GetContainerAndCA(IECInstan
         {
         caContainer = GetPropertyContainer(className, propertyName, primarySchema);
         }
-
-    caInstance = caContainer->GetLocalAttributeAsConsolidated(caClassName);
-
+    
     return caContainer;
     }
 
@@ -400,7 +408,7 @@ IECCustomAttributeContainerP SchemaLocalizedStrings::GetPropertyContainer(WStrin
 
 /*---------------------------------------------------------------------------------**//**
 * Parses a string like: 
-* Standard:[PrimarySchemaFullName]:<ClassName>:<PropertyName>@Standard:[CaClassSchemaFullName]:[CaClassName].[PropertyAccessor]:[Hash]
+* Standard:[PrimarySchemaFullName]:<ClassName>:<PropertyName>@Standard:[CaClassSchemaFullName]:[CaClassName]:[PropertyAccessor]:[Hash]
 * @bsimethod                                    Colin.Kerr                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(WStringR containerAccessor, WStringR caClassName, WStringR propertyAccessor, WStringCR keyString, size_t prefixLength, size_t atIndex)
@@ -412,7 +420,7 @@ ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(WStringR containerAcces
     if (WString::npos == caSchemaClassSepIndex)
         return ECObjectsStatus::ECOBJECTS_STATUS_ParseError;
 
-    size_t propertyAccessorIndex = keyString.find(DOT, caSchemaClassSepIndex + 1); // index of '.' between CaClassName and PropertyAccessor
+    size_t propertyAccessorIndex = keyString.find(COLON, caSchemaClassSepIndex + 1); // index of ':' between CaClassName and PropertyAccessor
     if (WString::npos == propertyAccessorIndex)
         return ECObjectsStatus::ECOBJECTS_STATUS_ParseError;
 

@@ -30,7 +30,7 @@ private:
     static bool TryGetBoolValue(IECInstanceCR instance, bool & value, WCharCP accessString);
     static ECObjectsStatus ParseCaKeyString(WStringR containerAccessor, WStringR caClassName, WStringR propertyAccessor, WStringCR keyString, size_t prefixLength, size_t atIndex);
     static ECObjectsStatus ParseContainerAccessor(WStringR className, WStringR relEndPoint, WStringR propertyName, WStringCR containerAccessor);
-    static IECCustomAttributeContainerP GetContainerAndCA(IECInstancePtr& caInstance, WStringCR containerAccessor, WStringCR caClassName, ECSchemaR primarySchema);
+    static IECCustomAttributeContainerP GetContainer(WStringCR containerAccessor, ECSchemaR primarySchema);
     static IECCustomAttributeContainerP GetClassContainer(WStringCR className, WStringCR relEndPoint, ECSchemaR primarySchema);
     static IECCustomAttributeContainerP GetPropertyContainer(WStringCR className, WStringCR propertyName, ECSchemaR primarySchema);
 

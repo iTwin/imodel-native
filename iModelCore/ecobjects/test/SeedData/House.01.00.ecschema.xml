@@ -62,6 +62,22 @@
                 <ExtendedInfo xmlns="House.01.00">
                     <Purpose>Length of door</Purpose>
                 </ExtendedInfo>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>None</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>Constant</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>2</Value>
+                            <DisplayString>Tapered</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Width" typeName="string">
