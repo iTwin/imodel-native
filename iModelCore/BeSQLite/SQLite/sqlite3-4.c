@@ -1252,7 +1252,7 @@ SQLITE_PRIVATE u32 sqlite3ExprListFlags(const ExprList *pList){
   if( pList ){
     for(i=0; i<pList->nExpr; i++){
        Expr *pExpr = pList->a[i].pExpr;
-       if( ALWAYS(pExpr) ) m |= pList->a[i].pExpr->flags;
+       if( ALWAYS(pExpr) ) m |= pExpr->flags;
     }
   }
   return m;
@@ -4550,6 +4550,7 @@ static void renameParentFunc(
         n = sqlite3GetToken(z, &token);
       }while( token==TK_SPACE );
 
+      if( token==TK_ILLEGAL ) break;
       zParent = sqlite3DbStrNDup(db, (const char *)z, n);
       if( zParent==0 ) break;
       sqlite3Dequote(zParent);
@@ -12023,8 +12024,7 @@ SQLITE_PRIVATE void sqlite3UniqueConstraint(
   StrAccum errMsg;
   Table *pTab = pIdx->pTable;
 
-  sqlite3StrAccumInit(&errMsg, 0, 0, 200);
-  errMsg.db = pParse->db;
+  sqlite3StrAccumInit(&errMsg, pParse->db, 0, 0, 200);
   for(j=0; j<pIdx->nKeyCol; j++){
     char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
     if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
@@ -13865,13 +13865,13 @@ static void printfFunc(
   StrAccum str;
   const char *zFormat;
   int n;
+  sqlite3 *db = sqlite3_context_db_handle(context);
 
   if( argc>=1 && (zFormat = (const char*)sqlite3_value_text(argv[0]))!=0 ){
     x.nArg = argc-1;
     x.nUsed = 0;
     x.apArg = argv+1;
-    sqlite3StrAccumInit(&str, 0, 0, SQLITE_MAX_LENGTH);
-    str.db = sqlite3_context_db_handle(context);
+    sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
     sqlite3XPrintf(&str, SQLITE_PRINTF_SQLFUNC, zFormat, &x);
     n = str.nChar;
     sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
@@ -14021,7 +14021,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 #endif
 
 /*
-** Allocate nByte bytes of space using sqlite3_malloc(). If the
+** Allocate nByte bytes of space using sqlite3Malloc(). If the
 ** allocation fails, call sqlite3_result_error_nomem() to notify
 ** the database handle that malloc() has failed and return NULL.
 ** If nByte is larger than the maximum string or blob length, then
@@ -14690,7 +14690,7 @@ static void charFunc(
 ){
   unsigned char *z, *zOut;
   int i;
-  zOut = z = sqlite3_malloc( argc*4+1 );
+  zOut = z = sqlite3_malloc64( argc*4+1 );
   if( z==0 ){
     sqlite3_result_error_nomem(context);
     return;
@@ -14838,7 +14838,7 @@ static void replaceFunc(
         return;
       }
       zOld = zOut;
-      zOut = sqlite3_realloc(zOut, (int)nOut);
+      zOut = sqlite3_realloc64(zOut, (int)nOut);
       if( zOut==0 ){
         sqlite3_result_error_nomem(context);
         sqlite3_free(zOld);
@@ -15200,8 +15200,7 @@ static void groupConcatStep(
 
   if( pAccum ){
     sqlite3 *db = sqlite3_context_db_handle(context);
-    int firstTerm = pAccum->useMalloc==0;
-    pAccum->useMalloc = 2;
+    int firstTerm = pAccum->mxAlloc==0;
     pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
     if( !firstTerm ){
       if( argc==2 ){
@@ -20007,7 +20006,7 @@ static int sqlite3LoadExtension(
   const char *zEntry;
   char *zAltEntry = 0;
   void **aHandle;
-  int nMsg = 300 + sqlite3Strlen30(zFile);
+  u64 nMsg = 300 + sqlite3Strlen30(zFile);
   int ii;
 
   /* Shared library endings to try if zFile cannot be loaded as written */
@@ -20050,7 +20049,7 @@ static int sqlite3LoadExtension(
 #endif
   if( handle==0 ){
     if( pzErrMsg ){
-      *pzErrMsg = zErrmsg = sqlite3_malloc(nMsg);
+      *pzErrMsg = zErrmsg = sqlite3_malloc64(nMsg);
       if( zErrmsg ){
         sqlite3_snprintf(nMsg, zErrmsg, 
             "unable to open shared library [%s]", zFile);
@@ -20076,7 +20075,7 @@ static int sqlite3LoadExtension(
   if( xInit==0 && zProc==0 ){
     int iFile, iEntry, c;
     int ncFile = sqlite3Strlen30(zFile);
-    zAltEntry = sqlite3_malloc(ncFile+30);
+    zAltEntry = sqlite3_malloc64(ncFile+30);
     if( zAltEntry==0 ){
       sqlite3OsDlClose(pVfs, handle);
       return SQLITE_NOMEM;
@@ -20098,7 +20097,7 @@ static int sqlite3LoadExtension(
   if( xInit==0 ){
     if( pzErrMsg ){
       nMsg += sqlite3Strlen30(zEntry);
-      *pzErrMsg = zErrmsg = sqlite3_malloc(nMsg);
+      *pzErrMsg = zErrmsg = sqlite3_malloc64(nMsg);
       if( zErrmsg ){
         sqlite3_snprintf(nMsg, zErrmsg,
             "no entry point [%s] in shared library [%s]", zEntry, zFile);
@@ -20197,7 +20196,7 @@ static const sqlite3_api_routines sqlite3Apis = { 0 };
 */
 typedef struct sqlite3AutoExtList sqlite3AutoExtList;
 static SQLITE_WSD struct sqlite3AutoExtList {
-  int nExt;              /* Number of entries in aExt[] */          
+  u32 nExt;              /* Number of entries in aExt[] */          
   void (**aExt)(void);   /* Pointers to the extension init functions */
 } sqlite3Autoext = { 0, 0 };
 
@@ -20230,7 +20229,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_auto_extension(void (*xInit)(void)){
   }else
 #endif
   {
-    int i;
+    u32 i;
 #if SQLITE_THREADSAFE
     sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
@@ -20240,9 +20239,9 @@ SQLITE_API int SQLITE_STDCALL sqlite3_auto_extension(void (*xInit)(void)){
       if( wsdAutoext.aExt[i]==xInit ) break;
     }
     if( i==wsdAutoext.nExt ){
-      int nByte = (wsdAutoext.nExt+1)*sizeof(wsdAutoext.aExt[0]);
+      u64 nByte = (wsdAutoext.nExt+1)*sizeof(wsdAutoext.aExt[0]);
       void (**aNew)(void);
-      aNew = sqlite3_realloc(wsdAutoext.aExt, nByte);
+      aNew = sqlite3_realloc64(wsdAutoext.aExt, nByte);
       if( aNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -20274,7 +20273,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_cancel_auto_extension(void (*xInit)(void))
   int n = 0;
   wsdAutoextInit;
   sqlite3_mutex_enter(mutex);
-  for(i=wsdAutoext.nExt-1; i>=0; i--){
+  for(i=(int)wsdAutoext.nExt-1; i>=0; i--){
     if( wsdAutoext.aExt[i]==xInit ){
       wsdAutoext.nExt--;
       wsdAutoext.aExt[i] = wsdAutoext.aExt[wsdAutoext.nExt];
@@ -20312,7 +20311,7 @@ SQLITE_API void SQLITE_STDCALL sqlite3_reset_auto_extension(void){
 ** If anything goes wrong, set an error in the database connection.
 */
 SQLITE_PRIVATE void sqlite3AutoLoadExtensions(sqlite3 *db){
-  int i;
+  u32 i;
   int go = 1;
   int rc;
   int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
@@ -22820,13 +22819,13 @@ static void corruptSchema(
 ){
   sqlite3 *db = pData->db;
   if( !db->mallocFailed && (db->flags & SQLITE_RecoveryMode)==0 ){
+    char *z;
     if( zObj==0 ) zObj = "?";
-    sqlite3SetString(pData->pzErrMsg, db,
-      "malformed database schema (%s)", zObj);
-    if( zExtra ){
-      *pData->pzErrMsg = sqlite3MAppendf(db, *pData->pzErrMsg, 
-                                 "%s - %s", *pData->pzErrMsg, zExtra);
-    }
+    z = sqlite3_mprintf("malformed database schema (%s)", zObj);
+    if( z && zExtra ) z = sqlite3_mprintf("%z - %s", z, zExtra);
+    sqlite3DbFree(db, *pData->pzErrMsg);
+    *pData->pzErrMsg = z;
+    if( z==0 ) db->mallocFailed = 1;
   }
   pData->rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_CORRUPT_BKPT;
 }
@@ -23018,7 +23017,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   if( !sqlite3BtreeIsInReadTrans(pDb->pBt) ){
     rc = sqlite3BtreeBeginTrans(pDb->pBt, 0);
     if( rc!=SQLITE_OK ){
-      sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
+      sqlite3SetString(pzErrMsg, db, sqlite3ErrStr(rc));
       goto initone_error_out;
     }
     openedTransaction = 1;
@@ -24402,8 +24401,13 @@ static void selectInnerLoop(
     /* If the destination is an EXISTS(...) expression, the actual
     ** values returned by the SELECT are not required.
     */
-    sqlite3ExprCodeExprList(pParse, pEList, regResult,
-                  (eDest==SRT_Output||eDest==SRT_Coroutine)?SQLITE_ECEL_DUP:0);
+    u8 ecelFlags;
+    if( eDest==SRT_Mem || eDest==SRT_Output || eDest==SRT_Coroutine ){
+      ecelFlags = SQLITE_ECEL_DUP;
+    }else{
+      ecelFlags = 0;
+    }
+    sqlite3ExprCodeExprList(pParse, pEList, regResult, ecelFlags);
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement
@@ -26292,7 +26296,7 @@ static int generateOutputSubroutine(
     */
     case SRT_Set: {
       int r1;
-      assert( pIn->nSdst==1 );
+      assert( pIn->nSdst==1 || pParse->nErr>0 );
       pDest->affSdst = 
          sqlite3CompareAffinity(p->pEList->a[0].pExpr, pDest->affSdst);
       r1 = sqlite3GetTempReg(pParse);
@@ -29228,8 +29232,7 @@ SQLITE_PRIVATE void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 m
       struct SrcList_item *pItem = &p->pSrc->a[i];
       StrAccum x;
       char zLine[100];
-      sqlite3StrAccumInit(&x, zLine, sizeof(zLine), 0);
-      x.useMalloc = 0;
+      sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
       sqlite3XPrintf(&x, 0, "{%d,*}", pItem->iCursor);
       if( pItem->zDatabase ){
         sqlite3XPrintf(&x, 0, " %s.%s", pItem->zDatabase, pItem->zName);
@@ -29388,7 +29391,7 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
         z = 0;
       }else{
         int n = sqlite3Strlen30(argv[i])+1;
-        z = sqlite3_malloc( n );
+        z = sqlite3_malloc64( n );
         if( z==0 ) goto malloc_failed;
         memcpy(z, argv[i], n);
       }
@@ -29437,7 +29440,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_get_table(
   res.nData = 1;
   res.nAlloc = 20;
   res.rc = SQLITE_OK;
-  res.azResult = sqlite3_malloc(sizeof(char*)*res.nAlloc );
+  res.azResult = sqlite3_malloc64(sizeof(char*)*res.nAlloc );
   if( res.azResult==0 ){
      db->errCode = SQLITE_NOMEM;
      return SQLITE_NOMEM;
@@ -29465,7 +29468,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_get_table(
   }
   if( res.nAlloc>res.nData ){
     char **azNew;
-    azNew = sqlite3_realloc( res.azResult, sizeof(char*)*res.nData );
+    azNew = sqlite3_realloc64( res.azResult, sizeof(char*)*res.nData );
     if( azNew==0 ){
       sqlite3_free_table(&res.azResult[1]);
       db->errCode = SQLITE_NOMEM;

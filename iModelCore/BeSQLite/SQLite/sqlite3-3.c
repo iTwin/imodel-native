@@ -2429,7 +2429,7 @@ SQLITE_PRIVATE int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve,
   if( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE &&
         ((pageSize-1)&pageSize)==0 ){
     assert( (pageSize & 7)==0 );
-    assert( !pBt->pPage1 && !pBt->pCursor );
+    assert( !pBt->pCursor );
     pBt->pageSize = (u32)pageSize;
     freeTempSpace(pBt);
   }
@@ -8537,12 +8537,12 @@ static void checkList(
 **
 ** The heap property is this:  Every node is less than or equal to both
 ** of its daughter nodes.  A consequence of the heap property is that the
-** root node aHeap[1] is always the minimum value current in the heap.
+** root node aHeap[1] is always the minimum value currently in the heap.
 **
 ** The btreeHeapInsert() routine inserts an unsigned 32-bit number onto
 ** the heap, preserving the heap property.  The btreeHeapPull() routine
 ** removes the root element from the heap (the minimum value in the heap)
-** and then move other nodes around as necessary to preserve the heap
+** and then moves other nodes around as necessary to preserve the heap
 ** property.
 **
 ** This heap is used for cell overlap and coverage testing.  Each u32
@@ -8899,8 +8899,7 @@ SQLITE_PRIVATE char *sqlite3BtreeIntegrityCheck(
   }
   i = PENDING_BYTE_PAGE(pBt);
   if( i<=sCheck.nPage ) setPageReferenced(&sCheck, i);
-  sqlite3StrAccumInit(&sCheck.errMsg, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
-  sCheck.errMsg.useMalloc = 2;
+  sqlite3StrAccumInit(&sCheck.errMsg, 0, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
 
   /* Check the integrity of the freelist
   */
@@ -10236,10 +10235,11 @@ SQLITE_PRIVATE int sqlite3VdbeMemMakeWriteable(Mem *pMem){
     pMem->z[pMem->n] = 0;
     pMem->z[pMem->n+1] = 0;
     pMem->flags |= MEM_Term;
-#ifdef SQLITE_DEBUG
-    pMem->pScopyFrom = 0;
-#endif
   }
+  pMem->flags &= ~MEM_Ephem;
+#ifdef SQLITE_DEBUG
+  pMem->pScopyFrom = 0;
+#endif
 
   return SQLITE_OK;
 }
@@ -11769,6 +11769,17 @@ SQLITE_PRIVATE Vdbe *sqlite3VdbeCreate(Parse *pParse){
 }
 
 /*
+** Change the error string stored in Vdbe.zErrMsg
+*/
+SQLITE_PRIVATE void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
+  va_list ap;
+  sqlite3DbFree(p->db, p->zErrMsg);
+  va_start(ap, zFormat);
+  p->zErrMsg = sqlite3VMPrintf(p->db, zFormat, ap);
+  va_end(ap);
+}
+
+/*
 ** Remember the SQL string for a prepared statement.
 */
 SQLITE_PRIVATE void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
@@ -13125,7 +13136,7 @@ SQLITE_PRIVATE int sqlite3VdbeList(
   }else if( db->u1.isInterrupted ){
     p->rc = SQLITE_INTERRUPT;
     rc = SQLITE_ERROR;
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(p->rc));
+    sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
   }else{
     char *zP4;
     Op *pOp;
@@ -14028,7 +14039,7 @@ SQLITE_PRIVATE int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
   ){
     p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
     p->errorAction = OE_Abort;
-    sqlite3SetString(&p->zErrMsg, db, "FOREIGN KEY constraint failed");
+    sqlite3VdbeError(p, "FOREIGN KEY constraint failed");
     return SQLITE_ERROR;
   }
   return SQLITE_OK;
@@ -17851,9 +17862,8 @@ SQLITE_PRIVATE char *sqlite3VdbeExpandSql(
   char zBase[100];         /* Initial working space */
 
   db = p->db;
-  sqlite3StrAccumInit(&out, zBase, sizeof(zBase), 
+  sqlite3StrAccumInit(&out, db, zBase, sizeof(zBase), 
                       db->aLimit[SQLITE_LIMIT_LENGTH]);
-  out.db = db;
   if( db->nVdbeExec>1 ){
     while( *zRawSql ){
       const char *zStart = zRawSql;
@@ -18263,6 +18273,7 @@ static void applyAffinity(
     if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
       sqlite3VdbeMemStringify(pRec, enc, 1);
     }
+    pRec->flags &= ~(MEM_Real|MEM_Int);
   }
 }
 
@@ -19023,12 +19034,11 @@ case OP_Halt: {
     assert( zType!=0 || pOp->p4.z!=0 );
     zLogFmt = "abort at %d in [%s]: %s";
     if( zType && pOp->p4.z ){
-      sqlite3SetString(&p->zErrMsg, db, "%s constraint failed: %s", 
-                       zType, pOp->p4.z);
+      sqlite3VdbeError(p, "%s constraint failed: %s", zType, pOp->p4.z);
     }else if( pOp->p4.z ){
-      sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
+      sqlite3VdbeError(p, "%s", pOp->p4.z);
     }else{
-      sqlite3SetString(&p->zErrMsg, db, "%s constraint failed", zType);
+      sqlite3VdbeError(p, "%s constraint failed", zType);
     }
     sqlite3_log(pOp->p1, zLogFmt, pcx, p->zSql, p->zErrMsg);
   }
@@ -19041,7 +19051,6 @@ case OP_Halt: {
     assert( rc==SQLITE_OK || db->nDeferredCons>0 || db->nDeferredImmCons>0 );
     rc = p->rc ? SQLITE_ERROR : SQLITE_DONE;
   }
-  pOp = &aOp[pcx];
   goto vdbe_return;
 }
 
@@ -19261,10 +19270,11 @@ case OP_Move: {
     memAboutToChange(p, pOut);
     sqlite3VdbeMemMove(pOut, pIn1);
 #ifdef SQLITE_DEBUG
-    if( pOut->pScopyFrom>=&aMem[p1] && pOut->pScopyFrom<&aMem[p1+pOp->p3] ){
-      pOut->pScopyFrom += p1 - pOp->p2;
+    if( pOut->pScopyFrom>=&aMem[p1] && pOut->pScopyFrom<pOut ){
+      pOut->pScopyFrom += pOp->p2 - p1;
     }
 #endif
+    Deephemeralize(pOut);
     REGISTER_TRACE(p2++, pOut);
     pIn1++;
     pOut++;
@@ -19660,7 +19670,7 @@ case OP_Function: {
   /* If the function returned an error, throw an exception */
   if( ctx.fErrorOrAux ){
     if( ctx.isError ){
-      sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(ctx.pOut));
+      sqlite3VdbeError(p, "%s", sqlite3_value_text(ctx.pOut));
       rc = ctx.isError;
     }
     sqlite3VdbeDeleteAuxData(p, (int)(pOp - aOp), pOp->p1);
@@ -20533,7 +20543,7 @@ case OP_Column: {
       }
     }
 
-    /* If after trying to extra new entries from the header, nHdrParsed is
+    /* If after trying to extract new entries from the header, nHdrParsed is
     ** still not up to p2, that means that the record has fewer than p2
     ** columns.  So the result will be either the default value or a NULL.
     */
@@ -20847,8 +20857,7 @@ case OP_Savepoint: {
       /* A new savepoint cannot be created if there are active write 
       ** statements (i.e. open read/write incremental blob handles).
       */
-      sqlite3SetString(&p->zErrMsg, db, "cannot open savepoint - "
-        "SQL statements in progress");
+      sqlite3VdbeError(p, "cannot open savepoint - SQL statements in progress");
       rc = SQLITE_BUSY;
     }else{
       nName = sqlite3Strlen30(zName);
@@ -20899,15 +20908,14 @@ case OP_Savepoint: {
       iSavepoint++;
     }
     if( !pSavepoint ){
-      sqlite3SetString(&p->zErrMsg, db, "no such savepoint: %s", zName);
+      sqlite3VdbeError(p, "no such savepoint: %s", zName);
       rc = SQLITE_ERROR;
     }else if( db->nVdbeWrite>0 && p1==SAVEPOINT_RELEASE ){
       /* It is not possible to release (commit) a savepoint if there are 
       ** active write statements.
       */
-      sqlite3SetString(&p->zErrMsg, db, 
-        "cannot release savepoint - SQL statements in progress"
-      );
+      sqlite3VdbeError(p, "cannot release savepoint - "
+                          "SQL statements in progress");
       rc = SQLITE_BUSY;
     }else{
 
@@ -21013,23 +21021,12 @@ case OP_AutoCommit: {
   assert( db->nVdbeActive>0 );  /* At least this one VM is active */
   assert( p->bIsReader );
 
-#if 0
-  if( turnOnAC && iRollback && db->nVdbeActive>1 ){
-    /* If this instruction implements a ROLLBACK and other VMs are
-    ** still running, and a transaction is active, return an error indicating
-    ** that the other VMs must complete first. 
-    */
-    sqlite3SetString(&p->zErrMsg, db, "cannot rollback transaction - "
-        "SQL statements in progress");
-    rc = SQLITE_BUSY;
-  }else
-#endif
   if( turnOnAC && !iRollback && db->nVdbeWrite>0 ){
     /* If this instruction implements a COMMIT and other VMs are writing
     ** return an error indicating that the other VMs must complete first. 
     */
-    sqlite3SetString(&p->zErrMsg, db, "cannot commit transaction - "
-        "SQL statements in progress");
+    sqlite3VdbeError(p, "cannot commit transaction - "
+                        "SQL statements in progress");
     rc = SQLITE_BUSY;
   }else if( desiredAutoCommit!=db->autoCommit ){
     if( iRollback ){
@@ -21056,7 +21053,7 @@ case OP_AutoCommit: {
     }
     goto vdbe_return;
   }else{
-    sqlite3SetString(&p->zErrMsg, db,
+    sqlite3VdbeError(p,
         (!desiredAutoCommit)?"cannot start a transaction within a transaction":(
         (iRollback)?"cannot rollback - no transaction is active":
                    "cannot commit - no transaction is active"));
@@ -23539,7 +23536,7 @@ case OP_Program: {        /* jump */
 
   if( p->nFrame>=db->aLimit[SQLITE_LIMIT_TRIGGER_DEPTH] ){
     rc = SQLITE_ERROR;
-    sqlite3SetString(&p->zErrMsg, db, "too many levels of trigger recursion");
+    sqlite3VdbeError(p, "too many levels of trigger recursion");
     break;
   }
 
@@ -23842,7 +23839,7 @@ case OP_AggStep: {
   ctx.skipFlag = 0;
   (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
   if( ctx.isError ){
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&t));
+    sqlite3VdbeError(p, "%s", sqlite3_value_text(&t));
     rc = ctx.isError;
   }
   if( ctx.skipFlag ){
@@ -23874,7 +23871,7 @@ case OP_AggFinal: {
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
   if( rc ){
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(pMem));
+    sqlite3VdbeError(p, "%s", sqlite3_value_text(pMem));
   }
   sqlite3VdbeChangeEncoding(pMem, encoding);
   UPDATE_MAX_BLOBSIZE(pMem);
@@ -23979,7 +23976,7 @@ case OP_JournalMode: {    /* out2 */
   ){
     if( !db->autoCommit || db->nVdbeRead>1 ){
       rc = SQLITE_ERROR;
-      sqlite3SetString(&p->zErrMsg, db, 
+      sqlite3VdbeError(p,
           "cannot change %s wal mode from within a transaction",
           (eNew==PAGER_JOURNALMODE_WAL ? "into" : "out of")
       );
@@ -24018,7 +24015,6 @@ case OP_JournalMode: {    /* out2 */
   }
   eNew = sqlite3PagerSetJournalMode(pPager, eNew);
 
-  pOut = &aMem[pOp->p2];
   pOut->flags = MEM_Str|MEM_Static|MEM_Term;
   pOut->z = (char *)sqlite3JournalModename(eNew);
   pOut->n = sqlite3Strlen30(pOut->z);
@@ -24111,7 +24107,7 @@ case OP_TableLock: {
     rc = sqlite3BtreeLockTable(db->aDb[p1].pBt, pOp->p2, isWriteLock);
     if( (rc&0xFF)==SQLITE_LOCKED ){
       const char *z = pOp->p4.z;
-      sqlite3SetString(&p->zErrMsg, db, "database table is locked: %s", z);
+      sqlite3VdbeError(p, "database table is locked: %s", z);
     }
   }
   break;
@@ -24213,8 +24209,9 @@ case OP_VOpen: {
       pCur->pVtabCursor = pVtabCursor;
       pVtab->nRef++;
     }else{
-      db->mallocFailed = 1;
+      assert( db->mallocFailed );
       pModule->xClose(pVtabCursor);
+      goto no_mem;
     }
   }
   break;
@@ -24658,7 +24655,7 @@ vdbe_return:
   ** is encountered.
   */
 too_big:
-  sqlite3SetString(&p->zErrMsg, db, "string or blob too big");
+  sqlite3VdbeError(p, "string or blob too big");
   rc = SQLITE_TOOBIG;
   goto vdbe_error_halt;
 
@@ -24666,7 +24663,7 @@ too_big:
   */
 no_mem:
   db->mallocFailed = 1;
-  sqlite3SetString(&p->zErrMsg, db, "out of memory");
+  sqlite3VdbeError(p, "out of memory");
   rc = SQLITE_NOMEM;
   goto vdbe_error_halt;
 
@@ -24677,7 +24674,7 @@ abort_due_to_error:
   assert( p->zErrMsg==0 );
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc!=SQLITE_IOERR_NOMEM ){
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(rc));
+    sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   }
   goto vdbe_error_halt;
 
@@ -24688,7 +24685,7 @@ abort_due_to_interrupt:
   assert( db->u1.isInterrupted );
   rc = SQLITE_INTERRUPT;
   p->rc = rc;
-  sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(rc));
+  sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   goto vdbe_error_halt;
 }
 
@@ -27262,11 +27259,12 @@ static void vdbeMergeEngineCompare(
 #define INCRINIT_TASK   1
 #define INCRINIT_ROOT   2
 
-/* Forward reference.
-** The vdbeIncrMergeInit() and vdbePmaReaderIncrMergeInit() routines call each
-** other (when building a merge tree).
+/* 
+** Forward reference required as the vdbeIncrMergeInit() and
+** vdbePmaReaderIncrInit() routines are called mutually recursively when
+** building a merge tree.
 */
-static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode);
+static int vdbePmaReaderIncrInit(PmaReader *pReadr, int eMode);
 
 /*
 ** Initialize the MergeEngine object passed as the second argument. Once this
@@ -27313,7 +27311,7 @@ static int vdbeMergeEngineInit(
       ** better advantage of multi-processor hardware. */
       rc = vdbePmaReaderNext(&pMerger->aReadr[nTree-i-1]);
     }else{
-      rc = vdbePmaReaderIncrMergeInit(&pMerger->aReadr[i], INCRINIT_NORMAL);
+      rc = vdbePmaReaderIncrInit(&pMerger->aReadr[i], INCRINIT_NORMAL);
     }
     if( rc!=SQLITE_OK ) return rc;
   }
@@ -27325,17 +27323,15 @@ static int vdbeMergeEngineInit(
 }
 
 /*
-** Initialize the IncrMerge field of a PmaReader.
-**
-** If the PmaReader passed as the first argument is not an incremental-reader
-** (if pReadr->pIncr==0), then this function is a no-op. Otherwise, it serves
-** to open and/or initialize the temp file related fields of the IncrMerge
+** The PmaReader passed as the first argument is guaranteed to be an
+** incremental-reader (pReadr->pIncr!=0). This function serves to open
+** and/or initialize the temp file related fields of the IncrMerge
 ** object at (pReadr->pIncr).
 **
 ** If argument eMode is set to INCRINIT_NORMAL, then all PmaReaders
-** in the sub-tree headed by pReadr are also initialized. Data is then loaded
-** into the buffers belonging to pReadr and it is set to
-** point to the first key in its range.
+** in the sub-tree headed by pReadr are also initialized. Data is then 
+** loaded into the buffers belonging to pReadr and it is set to point to 
+** the first key in its range.
 **
 ** If argument eMode is set to INCRINIT_TASK, then pReadr is guaranteed
 ** to be a multi-threaded PmaReader and this function is being called in a
@@ -27362,59 +27358,62 @@ static int vdbeMergeEngineInit(
 static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode){
   int rc = SQLITE_OK;
   IncrMerger *pIncr = pReadr->pIncr;
+  SortSubtask *pTask = pIncr->pTask;
+  sqlite3 *db = pTask->pSorter->db;
 
   /* eMode is always INCRINIT_NORMAL in single-threaded mode */
   assert( SQLITE_MAX_WORKER_THREADS>0 || eMode==INCRINIT_NORMAL );
 
-  if( pIncr ){
-    SortSubtask *pTask = pIncr->pTask;
-    sqlite3 *db = pTask->pSorter->db;
+  rc = vdbeMergeEngineInit(pTask, pIncr->pMerger, eMode);
 
-    rc = vdbeMergeEngineInit(pTask, pIncr->pMerger, eMode);
-
-    /* Set up the required files for pIncr. A multi-theaded IncrMerge object
-    ** requires two temp files to itself, whereas a single-threaded object
-    ** only requires a region of pTask->file2. */
-    if( rc==SQLITE_OK ){
-      int mxSz = pIncr->mxSz;
+  /* Set up the required files for pIncr. A multi-theaded IncrMerge object
+  ** requires two temp files to itself, whereas a single-threaded object
+  ** only requires a region of pTask->file2. */
+  if( rc==SQLITE_OK ){
+    int mxSz = pIncr->mxSz;
 #if SQLITE_MAX_WORKER_THREADS>0
-      if( pIncr->bUseThread ){
-        rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[0].pFd);
-        if( rc==SQLITE_OK ){
-          rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[1].pFd);
-        }
-      }else
+    if( pIncr->bUseThread ){
+      rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[0].pFd);
+      if( rc==SQLITE_OK ){
+        rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[1].pFd);
+      }
+    }else
 #endif
-      /*if( !pIncr->bUseThread )*/{
-        if( pTask->file2.pFd==0 ){
-          assert( pTask->file2.iEof>0 );
-          rc = vdbeSorterOpenTempFile(db, pTask->file2.iEof, &pTask->file2.pFd);
-          pTask->file2.iEof = 0;
-        }
-        if( rc==SQLITE_OK ){
-          pIncr->aFile[1].pFd = pTask->file2.pFd;
-          pIncr->iStartOff = pTask->file2.iEof;
-          pTask->file2.iEof += mxSz;
-        }
+    /*if( !pIncr->bUseThread )*/{
+      if( pTask->file2.pFd==0 ){
+        assert( pTask->file2.iEof>0 );
+        rc = vdbeSorterOpenTempFile(db, pTask->file2.iEof, &pTask->file2.pFd);
+        pTask->file2.iEof = 0;
+      }
+      if( rc==SQLITE_OK ){
+        pIncr->aFile[1].pFd = pTask->file2.pFd;
+        pIncr->iStartOff = pTask->file2.iEof;
+        pTask->file2.iEof += mxSz;
       }
     }
+  }
 
 #if SQLITE_MAX_WORKER_THREADS>0
-    if( rc==SQLITE_OK && pIncr->bUseThread ){
-      /* Use the current thread to populate aFile[1], even though this
-      ** PmaReader is multi-threaded. The reason being that this function
-      ** is already running in background thread pIncr->pTask->thread. */
-      assert( eMode==INCRINIT_ROOT || eMode==INCRINIT_TASK );
-      rc = vdbeIncrPopulate(pIncr);
-    }
+  if( rc==SQLITE_OK && pIncr->bUseThread ){
+    /* Use the current thread to populate aFile[1], even though this
+    ** PmaReader is multi-threaded. If this is an INCRINIT_TASK object,
+    ** then this function is already running in background thread 
+    ** pIncr->pTask->thread. 
+    **
+    ** If this is the INCRINIT_ROOT object, then it is running in the 
+    ** main VDBE thread. But that is Ok, as that thread cannot return
+    ** control to the VDBE or proceed with anything useful until the 
+    ** first results are ready from this merger object anyway.
+    */
+    assert( eMode==INCRINIT_ROOT || eMode==INCRINIT_TASK );
+    rc = vdbeIncrPopulate(pIncr);
+  }
 #endif
 
-    if( rc==SQLITE_OK
-     && (SQLITE_MAX_WORKER_THREADS==0 || eMode!=INCRINIT_TASK)
-    ){
-      rc = vdbePmaReaderNext(pReadr);
-    }
+  if( rc==SQLITE_OK && (SQLITE_MAX_WORKER_THREADS==0 || eMode!=INCRINIT_TASK) ){
+    rc = vdbePmaReaderNext(pReadr);
   }
+
   return rc;
 }
 
@@ -27423,7 +27422,7 @@ static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode){
 ** The main routine for vdbePmaReaderIncrMergeInit() operations run in 
 ** background threads.
 */
-static void *vdbePmaReaderBgInit(void *pCtx){
+static void *vdbePmaReaderBgIncrInit(void *pCtx){
   PmaReader *pReader = (PmaReader*)pCtx;
   void *pRet = SQLITE_INT_TO_PTR(
                   vdbePmaReaderIncrMergeInit(pReader,INCRINIT_TASK)
@@ -27431,20 +27430,36 @@ static void *vdbePmaReaderBgInit(void *pCtx){
   pReader->pIncr->pTask->bDone = 1;
   return pRet;
 }
+#endif
 
 /*
-** Use a background thread to invoke vdbePmaReaderIncrMergeInit(INCRINIT_TASK) 
-** on the PmaReader object passed as the first argument.
-**
-** This call will initialize the various fields of the pReadr->pIncr 
-** structure and, if it is a multi-threaded IncrMerger, launch a 
-** background thread to populate aFile[1].
+** If the PmaReader passed as the first argument is not an incremental-reader
+** (if pReadr->pIncr==0), then this function is a no-op. Otherwise, it invokes
+** the vdbePmaReaderIncrMergeInit() function with the parameters passed to
+** this routine to initialize the incremental merge.
+** 
+** If the IncrMerger object is multi-threaded (IncrMerger.bUseThread==1), 
+** then a background thread is launched to call vdbePmaReaderIncrMergeInit().
+** Or, if the IncrMerger is single threaded, the same function is called
+** using the current thread.
 */
-static int vdbePmaReaderBgIncrInit(PmaReader *pReadr){
-  void *pCtx = (void*)pReadr;
-  return vdbeSorterCreateThread(pReadr->pIncr->pTask, vdbePmaReaderBgInit, pCtx);
-}
+static int vdbePmaReaderIncrInit(PmaReader *pReadr, int eMode){
+  IncrMerger *pIncr = pReadr->pIncr;   /* Incremental merger */
+  int rc = SQLITE_OK;                  /* Return code */
+  if( pIncr ){
+#if SQLITE_MAX_WORKER_THREADS>0
+    assert( pIncr->bUseThread==0 || eMode==INCRINIT_TASK );
+    if( pIncr->bUseThread ){
+      void *pCtx = (void*)pReadr;
+      rc = vdbeSorterCreateThread(pIncr->pTask, vdbePmaReaderBgIncrInit, pCtx);
+    }else
 #endif
+    {
+      rc = vdbePmaReaderIncrMergeInit(pReadr, eMode);
+    }
+  }
+  return rc;
+}
 
 /*
 ** Allocate a new MergeEngine object to merge the contents of nPMA level-0
@@ -27689,15 +27704,21 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
             }
           }
           for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
+            /* Check that:
+            **   
+            **   a) The incremental merge object is configured to use the
+            **      right task, and
+            **   b) If it is using task (nTask-1), it is configured to run
+            **      in single-threaded mode. This is important, as the
+            **      root merge (INCRINIT_ROOT) will be using the same task
+            **      object.
+            */
             PmaReader *p = &pMain->aReadr[iTask];
-            assert( p->pIncr==0 || p->pIncr->pTask==&pSorter->aTask[iTask] );
-            if( p->pIncr ){ 
-              if( iTask==pSorter->nTask-1 ){
-                rc = vdbePmaReaderIncrMergeInit(p, INCRINIT_TASK);
-              }else{
-                rc = vdbePmaReaderBgIncrInit(p);
-              }
-            }
+            assert( p->pIncr==0 || (
+                (p->pIncr->pTask==&pSorter->aTask[iTask])             /* a */
+             && (iTask!=pSorter->nTask-1 || p->pIncr->bUseThread==0)  /* b */
+            ));
+            rc = vdbePmaReaderIncrInit(p, INCRINIT_TASK);
           }
         }
         pMain = 0;
@@ -28672,7 +28693,6 @@ static void resolveAlias(
   assert( iCol>=0 && iCol<pEList->nExpr );
   pOrig = pEList->a[iCol].pExpr;
   assert( pOrig!=0 );
-  assert( (pOrig->flags & EP_Resolved)!=0 || zType[0]==0 );
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
   if( pDup==0 ) return;

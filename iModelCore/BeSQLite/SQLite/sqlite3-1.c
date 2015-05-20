@@ -294,9 +294,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.8.10"
-#define SQLITE_VERSION_NUMBER 3008010
-#define SQLITE_SOURCE_ID      "2015-04-23 17:22:50 aada0ad08e3baa10d14d1f3393183110289e068e"
+#define SQLITE_VERSION        "3.8.11"
+#define SQLITE_VERSION_NUMBER 3008011
+#define SQLITE_SOURCE_ID      "2015-05-19 23:04:26 7530e1bf557083ef91447a02f05b019dbe60fa70"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -1139,13 +1139,21 @@ struct sqlite3_io_methods {
 ** pointed to by the pArg argument.  This capability is used during testing
 ** and only needs to be supported when SQLITE_TEST is defined.
 **
-** <li>[[SQLITE_FCNTL_WAL_BLOCK]]
+* <li>[[SQLITE_FCNTL_WAL_BLOCK]]
 ** The [SQLITE_FCNTL_WAL_BLOCK] is a signal to the VFS layer that it might
 ** be advantageous to block on the next WAL lock if the lock is not immediately
 ** available.  The WAL subsystem issues this signal during rare
 ** circumstances in order to fix a problem with priority inversion.
 ** Applications should <em>not</em> use this file-control.
 **
+** <li>[[SQLITE_FCNTL_ZIPVFS]]
+** The [SQLITE_FCNTL_ZIPVFS] opcode is implemented by zipvfs only. All other
+** VFS should return SQLITE_NOTFOUND for this opcode.
+**
+** <li>[[SQLITE_FCNTL_OTA]]
+** The [SQLITE_FCNTL_OTA] opcode is implemented by the special VFS used by
+** the OTA extension only.  All other VFS should return SQLITE_NOTFOUND for
+** this opcode.  
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1171,6 +1179,8 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_COMMIT_PHASETWO        22
 #define SQLITE_FCNTL_WIN32_SET_HANDLE       23
 #define SQLITE_FCNTL_WAL_BLOCK              24
+#define SQLITE_FCNTL_ZIPVFS                 25
+#define SQLITE_FCNTL_OTA                    26
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -4076,8 +4086,6 @@ SQLITE_API int SQLITE_STDCALL sqlite3_data_count(sqlite3_stmt *pStmt);
 ** KEYWORDS: {column access functions}
 ** METHOD: sqlite3_stmt
 **
-** These routines form the "result set" interface.
-**
 ** ^These routines return information about a single column of the current
 ** result row of a query.  ^In every case the first argument is a pointer
 ** to the [prepared statement] that is being evaluated (the [sqlite3_stmt*]
@@ -4137,13 +4145,14 @@ SQLITE_API int SQLITE_STDCALL sqlite3_data_count(sqlite3_stmt *pStmt);
 ** even empty strings, are always zero-terminated.  ^The return
 ** value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
 **
-** ^The object returned by [sqlite3_column_value()] is an
-** [unprotected sqlite3_value] object.  An unprotected sqlite3_value object
-** may only be used with [sqlite3_bind_value()] and [sqlite3_result_value()].
+** <b>Warning:</b> ^The object returned by [sqlite3_column_value()] is an
+** [unprotected sqlite3_value] object.  In a multithreaded environment,
+** an unprotected sqlite3_value object may only be used safely with
+** [sqlite3_bind_value()] and [sqlite3_result_value()].
 ** If the [unprotected sqlite3_value] object returned by
 ** [sqlite3_column_value()] is used in any other way, including calls
 ** to routines like [sqlite3_value_int()], [sqlite3_value_text()],
-** or [sqlite3_value_bytes()], then the behavior is undefined.
+** or [sqlite3_value_bytes()], the behavior is not threadsafe.
 **
 ** These routines attempt to convert the value where appropriate.  ^For
 ** example, if the internal representation is FLOAT and a text result
@@ -4174,12 +4183,6 @@ SQLITE_API int SQLITE_STDCALL sqlite3_data_count(sqlite3_stmt *pStmt);
 ** </table>
 ** </blockquote>)^
 **
-** The table above makes reference to standard C library functions atoi()
-** and atof().  SQLite does not really use these functions.  It has its
-** own equivalent internal routines.  The atoi() and atof() names are
-** used in the table for brevity and because they are familiar to most
-** C programmers.
-**
 ** Note that when type conversions occur, pointers returned by prior
 ** calls to sqlite3_column_blob(), sqlite3_column_text(), and/or
 ** sqlite3_column_text16() may be invalidated.
@@ -4204,7 +4207,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_data_count(sqlite3_stmt *pStmt);
 ** of conversion are done in place when it is possible, but sometimes they
 ** are not possible and in those cases prior pointers are invalidated.
 **
-** The safest and easiest to remember policy is to invoke these routines
+** The safest policy is to invoke these routines
 ** in one of the following ways:
 **
 ** <ul>
@@ -4224,7 +4227,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_data_count(sqlite3_stmt *pStmt);
 ** ^The pointers returned are valid until a type conversion occurs as
 ** described above, or until [sqlite3_step()] or [sqlite3_reset()] or
 ** [sqlite3_finalize()] is called.  ^The memory space used to hold strings
-** and BLOBs is freed automatically.  Do <b>not</b> pass the pointers returned
+** and BLOBs is freed automatically.  Do <em>not</em> pass the pointers returned
 ** from [sqlite3_column_blob()], [sqlite3_column_text()], etc. into
 ** [sqlite3_free()].
 **
@@ -9735,6 +9738,32 @@ SQLITE_PRIVATE   void sqlite3Coverage(int);
 #endif
 
 /*
+** Declarations used for tracing the operating system interfaces.
+*/
+#if defined(SQLITE_FORCE_OS_TRACE) || defined(SQLITE_TEST) || \
+    (defined(SQLITE_DEBUG) && SQLITE_OS_WIN)
+  extern int sqlite3OSTrace;
+# define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
+# define SQLITE_HAVE_OS_TRACE
+#else
+# define OSTRACE(X)
+# undef  SQLITE_HAVE_OS_TRACE
+#endif
+
+/*
+** Is the sqlite3ErrName() function needed in the build?  Currently,
+** it is needed by "mutex_w32.c" (when debugging), "os_win.c" (when
+** OSTRACE is enabled), and by several "test*.c" files (which are
+** compiled using SQLITE_TEST).
+*/
+#if defined(SQLITE_HAVE_OS_TRACE) || defined(SQLITE_TEST) || \
+    (defined(SQLITE_DEBUG) && SQLITE_OS_WIN)
+# define SQLITE_NEED_ERR_NAME
+#else
+# undef  SQLITE_NEED_ERR_NAME
+#endif
+
+/*
 ** Return true (non-zero) if the input is an integer that is too large
 ** to fit in 32-bits.  This macro is used inside of various testcase()
 ** macros to verify that we have tested SQLite for large-file support.
@@ -12708,34 +12737,8 @@ struct VTable {
 };
 
 /*
-** Each SQL table is represented in memory by an instance of the
-** following structure.
-**
-** Table.zName is the name of the table.  The case of the original
-** CREATE TABLE statement is stored, but case is not significant for
-** comparisons.
-**
-** Table.nCol is the number of columns in this table.  Table.aCol is a
-** pointer to an array of Column structures, one for each column.
-**
-** If the table has an INTEGER PRIMARY KEY, then Table.iPKey is the index of
-** the column that is that key.   Otherwise Table.iPKey is negative.  Note
-** that the datatype of the PRIMARY KEY must be INTEGER for this field to
-** be set.  An INTEGER PRIMARY KEY is used as the rowid for each row of
-** the table.  If a table has no INTEGER PRIMARY KEY, then a random rowid
-** is generated for each row of the table.  TF_HasPrimaryKey is set if
-** the table has any PRIMARY KEY, INTEGER or otherwise.
-**
-** Table.tnum is the page number for the root BTree page of the table in the
-** database file.  If Table.iDb is the index of the database table backend
-** in sqlite.aDb[].  0 is for the main database and 1 is for the file that
-** holds temporary tables and indices.  If TF_Ephemeral is set
-** then the table is stored in a file that is automatically deleted
-** when the VDBE cursor to the table is closed.  In this case Table.tnum 
-** refers VDBE cursor number that holds the table open, not to the root
-** page number.  Transient tables are used to hold the results of a
-** sub-query that appears instead of a real table name in the FROM clause 
-** of a SELECT statement.
+** The schema for each SQL table and view is represented in memory
+** by an instance of the following structure.
 */
 struct Table {
   char *zName;         /* Name of the table or view */
@@ -12747,11 +12750,11 @@ struct Table {
 #ifndef SQLITE_OMIT_CHECK
   ExprList *pCheck;    /* All CHECK constraints */
 #endif
-  LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */
-  int tnum;            /* Root BTree node for this table (see note above) */
-  i16 iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
+  int tnum;            /* Root BTree page for this table */
+  i16 iPKey;           /* If not negative, use aCol[iPKey] as the rowid */
   i16 nCol;            /* Number of columns in this table */
   u16 nRef;            /* Number of pointers to this Table */
+  LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */
   LogEst szTabRow;     /* Estimated size of each table row in bytes */
 #ifdef SQLITE_ENABLE_COSTMULT
   LogEst costMult;     /* Cost multiplier for using this table */
@@ -13990,8 +13993,7 @@ struct StrAccum {
   char *zText;         /* The string collected so far */
   int  nChar;          /* Length of the string so far */
   int  nAlloc;         /* Amount of space allocated in zText */
-  int  mxAlloc;        /* Maximum allowed string length */
-  u8   useMalloc;      /* 0: none,  1: sqlite3DbMalloc,  2: sqlite3_malloc */
+  int  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
   u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
 };
 #define STRACCUM_NOMEM   1
@@ -14307,8 +14309,7 @@ SQLITE_PRIVATE void sqlite3VXPrintf(StrAccum*, u32, const char*, va_list);
 SQLITE_PRIVATE void sqlite3XPrintf(StrAccum*, u32, const char*, ...);
 SQLITE_PRIVATE char *sqlite3MPrintf(sqlite3*,const char*, ...);
 SQLITE_PRIVATE char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
-SQLITE_PRIVATE char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
 SQLITE_PRIVATE   void sqlite3DebugPrintf(const char*, ...);
 #endif
 #if defined(SQLITE_TEST)
@@ -14326,7 +14327,7 @@ SQLITE_PRIVATE   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
 #endif
 
 
-SQLITE_PRIVATE void sqlite3SetString(char **, sqlite3*, const char*, ...);
+SQLITE_PRIVATE void sqlite3SetString(char **, sqlite3*, const char*);
 SQLITE_PRIVATE void sqlite3ErrorMsg(Parse*, const char*, ...);
 SQLITE_PRIVATE int sqlite3Dequote(char*);
 SQLITE_PRIVATE int sqlite3KeywordCode(const unsigned char*, int);
@@ -14655,7 +14656,7 @@ SQLITE_PRIVATE void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 SQLITE_PRIVATE u8 sqlite3HexToInt(int h);
 SQLITE_PRIVATE int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 
-#if defined(SQLITE_TEST) 
+#if defined(SQLITE_NEED_ERR_NAME)
 SQLITE_PRIVATE const char *sqlite3ErrName(int);
 #endif
 
@@ -14749,7 +14750,7 @@ SQLITE_PRIVATE int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
 SQLITE_PRIVATE int sqlite3ApiExit(sqlite3 *db, int);
 SQLITE_PRIVATE int sqlite3OpenTempDatabase(Parse *);
 
-SQLITE_PRIVATE void sqlite3StrAccumInit(StrAccum*, char*, int, int);
+SQLITE_PRIVATE void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
 SQLITE_PRIVATE void sqlite3StrAccumAppend(StrAccum*,const char*,int);
 SQLITE_PRIVATE void sqlite3StrAccumAppendAll(StrAccum*,const char*);
 SQLITE_PRIVATE void sqlite3AppendChar(StrAccum*,int,char);
@@ -15021,6 +15022,10 @@ SQLITE_PRIVATE   int sqlite3MemdebugNoType(void*,u8);
 #if SQLITE_MAX_WORKER_THREADS>0
 SQLITE_PRIVATE int sqlite3ThreadCreate(SQLiteThread**,void*(*)(void*),void*);
 SQLITE_PRIVATE int sqlite3ThreadJoin(SQLiteThread*, void**);
+#endif
+
+#if defined(SQLITE_ENABLE_DBSTAT_VTAB) || defined(SQLITE_TEST)
+SQLITE_PRIVATE int sqlite3DbstatRegister(sqlite3*);
 #endif
 
 #endif /* _SQLITEINT_H_ */
@@ -15365,6 +15370,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #if SQLITE_ENABLE_COLUMN_METADATA
   "ENABLE_COLUMN_METADATA",
+#endif
+#if SQLITE_ENABLE_DBSTAT_VTAB
+  "ENABLE_DBSTAT_VTAB",
 #endif
 #if SQLITE_ENABLE_EXPENSIVE_ASSERT
   "ENABLE_EXPENSIVE_ASSERT",
@@ -16148,6 +16156,7 @@ struct PreUpdate {
 /*
 ** Function prototypes
 */
+SQLITE_PRIVATE void sqlite3VdbeError(Vdbe*, const char *, ...);
 SQLITE_PRIVATE void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 SQLITE_PRIVATE int sqlite3VdbeCursorMoveto(VdbeCursor*);
@@ -21154,16 +21163,6 @@ SQLITE_PRIVATE sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
 #endif
 
-#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
-# ifndef SQLITE_DEBUG_OS_TRACE
-#   define SQLITE_DEBUG_OS_TRACE 0
-# endif
-  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
-# define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
-#else
-# define OSTRACE(X)
-#endif
-
 /*
 ** Macros for performance tracing.  Normally turned off.  Only works
 ** on i486 hardware.
@@ -22008,10 +22007,8 @@ SQLITE_PRIVATE void sqlite3MallocEnd(void){
 ** Return the amount of memory currently checked out.
 */
 SQLITE_API sqlite3_int64 SQLITE_STDCALL sqlite3_memory_used(void){
-  int n, mx;
-  sqlite3_int64 res;
-  sqlite3_status(SQLITE_STATUS_MEMORY_USED, &n, &mx, 0);
-  res = (sqlite3_int64)n;  /* Work around bug in Borland C. Ticket #3216 */
+  sqlite3_int64 res, mx;
+  sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &res, &mx, 0);
   return res;
 }
 
@@ -22021,11 +22018,9 @@ SQLITE_API sqlite3_int64 SQLITE_STDCALL sqlite3_memory_used(void){
 ** or since the most recent reset.
 */
 SQLITE_API sqlite3_int64 SQLITE_STDCALL sqlite3_memory_highwater(int resetFlag){
-  int n, mx;
-  sqlite3_int64 res;
-  sqlite3_status(SQLITE_STATUS_MEMORY_USED, &n, &mx, resetFlag);
-  res = (sqlite3_int64)mx;  /* Work around bug in Borland C. Ticket #3216 */
-  return res;
+  sqlite3_int64 res, mx;
+  sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &res, &mx, resetFlag);
+  return mx;
 }
 
 /*
@@ -22557,19 +22552,11 @@ SQLITE_PRIVATE char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
 }
 
 /*
-** Create a string from the zFromat argument and the va_list that follows.
-** Store the string in memory obtained from sqliteMalloc() and make *pz
-** point to that string.
+** Free any prior content in *pz and replace it with a copy of zNew.
 */
-SQLITE_PRIVATE void sqlite3SetString(char **pz, sqlite3 *db, const char *zFormat, ...){
-  va_list ap;
-  char *z;
-
-  va_start(ap, zFormat);
-  z = sqlite3VMPrintf(db, zFormat, ap);
-  va_end(ap);
+SQLITE_PRIVATE void sqlite3SetString(char **pz, sqlite3 *db, const char *zNew){
   sqlite3DbFree(db, *pz);
-  *pz = z;
+  *pz = sqlite3DbStrDup(db, zNew);
 }
 
 /*
@@ -22748,6 +22735,7 @@ static char et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
 ** Set the StrAccum object to an error mode.
 */
 static void setStrAccumError(StrAccum *p, u8 eError){
+  assert( eError==STRACCUM_NOMEM || eError==STRACCUM_TOOBIG );
   p->accError = eError;
   p->nAlloc = 0;
 }
@@ -22862,7 +22850,6 @@ SQLITE_PRIVATE void sqlite3VXPrintf(
       }
     }while( !done && (c=(*++fmt))!=0 );
     /* Get the field width */
-    width = 0;
     if( c=='*' ){
       if( bArgList ){
         width = (int)getIntArg(pArgList);
@@ -22886,7 +22873,6 @@ SQLITE_PRIVATE void sqlite3VXPrintf(
 
     /* Get the precision */
     if( c=='.' ){
-      precision = 0;
       c = *++fmt;
       if( c=='*' ){
         if( bArgList ){
@@ -23365,7 +23351,7 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
     testcase(p->accError==STRACCUM_NOMEM);
     return 0;
   }
-  if( !p->useMalloc ){
+  if( p->mxAlloc==0 ){
     N = p->nAlloc - p->nChar - 1;
     setStrAccumError(p, STRACCUM_TOOBIG);
     return N;
@@ -23385,10 +23371,10 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
     }else{
       p->nAlloc = (int)szNew;
     }
-    if( p->useMalloc==1 ){
+    if( p->db ){
       zNew = sqlite3DbRealloc(p->db, zOld, p->nAlloc);
     }else{
-      zNew = sqlite3_realloc(zOld, p->nAlloc);
+      zNew = sqlite3_realloc64(zOld, p->nAlloc);
     }
     if( zNew ){
       assert( p->zText!=0 || p->nChar==0 );
@@ -23465,12 +23451,8 @@ SQLITE_PRIVATE void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
 SQLITE_PRIVATE char *sqlite3StrAccumFinish(StrAccum *p){
   if( p->zText ){
     p->zText[p->nChar] = 0;
-    if( p->useMalloc && p->zText==p->zBase ){
-      if( p->useMalloc==1 ){
-        p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
-      }else{
-        p->zText = sqlite3_malloc(p->nChar+1);
-      }
+    if( p->mxAlloc>0 && p->zText==p->zBase ){
+      p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
       if( p->zText ){
         memcpy(p->zText, p->zBase, p->nChar+1);
       }else{
@@ -23486,25 +23468,31 @@ SQLITE_PRIVATE char *sqlite3StrAccumFinish(StrAccum *p){
 */
 SQLITE_PRIVATE void sqlite3StrAccumReset(StrAccum *p){
   if( p->zText!=p->zBase ){
-    if( p->useMalloc==1 ){
-      sqlite3DbFree(p->db, p->zText);
-    }else{
-      sqlite3_free(p->zText);
-    }
+    sqlite3DbFree(p->db, p->zText);
   }
   p->zText = 0;
 }
 
 /*
-** Initialize a string accumulator
+** Initialize a string accumulator.
+**
+** p:     The accumulator to be initialized.
+** db:    Pointer to a database connection.  May be NULL.  Lookaside
+**        memory is used if not NULL. db->mallocFailed is set appropriately
+**        when not NULL.
+** zBase: An initial buffer.  May be NULL in which case the initial buffer
+**        is malloced.
+** n:     Size of zBase in bytes.  If total space requirements never exceed
+**        n then no memory allocations ever occur.
+** mx:    Maximum number of bytes to accumulate.  If mx==0 then no memory
+**        allocations will ever occur.
 */
-SQLITE_PRIVATE void sqlite3StrAccumInit(StrAccum *p, char *zBase, int n, int mx){
+SQLITE_PRIVATE void sqlite3StrAccumInit(StrAccum *p, sqlite3 *db, char *zBase, int n, int mx){
   p->zText = p->zBase = zBase;
-  p->db = 0;
+  p->db = db;
   p->nChar = 0;
   p->nAlloc = n;
   p->mxAlloc = mx;
-  p->useMalloc = 1;
   p->accError = 0;
 }
 
@@ -23517,9 +23505,8 @@ SQLITE_PRIVATE char *sqlite3VMPrintf(sqlite3 *db, const char *zFormat, va_list a
   char zBase[SQLITE_PRINT_BUF_SIZE];
   StrAccum acc;
   assert( db!=0 );
-  sqlite3StrAccumInit(&acc, zBase, sizeof(zBase),
+  sqlite3StrAccumInit(&acc, db, zBase, sizeof(zBase),
                       db->aLimit[SQLITE_LIMIT_LENGTH]);
-  acc.db = db;
   sqlite3VXPrintf(&acc, SQLITE_PRINTF_INTERNAL, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   if( acc.accError==STRACCUM_NOMEM ){
@@ -23542,24 +23529,6 @@ SQLITE_PRIVATE char *sqlite3MPrintf(sqlite3 *db, const char *zFormat, ...){
 }
 
 /*
-** Like sqlite3MPrintf(), but call sqlite3DbFree() on zStr after formatting
-** the string and before returning.  This routine is intended to be used
-** to modify an existing string.  For example:
-**
-**       x = sqlite3MPrintf(db, x, "prefix %s suffix", x);
-**
-*/
-SQLITE_PRIVATE char *sqlite3MAppendf(sqlite3 *db, char *zStr, const char *zFormat, ...){
-  va_list ap;
-  char *z;
-  va_start(ap, zFormat);
-  z = sqlite3VMPrintf(db, zFormat, ap);
-  va_end(ap);
-  sqlite3DbFree(db, zStr);
-  return z;
-}
-
-/*
 ** Print into memory obtained from sqlite3_malloc().  Omit the internal
 ** %-conversion extensions.
 */
@@ -23577,8 +23546,7 @@ SQLITE_API char *SQLITE_STDCALL sqlite3_vmprintf(const char *zFormat, va_list ap
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
-  sqlite3StrAccumInit(&acc, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
-  acc.useMalloc = 2;
+  sqlite3StrAccumInit(&acc, 0, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   return z;
@@ -23623,8 +23591,7 @@ SQLITE_API char *SQLITE_STDCALL sqlite3_vsnprintf(int n, char *zBuf, const char 
     return zBuf;
   }
 #endif
-  sqlite3StrAccumInit(&acc, zBuf, n, 0);
-  acc.useMalloc = 0;
+  sqlite3StrAccumInit(&acc, 0, zBuf, n, 0);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   return sqlite3StrAccumFinish(&acc);
 }
@@ -23650,8 +23617,7 @@ static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
   StrAccum acc;                          /* String accumulator */
   char zMsg[SQLITE_PRINT_BUF_SIZE*3];    /* Complete log message */
 
-  sqlite3StrAccumInit(&acc, zMsg, sizeof(zMsg), 0);
-  acc.useMalloc = 0;
+  sqlite3StrAccumInit(&acc, 0, zMsg, sizeof(zMsg), 0);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   sqlite3GlobalConfig.xLog(sqlite3GlobalConfig.pLogArg, iErrCode,
                            sqlite3StrAccumFinish(&acc));
@@ -23669,7 +23635,7 @@ SQLITE_API void SQLITE_CDECL sqlite3_log(int iErrCode, const char *zFormat, ...)
   }
 }
 
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
 /*
 ** A version of printf() that understands %lld.  Used for debugging.
 ** The printf() built into some versions of windows does not understand %lld
@@ -23679,8 +23645,7 @@ SQLITE_PRIVATE void sqlite3DebugPrintf(const char *zFormat, ...){
   va_list ap;
   StrAccum acc;
   char zBuf[500];
-  sqlite3StrAccumInit(&acc, zBuf, sizeof(zBuf), 0);
-  acc.useMalloc = 0;
+  sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   va_start(ap,zFormat);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   va_end(ap);
@@ -23707,7 +23672,7 @@ SQLITE_PRIVATE void sqlite3DebugPrintf(const char *zFormat, ...){
 ** is not the last item in the tree. */
 SQLITE_PRIVATE TreeView *sqlite3TreeViewPush(TreeView *p, u8 moreToFollow){
   if( p==0 ){
-    p = sqlite3_malloc( sizeof(*p) );
+    p = sqlite3_malloc64( sizeof(*p) );
     if( p==0 ) return 0;
     memset(p, 0, sizeof(*p));
   }else{
@@ -23730,8 +23695,7 @@ SQLITE_PRIVATE void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   int i;
   StrAccum acc;
   char zBuf[500];
-  sqlite3StrAccumInit(&acc, zBuf, sizeof(zBuf), 0);
-  acc.useMalloc = 0;
+  sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   if( p ){
     for(i=0; i<p->iLevel && i<sizeof(p->bLine)-1; i++){
       sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|   " : "    ", 4);

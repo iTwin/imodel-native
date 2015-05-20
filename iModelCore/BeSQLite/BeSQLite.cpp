@@ -2171,6 +2171,7 @@ void* DbFunction::Context::GetAggregateContext(int nBytes) {return sqlite3_aggre
 static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)sqlite3_user_data(context))->_StepAggregate((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
 static void aggregateFinal(sqlite3_context* context) { ((AggregateFunction*) sqlite3_user_data(context))->_FinishAggregate((DbFunction::Context&) *context); }
 static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->_ComputeScalar((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
+static int  rTreeMatch(RTreeMatchFunction::QueryInfo* info){return ((RTreeMatchFunction*) info->m_context)->_TestRange(*info);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
@@ -2183,15 +2184,6 @@ int DbFile::AddFunction(DbFunction& function) const
             isAgg ? aggregateStep  : nullptr, 
             isAgg ? aggregateFinal : nullptr, 
             nullptr);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int rTreeMatch(RTreeMatchFunction::QueryInfo* info)
-    {
-    RTreeMatchFunction* func = (RTreeMatchFunction*) info->m_context;
-    return func->_TestRange(*info);
     }
 
 /*---------------------------------------------------------------------------------**//**

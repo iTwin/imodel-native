@@ -96,8 +96,8 @@
 #  if (!defined(TARGET_OS_EMBEDDED) || (TARGET_OS_EMBEDDED==0)) \
        && (!defined(TARGET_IPHONE_SIMULATOR) || (TARGET_IPHONE_SIMULATOR==0))
 #    define HAVE_GETHOSTUUID 1
-//#  else
-//#    warning "gethostuuid() is disabled."
+#  else
+#    warning "gethostuuid() is disabled."
 #  endif
 #endif
 
@@ -295,16 +295,6 @@ static pid_t randomnessPid = 0;
 */
 #ifdef MEMORY_DEBUG
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
-#endif
-
-#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
-# ifndef SQLITE_DEBUG_OS_TRACE
-#   define SQLITE_DEBUG_OS_TRACE 0
-# endif
-  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
-# define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
-#else
-# define OSTRACE(X)
 #endif
 
 /*
@@ -849,7 +839,7 @@ static int unixMutexHeld(void) {
 #endif
 
 
-#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
+#ifdef SQLITE_HAVE_OS_TRACE
 /*
 ** Helper function for printing out trace information from debugging
 ** binaries. This returns the string representation of the supplied
@@ -1112,7 +1102,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
 
   assert( zAbsoluteName[0]=='/' );
   n = (int)strlen(zAbsoluteName);
-  pNew = sqlite3_malloc( sizeof(*pNew) + (n+1) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) + (n+1) );
   if( pNew==0 ) return 0;
   pNew->zCanonicalName = (char*)&pNew[1];
   memcpy(pNew->zCanonicalName, zAbsoluteName, n+1);
@@ -1516,7 +1506,7 @@ static int findInodeInfo(
     pInode = pInode->pNext;
   }
   if( pInode==0 ){
-    pInode = sqlite3_malloc( sizeof(*pInode) );
+    pInode = sqlite3_malloc64( sizeof(*pInode) );
     if( pInode==0 ){
       return SQLITE_NOMEM;
     }
@@ -4037,7 +4027,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_TEMPFILENAME: {
-      char *zTFile = sqlite3_malloc( pFile->pVfs->mxPathname );
+      char *zTFile = sqlite3_malloc64( pFile->pVfs->mxPathname );
       if( zTFile ){
         unixGetTempname(pFile->pVfs->mxPathname, zTFile);
         *(char**)pArg = zTFile;
@@ -4478,7 +4468,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   int nShmFilename;               /* Size of the SHM filename in bytes */
 
   /* Allocate space for the new unixShm object. */
-  p = sqlite3_malloc( sizeof(*p) );
+  p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
   assert( pDbFd->pShm==0 );
@@ -4509,7 +4499,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 #else
     nShmFilename = 6 + (int)strlen(zBasePath);
 #endif
-    pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nShmFilename );
+    pShmNode = sqlite3_malloc64( sizeof(*pShmNode) + nShmFilename );
     if( pShmNode==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
@@ -4719,7 +4709,7 @@ static int unixShmMap(
           goto shmpage_out;
         }
       }else{
-        pMem = sqlite3_malloc(szRegion);
+        pMem = sqlite3_malloc64(szRegion);
         if( pMem==0 ){
           rc = SQLITE_NOMEM;
           goto shmpage_out;
@@ -5556,7 +5546,7 @@ static int fillInUnixFile(
     ** the afpLockingContext.
     */
     afpLockingContext *pCtx;
-    pNew->lockingContext = pCtx = sqlite3_malloc( sizeof(*pCtx) );
+    pNew->lockingContext = pCtx = sqlite3_malloc64( sizeof(*pCtx) );
     if( pCtx==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -5586,7 +5576,7 @@ static int fillInUnixFile(
     int nFilename;
     assert( zFilename!=0 );
     nFilename = (int)strlen(zFilename) + 6;
-    zLockFile = (char *)sqlite3_malloc(nFilename);
+    zLockFile = (char *)sqlite3_malloc64(nFilename);
     if( zLockFile==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -5963,7 +5953,7 @@ static int unixOpen(
     if( pUnused ){
       fd = pUnused->fd;
     }else{
-      pUnused = sqlite3_malloc(sizeof(*pUnused));
+      pUnused = sqlite3_malloc64(sizeof(*pUnused));
       if( !pUnused ){
         return SQLITE_NOMEM;
       }
@@ -6343,7 +6333,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
   */
   memset(zBuf, 0, nBuf);
   randomnessPid = osGetpid(0);  
-#if !defined(SQLITE_TEST)
+#if !defined(SQLITE_TEST) && !defined(SQLITE_OMIT_RANDOMNESS)
   {
     int fd, got;
     fd = robust_open("/dev/urandom", O_RDONLY, 0);
@@ -6755,7 +6745,7 @@ static int proxyCreateUnixFile(
   if( pUnused ){
     fd = pUnused->fd;
   }else{
-    pUnused = sqlite3_malloc(sizeof(*pUnused));
+    pUnused = sqlite3_malloc64(sizeof(*pUnused));
     if( !pUnused ){
       return SQLITE_NOMEM;
     }
@@ -6788,7 +6778,7 @@ static int proxyCreateUnixFile(
     }
   }
   
-  pNew = (unixFile *)sqlite3_malloc(sizeof(*pNew));
+  pNew = (unixFile *)sqlite3_malloc64(sizeof(*pNew));
   if( pNew==NULL ){
     rc = SQLITE_NOMEM;
     goto end_create_proxy;
@@ -7250,7 +7240,7 @@ static int proxyReleaseConch(unixFile *pFile){
 
 /*
 ** Given the name of a database file, compute the name of its conch file.
-** Store the conch filename in memory obtained from sqlite3_malloc().
+** Store the conch filename in memory obtained from sqlite3_malloc64().
 ** Make *pConchPath point to the new name.  Return SQLITE_OK on success
 ** or SQLITE_NOMEM if unable to obtain memory.
 **
@@ -7266,7 +7256,7 @@ static int proxyCreateConchPathname(char *dbPath, char **pConchPath){
 
   /* Allocate space for the conch filename and initialize the name to
   ** the name of the original database file. */  
-  *pConchPath = conchPath = (char *)sqlite3_malloc(len + 8);
+  *pConchPath = conchPath = (char *)sqlite3_malloc64(len + 8);
   if( conchPath==0 ){
     return SQLITE_NOMEM;
   }
@@ -7382,7 +7372,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
   OSTRACE(("TRANSPROXY  %d for %s pid=%d\n", pFile->h,
            (lockPath ? lockPath : ":auto:"), osGetpid(0)));
 
-  pCtx = sqlite3_malloc( sizeof(*pCtx) );
+  pCtx = sqlite3_malloc64( sizeof(*pCtx) );
   if( pCtx==0 ){
     return SQLITE_NOMEM;
   }
@@ -7824,16 +7814,6 @@ SQLITE_API int SQLITE_STDCALL sqlite3_os_end(void){
 */
 #ifdef MEMORY_DEBUG
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
-#endif
-
-#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
-# ifndef SQLITE_DEBUG_OS_TRACE
-#   define SQLITE_DEBUG_OS_TRACE 0
-# endif
-  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
-# define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
-#else
-# define OSTRACE(X)
 #endif
 
 /*
@@ -10739,7 +10719,7 @@ static int winSync(sqlite3_file *id, int flags){
   BOOL rc;
 #endif
 #if !defined(NDEBUG) || !defined(SQLITE_NO_SYNC) || \
-    (defined(SQLITE_TEST) && defined(SQLITE_DEBUG))
+    defined(SQLITE_HAVE_OS_TRACE)
   /*
   ** Used when SQLITE_NO_SYNC is not defined and by the assert() and/or
   ** OSTRACE() macros.
@@ -11416,7 +11396,7 @@ struct winShmNode {
   int nRef;                  /* Number of winShm objects pointing to this */
   winShm *pFirst;            /* All winShm objects pointing to this */
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 nextShmId;              /* Next available winShm.id value */
 #endif
 };
@@ -11447,7 +11427,7 @@ struct winShm {
   u8 hasMutex;               /* True if holding the winShmNode mutex */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 id;                     /* Id of this connection with its winShmNode */
 #endif
 };
@@ -11638,7 +11618,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
 
   /* Make the new connection a child of the winShmNode */
   p->pShmNode = pShmNode;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   p->id = pShmNode->nextShmId++;
 #endif
   pShmNode->nRef++;
@@ -11907,7 +11887,7 @@ static int winShmMap(
     }
 
     /* Map the requested memory region into this processes address space. */
-    apNew = (struct ShmRegion *)sqlite3_realloc(
+    apNew = (struct ShmRegion *)sqlite3_realloc64(
         pShmNode->aRegion, (iRegion+1)*sizeof(apNew[0])
     );
     if( !apNew ){
@@ -13354,7 +13334,7 @@ static void winDlClose(sqlite3_vfs *pVfs, void *pHandle){
 static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   int n = 0;
   UNUSED_PARAMETER(pVfs);
-#if defined(SQLITE_TEST)
+#if defined(SQLITE_TEST) || defined(SQLITE_OMIT_RANDOMNESS)
   n = nBuf;
   memset(zBuf, 0, nBuf);
 #else
@@ -13388,23 +13368,23 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     memcpy(&zBuf[n], &i, sizeof(i));
     n += sizeof(i);
   }
-#endif
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
   if( sizeof(UUID)<=nBuf-n ){
     UUID id;
     memset(&id, 0, sizeof(UUID));
     osUuidCreate(&id);
-    memcpy(zBuf, &id, sizeof(UUID));
+    memcpy(&zBuf[n], &id, sizeof(UUID));
     n += sizeof(UUID);
   }
   if( sizeof(UUID)<=nBuf-n ){
     UUID id;
     memset(&id, 0, sizeof(UUID));
     osUuidCreateSequential(&id);
-    memcpy(zBuf, &id, sizeof(UUID));
+    memcpy(&zBuf[n], &id, sizeof(UUID));
     n += sizeof(UUID);
   }
 #endif
+#endif /* defined(SQLITE_TEST) || defined(SQLITE_ZERO_PRNG_SEED) */
   return n;
 }
 
@@ -13959,7 +13939,7 @@ SQLITE_PRIVATE int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   ** bits to act as the reference */
   pBitvec = sqlite3BitvecCreate( sz );
   pV = sqlite3MallocZero( (sz+7)/8 + 1 );
-  pTmpSpace = sqlite3_malloc(BITVEC_SZ);
+  pTmpSpace = sqlite3_malloc64(BITVEC_SZ);
   if( pBitvec==0 || pV==0 || pTmpSpace==0  ) goto bitvec_end;
 
   /* NULL pBitvec tests */
@@ -23414,6 +23394,8 @@ SQLITE_PRIVATE int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
         }
         assert( state==pPager->eState );
       }
+    }else if( eMode==PAGER_JOURNALMODE_OFF ){
+      sqlite3OsClose(pPager->jfd);
     }
   }
 
@@ -24196,7 +24178,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
   if( pWal->nWiData<=iPage ){
     int nByte = sizeof(u32*)*(iPage+1);
     volatile u32 **apNew;
-    apNew = (volatile u32 **)sqlite3_realloc((void *)pWal->apWiData, nByte);
+    apNew = (volatile u32 **)sqlite3_realloc64((void *)pWal->apWiData, nByte);
     if( !apNew ){
       *ppPage = 0;
       return SQLITE_NOMEM;
@@ -24821,7 +24803,7 @@ static int walIndexRecover(Wal *pWal){
 
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
-    aFrame = (u8 *)sqlite3_malloc(szFrame);
+    aFrame = (u8 *)sqlite3_malloc64(szFrame);
     if( !aFrame ){
       rc = SQLITE_NOMEM;
       goto recovery_error;
@@ -25214,7 +25196,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   nByte = sizeof(WalIterator) 
         + (nSegment-1)*sizeof(struct WalSegment)
         + iLast*sizeof(ht_slot);
-  p = (WalIterator *)sqlite3_malloc(nByte);
+  p = (WalIterator *)sqlite3_malloc64(nByte);
   if( !p ){
     return SQLITE_NOMEM;
   }
@@ -25224,7 +25206,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   /* Allocate temporary space used by the merge-sort routine. This block
   ** of memory will be freed before this function returns.
   */
-  aTmp = (ht_slot *)sqlite3_malloc(
+  aTmp = (ht_slot *)sqlite3_malloc64(
       sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)
   );
   if( !aTmp ){
