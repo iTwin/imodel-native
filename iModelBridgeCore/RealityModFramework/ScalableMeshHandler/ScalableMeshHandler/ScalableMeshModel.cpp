@@ -5,10 +5,10 @@ BEGIN_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshHandler)
 
-DgnModelP ScalableMeshHandler::_CreateInstance(DgnPlatform::DgnModel::CreateParams const& params)
+/*DgnModelP ScalableMeshHandler::_CreateInstance(DgnPlatform::DgnModel::CreateParams const& params)
     {
     return new ScalableMeshModel(params);
-    }
+    }*/
 
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {
