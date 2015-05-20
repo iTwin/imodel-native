@@ -2116,14 +2116,6 @@ void ElementGeometryCollection::Iterator::ToNext()
     {
     do
         {
-        if (m_dataOffset >= m_totalDataSize)
-            {
-            m_data = nullptr;
-            m_dataOffset = 0;
-
-            return;
-            }
-
         if (m_partGeometry.IsValid())
             {
             for (ElementGeometryPtr elemGeom : m_partGeometry->GetGeometry())
@@ -2146,6 +2138,14 @@ void ElementGeometryCollection::Iterator::ToNext()
 
             m_context->SetDgnGeomPartId(DgnGeomPartId());
             m_partGeometry = nullptr;
+            }
+
+        if (m_dataOffset >= m_totalDataSize)
+            {
+            m_data = nullptr;
+            m_dataOffset = 0;
+
+            return;
             }
 
         uint32_t        opCode = *((uint32_t *) (m_data));
