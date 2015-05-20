@@ -47,8 +47,8 @@ struct WMSCapabilities : RefCountedBase
         
 
         //! Complex type.
-        WMSServiceCP    GetServiceGroup() const { return m_pService.GetCR(); }
-        WMSCapabilityCP GetCapabilityGroup() const { return m_pCapability.GetCR(); }
+        WMSServiceCP    GetServiceGroup() const { return m_pService.get(); }
+        WMSCapabilityCP GetCapabilityGroup() const { return m_pCapability.get(); }
 
     private:
         WMSCapabilities(WStringCR version);
@@ -142,8 +142,8 @@ struct WMSService : RefCountedBase
 
         //! Complex type.
         bvector<WString>        GetKeywordList() const { return m_pKeywordList->Get(); }
-        WMSOnlineResourceCP     GetOnlineResource() const { return m_pOnlineResource.GetCR(); }
-        WMSContactInformationCP GetContactInformation() const { return m_pContactInformation.GetCR(); }
+        WMSOnlineResourceCP     GetOnlineResource() const { return m_pOnlineResource.get(); }
+        WMSContactInformationCP GetContactInformation() const { return m_pContactInformation.get(); }
 
     private:
         //! Read complex node.
@@ -216,8 +216,8 @@ struct WMSContactInformation : RefCountedBase
         WStringR    GetEmailAddressR() { return m_emailAddress; }
 
         //! Complex type.
-        WMSContactPersonCP  GetPerson() const { return m_pPerson.GetCR(); }
-        WMSContactAddressCP GetAddress() const { return m_pAddress.GetCR(); }
+        WMSContactPersonCP  GetPerson() const { return m_pPerson.get(); }
+        WMSContactAddressCP GetAddress() const { return m_pAddress.get(); }
 
     private:
         //! Read complex node.
@@ -308,7 +308,7 @@ struct WMSCapability : RefCountedBase
         static WMSCapabilityPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Complex type.
-        WMSRequestCP GetRequest() const { return m_pRequest.GetCR(); }
+        WMSRequestCP GetRequest() const { return m_pRequest.get(); }
         bvector<WString> GetExceptionList() const { return m_pExceptionList->Get(); }
         bvector<WMSLayerPtr> GetLayerList() const { return m_pLayerList; }
 
@@ -334,9 +334,9 @@ struct WMSRequest : RefCountedBase
         static WMSRequestPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Complex type.
-        WMSOperationTypeCP GetCapabilities() const { return m_pGetCapabilities.GetCR(); }
-        WMSOperationTypeCP GetMap() const { return m_pGetMap.GetCR(); }
-        WMSOperationTypeCP GetFeatureInfo() const { return m_pGetFeatureInfo.GetCR(); }
+        WMSOperationTypeCP GetCapabilities() const { return m_pGetCapabilities.get(); }
+        WMSOperationTypeCP GetMap() const { return m_pGetMap.get(); }
+        WMSOperationTypeCP GetFeatureInfo() const { return m_pGetFeatureInfo.get(); }
 
     private:
         //! Read complex node.
@@ -362,7 +362,7 @@ struct WMSOperationType : RefCountedBase
 
         //! Complex type.
         bvector<WString> GetFormatList() const { return m_pFormatList->Get(); }
-        WMSDCPTypeCP GetDcpType() const { return m_pDcpType.GetCR(); }
+        WMSDCPTypeCP GetDcpType() const { return m_pDcpType.get(); }
 
     private:
         //! Read complex node.
@@ -390,8 +390,8 @@ struct WMSDCPType : RefCountedBase
         static WMSDCPTypePtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
 
         //! Complex type.
-        WMSOnlineResourceCP GetHttpGet() const { return m_pHttpGet.GetCR(); }
-        WMSOnlineResourceCP GetHttpPost() const { return m_pHttpPost.GetCR(); }
+        WMSOnlineResourceCP GetHttpGet() const { return m_pHttpGet.get(); }
+        WMSOnlineResourceCP GetHttpPost() const { return m_pHttpPost.get(); }
 
     private:
         //! Read complex node.
@@ -451,16 +451,16 @@ struct WMSLayer : RefCountedBase
         //! Complex type.
         bvector<WString>            GetKeywordList() const { return m_pKeywordList->Get(); }
         bvector<WString>            GetCRSList() const { return m_pCRSList->Get(); }
-        WMSGeoBoundingBoxCP         GetGeoBBox() const { return m_pGeoBBox.GetCR(); }
-        WMSLatLonBoundingBoxCP      GetLatLonBBox() const { return m_pLatLonBBox.GetCR(); }
+        WMSGeoBoundingBoxCP         GetGeoBBox() const { return m_pGeoBBox.get(); }
+        WMSLatLonBoundingBoxCP      GetLatLonBBox() const { return m_pLatLonBBox.get(); }
         bvector<WMSBoundingBoxPtr>  GetBBox() const { return m_pBBoxList; }
         bvector<WMSDimensionPtr>    GetDimensionList() const { return m_pDimensionList; }
-        WMSAttributionCP            GetAttribution() const { return m_pAttribution.GetCR(); }
-        WMSUrlCP                    GetAuthorityUrl() const { return m_pAuthorityUrl.GetCR(); }
-        WMSUrlCP                    GetFeatureListUrl() const { return m_pFeatureListUrl.GetCR(); }
+        WMSAttributionCP            GetAttribution() const { return m_pAttribution.get(); }
+        WMSUrlCP                    GetAuthorityUrl() const { return m_pAuthorityUrl.get(); }
+        WMSUrlCP                    GetFeatureListUrl() const { return m_pFeatureListUrl.get(); }
         bvector<WMSUrlPtr>          GetMetadataUrlList() const { return m_pMetadataUrlList; }
-        WMSIdentifierCP             GetIdentifier() const { return m_pIdentifier.GetCR(); }
-        WMSStyleCP                  GetStyle() const { return m_pStyle.GetCR(); }
+        WMSIdentifierCP             GetIdentifier() const { return m_pIdentifier.get(); }
+        WMSStyleCP                  GetStyle() const { return m_pStyle.get(); }
         bvector<WMSLayerPtr>        GetLayerList() const { return m_pLayerList; }
 
     private:
@@ -685,8 +685,8 @@ struct WMSAttribution : RefCountedBase
         WStringR    GetTitleR() { return m_title; }
 
         //! Complex type.
-        WMSOnlineResourceCP GetOnlineResource() const { return m_pOnlineRes.GetCR(); }
-        WMSUrlCP            GetLogoUrl() const { return m_pLogoUrl.GetCR(); }
+        WMSOnlineResourceCP GetOnlineResource() const { return m_pOnlineRes.get(); }
+        WMSUrlCP            GetLogoUrl() const { return m_pLogoUrl.get(); }
 
     private:
         //! Read complex node.
@@ -756,7 +756,7 @@ struct WMSUrl : RefCountedBase
 
         //! Complex type.
         bvector<WString>    GetFormatList() const { return m_pFormatList->Get(); }
-        WMSOnlineResourceCP GetOnlineResource() const { return m_pOnlineRes.GetCR(); }
+        WMSOnlineResourceCP GetOnlineResource() const { return m_pOnlineRes.get(); }
 
     private:
         //! Read complex node.
@@ -819,9 +819,9 @@ struct WMSStyle : RefCountedBase
         WStringR    GetAbstractR() { return m_abstract; }
 
         //! Complex type.
-        WMSUrlCP    GetLegendUrl() const { return m_pLegendUrl.GetCR(); }
-        WMSUrlCP    GetStyleSheetUrl() const { return m_pStyleSheetUrl.GetCR(); }
-        WMSUrlCP    GetStyleUrl() const { return m_pStyleUrl.GetCR(); }
+        WMSUrlCP    GetLegendUrl() const { return m_pLegendUrl.get(); }
+        WMSUrlCP    GetStyleSheetUrl() const { return m_pStyleSheetUrl.get(); }
+        WMSUrlCP    GetStyleUrl() const { return m_pStyleUrl.get(); }
 
     private:
         //! Read complex node.

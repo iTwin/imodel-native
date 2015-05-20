@@ -58,6 +58,8 @@ $(o)RasterDataHandler$(oext) : $(baseDir)RasterDataHandler.cpp ${MultiCompileDep
 
 $(o)PointCloudDataHandler$(oext) : $(baseDir)PointCloudDataHandler.cpp ${MultiCompileDepends}
 
+$(o)WMSDataHandler$(oext) : $(baseDir)WMSDataHandler.cpp ${MultiCompileDepends}
+
 $(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointCloudVortex.h ${MultiCompileDepends}
 
 $(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(baseDir)RealityPlatformUtil.h ${MultiCompileDepends}
