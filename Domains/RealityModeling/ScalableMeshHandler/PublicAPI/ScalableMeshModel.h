@@ -60,10 +60,10 @@ typedef RefCountedPtr<ScalableMeshModel> ScalableMeshModelPtr;
 
 struct ScalableMeshHandler : DgnPlatform::ModelHandler
     {
-    HANDLER_DECLARE_MEMBERS("ScalableMesh", ScalableMeshHandler, DgnPlatform::ModelHandler, SCALABLEMESH_HANDLERS_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS("ScalableMesh", ScalableMeshModel, ScalableMeshHandler, DgnPlatform::ModelHandler, SCALABLEMESH_HANDLERS_EXPORT)
 
-    public:
-        SCALABLEMESH_HANDLERS_EXPORT virtual DgnModelP _CreateInstance(DgnPlatform::DgnModel::CreateParams const& params) override;
+    //public:
+    //    SCALABLEMESH_HANDLERS_EXPORT virtual DgnModelP _CreateInstance(DgnPlatform::DgnModel::CreateParams const& params) override;
     };
 END_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE
 //__PUBLISH_SECTION_END__
