@@ -515,8 +515,8 @@ TEST_F (ECDbHintTests, TablePerHierarchy_WithReuseColumns)
 
     //verify No of Columns in BaseClass
     Statement statement;
-    ASSERT_EQ (statement.Prepare(db, "SELECT * FROM rc_BaseClass"), DbResult::BE_SQLITE_OK);
-    ASSERT_EQ (statement.Step(), DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ (statement.Prepare (db, "SELECT * FROM rc_BaseClass"), DbResult::BE_SQLITE_OK);
+    ASSERT_EQ (statement.Step (), DbResult::BE_SQLITE_ROW);
     size_t columnCount = statement.GetColumnCount ();
     ASSERT_EQ (columnCount, 5);
 
@@ -649,14 +649,14 @@ TEST_F (ECDbHintTests, TestInValidMapStrategyValue)
 
     ECDbTestProject::Initialize ();
     ECDb ecdb;
-    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"SchemaHintDb.ecdb"))<<"ECDb couldn't be created";
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"SchemaHintDb.ecdb")) << "ECDb couldn't be created";
 
     ECSchemaPtr testSchema;
     auto readContext = ECSchemaReadContext::CreateContext ();
     ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
     ASSERT_TRUE (testSchema != nullptr);
     auto importStatus = ecdb.Schemas ().ImportECSchemas (readContext->GetCache ());
-    ASSERT_TRUE (importStatus == BentleyStatus::ERROR)<< "Schema import successful instead of returning error";
+    ASSERT_TRUE (importStatus == BentleyStatus::ERROR) << "Schema import successful instead of returning error";
     }
 
 //---------------------------------------------------------------------------------------
@@ -856,5 +856,99 @@ TEST_F (ECDbHintTests, InstanceInsertionForRelationshipsMappedToSameTable)
         rowCount++;
         }
     ASSERT_EQ (rowCount, 6) << "No of row returned doesn't match the no of Instances inserted for Relationship Classes";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//Base class has mapping hint TablerPerHierarchy and Derived Classes also implement TablerPerHierarchy
+TEST_F (ECDbHintTests, TablePerHierarchy)
+    {
+    const int rowsPerInstances = 3;
+    ECDbTestProject testproject;
+    auto& ecdb = testproject.Create ("SchemaHint_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
+
+    ASSERT_TRUE (ecdb.TableExists ("tph_TPH"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_DerivesTablePerHierarchy"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_ClassA"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_DerivesTablePerHierarchy1"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_ClassB"));
+
+    //Instance count should be equal to 15
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM tph.TPH"));
+    size_t rowCount = 0;
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        rowCount++;
+        }
+    ASSERT_TRUE (rowCount == 15) << "No of Instances in the Base Class is not 15";
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM ONLY tph.DerivesTablePerHierarchy1"));
+    rowCount = 0;
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        rowCount++;
+        }
+    ASSERT_TRUE (rowCount == 3) << "No of Instances in the Derived Class residing in the same base table is not 3";
+    stmt.Finalize ();
+    ecdb.CloseDb ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//Base class has mapping hint TablerPerHierarchy and Derived Classes implement DoNotMap and DoNotMapHierarchy
+TEST_F (ECDbHintTests, TablePerHierarchy_DoNotMapHierarchy)
+    {
+    const int rowsPerInstances = 3;
+    ECDbTestProject testproject;
+    auto& ecdb = testproject.Create ("SchemaHint_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
+
+    ASSERT_TRUE (ecdb.TableExists ("tph_TPH1"));
+    EXPECT_TRUE (ecdb.TableExists ("tph_ClassD"));/*this class should be mapped along the base class*/
+    ASSERT_FALSE (ecdb.TableExists ("tph_DerivesDoNotMapHierarchy"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_ClassC"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM ONLY tph.TPH1"));
+    size_t rowCount = 0;
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        rowCount++;
+        }
+    ASSERT_TRUE (rowCount == 3);
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM ONLY tph.ClassD"));
+    rowCount = 0;
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        rowCount++;
+        }
+    ASSERT_TRUE (rowCount == 3);
+    stmt.Finalize ();
+
+    ecdb.CloseDb ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//Base class has mapping hint TablerPerHierarchy and Derived Classes implement TableForThisClass and TablePerClass
+TEST_F (ECDbHintTests, TablePerHierarchy_TablePerClass)
+    {
+    const int rowsPerInstances = 3;
+    ECDbTestProject testproject;
+    auto& ecdb = testproject.Create ("SchemaHint_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
+
+    ASSERT_TRUE (ecdb.TableExists ("tph_TPH2"));
+    EXPECT_FALSE (ecdb.TableExists ("tph_DerivesTableForThisClass"));/*Seperate table should exist for this class*/
+    EXPECT_FALSE (ecdb.TableExists ("ClassF"));/*should be mapped to base class*/
+    EXPECT_FALSE (ecdb.TableExists ("tph_DerivesTablePerClass"));/*Seperate table should exist for this class*/
+    EXPECT_FALSE (ecdb.TableExists ("tph_ClassE"));/*Seperate table should exist for this class*/
+
+    ecdb.CloseDb ();
     }
 END_ECDBUNITTESTS_NAMESPACE
