@@ -18,8 +18,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct WebApiV2 : public WebApi
     {
     private:
-        static const BeVersion s_minWebApi;
-        static const BeVersion s_maxWebApi;
+        static const BeVersion s_maxTestedWebApi;
 
     private:
         WSInfo m_info;
