@@ -7,6 +7,20 @@
 
 #define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
 
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     07/2012
+//=======================================================================================
+struct AutoRestoreFPos
+{
+private:
+    IDgnShxFontData* m_data;
+    uint64_t m_positionToRestore;
+
+public:
+    AutoRestoreFPos(IDgnShxFontData& data) : m_data(&data), m_positionToRestore(data._Tell()) {}
+    ~AutoRestoreFPos() { m_data->_Seek((int64_t)m_positionToRestore, BeFileSeekOrigin::Begin); }
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
@@ -21,6 +35,9 @@ DgnShxFont::ShxType IDgnShxFontData::GetShxType()
     if (!session.IsValid())
         return DgnShxFont::ShxType::Invalid;
 
+    // Allow this to be used in the middle of other read operations.
+    AutoRestoreFPos restoreFPos(*this);
+    
     _Seek(0, BeFileSeekOrigin::Begin);
     
     char fileHeader[MAX_HEADER];
@@ -47,6 +64,184 @@ DgnShxFont::ShxType IDgnShxFontData::GetShxType()
 
     return DgnShxFont::ShxType::Invalid;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+void IDgnShxFontData::LoadNonUnicodeGlyphFPosCacheAndMetrics()
+    {
+    _Seek(0, BeFileSeekOrigin::Begin);
+    
+    // Skip header...
+    for (size_t iByte = 0; ((iByte < 40) && (0x1a != GetNextChar())); ++iByte)
+        ;
+
+    // Skip FirstCode and LastCode (both UInt16)...
+    _Seek(4, BeFileSeekOrigin::Current);
+
+    size_t numGlyphs = (size_t)GetNextUInt16();
+    size_t dataStart = (_Tell() + (4 * numGlyphs));
+    size_t dataOffset = 0;
+    DgnShxFont::GlyphFPos const* zeroGlyphFPos = nullptr;
+
+    // Read glyph GlyphFPos data.
+    for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
+        {
+        DgnGlyph::T_Id glyphId = (DgnGlyph::T_Id)GetNextUInt16();
+        DgnShxFont::GlyphFPos glyphFPos;
+        glyphFPos.m_dataOffset = (dataStart + dataOffset);
+        glyphFPos.m_dataSize = (size_t)GetNextUInt16();
+
+        m_glyphFPosCache[glyphId] = glyphFPos;
+        dataOffset += glyphFPos.m_dataSize;
+        
+        if (0 == glyphId)
+            zeroGlyphFPos = &m_glyphFPosCache[glyphId];
+        }
+    
+    //.............................................................................................
+    // Read metric data. Char 0 is the font specifier...
+    if (nullptr == zeroGlyphFPos)
+        {
+        m_ascender = 1;
+        return;
+        }
+
+    if (0 != _Seek(zeroGlyphFPos->m_dataOffset, BeFileSeekOrigin::Begin))
+        return;
+
+    size_t pBufSize = (size_t)zeroGlyphFPos->m_dataSize;
+    ScopedArray<Byte> pBuf(pBufSize);
+
+    // Read code 0 which should be the font specifier.
+    _Read(pBuf.GetData(), pBufSize, 1);
+
+    // Look for a NULL terminator.
+    size_t iLen = 0;
+    for (; ((iLen < pBufSize) && (0 != pBuf.GetData()[iLen])); ++iLen)
+        ;
+
+    // No Terminator found?
+    if (iLen == pBufSize)
+        return;
+
+    // Prehistoric legacy...
+    if ((pBufSize - iLen) != 5)
+        return;
+
+    size_t iOffset = (iLen + 1);
+    m_ascender = pBuf.GetData()[iOffset++];
+
+    // This hack comes from the OpenDWG code. I don't understand it but see TR#182253 for font with this problem (gbcbig.shx).
+    if (0 == m_ascender)
+        m_ascender = 8;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+void IDgnShxFontData::LoadUnicodeGlyphFPosCacheAndMetrics()
+    {
+    _Seek(0, BeFileSeekOrigin::Begin);
+    
+    // Skip header.
+    for (size_t iByte = 0; ((iByte < 40) && (0x1a != GetNextChar())); ++iByte)
+        ;
+
+    size_t numGlyphs = (size_t)GetNextUInt16();
+
+    // Not sure why we have to do this, but old code does, and most fonts indeed have less 1 glyph.
+    --numGlyphs;
+
+    // Skip 2 bytes...
+    _Seek(2, BeFileSeekOrigin::Current);
+
+    size_t fontInfoSize = (size_t)GetNextUInt16();
+    ScopedArray<Byte> fontInfo(fontInfoSize);
+
+    _Read(fontInfo.GetData(), fontInfoSize, 1);
+
+    size_t firstNullOffset = strlen(reinterpret_cast<char*>(fontInfo.GetData()));
+    size_t fontInfoDataOffset = (firstNullOffset + 1);
+
+    // ascender
+    m_ascender = fontInfo.GetData()[fontInfoDataOffset++];
+    
+    // skip descender
+    ++fontInfoDataOffset;
+
+    // Skip "modes".
+    ++fontInfoDataOffset;
+
+    // Special case when the "encoding" is "shape file".
+    if (2 == fontInfo.GetData()[fontInfoDataOffset])
+        m_ascender = 1;
+
+    uint64_t nextAddress = _Tell();
+
+    for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
+        {
+        if (0 != _Seek((int64_t)nextAddress, BeFileSeekOrigin::Begin))
+            break;
+
+        DgnGlyph::T_Id glyphId = (DgnGlyph::T_Id)GetNextUInt16();
+
+        DgnShxFont::GlyphFPos glyphFPos;
+        glyphFPos.m_dataOffset = (nextAddress + 4);
+        glyphFPos.m_dataSize = GetNextUInt16();
+
+        nextAddress = (size_t)(glyphFPos.m_dataOffset + glyphFPos.m_dataSize);
+
+        m_glyphFPosCache[glyphId] = glyphFPos;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+void IDgnShxFontData::LoadGlyphFPosCacheAndMetrics()
+    {
+    // Because we have to load and O(n) iterate the header to even know what glyphs are in the file, do it once up-front instead of repeatedly for each glyph.
+    // The glyphs will still load their glyph geometry data on-demand.
+    if (m_hasLoadedGlyphFPosCacheAndMetrics)
+        return;
+
+    m_hasLoadedGlyphFPosCacheAndMetrics = true;
+
+    // Allow this to be used in the middle of other read operations.
+    AutoRestoreFPos restoreFPos(*this); 
+    
+    switch (const_cast<IDgnShxFontData*>(this)->GetShxType())
+        {
+        case DgnShxFont::ShxType::Locale: LoadNonUnicodeGlyphFPosCacheAndMetrics(); return;
+        case DgnShxFont::ShxType::Unicode: LoadUnicodeGlyphFPosCacheAndMetrics(); return;
+        default:
+            return;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+DgnShxFont::GlyphFPos const* IDgnShxFontData::GetGlyphFPos(DgnGlyph::T_Id glyphId)
+    {
+    LoadGlyphFPosCacheAndMetrics();
+
+    T_GlyphFPosCache::const_iterator foundGlyphFPos = m_glyphFPosCache.find(glyphId);
+    if (m_glyphFPosCache.end() != foundGlyphFPos)
+        return &foundGlyphFPos->second;
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+Byte IDgnShxFontData::GetAscender()
+    {
+    LoadGlyphFPosCacheAndMetrics();
+    return m_ascender;
+    }   
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     03/2015
