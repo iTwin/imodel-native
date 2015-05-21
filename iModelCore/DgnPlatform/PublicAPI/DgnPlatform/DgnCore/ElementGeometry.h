@@ -254,6 +254,8 @@ struct Collection
     const_iterator begin () const {return const_iterator (m_data, m_dataSize);}
     const_iterator end   () const {return const_iterator ();}
 
+    void GetGeomPartIds (ECIdSet<DgnGeomPartId>&, DgnDbR) const;
+
     DGNPLATFORM_EXPORT void Draw (ViewContextR, DgnCategoryId, ViewFlagsCR) const;
 
     }; // Collection
@@ -315,6 +317,7 @@ const_iterator begin () const {return const_iterator (m_data, m_dataSize, m_cont
 const_iterator end   () const {return const_iterator ();}
 
 DGNPLATFORM_EXPORT ElemDisplayParamsCR GetElemDisplayParams();
+DGNPLATFORM_EXPORT DgnGeomPartId GetDgnGeomPartId(); //!< Returns invalid id if current geometry is from a part
 DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToElement();

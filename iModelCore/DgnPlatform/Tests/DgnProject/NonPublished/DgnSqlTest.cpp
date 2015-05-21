@@ -104,13 +104,15 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     if (true)
         {
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_error.sampleCode
-        //  This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
+        // This is an example of passing the wrong type of object to DGN_bbox_areaxy and getting an error.
+        // This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
+        // Note that the error is detected when you try to step the statement, not when you prepare it.
         Statement stmt;
         stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_placement_angles(Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
-        DbResult rc = stmt.Step();
-        ASSERT_EQ( BE_SQLITE_ERROR , rc );
-        printf ("SQLite error: %s", m_db->GetLastError()); // displays "SQLite error: Illegal input to DGN_bbox_areaxy"
+        DbResult rc = stmt.Step(); // rc will be BE_SQLITE_ERROR, and m_db->GetLastError() will return "Illegal input to DGN_bbox_areaxy"
         //__PUBLISH_EXTRACT_END__
+        ASSERT_EQ( BE_SQLITE_ERROR , rc );
+        BeTest::Log("SqlFunctionsTest", BeTest::PRIORITY_INFO, Utf8PrintfString("SQLite error: %s\n", m_db->GetLastError())); // displays "SQLite error: Illegal input to DGN_bbox_areaxy"
         }
 
     //  The X-Y area is width (X) time depth (Y)
@@ -140,6 +142,8 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     if (true)
         {
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
+        // This is an example of using DGN_placement_eabb to sum up element areas. Note that we must to use 
+        // element-aligned bounding boxes in this query, rather than axis-aligned bounding boxes.
         Statement stmt;
         stmt.Prepare(*m_db, "SELECT SUM(DGN_bbox_areaxy(DGN_placement_eabb(Placement))) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
         //__PUBLISH_EXTRACT_END__
@@ -195,6 +199,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
         //  Do the same by checking the yaw angle directly
         Statement stmt2;
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
+        // This query uses DGN_angles_value to extract the Yaw angle of an element's placement, in order to compare it with 90.
         stmt2.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE ABS(DGN_angles_value(DGN_placement_angles(g.Placement), 0) - 90) < 1.0");
         //__PUBLISH_EXTRACT_END__
 
@@ -235,6 +240,10 @@ TEST_F(SqlFunctionsTest, placement_angles)
     if (true)
         {
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
+        // This query looks for "Obstacles" that are oriented at 90 degrees in the X-Y plane.
+        // It is an example of using DGN_angles_maxdiff to look for elements with a specific placement angle. 
+        // This example also shows how to combine tests on geometry and business properties in a single query. 
+        // This example uses ECSql.
         ECSqlStatement estmt;
         estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM " 
                                 DGN_SCHEMA(DGN_CLASSNAME_ElementGeom) " AS g,"
@@ -260,6 +269,359 @@ TEST_F(SqlFunctionsTest, placement_angles)
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"DGN_point_min_distance_to_bbox.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+
+    double o1y = 2.0;
+    double o2x = 5.0;
+    DPoint3d o1origin = DPoint3d::From(0,o1y,0);
+    DPoint3d o2origin = DPoint3d::From(o2x,0,0);
+
+    DgnElementId r1, o1, o1a, o2, o2a;
+        {
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, "Robot1");
+        InsertElement(*robot1);
+
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "Obstacle1");
+        InsertElement(*obstacle1);
+        obstacle1->SetTestItem(*m_db, "SomeKindOfObstacle");
+
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "Obstacle1a");
+        InsertElement(*obstacle1a);
+        obstacle1a->SetTestItem(*m_db, "SomeOtherKindOfObstacle");
+
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "Obstacle2");
+        InsertElement(*obstacle2);
+        obstacle2->SetTestItem(*m_db, "SomeKindOfObstacle");
+
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "Obstacle2a");
+        InsertElement(*obstacle2a);
+        obstacle2a->SetTestItem(*m_db, "SomeOtherKindOfObstacle");
+
+        // Double-check that we created the robots and obstacles, as expected
+        ASSERT_EQ( RobotElement::QueryClassId(*m_db)    , robot1->GetElementClassId() );
+        ASSERT_EQ( ObstacleElement::QueryClassId(*m_db) , obstacle1->GetElementClassId() );
+
+        m_db->SaveChanges();
+
+        r1 = robot1->GetElementId();
+        o1 = obstacle1->GetElementId();
+        o1a = obstacle1a->GetElementId();
+        o2 = obstacle2->GetElementId();
+        o2a = obstacle2a->GetElementId();
+        }
+
+    RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
+
+    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
+    
+    Statement stmt;
+    stmt.Prepare(*m_db, 
+        "SELECT item.ElementId, item.x01 FROM"
+        "  (SELECT g.ElementId FROM"
+        "     (SELECT rt.ElementId FROM dgn_PrjRTree rt "                       //          FROM R-Tree
+        "        WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)" // select Elements in nodes that overlap bbox
+        "          AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
+        "          AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)) rt_res" // (call this result set "rt_res")
+        "     ,"
+        "      dgn_ElementGeom g WHERE g.ElementId=rt_res.ElementId"            //      JOIN ElementGeom
+        "          AND DGN_point_min_distance_to_bbox(:testPoint, DGN_placement_aabb(g.Placement)) <= :maxDistance"  // select geoms that are within some distance of a specified point
+        "  ) geom_res"                                                          //      (call this result set "geom_res")
+        "  , dgn_Element e"                                                     // JOIN Element
+        "  , dgn_ElementItem item "                                             // JOIN ElementItem
+        "       WHERE e.Id = geom_res.ElementId AND e.ECClassId=:ecClass"       //  select only Obstacles
+        "        AND item.ElementId = e.Id AND item.x01 = :propertyValue"       //                     ... with certain items
+
+        );
+
+    //  Initial placement
+    //
+    //  |                           ^
+    //  |                           |
+    //  |<---Obstacle1------->      Obstacle2
+    //  |                           |
+    //  |R1                         V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        // Search for Obstacles that are 2 meters from the center of Robot1. We should find only Obstacle1
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
+        AxisAlignedBox3d xbox = r1aabb;
+        DPoint3d r1center = DPoint3d::FromInterpolate(r1aabb.low, 0.5, r1aabb.high);
+        xbox.low.Add(DPoint3d::From(-3,-3,-3));
+        xbox.high.Add(DPoint3d::From(3,3,3));
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &xbox, sizeof(xbox), Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":testPoint"), &r1center, sizeof(r1center), Statement::MakeCopy::No);
+        stmt.BindDouble(stmt.GetParameterIndex(":maxDistance"), 2.0);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
+
+        ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+
+        DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1 , ofoundId );
+        ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
+
+        // Expand the search to a distance of 5 meters, and we should find both obstacles
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        xbox.low.Add(DPoint3d::From(-3,-3,-3));
+        xbox.high.Add(DPoint3d::From(3,3,3));
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &xbox, sizeof(xbox), Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":testPoint"), &r1center, sizeof(r1center), Statement::MakeCopy::No);
+        stmt.BindDouble(stmt.GetParameterIndex(":maxDistance"), 5.0);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
+        
+        DgnElementIdSet hits;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            hits.insert (stmt.GetValueId<DgnElementId>(0));
+            ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+            }
+        ASSERT_EQ( 2 , hits.size() );
+        ASSERT_TRUE( hits.Contains(o1) );
+        ASSERT_TRUE( hits.Contains(o2) );
+
+        // Narrow the search to 1 meter, and we should get no hits.
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &xbox, sizeof(xbox), Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":testPoint"), &r1center, sizeof(r1center), Statement::MakeCopy::No);
+        stmt.BindDouble(stmt.GetParameterIndex(":maxDistance"), 1.0);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
+        
+        ASSERT_EQ( BE_SQLITE_DONE , stmt.Step() );
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SqlFunctionsTest, spatialQueryECSql)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"spatialQueryECSql.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+
+    double o1y = 5.0;
+    double o2x = 5.0;
+    DPoint3d o1origin = DPoint3d::From(0,o1y,0);
+    DPoint3d o2origin = DPoint3d::From(o2x,0,0);
+
+    DgnElementId r1, o1, o1a, o2, o2a;
+        {
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, "Robot1");
+        InsertElement(*robot1);
+
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "Obstacle1");
+        InsertElement(*obstacle1);
+        obstacle1->SetTestItem(*m_db, "SomeKindOfObstacle");
+
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, "Obstacle1a");
+        InsertElement(*obstacle1a);
+        obstacle1a->SetTestItem(*m_db, "SomeOtherKindOfObstacle");
+
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "Obstacle2");
+        InsertElement(*obstacle2);
+        obstacle2->SetTestItem(*m_db, "SomeKindOfObstacle");
+
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, "Obstacle2a");
+        InsertElement(*obstacle2a);
+        obstacle2a->SetTestItem(*m_db, "SomeOtherKindOfObstacle");
+
+        // Double-check that we created the robots and obstacles, as expected
+        ASSERT_EQ( RobotElement::QueryClassId(*m_db)    , robot1->GetElementClassId() );
+        ASSERT_EQ( ObstacleElement::QueryClassId(*m_db) , obstacle1->GetElementClassId() );
+
+        m_db->SaveChanges();
+
+        r1 = robot1->GetElementId();
+        o1 = obstacle1->GetElementId();
+        o1a = obstacle1a->GetElementId();
+        o2 = obstacle2->GetElementId();
+        o2a = obstacle2a->GetElementId();
+        }
+
+    RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
+
+    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
+    ECSqlStatement stmt;
+    stmt.Prepare(*m_db, 
+        "SELECT TestItem.ECInstanceId, TestItem.TestItemProperty FROM dgn.ElementRTree rt, DgnPlatformTest.Obstacle, DgnPlatformTest.TestItem"
+        "     WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)"
+        "       AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
+        "       AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)"
+        "       AND Obstacle.ECInstanceId = rt.ECInstanceId"
+        "       AND TestItem.ECInstanceId = rt.ECInstanceId AND TestItem.TestItemProperty = :propertyValue"
+        );
+
+    //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
+    auto qplan = m_db->ExplainQueryPlan(nullptr, stmt.GetNativeSql());
+    auto scanRt = qplan.find("SCAN TABLE dgn_PrjRTree VIRTUAL TABLE INDEX");
+    auto searchItem = qplan.find("SEARCH TABLE dgn_ElementItem USING INTEGER PRIMARY KEY");
+    auto searchElement = qplan.find ("SEARCH TABLE dgn_Element USING INTEGER PRIMARY KEY");
+    ASSERT_NE( Utf8String::npos , scanRt );
+    ASSERT_NE( Utf8String::npos , searchItem );
+    ASSERT_NE( Utf8String::npos , searchElement );
+    ASSERT_LT( scanRt , searchItem );
+    ASSERT_LT( scanRt , searchElement );
+
+    //  Initial placement: Robot1 is not touching any obstacle
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                   ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |R1                 V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step());
+        }
+
+    //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |R1                 ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                   V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        ObstacleElementCPtr obstacle1 = m_db->Elements().Get<ObstacleElement>(o1);
+
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), obstacle1->GetPlacement().GetOrigin()));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+
+        DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1 , ofoundId );
+        ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+
+        //  Query for the other kind of obstacle
+        stmt.Reset();
+        stmt.ClearBindings();
+        r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeOtherKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+
+        ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o1a , ofoundId );
+        ASSERT_STREQ( "SomeOtherKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+
+        //  Query should fail if I specify an item that is not found on any kind of obstacle
+        stmt.Reset();
+        stmt.ClearBindings();
+        r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "no kind of obstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step());
+        }
+
+    //  Move Robot1 over, so that it touches Obstacle2 but not Obstacle1
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                   ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                R1 V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        ObstacleElementCPtr obstacle2 = m_db->Elements().Get<ObstacleElement>(o2);
+
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), obstacle2->GetPlacement().GetOrigin()));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+
+        DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
+        ASSERT_EQ( o2 , ofoundId );
+        ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+        }
+
+    //  Move Robot1 so that it touches both Obstacle1 and Obstacle1
+    //
+    //  |
+    //  |<---Obstacle1------->
+    //  |                R1 ^
+    //  |                   |
+    //  |                   Obstacle2
+    //  |                   |
+    //  |                   V
+    //  +-- -- -- -- -- -- --
+    if (true)
+        {
+        RobotElementPtr robot1CC = m_db->Elements().GetForEdit<RobotElement>(r1);
+        ASSERT_TRUE( robot1CC.IsValid() );
+        robot1CC->Translate(DVec3d::FromStartEnd(robot1CC->GetPlacement().GetOrigin(), DPoint3d::From(o2x,o1y,0)));
+        ASSERT_TRUE( m_db->Elements().Update(*robot1CC).IsValid() );
+
+        DgnElementIdSet overlaps;
+        stmt.Reset();
+        stmt.ClearBindings();
+        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
+        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        while (BeSQLite::EC::ECSqlStepStatus::HasRow == stmt.Step())
+            {
+            overlaps.insert (stmt.GetValueId<DgnElementId>(0));
+            ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
+            }
+        ASSERT_EQ( 2 , overlaps.size() );
+        ASSERT_TRUE( overlaps.Contains(o1) );
+        ASSERT_TRUE( overlaps.Contains(o2) );
+        }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
@@ -309,29 +671,19 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-	// Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
-	
-    Utf8CP sql = 
+    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
+    Statement stmt;
+    stmt.Prepare(*m_db, 
         "SELECT item.ElementId, item.x01 FROM"
-        "  (SELECT g.ElementId FROM"
-        "     (SELECT rt.ElementId FROM dgn_PrjRTree rt "                       //          FROM R-Tree
-        "        WHERE rt.MaxX >= ?1 AND rt.MinX <= ?4"                         //           select Elements in nodes that overlap bbox
-        "          AND rt.MaxY >= ?2 AND rt.MinY <= ?5"
-        "          AND rt.MaxZ >= ?3 AND rt.MinZ <= ?6) rt_res"                 //           (call this result set "rt_res")
-        "     ,"
-        "      dgn_ElementGeom g WHERE g.ElementId=rt_res.ElementId"            //      JOIN ElementGeom
-        "          AND DGN_bbox_overlaps(DGN_placement_aabb(g.Placement), DGN_bbox(?1, ?2, ?3, ?4, ?5, ?6))"  // select geoms that overlap bbox
-        "  ) geom_res"                                                          //      (call this result set "geom_res")
+        "  (SELECT rt.ElementId FROM dgn_PrjRTree rt "                          //          FROM R-Tree
+        "     WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)"  // select Elements in nodes that overlap bbox
+        "       AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
+        "       AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)) rt_res" // (call this result set "rt_res")
         "  , dgn_Element e"                                                     // JOIN Element
         "  , dgn_ElementItem item "                                             // JOIN ElementItem
-        "       WHERE e.Id = geom_res.ElementId AND e.ECClassId=?7"             //  select only Obstacles
-        "        AND item.ElementId = e.Id AND item.x01 = ?8"                  //                     ... with certain items
-    ;
-
-    //printf ("%s\n", m_db->ExplainQueryPlan(nullptr, sql));
-
-    Statement stmt;
-    stmt.Prepare(*m_db, sql);
+        "       WHERE e.Id = rt_res.ElementId AND e.ECClassId=:ecClass"         //  select only Obstacles
+        "        AND item.ElementId = e.Id AND item.x01 = :propertyValue"       //                     ... with certain items
+        );
 
     //  Initial placement
     //
@@ -348,14 +700,9 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         stmt.Reset();
         stmt.ClearBindings();
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
-        stmt.BindDouble(1, r1aabb.low.x);
-        stmt.BindDouble(2, r1aabb.low.y);
-        stmt.BindDouble(3, r1aabb.low.z);
-        stmt.BindDouble(4, r1aabb.high.x);
-        stmt.BindDouble(5, r1aabb.high.y);
-        stmt.BindDouble(6, r1aabb.high.z);
-        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
-        stmt.BindText(8, "SomeKindOfObstacle", Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &r1aabb, sizeof(r1aabb), Statement::MakeCopy::No);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
 
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
@@ -382,14 +729,9 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         stmt.Reset();
         stmt.ClearBindings();
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindDouble(1, r1aabb.low.x);
-        stmt.BindDouble(2, r1aabb.low.y);
-        stmt.BindDouble(3, r1aabb.low.z);
-        stmt.BindDouble(4, r1aabb.high.x);
-        stmt.BindDouble(5, r1aabb.high.y);
-        stmt.BindDouble(6, r1aabb.high.z);
-        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
-        stmt.BindText(8, "SomeKindOfObstacle", Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &r1aabb, sizeof(r1aabb), Statement::MakeCopy::No);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
 
         ASSERT_EQ( BE_SQLITE_ROW, stmt.Step() );
 
@@ -403,14 +745,9 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         stmt.Reset();
         stmt.ClearBindings();
         r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindDouble(1, r1aabb.low.x);
-        stmt.BindDouble(2, r1aabb.low.y);
-        stmt.BindDouble(3, r1aabb.low.z);
-        stmt.BindDouble(4, r1aabb.high.x);
-        stmt.BindDouble(5, r1aabb.high.y);
-        stmt.BindDouble(6, r1aabb.high.z);
-        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
-        stmt.BindText(8, "SomeOtherKindOfObstacle", Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &r1aabb, sizeof(r1aabb), Statement::MakeCopy::No);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeOtherKindOfObstacle", Statement::MakeCopy::No);
 
         ASSERT_EQ( BE_SQLITE_ROW, stmt.Step() );
 
@@ -424,14 +761,9 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         stmt.Reset();
         stmt.ClearBindings();
         r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindDouble(1, r1aabb.low.x);
-        stmt.BindDouble(2, r1aabb.low.y);
-        stmt.BindDouble(3, r1aabb.low.z);
-        stmt.BindDouble(4, r1aabb.high.x);
-        stmt.BindDouble(5, r1aabb.high.y);
-        stmt.BindDouble(6, r1aabb.high.z);
-        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
-        stmt.BindText(8, "no kind of obstacle", Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &r1aabb, sizeof(r1aabb), Statement::MakeCopy::No);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "no kind of obstacle", Statement::MakeCopy::No);
 
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
@@ -458,14 +790,9 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         stmt.Reset();
         stmt.ClearBindings();
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindDouble(1, r1aabb.low.x);
-        stmt.BindDouble(2, r1aabb.low.y);
-        stmt.BindDouble(3, r1aabb.low.z);
-        stmt.BindDouble(4, r1aabb.high.x);
-        stmt.BindDouble(5, r1aabb.high.y);
-        stmt.BindDouble(6, r1aabb.high.z);
-        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
-        stmt.BindText(8, "SomeKindOfObstacle", Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &r1aabb, sizeof(r1aabb), Statement::MakeCopy::No);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
         ASSERT_EQ( BE_SQLITE_ROW, stmt.Step() );
 
         DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
@@ -496,14 +823,9 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         stmt.Reset();
         stmt.ClearBindings();
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindDouble(1, r1aabb.low.x);
-        stmt.BindDouble(2, r1aabb.low.y);
-        stmt.BindDouble(3, r1aabb.low.z);
-        stmt.BindDouble(4, r1aabb.high.x);
-        stmt.BindDouble(5, r1aabb.high.y);
-        stmt.BindDouble(6, r1aabb.high.z);
-        stmt.BindId(7, ObstacleElement::QueryClassId(*m_db));
-        stmt.BindText(8, "SomeKindOfObstacle", Statement::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &r1aabb, sizeof(r1aabb), Statement::MakeCopy::No);
+        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
         while (BE_SQLITE_ROW == stmt.Step())
             {
             overlaps.insert (stmt.GetValueId<DgnElementId>(0));
@@ -525,6 +847,8 @@ TEST_F(SqlFunctionsTest, bbox_union)
 
     Statement stmt;
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
+    // This is an example of accumlating the union of bounding boxes.
+    // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
     stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
                     " AS g WHERE e.ModelId=2 AND e.id=g.ElementId");
     //__PUBLISH_EXTRACT_END__
@@ -538,6 +862,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
 
     stmt.Finalize();
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
+    // An example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
     stmt.Prepare(*dgndb, "SELECT count(*) FROM "
                          DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(0,0,90)) < 1.0");
     //__PUBLISH_EXTRACT_END__

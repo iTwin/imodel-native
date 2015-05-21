@@ -37,8 +37,8 @@ struct EdgeStatusAccessor
         uint32_t    m_flags;
         };
 
-    explicit EdgeStatusAccessor(DgnElementDependencyGraph::EdgeStatus s) : m_flags((uint32_t)s) {;}
-    explicit EdgeStatusAccessor(uint32_t s) : m_flags(s) {;}
+    explicit EdgeStatusAccessor(DgnElementDependencyGraph::EdgeStatus s) : m_flags((uint32_t)s) {}
+    explicit EdgeStatusAccessor(uint32_t s) : m_flags(s) {}
     DgnElementDependencyGraph::EdgeStatus ToEdgeStatus() const {return (DgnElementDependencyGraph::EdgeStatus)m_flags;}
     };
 
@@ -112,11 +112,6 @@ struct DgnElementDependencyGraph::EdgeQueue : DgnElementDependencyGraph::TableAp
     };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnElementDrivesElementDependencyHandler::GetDescription() {return _GetDescription();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  01/15
@@ -367,7 +362,7 @@ void DgnElementDependencyGraph::UpdateModelDependencyIndex ()
         if (iscycle)
             {
             auto mpath = stmt->GetValueText (3);
-            ReportValidationError (*new CyclesDetectedError (FmtElementPath(mpath)), nullptr);
+            ReportValidationError (*new CyclesDetectedError(FmtElementPath(mpath).c_str()), nullptr);
             return;
             }
 
@@ -409,7 +404,7 @@ BentleyStatus DgnElementDependencyGraph::CheckDirection(Edge const& edge)
     models.QueryModelDependencyIndexAndType(sidx, stype, m_db.Elements().QueryModelId(edge.m_ein));
     models.QueryModelDependencyIndexAndType(tidx, ttype, m_db.Elements().QueryModelId(edge.m_eout));
     if (sidx > tidx || stype > ttype)
-        ReportValidationError (*new DirectionValidationError(FmtEdge(edge)), &edge);
+        ReportValidationError (*new DirectionValidationError(FmtEdge(edge).c_str()), &edge);
     return BSISUCCESS;
     }
 
@@ -443,11 +438,11 @@ void DgnElementDependencyGraph::LogDependencyFound (Statement& stmt, Edge const&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElementDependencyGraph::ReportValidationError (ITxnManager::IValidationError& error, Edge const* edge)
+void DgnElementDependencyGraph::ReportValidationError (ITxnManager::ValidationError& error, Edge const* edge)
     {
     if (m_processor != nullptr)
         {
-        EDGLOG(LOG_TRACE, "PROCESS VALIDATION ERROR %s", error.GetDescription().c_str());
+        EDGLOG(LOG_TRACE, "PROCESS VALIDATION ERROR %s", error.GetDescription());
         m_processor->_OnValidationError(error, edge);
         }
     else
@@ -494,7 +489,7 @@ void DgnElementDependencyGraph::InvokeHandler (Edge const& edge, size_t indentLe
     else
         {
         EDGLOG(LOG_ERROR, "Missing handler for %s", FmtEdge(edge).c_str());
-        m_db.GetTxnManager().ReportValidationError (*new MissingHandlerError (FmtEdge(edge)));
+        m_db.GetTxnManager().ReportValidationError (*new MissingHandlerError (FmtEdge(edge).c_str()));
         BeAssert(false);
         }
 
@@ -724,7 +719,7 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder_OneGraph (Edge 
         {
         if (color == EdgeColor::Gray)
             {
-            m_db.GetTxnManager().ReportValidationError (*new CyclesDetectedError (FmtCyclePath(edge, pathToSupplier)));
+            m_db.GetTxnManager().ReportValidationError (*new CyclesDetectedError (FmtCyclePath(edge, pathToSupplier).c_str()));
             SetFailedEdgeStatusInDb(edge, true); // mark at least this edge as failed. maybe we should mark the entire cycle??
             }
         return;

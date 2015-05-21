@@ -24,8 +24,6 @@ DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-typedef bset<DgnElementP> T_StdDgnElementSet;
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================

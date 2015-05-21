@@ -12,7 +12,23 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECCustomAttributes>
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
     </ECCustomAttributes>
-    
+
+    <ECClass typeName="ElementRTree" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <MapStrategy>MapToExistingTable</MapStrategy>
+                <TableName>dgn_PrjRTree</TableName>
+                <ECIdColumn>ElementId</ECIdColumn>
+            </ECDbClassHint>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MinX" typeName="double"/>
+        <ECProperty propertyName="MaxX" typeName="double"/>
+        <ECProperty propertyName="MinY" typeName="double"/>
+        <ECProperty propertyName="MaxY" typeName="double"/>
+        <ECProperty propertyName="MinZ" typeName="double"/>
+        <ECProperty propertyName="MaxZ" typeName="double"/>
+    </ECClass>
+
     <ECClass typeName="Model" isDomainClass="True" >
         <ECCustomAttributes>
             <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">

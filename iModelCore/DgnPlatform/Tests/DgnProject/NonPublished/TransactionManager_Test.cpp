@@ -35,12 +35,10 @@ struct ABCHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
 
     bvector<EC::ECInstanceId> m_relIds;
 
-    Utf8String _GetDescription() override {return "The ABC rule";}
-
     void _OnRootChanged (DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR) override
         {
         if (s_abcShouldFail)
-            db.GetTxnManager().ReportValidationError(*new ITxnManager::ValidationError(ITxnManager::ValidationErrorSeverity::Warning, "ABC failed"));
+            db.GetTxnManager().ReportValidationError(*new ITxnManager::ValidationError(ITxnManager::ValidationError::Severity::Warning, "ABC failed"));
         m_relIds.push_back (relationshipId);
         }
 
@@ -1737,7 +1735,7 @@ struct TestEdgeProcessor : DgnElementDependencyGraph::IEdgeProcessor
 
     virtual void _ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDrivesElementDependencyHandler* handler) override;
     virtual void _ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDrivesElementDependencyHandler* handler) override;
-    virtual void _OnValidationError(ITxnManager::IValidationError const& error, DgnElementDependencyGraph::Edge const* edge) override;
+    virtual void _OnValidationError(ITxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) override;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1758,7 +1756,7 @@ void TestEdgeProcessor::_ProcessEdgeForValidation(DgnElementDependencyGraph::Edg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestEdgeProcessor::_OnValidationError(ITxnManager::IValidationError const& error, DgnElementDependencyGraph::Edge const* edge) 
+void TestEdgeProcessor::_OnValidationError(ITxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) 
     {
     m_hadError = true;
     }

@@ -16,26 +16,26 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define DGN_CLASSNAME_Color               "Color"
-#define DGN_CLASSNAME_DrawingElement      "DrawingElement"
-#define DGN_CLASSNAME_Element             "Element"
-#define DGN_CLASSNAME_ElementAspect       "ElementAspect"
-#define DGN_CLASSNAME_ElementGeom         "ElementGeom"
-#define DGN_CLASSNAME_ElementGroup        "ElementGroup"
-#define DGN_CLASSNAME_ElementItem         "ElementItem"
-#define DGN_CLASSNAME_ElementGroup        "ElementGroup"
-#define DGN_CLASSNAME_GeomPart            "GeomPart"
-#define DGN_CLASSNAME_Category            "Category"
-#define DGN_CLASSNAME_Link                "Link"
-#define DGN_CLASSNAME_Model               "Model"
-#define DGN_CLASSNAME_PhysicalModel       "PhysicalModel"
-#define DGN_CLASSNAME_DrawingModel        "DrawingModel"
-#define DGN_CLASSNAME_SheetModel          "SheetModel"
-#define DGN_CLASSNAME_ComponentModel      "ComponentModel"
-#define DGN_CLASSNAME_PhysicalElement     "PhysicalElement"
-#define DGN_CLASSNAME_SubCategory         "SubCategory"
-#define DGN_CLASSNAME_Style               "Style"
-#define DGN_CLASSNAME_View                "View"
+#define DGN_CLASSNAME_Category              "Category"
+#define DGN_CLASSNAME_Color                 "Color"
+#define DGN_CLASSNAME_ComponentModel        "ComponentModel"
+#define DGN_CLASSNAME_DrawingElement        "DrawingElement"
+#define DGN_CLASSNAME_DrawingModel          "DrawingModel"
+#define DGN_CLASSNAME_Element               "Element"
+#define DGN_CLASSNAME_ElementAspect         "ElementAspect"
+#define DGN_CLASSNAME_ElementGeom           "ElementGeom"
+#define DGN_CLASSNAME_ElementGroup          "ElementGroup"
+#define DGN_CLASSNAME_ElementItem           "ElementItem"
+#define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_Model                 "Model"
+#define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
+#define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
+#define DGN_CLASSNAME_PhysicalView          "PhysicalView"
+#define DGN_CLASSNAME_SheetModel            "SheetModel"
+#define DGN_CLASSNAME_Style                 "Style"
+#define DGN_CLASSNAME_SubCategory           "SubCategory"
+#define DGN_CLASSNAME_View                  "View"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
@@ -46,6 +46,7 @@
 #define DGN_TABLE_RasterData        DGN_TABLE("RasterData")
 #define DGN_TABLE_RasterFile        DGN_TABLE("RasterFile")
 #define DGN_TABLE_Session           DGN_TABLE("Session")
+
 #define DGN_VTABLE_PrjRTree         DGN_TABLE("PrjRTree")
 
 //-----------------------------------------------------------------------------------------
@@ -1010,10 +1011,12 @@ public:
     static BentleyStatus Draw(DgnGeomPartId, ViewContextR, DgnCategoryId, ViewFlagsCR);
 
 public:
-    // WIP: waiting for IGeometryExt deserialization to be hooked up!
-    //! Query for a geometry part by ID.
+    //! Load a geometry part by ID.
     //! @param[in] geomPartId the ID of the geometry part to load
     DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
+
+    //! Query for a DgnGeomPartId by code.
+    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(Utf8CP code);
 
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert

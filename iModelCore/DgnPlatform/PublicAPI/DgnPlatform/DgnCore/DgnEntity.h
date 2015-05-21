@@ -25,8 +25,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElementDrivesElementDependencyHandler : DgnDom
 protected:
     friend struct DgnElementDependencyGraph;
 
-//    virtual Utf8CP _GetHandlerType() override {return "ElementDependency";}
-
     //! Called by DgnElementDependencyGraph after the source DgnElement's content has changed. 
     //! This base class implementation of _OnRootChanged calls ITxnManager::ReportValidationError to indicate a missing handler.
     //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
@@ -46,15 +44,9 @@ protected:
     //! @param[in] source               The ECRelationship's Source DgnElement
     //! @param[in] target               The ECRelationship's Target DgnElement
     //! @param[in] summary              Summary of all DgnElements that were *directly* changed, plus all dependencies that failed.
-    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR summary) {;}
-
-    //! Should return a human-readable string, for debugging purposes. 
-    virtual Utf8String _GetDescription() {return "";}
+    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR summary) {}
 
 public:
-    //! Get a human-readable description of this handler, for debugging purposes. Not necessarily translated.
-    DGNPLATFORM_EXPORT Utf8String GetDescription();
-
     //! Looks up a registered DgnElementDrivesElementDependencyHandler by its ECRelationship class ID.
     //! @param[in] db               The DgnDb in which the handler and ECRelationship reside. 
     //! @param[out] classId         The ID of the particular ElementDrivesElement ECRelationshipClass
@@ -112,51 +104,35 @@ struct DgnElementDependencyGraph
     //! This means that the constraints imposed on Elements by the current set of ECRelationships and their dependency handlers cannot be satisfied. Some
     //! ECRelationships must be removed. 
     //! This error is always fatal. The application should cancel the current transaction.
-    struct CyclesDetectedError : RefCounted<ITxnManager::IValidationError>
+    struct CyclesDetectedError : ITxnManager::ValidationError
         {
-        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-        Utf8String m_path;
-        virtual ITxnManager::ValidationErrorSeverity _GetSeverity() const {return ITxnManager::ValidationErrorSeverity::Fatal;}
-        virtual Utf8String _GetDescription() const {return m_path;}
-        CyclesDetectedError(Utf8StringCR path) : m_path(path) {;}
+        CyclesDetectedError(Utf8CP path) : ITxnManager::ValidationError(Severity::Fatal, path) {}
         };
 
     //! An Element dependency was triggered, but the handler for it was not registered.
     //! #GetDescription returns the ID of the missing handler.
     //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
     //! This error should be reported to the user for follow up.
-    struct MissingHandlerError : RefCounted<ITxnManager::IValidationError>
+    struct MissingHandlerError : ITxnManager::ValidationError
         {
-        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-        Utf8String m_handlerId;
-        virtual ITxnManager::ValidationErrorSeverity _GetSeverity() const {return ITxnManager::ValidationErrorSeverity::Warning;}
-        virtual Utf8String _GetDescription() const {return m_handlerId;}
-        MissingHandlerError(Utf8StringCR hid) : m_handlerId(hid) {;}
+        MissingHandlerError(Utf8CP handlerId) : ITxnManager::ValidationError(Severity::Warning, handlerId) {}
         };
     
     //! The requirements of an Element dependency were violated by the actions taken by another dependency handler.
     //! #GetDescription returns a description of dependency that was violated.
     //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
     //! This error should be reported to the user for follow up.
-    struct DependencyValidationError : RefCounted<ITxnManager::IValidationError>
+    struct DependencyValidationError : ITxnManager::ValidationError
         {
-        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-        Utf8String m_errorDetails;
-        virtual ITxnManager::ValidationErrorSeverity _GetSeverity() const {return ITxnManager::ValidationErrorSeverity::Warning;}
-        virtual Utf8String _GetDescription() const {return m_errorDetails;}
-        DependencyValidationError(Utf8StringCR details) : m_errorDetails(details) {;}
+        DependencyValidationError(Utf8CP details) : ITxnManager::ValidationError(Severity::Warning, details) {}
         };
     
     //! A dependency attempted to propagate changes from a dependent model to a root model. 
     //! This is illegal, and this dependency must be removed.
     //! This error is always fatal. The application should cancel the current transaction.
-    struct DirectionValidationError : RefCounted<ITxnManager::IValidationError>
+    struct DirectionValidationError : ITxnManager::ValidationError
         {
-        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-        Utf8String m_errorDetails;
-        virtual ITxnManager::ValidationErrorSeverity _GetSeverity() const {return ITxnManager::ValidationErrorSeverity::Fatal;}
-        virtual Utf8String _GetDescription() const {return m_errorDetails;}
-        DirectionValidationError(Utf8StringCR details) : m_errorDetails(details) {;}
+        DirectionValidationError(Utf8CP details) : ITxnManager::ValidationError(Severity::Fatal, details) {}
         };
 
     //! Indicates if changes have been propagated through an ECRelationship successfully or not.
@@ -232,7 +208,7 @@ struct DgnElementDependencyGraph
         virtual void _ProcessEdgeForValidation(Edge const& edge, DgnElementDrivesElementDependencyHandler* handler) = 0;
 
         //! Invoked when a validation error such as a cycle is detected.
-        virtual void _OnValidationError(ITxnManager::IValidationError const& error, Edge const* edge) = 0;
+        virtual void _OnValidationError(ITxnManager::ValidationError const& error, Edge const* edge) = 0;
         };
 
 private:
@@ -263,7 +239,7 @@ private:
     // working with handlers
     void InvokeHandler(Edge const& rh, size_t indentLevel);
     void InvokeHandlerForValidation(Edge const& rh);
-    void ReportValidationError (ITxnManager::IValidationError&, Edge const*);
+    void ReportValidationError (ITxnManager::ValidationError&, Edge const*);
 
     void DiscoverEdges(DgnModelId mid);
 

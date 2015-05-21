@@ -337,6 +337,27 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    05/2015
+//---------------------------------------------------------------------------------------
+DgnGeomPartId DgnGeomParts::QueryGeomPartId(Utf8CP code)
+    {
+    if (!code || !*code)
+        return DgnGeomPartId();
+
+    CachedStatementPtr statement;
+    GetDgnDb().Elements().GetStatement(statement, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Code=?");
+
+    if (!statement.IsValid())
+        return DgnGeomPartId();
+
+    statement->BindText(1, code, Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW != statement->Step())
+        return DgnGeomPartId();
+
+    return statement->GetValueId<DgnGeomPartId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Brien.Bastings              05/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnGeomParts::Draw (DgnGeomPartId geomPartId, ViewContextR context, DgnCategoryId categoryId, ViewFlagsCR flags)
