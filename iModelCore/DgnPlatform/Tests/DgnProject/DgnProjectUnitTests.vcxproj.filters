@@ -186,6 +186,12 @@
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
+    <ClInclude Include="NonPublished\GeomHeaders.h">
+      <Filter>NonPublished</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\BentleyHeaders.h">
+      <Filter>NonPublished</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Published">

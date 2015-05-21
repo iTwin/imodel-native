@@ -76,10 +76,12 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnElementHelpers.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\ElementCreateHelpers.h" />
+    <ClInclude Include="NonPublished\BentleyHeaders.h" />
     <ClInclude Include="NonPublished\CompatibilityHeaders.h" />
     <ClInclude Include="NonPublished\DgnHandlersTests.h" />
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
     <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
+    <ClInclude Include="NonPublished\GeomHeaders.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />

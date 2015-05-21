@@ -39,7 +39,7 @@
 #include <Bentley/Iota.h>
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/RefCounted.h>
-#include <Bentley/ReleaseMarshaller.h>
+//#include <Bentley/ReleaseMarshaller.h>   // this header use windows.h
 //#include <Bentley/ScopedArray.h>
 #include <Bentley/ValueFormat.h>
 #include <Bentley/WString.h>
@@ -90,7 +90,7 @@ void GetBentleyStructList(bvector<TypeNamePair>& list)
     list.push_back(TypeNamePair(sizeof(GlobalHandleContainer), L"GlobalHandleContainer"));
     list.push_back(TypeNamePair(sizeof(Iota), L"Iota"));
     list.push_back(TypeNamePair(sizeof(NonCopyableClass), L"NonCopyableClass"));
-    list.push_back(TypeNamePair(sizeof(ReleaseMarshaller), L"ReleaseMarshaller"));
+    //list.push_back(TypeNamePair(sizeof(ReleaseMarshaller), L"ReleaseMarshaller"));
     list.push_back(TypeNamePair(sizeof(DoubleFormatterBase), L"DoubleFormatterBase"));
     list.push_back(TypeNamePair(sizeof(DoubleFormatter), L"DoubleFormatter"));
     //list.push_back(TypeNamePair(sizeof(WStringddddddddddd), L"WStringddddddddddd"));
