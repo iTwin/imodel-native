@@ -122,4 +122,3 @@ EntityDependencyGraph.ParentChildTest2
 EntityDependencyGraph.PersistentHandlerTest
 NamedVolume.CrudTest
 NotificationManagerTest.GetPriority
-TransactionManagerTests.CRUD
