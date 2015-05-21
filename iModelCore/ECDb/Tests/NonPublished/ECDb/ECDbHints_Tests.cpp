@@ -951,4 +951,51 @@ TEST_F (ECDbHintTests, TablePerHierarchy_TablePerClass)
 
     ecdb.CloseDb ();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST (ECDbTests, TestStructClassInTablePerHierarchy)
+    {
+    auto const schema =
+        L"<?xml version='1.0' encoding='utf-8'?>"
+        L"<ECSchema schemaName='TeststructClassInTablePerHierarchy' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECClass typeName='BaseClass' isDomainClass='True'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='PerpertyTPH' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='CustomAttributeClass' isDomainClass='False' isCustomAttributeClass='True'>"
+        L"        <BaseClass>BaseClass</BaseClass>"
+        L"        <ECProperty propertyName='PropertyCustomAttributeClass' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='isStructClass' isStruct='True' isDomainClass='True'>"
+        L"        <BaseClass>BaseClass</BaseClass>"
+        L"        <ECProperty propertyName='PropertyIsStructClass' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='NonDomainClass' isDomainClass='False'>"
+        L"        <BaseClass>BaseClass</BaseClass>"
+        L"        <ECProperty propertyName='PropertyNonDomainClass' typeName='string' />"
+        L"    </ECClass>"
+        L"</ECSchema>";
+
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create ("StructClassInTablePerHierarchyDb.ecdb");
+    ECSchemaPtr testSchema;
+    auto readContext = ECSchemaReadContext::CreateContext ();
+    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
+    ASSERT_TRUE (testSchema != nullptr);
+    auto importStatus = db.Schemas ().ImportECSchemas (readContext->GetCache ());
+    ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
+
+    ASSERT_TRUE (db.TableExists ("tph_BaseClass"));
+    ASSERT_TRUE (db.TableExists ("tph_ArrayOfisStructClass"));
+
+    db.CloseDb ();
+    }
 END_ECDBUNITTESTS_NAMESPACE
