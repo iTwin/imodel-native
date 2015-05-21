@@ -1153,7 +1153,7 @@ RedlineModelP RedlineModel::Open (DgnMarkupProjectR markupProject, DgnModelId mi
     DgnModelP model = markupProject.Models().GetModel (mid);
     if (NULL == model)
         return NULL;
-    if (model->GetModelType() != DgnModelType::Redline)
+    if (model->GetModelType() != DgnModelType::Sheet)
         {
         BeAssert (false && "Not a redline model!?");
         return NULL;
@@ -1173,7 +1173,7 @@ PhysicalRedlineModelP PhysicalRedlineModel::Open (DgnMarkupProjectR markupProjec
     DgnModelP model = markupProject.Models().GetModel (mid);
     if (NULL == model)
         return NULL;
-    if (model->GetModelType() != DgnModelType::PhysicalRedline)
+    if (model->GetModelType() != DgnModelType::Physical)
         {
         BeAssert (false && "Not a physical redline model!?");
         return NULL;
@@ -1200,7 +1200,7 @@ RedlineModelP RedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP
     {
     markupProject.GetTxnManager().Deactivate();
 
-    DgnModelId modelId = markupProject.CreateModelPhaseI (name, DgnModelType::Redline);
+    DgnModelId modelId = markupProject.CreateModelPhaseI (name, DgnModelType::Sheet);
 
     RedlineModelP rdlModel = Open (markupProject, modelId);
     if (rdlModel == nullptr)
@@ -1282,7 +1282,7 @@ DgnModelId DgnMarkupProject::CreateModelPhaseI (Utf8CP name, DgnModelType modelT
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalRedlineModelP PhysicalRedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel)
     {
-    DgnModelId modelId = markupProject.CreateModelPhaseI (name, DgnModelType::PhysicalRedline);
+    DgnModelId modelId = markupProject.CreateModelPhaseI (name, DgnModelType::Physical);
 
     PhysicalRedlineModelP rdlModel = Open (markupProject, modelId);
     if (NULL == rdlModel)

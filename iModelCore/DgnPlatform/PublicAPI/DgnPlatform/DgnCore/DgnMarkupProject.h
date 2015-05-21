@@ -190,7 +190,7 @@ private:
     friend struct DgnMarkupProject;
 
 protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Redline;}
+    virtual DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
     virtual bool _Is3d() const override {return false;}
 
     static RedlineModelP CreateModel (DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModel);
@@ -428,7 +428,7 @@ private:
     friend struct DgnMarkupProject;
 
 protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::PhysicalRedline;}
+    virtual DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
     virtual bool _Is3d() const override {return true;}
 
     static PhysicalRedlineModelP CreateModel (DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel);
