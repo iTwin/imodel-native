@@ -350,7 +350,7 @@ BESERVER_ISSUED_ID_CLASS(DgnFontId);
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-struct IdSet : bset<BeRepositoryBasedId>
+struct BeRepositoryBasedIdSet : bset<BeRepositoryBasedId>
 {
     DGNPLATFORM_EXPORT void FromJson (Json::Value const& in);
     DGNPLATFORM_EXPORT void ToJson (Json::Value& out) const;
@@ -359,13 +359,18 @@ struct IdSet : bset<BeRepositoryBasedId>
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-template<typename IdType> struct ECIdSet
+template<typename IdType> struct IdSet : BeRepositoryBasedIdSet, BeSQLite::VirtualSet
 {
 private:
-    IdSet m_set;
+    BeRepositoryBasedIdSet m_set;
 
+    virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const
+        {
+        BeAssert(nVals == 1);
+        return Contains(IdType(vals[0].GetValueInt64()));
+        }
 public:
-    ECIdSet(){static_assert(sizeof(IdType)==sizeof(BeRepositoryBasedId),"ECIdSets may only contain BeRepositoryBasedId");}
+    IdSet(){static_assert(sizeof(IdType)==sizeof(BeRepositoryBasedId),"IdSets may only contain BeRepositoryBasedId");}
 
     typedef bset<IdType> T_SetType;
     typedef typename T_SetType::const_iterator const_iterator;
@@ -381,14 +386,18 @@ public:
     void insert (const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
     size_t erase (IdType const& val) {return ((T_SetType&)m_set).erase(val);}
     iterator erase (iterator it) {return ((T_SetType&)m_set).erase(it);}
+
     bool Contains(IdType id) const {return end() != find(id);}
+    
     void FromJson (Json::Value const& in) {m_set.FromJson(in);}
     void ToJson (Json::Value& out) const {m_set.ToJson(out);}
+
+    BeRepositoryBasedIdSet const& GetRepositoryBasedIdSet() const { return m_set; }
 };
 
-typedef ECIdSet<DgnElementId> DgnElementIdSet;
-typedef ECIdSet<DgnModelId> DgnModelIdSet;
-typedef ECIdSet<DgnCategoryId> DgnCategoryIdSet;
+typedef IdSet<DgnElementId> DgnElementIdSet;
+typedef IdSet<DgnModelId> DgnModelIdSet;
+typedef IdSet<DgnCategoryId> DgnCategoryIdSet;
 
 //=======================================================================================
 //! A DgnClassId is the local id for an ECClass in a DgnDb

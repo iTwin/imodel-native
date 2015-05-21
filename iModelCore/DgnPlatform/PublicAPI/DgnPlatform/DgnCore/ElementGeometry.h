@@ -254,7 +254,7 @@ struct Collection
     const_iterator begin () const {return const_iterator (m_data, m_dataSize);}
     const_iterator end   () const {return const_iterator ();}
 
-    void GetGeomPartIds (ECIdSet<DgnGeomPartId>&, DgnDbR) const;
+    void GetGeomPartIds (IdSet<DgnGeomPartId>&, DgnDbR) const;
 
     DGNPLATFORM_EXPORT void Draw (ViewContextR, DgnCategoryId, ViewFlagsCR) const;
 
