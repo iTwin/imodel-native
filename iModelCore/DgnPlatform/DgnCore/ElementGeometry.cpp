@@ -1503,7 +1503,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Collection::GetGeomPartIds (ECIdSet<DgnGeomPartId>& parts, DgnDbR dgnDb) const
+void ElementGeomIO::Collection::GetGeomPartIds (IdSet<DgnGeomPartId>& parts, DgnDbR dgnDb) const
     {
     ElementGeomIO::Reader reader(dgnDb);
 

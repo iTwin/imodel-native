@@ -294,7 +294,6 @@ DGNPLATFORM_EXPORT static MaterialUVDetailPtr Create ();
 };
 #endif
 
-//__PUBLISH_SECTION_END__
 typedef RefCountedPtr<PlotInfo> PlotInfoPtr;
 
 //=======================================================================================
@@ -371,8 +370,6 @@ DGNPLATFORM_EXPORT void     SetLineWeightMM (double weight, bool set = true);
 
 }; // PlotInfoPtr
 
-//__PUBLISH_SECTION_START__
-
 //=======================================================================================
 //! This structure holds all of the information about an element specifying the "displayable parameters" of the element.
 //! It is typically extracted from the "dhdr" section of the element header and from user data.
@@ -380,7 +377,6 @@ DGNPLATFORM_EXPORT void     SetLineWeightMM (double weight, bool set = true);
 //=======================================================================================
 struct ElemDisplayParams
 {
-//__PUBLISH_SECTION_END__
 private:
 
 struct AppearanceOverrides
@@ -421,25 +417,8 @@ public:
 DGNPLATFORM_EXPORT ElemDisplayParams ();
 DGNPLATFORM_EXPORT explicit ElemDisplayParams (ElemDisplayParamsCR rhs);
 
-DGNPLATFORM_EXPORT double   GetNetTransparency () const;
-DGNPLATFORM_EXPORT double   GetNetFillTransparency () const;
-
-DGNPLATFORM_EXPORT int32_t  GetNetDisplayPriority () const; // Get net display priority (2d only).
-DGNPLATFORM_EXPORT void     SetNetDisplayPriority (int32_t priority); // RASTER USE ONLY!!!
-
-DGNPLATFORM_EXPORT bool     IsLineColorFromSubCategoryAppearance () const;
-DGNPLATFORM_EXPORT bool     IsWeightFromSubCategoryAppearance () const;
-DGNPLATFORM_EXPORT bool     IsLineStyleFromSubCategoryAppearance () const;
-DGNPLATFORM_EXPORT bool     IsMaterialFromSubCategoryAppearance () const;
-DGNPLATFORM_EXPORT bool     IsFillColorFromSubCategoryAppearance () const;
-
-DGNPLATFORM_EXPORT void     Resolve (ViewContextR); // Resolve effective values
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-public:
-
 DGNPLATFORM_EXPORT void     Init ();
+DGNPLATFORM_EXPORT void     Resolve (ViewContextR); // Resolve effective values
 DGNPLATFORM_EXPORT void     SetCategoryId (DgnCategoryId); // Setting the Category Id also sets the SubCategory to the default.
 DGNPLATFORM_EXPORT void     SetSubCategoryId (DgnSubCategoryId);
 DGNPLATFORM_EXPORT void     SetWeight (uint32_t weight);
@@ -455,8 +434,23 @@ DGNPLATFORM_EXPORT void     SetDisplayPriority (int32_t priority); // Set displa
 DGNPLATFORM_EXPORT void     SetMaterial (MaterialCP material);
 DGNPLATFORM_EXPORT void     SetPatternParams (PatternParamsP patternParams);
 
+//! @cond DONTINCLUDEINDOC
+DGNPLATFORM_EXPORT double   GetNetTransparency () const;
+DGNPLATFORM_EXPORT double   GetNetFillTransparency () const;
+
+DGNPLATFORM_EXPORT int32_t  GetNetDisplayPriority () const; // Get net display priority (2d only).
+DGNPLATFORM_EXPORT void     SetNetDisplayPriority (int32_t priority); // RASTER USE ONLY!!!
+
+DGNPLATFORM_EXPORT bool     IsLineColorFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool     IsWeightFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool     IsLineStyleFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool     IsMaterialFromSubCategoryAppearance () const;
+DGNPLATFORM_EXPORT bool     IsFillColorFromSubCategoryAppearance () const;
+//! @endcond
+
 //! Compare two ElemDisplayParam.
 DGNPLATFORM_EXPORT bool operator==(ElemDisplayParamsCR rhs) const;
+
 //! copy operator
 DGNPLATFORM_EXPORT ElemDisplayParamsR operator=(ElemDisplayParamsCR rhs);
 
