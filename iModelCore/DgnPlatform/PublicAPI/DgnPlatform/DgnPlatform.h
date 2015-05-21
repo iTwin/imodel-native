@@ -623,18 +623,6 @@ struct DgnElementCPtrVec : bvector<DgnElementCPtr>
         }
 };
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct ElementIdSet : bset<DgnElementId>, BeSQLite::VirtualSet
-{
-    virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const
-        {
-        BeAssert(nVals == 1);
-        return (find(vals[0].GetValueId<DgnElementId>()) != end());
-        }
-};
-
 /** @cond BENTLEY_SDK_Internal */
 
 //! Types used to interface with native DgnDisplayKernel
