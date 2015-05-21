@@ -7,14 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "DgnHandlersTests.h"
-#include "CompatibilityHeaders.h"
 #include <Bentley/BeTest.h>
 #include <BeXml/BeXml.h>
 #include <wchar.h>
 
-USING_NAMESPACE_BENTLEY
 
-#ifdef WIP_NOT_PORTABLE
+//#ifdef WIP_NOT_PORTABLE
 
 struct TypeNamePair
 {
@@ -24,11 +22,20 @@ struct TypeNamePair
     TypeNamePair() :m_size(-1), m_alignment(-1), m_name(L"UnIntializedName"){}
     TypeNamePair(int32_t size, WString name) :m_size(size), m_name(name){}
 };
-struct CompatibilityFixture : public ::testing::TestWithParam<struct TypeNamePair>
+
+#include "BentleyHeaders.h"
+#include "GeomHeaders.h"
+
+USING_NAMESPACE_BENTLEY
+
+
+struct Compatibility_Test : public ::testing::Test
     {
      public:
          static BeXmlDomPtr m_dom;
          static xmlXPathContextPtr m_xmlXPathContext;
+         static void GetStructList(bvector<TypeNamePair>& list);
+         static bool IsConfigLoadError;
          static void SetUpTestCase()
             {
                 printf("*** SetUpTestCase ***\n");
@@ -39,8 +46,15 @@ struct CompatibilityFixture : public ::testing::TestWithParam<struct TypeNamePai
                 {
                     BeXmlNodeP          root = m_dom->GetRootElement();
                     if (NULL != root)
+                    {
                         m_xmlXPathContext = m_dom->AcquireXPathContext(root);
+                        IsConfigLoadError = false;
+                    }
+                    else
+                        printf("ERROR: Can't find root node\n");
                 }
+                else
+                    printf("ERROR: Unable to read/parse xml document, ERROR CODE = %d", (int)status);
             }
         //---------------------------------------------------------------------------------------
         // @bsimethod                                        Umar.Hayat                02/13
@@ -54,7 +68,7 @@ struct CompatibilityFixture : public ::testing::TestWithParam<struct TypeNamePai
             expression = expressionW.ConvertToLocaleChars(expression);
             m_dom->SelectNodes(iterableNodeSet, expression, m_xmlXPathContext);
             //printf("size = %d\n", iterableNodeSet.size());
-            if (iterableNodeSet.size())
+            if (iterableNodeSet.size()) 
             {
                 //printf("node name %ls \n", (*(iterableNodeSet.begin()++))->GetName());
                 //printf("node name %s \n", iterableNodeSet.front()->GetName());
@@ -79,7 +93,7 @@ struct CompatibilityFixture : public ::testing::TestWithParam<struct TypeNamePai
             if (iterableNodeSet.size())
             {
                 //printf("node name %ls \n", (*(iterableNodeSet.begin()++))->GetName());
-                //printf("node name %s \n", iterableNodeSet.front()->GetName());
+                printf("node name %s \n", iterableNodeSet.front()->GetName());
                 int32_t size = -1;
                 iterableNodeSet.front()->GetAttributeInt32Value(size, "alignment");
                 return size;
@@ -88,51 +102,24 @@ struct CompatibilityFixture : public ::testing::TestWithParam<struct TypeNamePai
         }
 
     };
-BeXmlDomPtr CompatibilityFixture::m_dom;
-xmlXPathContextPtr CompatibilityFixture::m_xmlXPathContext;
+BeXmlDomPtr Compatibility_Test::m_dom;
+xmlXPathContextPtr Compatibility_Test::m_xmlXPathContext;
+bool Compatibility_Test::IsConfigLoadError = true;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                        Umar.Hayat                05/15
 //---------------------------------------------------------------------------------------
-TEST_P(CompatibilityFixture, SizeCheck)
-    {    
-    TypeNamePair param = GetParam();
-    ASSERT_TRUE(m_dom.IsValid());
-    //printf("size = %d\n", GetSizeOf(param.m_name));
-    ASSERT_EQ(param.m_size, GetSizeOf(param.m_name)) << param.m_name.c_str() << " size is not matching";
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                        Umar.Hayat                05/15
-//---------------------------------------------------------------------------------------
-/*TEST_P(CompatibilityFixture, AlignmentCheck)
+TEST_F(Compatibility_Test, SizeCheck)
     {
-    TypeNamePair param = GetParam();
-    ASSERT_TRUE(m_dom.IsValid());
-    //printf("size = %d\n", GetSizeOf(param.m_name));
-    ASSERT_EQ(param.m_alignment, GetAlignOf(param.m_name)) << param.m_name.c_str() << " alignment is not matching";
+    ASSERT_FALSE(IsConfigLoadError) << "Configuration file not loaded properly";
+    bvector<TypeNamePair> structList; 
+    GetBentleyStructList(structList);
+    GetGeomStructList(structList);
+    for (TypeNamePair param : structList)
+        {
+        //printf("size = %d\n", GetSizeOf(param.m_name));
+        EXPECT_EQ(param.m_size, GetSizeOf(param.m_name)) << param.m_name.c_str() << " size is not matching";
+        }
     }
-*/
-INSTANTIATE_TEST_CASE_P(CompatibilityTests, CompatibilityFixture, ::testing::Values(
-    TypeNamePair(sizeof(WString), L"WString"),
-    TypeNamePair(sizeof(BeFileName), L"BeFileName"),
-    TypeNamePair(sizeof(BeFile), L"BeFile"),
-    TypeNamePair(sizeof(BeNumerical), L"BeNumerical"),
-    TypeNamePair(sizeof(bvector<WString>), L"bvector"),
-    TypeNamePair(sizeof(bset<WString, WString>), L"bset"),
-    TypeNamePair(sizeof(Iota), L"Iota"),
-    TypeNamePair(sizeof(bmap<WString, WString>), L"bmap"),
-    TypeNamePair(sizeof(BeSharedMutex), L"BeSharedMutex"), 
-    TypeNamePair(sizeof(BeVersion), L"BeVersion"),
 
-    TypeNamePair(sizeof(DPoint2d), L"DPoint2d"),
-    TypeNamePair(sizeof(DPoint3d), L"DPoint3d"),
-    TypeNamePair(sizeof(DPoint4d), L"DPoint4d"),
-    TypeNamePair(sizeof(DRange1d), L"DRange1d"),
-    TypeNamePair(sizeof(DRange2d), L"DRange2d"),
-    TypeNamePair(sizeof(DPlane3d), L"DPlane3d"),
-    TypeNamePair(sizeof(DMatrix4d), L"DMatrix4d"),
-    //TypeNamePair(sizeof(DMatrix3d), L"DMatrix3d "),
-    TypeNamePair(sizeof(DMap4d), L"DMap4d")
-));
-
-#endif // WIP_NOT_PORTABLE
+//#endif // WIP_NOT_PORTABLE
