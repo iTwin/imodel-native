@@ -413,7 +413,7 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableECSchema (Db& db)
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX idx_UniqueECSchemaName ON ec_Schema ([Name] COLLATE NOCASE);");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX uix_ec_Schema_Name ON ec_Schema (Name COLLATE NOCASE);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -444,7 +444,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE INDEX idx_ECClassName ON ec_Class (Name);");
+    return db.ExecuteSql ("CREATE INDEX ix_ec_Class_Name ON ec_Class (Name);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -468,7 +468,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_ClassMap_ECClassIdANDParentId ON ec_ClassMap (ECClassId, ParentId) WHERE ParentId IS NOT NULL;");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX uix_ec_ClassMap_ECClassId_ParentId ON ec_ClassMap (ECClassId, ParentId) WHERE ParentId IS NOT NULL;");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -493,7 +493,7 @@ Db& db
         return stat;
 
     //index needed for fast look-ups of derived classes for a given ECClass
-    return db.ExecuteSql ("CREATE INDEX idx_ec_BaseClass_BaseECClassId ON ec_BaseClass (BaseECClassId);");
+    return db.ExecuteSql ("CREATE INDEX ix_ec_BaseClass_BaseECClassId ON ec_BaseClass (BaseECClassId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -517,7 +517,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_PropertyPath_PropertyIdAndAccessString ON ec_PropertyPath (RootECPropertyId, AccessString);");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON ec_PropertyPath (RootECPropertyId, AccessString);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -550,11 +550,11 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = db.ExecuteSql ("CREATE INDEX idx_ECPropertyName ON ec_Property (Name);");
+    stat = db.ExecuteSql ("CREATE INDEX ix_ec_Property_Name ON ec_Property (Name);");
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE INDEX idx_ECClassId ON ec_Property (ECClassId);");
+    return db.ExecuteSql ("CREATE INDEX ix_ec_Property_ECClassId ON ec_Property (ECClassId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -706,7 +706,7 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableColumn
 Db& db
 )
     {
-    return db.ExecuteSql (
+    DbResult stat = db.ExecuteSql (
         "CREATE TABLE ec_Column"
         "("
         "Id INTEGER PRIMARY KEY,"
@@ -723,6 +723,11 @@ Db& db
         "PrimaryKey_Ordinal INTEGER,"
         "UserData INTEGER"
         ");");
+
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    return db.ExecuteSql("CREATE INDEX ix_ec_Column_TableId ON ec_Column (TableId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -747,7 +752,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_Index_TableIdAndName ON ec_Index (TableId, Name);");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX uix_ec_Index_TableId_Name ON ec_Index (TableId, Name);");
     }
 
 //-----------------------------------------------------------------------------------------
