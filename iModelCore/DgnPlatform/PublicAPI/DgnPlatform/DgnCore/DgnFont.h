@@ -197,7 +197,7 @@ private:
     DgnGlyphCP GetDefaultGlyphCP() const;
     DgnGlyph::T_Id FindFractionGlyphCode(uint8_t numerator, uint8_t denominator) const;
     DgnGlyph::T_Id Ucs4CharToFontChar(uint32_t, CharCP codePageString, bvector<Byte>& localeBuffer) const;
-    bvector<DgnGlyph::T_Id> Utf8ToFontChar(Utf8StringCR) const;
+    bvector<DgnGlyph::T_Id> Utf8ToFontChars(Utf8StringCR) const;
 
 public:
     DgnRscFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Rsc, name, data), m_defaultGlyph(nullptr), m_isDefaultGlyphAllocated(false), m_hasLoadedGlyphs(false), m_hasLoadedFractions(false) {}
@@ -232,9 +232,24 @@ struct DgnShxFont : DgnFont
         Metadata() : m_codePage(LangCodePage::Unknown), m_degreeCode(0), m_diameterCode(0), m_plusMinusCode(0) {}
     };
 
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     07/2012
+    //=======================================================================================
+    struct GlyphFPos
+    {
+        int64_t m_dataOffset;
+        size_t m_dataSize;
+    };
+
 private:
     friend struct DgnFontPersistence;
     Metadata m_metadata;
+    typedef bmap<DgnGlyph::T_Id, DgnGlyphCP> T_GlyphCache;
+    mutable T_GlyphCache m_glyphCache;
+
+    DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
+    DgnGlyph::T_Id Ucs4CharToFontChar(uint32_t, CharCP codePageString, bvector<Byte>& localeBuffer) const;
+    bvector<DgnGlyph::T_Id> Utf8ToFontChars(Utf8StringCR) const;
 
 public:
     DgnShxFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Shx, name, data) {}

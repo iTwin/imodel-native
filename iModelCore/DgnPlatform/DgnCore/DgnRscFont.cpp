@@ -459,7 +459,7 @@ DgnGlyph::T_Id DgnRscFont::Ucs4CharToFontChar(uint32_t ucs4Char, CharCP codePage
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-bvector<DgnGlyph::T_Id> DgnRscFont::Utf8ToFontChar(Utf8StringCR str) const
+bvector<DgnGlyph::T_Id> DgnRscFont::Utf8ToFontChars(Utf8StringCR str) const
     {
     bvector<uint16_t> fontChars;
     
@@ -503,7 +503,7 @@ BentleyStatus DgnRscFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGlyphLa
     //  is potentially computed, but should be cheap compared to the overall layout operation.
 
     // RSC glyphs codes are encoded as 16-bit multi-byte locale. In other words, we have to take each Unicode character, convert to locale, and make a uint16_t entry for each (single byte or otherwise).
-    bvector<DgnGlyph::T_Id> fontChars = Utf8ToFontChar(context.m_string);
+    bvector<DgnGlyph::T_Id> fontChars = Utf8ToFontChars(context.m_string);
     
     // Sometimes need to reserve a special blank glyph because if an RSC font does not provide a space glyph, it must be adjusted based on the previous character.
     unique_ptr<DgnRscGlyph> blankGlyph;
