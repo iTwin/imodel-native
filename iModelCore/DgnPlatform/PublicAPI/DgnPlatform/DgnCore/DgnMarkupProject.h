@@ -524,7 +524,6 @@ public:
     //! @param[out] status BE_SQLITE_OK if the DgnMarkupProject file was successfully opened or a non-zero error code if the project could not be opened or is not a markup project. May be NULL. 
     //! @param[in] filename The name of the file from which the DgnMarkupProject is to be opened. Must be a valid filename.
     //! @param[in] openParams Parameters for opening the database file
-    //! @param[in] loadDgnFile After the DgnMarkupProject database is opened, this method will also load the DgnFile for the project. If you know you
     //! will never access any element data, you can skip that step. However, generally it is preferable to load the DgnFile when opening the project.
     //! @return a reference counted pointer to the opened DgnMarkupProject. Its IsValid() method will be false if the open failed for any reason.
     DGNPLATFORM_EXPORT static DgnMarkupProjectPtr OpenDgnDb (BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);

@@ -36,7 +36,7 @@ typedef RefCountedPtr<ISprite> ISpritePtr;
  Sprites can be of varying sizes and color depths and can have both opaque and transparent pixels. 
  
  At a given time there can be many Sprites Locations shown in a DgnViewport. However, since the entire scene is
- refreshed from the backingStore for every frame (see discussion of Scene Creation in the detailed description of \ref Viewport), and
+ refreshed from the backingStore for every frame (see discussion of Scene Creation in the detailed description of \ref DgnViewport), and
  since Sprites are NOT stored in the backingStore, every IViewDecoration must (re)draw all of its SpriteLocations for every frame
  or they will disappear.
 

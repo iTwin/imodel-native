@@ -184,7 +184,7 @@ public:
 
     //! Find all elements in the project within the named volume
     //! @param[out] elementIds Element ids found (pass nullptr if not interested). Any existing entries are not cleared. 
-    //! @param[in] project DgnProject containing the elements
+    //! @param[in] dgnDb DgnDb containing the elements
     //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
     //! to include elements that partially overlap the volume (i.e., at the boundary). 
     DGNPLATFORM_EXPORT void FindElements (ElementIdSet* elementIds, DgnDbR dgnDb, bool allowPartialOverlaps = true) const;
