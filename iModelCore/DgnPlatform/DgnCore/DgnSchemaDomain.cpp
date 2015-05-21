@@ -695,6 +695,10 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb D
     RegisterHandler(WebMercatorModelHandler::GetHandler());
     RegisterHandler(StreetMapModelHandler::GetHandler());
     RegisterHandler(SheetModelHandler::GetHandler());
+    RegisterHandler(GraphicsModel2dHandler::GetHandler());
+    RegisterHandler(PlanarPhysicalModelHandler::GetHandler());
+    RegisterHandler(SectionDrawingModelHandler::GetHandler());
+
     RegisterHandler(ElementHandler::GetHandler());
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(PhysicalElementHandler::GetHandler());
