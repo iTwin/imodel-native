@@ -80,7 +80,7 @@ void IDgnShxFontData::LoadNonUnicodeGlyphFPosCacheAndMetrics()
     _Seek(4, BeFileSeekOrigin::Current);
 
     size_t numGlyphs = (size_t)GetNextUInt16();
-    size_t dataStart = (_Tell() + (4 * numGlyphs));
+    size_t dataStart = (size_t)(_Tell() + (4 * numGlyphs));
     size_t dataOffset = 0;
     DgnShxFont::GlyphFPos const* zeroGlyphFPos = nullptr;
 
