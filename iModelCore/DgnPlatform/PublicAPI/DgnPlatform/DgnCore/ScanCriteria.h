@@ -21,14 +21,8 @@ typedef int (*PFScanElementCallback)(DgnElementCR, void *callbackArg, ScanCriter
 
 enum class ScanTestResult
 {
-    Pass = 0,
+    Pass= 0,
     Fail = 1,
-};
-
-enum ScanCriteriaIterationType
-{
-    MSSCANCRIT_ITERATE_ELEMENT = 1,
-    MSSCANCRIT_ITERATE_ELEMENT_UNORDERED = 2,
 };
 
 enum ScanCriteriaConstants
@@ -38,11 +32,9 @@ enum ScanCriteriaConstants
     BUFF_FULL       = 11,
 };
 
-
 enum
 {
     MAX_SC_RANGE       = 8,
-    MAX_ORDERED_HITS   = 3000,
 };
 
 //=======================================================================================
@@ -50,8 +42,6 @@ enum
 //=======================================================================================
 struct ScanType
 {
-    unsigned int    returnOneElem:1;
-    unsigned int    iteration:2;
     unsigned int    testRange:1;
     unsigned int    testSkewScan:1;
     unsigned int    testCategory:1;
@@ -65,52 +55,6 @@ struct ScanType
 //=======================================================================================
 struct ScanCriteria : DgnRangeTree::Traverser
 {
-    struct ElemFilter
-        {
-        virtual  ScanTestResult _FilterElement (ScanCriteriaCP scP, DgnElementCP element) = 0;
-        virtual  void           Release(ScanCriteriaCP scP) = 0;
-        };
-
-    //=======================================================================================
-    //! Iterator over the elements in a DgnModel.
-    //! @bsiclass                                                     KeithBentley    10/00
-    //=======================================================================================
-    struct ElemIterator : std::iterator<std::forward_iterator_tag, DgnElementP const>
-    {
-    public:
-        enum IteratorState {ITERATING_GraphicElms = 2, ITERATING_HitEOF = 3};
-
-    private:
-        DgnModel::const_iterator m_iter;
-        DgnModelP           m_model;
-        IteratorState       m_state;
-
-    public:                                  // Make sure this is not constructible in the published API
-        ElemIterator() {m_model = NULL; m_state = ITERATING_GraphicElms;}
-        ElemIterator(DgnModel* pModel);    // iterate this model only
-        ElemIterator(ElemIterator *source);
-
-    public:
-        DgnElementCP GetCurrentDgnElement() {return HitEOF()? nullptr : m_iter->second.get();}
-        IteratorState GetState () {return m_state;}
-        DgnModelP GetModel () {return m_model;}
-
-        DgnElementCP GetFirstDgnElement (DgnModelP pModel, bool wantDeleted=false);
-        DgnElementCP GetFirstDgnElement () { return GetFirstDgnElement (m_model, false); }
-        DgnElementCP GetNextDgnElement (bool wantDeleted=false);
-        void SetModel (DgnModelP dgnModel) {m_model = dgnModel; m_iter = m_model->end();}
-        bool SetCurrentElm (DgnElementCP toElm);
-        void SetAtEOF ();
-        bool HitEOF () const {return m_state == ITERATING_HitEOF;}
-    public:
-        ElemIterator& operator++();
-        bool operator!=(ElemIterator const& rhs) const;
-        bool operator==(ElemIterator const& rhs) const {return !(*this != rhs);}
-
-        //! Access the element data
-        DgnElementCP operator* () const;
-    };
-
 private:
     typedef bvector<GeometricElementCP>  T_RangeHits;
 
@@ -121,7 +65,6 @@ private:
     int                     m_firstMember;
     ScanType                m_type;                // INPUT:  scan type bits
     DgnModelP               m_model;               // DERIVED or INPUT: the model we're scanning
-    int                     m_newCriteria;         // INPUT:  new range criteria
     int                     m_numRanges;
     DPoint3d                m_skewVector;          // INPUT:  skewVector if testSkewScan true
     DRange3d                m_skewRange;           // INPUT:  skew range in doubles
@@ -129,36 +72,18 @@ private:
     PFScanElementCallback   m_callbackFunc;        // INPUT:  iterator function
     void*                   m_callbackArg;         // INPUT:  argument to pass to callbackFunc
     DgnCategoryIdSet const* m_categories;          // INPUT:  the categories
-    ElemFilter*             m_elemfilter;
-    short                   m_elemOk;              // CONTEXT:  current element OK, wont fit in output
-    ElemIterator            m_iterator;
     IRangeNodeCheckP        m_appRangeNodeCheck;
-    T_RangeHits*            m_rangeHits;
-    int                     m_currRangeHit;
     ViewContextP            m_viewContext;
     int                     m_lastMember;
 
-    StatusInt CallElementFunc (DgnElementCP el);
-    StatusInt ProcessRangeIndexResults ();
     bool      UseRangeTree(DgnRangeTree&);
-    bool      UseRangeTreeOrdering () {return 3 == m_type.iteration;}
-    bool      IsElemRefIter () {return 3 == m_type.iteration || 2 == m_type.iteration;}
-    bool      IsElemDescrIter () {return 1 == m_type.iteration;}
-    bool      CheckElementRange (DgnElementCR) const;
-    StatusInt DoElementCallback ();
-    bool      TransferElement (int* scanStatus);
-    void      ResetState();
-    void      Empty();
-    DgnRangeTree::Match FindRangeHits(DgnRangeTree*);
-    StatusInt ProcessElemRefRangeList ();
-
-    virtual bool _CheckRangeTreeNode (DRange3dCR, bool, bool) const override;
-    virtual DgnRangeTree::Match _VisitRangeTreeElem (GeometricElementCP) override;
+    bool      CheckElementRange(DgnElementCR) const;
+    virtual bool _CheckRangeTreeNode (DRange3dCR, bool) const override;
+    virtual DgnRangeTree::Match _VisitRangeTreeElem(GeometricElementCP, DRange3dCR) override;
 
 public:
     DGNPLATFORM_EXPORT ScanCriteria ();
     DGNPLATFORM_EXPORT explicit ScanCriteria (ScanCriteriaCR);
-    DGNPLATFORM_EXPORT virtual ~ScanCriteria ();
 
     void         CopyRangeTest (ScanCriteriaCR from);
     ScanType     GetScanType () const {return m_type;}
@@ -170,10 +95,7 @@ public:
     DgnCategoryIdSet const* GetCategories() const {return m_categories;}
 
     DGNPLATFORM_EXPORT ScanTestResult CheckRange (DRange3dCR elemRange, bool isElem3d) const;
-    DGNPLATFORM_EXPORT void      SetSkewRangeTest (DRange3dP mainRange, DRange3dP skewRange, DPoint3dP skewVector);
-    DGNPLATFORM_EXPORT StatusInt SetReturnType(int returnType, int oneElementOnly, int nestCells);
-    DGNPLATFORM_EXPORT void      SetFilter(ElemFilter* filter);
-    DGNPLATFORM_EXPORT StatusInt Scan (ViewContextP);
+    DGNPLATFORM_EXPORT void SetSkewRangeTest (DRange3dP mainRange, DRange3dP skewRange, DPoint3dP skewVector);
 
 public:
     //! Create a new instance of ScanCriteria
@@ -205,7 +127,7 @@ public:
     DGNPLATFORM_EXPORT void SetRangeTest(DRange3dP scanRange);
 
     //! Perform the scan, filtering elements as dictated by this ScanCriteria, calling the callbackFunc specified in #SetElemRefCallback.
-    DGNPLATFORM_EXPORT StatusInt Scan();
+    DGNPLATFORM_EXPORT StatusInt Scan (ViewContextP = nullptr);
 
     //! Get the DgnModel set by #SetDgnModel. This method is often useful from the callbackFunc set in #SetElemRefCallback.
     DGNPLATFORM_EXPORT DgnModelP GetDgnModel();

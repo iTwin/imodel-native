@@ -36,8 +36,6 @@ void ScanCriteria::Delete (ScanCriteriaP scP)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ScanCriteria::SetDgnModel (DgnModelP model)
     {
-    m_newCriteria  = 1;
-
     if (NULL == (m_model = model))
         return DGNMODEL_STATUS_BadModel;
 
@@ -45,45 +43,12 @@ StatusInt       ScanCriteria::SetDgnModel (DgnModelP model)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ScanCriteria::SetReturnType (int returnType, int oneElementOnly, int nestCells)
-    {
-    switch (returnType)
-        {
-        case MSSCANCRIT_ITERATE_ELEMENT:
-            m_type.iteration = 2;
-            break;
-        case MSSCANCRIT_ITERATE_ELEMENT_UNORDERED:
-            m_type.iteration = 3;
-            break;
-        default:
-            {
-            BeAssert(0);
-            return ERROR;
-            }
-        }
-
-    m_type.returnOneElem = oneElementOnly;
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    08/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ScanCriteria::SetElementCallback (PFScanElementCallback callbackFunc, CallbackArgP callbackArg)
+void ScanCriteria::SetElementCallback (PFScanElementCallback callbackFunc, CallbackArgP callbackArg)
     {
     m_callbackArg  = callbackArg;
     m_callbackFunc = callbackFunc;
-
-    if (NULL != callbackFunc)
-        {
-        //  Don't override a value already set by SetReturnType
-        if (3 != m_type.iteration)
-            m_type.iteration = 2;
-        }
-    else
-        m_type.iteration = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
