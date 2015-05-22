@@ -867,15 +867,19 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     // get enclosing bounding box around polyhedron (outside scan range).
     DRange3d scanRange = polyhedron.ToRange();
 
+#ifdef WIP_NO_RANGE_INDEX_FOR_2D
     if (!Is3dView())
         {
         scanRange.low.z = -1.0e20;
         scanRange.high.z = 1.0e20;
         }
+#endif
 
     if (m_scanCriteria)
         {
-        if (RangeResult::Inside == m_parentRangeResult)
+        if (!Is3dView())    // WIP_NO_RANGE_INDEX_FOR_2D
+            m_scanCriteria->SetRangeTest (NULL);
+        else if (RangeResult::Inside == m_parentRangeResult)
             m_scanCriteria->SetRangeTest (NULL);
         else
             {
@@ -1200,7 +1204,7 @@ static StatusInt visitElementFunc (DgnElementCR element, ViewContextP context, S
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetScanReturn()
     {
-    bool isScanRangeValid = (RangeResult::Inside != m_parentRangeResult);
+    bool isScanRangeValid = Is3dView() && (RangeResult::Inside != m_parentRangeResult); // WIP_NO_RANGE_INDEX_FOR_2D
     int  returnType = (isScanRangeValid ? _GetScanReturnType() : MSSCANCRIT_ITERATE_ELEMENT);
 
     m_scanCriteria->SetRangeNodeCheck (this);

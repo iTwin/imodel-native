@@ -32,6 +32,10 @@
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
+#define DGN_CLASSNAME_Model2d               "Model2d"
+#define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
+#define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
+#define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
 #define DGN_CLASSNAME_SubCategory           "SubCategory"
@@ -482,6 +486,7 @@ enum class DgnViewType
     Drawing  = 1<<1,        //!< a view of a single drawing (2d) model
     Sheet    = 1<<2,        //!< a view of a sheet.
     Component = 1<<4,       //!< a view of a single component model
+    TwoD   = (Drawing | Sheet),
     All    = (Physical | Drawing | Sheet | Component),
 };
 

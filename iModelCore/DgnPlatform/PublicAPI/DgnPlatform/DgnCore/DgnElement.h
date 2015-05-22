@@ -169,6 +169,11 @@ protected:
     //! Override if the DgnElement subclass needs to generate the display label in a different way.
     virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode();}
 
+    //! Set the parent (owner) of this DgnElement.
+    //! The default implementation sets the parent without doing any checking.
+    //! Override if the DgnElement subclass needs to validate the parent/child relationship.
+    virtual BentleyStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return BentleyStatus::SUCCESS;}
+
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
     virtual void _OnInserted() {}
     virtual GeometricElementCP _ToGeometricElement() const {return nullptr;}
@@ -252,8 +257,8 @@ public:
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
-    /** @name AppData Management */
-    /** @{ */
+/** @name AppData Management */
+/** @{ */
     //! Get the HeapZone for the this element.
     DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
 
@@ -272,7 +277,7 @@ public:
     //! @param[in] key The key for the AppData of interest.
     //! @return the AppData for key \a key, or nullptr.
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
-    /** @} */
+/** @} */
 
     //! Get the DgnModel of this element.
     DgnModelR GetDgnModel() const {return m_dgnModel;}
@@ -301,11 +306,16 @@ public:
     DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 
     //! Get the DgnElementId for the parent of this element
+    //! @see SetParentId
     //! @return Id will be invalid if this element does not have a parent element
     DgnElementId GetParentId() const {return m_parentId;}
 
-    //! Change the parent of this DgnElement
-    void SetParentId(DgnElementId parent) {m_parentId = parent;}
+    //! Set the parent (owner) of this DgnElement
+    //! @see GetParentId
+    //! @see _SetParentId
+    //! @return BentleyStatus::SUCCESS if parent was set
+    //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects setting the parent.
+    BentleyStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
 
     //! Get the category of this DgnElement.
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
@@ -330,6 +340,7 @@ public:
     //! @see _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
+    //! Factory method that creates a new instance of DgnElement using the specified params.
     static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
 };
 

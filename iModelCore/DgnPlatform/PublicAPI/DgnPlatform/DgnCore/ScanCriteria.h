@@ -91,7 +91,7 @@ struct ScanCriteria : DgnRangeTree::Traverser
         ElemIterator(ElemIterator *source);
 
     public:
-        DgnElementCP GetCurrentDgnElement() {return m_iter->second.get();}
+        DgnElementCP GetCurrentDgnElement() {return HitEOF()? nullptr : m_iter->second.get();}
         IteratorState GetState () {return m_state;}
         DgnModelP GetModel () {return m_model;}
 
