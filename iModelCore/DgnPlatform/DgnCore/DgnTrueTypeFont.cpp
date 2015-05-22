@@ -656,6 +656,7 @@ BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGl
         return ERROR;
 
     // Acquire the glyphs.
+    // We need a 1:1 correlation between widths and glyphs, so this means we can insert null glyphs.
     result.m_glyphs.reserve(numUcs4Chars);
     for (size_t iGlyph = 0; iGlyph < numUcs4Chars; ++iGlyph)
         result.m_glyphs.push_back(FindGlyphCP(face, FT_Get_Char_Index(face, ucs4Chars[iGlyph]), style));
