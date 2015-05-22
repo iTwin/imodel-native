@@ -185,7 +185,7 @@ virtual StatusInt   _GetRange (DRange3dR range) const = 0;
 //=======================================================================================
 struct          IRangeNodeCheck
 {
-    virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR, DRange3dCR, bool is3d, bool isElement) = 0;
+    virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR, DRange3dCR, bool is3d) = 0;
 };
 
 //=======================================================================================
@@ -463,7 +463,6 @@ protected:
     void                    InvalidateScanRange ();
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange ();
     DGNPLATFORM_EXPORT bool CheckThicknessVector ();
-    virtual int _GetScanReturnType () {return MSSCANCRIT_ITERATE_ELEMENT;}
     DGNPLATFORM_EXPORT virtual StatusInt       _Attach (DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void            _Detach ();
     DGNPLATFORM_EXPORT virtual void            _SetupOutputs () = 0;
@@ -522,7 +521,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void            _SetCurrentElement (GeometricElementCP);
 
     DGNPLATFORM_EXPORT virtual void            _ClearZ ();
-    DGNPLATFORM_EXPORT virtual ScanTestResult  _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d, bool isElement);
+    DGNPLATFORM_EXPORT virtual ScanTestResult  _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
     DGNPLATFORM_EXPORT virtual void            _DrawAligned (DVec3dCR axis, DPoint3dCR origin, AlignmentMode type, IStrokeAligned& stroker);
     DGNPLATFORM_EXPORT virtual void            _SetLocatePriority (int priority);
     DGNPLATFORM_EXPORT virtual void            _SetNonSnappable (bool unsnappable);

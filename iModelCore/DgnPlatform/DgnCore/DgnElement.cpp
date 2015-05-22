@@ -792,7 +792,8 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
     // low and high are not allowed to be equal
     fixRange(range.low.x, range.high.x);
     fixRange(range.low.y, range.high.y);
-    range.low.z = range.high.z = 0.0;
+    range.low.z = -.005;
+    range.high.z = .005;
 
     return range;
     }
