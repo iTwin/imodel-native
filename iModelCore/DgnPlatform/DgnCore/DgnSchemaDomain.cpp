@@ -641,6 +641,10 @@ HANDLER_DEFINE_MEMBERS(ModelHandler)
 HANDLER_DEFINE_MEMBERS(PhysicalModelHandler)
 HANDLER_DEFINE_MEMBERS(WebMercatorModelHandler)
 HANDLER_DEFINE_MEMBERS(StreetMapModelHandler)
+HANDLER_DEFINE_MEMBERS(SheetModelHandler)
+HANDLER_DEFINE_MEMBERS(GraphicsModel2dHandler)
+HANDLER_DEFINE_MEMBERS(PlanarPhysicalModelHandler)
+HANDLER_DEFINE_MEMBERS(SectionDrawingModelHandler)
 HANDLER_DEFINE_MEMBERS(ElementHandler)
 HANDLER_DEFINE_MEMBERS(ElementGroupHandler)
 HANDLER_DEFINE_MEMBERS(PhysicalElementHandler)
@@ -691,6 +695,11 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb D
     RegisterHandler(PhysicalModelHandler::GetHandler());
     RegisterHandler(WebMercatorModelHandler::GetHandler());
     RegisterHandler(StreetMapModelHandler::GetHandler());
+    RegisterHandler(SheetModelHandler::GetHandler());
+    RegisterHandler(GraphicsModel2dHandler::GetHandler());
+    RegisterHandler(PlanarPhysicalModelHandler::GetHandler());
+    RegisterHandler(SectionDrawingModelHandler::GetHandler());
+
     RegisterHandler(ElementHandler::GetHandler());
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(PhysicalElementHandler::GetHandler());

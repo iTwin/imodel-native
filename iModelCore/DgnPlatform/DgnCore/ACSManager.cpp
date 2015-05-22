@@ -1090,7 +1090,7 @@ bool                drawName
 
     scale = viewport->GetPixelSizeAtPoint (drawOrigin, DgnCoordSystem::World) * acsSizePixels;
 
-    double exagg = viewport->GetViewController().GetAspectRatioSkew();
+    double exagg = 1.0;//viewport->GetViewController().GetAspectRatioSkew();
     rMatrix.InverseOf(rMatrix);
     rMatrix.ScaleRows (rMatrix,  scale,  scale / exagg,  scale);
     transform.InitFrom(rMatrix, *drawOrigin);

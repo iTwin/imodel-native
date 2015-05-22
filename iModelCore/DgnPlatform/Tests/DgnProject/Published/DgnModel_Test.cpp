@@ -39,6 +39,8 @@ struct DgnModelTests : public testing::Test
             if (m_modelP)
                 m_modelP->FillModel();
             }
+
+        void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
     };
 
 //---------------------------------------------------------------------------------------
@@ -120,4 +122,146 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
 
     AxisAlignedBox3d thirdRange = m_modelP->QueryModelRange();
     EXPECT_FALSE(thirdRange.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static int countSheets(DgnDbR db)
+    {
+    int count = 0;
+    for (auto const& sheet : db.Models().MakeSheetIterator())
+        {
+        DgnModelType mtype = sheet.GetModelType();
+        if (mtype != DgnModelType::Sheet)
+            return -1;
+
+        ++count;
+        }
+    return count;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool expectSuccess)
+    {
+    DgnModelP model = db.Models().GetModel(mid);
+
+    DgnCategoryId cat = db.Categories().QueryHighestId();
+
+    GeometricElementPtr gelem;
+    if (is3d)
+        gelem = PhysicalElement::Create(PhysicalElement::CreateParams(*model, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
+    else
+        gelem = DrawingElement::Create(DrawingElement::CreateParams(*model, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingElement")), cat, Placement2d()));
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem);
+    builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
+
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem))  // We actually catch 2d3d mismatch in SetGeomStreamAndPlacement
+        {
+        ASSERT_FALSE(expectSuccess);
+        return;
+        }
+
+    ASSERT_EQ( expectSuccess , db.Elements().Insert(*gelem)->GetElementKey().IsValid() );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+TEST_F(DgnModelTests, SheetModelCRUD)
+    {
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
+
+    static Utf8CP s_sheet1Name = "Sheet1";
+    static Utf8CP s_sheet1NameUPPER = "SHEET1";
+    static Utf8CP s_sheet2Name = "Sheet2";
+    
+    DPoint2d sheet1Size;
+    BeFileName dbFileName;
+    if (true)
+        {
+        DgnDbPtr db = tdm.GetDgnProjectP();
+
+        ASSERT_EQ( 0 , countSheets(*db) );
+
+        //  Create a sheet
+        SheetModelPtr sheet1 = SheetModel::Create(*db, s_sheet1Name, DPoint2d::From(100, 100), SheetModel::Units::Millimeters);
+        ASSERT_TRUE( sheet1.IsValid() );
+        ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet1, "a sheet model (in mm)") );
+        ASSERT_TRUE( sheet1->GetModelId().IsValid() );
+
+        ASSERT_EQ( 1 , countSheets(*db) );
+
+        //  Test some insert errors
+        ASSERT_NE( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet1, "") ) << "Should be illegal to add sheet that is already persistent";
+
+        SheetModelPtr sheetSameName = SheetModel::Create(*db, s_sheet1Name, DPoint2d::From(100, 100), SheetModel::Units::Inches);
+        ASSERT_NE( DGNMODEL_STATUS_Success, db->Models().Insert(*sheetSameName, "") ) << "Should be illegal to add a second sheet with the same name";
+        ASSERT_NE( DGNMODEL_STATUS_Success, db->Models().Insert(*sheetSameName, "") ) << "Should be illegal to add a second sheet with the same name .. even if case is different";
+
+        //  Create a second sheet
+        SheetModelPtr sheet2 = SheetModel::Create(*db, s_sheet2Name, DPoint2d::From(100, 100), SheetModel::Units::Inches);
+        ASSERT_TRUE( sheet1.IsValid() );
+        ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet2, "a second sheet model (in inches)") );
+        ASSERT_TRUE( sheet2->GetModelId().IsValid() );
+        ASSERT_NE( sheet2->GetModelId() , sheet1->GetModelId() );
+
+        ASSERT_EQ( 2 , countSheets(*db) );
+        ASSERT_TRUE( db->Models().QueryModelId(s_sheet2Name).IsValid() );
+
+        //  Look up a sheet     ... by name
+        DgnModelId mid = db->Models().QueryModelId(s_sheet1Name);
+        ASSERT_EQ( mid , sheet1->GetModelId() );
+        ASSERT_EQ( mid , db->Models().QueryModelId(s_sheet1NameUPPER) ) << "Sheet model names should be case-insensitive";
+        //                      ... by id
+        ASSERT_EQ( sheet1.get() , db->Models().Get<SheetModel>(mid) );
+        Utf8String mname;
+        // Look up a sheet's name by id
+        db->Models().GetModelName(mname, mid);
+        ASSERT_STREQ( sheet1->GetModelName() , mname.c_str() );
+
+        sheet1Size = sheet1->GetSize();
+        dbFileName = db->GetFileName();
+
+        db->SaveChanges();
+        db->CloseDb();
+        }
+
+    // Verify that loading works
+    if (true)
+        {
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OPEN_ReadWrite));
+        ASSERT_TRUE( db.IsValid() );
+
+        DgnModelId mid = db->Models().QueryModelId(s_sheet1Name);
+        SheetModelPtr sheet1 = db->Models().Get<SheetModel>(mid);
+        ASSERT_TRUE( sheet1.IsValid() );
+        ASSERT_EQ( mid , sheet1->GetModelId() );
+        ASSERT_STREQ( s_sheet1Name , sheet1->GetModelName() );
+
+        ASSERT_EQ( sheet1Size.x , sheet1->GetSize().x );
+        ASSERT_EQ( sheet1Size.y , sheet1->GetSize().y );
+
+        // Delete Sheet2
+        ASSERT_EQ( 2 , countSheets(*db) );
+        ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().DeleteModel(db->Models().QueryModelId(s_sheet2Name)) );
+        ASSERT_EQ( 1 , countSheets(*db) );
+        }        
+
+    if (true)
+        {
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OPEN_ReadWrite));
+        ASSERT_TRUE( db.IsValid() );
+
+        ASSERT_EQ( 1 , countSheets(*db) );
+
+        DgnModelId mid = db->Models().QueryModelId(s_sheet1Name);
+
+        // Verify that we can only place drawing elements in a sheet
+        InsertElement(*db, mid, false, true);
+        InsertElement(*db, mid, true, false);
+        }
     }
