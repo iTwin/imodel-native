@@ -309,7 +309,7 @@ DgnModelStatus GeometricElement::_InsertInDb()
         return stat;
 
     // Insert element uses geom part relationships for geom parts referenced in geom stream...
-    ECIdSet<DgnGeomPartId> parts;
+    IdSet<DgnGeomPartId> parts;
     ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(parts, dgnDb);
 
     for (DgnGeomPartId partId : parts)
@@ -349,11 +349,11 @@ DgnModelStatus GeometricElement::_UpdateInDb()
     dgnDb.Elements().GetStatement(stmt, "SELECT GeomPartId FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts) " WHERE ElementId=?");
     stmt->BindId(1, m_elementId);
 
-    ECIdSet<DgnGeomPartId> partsOld;
+    IdSet<DgnGeomPartId> partsOld;
     while (BE_SQLITE_ROW == stmt->Step())
         partsOld.insert(stmt->GetValueId<DgnGeomPartId>(0));
 
-    ECIdSet<DgnGeomPartId> partsNew;
+    IdSet<DgnGeomPartId> partsNew;
     ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(partsNew, dgnDb);
 
     if (partsOld.empty() && partsNew.empty())

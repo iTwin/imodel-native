@@ -89,6 +89,7 @@
 #include <RmgrTools/Tools/toolsubsStdio.h>
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/DgnCore/IGeoCoordServices.h>
+#include <DgnPlatform/DgnCore/PointCloudBaseModel.h>
 
 #include "DgnCore/DgnCoreLog.h"
 

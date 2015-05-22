@@ -360,7 +360,7 @@ void NamedVolume::GetRange(DRange3d& range) const
 //+---------------+---------------+---------------+---------------+---------------+-----
 void NamedVolume::FindElements 
 (
-ElementIdSet* elementIds,
+DgnElementIdSet* elementIds,
 FenceParamsR fence,
 Statement& stmt,
 DgnDbR dgnDb
@@ -392,7 +392,7 @@ DgnDbR dgnDb
 //+---------------+---------------+---------------+---------------+---------------+-----
 void NamedVolume::FindElements 
 (
-ElementIdSet* elementIds,
+DgnElementIdSet* elementIds,
 DgnDbR dgnDb,
 bool allowPartialOverlaps /*=true*/
 ) const
@@ -430,7 +430,7 @@ bool allowPartialOverlaps /*=true*/
 //+---------------+---------------+---------------+---------------+---------------+-----
 void NamedVolume::FindElements 
 (
-ElementIdSet* elementIds,
+DgnElementIdSet* elementIds,
 DgnViewportR viewport,
 bool allowPartialOverlaps /*=true*/
 ) const

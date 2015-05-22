@@ -17,7 +17,7 @@ double const fc_hugeVal = 1e37;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IdSet::FromJson (Json::Value const& in)
+void BeRepositoryBasedIdSet::FromJson(Json::Value const& in)
     {
     Utf8String str = in.asString();
     if (str.empty())
@@ -72,7 +72,7 @@ static void saveRange (bool& valid, Utf8StringR str, int64_t start, int64_t end)
 * convert an IdSet to a Json string. This looks for ranges of contiguous values and uses "n-m" syntax.
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IdSet::ToJson (Json::Value& out) const
+void BeRepositoryBasedIdSet::ToJson(Json::Value& out) const
     {
     Utf8String str;
     int64_t start=0, end=0;
