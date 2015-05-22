@@ -2979,6 +2979,8 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     Bentley::DateTime dateTime2;
     ECSqlStatement statement2;
     stat = statement2.Prepare(db, ecsql.c_str());
+    BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp
+
     ASSERT_TRUE(statement2.Step() == ECSqlStepStatus::HasRow);
         {
         ASSERT_FALSE(statement2.IsValueNull(0));
