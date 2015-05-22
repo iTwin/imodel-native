@@ -7,9 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Logging/bentleylogging.h>
-#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger ("WSClient"))
-
 #include <sstream>
 struct StringUtils
     {
