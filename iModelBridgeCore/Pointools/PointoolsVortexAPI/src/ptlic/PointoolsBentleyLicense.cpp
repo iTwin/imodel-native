@@ -170,7 +170,16 @@ PointoolsBentleyLicense::Status PointoolsBentleyLicense::initialize(const Produc
 		return Status_Already_Initialized;
 	}
 
-	CoInitialize(NULL);
+	switch(CoInitialize(NULL))
+	{
+	case S_OK:
+		break;
+
+	case S_FALSE:
+	case RPC_E_CHANGED_MODE:
+	default:
+		return Status_Failed;
+	}
 																	// Validate parameters. Version must be xx.xx.xx.xx with eleven characters.
 	if(name.length() == 0 || version.length() != 11)
 	{
