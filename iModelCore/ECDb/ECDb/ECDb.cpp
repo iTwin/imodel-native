@@ -125,7 +125,7 @@ DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
 //---------------+---------------+---------------+---------------+---------------+------
 int ECDb::_OnAddFunction (DbFunction& func) const
     {
-    return (int) m_pimpl->OnAddFunction(func);
+    return m_pimpl->OnAddFunction(func) == SUCCESS ? 0 : 1;
     }
 
 //--------------------------------------------------------------------------------------
