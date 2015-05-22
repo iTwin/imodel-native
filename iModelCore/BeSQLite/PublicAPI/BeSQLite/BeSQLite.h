@@ -1221,6 +1221,7 @@ struct RTreeMatchFunction : DbFunction
         Within  m_parentWithin;
         mutable Within m_within;
         mutable double m_score;
+        DbValue* m_args;       // SQL values of parameters
     };
 
     //! this method is called for every internal and leaf node in an sqlite rtree vtable.
@@ -2671,7 +2672,7 @@ public:
     BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0);
 
     //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
-    BE_SQLITE_EXPORT Utf8String ExplainQueryPlan(DbResult* err, Utf8CP sql);
+    BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true);
 
     //! Create a new table in this Db.
     //! @param[in] tableName The name for the new table.

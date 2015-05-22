@@ -11156,6 +11156,7 @@ static void yy_reduce(
       case 114: /* selectnowith ::= selectnowith multiselect_op oneselect */
 {
   Select *pRhs = yymsp[0].minor.yy3;
+  Select *pLhs = yymsp[-2].minor.yy3;
   if( pRhs && pRhs->pPrior ){
     SrcList *pFrom;
     Token x;
@@ -11166,11 +11167,12 @@ static void yy_reduce(
   }
   if( pRhs ){
     pRhs->op = (u8)yymsp[-1].minor.yy328;
-    pRhs->pPrior = yymsp[-2].minor.yy3;
+    pRhs->pPrior = pLhs;
+    if( ALWAYS(pLhs) ) pLhs->selFlags &= ~SF_MultiValue;
     pRhs->selFlags &= ~SF_MultiValue;
     if( yymsp[-1].minor.yy328!=TK_ALL ) pParse->hasCompound = 1;
   }else{
-    sqlite3SelectDelete(pParse->db, yymsp[-2].minor.yy3);
+    sqlite3SelectDelete(pParse->db, pLhs);
   }
   yygotominor.yy3 = pRhs;
 }

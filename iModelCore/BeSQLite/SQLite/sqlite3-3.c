@@ -10805,10 +10805,6 @@ SQLITE_PRIVATE void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 }
 #endif /* SQLITE_DEBUG */
 
-/*
-** Size of struct Mem not including the Mem.zMalloc member.
-*/
-#define MEMCELLSIZE offsetof(Mem,zMalloc)
 
 /*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
@@ -16229,6 +16225,34 @@ SQLITE_API int SQLITE_STDCALL sqlite3_value_type(sqlite3_value* pVal){
   };
   return aType[pVal->flags&MEM_AffMask];
 }
+
+/* Make a copy of an sqlite3_value object
+*/
+SQLITE_API sqlite3_value *SQLITE_STDCALL sqlite3_value_dup(const sqlite3_value *pOrig){
+  sqlite3_value *pNew;
+  if( pOrig==0 ) return 0;
+  pNew = sqlite3_malloc( sizeof(*pNew) );
+  if( pNew==0 ) return 0;
+  memset(pNew, 0, sizeof(*pNew));
+  memcpy(pNew, pOrig, MEMCELLSIZE);
+  pNew->flags &= ~MEM_Dyn;
+  pNew->db = 0;
+  if( pNew->flags&(MEM_Str|MEM_Blob) ){
+    if( 0==(pOrig->flags&MEM_Static) ){
+      pNew->flags |= MEM_Ephem;
+      sqlite3VdbeMemMakeWriteable(pNew);
+    }
+  }
+  return pNew;
+}
+
+/* Destroy an sqlite3_value object previously obtained from
+** sqlite3_value_dup().
+*/
+SQLITE_API void SQLITE_STDCALL sqlite3_value_free(sqlite3_value *pOld){
+  sqlite3ValueFree(pOld);
+}
+  
 
 /**************************** sqlite3_result_  *******************************
 ** The following routines are used by user-defined functions to specify

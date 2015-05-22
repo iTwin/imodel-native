@@ -603,20 +603,17 @@ DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Db::ExplainQueryPlan(DbResult* err, Utf8CP sql)
+Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan)
     {
     Statement queryPlan;
-    if (BE_SQLITE_OK != queryPlan.Prepare (*this, Utf8PrintfString("EXPLAIN QUERY PLAN %s", sql)))
-        return GetLastError(err);
+    if (BE_SQLITE_OK != queryPlan.Prepare (*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql)))
+        return GetLastError();
 
-    if (nullptr != err)
-        *err = BE_SQLITE_OK;
-
+    Utf8CP fmt = !explainPlan ? "%-3s %-12s %-4s %-4s\n" : "%s %s %s %s\n";
     Utf8String plan;
     while (BE_SQLITE_ROW == queryPlan.Step())
-        {
-        plan.append (Utf8PrintfString("%d %d %d %s\n", queryPlan.GetValueInt(0), queryPlan.GetValueInt(1), queryPlan.GetValueInt(2), queryPlan.GetValueText(3)));
-        }
+        plan.append (Utf8PrintfString(fmt, queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3)));
+
     return plan;
     }
 
