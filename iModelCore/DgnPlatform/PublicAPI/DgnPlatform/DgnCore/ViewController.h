@@ -204,6 +204,7 @@ protected:
     virtual void _OnDynamicUpdateComplete(DgnViewportR vp, ViewContextR context, bool completedSuccessfully) {}
     virtual void _OnAttachedToViewport(DgnViewportR) {}
     virtual ColorDef _GetBackgroundColor() const {return m_backgroundColor;}
+    virtual double _GetAspectRatioSkew() const {return 1.0;}
 
     DGNPLATFORM_EXPORT virtual void _FillModels();
     DGNPLATFORM_EXPORT virtual ViewFrustumStatus _SetupFromFrustum (Frustum const& inFrustum);
@@ -481,6 +482,8 @@ public:
     //! @param[in] category the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff) {_ChangeCategoryDisplay(categoryId, onOff);}
+
+    double GetAspectRatioSkew() const {return _GetAspectRatioSkew();}
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT ColorDef ResolveBGColor() const;

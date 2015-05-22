@@ -448,27 +448,25 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_RTree3d is not in the ecschema
     ECSqlStatement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT TestItem.ECInstanceId, TestItem.TestItemProperty FROM dgn.ElementRTree rt, DgnPlatformTest.Obstacle, DgnPlatformTest.TestItem"
-        "     WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)"
-        "       AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
-        "       AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)"
-        "       AND Obstacle.ECInstanceId = rt.ECInstanceId"
-        "       AND TestItem.ECInstanceId = rt.ECInstanceId AND TestItem.TestItemProperty = :propertyValue"
+        "SELECT TestItem.ECInstanceId,TestItem.TestItemProperty FROM dgn.ElementRTree rt,DgnPlatformTest.Obstacle,DgnPlatformTest.TestItem"
+            " WHERE rt.ECInstanceId MATCH DGN_rtree_overlap_aabb(:bbox)"
+            " AND Obstacle.ECInstanceId=rt.ECInstanceId"
+            " AND TestItem.ECInstanceId=rt.ECInstanceId AND TestItem.TestItemProperty = :propertyValue"
         );
 
     //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
-    auto qplan = m_db->ExplainQuery(stmt.GetNativeSql());
+    auto sql = stmt.GetNativeSql();
+    auto qplan = m_db->ExplainQuery(sql);
     auto scanRt = qplan.find("SCAN TABLE dgn_RTree3d VIRTUAL TABLE INDEX");
     auto searchItem = qplan.find("SEARCH TABLE dgn_ElementItem USING INTEGER PRIMARY KEY");
     auto searchElement = qplan.find ("SEARCH TABLE dgn_Element USING INTEGER PRIMARY KEY");
-    ASSERT_NE( Utf8String::npos , scanRt );
-    ASSERT_NE( Utf8String::npos , searchItem );
-    ASSERT_NE( Utf8String::npos , searchElement );
-    ASSERT_LT( scanRt , searchItem );
-    ASSERT_LT( scanRt , searchElement );
+    ASSERT_NE(Utf8String::npos , scanRt );
+    ASSERT_NE(Utf8String::npos , searchItem );
+    ASSERT_NE(Utf8String::npos , searchElement );
+    ASSERT_LT(scanRt , searchItem );
+    ASSERT_LT(scanRt , searchElement );
 
     //  Initial placement: Robot1 is not touching any obstacle
     //
@@ -488,7 +486,8 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step());
+        auto rc = stmt.Step();
+        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done,rc);
         }
 
     //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2
