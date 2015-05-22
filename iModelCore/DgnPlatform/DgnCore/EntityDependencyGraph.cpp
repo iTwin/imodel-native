@@ -29,10 +29,10 @@ struct EdgeStatusAccessor
     {
     union {
         struct {
-            uint32_t      m_failed:1;           // NB: bit layout must match EdgeStatus
-            uint32_t      m_unused1:6;          // NB: bit layout must match EdgeStatus
-            uint32_t      m_deferred:1;         // NB: bit layout must match EdgeStatus
-            uint32_t      m_unused2:24;
+            uint32_t m_failed:1;           // NB: bit layout must match EdgeStatus
+            uint32_t m_unused1:6;          // NB: bit layout must match EdgeStatus
+            uint32_t m_deferred:1;         // NB: bit layout must match EdgeStatus
+            uint32_t m_unused2:24;
             };
         uint32_t    m_flags;
         };
@@ -212,6 +212,7 @@ Utf8String DgnElementDependencyGraph::FmtElement (DgnElementId eid)
     {
     if (s_debugGraph_showElementIds)
         return Utf8PrintfString ("%s(%lld)", GetElementCode(eid).c_str(), eid.GetValue());
+
     return GetElementCode(eid);
     }
 
@@ -328,17 +329,17 @@ void DgnElementDependencyGraph::UpdateModelDependencyIndex ()
 // NB: The SELECT stmt in a CTE must specify columns in the *same order* as propagate's arguments. This is required even if SELECT specifies aliases.
     CachedStatementPtr stmt;
     auto sqlitestat = m_db.GetCachedStatement (stmt, 
-"WITH RECURSIVE"
-" propagate(input_model,output_model,mpath,plevel,iscycle) AS ("
-"  SELECT 0,MODEL.Id,('.'||MODEL.Id),0,0"
-"   FROM  " DGN_TABLE(DGN_CLASSNAME_Model) " MODEL"
-"   WHERE ( MODEL.Id NOT IN ( SELECT DependentModelId FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " ) )"
-"  UNION ALL"
-"   SELECT DEPREL.RootModelId, DEPREL.DependentModelId, (propagate.mpath||'.'||DEPREL.DependentModelId), (propagate.plevel + 1),  (instr(propagate.mpath,DEPREL.DependentModelId) == 1)"
-"    FROM  " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " DEPREL, propagate"
-"    WHERE ( (propagate.iscycle = 0) AND (DEPREL.RootModelId = propagate.output_model) AND (propagate.plevel < 100000) )"
-"   )"
-"SELECT propagate.plevel, propagate.input_model, propagate.output_model, propagate.mpath, propagate.iscycle FROM propagate");
+        "WITH RECURSIVE"
+         " propagate(input_model,output_model,mpath,plevel,iscycle) AS ("
+          " SELECT 0,MODEL.Id,('.'||MODEL.Id),0,0"
+           " FROM " DGN_TABLE(DGN_CLASSNAME_Model) " MODEL"
+           " WHERE ( MODEL.Id NOT IN ( SELECT DependentModelId FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " ))"
+          " UNION ALL"
+           " SELECT DEPREL.RootModelId, DEPREL.DependentModelId, (propagate.mpath||'.'||DEPREL.DependentModelId), (propagate.plevel + 1), (instr(propagate.mpath,DEPREL.DependentModelId) == 1)"
+            " FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " DEPREL, propagate"
+            " WHERE ((propagate.iscycle = 0) AND (DEPREL.RootModelId = propagate.output_model) AND (propagate.plevel < 100000))"
+           ")"
+        " SELECT propagate.plevel, propagate.input_model, propagate.output_model, propagate.mpath, propagate.iscycle FROM propagate");
 //                  0                1                      2                       3                4
     if (sqlitestat != BE_SQLITE_OK)
         {
@@ -348,8 +349,7 @@ void DgnElementDependencyGraph::UpdateModelDependencyIndex ()
         }
 
     CachedStatementPtr updateIdx;
-    sqlitestat = m_db.GetCachedStatement (updateIdx, 
-"UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET DependencyIndex=? WHERE Id=?");
+    sqlitestat = m_db.GetCachedStatement(updateIdx, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET DependencyIndex=? WHERE Id=?");
 
     bset<DgnModelId> modelsSeen;
 
@@ -475,7 +475,7 @@ void DgnElementDependencyGraph::InvokeHandler (Edge const& edge, size_t indentLe
         {
         EDGLOG(LOG_TRACE, "%sPROCESS %s(%llx)", fmtIndent(indentLevel).c_str(), FmtEdge(edge).c_str(), (intptr_t)handler);
 
-        m_processor->_ProcessEdge (edge, handler);
+        m_processor->_ProcessEdge(edge, handler);
         return;
         }
 
@@ -638,7 +638,7 @@ BeSQLite::DbResult DgnElementDependencyGraph::EdgeQueue::BindSelectByOutput (Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnElementDependencyGraph::EdgeQueue::AddEdge (DgnElementDependencyGraph::Edge& edge)
+DbResult DgnElementDependencyGraph::EdgeQueue::AddEdge(DgnElementDependencyGraph::Edge& edge)
     {
     // Don't add the edge to the graph if it's deferred
     if (edge.IsDeferred())
@@ -725,7 +725,7 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder_OneGraph (Edge 
         return;
         }
 
-    edges.SetEdgeColor (edge.GetECRelationshipId(), EdgeColor::Gray);
+    edges.SetEdgeColor(edge.GetECRelationshipId(), EdgeColor::Gray);
 
     // Schedule suppliers of edge's input first.
     auto pathToEdge (pathToSupplier);
@@ -776,32 +776,32 @@ DbResult DgnElementDependencyGraph::ElementDrivesElement::DoPrepare(DgnModelId m
     //  NB All Select statements must specify the same columns in the same order
 
     GetDgnDb().GetCachedStatement (m_selectByRootInDirectChanges, Utf8PrintfString(
-"SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-" WHERE (RootElementId IN (SELECT ElementId FROM %s WHERE ModelId=?))", m_graph.GetDirectChangesTableName()));
+        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE (RootElementId IN (SELECT ElementId FROM %s WHERE ModelId=?))", m_graph.GetDirectChangesTableName()));
 
     m_selectByRootInDirectChanges->BindId (1, mid);
 
     GetDgnDb().GetCachedStatement (m_selectByDependentInDirectChanges, Utf8PrintfString(
-"SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-" WHERE (DependentElementId IN (SELECT ElementId FROM %s WHERE ModelId=?))", m_graph.GetDirectChangesTableName()));
+        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE (DependentElementId IN (SELECT ElementId FROM %s WHERE ModelId=?))", m_graph.GetDirectChangesTableName()));
 
     m_selectByDependentInDirectChanges->BindId (1, mid);
 
     GetDgnDb().GetCachedStatement (m_selectByRelationshipInDirectChanges, Utf8PrintfString(
-"SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-" WHERE (ECInstanceId IN (SELECT ECInstanceId FROM %s WHERE ModelId=?))", m_graph.GetDirectChangesToElementDrivesElementTableName()));
+        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE (ECInstanceId IN (SELECT ECInstanceId FROM %s WHERE ModelId=?))", m_graph.GetDirectChangesToElementDrivesElementTableName()));
 
     m_selectByRelationshipInDirectChanges->BindId (1, mid);
 
     GetDgnDb().GetCachedStatement (m__selectByRoot__, 
-"SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-" WHERE (RootElementId=?)");
+        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE RootElementId=?");
 
     GetDgnDb().GetCachedStatement (m__selectByDependent__, 
-"SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-" WHERE (DependentElementId=?)");
+        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE DependentElementId=?");
 
-    GetDgnDb().GetCachedStatement(m__updateStatus__, "UPDATE " DGN_TABLE(DGN_RELNAME_ElementDrivesElement) " SET Status=? WHERE(ECInstanceId=?)");
+    GetDgnDb().GetCachedStatement(m__updateStatus__, "UPDATE " DGN_TABLE(DGN_RELNAME_ElementDrivesElement) " SET Status=? WHERE ECInstanceId=?");
     
     return BE_SQLITE_OK;
     }
@@ -813,8 +813,7 @@ DbResult DgnElementDependencyGraph::ElementDrivesElement::SelectEdgeByRelId (Edg
     {
     BeSQLite::CachedStatementPtr selectByRelId;
     GetDgnDb().GetCachedStatement (selectByRelId, 
-"SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-" WHERE (ECInstanceId = ?)");
+        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement) " WHERE ECInstanceId=?");
 
     selectByRelId->BindId (1, eid);
     return SelectEdge(edge, *selectByRelId);
@@ -908,7 +907,7 @@ void DgnElementDependencyGraph::ElementDrivesElement::BindSelectByDependent (Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnElementDependencyGraph::ElementDrivesElement::StepSelectByDependent (Edge& edge)
     {
-    return SelectEdge (edge, *m__selectByDependent__);
+    return SelectEdge(edge, *m__selectByDependent__);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -921,18 +920,18 @@ void DgnElementDependencyGraph::DiscoverEdges (DgnModelId mid)
 
     //  Find edges affected by the Elements that were directly changed
     Edge directlyChanged;
-    while (elementDrivesElement.StepSelectWhereRootInDirectChanges (directlyChanged) == BE_SQLITE_ROW)
-        queue.AddEdge (directlyChanged);
+    while (elementDrivesElement.StepSelectWhereRootInDirectChanges(directlyChanged) == BE_SQLITE_ROW)
+        queue.AddEdge(directlyChanged);
 
-    while (elementDrivesElement.StepSelectWhereDependentInDirectChanges (directlyChanged) == BE_SQLITE_ROW)
-        queue.AddEdge (directlyChanged);
+    while (elementDrivesElement.StepSelectWhereDependentInDirectChanges(directlyChanged) == BE_SQLITE_ROW)
+        queue.AddEdge(directlyChanged);
 
-    while (elementDrivesElement.StepSelectWhereRelationshipInDirectChanges (directlyChanged) == BE_SQLITE_ROW)
-        queue.AddEdge (directlyChanged);
+    while (elementDrivesElement.StepSelectWhereRelationshipInDirectChanges(directlyChanged) == BE_SQLITE_ROW)
+        queue.AddEdge(directlyChanged);
 
     //  Find edges reachable from the initial set found above.
     Edge currEdge;
-    while (queue.StepSelectAll (currEdge) == BE_SQLITE_ROW)
+    while (queue.StepSelectAll(currEdge) == BE_SQLITE_ROW)
         {
         //  Return currEdge as result
         EDGLOG(LOG_TRACE, "VISIT %s", FmtEdge(currEdge).c_str());
@@ -945,7 +944,7 @@ void DgnElementDependencyGraph::DiscoverEdges (DgnModelId mid)
         //  The output of currEdge could be the input of other ElementDrivesElement dependencies. Those downstream dependencies must be fired as a result.
         elementDrivesElement.BindSelectByRoot (currEdge.m_eout);
         while (elementDrivesElement.StepSelectByRoot (affected) == BE_SQLITE_ROW)
-            queue.AddEdge (affected);
+            queue.AddEdge(affected);
 
         //  The output of currEdge could be the *output* of other ElementDrivesElement dependencies. Those "collaborating" dependencies must also be fired.
         bset<EC::ECInstanceId> suppliers;
@@ -1033,7 +1032,7 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers (TxnSummaryCR s
     //  Step through the affected models in dependency order
     //  ----------------------------------------------------------------------
     CachedStatementPtr modelsInOrder;
-    auto sqlitestat = m_db.GetCachedStatement (modelsInOrder, "SELECT Id From " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE InVirtualSet(?,Id) ORDER BY Type, DependencyIndex");
+    auto sqlitestat = m_db.GetCachedStatement (modelsInOrder, "SELECT Id From " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE InVirtualSet(?,Id) ORDER BY Type,DependencyIndex");
     if (sqlitestat != BE_SQLITE_OK)
         {
         EDGLOG(LOG_ERROR, "error creating model select on %x", sqlitestat);
@@ -1122,7 +1121,7 @@ BentleyStatus DgnElementDependencyGraph::SetEdgeDeferred(Edge& edge, bool isDefe
     EdgeStatusAccessor accs(edge.m_status);
     accs.m_deferred = isDeferred;
     edge.m_status = (uint8_t)accs.ToEdgeStatus();
-    return UpdateEdgeStatusInDb(edge, accs.ToEdgeStatus()) == BE_SQLITE_DONE? BSISUCCESS: BSIERROR;
+    return UpdateEdgeStatusInDb(edge, accs.ToEdgeStatus()) == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

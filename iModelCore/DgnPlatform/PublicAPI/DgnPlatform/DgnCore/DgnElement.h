@@ -106,11 +106,10 @@ public:
         virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR modified)  {return false;}
 
         //! Called after this AppData's element was Updated.
-        //! @param[in] orig the original DgnElement
         //! @param[in] modified the modified DgnElement
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
-        virtual bool _OnUpdated(DgnElementCR orig, DgnElementCR modified) {return false;}
+        virtual bool _OnUpdated(DgnElementCR modified) {return false;}
 
         //! Called before this AppData's element is Deleted.
         //! @param[in]  el the DgnElement to be deleted

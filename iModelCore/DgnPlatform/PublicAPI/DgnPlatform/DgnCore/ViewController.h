@@ -191,7 +191,6 @@ protected:
 
     virtual ~ViewController(){}
     virtual void _AdjustAspectRatio (double, bool expandView) = 0;
-    virtual double _GetAspectRatioSkew() const {return 1.0;}
     virtual DPoint3d _GetTargetPoint() const {return GetCenter();}
     virtual DPoint3d _GetOrigin() const = 0;
     virtual DVec3d _GetDelta() const = 0;
@@ -205,6 +204,7 @@ protected:
     virtual void _OnDynamicUpdateComplete(DgnViewportR vp, ViewContextR context, bool completedSuccessfully) {}
     virtual void _OnAttachedToViewport(DgnViewportR) {}
     virtual ColorDef _GetBackgroundColor() const {return m_backgroundColor;}
+    virtual double _GetAspectRatioSkew() const {return 1.0;}
 
     DGNPLATFORM_EXPORT virtual void _FillModels();
     DGNPLATFORM_EXPORT virtual ViewFrustumStatus _SetupFromFrustum (Frustum const& inFrustum);
@@ -357,7 +357,6 @@ public:
 
     DGNPLATFORM_EXPORT StatusInt VisitHit (HitPathCR, ViewContextR) const;
     DGNPLATFORM_EXPORT void DrawView (ViewContextR);
-    DGNPLATFORM_EXPORT void ChangeCategoryDisplay (DgnCategoryId, bool onOff);
     DGNPLATFORM_EXPORT void ChangeModelDisplay (DgnModelId, bool onOff);
     DGNPLATFORM_EXPORT StatusInt GetRangeForFit (DRange3dR range);
     DGNPLATFORM_EXPORT void OnViewOpened(DgnViewportR);
@@ -443,13 +442,13 @@ public:
     DgnViewId GetViewId() const {return m_viewId;}
 
     //! Gets the background color used in the view.
-    DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
+    ColorDef GetBackgroundColor() const {return _GetBackgroundColor();}
 
     //! Adjust the aspect ratio of this view so that it matches the aspect ratio (x/y) of the supplied rectangle.
     //! @param[in] aspect The target aspect ratio.
     //! @param[in] expandView When adjusting the view to correct the aspect ratio, the one axis (x or y) must either be lengthened or shortened.
     //! if expandView is true, the shorter axis is lengthened. Otherwise the long axis is shortened.
-    DGNPLATFORM_EXPORT void AdjustAspectRatio (double aspect, bool expandView);
+    void AdjustAspectRatio (double aspect, bool expandView) {_AdjustAspectRatio(aspect, expandView);}
 
     //! Get the origin (lower, left, front) point of of the view in coordinates of the target
     //! model (physical coordinates for PhysicalViewController and drawing coordinates for DrawingViewController).
@@ -471,7 +470,7 @@ public:
 
     //! Change the rotation of the view.
     //! @note viewRot must be orthonormal. For 2d views, only the rotation angle about the z axis is used.
-    DGNPLATFORM_EXPORT void SetRotation (RotMatrixCR viewRot);
+    void SetRotation (RotMatrixCR viewRot){_SetRotation(viewRot);}
 
     //! Get the center point of the view.
     DGNPLATFORM_EXPORT DPoint3d GetCenter() const;
@@ -479,9 +478,14 @@ public:
     //! Get the target point of the view. If there is no camera, Center() is returned.
     DGNPLATFORM_EXPORT DPoint3d GetTargetPoint() const;
 
+    //! Change whether a DgnCatetory is display in this view.
+    //! @param[in] category the DgnCategoryId to change.
+    //! @param[in] onOff if true, the category is displayed in this view.
+    void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff) {_ChangeCategoryDisplay(categoryId, onOff);}
+
+    double GetAspectRatioSkew() const {return _GetAspectRatioSkew();}
+
 //__PUBLISH_SECTION_END__
-    //! Returns the aspect ratio distortion for a specialized view. Usually returns 1.0.
-    DGNPLATFORM_EXPORT double GetAspectRatioSkew() const;
     DGNPLATFORM_EXPORT ColorDef ResolveBGColor() const;
     DGNPLATFORM_EXPORT bool IsViewChanged (Utf8StringCR base) const;
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent (GeoLocationEventStatus& status, GeoPointCR point);
@@ -491,19 +495,22 @@ public:
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
 //__PUBLISH_SECTION_START__
 
-    // Get the set of currently displayed DgnModels for this ViewController
+    //! Get the set of currently displayed DgnModels for this ViewController
     DgnModelIdSet const& GetViewedModels() const {return m_viewedModels;}
     DgnModelIdSet& GetViewedModelsR() {return m_viewedModels;}
 
-    // Get the set of currently displayed DgnCategories for this ViewController
+    //! Get the set of currently displayed DgnCategories for this ViewController
     DgnCategoryIdSet const& GetViewedCategories() const {return m_viewedCategories;}
     DgnCategoryIdSet& GetViewedCategoriesR() {return m_viewedCategories;}
 
-    DGNPLATFORM_EXPORT DgnCategories::SubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId) const;
+    //! Get the Appearance of a DgnSubCategory for this view.
+    //! @param[in] the DgnSubCategoryId of interest
+    //! @return the appearance of the DgnSubCategory for this view.
+    DGNPLATFORM_EXPORT DgnCategories::SubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
     //! Change the background color of the view.
     //! @param[in] color The new background color
-    DGNPLATFORM_EXPORT void SetBackgroundColor (ColorDef color);
+    DGNPLATFORM_EXPORT void SetBackgroundColor(ColorDef color);
 
     //! Initialize this ViewController .
     DGNPLATFORM_EXPORT void Init();
@@ -542,7 +549,7 @@ public:
     //! Establish the view parameters from an 8-point frustum.
     //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController
     //! @note The order of the points in the frustum is defined by the NpcCorners enum.
-    DGNPLATFORM_EXPORT ViewFrustumStatus SetupFromFrustum (Frustum const& frustum);
+    DGNPLATFORM_EXPORT ViewFrustumStatus SetupFromFrustum(Frustum const& frustum);
 
     //! Change the volume that this view displays, keeping its current rotation.
     //! @param[in] worldVolume The new volume, in world-coordinates, for the view. The resulting view will show all of worldVolume, by fitting a
@@ -556,7 +563,7 @@ public:
     //! @note For 3d views, the camera is centered on the new volume and moved along the view z axis using the default lens angle
     //! such that the entire volume is visible.
     //! @note, for 2d views, only the X and Y values of volume are used.
-    DGNPLATFORM_EXPORT void LookAtVolume (DRange3dCR worldVolume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
+    DGNPLATFORM_EXPORT void LookAtVolume(DRange3dCR worldVolume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
 
     //! Get the unit vector that points in the view X (left-to-right) direction.
     DVec3d GetXVector() const {DVec3d v; GetRotation().GetRow(v,0); return v;}
@@ -957,7 +964,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingViewController : ViewController2d
     DEFINE_T_SUPER (ViewController2d);
 
     virtual DrawingViewControllerCP _ToDrawingView() const override {return this;}
-    DGNPLATFORM_EXPORT virtual double _GetAspectRatioSkew() const override;
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent (GeoLocationEventStatus& status, GeoPointCR point) override;
 
 public:

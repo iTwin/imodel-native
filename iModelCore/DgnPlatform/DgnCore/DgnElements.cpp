@@ -1247,9 +1247,9 @@ struct OnUpdateCaller
     };
 struct OnUpdatedCaller
     {
-    DgnElementCR m_orig, m_updated;
-    OnUpdatedCaller(DgnElementCR orig, DgnElementCR updated) : m_orig(orig), m_updated(updated){}
-    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_orig, m_updated);}   
+    DgnElementCR m_updated;
+    OnUpdatedCaller(DgnElementCR updated) : m_updated(updated){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated);}   
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1372,8 +1372,8 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         }
 
     // we need to call the pre/post update events on BOTH sets of appdata
-    CallAppData(OnUpdatedCaller(element, replacement), element);
-    CallAppData(OnUpdatedCaller(element, replacement), replacement);
+    CallAppData(OnUpdatedCaller(element), element);
+    CallAppData(OnUpdatedCaller(element), replacement);
 
     int32_t sizeChange = element._GetMemSize() - oldSize; // figure out whether the element data is larger now than before
     BeAssert(0 <= sizeChange); // we never shrink

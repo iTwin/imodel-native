@@ -50,7 +50,7 @@ DgnDomain::Handler* DgnDomain::FindHandler(Utf8CP className) const
     {
     for (Handler* iter : m_handlers)
         {
-        if (0 == strcmp(iter->GetClassName(), className))
+        if (iter->GetClassName() == className)
             return iter;
         }
 
@@ -80,7 +80,6 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
         auto thisHandler = myHandlers.find(handlerName);
         if (thisHandler == myHandlers.end())
             {
-            BeAssert(false);
             LOG.errorv("Error Missing Handler [%s]", handlerName.c_str());
             continue;
             }
@@ -128,7 +127,6 @@ DbResult DgnDomains::SyncWithSchemas()
         auto thisDomain = registeredDomains.find(domainName);
         if (thisDomain == registeredDomains.end())
             {
-            BeAssert(false);
             LOG.errorv("Error Missing Domain [%s]", stmt.GetValueText(0));
             continue;
             }
@@ -192,6 +190,16 @@ BentleyStatus DgnDomain::RegisterHandler(Handler& handler)
         return ERROR;
 
     handler.SetDomain(*this); 
+
+    // make sure we don't already have a handler for this classname
+    for (auto thisHandler=m_handlers.begin(); thisHandler!=m_handlers.end(); )
+        {
+        if ((*thisHandler)->GetClassName() == handler.GetClassName())
+            thisHandler = m_handlers.erase(thisHandler);
+        else
+            ++thisHandler;
+        }
+
     m_handlers.push_back(&handler);
     return SUCCESS;
     }
@@ -343,7 +351,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
     {
-    return DgnClassId(m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName()));
+    return DgnClassId(m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**

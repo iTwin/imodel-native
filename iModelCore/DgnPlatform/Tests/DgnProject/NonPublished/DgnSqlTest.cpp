@@ -317,25 +317,17 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
+    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_RTree3d is not in the ecschema
     
     Statement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT item.ElementId, item.x01 FROM"
-        "  (SELECT g.ElementId FROM"
-        "     (SELECT rt.ElementId FROM dgn_PrjRTree rt "                       //          FROM R-Tree
-        "        WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)" // select Elements in nodes that overlap bbox
-        "          AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
-        "          AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)) rt_res" // (call this result set "rt_res")
-        "     ,"
-        "      dgn_ElementGeom g WHERE g.ElementId=rt_res.ElementId"            //      JOIN ElementGeom
-        "          AND DGN_point_min_distance_to_bbox(:testPoint, DGN_placement_aabb(g.Placement)) <= :maxDistance"  // select geoms that are within some distance of a specified point
-        "  ) geom_res"                                                          //      (call this result set "geom_res")
-        "  , dgn_Element e"                                                     // JOIN Element
-        "  , dgn_ElementItem item "                                             // JOIN ElementItem
-        "       WHERE e.Id = geom_res.ElementId AND e.ECClassId=:ecClass"       //  select only Obstacles
-        "        AND item.ElementId = e.Id AND item.x01 = :propertyValue"       //                     ... with certain items
-
+        "SELECT item.ElementId, item.x01 FROM dgn_Element e,dgn_ElementItem item,dgn_ElementGeom g,dgn_RTree3d rt WHERE"
+             " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)" //          FROM R-Tree
+             " AND g.ElementId=rt.ElementId"
+             " AND DGN_point_min_distance_to_bbox(:testPoint, DGN_placement_aabb(g.Placement)) <= :maxDistance"  // select geoms that are within some distance of a specified point
+             " AND e.Id=g.ElementId"
+             " AND e.ECClassId=:ecClass"       //  select only Obstacles
+             " AND item.ElementId=e.Id AND item.x01=:propertyValue"       //                     ... with certain items
         );
 
     //  Initial placement
@@ -362,7 +354,8 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
         stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
         stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
 
-        ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+        DbResult rc=stmt.Step();
+        ASSERT_EQ( BE_SQLITE_ROW , rc);
 
         DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
         ASSERT_EQ( o1 , ofoundId );
@@ -455,27 +448,25 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
     ECSqlStatement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT TestItem.ECInstanceId, TestItem.TestItemProperty FROM dgn.ElementRTree rt, DgnPlatformTest.Obstacle, DgnPlatformTest.TestItem"
-        "     WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)"
-        "       AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
-        "       AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)"
-        "       AND Obstacle.ECInstanceId = rt.ECInstanceId"
-        "       AND TestItem.ECInstanceId = rt.ECInstanceId AND TestItem.TestItemProperty = :propertyValue"
+        "SELECT TestItem.ECInstanceId,TestItem.TestItemProperty FROM dgn.ElementRTree rt,DgnPlatformTest.Obstacle,DgnPlatformTest.TestItem"
+            " WHERE rt.ECInstanceId MATCH DGN_rtree_overlap_aabb(:bbox)"
+            " AND Obstacle.ECInstanceId=rt.ECInstanceId"
+            " AND TestItem.ECInstanceId=rt.ECInstanceId AND TestItem.TestItemProperty = :propertyValue"
         );
 
     //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
-    auto qplan = m_db->ExplainQueryPlan(nullptr, stmt.GetNativeSql());
-    auto scanRt = qplan.find("SCAN TABLE dgn_PrjRTree VIRTUAL TABLE INDEX");
+    auto sql = stmt.GetNativeSql();
+    auto qplan = m_db->ExplainQuery(sql);
+    auto scanRt = qplan.find("SCAN TABLE dgn_RTree3d VIRTUAL TABLE INDEX");
     auto searchItem = qplan.find("SEARCH TABLE dgn_ElementItem USING INTEGER PRIMARY KEY");
     auto searchElement = qplan.find ("SEARCH TABLE dgn_Element USING INTEGER PRIMARY KEY");
-    ASSERT_NE( Utf8String::npos , scanRt );
-    ASSERT_NE( Utf8String::npos , searchItem );
-    ASSERT_NE( Utf8String::npos , searchElement );
-    ASSERT_LT( scanRt , searchItem );
-    ASSERT_LT( scanRt , searchElement );
+    ASSERT_NE(Utf8String::npos , scanRt );
+    ASSERT_NE(Utf8String::npos , searchItem );
+    ASSERT_NE(Utf8String::npos , searchElement );
+    ASSERT_LT(scanRt , searchItem );
+    ASSERT_LT(scanRt , searchElement );
 
     //  Initial placement: Robot1 is not touching any obstacle
     //
@@ -495,7 +486,8 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step());
+        auto rc = stmt.Step();
+        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done,rc);
         }
 
     //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2
@@ -671,20 +663,16 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
-    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_PrjRTree is not in the ecschema
+    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_RTree3d is not in the ecschema
     Statement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT item.ElementId, item.x01 FROM"
-        "  (SELECT rt.ElementId FROM dgn_PrjRTree rt "                          //          FROM R-Tree
-        "     WHERE rt.MaxX >= Dgn_bbox_value(:bbox,0) AND rt.MinX <= Dgn_bbox_value(:bbox,3)"  // select Elements in nodes that overlap bbox
-        "       AND rt.MaxY >= Dgn_bbox_value(:bbox,1) AND rt.MinY <= Dgn_bbox_value(:bbox,4)"
-        "       AND rt.MaxZ >= Dgn_bbox_value(:bbox,2) AND rt.MinZ <= Dgn_bbox_value(:bbox,5)) rt_res" // (call this result set "rt_res")
-        "  , dgn_Element e"                                                     // JOIN Element
-        "  , dgn_ElementItem item "                                             // JOIN ElementItem
-        "       WHERE e.Id = rt_res.ElementId AND e.ECClassId=:ecClass"         //  select only Obstacles
-        "        AND item.ElementId = e.Id AND item.x01 = :propertyValue"       //                     ... with certain items
+        "SELECT item.ElementId,item.x01 FROM dgn_RTree3d rt,dgn_Element e,dgn_ElementItem item WHERE"
+           " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)"   // select elements whose range overlaps box
+           " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"         //  select only Obstacles
+           " AND item.ElementId=e.Id AND item.x01=:propertyValue"          //   ... with certain items
         );
 
+    
     //  Initial placement
     //
     //  |

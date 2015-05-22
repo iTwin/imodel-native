@@ -61,7 +61,7 @@ DbResult DgnDb::CreateProjectTables()
 
     Fonts().DbFontMap().CreateFontTable();
 
-    ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_PrjRTree " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
+    ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_RTree3d " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
     importDgnSchema(*this, false);
 
@@ -71,7 +71,7 @@ DbResult DgnDb::CreateProjectTables()
                                      "Data BLOB");
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom)
-               " BEGIN DELETE FROM " DGN_VTABLE_PrjRTree " WHERE ElementId=old.ElementId; END");
+               " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId; END");
 
     ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
                     " WHERE Namespace=\"" PROPERTY_APPNAME_DgnView "\" AND Id=OLD.Id; END");

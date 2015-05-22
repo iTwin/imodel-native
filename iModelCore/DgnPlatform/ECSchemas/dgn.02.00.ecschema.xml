@@ -17,7 +17,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <MapStrategy>MapToExistingTable</MapStrategy>
-                <TableName>dgn_PrjRTree</TableName>
+                <TableName>dgn_RTree3d</TableName>
                 <ECIdColumn>ElementId</ECIdColumn>
             </ECDbClassHint>
         </ECCustomAttributes>
