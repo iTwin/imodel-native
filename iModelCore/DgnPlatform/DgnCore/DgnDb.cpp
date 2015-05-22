@@ -294,7 +294,7 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 BEGIN_UNNAMED_NAMESPACE
 struct IgnoreTablesForDiff : ChangeSet::IgnoreTablesForDiff
 {
-    bool _ShouldIgnoreTable(Utf8CP tableName) override {return 0 == strncmp(tableName, "dgn_PrjRTree", 12);}
+    bool _ShouldIgnoreTable(Utf8CP tableName) override {return 0 == strncmp(tableName, "dgn_RTree3d", 12);}
 };
 END_UNNAMED_NAMESPACE
 

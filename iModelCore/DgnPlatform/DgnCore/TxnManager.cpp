@@ -36,7 +36,7 @@ struct UndoTracker : ChangeTracker
         {
         // Skip the range tree tables - they hold redundant data that will be automatically updated when the changeset is applied.
         // They all start with the string defined by DGNELEMENT_VTABLE_3dRTree
-        if (0 == strncmp (DGN_VTABLE_PrjRTree, tableName, sizeof(DGN_VTABLE_PrjRTree)-1))
+        if (0 == strncmp (DGN_VTABLE_RTree3d, tableName, sizeof(DGN_VTABLE_RTree3d)-1))
             return  TrackChangesForTable::No;
 
         return TrackChangesForTable::Yes;
@@ -551,7 +551,6 @@ void ITxnManager::InitTempTables()
         stat = m_dgndb.ExecuteSql (Utf8PrintfString("CREATE INDEX %sECInstanceIdIdx ON %s (ECInstanceId)", ttable.c_str(), basetable.c_str()));
         }
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15

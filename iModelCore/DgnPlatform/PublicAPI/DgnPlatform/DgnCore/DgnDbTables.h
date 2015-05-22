@@ -47,7 +47,7 @@
 #define DGN_TABLE_RasterFile        DGN_TABLE("RasterFile")
 #define DGN_TABLE_Session           DGN_TABLE("Session")
 
-#define DGN_VTABLE_PrjRTree         DGN_TABLE("PrjRTree")
+#define DGN_VTABLE_RTree3d         DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
