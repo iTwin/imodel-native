@@ -9,7 +9,7 @@
 #include "WebApiV2.h"
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 
-const BeVersion WebApiV2::s_maxTestedWebApi (2, 2);
+const BeVersion WebApiV2::s_maxTestedWebApi (2, 3);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
