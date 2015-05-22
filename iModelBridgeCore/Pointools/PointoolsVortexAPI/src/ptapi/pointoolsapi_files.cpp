@@ -681,6 +681,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 			{
 				pod::g_demoCode = _nonDemoCode;		
 			}
+
 			if (strcmp(type.c_str(), txt_demo)==0)
 			{
 				if (g_timeOut < 0) 
@@ -697,6 +698,9 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 		// or startLicenseBentley() will fail when unable to load Bentley.liblib.DLL. 
 		if (licenseData == NULL || useSELECTLicense(company, module, type, ex, expires))
 		{					
+															// Don't support demo mode files with SELECT licensing
+			pod::g_demoCode = _nonDemoCode;		
+
 			const PointoolsBentleyLicense::ProductVersion productVersion(getShortVersionString());			
 			if(startLicenseBentley(productVersion) == false) 
 			{
