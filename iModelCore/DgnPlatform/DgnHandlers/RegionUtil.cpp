@@ -230,12 +230,12 @@ static void getDependencyRoots (bvector<DependencyRoot>& depRoots, bvector<Displ
 +===============+===============+===============+===============+===============+======*/
 struct TextBoxInfo : RefCounted <ICurvePrimitiveInfo>
 {
-DisplayPathPtr  m_path;
-bool            m_used;
+GeometricElementCPtr  m_element;
+bool                  m_used;
 
-TextBoxInfo (DisplayPathP path) {m_path = path; m_used = false;}
+TextBoxInfo (GeometricElementCP element) {m_element = element; m_used = false;}
 
-static ICurvePrimitiveInfoPtr Create (DisplayPathP path) {return new TextBoxInfo (path);}
+static ICurvePrimitiveInfoPtr Create (GeometricElementCP element) {return new TextBoxInfo (element);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/13
@@ -272,7 +272,7 @@ static void ClearUsed (CurveVectorCR curves)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void GetUsed (CurveVectorCR curves, bvector<DisplayPathCP>& regionRoots)
+static void GetUsed (CurveVectorCR curves, bvector<DgnElementId>& regionRoots)
     {
     if (curves.IsUnionRegion () || curves.IsParityRegion ())
         {
@@ -293,10 +293,10 @@ static void GetUsed (CurveVectorCR curves, bvector<DisplayPathCP>& regionRoots)
 
             TextBoxInfo* textInfo = dynamic_cast <TextBoxInfo*> (curve->GetCurvePrimitiveInfo ().get ());
 
-            if (!textInfo || !textInfo->m_used)
+            if (!textInfo || !textInfo->m_used || !textInfo->m_element.IsValid())
                 continue;
 
-            regionRoots.push_back (textInfo->m_path.get ());
+            regionRoots.push_back (textInfo->m_element->GetElementId());
             }
         }
     }
@@ -347,8 +347,10 @@ RegionGraphicsDrawGeom::~RegionGraphicsDrawGeom ()
             if (!jmdlRIMSBS_getUserPointer (m_pCurves, &userDataP, iCurve++))
                 break;
 
+#if defined (NEEDS_WORK_DGNITEM)
             if (userDataP)
                 ((DisplayPath*) userDataP)->Release ();
+#endif
 
             } while (true);
         }
@@ -523,7 +525,7 @@ BentleyStatus   RegionGraphicsDrawGeom::GetActiveRegions (CurveVectorPtr& region
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& regionRoots, ICurvePrimitiveCR curvePrimitive)
+BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curvePrimitive)
     {
     CurveNodeInfo const* nodeInfo = dynamic_cast <CurveNodeInfo const*> (curvePrimitive.GetCurvePrimitiveInfo ().get ());
 
@@ -534,7 +536,7 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& region
         if (!textInfo)
             return ERROR;
 
-        regionRoots.push_back (textInfo->m_path.get ());
+        regionRoots.push_back (textInfo->m_element->GetElementId());
 
         return SUCCESS;
         }
@@ -551,13 +553,15 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& region
         if (!jmdlRIMSBS_getUserPointer (m_pCurves, &userDataP, parentIndex) || !userDataP)
             continue;
 
+#if defined (NEEDS_WORK_DGNITEM)
         int     userInt = 0;
 
         // NOTE: Dependency root order matters for assoc region re-evaluate of boolean difference...first root is geometry to subtract from!
         if (!m_isFlood && jmdlRIMSBS_getUserInt (m_pCurves, &userInt, parentIndex) && 1 == userInt)
-            regionRoots.insert (regionRoots.begin (), (DisplayPathCP) userDataP); 
+            regionRoots.insert (regionRoots.begin(), (DisplayPathCP) userDataP); 
         else
             regionRoots.push_back ((DisplayPathCP) userDataP);
+#endif
         }
 
     return (regionRoots.empty () ? ERROR : SUCCESS);
@@ -566,7 +570,7 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& region
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& regionRoots, CurveVectorCR region)
+BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DgnElementId>& regionRoots, CurveVectorCR region)
     {
     for (ICurvePrimitivePtr curvePrimitive: region)
         {
@@ -582,7 +586,7 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& region
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& regionRoots)
+BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DgnElementId>& regionRoots)
     {
     EmbeddedIntArray  startArray;
     EmbeddedIntArray  sequenceArray;
@@ -598,7 +602,11 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& region
             void*   userDataP;
 
             if (jmdlRIMSBS_getUserPointer (m_pCurves, &userDataP, parentIndex) && userDataP)
+#if defined (NEEDS_WORK_DGNITEM)
                 regionRoots.push_back ((DisplayPathCP) userDataP); // held by context...
+#else
+                regionRoots.push_back (DgnElementId()); // held by context...
+#endif
             }
         }
 
@@ -615,13 +623,9 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots (bvector<DisplayPathCP>& region
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayPath*    RegionGraphicsDrawGeom::GetCurrentGeomPath ()
+GeometricElementCP RegionGraphicsDrawGeom::GetCurrentElement ()
     {
-    // NEEDSWORK: Don't need path...don't have shared cells...
-    if (NULL == m_context->GetCurrentElement ())
-        return NULL;
-
-    return new DisplayPath (m_context->GetCurrentElement ());
+    return m_context->GetCurrentElement();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -629,11 +633,15 @@ DisplayPath*    RegionGraphicsDrawGeom::GetCurrentGeomPath ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive (ICurvePrimitiveCR primitive, bool closed, bool filled)
     {
-    TransformCP   placementTrans = m_context->GetCurrLocalToFrustumTransformCP ();
-    DisplayPathP  path = GetCurrentGeomPath ();
+    TransformCP placementTrans = m_context->GetCurrLocalToFrustumTransformCP ();
+#if defined (NEEDS_WORK_DGNITEM)
+    GeometricElementCP element = GetCurrentElement ();
 
     if (path)
         path->AddRef ();
+#else
+    void*       userDataP = nullptr;
+#endif
 
     switch (primitive.GetCurvePrimitiveType ())
         {
@@ -644,7 +652,7 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive (ICurvePrimitiveC
             if (placementTrans)
                 placementTrans->Multiply (segment.point, 2);
 
-            jmdlRG_addLinear (m_pRG, segment.point, 2, false, jmdlRIMSBS_addDataCarrier (m_pCurves, m_currentGeomMarkerId, (void *) path));
+            jmdlRG_addLinear (m_pRG, segment.point, 2, false, jmdlRIMSBS_addDataCarrier (m_pCurves, m_currentGeomMarkerId, userDataP));
             break;
             }
 
@@ -655,7 +663,7 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive (ICurvePrimitiveC
             if (placementTrans)
                 placementTrans->Multiply (&points[0], (int) points.size ());
 
-            jmdlRG_addLinear (m_pRG, &points[0], (int) points.size (), false, jmdlRIMSBS_addDataCarrier (m_pCurves, m_currentGeomMarkerId, (void *) path));
+            jmdlRG_addLinear (m_pRG, &points[0], (int) points.size (), false, jmdlRIMSBS_addDataCarrier (m_pCurves, m_currentGeomMarkerId, userDataP));
             break;
             }
 
@@ -667,7 +675,7 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive (ICurvePrimitiveC
             if (placementTrans)
                 placementTrans->Multiply (ellipse);
 
-            curveId = jmdlRIMSBS_addDEllipse3d (m_pCurves, m_currentGeomMarkerId, (void *) path, &ellipse);
+            curveId = jmdlRIMSBS_addDEllipse3d (m_pCurves, m_currentGeomMarkerId, userDataP, &ellipse);
             jmdlRG_addCurve (m_pRG, curveId, curveId);
             break;
             }
@@ -686,7 +694,7 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive (ICurvePrimitiveC
             else
                 tmpCurve.CopyFrom (bcurve);
 
-            curveId = jmdlRIMSBS_addMSBsplineCurve (m_pCurves, m_currentGeomMarkerId, (void *) path, &tmpCurve);
+            curveId = jmdlRIMSBS_addMSBsplineCurve (m_pCurves, m_currentGeomMarkerId, userDataP, &tmpCurve);
             jmdlRG_addCurve (m_pRG, curveId, curveId);
             break;
             }
@@ -710,10 +718,10 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurveVector (CurveVectorCR curve
             if (NULL != placementTransform)
                 textBox->TransformInPlace (*placementTransform);
 
-            DisplayPathP    path = GetCurrentGeomPath ();
+            GeometricElementCP element = GetCurrentElement();
 
-            if (path)
-                textBox->front ()->SetCurvePrimitiveInfo (TextBoxInfo::Create (path));
+            if (element)
+                textBox->front ()->SetCurvePrimitiveInfo (TextBoxInfo::Create (element));
 
             if (!m_textBoundaries.IsValid ())
                 m_textBoundaries = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
@@ -1259,7 +1267,7 @@ bool            RegionGraphicsContext::GetAdjustedSeedPoints (bvector<DPoint3d>*
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::CreateRegionElement (DgnElementPtr& element, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d)
+BentleyStatus   RegionGraphicsContext::CreateRegionElement (DgnElementPtr& element, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d)
     {
 #if defined (NEEDS_WORK_DGNITEM)
     switch (region.GetBoundaryType ())
@@ -1438,7 +1446,7 @@ BentleyStatus   RegionGraphicsContext::CreateRegionElement (DgnElementPtr& eleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::CreateRegionElements (DgnElementPtrVec& out, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d)
+BentleyStatus   RegionGraphicsContext::CreateRegionElements (DgnElementPtrVec& out, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d)
     {
     // Return agenda of solid areas instead of a single union region...
     if (CurveVector::BOUNDARY_TYPE_UnionRegion == region.GetBoundaryType ())
@@ -1523,7 +1531,7 @@ BentleyStatus   RegionGraphicsContext::GetAssociativeRegion (DgnElementPtr& elem
         return ERROR;
 
     DgnElementPtrVec        out;
-    bvector<DisplayPathCP>  regionRoots;
+    bvector<DgnElementId>   regionRoots;
 
     if (SUCCESS != CreateRegionElements (out, *region, &regionRoots, _GetViewTarget ()->Is3d ()))
         return ERROR;
@@ -1558,7 +1566,7 @@ BentleyStatus   RegionGraphicsContext::UpdateAssociativeRegion (DgnElementPtr& e
         return ERROR;
 
     DgnElementPtrVec        out;
-    bvector<DisplayPathCP>  regionRoots;
+    bvector<DgnElementId>   regionRoots;
 
     // NOTE: Can't use model dimension to update assoc region boundary in dictionary model...
     if (SUCCESS != CreateRegionElements (out, *region, &regionRoots, element->Is3d()))

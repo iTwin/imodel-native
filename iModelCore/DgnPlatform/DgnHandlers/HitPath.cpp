@@ -10,23 +10,6 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectionPath::SelectionPath (SelectionPath const* from)
-    {
-    m_viewport = from->m_viewport;
-    SetPath (from);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-int SelectionPath::GetViewNumber() const
-    {
-    return  m_viewport ? m_viewport->GetViewNumber() : -1;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
 void GeomDetail::Init ()
     {
     m_primitive     = NULL;
@@ -410,14 +393,6 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitiveInfoPtr MeshSegmentInfo::Create (uint32_t closeVertex, uint32_t segmentVertex)
-    {
-    return new MeshSegmentInfo (closeVertex, segmentVertex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt HitPath::GetHitLocalToContextLocal (TransformR hitLocalToContextLocalTrans, ViewContextR context) const
@@ -456,39 +431,36 @@ StatusInt HitPath::GetContextLocalToHitLocal (TransformR contextLocalToHitLocalT
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitPath::HitPath
 (
-DgnViewportP               viewport,
-DisplayPathCR           path,
-DPoint3dCR              testPoint,
-HitSource               source,
-ViewFlagsCR             viewFlags,
-GeomDetailCR            geomDetail,
-IElemTopologyCP         elemTopo
-//IViewHandlerHitInfoCP   viewHandlerHitInfo removed in graphite
-) : SelectionPath (viewport)
+DgnViewportR        viewport,
+GeometricElementCR  element,
+DPoint3dCR          testPoint,
+HitSource           source,
+ViewFlagsCR         viewFlags,
+GeomDetailCR        geomDetail,
+IElemTopologyCP     elemTopo
+) : m_viewport(viewport)
     {
-    SetPath (&path);
-
-    m_locateSource       = source;
-    m_testPoint          = testPoint;
-    m_viewFlags          = viewFlags;
-    m_geomDetail         = geomDetail;
-    m_elemTopo           = elemTopo;
-    //m_viewHandlerHitInfo = viewHandlerHitInfo; removed in graphite
-    m_componentMode      = false;
+    m_elementId     = element.GetElementId();
+    m_locateSource  = source;
+    m_testPoint     = testPoint;
+    m_viewFlags     = viewFlags;
+    m_geomDetail    = geomDetail;
+    m_elemTopo      = elemTopo;
+    m_componentMode = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPath::HitPath (HitPath const& from) : SelectionPath (&from)
+HitPath::HitPath (HitPath const& from) : m_viewport(from.m_viewport)
     {
-    m_locateSource       = from.m_locateSource;
-    m_testPoint          = from.m_testPoint;
-    m_viewFlags          = from.m_viewFlags;
-    m_geomDetail         = from.m_geomDetail;
-    m_elemTopo           = (NULL == from.m_elemTopo) ? NULL : from.m_elemTopo->_Clone ();
-    //m_viewHandlerHitInfo = (NULL == from.m_viewHandlerHitInfo) ? NULL : from.m_viewHandlerHitInfo->_Clone (); removed in graphite
-    m_componentMode      = from.m_componentMode;
+    m_elementId     = from.m_elementId;
+    m_locateSource  = from.m_locateSource;
+    m_testPoint     = from.m_testPoint;
+    m_viewFlags     = from.m_viewFlags;
+    m_geomDetail    = from.m_geomDetail;
+    m_elemTopo      = (NULL == from.m_elemTopo) ? NULL : from.m_elemTopo->_Clone ();
+    m_componentMode = from.m_componentMode;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -500,17 +472,93 @@ HitPath::~HitPath ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void HitPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+    {
+    if (vp->IsActive())
+        T_HOST.GetGraphicsAdmin()._DrawPathInVp (this, vp, drawMode, drawPurpose, stopFlag);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitPath::_GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const
     {
-    T_Super::_GetInfoString (pathDescr, delimiter);
+    T_HOST.GetGraphicsAdmin()._GetInfoString (this, pathDescr, delimiter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbR HitPath::GetDgnDb() const
+    {
+    return m_viewport.GetViewController().GetDgnDb();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelR HitPath::GetDgnModel() const
+    {
+    GeometricElementCPtr element = GetElement();
+
+    return (element.IsValid() ? element->GetDgnModel() : *m_viewport.GetViewController().GetTargetModel());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometricElementCPtr HitPath::GetElement() const
+    {
+    DgnElementCP element = GetDgnDb().Elements().FindElement(m_elementId);
+
+    return (nullptr != element ? element->ToGeometricElement() : nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HitPath::IsInSelectionSet () const
+    {
+    GeometricElementCPtr element = GetElement();
+
+    return (element.IsValid() ? element->IsInSelectionSet() : false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::Hilited HitPath::IsHilited () const
+    {
+    GeometricElementCPtr element = GetElement();
+
+    return (element.IsValid() ? element->IsHilited() : DgnElement::Hilited::None);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    06/01
++---------------+---------------+---------------+---------------+---------------+------*/
+void HitPath::_SetHilited (DgnElement::Hilited newState) const
+    {
+    GeometricElementCPtr element = GetElement();
+
+    if (!element.IsValid())
+        return;
+    
+    // don't turn on/off hilite bit for elements in the selection set.
+    if (element->IsInSelectionSet())
+        return;
+
+    // KLUDGE: Preserve any alternative hilite state (i.e. HILITED_Bold) already set on this element...
+    if (DgnElement::Hilited::None == newState || DgnElement::Hilited::None == element->IsHilited())
+        element->SetHilited(newState);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            HitPath::ClearElemTopology()
+void HitPath::ClearElemTopology()
     {
     DELETE_AND_CLEAR (m_elemTopo);
     }
@@ -518,25 +566,22 @@ void            HitPath::ClearElemTopology()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            HitPath::IsSamePath (DisplayPathCP otherPath, bool fullPath) const
+bool HitPath::_IsSameHit (HitPathCP otherHit) const
     {
-    // check base paths
-    if (!SelectionPath::IsSamePath (otherPath, fullPath))
+    // check element...
+    if (nullptr == otherHit || m_elementId != otherHit->GetElementId())
         return false;
 
     // if other path is also hit path allow for elem topo compare...otherwise paths are the same
-    if (DisplayPathType::Hit != otherPath->GetPathType())
+    if (DisplayPathType::Hit != otherHit->GetPathType())
         return true;
-
-    HitPathP    otherHitPath = (HitPath*) otherPath;
 
     IElemTopology const *thisTopo, *otherTopo;
 
-    if (NULL == (thisTopo = GetElemTopology()) ||
-        NULL == (otherTopo = otherHitPath->GetElemTopology()))
+    if (nullptr == (thisTopo = GetElemTopology()) || nullptr == (otherTopo = otherHit->GetElemTopology()))
         return true;
 
-    if (0 !=  thisTopo->_Compare (*otherTopo))
+    if (0 != thisTopo->_Compare (*otherTopo))
         return false;
 
     return true;
@@ -620,7 +665,7 @@ SnapPath::~SnapPath ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ShaunSewall     12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapPath* SnapPath::Clone () const 
+SnapPath* SnapPath::_Clone () const 
     {
     return new SnapPath (*this);
     }
@@ -630,7 +675,7 @@ SnapPath* SnapPath::Clone () const
 * the snapped point, otherwise it returns the closest point on the element.
 * @bsimethod    HitPath                                         KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            SnapPath::GetHitPoint (DPoint3dR pt) const
+void SnapPath::_GetHitPoint (DPoint3dR pt) const
     {
     if (IsHot ())
         pt = m_snapPoint;
@@ -642,7 +687,7 @@ void            SnapPath::GetHitPoint (DPoint3dR pt) const
 * @return whether point has been adjusted
 * @bsimethod    SnapPath                                        BrienBastings   08/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool         SnapPath::PointWasAdjusted () const
+bool SnapPath::PointWasAdjusted () const
     {
     return (!bsiDPoint3d_pointEqualTolerance (&m_snapPoint, &m_adjustedPt, 1.0e-10));
     }
@@ -650,7 +695,7 @@ bool         SnapPath::PointWasAdjusted () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            SnapPath::SetHitPoint (DPoint3dCR hitPoint)
+void SnapPath::_SetHitPoint (DPoint3dCR hitPoint)
     {
     m_snapPoint  = hitPoint;
     m_adjustedPt = hitPoint;
@@ -659,12 +704,12 @@ void            SnapPath::SetHitPoint (DPoint3dCR hitPoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-IntersectPath::IntersectPath (HitPathCP firstPath, HitPathCP secondPath, DPoint3dCR pt) : SnapPath (firstPath)
+IntersectPath::IntersectPath (HitPathCP firstHit, HitPathCP secondHit, DPoint3dCR pt) : SnapPath (firstHit)
     {
-    m_secondPath = (HitPath *) secondPath;
+    m_secondHit = (HitPathP) secondHit;
 
-    if (m_secondPath)
-        m_secondPath->AddRef();
+    if (m_secondHit)
+        m_secondHit->AddRef();
 
     SetHitPoint (pt);
     }
@@ -672,12 +717,10 @@ IntersectPath::IntersectPath (HitPathCP firstPath, HitPathCP secondPath, DPoint3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-IntersectPath::IntersectPath (IntersectPath const& i2)
-    :
-    SnapPath (i2)
+IntersectPath::IntersectPath (IntersectPath const& i2) : SnapPath (i2)
     {
-    m_secondPath = i2.m_secondPath;
-    m_secondPath->AddRef ();
+    m_secondHit = i2.m_secondHit;
+    m_secondHit->AddRef ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -685,16 +728,16 @@ IntersectPath::IntersectPath (IntersectPath const& i2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IntersectPath::~IntersectPath ()
     {
-    if (m_secondPath)
-        m_secondPath->Release();
+    if (m_secondHit)
+        m_secondHit->Release();
 
-    m_secondPath = NULL;
+    m_secondHit = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ShaunSewall     12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapPath* IntersectPath::Clone () const 
+SnapPath* IntersectPath::_Clone () const 
     {
     return new IntersectPath (*this);
     }
@@ -704,14 +747,10 @@ SnapPath* IntersectPath::Clone () const
 * both paths of both hits are the same.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IntersectPath::IsSamePath
-(
-DisplayPathCP    otherPath,
-bool            fullPath    // fullPath arg is ignored for intersect paths!
-) const
+bool IntersectPath::_IsSameHit (HitPathCP otherPath) const
     {
     // check base paths
-    if (!SnapPath::IsSamePath (otherPath, false))
+    if (!SnapPath::IsSameHit(otherPath))
         return false;
 
     // for IntersectPaths, it can't be the same hit unless both are of type InteresctPath and BOTH paths match
@@ -719,15 +758,15 @@ bool            fullPath    // fullPath arg is ignored for intersect paths!
         return false;
 
     // now check the "second" paths
-    HitPathCP    o2 = ((IntersectPath*) otherPath)->GetSecondPath();
+    HitPathCP    o2 = ((IntersectPath*) otherPath)->GetSecondHit();
 
-    return GetSecondPath()->IsSamePath (o2, false);
+    return GetSecondHit()->IsSameHit(o2);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectPath::SetHilited (DgnElement::Hilited newState) const
+void IntersectPath::_SetHilited (DgnElement::Hilited newState) const
     {
     SnapPath::SetHilited (newState);
 
@@ -735,7 +774,7 @@ void IntersectPath::SetHilited (DgnElement::Hilited newState) const
     if (DgnElement::Hilited::Normal == newState)
         newState = DgnElement::Hilited::Dashed;
 
-    m_secondPath->SetHilited (newState);
+    m_secondHit->SetHilited (newState);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -744,12 +783,12 @@ void IntersectPath::SetHilited (DgnElement::Hilited newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IntersectPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void IntersectPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
     // start by drawing the first path normally
     T_Super::_DrawInVp (vp, drawMode, drawPurpose, stopFlag);
 
-    SnapPath tmpSnapPath (m_secondPath); // So display handlers know this is from a snap...
+    SnapPath tmpSnapPath (m_secondHit); // So display handlers know this is from a snap...
 
     // NOTE: When we're flashing, the hilite flags are not necessarily set on the elementRefs. So to get the second path
     //       drawn with dashed symbology, we need to turn on its "dashed hilite" flag temporarily, and then restore it.
@@ -775,28 +814,18 @@ void            IntersectPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitList::HitList ()
-    {
-    m_currHit = -1;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-HitList::~HitList ()
-    {
-    clear();
-    }
+HitList::HitList() {m_currHit = -1;}
+HitList::~HitList() {clear();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-int             HitList::GetCount () const      {return (int) size ();}
+int HitList::GetCount () const {return (int) size ();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectionPath*  HitList::Get (int i)
+HitPathP HitList::Get (int i)
     {
     if (i < 0)                  // ***NEEDS WORK: the old ObjectArray used to support -1 == END
         i = (int) size ();
@@ -808,7 +837,7 @@ SelectionPath*  HitList::Get (int i)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            HitList::Set (int i, SelectionPath*p)
+void HitList::Set (int i, HitPathP p)
     {
     if (i < 0 || i >= GetCount())
         {
@@ -821,7 +850,7 @@ void            HitList::Set (int i, SelectionPath*p)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            HitList::Insert (int i, SelectionPath *p)
+void HitList::Insert (int i, HitPathP p)
     {
     if (i < 0 || i == (int)size())
         push_back (p);
@@ -832,9 +861,9 @@ void            HitList::Insert (int i, SelectionPath *p)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            HitList::DropNulls ()
+void HitList::DropNulls()
     {
-    erase (std::remove(begin(), end(), (SelectionPath*)NULL), end());
+    erase (std::remove(begin(), end(), (HitPathP)NULL), end());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -842,7 +871,7 @@ void            HitList::DropNulls ()
 * before they are dropped. Clears the "current hit" index.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    HitList::Empty ()
+void HitList::Empty()
     {
     // empty the list (also decrements ref counts of entries)
     clear ();
@@ -874,10 +903,7 @@ void HitList::RemoveHit (int hitNum)
 * @return       the requested hit from the HitList
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectionPath*    HitList::GetHit
-(
-int     hitNum
-) const
+HitPathP HitList::GetHit (int hitNum) const
     {
     if (hitNum < 0)                     // *** NEEDS WORK: The old ObjectArray used to support -1 == END
         hitNum = (int) size() - 1;
@@ -891,7 +917,7 @@ int     hitNum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            HitList::RemoveCurrentHit()
+void HitList::RemoveCurrentHit()
     {
     RemoveHit (m_currHit);
     }
@@ -899,11 +925,11 @@ void            HitList::RemoveCurrentHit()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            HitList::SetCurrentHit (HitPathCP hit)
+void HitList::SetCurrentHit (HitPathCP hit)
     {
     ResetCurrentHit();
 
-    for (HitPathCP thisHit; NULL != (thisHit=(HitPathCP) GetNextHit()); )
+    for (HitPathCP thisHit; NULL != (thisHit=GetNextHit());)
         {
         if (thisHit == hit)
             return;
@@ -924,7 +950,7 @@ static const double s_tooCloseTolerance = 1.0e-5;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool is2dHitCompare (HitPathCR oHit1, HitPathCR oHit2)
     {
-    return (!oHit1.GetCursorElem()->GetDgnModel().Is3d() && !oHit2.GetCursorElem()->GetDgnModel().Is3d());
+    return (!oHit1.GetViewport().Is3dView() && !oHit2.GetViewport().Is3dView());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -932,13 +958,13 @@ static bool is2dHitCompare (HitPathCR oHit1, HitPathCR oHit2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int doZCompareOfSurfaceAndEdge (HitPathCR oHitSurf, HitPathCR oHitEdge)
     {
-    DgnViewportP   vp = oHitSurf.GetViewport ();
-    DPoint4d    homogeneousPlane;
+    DgnViewportR vp = oHitSurf.GetViewport ();
+    DPoint4d     homogeneousPlane;
     
-    if (!vp || !homogeneousPlane.PlaneFromOriginAndNormal (oHitSurf.GetGeomDetail ().GetClosestPointLocal (), oHitSurf.GetGeomDetail ().GetSurfaceNormal ()))
+    if (!homogeneousPlane.PlaneFromOriginAndNormal (oHitSurf.GetGeomDetail ().GetClosestPointLocal (), oHitSurf.GetGeomDetail ().GetSurfaceNormal ()))
         return 0;
 
-    DMap4dCP    worldToViewMap = vp->GetWorldToViewMap ();
+    DMap4dCP    worldToViewMap = vp.GetWorldToViewMap ();
     DMatrix4d   worldToLocal;
     DMap4d      localToWorldMap, localToViewMap;
 
@@ -1112,7 +1138,7 @@ bool            compareElemClass
         // Caller can establish a policy to only ever allow one hit for a given path. However, we want to make sure
         // that the one hit we do save is the "best" hit for that path. Therefore, every time we get another hit
         // for a path, we drop the one with the lower value based on the comparison, and save the other one.
-        if (!allowDuplicates && newHit->IsSamePath (oldHit, true))
+        if (!allowDuplicates && newHit->IsSameHit(oldHit))
             {
             // replace with new hit if it's better (otherwise just ignore it).
             if (comparison < 0)
@@ -1148,18 +1174,18 @@ bool            compareElemClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectionPath*  HitList::GetCurrentHit () const
+HitPathP HitList::GetCurrentHit () const
     {
     if (-1 == m_currHit)
         return NULL;
 
-    return (HitPath*) GetHit (m_currHit);
+    return GetHit (m_currHit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectionPath*  HitList::GetNextHit ()
+HitPathP HitList::GetNextHit ()
     {
     m_currHit++;
 
@@ -1170,66 +1196,66 @@ SelectionPath*  HitList::GetNextHit ()
 * search through hitlist and remove any hits that match a specified path.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool     HitList::RemoveHitsMatchingPath
-(
-DisplayPathCP    path
-)
+bool HitList::RemoveHitsFrom (HitPathCR hit)
     {
-    SelectionPath*  thisPath;
-    bool         removedOne = false;
+    HitPathP    thisHit;
+    bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
     for (int i=GetCount()-1; i>=0; i--)
         {
-        if ((NULL != (thisPath = GetHit (i))) && thisPath->IsSamePath (path, true))
+        if ((nullptr != (thisHit = GetHit (i))) && thisHit->IsSameHit(&hit))
             {
             removedOne = true;
             RemoveHit (i);
             }
         }
-    return  removedOne;
+    
+    return removedOne;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * search through hitlist and remove any hits that contain a specified elementRef.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitList::RemoveHitsContaining (DgnElementP element)
+bool HitList::RemoveHitsFrom (DgnElementCR element)
     {
-    SelectionPath*  thisPath;
-    bool         removedOne = false;
+    HitPathP    thisHit;
+    bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
     for (int i=GetCount()-1; i>=0; i--)
         {
-        if ((NULL != (thisPath = GetHit (i))) && thisPath->Contains (element))
+        if ((nullptr != (thisHit = GetHit (i))) && thisHit->GetElementId() == element.GetElementId())
             {
             removedOne = true;
             RemoveHit (i);
             }
         }
-    return  removedOne;
+
+    return removedOne;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* search through hitlist and remove any hits from the specified modelRef
+* search through hitlist and remove any hits from the specified model
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool     HitList::RemoveHitsFrom (DgnModelP modelRef)
+bool     HitList::RemoveHitsFrom (DgnModelR model)
     {
-    SelectionPath*  thisPath;
-    bool         removedOne = false;
+    HitPathP    thisHit;
+    bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
     for (int i=GetCount()-1; i>=0; i--)
         {
-        if ((NULL != (thisPath = GetHit (i))) && modelRef == thisPath->GetRoot())
+        if ((NULL != (thisHit = GetHit (i))) && &model == &thisHit->GetDgnModel())
             {
             removedOne = true;
             RemoveHit (i);
             }
         }
-    return  removedOne;
+
+    return removedOne;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1239,13 +1265,15 @@ void HitList::Dump (WCharCP label) const
     {
     printf ("%ls %d", label, GetCount());
 
-    SelectionPath*  thisPath;
-    for (int i=0; NULL != (thisPath = GetHit(i)); i++)
-        thisPath->Dump(L"\n");
+    HitPathP thisHit;
+
+    for (int i=0; NULL != (thisHit = GetHit(i)); i++)
+        printf ("\n -> ElementId : %llu", thisHit->GetElementId().GetValue());
 
     printf ("\n");
     }
 
+#if defined (NOT_NOW)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1270,6 +1298,7 @@ StatusInt       HitPath::GetLinearParameters (DSegment3dP hitSeg, int* vertex, i
 
     return SUCCESS;
     }
+#endif
 
 #ifdef WIP_VANCOUVER_MERGE // DgnActionItem
 /*---------------------------------------------------------------------------------**//**

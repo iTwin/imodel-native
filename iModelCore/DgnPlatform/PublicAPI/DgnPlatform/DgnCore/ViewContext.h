@@ -16,7 +16,6 @@
 #include "IViewDraw.h"
 
 //__PUBLISH_SECTION_END__
-#include "DisplayPath.h"
 #include "ScanCriteria.h"
 #include "Material.h"
 
@@ -807,13 +806,6 @@ DGNPLATFORM_EXPORT void SetDgnDb (DgnDbR);
 //! Set or clear the current persistent element.
 DGNPLATFORM_EXPORT void SetCurrentElement (GeometricElementCP);
 /** @endcond */
-
-//! Get the source DisplayPath for this ViewContext. The "source" DisplayPath will only be non-NULL when
-//! the context is being used to "re-display" an existing path. During Updates, for example, the source
-//! DisplayPath will be NULL.
-//! @return the DisplayPath for this ViewContext.
-//! @note see discussion of DisplayPaths in the MDL documentation.
-DGNPLATFORM_EXPORT DisplayPathCP GetSourceDisplayPath () const;
 
 //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
 //! @return the DrawPurpose specified in the call to DrawContext#Attach (drawcontext.h)

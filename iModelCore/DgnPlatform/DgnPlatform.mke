@@ -188,7 +188,7 @@ $(coreObjs)DgnCore$(oext): $(DgnCoreDir)DgnCore.cpp $(DgnCoreDir)DgnCoreDLLInlin
 
 $(coreObjs)HandlerTypeInfo$(oext): $(DgnCoreDir)HandlerTypeInfo.cpp $(contextDepends) $(HandlerDepends) ${MultiCompileDepends}
 
-$(coreObjs)ViewContext$(oext): $(DgnCoreDir)ViewContext.cpp   $(DgnCoreAPISrc)DisplayPath.h $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h $(DgnCoreAPISrc)ScanCriteria.h $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
+$(coreObjs)ViewContext$(oext): $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h $(DgnCoreAPISrc)ScanCriteria.h $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
 
 $(coreObjs)SymbolContext$(oext): $(DgnCoreDir)SymbolContext.cpp   $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h  $(LevelApiDepends) ${MultiCompileDepends}
 
@@ -217,8 +217,6 @@ $(coreObjs)TransformClipStack$(oext): $(DgnCoreDir)TransformClipStack.cpp $(DgnC
 $(coreObjs)DgnCorePolyfaceClip$(oext): $(DgnCoreDir)DgnCorePolyfaceClip.cpp $(DgnCoreAPISrc)ClipUtil.h ${MultiCompileDepends}
 
 $(coreObjs)FenceParams$(oext): $(DgnCoreDir)FenceParams.cpp $(DgnCoreAPISrc)FenceParams.h $(contextDepends) ${MultiCompileDepends}
-
-$(coreObjs)DisplayPath$(oext):  $(DgnCoreDir)DisplayPath.cpp $(DgnCoreAPISrc)DisplayPath.h $(contextDepends) ${MultiCompileDepends}
 
 $(coreObjs)GParray$(oext):      $(DgnCoreDir)GParray.cpp $(DgnCoreAPISrc)GPArray.h ${MultiCompileDepends}
 
@@ -362,9 +360,9 @@ $(coreObjs)TextAnnotationSeed$(oext) : $(AnnotationsSrc)TextAnnotationSeed.cpp $
 
 $(coreObjs)DgnHandlers$(oext): $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
 
-$(coreObjs)HitPath$(oext): $(DgnHandlersDir)HitPath.cpp $(DgnCoreAPISrc)DisplayPath.h $(HandlerDepends) ${MultiCompileDepends}
+$(coreObjs)HitPath$(oext): $(DgnHandlersDir)HitPath.cpp $(HandlerDepends) ${MultiCompileDepends}
 
-$(coreObjs)PickContext$(oext): $(DgnHandlersDir)PickContext.cpp  $(DgnCoreAPISrc)HitPath.h $(DgnCoreAPISrc)DisplayPath.h $(contextDepends) $(DgnCoreAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
+$(coreObjs)PickContext$(oext): $(DgnHandlersDir)PickContext.cpp  $(DgnCoreAPISrc)HitPath.h $(contextDepends) $(DgnCoreAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
 
 $(coreObjs)RegionUtil$(oext): $(DgnHandlersDir)RegionUtil.cpp $(contextDepends) ${MultiCompileDepends}
 

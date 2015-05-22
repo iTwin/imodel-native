@@ -141,7 +141,7 @@ StatusInt HypermodelingViewController::_VisitHit(HitPathCR hit, ViewContextR con
     //  If the hit is in the drawing view, draw that view
     for (auto drawing : m_drawings)
         {
-        if (drawing->GetTargetModel() == hit.GetRoot())
+        if (drawing->GetTargetModel() == &hit.GetDgnModel())
             {
             m_pass = PASS_ForPicking;
             PushClipsForInContextViewPass (context, *drawing);

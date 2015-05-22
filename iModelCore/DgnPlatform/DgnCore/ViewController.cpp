@@ -1834,9 +1834,9 @@ void ViewController2d::_SaveToSettings (JsonValueR settings) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewController::_VisitHit (HitPathCR hit, ViewContextR context) const
     {
-    GeometricElementCP element = (nullptr != hit.GetHeadElem() ? hit.GetHeadElem()->ToGeometricElement() : nullptr);
+    GeometricElementCPtr element = hit.GetElement();
 
-    if (nullptr == element)
+    if (!element.IsValid())
         return ERROR;
 
     ViewContext::ContextMark mark(&context);
