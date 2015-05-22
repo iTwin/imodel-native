@@ -200,6 +200,7 @@ namespace connectivity
                 like_predicate,
                 limit_offset_clause,
                 manipulative_statement,
+                rtreematch_predicate,
                 named_columns_join,
                 num_value_exp,
                 non_join_query_exp,

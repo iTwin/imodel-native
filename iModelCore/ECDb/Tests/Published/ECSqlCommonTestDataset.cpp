@@ -320,6 +320,40 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
 
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlTestDataset ECSqlCommonTestDataset::WhereMatchTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+    {
+    ECSqlTestDataset dataset;
+
+    ECClassCP testClass = testProject.GetTestSchemaManager().GetClass("ECSqlTest", "P");
+    Utf8String testClassECSqlStub;
+    if (ToECSql(testClassECSqlStub, ecsqlType, *testClass, false))
+        {
+        //This uses a dummy function to just test that parsing and preparing works. In real usage the function
+        //on the rhs must be a geometric function as defined in SQLite
+        Utf8String ecsql;
+        ecsql.Sprintf("%s WHERE ECInstanceId MATCH random()", testClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE ECInstanceId NOT MATCH random()", testClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE I MATCH random()", testClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        //even though SQLite expects the LHS to be a column, we allow a value exp in the ECSQL grammar.
+        ecsql.Sprintf("%s WHERE (I + L) MATCH random()", testClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE ECInstanceId MATCH '123'", testClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        }
+
+    return dataset;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)

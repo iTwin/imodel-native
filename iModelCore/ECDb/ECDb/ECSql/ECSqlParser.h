@@ -73,7 +73,7 @@ private:
 
     static std::unique_ptr<FunctionCallExp>            parse_fct_spec                  (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static BentleyStatus                               parse_and_add_functionarg       (ECSqlParseContext& ctx, FunctionCallExp& functionCallExp, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<UnaryValueExp>                   parse_factor                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<UnaryValueExp>              parse_factor                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<FoldFunctionCallExp>        parse_fold                      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<SetFunctionCallExp>         parse_general_set_fct           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
@@ -95,8 +95,10 @@ private:
     static std::unique_ptr<ComputedExp>                parse_like_predicate_part_2     (ECSqlParseContext& ctx, BooleanSqlOperator& likeOperator, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<LimitOffsetExp>             parse_limit_offset_clause       (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
+    static std::unique_ptr<BooleanExp>                 parse_rtreematch_predicate           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+
     static std::unique_ptr<NamedPropertiesJoinExp>     parse_named_columns_join        (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-     static std::unique_ptr<ValueExp>                   parse_num_value_exp             (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<ValueExp>                   parse_num_value_exp             (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static SqlSetQuantifier                            parse_opt_all_distinct          (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static OrderBySpecExp::SortDirection               parse_opt_asc_desc              (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);

@@ -193,7 +193,10 @@ Utf8CP ExpHelper::ToString(BooleanSqlOperator op)
         case BooleanSqlOperator::IS_NOT:        return "IS NOT";
         //Pattern
         case BooleanSqlOperator::LIKE:          return "LIKE";
-        case BooleanSqlOperator::NOT_LIKE:      return "NOT LIKE";               
+        case BooleanSqlOperator::NOT_LIKE:      return "NOT LIKE";      
+
+        case BooleanSqlOperator::MATCH:         return "MATCH";
+        case BooleanSqlOperator::NOT_MATCH:     return "NOT MATCH";
         }
     BeAssert(false && "case not handled");
     return nullptr;

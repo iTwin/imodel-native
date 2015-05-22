@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlCommonTestDataset.h $
+|     $Source: Tests/Published/ECSqlCommonTestDataset.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,7 +39,8 @@ public:
     static ECSqlTestDataset WhereBasicsTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset WhereCommonGeometryTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset WhereFunctionTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipEndTableMappingTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
+    static ECSqlTestDataset WhereMatchTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipEndTableMappingTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset WhereRelationshipLinkTableMappingTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset WhereRelationshipWithAnyClassConstraintTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset WhereRelationshipWithAdditionalPropsTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);

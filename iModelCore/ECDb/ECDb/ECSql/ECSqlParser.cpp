@@ -1608,6 +1608,8 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
         case OSQLParseNode::like_predicate:
             return parse_like_predicate (ctx, parseNode);
 
+        case OSQLParseNode::rtreematch_predicate:
+            return parse_rtreematch_predicate(ctx, parseNode);
 
         default:
             BeAssert (false && "Invalid grammar");
@@ -1772,6 +1774,38 @@ unique_ptr<ComputedExp> ECSqlParser::parse_like_predicate_part_2 (ECSqlParseCont
 
     return unique_ptr<ComputedExp> (new LikeRhsValueExp (move (rhsExp), move (escapeExp)));
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    05/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+std::unique_ptr<BooleanExp> ECSqlParser::parse_rtreematch_predicate(ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+    {
+    if (!SQL_ISRULE(parseNode, rtreematch_predicate))
+        {
+        BeAssert(false && "Wrong grammar. Expecting rtreematch_predicate");
+        ctx.SetError(ECSqlStatus::ProgrammerError, "Wrong grammar. Expecting rtreematch_predicate");
+        return nullptr;
+        }
+
+    OSQLParseNode const* lhsNode = parseNode->getChild(0);
+    unique_ptr<ValueExp> lhsExp = parse_row_value_constructor(ctx, lhsNode);
+    if (!ctx.IsSuccess())
+        return nullptr;
+
+    //rest of predicate is in match_predicate_part_2 rule node
+    OSQLParseNode const* part2Node = parseNode->getChild(1);
+
+    const bool isNot = parse_sql_not(ctx, part2Node->getChild(0));
+    const BooleanSqlOperator op = isNot ? BooleanSqlOperator::NOT_MATCH : BooleanSqlOperator::MATCH;
+
+    //second child node is SQL_TOKEN_MATCH, and third therefore the rhs function call
+    unique_ptr<FunctionCallExp> rhsExp = parse_fct_spec(ctx, part2Node->getChild(2));
+    if (!ctx.IsSuccess())
+        return nullptr;
+
+    return unique_ptr<BooleanExp>(new BinaryBooleanExp(move(lhsExp), op, move(rhsExp)));
+    }
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013

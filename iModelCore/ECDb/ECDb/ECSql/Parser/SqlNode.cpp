@@ -1417,6 +1417,7 @@ namespace connectivity
                     {OSQLParseNode::like_predicate, "like_predicate"},
                     {OSQLParseNode::limit_offset_clause, "limit_offset_clause"},
                     {OSQLParseNode::manipulative_statement, "manipulative_statement"},
+                    {OSQLParseNode::rtreematch_predicate, "rtreematch_predicate"},
                     {OSQLParseNode::named_columns_join, "named_columns_join"},
                     {OSQLParseNode::num_value_exp, "num_value_exp"},
                     {OSQLParseNode::non_join_query_exp, "non_join_query_exp"},

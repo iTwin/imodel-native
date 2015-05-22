@@ -190,6 +190,9 @@
     <ClCompile Include="NonPublished\ECDb\ECDbSql_Test.cpp">
       <Filter>NonPublished\ECDb</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

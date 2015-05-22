@@ -166,6 +166,9 @@ using namespace connectivity;
 // LIMIT and OFFSEt
 %token <pParseNode> SQL_TOKEN_LIMIT SQL_TOKEN_OFFSET SQL_TOKEN_NEXT SQL_TOKEN_ONLY
 
+//non-standard
+%token <pParseNode> SQL_TOKEN_MATCH
+
 //EC data types
 %token <pParseNode> SQL_TOKEN_BINARY SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_INT32 SQL_TOKEN_LONG SQL_TOKEN_INT64 SQL_TOKEN_STRING SQL_TOKEN_DATE SQL_TOKEN_TIMESTAMP SQL_TOKEN_DATETIME SQL_TOKEN_POINT2D SQL_TOKEN_POINT3D 
     /* operators */
@@ -246,8 +249,8 @@ using namespace connectivity;
 %type <pParseNode> opt_fetch_first_row_count fetch_first_clause offset_row_count fetch_first_row_count first_or_next row_or_rows opt_result_offset_clause result_offset_clause
 /* LIMIT and OFFSET */
 %type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_fetch_first_clause opt_only ecclassid_fct_spec union_op
-
-
+/* non-standard */
+%type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 
 %%
 
@@ -1118,6 +1121,7 @@ predicate:
     |   test_for_null
     |   in_predicate
     |   like_predicate
+    |   rtreematch_predicate
     ;
 
 
@@ -1436,6 +1440,25 @@ all_or_any_predicate:
                 YYERROR;
         }
     */
+    ;
+
+rtreematch_predicate:
+       row_value_constructor rtreematch_predicate_part_2
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+        }
+    ;
+
+rtreematch_predicate_part_2:
+       sql_not SQL_TOKEN_MATCH fct_spec
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+        }
     ;
 
 any_all_some:

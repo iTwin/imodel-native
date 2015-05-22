@@ -110,7 +110,9 @@ enum class BooleanSqlOperator
     BETWEEN,
     NOT_BETWEEN,
     LIKE,
-    NOT_LIKE
+    NOT_LIKE,
+    MATCH,
+    NOT_MATCH
     };
 
 //=======================================================================================

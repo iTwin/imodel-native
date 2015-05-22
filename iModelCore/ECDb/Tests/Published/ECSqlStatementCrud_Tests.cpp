@@ -276,6 +276,15 @@ TEST_F (ECSqlSelectTestFixture, WhereFunctionTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectTestFixture, WhereMatchTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Select, GetTestProject(), PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereRelationshipEndTableMappingTests)
@@ -617,6 +626,15 @@ TEST_F (ECSqlUpdateTestFixture, WhereFunctionTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlUpdateTestFixture, WhereMatchTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Update, GetTestProject(), PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereRelationshipEndTableMappingTests)
@@ -735,6 +753,15 @@ TEST_F (ECSqlDeleteTestFixture, WhereFunctionTests)
     {
     auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
     RunTest (dataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlDeleteTestFixture, WhereMatchTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Delete, GetTestProject(), PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
