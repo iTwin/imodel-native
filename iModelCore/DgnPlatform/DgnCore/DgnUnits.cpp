@@ -130,7 +130,7 @@ AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
     {
     RTree3dBoundsTest bounds(m_dgndb);
     Statement stmt;
-    DbResult rc = stmt.Prepare(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_PrjRTree " WHERE ElementId MATCH rTreeMatch(1)");
+    DbResult rc = stmt.Prepare(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH rTreeMatch(1)");
     bounds.m_bounds.Invalidate();
     rc=bounds.StepRTree(stmt);
     BeAssert(rc==BE_SQLITE_DONE);

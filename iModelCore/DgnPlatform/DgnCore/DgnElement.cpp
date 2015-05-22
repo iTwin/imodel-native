@@ -494,7 +494,7 @@ DgnModelStatus PhysicalElement::_InsertInDb()
         return DGNMODEL_STATUS_Success;
 
     CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_VTABLE_PrjRTree " (ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ) VALUES (?,?,?,?,?,?,?)");
+    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_VTABLE_RTree3d " (ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ) VALUES (?,?,?,?,?,?,?)");
 
     stmt->BindId(1, m_elementId);
     AxisAlignedBox3dCR range = m_placement.CalculateRange();
@@ -521,7 +521,7 @@ DgnModelStatus PhysicalElement::_UpdateInDb()
         return DGNMODEL_STATUS_Success;
 
     CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_VTABLE_PrjRTree " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
+    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_VTABLE_RTree3d " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
 
     AxisAlignedBox3dCR range = m_placement.CalculateRange();
     stmt->BindDouble(1, range.low.x);
