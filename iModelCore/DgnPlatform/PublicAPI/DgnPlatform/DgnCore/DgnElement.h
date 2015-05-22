@@ -106,11 +106,10 @@ public:
         virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR modified)  {return false;}
 
         //! Called after this AppData's element was Updated.
-        //! @param[in] orig the original DgnElement
         //! @param[in] modified the modified DgnElement
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
-        virtual bool _OnUpdated(DgnElementCR orig, DgnElementCR modified) {return false;}
+        virtual bool _OnUpdated(DgnElementCR modified) {return false;}
 
         //! Called before this AppData's element is Deleted.
         //! @param[in]  el the DgnElement to be deleted
@@ -170,6 +169,16 @@ protected:
     //! Override if the DgnElement subclass needs to generate the display label in a different way.
     virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode();}
 
+    //! Set the parent (owner) of this DgnElement.
+    //! The default implementation sets the parent without doing any checking.
+    //! Override if the DgnElement subclass needs to validate the parent/child relationship.
+    virtual BentleyStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return BentleyStatus::SUCCESS;}
+
+    //! Set the category of this DgnElement.
+    //! The default implementation sets the category without doing any checking.
+    //! Override if the DgnElement subclass needs to validate the category.
+    virtual BentleyStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return BentleyStatus::SUCCESS;}
+
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
     virtual void _OnInserted() {}
     virtual GeometricElementCP _ToGeometricElement() const {return nullptr;}
@@ -215,8 +224,6 @@ public:
     void SetHilited(Hilited newState) const {m_flags.m_hilited = (uint8_t) newState;}
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const;
 
-    void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
-
     DGNPLATFORM_EXPORT void ClearAllAppData();
 
     //! Test if the element is in the selection set
@@ -253,8 +260,8 @@ public:
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
-    /** @name AppData Management */
-    /** @{ */
+/** @name AppData Management */
+/** @{ */
     //! Get the HeapZone for the this element.
     DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
 
@@ -273,7 +280,7 @@ public:
     //! @param[in] key The key for the AppData of interest.
     //! @return the AppData for key \a key, or nullptr.
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
-    /** @} */
+/** @} */
 
     //! Get the DgnModel of this element.
     DgnModelR GetDgnModel() const {return m_dgnModel;}
@@ -302,14 +309,27 @@ public:
     DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 
     //! Get the DgnElementId for the parent of this element
+    //! @see SetParentId
     //! @return Id will be invalid if this element does not have a parent element
     DgnElementId GetParentId() const {return m_parentId;}
 
-    //! Change the parent of this DgnElement
-    void SetParentId(DgnElementId parent) {m_parentId = parent;}
+    //! Set the parent (owner) of this DgnElement
+    //! @see GetParentId
+    //! @see _SetParentId
+    //! @return BentleyStatus::SUCCESS if the parent was set
+    //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects setting the parent.
+    BentleyStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
 
     //! Get the category of this DgnElement.
+    //! @see SetCategoryId
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
+
+    //! Set the category of this DgnElement.
+    //! @see GetCategoryId
+    //! @see _SetCategoryId
+    //! @return BentleyStatus::SUCCESS if the category was set
+    //! @note This call can fail if a DgnElement subclass overrides _SetCategoryId and rejects setting the category.
+    BentleyStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 
     //! Get the code (business key) of this DgnElement.
     Utf8CP GetCode() const {return m_code.c_str();}
@@ -331,6 +351,7 @@ public:
     //! @see _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
+    //! Factory method that creates a new instance of DgnElement using the specified params.
     static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
 };
 

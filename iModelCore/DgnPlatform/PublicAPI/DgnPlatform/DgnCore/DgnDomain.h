@@ -223,7 +223,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         Handler* GetSuperClass() const {return m_superClass;}
 
         //! Get the name of the ECClass handled by this Handler
-        Utf8CP GetClassName() const {return m_ecClassName.c_str();}
+        Utf8StringCR GetClassName() const {return m_ecClassName;}
 
         //! Get DgnDomain of Handler
         DgnDomainCR GetDomain() const {return *m_domain;}

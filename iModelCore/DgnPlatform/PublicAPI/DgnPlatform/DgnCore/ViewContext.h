@@ -184,7 +184,7 @@ virtual StatusInt   _GetRange (DRange3dR range) const = 0;
 //=======================================================================================
 struct          IRangeNodeCheck
 {
-    virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR, DRange3dCR, bool is3d, bool isElement) = 0;
+    virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR, DRange3dCR, bool is3d) = 0;
 };
 
 //=======================================================================================
@@ -462,7 +462,6 @@ protected:
     void                    InvalidateScanRange ();
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange ();
     DGNPLATFORM_EXPORT bool CheckThicknessVector ();
-    virtual int _GetScanReturnType () {return MSSCANCRIT_ITERATE_ELEMENT;}
     DGNPLATFORM_EXPORT virtual StatusInt       _Attach (DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void            _Detach ();
     DGNPLATFORM_EXPORT virtual void            _SetupOutputs () = 0;
@@ -521,7 +520,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void            _SetCurrentElement (GeometricElementCP);
 
     DGNPLATFORM_EXPORT virtual void            _ClearZ ();
-    DGNPLATFORM_EXPORT virtual ScanTestResult  _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d, bool isElement);
+    DGNPLATFORM_EXPORT virtual ScanTestResult  _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
     DGNPLATFORM_EXPORT virtual void            _DrawAligned (DVec3dCR axis, DPoint3dCR origin, AlignmentMode type, IStrokeAligned& stroker);
     DGNPLATFORM_EXPORT virtual void            _SetLocatePriority (int priority);
     DGNPLATFORM_EXPORT virtual void            _SetNonSnappable (bool unsnappable);
@@ -1107,14 +1106,6 @@ public:
     void Init (double e, double r, double d, Transform const& a);
 
     DGNPLATFORM_EXPORT void SwapScales ();
-
-    DGNPLATFORM_EXPORT void RemoveAspectRatioSkew ();
-
-    //! Has a view handler imposed aspect ratio skewing (aka y-axis exaggeration)?
-    DGNPLATFORM_EXPORT bool HasAspectRatioSkew () const;
-
-    //! Get the aspect ratio skewing effect (aka y-axis exaggeration) imposed by the view handler expressed as non-uniform scaling in local coordinate system.
-    Transform const& GetAspectRatioSkew () const {return aspectRatioSkew;}
 
     //! The element's current annotation scale
     double GetElementNativeScale () const {return elementScale;}

@@ -50,14 +50,28 @@ struct IDgnRscFontData : IDgnFontData
 //=======================================================================================
 struct IDgnShxFontData : IDgnFontData
 {
+private:
+    // This information is here for SHX (vs. DgnShxFont itself) because glyphs need access to sub-shape information, and I'd rather keep this low-level data here instead of expose it through the font.
+    typedef bmap<DgnGlyph::T_Id, DgnShxFont::GlyphFPos> T_GlyphFPosCache;
+    T_GlyphFPosCache m_glyphFPosCache;
+    bool m_hasLoadedGlyphFPosCacheAndMetrics;
+    Byte m_ascender;
+
+    void LoadGlyphFPosCacheAndMetrics();
+    void LoadNonUnicodeGlyphFPosCacheAndMetrics();
+    void LoadUnicodeGlyphFPosCacheAndMetrics();
+
+public:
+    IDgnShxFontData() : m_hasLoadedGlyphFPosCacheAndMetrics(false), m_ascender(0) {}
     virtual size_t _Read(void* buffer, size_t size, size_t count) = 0;
     virtual BentleyStatus _Seek(int64_t offset, BeFileSeekOrigin origin) = 0;
     virtual uint64_t _Tell() = 0;
 
     char GetNextChar() { char next; _Read(&next, sizeof(next), 1); return next; }
     uint16_t GetNextUInt16() { uint16_t next; _Read(&next, sizeof(next), 1); return next; }
-
     DgnShxFont::ShxType GetShxType();
+    DgnShxFont::GlyphFPos const* GetGlyphFPos(DgnGlyph::T_Id);
+    Byte GetAscender();
 };
 
 //=======================================================================================

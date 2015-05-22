@@ -302,6 +302,19 @@ void DgnModel2d::_FromPropertiesJson(Json::Value const& val)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus DgnModel2d::_OnInsertElement(DgnElementR element)
+    {
+    DgnModelStatus status = T_Super::_OnInsertElement(element);
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+    if (element.ToPhysicalElement() != nullptr)
+        return DGNMODEL_STATUS_2d3dMismatch;
+    return DGNMODEL_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PlanarPhysicalModel::_ToPropertiesJson(Json::Value& val) const
@@ -973,3 +986,44 @@ AxisAlignedBox3d DgnModel::_QueryModelRange() const
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetModel::SheetModel(CreateParams const& params) : T_Super(params) {m_size = DPoint2d::FromZero();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetModel::SheetModel(DgnDbR db, Utf8CP name, DPoint2dCR size, Units unitsPicker) 
+    : 
+    T_Super(CreateParams(db, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)), name)),
+    m_size(size)
+    {
+    UnitDefinition units;
+    if (unitsPicker == Units::Inches)
+        units = UnitDefinition(UnitBase::Meter, UnitSystem::English, 0.02539998628, 1, L""); // *** NEEDS WORK: how to express a unit system in inches?
+    else if (unitsPicker == Units::Millimeters)
+        units = UnitDefinition(UnitBase::Meter, UnitSystem::Metric, 0.001, 1, L""); // *** NEEDS WORK: How to express a unit system in mms?
+
+    m_properties.SetWorkingUnits(units, units);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SheetModel::_ToPropertiesJson(Json::Value& val) const 
+    {
+    T_Super::_ToPropertiesJson(val);
+    JsonUtils::DPoint2dToJson(val["sheet_size"], m_size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SheetModel::_FromPropertiesJson(Json::Value const& val) 
+    {
+    T_Super::_FromPropertiesJson(val);
+    JsonUtils::DPoint2dFromJson(m_size, val["sheet_size"]);
+    }
+

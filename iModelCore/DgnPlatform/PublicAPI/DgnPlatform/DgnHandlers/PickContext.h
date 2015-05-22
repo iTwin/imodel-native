@@ -133,7 +133,6 @@ private:
     virtual void            _DrawStyledBSplineCurve3d (MSBsplineCurveCR) override;
     virtual void            _DrawStyledBSplineCurve2d (MSBsplineCurveCR, double zDepth) override;
     virtual QvElemP         _DrawCached (DgnPlatform::IStrokeForCache&) override;
-    virtual int             _GetScanReturnType () override  {return MSSCANCRIT_ITERATE_ELEMENT_UNORDERED;}
     virtual IPickGeomP      _GetIPickGeom () override {return &m_output;}
     virtual uint32_t        _GetDisplayInfo (bool isRenderable) override;
 

@@ -746,22 +746,22 @@ struct DGN_point_value : ScalarFunction
 /**
     A rtree MATCH function that accepts objects that overlap an aabb.
 */
-void DGN_rtree_overlap(DGN_aabb);
+void DGN_rtree_aabb_overlap(DGN_aabb);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_rtree_aabb_overlap : RTreeMatchFunction
+struct DGN_rtree_overlap_aabb : RTreeMatchFunction
 {
     int _TestRange(QueryInfo const& info) override
         {
-        if (info.m_nParam != 1)
+        if (info.m_nParam != 1 || info.m_args[0].GetValueBytes() != sizeof(DRange3d))
             return BE_SQLITE_ERROR;
 
         info.m_within = Within::Outside;
 
-        RTree3dValCP bounds = (RTree3dValCP) ((DbValue*)info.m_param)->GetValueBlob();
+        RTree3dVal bounds(*(DRange3dCP) info.m_args[0].GetValueBlob());
         RTree3dValCP pt = (RTree3dValCP) info.m_coords;
 
-        bool passedTest = (info.m_parentWithin == Within::Inside) ? true : bounds->Intersects(*pt);
+        bool passedTest = (info.m_parentWithin == Within::Inside) ? true : bounds.Intersects(*pt);
         if (!passedTest)
             return BE_SQLITE_OK;
 
@@ -769,7 +769,7 @@ struct DGN_rtree_aabb_overlap : RTreeMatchFunction
             {
             // For nodes, return 'level-score'.
             info.m_score = info.m_level;
-            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : bounds->Contains(*pt) ? Within::Inside : Within::Partly;
+            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : bounds.Contains(*pt) ? Within::Inside : Within::Partly;
             }
         else
             {
@@ -780,7 +780,7 @@ struct DGN_rtree_aabb_overlap : RTreeMatchFunction
         return BE_SQLITE_OK;
         }
 
-    DGN_rtree_aabb_overlap() : RTreeMatchFunction("DGN_rtree_aabb_overlap", 1) {}
+    DGN_rtree_overlap_aabb() : RTreeMatchFunction("DGN_rtree_overlap_aabb", 1) {}
 };
 
 END_UNNAMED_NAMESPACE
@@ -816,7 +816,7 @@ void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
 
     static RTreeMatchFunction* s_matchFuncs[] = 
                          {
-                         new DGN_rtree_aabb_overlap
+                         new DGN_rtree_overlap_aabb
                          };
 
     for (DbFunction* func : s_funcs)
@@ -825,7 +825,6 @@ void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
     for (RTreeMatchFunction* func : s_matchFuncs)
         db.AddRTreeMatchFunction(*func);
     }
-
 
 #ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup DgnSchemaDomainSqlFunctions @{  at the top of the file
 // __PUBLISH_SECTION_START__

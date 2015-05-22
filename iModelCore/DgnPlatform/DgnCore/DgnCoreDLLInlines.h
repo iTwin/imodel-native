@@ -114,13 +114,8 @@ DG_INLINE DVec3d          ViewController::GetDelta() const {return _GetDelta();}
 DG_INLINE RotMatrix       ViewController::GetRotation() const {return _GetRotation();}
 DG_INLINE void            ViewController::SetOrigin(DPoint3dCR val) {_SetOrigin(val);}
 DG_INLINE void            ViewController::SetDelta(DVec3dCR val) {_SetDelta(val);}
-DG_INLINE void            ViewController::SetRotation(RotMatrixCR val) {_SetRotation(val);}
-DG_INLINE double          ViewController::GetAspectRatioSkew() const {return _GetAspectRatioSkew();}
-DG_INLINE ColorDef        ViewController::GetBackgroundColor() const {return _GetBackgroundColor();}
 DG_INLINE void            ViewController::SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_viewFlags.bgColor=1;}
-DG_INLINE void            ViewController::AdjustAspectRatio(double windowAspect, bool expandView) {_AdjustAspectRatio(windowAspect, expandView);}
 DG_INLINE bool            ViewController::IsLoaded() const { return m_baseModelId.IsValid();}
-DG_INLINE void            ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff) {_ChangeCategoryDisplay(categoryId, onOff);}
 DG_INLINE void            ViewController::ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
 DG_INLINE bool            ViewController::Allow3dManipulations() const {return _Allow3dManipulations();}
 DG_INLINE DgnModelP       ViewController::GetTargetModel() const {return _GetTargetModel();}

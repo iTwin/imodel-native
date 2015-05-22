@@ -338,10 +338,6 @@ public:
     //! @return the result of calling changeset.ApplyChanges
     DGNPLATFORM_EXPORT BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnId txnId, Utf8StringCR txnDescr, uint64_t txnSource, TxnDirection isUndo);
 
-public:
-    //! @name The Current Transaction
-    //@{
-
     //! End the current transaction, either committing or cancelling the changes made.
     //! If changes are to be discarded, then this function will call CancelToPos.
     //! If changes are to be retained, then this function will invoke TxnMonitor callbacks and then set a closing mark.
@@ -362,8 +358,6 @@ public:
 
     //! Query if any Fatal validation errors were reported during the last boundary check.
     DGNPLATFORM_EXPORT bool HasAnyFatalValidationErrors() const;
-
-    //@}
 
     //! @name Start and Stop Journaling Changes for Undo
     //@{
