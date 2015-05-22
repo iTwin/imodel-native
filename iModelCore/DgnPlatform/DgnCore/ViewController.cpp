@@ -1672,6 +1672,8 @@ void ViewFlags::InitDefaults()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expandView)
     {
+    windowAspect *= GetAspectRatioSkew();
+
     // first, make sure none of the deltas are negative
     m_delta.x = fabs (m_delta.x);
     m_delta.y = fabs (m_delta.y);
