@@ -1248,7 +1248,8 @@ int Db::AddFunction(DbFunction& func) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Db::AddRTreeMatchFunction(RTreeMatchFunction& func) const
     {
-    return m_dbFile->AddRTreeMatchFunction(func);
+    int stat =m_dbFile->AddRTreeMatchFunction(func);
+    return (stat != 0) ? stat : _OnAddFunction(func);
     }
 
 /*---------------------------------------------------------------------------------**//**
