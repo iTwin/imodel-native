@@ -1116,14 +1116,6 @@ public:
 
     DGNPLATFORM_EXPORT void SwapScales ();
 
-    DGNPLATFORM_EXPORT void RemoveAspectRatioSkew ();
-
-    //! Has a view handler imposed aspect ratio skewing (aka y-axis exaggeration)?
-    DGNPLATFORM_EXPORT bool HasAspectRatioSkew () const;
-
-    //! Get the aspect ratio skewing effect (aka y-axis exaggeration) imposed by the view handler expressed as non-uniform scaling in local coordinate system.
-    Transform const& GetAspectRatioSkew () const {return aspectRatioSkew;}
-
     //! The element's current annotation scale
     double GetElementNativeScale () const {return elementScale;}
 

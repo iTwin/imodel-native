@@ -1500,7 +1500,6 @@ double CameraViewController::GetBackDistance() const
     return eyeOrg.z;
     }
 
-double   DrawingViewController::_GetAspectRatioSkew() const {return 1.0;}
 DPoint3d ViewController2d::_GetOrigin() const {return DPoint3d::From (m_origin.x, m_origin.y);}
 void     ViewController2d::_SetDelta(DVec3dCR delta) {m_delta.x = delta.x; m_delta.y = delta.y;}
 void     ViewController2d::_SetOrigin(DPoint3dCR origin) {m_origin.x = origin.x; m_origin.y = origin.y;}
@@ -1671,7 +1670,7 @@ void ViewFlags::InitDefaults()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_AdjustAspectRatio (double windowAspect, bool expandView)
+void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expandView)
     {
     // first, make sure none of the deltas are negative
     m_delta.x = fabs (m_delta.x);

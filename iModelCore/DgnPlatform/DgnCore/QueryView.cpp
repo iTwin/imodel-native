@@ -439,7 +439,7 @@ Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR)
         m_dgndb.Models().GetModel(id);
 
     return Utf8String ("SELECT rTreeAccept(r.ElementId) FROM "
-           DGN_VTABLE_PrjRTree " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e "
+           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e "
            "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId"
            " AND InVirtualSet(@vSet,e.ModelId,e.CategoryId)");
     }
