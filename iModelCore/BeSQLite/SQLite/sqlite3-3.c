@@ -6167,7 +6167,8 @@ static void rebuildPage(
     memcpy(pData, pCell, szCell[i]);
     put2byte(pCellptr, (pData - aData));
     pCellptr += 2;
-    assert( szCell[i]==cellSizePtr(pPg, pCell) );
+    assert( szCell[i]==cellSizePtr(pPg, pCell) || CORRUPT_DB );
+    testcase( szCell[i]!=cellSizePtr(pPg,pCell) );
   }
 
   /* The pPg->nFree field is now set incorrectly. The caller will fix it. */
@@ -7860,7 +7861,8 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
         pgnoRoot==PENDING_BYTE_PAGE(pBt) ){
       pgnoRoot++;
     }
-    assert( pgnoRoot>=3 );
+    assert( pgnoRoot>=3 || CORRUPT_DB );
+    testcase( pgnoRoot<3 );
 
     /* Allocate a page. The page that currently resides at pgnoRoot will
     ** be moved to the allocated page (unless the allocated page happens
@@ -8010,7 +8012,8 @@ static int clearDatabasePage(
     rc = clearDatabasePage(pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange);
     if( rc ) goto cleardatabasepage_out;
   }else if( pnChange ){
-    assert( pPage->intKey );
+    assert( pPage->intKey || CORRUPT_DB );
+    testcase( !pPage->intKey );
     *pnChange += pPage->nCell;
   }
   if( freePageFlag ){
@@ -16238,9 +16241,11 @@ SQLITE_API sqlite3_value *SQLITE_STDCALL sqlite3_value_dup(const sqlite3_value *
   pNew->flags &= ~MEM_Dyn;
   pNew->db = 0;
   if( pNew->flags&(MEM_Str|MEM_Blob) ){
-    if( 0==(pOrig->flags&MEM_Static) ){
-      pNew->flags |= MEM_Ephem;
-      sqlite3VdbeMemMakeWriteable(pNew);
+    pNew->flags &= ~(MEM_Static|MEM_Dyn);
+    pNew->flags |= MEM_Ephem;
+    if( sqlite3VdbeMemMakeWriteable(pNew)!=SQLITE_OK ){
+      sqlite3ValueFree(pNew);
+      pNew = 0;
     }
   }
   return pNew;

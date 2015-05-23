@@ -16900,7 +16900,7 @@ SQLITE_PRIVATE void sqlite3OpenTable(
   }else{
     Index *pPk = sqlite3PrimaryKeyIndex(pTab);
     assert( pPk!=0 );
-    assert( pPk->tnum=pTab->tnum );
+    assert( pPk->tnum==pTab->tnum );
     sqlite3VdbeAddOp3(v, opcode, iCur, pPk->tnum, iDb);
     sqlite3VdbeSetP4KeyInfo(pParse, pPk);
     VdbeComment((v, "%s", pTab->zName));
@@ -24528,6 +24528,8 @@ static void selectInnerLoop(
       int r1 = sqlite3GetTempRange(pParse, nPrefixReg+1);
       testcase( eDest==SRT_Table );
       testcase( eDest==SRT_EphemTab );
+      testcase( eDest==SRT_Fifo );
+      testcase( eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
@@ -24943,10 +24945,7 @@ static void generateSortTail(
     VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
   }
   switch( eDest ){
-    case SRT_Table:
     case SRT_EphemTab: {
-      testcase( eDest==SRT_Table );
-      testcase( eDest==SRT_EphemTab );
       sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iParm, regRow, regRowid);
       sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
@@ -26295,15 +26294,14 @@ static int generateOutputSubroutine(
   */
   codeOffset(v, p->iOffset, iContinue);
 
+  assert( pDest->eDest!=SRT_Exists );
+  assert( pDest->eDest!=SRT_Table );
   switch( pDest->eDest ){
     /* Store the result as data using a unique key.
     */
-    case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);
-      testcase( pDest->eDest==SRT_Table );
-      testcase( pDest->eDest==SRT_EphemTab );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r1);
       sqlite3VdbeAddOp2(v, OP_NewRowid, pDest->iSDParm, r2);
       sqlite3VdbeAddOp3(v, OP_Insert, pDest->iSDParm, r1, r2);
@@ -26330,16 +26328,6 @@ static int generateOutputSubroutine(
       sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
-
-#if 0  /* Never occurs on an ORDER BY query */
-    /* If any row exist in the result set, record that fact and abort.
-    */
-    case SRT_Exists: {
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, pDest->iSDParm);
-      /* The LIMIT clause will terminate the loop for us */
-      break;
-    }
-#endif
 
     /* If this is a scalar select that is part of an expression, then
     ** store the results in the appropriate memory cell and break out
@@ -31404,12 +31392,10 @@ static void updateVirtualTable(
   */
   assert( v );
   ephemTab = pParse->nTab++;
-  sqlite3VdbeAddOp2(v, OP_OpenEphemeral, ephemTab, pTab->nCol+1+(pRowid!=0));
-  sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
 
   /* fill the ephemeral table 
   */
-  sqlite3SelectDestInit(&dest, SRT_Table, ephemTab);
+  sqlite3SelectDestInit(&dest, SRT_EphemTab, ephemTab);
   sqlite3Select(pParse, pSelect, &dest);
 
   /* Generate code to scan the ephemeral table and call VUpdate. */
