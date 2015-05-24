@@ -2045,12 +2045,12 @@ bool GeometricElement::_DrawHit (HitPathCR hit, ViewContextR context) const
     if (nullptr == primitive)
         return false;
 
-    GeometricElementCP element = (nullptr != hit.GetHeadElem() ? hit.GetHeadElem()->ToGeometricElement() : nullptr);
+    GeometricElementCPtr element = hit.GetElement();
 
-    if (nullptr == element)
+    if (!element.IsValid())
         return false;
 
-    context.SetCurrentElement(element);
+    context.SetCurrentElement(element.get());
 
     bool        pushedtrans = false;
     Transform   hitLocalToContextLocal;

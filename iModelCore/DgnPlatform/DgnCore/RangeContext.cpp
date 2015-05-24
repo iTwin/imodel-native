@@ -927,9 +927,9 @@ bool IsRangeContainedInCurrentRange (DRange3dCR range, bool is3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR criteria, DRange3dCR scanRange, bool is3d, bool isElement) override
+virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR criteria, DRange3dCR scanRange, bool is3d) override
     {
-    if (ScanTestResult::Fail == T_Super::_CheckNodeRange (criteria, scanRange, is3d, isElement))
+    if (ScanTestResult::Fail == T_Super::_CheckNodeRange (criteria, scanRange, is3d))
         return  ScanTestResult::Fail;
 
     return IsRangeContainedInCurrentRange (scanRange, is3d) ? ScanTestResult::Fail : ScanTestResult::Pass;
@@ -952,15 +952,6 @@ bool _ScanRangeFromPolyhedron()
         return  true;
         }
     return  T_Super::_ScanRangeFromPolyhedron ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            _SetScanReturn () override
-    {
-    T_Super::_SetScanReturn ();
-    m_scanCriteria->SetReturnType (MSSCANCRIT_ITERATE_ELEMENT_UNORDERED, false, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

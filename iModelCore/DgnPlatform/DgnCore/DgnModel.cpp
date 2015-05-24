@@ -990,7 +990,7 @@ AxisAlignedBox3d DgnModel::_QueryModelRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetModel::SheetModel(CreateParams const& params) : T_Super(params) {;}
+SheetModel::SheetModel(CreateParams const& params) : T_Super(params) {m_size = DPoint2d::FromZero();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15

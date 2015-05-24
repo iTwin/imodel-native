@@ -166,7 +166,6 @@ DGNPLATFORM_TYPEDEFS (DgnModelInfo)
 DGNPLATFORM_TYPEDEFS (DgnModelIterator)
 DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
-DGNPLATFORM_TYPEDEFS (DisplayPath)
 DGNPLATFORM_TYPEDEFS (DrawContext)
 DGNPLATFORM_TYPEDEFS (DrawingModel)
 DGNPLATFORM_TYPEDEFS (DropGeometry)
@@ -255,7 +254,6 @@ DGNPLATFORM_TYPEDEFS (QvViewport)
 DGNPLATFORM_TYPEDEFS (RedlineViewController)
 DGNPLATFORM_TYPEDEFS (RegionGraphicsContext)
 DGNPLATFORM_TYPEDEFS (ScanCriteria)
-DGNPLATFORM_TYPEDEFS (SelectionPath)
 DGNPLATFORM_TYPEDEFS (SelectionSetManager)
 DGNPLATFORM_TYPEDEFS (SheetViewController)
 DGNPLATFORM_TYPEDEFS (SnapContext)
@@ -298,7 +296,6 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR (ClipVector)
-DGNPLATFORM_REF_COUNTED_PTR (DisplayPath)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (DisplayStyleHandlerSettings)
 DGNPLATFORM_REF_COUNTED_PTR (IProgressiveDisplay)
@@ -801,8 +798,6 @@ enum AngleModeVals
 
 enum class DisplayPathType
 {
-    Display      = 0,
-    Selection    = 1,
     Hit          = 2,
     Snap         = 3,
     Intersection = 4,

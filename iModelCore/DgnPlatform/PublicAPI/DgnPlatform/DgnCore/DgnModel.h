@@ -365,7 +365,7 @@ public:
 //! A DgnModel2d is a infinite planar model. Coordinates values are X,Y.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct DgnModel2d : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : DgnModel
     {
     DEFINE_T_SUPER(DgnModel)
 
@@ -405,7 +405,7 @@ public:
 //! @private
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct ComponentModel : DgnModel3d
+struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 {
     DEFINE_T_SUPER(DgnModel3d)
 
@@ -421,7 +421,7 @@ public:
 //! A GraphicsModel2d is a 2D model that is used for general purpose graphics. It does not a position in phsyical space.
 // @bsiclass                                                    Sam.Wilson  05/15
 //=======================================================================================
-struct GraphicsModel2d : DgnModel2d
+struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2d : DgnModel2d
     {
     DEFINE_T_SUPER(DgnModel2d)
 
@@ -438,7 +438,7 @@ public:
 //! A PlanarPhysicalModel is a infinite planar model that is positioned in physical space.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct PlanarPhysicalModel : DgnModel2d
+struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
 {
     DEFINE_T_SUPER(DgnModel2d)
 
@@ -466,7 +466,7 @@ public:
 //! SectionDrawingModels can also contain 2-D annotation elements.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct SectionDrawingModel : PlanarPhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
     {
     DEFINE_T_SUPER(PlanarPhysicalModel)
 
@@ -511,7 +511,7 @@ public:
 //! -- Can embed \em views of other models. Embedded views are pictures only.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct SheetModel : DgnModel2d
+struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
     {
     DEFINE_T_SUPER(DgnModel2d)
 

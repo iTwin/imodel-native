@@ -128,15 +128,17 @@ DG_INLINE void               CameraViewController::ClearClipVector() {m_clipVect
 DG_INLINE ClipVectorPtr      CameraViewController::_GetClipVector() const {return m_clipVector;}
 DG_INLINE IAuxCoordSysP      PhysicalViewController::GetAuxCoordinateSystem() const {return _GetAuxCoordinateSystem();}
 
-DG_INLINE void  DisplayPath::GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const {_GetInfoString(pathDescr, delimiter);}
-DG_INLINE void  DisplayPath::DrawInVp(DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
-
+DG_INLINE void            HitPath::GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const {_GetInfoString(pathDescr, delimiter);}
+DG_INLINE void            HitPath::DrawInVp(DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
 DG_INLINE HitSource       HitPath::GetLocateSource() const {return m_locateSource;}
 DG_INLINE DPoint3dCR      HitPath::GetTestPoint() const {return m_testPoint;}
 DG_INLINE GeomDetailCR    HitPath::GetGeomDetail() const {return m_geomDetail;}
 DG_INLINE GeomDetailR     HitPath::GetGeomDetailW() {return m_geomDetail;}
 DG_INLINE ViewFlagsCR     HitPath::GetViewFlags() const {return m_viewFlags; }
 DG_INLINE IElemTopologyCP HitPath::GetElemTopology() const {return m_elemTopo;}
+DG_INLINE DgnViewportR    HitPath::GetViewport() const {return m_viewport;}
+DG_INLINE DgnElementId    HitPath::GetElementId() const {return m_elementId;}
+
 DG_INLINE SnapMode        SnapPath::GetSnapMode() const {return m_snapMode;}
 DG_INLINE SnapMode        SnapPath::GetOriginalSnapMode() const {return m_originalSnapMode;}
 DG_INLINE void            SnapPath::SetSnapMode(SnapMode s, bool isOriginal) {m_snapMode=s; if(isOriginal) m_originalSnapMode=s;}
@@ -151,7 +153,7 @@ DG_INLINE DPoint3dCR      SnapPath::GetSnapPoint() const {return m_snapPoint;}
 DG_INLINE int             SnapPath::GetSnapDivisor() const {return m_divisor;}
 DG_INLINE double          SnapPath::GetMinScreenDist() const {return m_minScreenDist;}
 DG_INLINE Point2d const&  SnapPath::GetScreenPoint() const {return m_screenPt;}
-DG_INLINE HitPath*        IntersectPath::GetSecondPath() const {return m_secondPath;}
+DG_INLINE HitPath*        IntersectPath::GetSecondHit() const {return m_secondHit;}
 
 DG_INLINE IACSManagerR  IACSManager::GetManager() {return T_HOST.GetAcsManager();}
 

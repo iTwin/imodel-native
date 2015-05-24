@@ -129,14 +129,14 @@ static void getCategoryString (Utf8StringR categoryStr, DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (DisplayPathCP path, Utf8StringR pathDescr, Utf8CP delimiter) const
+void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (HitPathCP hit, Utf8StringR pathDescr, Utf8CP delimiter) const
     {
-    if (nullptr == path)
+    if (nullptr == hit)
         return;
 
-    DgnElementP element = path->GetHeadElem();
+    GeometricElementCPtr element = hit->GetElement();
 
-    if (nullptr == element)
+    if (!element.IsValid())
         return;
 
     pathDescr = element->GetCode();
