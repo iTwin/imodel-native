@@ -32,6 +32,7 @@ struct DgnRangeTree
     //=======================================================================================
     struct Traverser
     {
+        virtual ~Traverser() {}
         virtual bool  _CheckRangeTreeNode(DRange3dCR, bool is3d) const = 0;   // true == process node
         virtual Match _VisitRangeTreeElem(GeometricElementCP, DRange3dCR) = 0;    // true == keep going, false == stop traversal
     };
