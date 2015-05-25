@@ -45,12 +45,12 @@ struct PTHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
 
     bvector<EC::ECInstanceId> m_relIds;
 
-    Utf8String _GetDescription() override { return "The PT rule"; }
+    virtual void _GetLocalizedDescription(Utf8StringR descr, uint32_t desiredLength) override { descr = "The PT rule"; }
 
     void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR) override
     {
         if (s_ptShouldFail)
-            db.GetTxnManager().ReportValidationError(*new ITxnManager::ValidationError(ITxnManager::ValidationErrorSeverity::Warning, "PT failed"));
+            db.GetTxnManager().ReportValidationError(*new ITxnManager::ValidationError(ITxnManager::ValidationError::Severity::Warning, "PT failed"));
         m_relIds.push_back(relationshipId);
     }
 
@@ -351,7 +351,7 @@ bool selectElementItem(DgnElementId id)
     if (selStmt->Step() != BeSQLite::EC::ECSqlStepStatus::HasRow)
         return false;
 
-    Utf8CP value = selStmt->GetValueText(0);
+    //Utf8CP value = selStmt->GetValueText(0);
 
     return true;
 }
