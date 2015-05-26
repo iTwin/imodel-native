@@ -43,6 +43,7 @@ RealityDataHandlerDepends = $(DgnCoreAPISrc)DgnViewport.h $(DgnCoreAPISrc)Realit
 WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 
 PointCloudBaseModelDepends = $(DgnCoreAPISrc)PointCloudBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
+RasterBaseModelDepends     = $(DgnCoreAPISrc)RasterBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 
 txnManagerDepends = $(DgnCoreAPISrc)ITxnManager.h
 RmgrToolsPublicApi=$(BuildContext)PublicAPI/RmgrTools/
@@ -169,6 +170,8 @@ $(coreObjs)RealityDataCache$(oext) : $(DgnCoreDir)RealityDataCache.cpp $(Reality
 $(coreObjs)WebMercator$(oext):    $(DgnCoreDir)WebMercator.cpp $(contextDepends) $(WebMercatorDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)PointCloudBaseModel$(oext):  $(DgnCoreDir)PointCloudBaseModel.cpp $(contextDepends) $(PointCloudBaseModelDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
+
+$(coreObjs)RasterBaseModel$(oext):  $(DgnCoreDir)RasterBaseModel.cpp $(contextDepends) $(RasterBaseModelDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)TextString$(oext):    $(DgnCoreDir)TextString.cpp $(contextDepends) $(DgnCoreAPISrc)TextString.h $(DgnCoreAPISrc)DgnFont.h $(HandlerDepends) ${MultiCompileDepends}
 
