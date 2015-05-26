@@ -45,8 +45,6 @@ DgnProjectImporterTests.ImportSeedTwice # fails an expected condition; notified 
 
 DgnECNavigatorTest.Ifc_WithLatestDgnDb # Failing after 0501 to 06 merge; EC team notified on 2014-July-03
 
-TextAnnotationTest* # Platform code needs cleanup after 0501 to 06 merge.
-
 DgnViewsTest.GetRelatedDrawings # Failing after 0501 to 06 merge.
 RefImport.DupDirectAttachments # Failing after 0501 to 06 merge.
 RefImport.LiveNesting # Failing after 0501 to 06 merge.
@@ -61,9 +59,6 @@ ECDbInstances.FieldEngineerStructArray
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-AnnotationTextBlockTest.DeepCopy
-AnnotationTextBlockTest.DefaultsAndAccessors
-AnnotationTextStyleTest.DefaultsAndAccessors
 BeSQLiteRealityDataStorageTests.*
 DgnColorsTest.GetElementColor
 DgnColorsTest.ImportElement
@@ -108,19 +103,5 @@ DgnViewsTest.InsertView
 DgnViewsTest.WorkWithViewTable
 DgpRoundtripExpressionTests.Roundtrip
 ECDbInstances.SelectDgnLinksForDgnElement
-EntityDependencyGraph.CycleTest1
-EntityDependencyGraph.CycleTest2
-EntityDependencyGraph.DiamondTest2
-EntityDependencyGraph.FailureTest1
-EntityDependencyGraph.MixedTest1
-EntityDependencyGraph.MixedTest2
-EntityDependencyGraph.ModelDependenciesTest
-EntityDependencyGraph.ModelDependenciesWithCycleTest
-EntityDependencyGraph.NonDependencyOrderTest
-EntityDependencyGraph.OverlappingOutputOrderTest1
-EntityDependencyGraph.OverlappingOutputOrderTest2
-EntityDependencyGraph.ParentChildTest1
-EntityDependencyGraph.ParentChildTest2
-EntityDependencyGraph.PersistentHandlerTest
 NamedVolume.CrudTest
 NotificationManagerTest.GetPriority

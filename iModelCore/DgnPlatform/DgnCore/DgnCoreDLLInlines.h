@@ -646,4 +646,4 @@ DG_INLINE double            AreaOrVolumeParser::GetMasterUnitScale()            
 DG_INLINE void              AreaOrVolumeParser::SetScale          (double scale) { m_scale = scale; }
 DG_INLINE double            AreaOrVolumeParser::GetScale          ()             { return m_scale; }
 
-DG_INLINE DgnDbR               DgnElement::GetDgnDb() const {return m_dgnModel.GetDgnDb();}
+DG_INLINE DgnDbR DgnElement::GetDgnDb() const {return m_dgnModel.GetDgnDb();}

@@ -1286,13 +1286,17 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
         return nullptr;
         }
 
-    stat = element._OnInsert();
-    if (DGNMODEL_STATUS_Success != stat)
-        return nullptr;
-
     stat = model._OnInsertElement(element);
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
+
+    // ask parent whether its ok to add this child.
+    auto parent = GetElement(element.m_parentId);
+    if (parent.IsValid() && DgnElement::ChildChange::Ok != parent->_OnChildInsert(element))
+        {
+        stat = DGNMODEL_STATUS_ParentBlockedChange;
+        return nullptr;
+        }
 
     CallAppData(OnInsertCaller(), element);
 
@@ -1312,8 +1316,10 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
 
     AddToPool(*newElement);
 
-    newElement->_OnInserted();
     model._OnInsertedElement(*newElement);
+    if (parent.IsValid())
+        parent->_OnChildInserted(*newElement);
+
     CallAppData(OnInsertedCaller(*newElement), element);
 
     return newElement;
@@ -1352,6 +1358,14 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr; // model rejected proposed change
 
+    // ask parent whether its ok to update his child.
+    auto parent = GetElement(element.m_parentId);
+    if (parent.IsValid() && DgnElement::ChildChange::Ok != parent->_OnChildUpdate(element, replacement))
+        {
+        stat = DGNMODEL_STATUS_ParentBlockedChange;
+        return nullptr;
+        }
+
     // we need to call the pre/post update events on BOTH sets of appdata
     CallAppData(OnUpdateCaller(element, replacement), element);
     CallAppData(OnUpdateCaller(element, replacement), replacement);
@@ -1370,6 +1384,10 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         model._OnUpdateElementFailed(element); // notify model the update failed
         return nullptr;
         }
+
+    parent = GetElement(element.m_parentId); // look it up again, may have changed
+    if (parent.IsValid())
+        parent->_OnChildUpdated(element);
 
     // we need to call the pre/post update events on BOTH sets of appdata
     CallAppData(OnUpdatedCaller(element), element);
@@ -1398,6 +1416,11 @@ DgnModelStatus DgnElements::Delete(DgnElementCR element)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
+    // ask parent whether its ok to delete his child.
+    auto parent = GetElement(element.m_parentId);
+    if (parent.IsValid() && DgnElement::ChildChange::Ok != parent->_OnChildDelete(element))
+        return DGNMODEL_STATUS_ParentBlockedChange;
+
     // TODO: delete children here.
 
     CallAppData(OnDeleteCaller(), element);
@@ -1406,6 +1429,8 @@ DgnModelStatus DgnElements::Delete(DgnElementCR element)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
+    if (parent.IsValid())
+        parent->_OnChildDeleted(element);
     CallAppData(OnDeletedCaller(), element);
 
     DropFromPool(element);

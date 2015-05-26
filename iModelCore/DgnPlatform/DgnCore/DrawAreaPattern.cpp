@@ -492,7 +492,7 @@ PatternSymbol (DgnGeomPartId partId, DgnDbR project)
         m_eeh.GetHandler ().ConvertTo2d (m_eeh, flattenTrans, flattenDir);
         }
 
-    m_range = m_eeh.GetGeometricElement()->_GetRange3d();
+    m_range = m_eeh.GetGeometricElement()->_CalculateRange3d();
 #else
     m_partId = partId;
     m_range  = DRange3d::NullRange();
