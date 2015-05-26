@@ -22,6 +22,7 @@ MkiHeaders =    $(MkiPublicApiDir)Authentication.h                      \
                 $(MkiPublicApiDir)ConnectTokenProvider.h                \
                 $(MkiPublicApiDir)IConnectAuthenticationPersistence.h   \
                 $(MkiPublicApiDir)IConnectTokenProvider.h               \
+                $(MkiPublicApiDir)Passport.h                            \
                 $(MkiPublicApiDir)SamlToken.h                           \
                 $(MkiSourceDir)AuthenticationData.h
 
@@ -44,4 +45,7 @@ $(o)ConnectSpaces$(oext)                    : $(MkiSourceDir)ConnectSpaces.cpp $
 
 $(o)ConnectTokenProvider$(oext)             : $(MkiSourceDir)ConnectTokenProvider.cpp $(MkiHeaders) ${MultiCompileDepends}
 
+$(o)Passport$(oext)                         : $(MkiSourceDir)Passport.cpp $(MkiHeaders) ${MultiCompileDepends}
+
 $(o)SamlToken$(oext)                        : $(MkiSourceDir)SamlToken.cpp $(MkiHeaders) ${MultiCompileDepends}
+

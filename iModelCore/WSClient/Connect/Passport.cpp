@@ -10,7 +10,7 @@
 
 #include <Bentley/Base64Utilities.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
-#include <WebServices/Client/UrlProvider.h>
+#include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
