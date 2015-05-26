@@ -15,7 +15,7 @@ import uuid
 if os.name == 'nt':
     import _winreg
 
-verbose=1
+verbose=0
 
 #-----------------------------------------------------------------------------#
 #                                               Kevin.Nyman         11/09
