@@ -1,0 +1,20 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Configuration/Configuration.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+MkiPublicApiDir = $(ClientPublicApiDirectory)Configuration/
+MkiSourceDir = $(ClientSourceDirectory)Configuration/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+Headers   = $(MkiPublicApiDir)UrlProvider.h                      
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+$(o)UrlProvider$(oext) : $(MkiSourceDir)UrlProvider.cpp $(Headers) ${MultiCompileDepends}

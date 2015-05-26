@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+#include "../MobileUtilsTests.h"
 #include <Bentley/BeTest.h>
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSRepositoryClient.h>

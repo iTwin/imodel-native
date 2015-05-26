@@ -1,0 +1,23 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Licensing/Licensing.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+MkiPublicApiDir = $(ClientPublicApiDirectory)Licensing/
+MkiSourceDir = $(ClientSourceDirectory)Licensing/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+MkiHeaders =    $(MkiPublicApiDir)MobileTracking.h \
+                $(MkiPublicApiDir)UsageTracking.h                     
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+$(o)MobileTracking$(oext)       : $(MkiSourceDir)MobileTracking.cpp $(MkiHeaders) ${MultiCompileDepends}
+
+$(o)UsageTracking$(oext)        : $(MkiSourceDir)UsageTracking.cpp $(MkiHeaders) ${MultiCompileDepends}
