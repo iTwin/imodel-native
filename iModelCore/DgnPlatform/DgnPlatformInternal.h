@@ -66,7 +66,6 @@
 #include <DgnPlatform/DgnCore/TransformClipStack.h>
 #include "DgnCore/JsonUtils.h"
 #include <DgnPlatform/DgnHandlers/DgnHandlersAPI.h>
-#include <DgnPlatform/DgnHandlers/ElementUtil.h>
 #include <DgnPlatform/DgnHandlers/RegionUtil.h>
 #include <DgnPlatformInternal/DgnHandlers/MultilineStyle.h>
 #include <Mtg/MtgApi.h>
