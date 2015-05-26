@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <map>
-#include <WebServices/Client/Connect/Connect.h>
+#include <WebServices/Connect/Connect.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
 

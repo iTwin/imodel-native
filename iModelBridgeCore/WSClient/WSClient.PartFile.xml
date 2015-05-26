@@ -10,7 +10,7 @@
         <SubPart PartName="WebServicesClient-Bindings-Android" />
     </Part>
 
-    <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="Client/prewire.mke">
+    <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="ClientPrewire.mke">
         <Bindings>
             <PublicAPI Domain="WebServices"/>
         </Bindings>
@@ -24,7 +24,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="Client/Client.mke">
+    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke">
         <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
@@ -44,7 +44,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Xliffs" BentleyBuildMakeFile="Client/xliffs.mke">
+    <Part Name="WebServicesClient-Xliffs" BentleyBuildMakeFile="xliffs.mke">
         <Bindings>
             <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
                 Delivery/xliffs/WSError_en.xliff

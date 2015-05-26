@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <WebServices/Client/ChunkedUploadRequest.h>
 #include <WebServices/Client/WSClient.h>
 #include <WebServices/Client/WSQuery.h>
 #include <WebServices/Client/WSRepositoryClient.h>

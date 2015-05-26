@@ -41,7 +41,7 @@
     <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p  WebServicesClient b</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include\;$(IncludePath)</IncludePath>
     <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(TEMP)</IntDir>
   </PropertyGroup>
@@ -58,18 +58,18 @@
     <ClCompile Include="Client\ClientConfiguration.cpp" />
     <ClCompile Include="Client\ClientConnection.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
-    <ClCompile Include="Client\Connect\Authentication.cpp" />
-    <ClCompile Include="Client\Connect\AuthenticationData.cpp" />
-    <ClCompile Include="Client\Connect\Connect.cpp" />
-    <ClCompile Include="Client\Connect\ConnectAuthenticationHandler.cpp" />
-    <ClCompile Include="Client\Connect\ConnectAuthenticationPersistence.cpp" />
-    <ClCompile Include="Client\Connect\ConnectSetup.cpp" />
-    <ClCompile Include="Client\Connect\ConnectSpaces.cpp" />
-    <ClCompile Include="Client\Connect\ConnectTokenProvider.cpp" />
-    <ClCompile Include="Client\Connect\SamlToken.cpp" />
-    <ClCompile Include="Client\MobileTracking.cpp" />
+    <ClCompile Include="Connect\Authentication.cpp" />
+    <ClCompile Include="Connect\AuthenticationData.cpp" />
+    <ClCompile Include="Connect\Connect.cpp" />
+    <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp" />
+    <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp" />
+    <ClCompile Include="Connect\ConnectSetup.cpp" />
+    <ClCompile Include="Connect\ConnectSpaces.cpp" />
+    <ClCompile Include="Connect\ConnectTokenProvider.cpp" />
+    <ClCompile Include="Connect\SamlToken.cpp" />
+    <ClCompile Include="Licensing\MobileTracking.cpp" />
     <ClCompile Include="Client\ObjectId.cpp" />
-    <ClCompile Include="Client\Passport.cpp" />
+    <ClCompile Include="Connect\Passport.cpp" />
     <ClCompile Include="Client\Response\WSCreateObjectResponse.cpp" />
     <ClCompile Include="Client\Response\WSFileResponse.cpp" />
     <ClCompile Include="Client\Response\WSObjectsReader.cpp" />
@@ -77,8 +77,8 @@
     <ClCompile Include="Client\Response\WSObjectsReaderV2.cpp" />
     <ClCompile Include="Client\Response\WSObjectsResponse.cpp" />
     <ClCompile Include="Client\ServerInfoProvider.cpp" />
-    <ClCompile Include="Client\UrlProvider.cpp" />
-    <ClCompile Include="Client\UsageTracking.cpp" />
+    <ClCompile Include="Configuration\UrlProvider.cpp" />
+    <ClCompile Include="Licensing\UsageTracking.cpp" />
     <ClCompile Include="Client\Utils.cpp" />
     <ClCompile Include="Client\WebApi\WebApi.cpp" />
     <ClCompile Include="Client\WebApi\WebApiV1.cpp" />
@@ -95,8 +95,8 @@
     <ClInclude Include="Client\ClientConfiguration.h" />
     <ClInclude Include="Client\ClientConnection.h" />
     <ClInclude Include="Client\ClientInternal.h" />
-    <ClInclude Include="Client\Connect\AuthenticationData.h" />
-    <ClInclude Include="Client\Connect\Connect.xliff.h" />
+    <ClInclude Include="Connect\AuthenticationData.h" />
+    <ClInclude Include="Connect\Connect.xliff.h" />
     <ClInclude Include="Client\Logging.h" />
     <ClInclude Include="Client\ServerInfoProvider.h" />
     <ClInclude Include="Client\Utils.h" />
@@ -105,29 +105,29 @@
     <ClInclude Include="Client\WebApi\WebApiV1BentleyConnect.h" />
     <ClInclude Include="Client\WebApi\WebApiV2.h" />
     <ClInclude Include="Client\WSError.xliff.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\ChunkedUploadRequest.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\Authentication.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\Connect.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectAuthenticationHandler.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectAuthenticationPersistence.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectMessaging.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectSetup.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectSpaces.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\ConnectTokenProvider.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\IConnectAuthenticationPersistence.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\IConnectTokenProvider.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Connect\SamlToken.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\MobileTracking.h" />
+    <ClInclude Include="Client\ChunkedUploadRequest.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\Connect.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectMessaging.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSetup.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSpaces.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\MobileTracking.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\ObjectId.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Passport.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\Passport.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSCreateObjectResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSFileResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReader.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV1.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV2.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsResponse.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\UrlProvider.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\UsageTracking.h" />
+    <ClInclude Include="PublicAPI\WebServices\Configuration\UrlProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTracking.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WebServicesClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSError.h" />
@@ -141,11 +141,14 @@
     <Xml Include="WSClient.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Client\Client.mke" />
-    <None Include="Client\ClientPolicy.mki" />
-    <None Include="Client\Connect\Connect.mki" />
-    <None Include="Client\prewire.mke" />
-    <None Include="Client\xliffs.mke" />
+    <None Include="ClientLib.mke" />
+    <None Include="ClientLibPolicy.mki" />
+    <None Include="Client\Client.mki" />
+    <None Include="Configuration\Configuration.mki" />
+    <None Include="Connect\Connect.mki" />
+    <None Include="ClientPrewire.mke" />
+    <None Include="Licensing\Licensing.mki" />
+    <None Include="xliffs.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
