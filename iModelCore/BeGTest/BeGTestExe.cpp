@@ -40,6 +40,8 @@ static WCharCP getPlatform (BeFileName const& progPath)
         return L"LinuxX86";
     if (progPath.find (L"LinuxX64") != WString::npos)
         return L"LinuxX64";
+    if (progPath.find (L"MacOSX64") != WString::npos)
+        return L"MacOSX64";
 
     printf ("%s\n", Utf8String(progPath).c_str());    
     BeAssert (false);
