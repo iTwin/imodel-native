@@ -391,12 +391,12 @@ DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR);
 DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr);
 DGNPLATFORM_EXPORT bool Append (TextStringCR);
 
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle = 0.0);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (DgnModelR model, DgnCategoryId categoryId);
 
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement3dCR, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement2dCR, DPoint2dCR origin, double angle = 0.0);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement3dCR, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement2dCR, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (GeometricElementCR);
 
 }; // ElementGeometryBuilder

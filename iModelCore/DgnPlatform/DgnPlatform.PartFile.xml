@@ -353,33 +353,6 @@
     <!-- The first part ever built causes the tool context to be generated. This is actually a little intricate and has certain requirements, so explicitly cause it to happen in a controlled way. -->
     <Part Name="BootStrapToolContext" BentleyBuildMakeFile="BootStrapToolContext.mke"/>
 
-    <!-- *** NEEDS WORK: We should not need a special part for Linux. *** -->
-    <Product Name="DgnPlatformLinux" OnlyPlatforms="LinuxX64">
-        <Directories DirectoryListName="DgnPlatformLinux" />
-        
-        <SubPart PartName="BootStrapToolContext"/>
-        <SubPart PartName="DgnPlatformLib"/>
-    </Product>
-
-    <ProductDirectoryList ListName="DgnPlatformLinux">
-        <ProductDirectory Name="PublicAPI" Path="include/publicapi"/>
-        <ProductDirectory Name="VendorAPI" Path="include/vendorapi"/>
-
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="lib"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="lib"/>
-        <ProductDirectory Name="ECObjectsNativeAssemblies" Path="lib"/>
-        <ProductDirectory Name="GeomNativeAssemblies" Path="lib"/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="lib"/>
-
-        <ProductDirectory Name="DgnPlatformFont" Path="etc/fonts"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts" Path="etc/fonts"/>
-        <ProductDirectory Name="ECSchemas" Path="etc"/>
-        <ProductDirectory Name="VendorNotices" Path="etc/notices"/>
-        <ProductDirectory Name="VendorNotices" LibType="static" Path="etc/notices"/>
-
-        <ProductDirectory Name="Libs" Deliver="False"/>
-    </ProductDirectoryList>
-
     <Part Name="DgnPlatform-Tested">
         <!-- Build the SDK -->
         <!-- *** NEEDS WORK: We should not need a special part for Linux. *** -->
