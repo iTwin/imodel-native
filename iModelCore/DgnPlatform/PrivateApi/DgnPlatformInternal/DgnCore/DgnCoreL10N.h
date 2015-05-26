@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/DgnPlatformInternal/DgnCore/DgnCoreL10N.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,21 +13,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
     {
-    IDS_SHEETPROPERTIES_SheetLayout = 121,                          // =="Sheet Layout"==
-    IDS_SectionGraphicsCut = 123,                                   // =="Section Cut"==
-    IDS_SectionGraphicsForward = 124,                               // =="Forward"==
-    IDS_SectionGraphicsOutside = 125,                               // =="Outside"==
-    IDS_SectionGraphicsBackward = 126,                              // =="Backward"==
-    IDS_UniqueNameRoot = 127,                                       // =="Untitled"==
-    IDS_DISPLAYMODE_WIREFRAME = 132,                                // =="Wireframe"==
-    IDS_DISPLAYMODE_HIDDENLINE = 133,                               // =="Hidden Line"==
-    IDS_DISPLAYMODE_FILLEDHIDDENLINE = 134,                         // =="Filled Hidden Line"==
-    IDS_DISPLAYMODE_SMOOTH = 135,                                   // =="Smooth"==
     UNDOMSG_FMT_UNDONE = 136,                                       // ==" Undone"== <<must preserve leading space>>
     UNDOMSG_FMT_REDONE = 137,                                       // ==" Redone"== <<must preserve leading space>>
-    IDS_VIEWGROUP_VIEWS = 160,                                      // =="Views"==
-    IDS_VIEWGROUP_TEMPVIEWS = 161,                                  // =="Temp Views"==
-    IDS_NAMEDGROUP_BASE = 170,                                      // =="Group"==
     UNIT_LABEL_None = 200,                                          // =="??"==
     UNIT_LABEL_SurveyMiles = 201,                                   // =="sm"==
     UNIT_LABEL_Miles = 202,                                         // =="mi"==
@@ -238,9 +225,6 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
     DATETIME_PM_SHORT = 661,                                        // =="P"==
     DATETIME_UTC = 662,                                             // =="UTC"==
     VIEW_MessageID_BaseName = 663,                                  // =="Untitled"==
-    IDS_LevelName = 664,                                            // =="Level "==
-    IDS_LevelDescriptionNone = 665,                                 // =="(none)"==
-    IDS_SectionGraphicsOther = 666,                                 // ==""==
     };
 BENTLEY_TRANSLATABLE_STRINGS_END
 

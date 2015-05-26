@@ -11,7 +11,6 @@
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECDbApi.h>
-#include <DgnPlatform/DgnHandlers/DgnECPersistence.h>
 #include <Logging/bentleylogging.h>
 #include "PerformanceTestFixture.h"
 

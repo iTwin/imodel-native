@@ -15,7 +15,6 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
-#include <DgnPlatform/DgnHandlers/DgnECPersistence.h>
 #include <Logging/bentleylogging.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_EC
