@@ -661,17 +661,23 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         o2a = obstacle2a->GetElementId();
         }
 
-    RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
-
-    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_RTree3d is not in the ecschema
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_rtree_overlap_aabb.sampleCode
+    // This query uses DGN_rtree_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
+    // item property X01 = :propertyValue.
     Statement stmt;
     stmt.Prepare(*m_db, 
         "SELECT item.ElementId,item.x01 FROM dgn_RTree3d rt,dgn_Element e,dgn_ElementItem item WHERE"
-           " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)"   // select elements whose range overlaps box
-           " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"         //  select only Obstacles
-           " AND item.ElementId=e.Id AND item.x01=:propertyValue"          //   ... with certain items
+           " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)"      // select elements whose range overlaps box
+           " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"        // and are of a specific ecClass 
+           " AND item.ElementId=e.Id AND item.x01=:propertyValue"   // ... with certain item value
         );
 
+    RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
+    AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
+    stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &r1aabb, sizeof(r1aabb), Statement::MakeCopy::No);
+    stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
+    stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
+    //__PUBLISH_EXTRACT_END__
     
     //  Initial placement
     //
@@ -683,17 +689,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
     //  |                   |
     //  |R1                 V
     //  +-- -- -- -- -- -- --
-    if (true)
-        {
-        stmt.Reset();
-        stmt.ClearBindings();
-        AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
-        stmt.BindBlob(stmt.GetParameterIndex(":bbox"), &r1aabb, sizeof(r1aabb), Statement::MakeCopy::No);
-        stmt.BindId(stmt.GetParameterIndex(":ecClass"), ObstacleElement::QueryClassId(*m_db));
-        stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
-
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2
     //

@@ -385,7 +385,7 @@ public:
     iterator erase (iterator it) {return ((T_SetType&)m_set).erase(it);}
 
     bool Contains(IdType id) const {return end() != find(id);}
-    
+
     void FromJson (Json::Value const& in) {m_set.FromJson(in);}
     void ToJson (Json::Value& out) const {m_set.ToJson(out);}
 
@@ -397,7 +397,7 @@ typedef IdSet<DgnModelId> DgnModelIdSet;
 typedef IdSet<DgnCategoryId> DgnCategoryIdSet;
 
 //=======================================================================================
-//! A DgnClassId is the local id for an ECClass in a DgnDb
+//! A DgnClassId is the local id for an ECClass in a DgnDb.
 //=======================================================================================
 struct DgnClassId : BeInt64Id<DgnClassId>
 {
@@ -411,7 +411,7 @@ struct DgnClassId : BeInt64Id<DgnClassId>
 };
 
 //=======================================================================================
-//! The key (classId,instanceId) of an element
+//! The key (classId,instanceId) of a DgnElement.
 //=======================================================================================
 struct DgnElementKey : BeSQLite::EC::ECInstanceKey
 {
@@ -449,8 +449,9 @@ struct ElementItemKey : BeSQLite::EC::ECInstanceKey
 typedef ElementItemKey const& ElementItemKeyCR;
 
 //=======================================================================================
-//! Bounding box is a DRange3d the holds the min/max values for an object in each of x,y,z in some coordinate system.
-//! A bounding box makes no guarantee of 
+//! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.
+//! @note A BoundingBox3d makes no guarantee that the box is the minimum (smallest) box possible, just that no portion of the object
+//! described by it will extend beyond its values.
 // @bsiclass
 //=======================================================================================
 struct BoundingBox3d : DRange3d
@@ -461,7 +462,7 @@ struct BoundingBox3d : DRange3d
 };
 
 //=======================================================================================
-//! Bounding box that is aligned with the axes of a DgnModels::Model::CoordinateSpace
+//! A BoundingBox3d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
 // @bsiclass
 //=======================================================================================
 struct AxisAlignedBox3d : BoundingBox3d
@@ -473,7 +474,7 @@ struct AxisAlignedBox3d : BoundingBox3d
 };
 
 //=======================================================================================
-//! Bounding box that is aligned with the local coordinate system of a DgnElement
+//! A BoundingBox3d that is aligned with the local coordinate system of a DgnElement.
 // @bsiclass
 //=======================================================================================
 struct ElementAlignedBox3d : BoundingBox3d
@@ -500,6 +501,9 @@ struct ElementAlignedBox3d : BoundingBox3d
 };
 
 //=======================================================================================
+//! A DRange2d that holds min/max values for an object in each of x and y in some coordinate system.
+//! @note A BoundingBox2d makes no guarantee that the box is the minimum (smallest) box possible, just that no portion of the object
+//! described by it will extend beyond its values.
 // @bsiclass
 //=======================================================================================
 struct BoundingBox2d : DRange2d
@@ -509,7 +513,7 @@ struct BoundingBox2d : DRange2d
 };
 
 //=======================================================================================
-//! Bounding box that is aligned with the axes of a DgnModels::Model::CoordinateSpace
+//! A BoundingBox2d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
 // @bsiclass
 //=======================================================================================
 struct AxisAlignedBox2d : BoundingBox2d
@@ -520,7 +524,7 @@ struct AxisAlignedBox2d : BoundingBox2d
 };
 
 //=======================================================================================
-//! Bounding box that is aligned with the local coordinate system of a DgnElement
+//! A BoundingBox2d that is aligned with the local coordinate system of a DgnElement.
 // @bsiclass
 //=======================================================================================
 struct ElementAlignedBox2d : BoundingBox2d
@@ -541,9 +545,10 @@ struct ElementAlignedBox2d : BoundingBox2d
 };
 
 //=======================================================================================
+//! The 8 corners of the NPC cube.
 // @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
-enum NpcCorners     /// The 8 corners of the NPC cube.
+enum NpcCorners
 {
     NPC_000           = 0,  //!< Left bottom rear
     NPC_100           = 1,  //!< Right bottom rear
@@ -567,6 +572,8 @@ enum NpcCorners     /// The 8 corners of the NPC cube.
 };
 
 //=======================================================================================
+//! The region of physical (3d) space that appears in a view. It forms the field-of-view of a camera.
+//! It is stored as 8 points, in NpcCorner order, that must define a truncated pyramid.
 // @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct Frustum
@@ -714,8 +721,8 @@ enum class ClipMask
     YHigh      = (0x0001 << 3),
     ZLow       = (0x0001 << 4),
     ZHigh      = (0x0001 << 5),
-    XAndY      = (0x000f),         // (XLow | XHigh | YLow | YHigh) - set back to that when we compile everything with VS2012.
-    All        = (0x003f),         // (XAndY | ZLow | ZHigh),       - "
+    XAndY      = (0x000f),         // (XLow | XHigh | YLow | YHigh)
+    All        = (0x003f),         // (XAndY | ZLow | ZHigh),
 };
 
 ENUM_IS_FLAGS(ClipMask)
@@ -733,8 +740,8 @@ enum class SnapStatus
     Disabled             = 100,
     NoSnapPossible       = 200,
     NotSnappable         = 300,
-    RefNotSnappable      = 301,
-    FilteredByLevel      = 400,
+    ModelNotSnappable    = 301,
+    FilteredByCategory   = 400,
     FilteredByUser       = 500,
     FilteredByApp        = 600,
     FilteredByAppQuietly = 700,

@@ -142,8 +142,6 @@ $(coreObjs)LsPointComponent$(oext):    $(lineStyleDir)LsPointComponent.cpp $(LsL
 
 $(coreObjs)StrokePattern$(oext):   $(lineStyleDir)StrokePattern.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
-$(coreObjs)Scanner$(oext):     $(DgnCoreDir)Scanner.cpp $(DgnCoreAPISrc)ScanCriteria.h $(DgnFileIOPubH) $(contextDepends) $(DgnCoreAPISrc)NullContext.h ${MultiCompileDepends}
-
 $(coreObjs)DgnScan$(oext):     $(DgnCoreDir)DgnScan.cpp $(DgnCoreAPISrc)ScanCriteria.h $(DgnFileIOPubH) $(HandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)DgnRangeTree$(oext): $(DgnCoreDir)DgnRangeTree.cpp $(DgnCoreAPISrc)DgnRangeTree.h ${MultiCompileDepends}
