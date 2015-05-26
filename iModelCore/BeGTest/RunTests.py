@@ -697,7 +697,7 @@ class DgnPlatformTestRunner:
         
         # This is a hack because symlinks wreck havoc when running on Linux... some shells and apps resolve, some resolve partially, some don't... sucks, but this is the most reliable way.
         # See associated code in RunBeGTest.mke
-        if (sys.platform.startswith('linux')):
+        if (sys.platform.startswith('linux') or sys.platform.startswith('darwin')):
             dllLocation = os.path.join (outRoot, self.GetTargetProcessorDir(), "ProductCopy", TestProductMap[self.m_testRunningType], "bin")
         else:
             dllLocation = os.path.join (outRoot, self.GetTargetProcessorDir(), "Product", TestProductMap[self.m_testRunningType], "bin")
