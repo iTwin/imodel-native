@@ -29,11 +29,12 @@ private:
     bmap<Utf8CP, int, CompareUtf8> m_ecsqlParameterNameToIndexMapping;
     IClassMap::View m_classMapViewMode;
     ECSqlStatusContext& m_status;
+    int m_aliasCount;
 public:
     //! @param[in] classMapViewMode indicates what class map view to use for a given class in the ECSQL to parse.
     //!            ClassMap views differ for ECClasses that are domain classes and structs at the same time.
     ECSqlParseContext (ECDbCR ecdb, IClassMap::View classMapViewMode, ECSqlStatusContext& status)
-        : m_ecdb (ecdb), m_currentECSqlParameterIndex (0), m_classMapViewMode (classMapViewMode), m_status (status)
+        : m_ecdb (ecdb), m_currentECSqlParameterIndex (0), m_classMapViewMode (classMapViewMode), m_status (status), m_aliasCount (0)
         {}
 
     ECDbCR GetECDb() const;
@@ -54,6 +55,12 @@ public:
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses (ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd, bool* containAnyClass);
     bool IsEndClassOfRelationship (ECN::ECClassCR searchClass, ECN::ECRelationshipEnd searchEnd, ECN::ECRelationshipClassCR relationshipClass);
+    Utf8String GenerateAlias ()
+        {
+        Utf8String alias;
+        alias.Sprintf ("K%d" , m_aliasCount++);
+        return alias;
+        }
     };
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ClassRefExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -172,7 +172,7 @@ public:
         tmp.append (GetFullName ());
 
         if(!GetAlias().empty())
-            tmp.append (GetAlias());
+            tmp.append(" ").append (GetAlias());
         return tmp;
         }
     };

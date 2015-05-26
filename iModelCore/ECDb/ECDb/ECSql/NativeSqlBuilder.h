@@ -62,7 +62,11 @@ public:
         if (clear)
             m_nativeSql.clear ();
         }
-
+    void Rest ()
+        {
+        m_nativeSql.clear ();
+        m_stack.clear ();
+        }
     Utf8String Pop ()
         {
         Utf8String r;

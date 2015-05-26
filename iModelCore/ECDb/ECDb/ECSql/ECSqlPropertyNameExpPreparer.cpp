@@ -43,7 +43,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativ
     auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType);
 
     nativeSqlSnippets.insert (nativeSqlSnippets.end (), propNameNativeSqlSnippets.begin (), propNameNativeSqlSnippets.end ());
-    
+   
     return ECSqlStatus::Success;
     }
 
@@ -88,6 +88,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
         BeAssert ("Nested expression must have a name/alias" && false);
         return ECSqlStatus::ProgrammerError;
         }
+    printf ("%s %s %s %s %s \r\n", exp.ToECSql ().c_str (), propertyRef->LinkedTo ().ToECSql ().c_str (), propertyRef->LinkedTo ().GetName ().c_str (), propertyRef->LinkedTo ().GetColumnAlias ().c_str (), propertyRef->LinkedTo ().GetNestedAlias ().c_str ());
 
     auto valueExp = derviedPropertyExp.GetExpression ();
     //1. Exp-> PropertyName    useSameColumnNames
@@ -96,32 +97,63 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
     switch (valueExp->GetType ())
         {
         case Exp::Type::PropertyName:
-            {     
+            {
             auto propertyName = static_cast <PropertyNameExp const*>(valueExp);
             if (!propertyName->IsPropertyRef ())
                 {
-                auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select);
-                propertyRef->GetNativeSqlSnippetsR ().insert ( propertyRef->GetNativeSqlSnippetsR ().end(), snippets.begin (), snippets.end ());
+                if (!propertyRef->IsPrepared ())
+                    {
+                    auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select);
+                    auto r = propertyRef->Prepare (snippets);
+                    if (!r)
+                        return ECSqlStatus::ProgrammerError;
+                    }
                 }
             else
                 {
-                auto const& snippets = propertyName->GetPropertyRef ()->GetNativeSqlSnippets ();
-                propertyRef->GetNativeSqlSnippetsR ().insert ( propertyRef->GetNativeSqlSnippetsR ().end(), snippets.begin (), snippets.end ());
+                NativeSqlBuilder::List snippets;
+                ctx.PushScope (ctx.GetCurrentScope ().GetExp ());
+                auto stat = ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (snippets, ctx, *propertyName);
+                if (stat != ECSqlStatus::Success)
+                    return stat;
+
+                ctx.PopScope ();
+
+                bool r = propertyRef->Prepare (snippets);
+                if (!r)
+                    return ECSqlStatus::ProgrammerError;
                 }
 
-            for (auto const& snippet : propertyRef->GetNativeSqlSnippets ())
-                {
-                NativeSqlBuilder sqlSnippet;
-                sqlSnippet.Append (snippet);
-                nativeSqlSnippets.push_back (sqlSnippet);
-                }
-           break;
+            nativeSqlSnippets = propertyRef->GetOutSnippets ();
+            break;
             }
-        case Exp::Type::SubqueryValue:
-            BeAssert (false && "NotSupported");
-            return ECSqlStatus::ProgrammerError;
+        case Exp::Type::SubqueryValue:{
+                                          auto alias = derviedPropertyExp.GetColumnAlias ();
+                                          if (alias.empty ())
+                                              alias = derviedPropertyExp.GetNestedAlias ();
+
+                                          if (alias.empty ())
+                                              return ECSqlStatus::ProgrammerError;
+
+                                          NativeSqlBuilder sqlSnippet;
+                                          sqlSnippet.Append (alias.c_str ());
+                                          nativeSqlSnippets.push_back (sqlSnippet); }
             break;
         default:
+            {
+            //Here we presume any primitive value expression which must have a alias.
+            auto alias = derviedPropertyExp.GetColumnAlias ();
+            if (alias.empty ())
+                alias = derviedPropertyExp.GetNestedAlias ();
+           
+            if (alias.empty ())
+                return ECSqlStatus::ProgrammerError;
+
+            NativeSqlBuilder sqlSnippet;
+            sqlSnippet.Append (alias.c_str ());
+            nativeSqlSnippets.push_back (sqlSnippet);
+            }
+          
             break;
         }
 

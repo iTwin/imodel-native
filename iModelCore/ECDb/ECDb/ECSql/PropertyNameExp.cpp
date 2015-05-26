@@ -13,6 +13,41 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 using namespace std;
 
+bool PropertyNameExp::PropertyRef::Prepare (NativeSqlBuilder::List const& snippets)
+    {
+    m_nativeSqlSnippets.clear ();
+    m_isPrepared = false;
+    auto alias = m_linkedTo.GetColumnAlias ();
+    if (alias.empty ())
+        alias = m_linkedTo.GetNestedAlias ();
+
+    if (!alias.empty ())
+        {
+        m_nativeSqlSnippets = snippets;
+        if (m_nativeSqlSnippets.size () == 1LL)
+            {
+            m_nativeSqlSnippets.front ().Rest ();
+            m_nativeSqlSnippets.front ().AppendEscaped (alias.c_str ());
+            m_isPrepared = true;
+            }
+        else
+            {
+            int idx = 0;
+            Utf8String postfix;
+            for (auto& snippet : m_nativeSqlSnippets)
+                {
+                postfix.clear ();
+                postfix.Sprintf ("%s_%d", alias.c_str (), idx++);
+                snippet.Rest ();
+                snippet.AppendEscaped (postfix.c_str ());
+                }
+
+            m_isPrepared = true;
+            }     
+        }
+
+    return m_isPrepared;
+    }
 //****************************** PropertyNameExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -76,6 +111,12 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing (ECSqlParseContext& c
     if (IsPropertyRef())
         {
         auto& derivedProperty = GetPropertyRefP ()->LinkedTo();
+        if (derivedProperty.GetNestedAlias().empty())
+            {            
+            const_cast<DerivedPropertyExp&>(derivedProperty).SetNestedAlias (ctx.GenerateAlias ().c_str ());
+            }
+
+      
         auto stat = const_cast<DerivedPropertyExp&>(derivedProperty).FinalizeParsing (ctx);
         if (stat != ECSqlStatus::Success)
             return FinalizeParseStatus::Error;

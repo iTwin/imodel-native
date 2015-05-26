@@ -63,6 +63,35 @@ struct IntegerToBlobSqlFunction : ScalarFunction
     };
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct ToBoolStrSqlFunction : ScalarFunction, ScalarFunction::IScalar
+    {
+    private:
+        virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+            {
+            if (nArgs != 1)
+                {
+                ctx->SetResultError("Function TOBOOLSTR expects 1 argument.", -1);
+                return;
+                }
+
+            DbValue const& arg = args[0];
+            if (arg.IsNull())
+                {
+                ctx->SetResultNull();
+                return;
+                }
+
+            Utf8String val = arg.GetValueDouble() != 0.0 ? "true" : "false";
+            ctx->SetResultText(val.c_str(), (int) val.size(), DbFunction::Context::CopyData::Yes);
+            }
+
+    public:
+        ToBoolStrSqlFunction() : ScalarFunction("TOBOOLSTR", 1, DbValueType::TextVal, this) {}
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
  struct SumOfSquares : AggregateFunction
@@ -237,6 +266,30 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
         ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
     ASSERT_EQ(0, ecdb.RemoveFunction(func));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_StringSqlFunction)
+    {
+    const int perClassRowCount = 3;
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+
+    ToBoolStrSqlFunction func;
+    ASSERT_EQ(0, ecdb.AddScalarFunction(func));
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT TOBOOLSTR(1) FROM ecsql.P LIMIT 1")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        ASSERT_EQ((int) ECSqlStepStatus::HasRow, (int) stmt.Step());
+
+        IECSqlValue const& val = stmt.GetValue(0);
+        ASSERT_STREQ("true", val.GetText());
+        ASSERT_EQ(ECN::PRIMITIVETYPE_String, val.GetColumnInfo().GetDataType().GetPrimitiveType());
+        }
     }
 
 //---------------------------------------------------------------------------------------

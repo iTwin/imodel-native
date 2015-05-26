@@ -51,13 +51,21 @@ private:
 
 private:
     Utf8String m_columnAlias;
+    Utf8String m_nestedAlias;
 public:
     DerivedPropertyExp (std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias);
 
     ValueExp const* GetExpression () const { return GetChild<ValueExp> (0);}
     Utf8String GetName () const;
-    Utf8StringCR GetColumnAlias () const { return m_columnAlias; }
-
+    Utf8StringCR GetColumnAlias () const;
+    Utf8StringCR GetNestedAlias () const 
+        {
+        return m_nestedAlias;
+        }
+    void SetNestedAlias (Utf8CP nestedAlias)
+        {
+        m_nestedAlias = nestedAlias;
+        }
     virtual Utf8String ToECSql() const override;
     };
 

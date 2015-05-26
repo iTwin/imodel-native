@@ -622,13 +622,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp (ECSqlPrepareContext& ctx, Cro
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareDerivedPropertyExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, DerivedPropertyExp const* exp)
-    { 
+    {
     auto innerExp = exp->GetExpression ();
     if (innerExp == nullptr)
         return ctx.SetError (ECSqlStatus::ProgrammerError, "DerivedPropertyExp::GetExpression is not expected to return null during preparation.");
 
-    const auto startColumnIndex = ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount (); 
-    
+    const auto startColumnIndex = ctx.GetCurrentScope ().GetNativeSqlSelectClauseColumnCount ();
+
     auto snippetCountBefore = nativeSqlSnippets.size ();
     if (IsNullExp (*innerExp))
         //pass 1 here as NULL in select clause item is always a primitive null and maps to the default type of the EC system (string).
@@ -640,12 +640,35 @@ ECSqlStatus ECSqlExpPreparer::PrepareDerivedPropertyExp (NativeSqlBuilder::List&
         if (status != ECSqlStatus::Success)
             return status;
         }
-    
 
-
-    if (ctx.GetCurrentScope ().IsRootScope ())
+    if (!ctx.GetCurrentScope ().IsRootScope ())
         {
-        ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount (nativeSqlSnippets.size () - snippetCountBefore);
+        auto alias = exp->GetColumnAlias ();
+        if (alias.empty ())
+            alias = exp->GetNestedAlias ();
+
+        if (!alias.empty ())
+            {
+            if (nativeSqlSnippets.size () == 1LL)
+                {
+                nativeSqlSnippets.front ().AppendSpace ().AppendEscaped (alias.c_str ());
+                }
+            else
+                {
+                int idx = 0;
+                Utf8String postfix;
+                for (auto& snippet : nativeSqlSnippets)
+                    {       
+                    postfix.clear ();
+                    postfix.Sprintf ("%s_%d", alias.c_str (), idx++);
+                    snippet.AppendSpace ().AppendEscaped (postfix.c_str ());
+                    }
+                }
+            }
+        }
+    else if (ctx.GetCurrentScope ().IsRootScope ())
+        {
+        ctx.GetCurrentScopeR ().IncrementNativeSqlSelectClauseColumnCount (nativeSqlSnippets.size () - snippetCountBefore);
         auto status = ECSqlFieldFactory::CreateField (ctx, exp, startColumnIndex);
         if (status != ECSqlStatus::Success)
             return status;
@@ -1643,7 +1666,9 @@ ECSqlStatus FindBindableFields(std::vector<StructArrayMappedToSecondaryTableECSq
 //static
 ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext& ctx)
     {
-    BeAssert (ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetType () == ECSqlType::Select);
+
+    if (ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetType () != ECSqlType::Select)
+        return ECSqlStatus::Success;
 
     auto preparedStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP <ECSqlSelectPreparedStatement> ();
 

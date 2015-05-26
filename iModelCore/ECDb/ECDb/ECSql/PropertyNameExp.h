@@ -24,18 +24,21 @@ struct PropertyNameExp : ValueExp
         private:
             DerivedPropertyExp const& m_linkedTo;
             NativeSqlBuilder::List m_nativeSqlSnippets;
+            bool m_isPrepared;
         public:
             PropertyRef (DerivedPropertyExp const& endPoint)
-                :m_linkedTo (endPoint)
+                :m_linkedTo (endPoint), m_isPrepared (false)
                 {}
 
             DerivedPropertyExp const& LinkedTo () const { return m_linkedTo; }
-            NativeSqlBuilder::List& GetNativeSqlSnippetsR () { return m_nativeSqlSnippets; }
-            NativeSqlBuilder::List const& GetNativeSqlSnippets () const { return m_nativeSqlSnippets; }
+
+            NativeSqlBuilder::List const& GetOutSnippets () const { return m_nativeSqlSnippets; }
 
             DerivedPropertyExp const& GetEndPointDerivedProperty () const;
             PropertyNameExp const* GetEndPointPropertyNameIfAny () const;
-                
+            bool IsPrepared () const { return m_isPrepared; }
+            bool Prepare (NativeSqlBuilder::List const& snippets);
+            
         };
 public:
     DEFINE_EXPR_TYPE(PropertyName) 

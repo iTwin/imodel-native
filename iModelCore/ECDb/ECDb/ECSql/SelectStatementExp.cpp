@@ -88,16 +88,47 @@ DerivedPropertyExp::DerivedPropertyExp(unique_ptr<ValueExp> valueExp, Utf8CP col
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String DerivedPropertyExp::GetName () const
     {     
-    if (!m_columnAlias.empty())
-        return m_columnAlias;
+    auto const & columnAlias = GetColumnAlias ();
+    if (!columnAlias.empty ())
+        return columnAlias;
 
-    if (GetExpression()->GetType() == Type::PropertyName)
-        return static_cast<PropertyNameExp const*>(GetExpression())->GetPropertyPath ().ToString ();
+
+    if (GetExpression ()->GetType () == Exp::Type::PropertyName)
+        {
+        auto propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression ());
+        if (propertyNameExp->IsPropertyRef ())
+            {
+            return propertyNameExp->GetPropertyRef ()->LinkedTo ().GetName ();
+            }
+        else
+            return propertyNameExp->GetPropertyPath ().ToString ();
+        }
 
     auto expr = GetExpression()->ToECSql();
     expr.ReplaceAll("[","");
     expr.ReplaceAll("]","");
     return expr;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+Utf8StringCR DerivedPropertyExp::GetColumnAlias () const
+    {
+    if (!m_columnAlias.empty ())
+        return m_columnAlias;
+
+    if (GetExpression ()->GetType () == Exp::Type::PropertyName)
+        {
+        auto propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression ());
+        if (propertyNameExp->IsPropertyRef ())
+            {
+            return propertyNameExp->GetPropertyRef ()->LinkedTo ().GetColumnAlias ();
+            }
+        }
+
+    return m_columnAlias;
     }
 
 //-----------------------------------------------------------------------------------------

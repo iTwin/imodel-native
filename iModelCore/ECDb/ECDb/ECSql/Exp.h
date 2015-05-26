@@ -480,6 +480,8 @@ public:
     const_iterator<Exp const*> begin () const;
     const_iterator<Exp const*> end () const;
     const_iterator<Exp*> end ();
+
+
     };
 
 
@@ -566,6 +568,16 @@ public:
     Utf8String ToString () const;
 
     static bool IsAsteriskToken (Utf8CP token) { return strcmp (token, ASTERISK_TOKEN) == 0; }
+    Exp const* FindParent (Exp::Type type) const
+        {
+        Exp const* p = this;
+        do
+            {
+            p = p->GetParent ();        
+            } while (p != nullptr && p->GetType () != type);
+
+        return p;
+        }
     };
 
 typedef Exp* ExpP;

@@ -150,7 +150,7 @@ private:
     bool m_nativeStatementIsNoop;
     bool m_nativeNothingToUpdate;
     ExpScopeStack m_scopes;
-    SelectionOptions m_selectionOptions;
+    SelectionOptions m_selectionOptions;    
     //SELECT only
  
     static bool FindLastParameterIndexBeforeWhereClause (int& index, Exp const& statementExp, WhereExp const* whereExp);

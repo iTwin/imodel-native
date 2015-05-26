@@ -127,8 +127,6 @@ int ECDb::_OnAddFunction (DbFunction& func) const
     {
     return m_pimpl->OnAddFunction(func) == SUCCESS ? 0 : 1;
     }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2014
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::_OnRemoveFunction (DbFunction& func) const
