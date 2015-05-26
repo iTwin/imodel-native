@@ -65,30 +65,30 @@ struct IntegerToBlobSqlFunction : ScalarFunction
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ToBoolStrSqlFunction : ScalarFunction, ScalarFunction::IScalar
+struct ToBoolStrSqlFunction : ScalarFunction
     {
     private:
-        virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
             {
             if (nArgs != 1)
                 {
-                ctx->SetResultError("Function TOBOOLSTR expects 1 argument.", -1);
+                ctx.SetResultError("Function TOBOOLSTR expects 1 argument.", -1);
                 return;
                 }
 
             DbValue const& arg = args[0];
             if (arg.IsNull())
                 {
-                ctx->SetResultNull();
+                ctx.SetResultNull();
                 return;
                 }
 
             Utf8String val = arg.GetValueDouble() != 0.0 ? "true" : "false";
-            ctx->SetResultText(val.c_str(), (int) val.size(), DbFunction::Context::CopyData::Yes);
+            ctx.SetResultText(val.c_str(), (int) val.size(), DbFunction::Context::CopyData::Yes);
             }
 
     public:
-        ToBoolStrSqlFunction() : ScalarFunction("TOBOOLSTR", 1, DbValueType::TextVal, this) {}
+        ToBoolStrSqlFunction() : ScalarFunction("TOBOOLSTR", 1, DbValueType::TextVal) {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -278,7 +278,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StringSqlFunction)
     auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
 
     ToBoolStrSqlFunction func;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(func));
+    ASSERT_EQ(0, ecdb.AddFunction(func));
 
         {
         ECSqlStatement stmt;
