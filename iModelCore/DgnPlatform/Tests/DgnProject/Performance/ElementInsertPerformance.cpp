@@ -119,10 +119,6 @@ struct PTestElementHandler : DgnPlatform::ElementHandler
         DgnElementPtr testElement = PTestElementHandler::Create(PTestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
         GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
-#ifdef WIP_ITEM_HANDLER
-        geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
-#endif
-
         ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
 
         builder->Append(*computeShape());
