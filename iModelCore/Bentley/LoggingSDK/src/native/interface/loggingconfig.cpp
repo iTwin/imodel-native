@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/loggingconfig.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bsilogprivate.h"
@@ -299,6 +299,18 @@ SEVERITY    severity
         }
 
     return GetLogProvider().SetSeverity(nameSpace,severity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Vincas.Razma    05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int STDCALL_ATTRIBUTE LoggingConfig::SetSeverity
+(
+Utf8CP      nameSpace,
+SEVERITY    severity
+)
+    {
+    return SetSeverity (WString (nameSpace, true).c_str (), severity);
     }
 
 /*---------------------------------------------------------------------------------**//**

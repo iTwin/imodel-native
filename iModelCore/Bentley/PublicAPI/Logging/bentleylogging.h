@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Logging/bentleylogging.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -457,6 +457,11 @@ public:
         @param[in] nameSpace used to identify the logger
         @param[in] severity the logging severity level */
     static int  STDCALL_ATTRIBUTE SetSeverity ( WCharCP nameSpace, SEVERITY severity );
+
+    /** Set the logging severity level for the logger with the specified nameSpace.
+    @param[in] nameSpace used to identify the logger
+    @param[in] severity the logging severity level */
+    static int  STDCALL_ATTRIBUTE SetSeverity ( Utf8CP nameSpace, SEVERITY severity );
 
     /** Set the maximum message size for a formated message. Messages are formated using
         printf style formating rules before they are sent to the provider.
