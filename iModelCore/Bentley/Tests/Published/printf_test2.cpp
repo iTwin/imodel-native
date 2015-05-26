@@ -412,10 +412,10 @@ static void test_sprintf( void )
     ok(!wcscmp(buffer,L"wide"), L"failed\n");
     ok( r==4, L"return count wrong\n");
 
-    format = L"%Ls";
-    r = BeStringUtilities::Snwprintf(buffer, format, L"not wide" );
-    ok(!wcscmp(buffer,L"not wide"), L"failed\n");
-    ok( r==8, L"return count wrong\n");
+//    format = L"%Ls";
+//    r = BeStringUtilities::Snwprintf(buffer, format, L"not wide" );
+//    ok(!wcscmp(buffer,L"not wide"), L"failed\n");
+//    ok( r==8, L"return count wrong\n");
 
 //    format = L"%b";
 //    r = BeStringUtilities::Snwprintf(buffer, format);
