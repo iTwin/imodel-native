@@ -324,7 +324,12 @@ void TextString::ComputeAndLayoutGlyphs()
     
     m_glyphIds.clear();
     for (DgnGlyphCP glyph : layoutResult.m_glyphs)
-        m_glyphIds.push_back(glyph->GetId());
+        {
+        if (nullptr == glyph)
+            m_glyphIds.push_back(0);
+        else
+            m_glyphIds.push_back(glyph->GetId());
+        }
 
     m_glyphOrigins.resize(numGlyphs);
     memcpy(&m_glyphOrigins[0], &layoutResult.m_glyphOrigins[0], sizeof(decltype(m_glyphOrigins)::value_type) * numGlyphs);

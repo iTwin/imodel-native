@@ -16,7 +16,6 @@
 #include "IViewDraw.h"
 
 //__PUBLISH_SECTION_END__
-#include "DisplayPath.h"
 #include "ScanCriteria.h"
 #include "Material.h"
 
@@ -183,9 +182,9 @@ virtual StatusInt   _GetRange (DRange3dR range) const = 0;
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct          IRangeNodeCheck
+struct IRangeNodeCheck
 {
-    virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR, DRange3dCR, bool is3d, bool isElement) = 0;
+    virtual ScanCriteria::Result _CheckNodeRange (ScanCriteriaCR, DRange3dCR, bool is3d) = 0;
 };
 
 //=======================================================================================
@@ -463,7 +462,6 @@ protected:
     void                    InvalidateScanRange ();
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange ();
     DGNPLATFORM_EXPORT bool CheckThicknessVector ();
-    virtual int _GetScanReturnType () {return MSSCANCRIT_ITERATE_ELEMENT;}
     DGNPLATFORM_EXPORT virtual StatusInt       _Attach (DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void            _Detach ();
     DGNPLATFORM_EXPORT virtual void            _SetupOutputs () = 0;
@@ -522,7 +520,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void            _SetCurrentElement (GeometricElementCP);
 
     DGNPLATFORM_EXPORT virtual void            _ClearZ ();
-    DGNPLATFORM_EXPORT virtual ScanTestResult  _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d, bool isElement);
+    DGNPLATFORM_EXPORT virtual ScanCriteria::Result  _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
     DGNPLATFORM_EXPORT virtual void            _DrawAligned (DVec3dCR axis, DPoint3dCR origin, AlignmentMode type, IStrokeAligned& stroker);
     DGNPLATFORM_EXPORT virtual void            _SetLocatePriority (int priority);
     DGNPLATFORM_EXPORT virtual void            _SetNonSnappable (bool unsnappable);
@@ -807,13 +805,6 @@ DGNPLATFORM_EXPORT void SetDgnDb (DgnDbR);
 //! Set or clear the current persistent element.
 DGNPLATFORM_EXPORT void SetCurrentElement (GeometricElementCP);
 /** @endcond */
-
-//! Get the source DisplayPath for this ViewContext. The "source" DisplayPath will only be non-NULL when
-//! the context is being used to "re-display" an existing path. During Updates, for example, the source
-//! DisplayPath will be NULL.
-//! @return the DisplayPath for this ViewContext.
-//! @note see discussion of DisplayPaths in the MDL documentation.
-DGNPLATFORM_EXPORT DisplayPathCP GetSourceDisplayPath () const;
 
 //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
 //! @return the DrawPurpose specified in the call to DrawContext#Attach (drawcontext.h)

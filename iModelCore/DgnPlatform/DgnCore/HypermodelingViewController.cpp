@@ -141,7 +141,7 @@ StatusInt HypermodelingViewController::_VisitHit(HitPathCR hit, ViewContextR con
     //  If the hit is in the drawing view, draw that view
     for (auto drawing : m_drawings)
         {
-        if (drawing->GetTargetModel() == hit.GetRoot())
+        if (drawing->GetTargetModel() == &hit.GetDgnModel())
             {
             m_pass = PASS_ForPicking;
             PushClipsForInContextViewPass (context, *drawing);
@@ -185,7 +185,7 @@ DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR dr
 
     DRange3d range = DRange3d::NullRange();
     for (auto const& el : *model)
-        range.Extend(el.second->ToGeometricElement()->_GetRange3d());
+        range.Extend(el.second->ToGeometricElement()->_CalculateRange3d());
 
     range.ScaleAboutCenter (range, 1.10);
 

@@ -133,7 +133,6 @@ private:
     virtual void            _DrawStyledBSplineCurve3d (MSBsplineCurveCR) override;
     virtual void            _DrawStyledBSplineCurve2d (MSBsplineCurveCR, double zDepth) override;
     virtual QvElemP         _DrawCached (DgnPlatform::IStrokeForCache&) override;
-    virtual int             _GetScanReturnType () override  {return MSSCANCRIT_ITERATE_ELEMENT_UNORDERED;}
     virtual IPickGeomP      _GetIPickGeom () override {return &m_output;}
     virtual uint32_t        _GetDisplayInfo (bool isRenderable) override;
 
@@ -144,7 +143,7 @@ public:
     DGNPLATFORM_EXPORT PickContext (LocateOptions const& options, StopLocateTest* stopTester=NULL);
 
     DGNPLATFORM_EXPORT bool PickElements (DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
-    DGNPLATFORM_EXPORT TestPathStatus TestPath (DisplayPathCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
+    DGNPLATFORM_EXPORT TestPathStatus TestHit (HitPathCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
 
     DGNPLATFORM_EXPORT static void InitBoresite (DRay3dR boresite, DPoint3dCR spacePoint, DMatrix4dCR worldToLocal);
 };

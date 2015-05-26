@@ -508,7 +508,7 @@ void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
 
     GeometricElementCP geom = element._ToGeometricElement();
     if (nullptr != geom)
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->_GetRange3d(), *geom));
+        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->_CalculateRange3d(), *geom));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -990,7 +990,7 @@ AxisAlignedBox3d DgnModel::_QueryModelRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetModel::SheetModel(CreateParams const& params) : T_Super(params) {;}
+SheetModel::SheetModel(CreateParams const& params) : T_Super(params) {m_size = DPoint2d::FromZero();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
