@@ -453,12 +453,12 @@ struct Placement2d
 {
 protected:
     DPoint2d            m_origin;
-    double              m_angle;
+    AngleInDegrees      m_angle;
     ElementAlignedBox2d m_boundingBox;
 
 public:
-    Placement2d() : m_origin(DPoint2d::FromZero()), m_angle(0.0)  {}
-    Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
+    Placement2d() : m_origin(DPoint2d::FromZero()) {}
+    Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
     Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
     Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
     Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
@@ -470,9 +470,9 @@ public:
     DPoint2dR GetOriginR() {return m_origin;}
 
     //! Get the placement angle of the element
-    double GetAngle() const {return m_angle;}
+    AngleInDegrees GetAngle() const {return m_angle;}
     //! Get a writable reference to the placement angle
-    double& GetAngleR() {return m_angle;}
+    AngleInDegrees& GetAngleR() {return m_angle;}
 
     //! Get the element-aligned bounding box
     ElementAlignedBox2d const& GetElementBox() const {return m_boundingBox;}
@@ -480,7 +480,7 @@ public:
     //! Get a writable reference to the element-aligned bounding box
     ElementAlignedBox2d& GetElementBoxR() {return m_boundingBox;}
 
-    Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle, 1.0, 1.0); return t;}
+    Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle.Radians(), 1.0, 1.0); return t;}
 
     //! Calculate the axis-aligned range of this placement
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
