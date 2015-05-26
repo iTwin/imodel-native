@@ -166,8 +166,6 @@ $(coreObjs)TextStyleInterop$(oext): $(DgnCoreDir)TextStyleInterop.cpp $(DgnCoreA
 
 $(coreObjs)DgnPropertyJson$(oext): $(DgnCoreDir)DgnPropertyJson.cpp ${MultiCompileDepends}
 
-$(coreObjs)ElementUtil$(oext): $(DgnCoreDir)ElementUtil.cpp ${MultiCompileDepends}
-
 $(coreObjs)ElementGeometry$(oext): $(DgnCoreDir)ElementGeometry.cpp ${MultiCompileDepends}
 
 $(coreObjs)ElementGraphics$(oext): $(DgnCoreDir)ElementGraphics.cpp $(DgnCoreAPISrc)ElementGraphics.h ${MultiCompileDepends}
