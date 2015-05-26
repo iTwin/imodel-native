@@ -508,7 +508,7 @@ void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
 
     GeometricElementCP geom = element._ToGeometricElement();
     if (nullptr != geom)
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->_GetRange3d(), *geom));
+        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->_CalculateRange3d(), *geom));
     }
 
 /*---------------------------------------------------------------------------------**//**
