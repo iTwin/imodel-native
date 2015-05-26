@@ -174,6 +174,16 @@ protected:
     //! Override if the DgnElement subclass needs to validate the parent/child relationship.
     virtual BentleyStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return BentleyStatus::SUCCESS;}
 
+    //! Set the category of this DgnElement.
+    //! The default implementation sets the category without doing any checking.
+    //! Override if the DgnElement subclass needs to validate the category.
+    virtual BentleyStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return BentleyStatus::SUCCESS;}
+
+    //! Set the code of this DgnElement.
+    //! The default implementation sets the code without doing any checking.
+    //! Override if the DgnElement subclass needs to validate the code.
+    virtual BentleyStatus _SetCode(Utf8CP code) {m_code.AssignOrClear(code); return BentleyStatus::SUCCESS;}
+
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
     virtual void _OnInserted() {}
     virtual GeometricElementCP _ToGeometricElement() const {return nullptr;}
@@ -218,8 +228,6 @@ public:
     Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;}
     void SetHilited(Hilited newState) const {m_flags.m_hilited = (uint8_t) newState;}
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const;
-
-    void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId;}
 
     DGNPLATFORM_EXPORT void ClearAllAppData();
 
@@ -313,18 +321,30 @@ public:
     //! Set the parent (owner) of this DgnElement
     //! @see GetParentId
     //! @see _SetParentId
-    //! @return BentleyStatus::SUCCESS if parent was set
+    //! @return BentleyStatus::SUCCESS if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects setting the parent.
     BentleyStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
 
     //! Get the category of this DgnElement.
+    //! @see SetCategoryId
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
+
+    //! Set the category of this DgnElement.
+    //! @see GetCategoryId
+    //! @see _SetCategoryId
+    //! @return BentleyStatus::SUCCESS if the category was set
+    //! @note This call can fail if a DgnElement subclass overrides _SetCategoryId and rejects setting the category.
+    BentleyStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 
     //! Get the code (business key) of this DgnElement.
     Utf8CP GetCode() const {return m_code.c_str();}
 
     //! Set the code of this DgnElement.
-    void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
+    //! @see GetCode
+    //! @see _SetCode
+    //! @return BentleyStatus::SUCCESS if the code was set
+    //! @note This call can fail if a DgnElement subclass overrides _SetCode and rejects setting the code.
+    BentleyStatus SetCode(Utf8CP code) {return _SetCode(code);}
 
     //! Get the optional label (user-friendly name) of this DgnElement.
     //! @return the label or nullptr

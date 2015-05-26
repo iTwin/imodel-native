@@ -354,7 +354,7 @@ protected:
     virtual void _SetDelta (DVec3dCR delta) override;
     virtual void _SetRotation (RotMatrixCR rot) override;
     virtual DgnModelP _GetTargetModel() const override;
-    virtual DgnDbR _GetDgnProject() const override;
+    virtual DgnDbR _GetDgnDb() const override;
     virtual void _AdjustAspectRatio (double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint () const override;
     virtual bool _Allow3dManipulations () const override;

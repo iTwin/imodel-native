@@ -1398,6 +1398,8 @@ DgnModelStatus DgnElements::Delete(DgnElementCR element)
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
+    // TODO: delete children here.
+
     CallAppData(OnDeleteCaller(), element);
 
     stat = element._DeleteInDb();

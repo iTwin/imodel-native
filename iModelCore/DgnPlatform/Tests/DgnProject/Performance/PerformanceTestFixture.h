@@ -19,7 +19,10 @@
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 typedef bpair<Utf8String, double> T_TimerResultPair;
 
+USING_NAMESPACE_BENTLEY_SQLITE
+
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
+
 //=======================================================================================    
 //! @bsiclass                                                 Krischan.Eberle      09/2012
 //=======================================================================================    
@@ -45,5 +48,25 @@ protected:
     static void AssignRandomECValue (ECN::ECValue& ecValue, ECN::ECPropertyCR ecProp);
     static void LogResultsToFile(bmap<Utf8String, double> results);
     };
+
+//=======================================================================================
+//! @bsiclass                                                Majd.Uddin     05/2015
+//=======================================================================================
+struct PerformanceTestingFrameWork
+{
+private:
+    Db m_Db;
+    ECSqlStatement stmt;
+    DbResult dbOpenStat;
+    BeFileName dir;
+
+public:
+    PerformanceTestingFrameWork()
+    {
+    }
+    void openDb();
+    bool writeTodb(StopWatch &timerCount, Utf8String testName, Utf8String testDescription, int opCount = -1);
+    bool writeTodb(double timeInSeconds, Utf8String testName, Utf8String testDescription, int opCount = -1);
+};
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

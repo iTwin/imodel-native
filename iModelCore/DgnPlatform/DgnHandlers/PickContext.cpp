@@ -156,10 +156,11 @@ static double getAdjustedViewZ (ViewContextR context, DPoint4dCR viewPt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority priority)
     {
-    if (NULL == m_context->GetCurrentElement ())
+    GeometricElementCP element;
+
+    if (nullptr == (element = m_context->GetCurrentElement()))
         return;
 
-    DisplayPath path (m_context->GetCurrentElement ()); // NEEDSWORK: Don't need path...don't have shared cells...
     DPoint3d    localPt;
 
     if (hitPtLocal)
@@ -222,8 +223,8 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     m_currGeomDetail.SetScreenDist (sqrt (distSquaredXY (hitPtScreen, m_pickPointView)));
     m_currGeomDetail.SetZValue (getAdjustedViewZ (*m_context, hitPtScreen) + m_context->GetCurrentDisplayParams()->GetNetDisplayPriority());
 
-    IElemTopologyP  newElemTopo = (NULL != m_context->GetElemTopology() ? m_context->GetElemTopology()->_Clone() : NULL);
-    RefCountedPtr<HitPath> thisHit = new HitPath (m_context->GetViewport(), path, pickPtWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail, newElemTopo);
+    IElemTopologyP newElemTopo = (NULL != m_context->GetElemTopology() ? m_context->GetElemTopology()->_Clone() : NULL);
+    RefCountedPtr<HitPath> thisHit = new HitPath (*m_context->GetViewport(), *element, pickPtWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail, newElemTopo);
 
     m_hitList->AddHit (thisHit.get(), true, true, m_options.GetHitsSortedByClass ());
 
@@ -496,9 +497,6 @@ bool PickOutput::TestIndexedPolyEdge (DPoint3dCP vertsP, DPoint4dCP hVertsP, int
     if (proximity.closeDistanceSquared < m_pickApertureSquared)
         {
         ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine (DSegment3d::From (edge[0], edge[1]));
-
-        // The CurvePrimitiveInfo is used by the legacy Mesh Element associations.   The ID will be used by polyfaces emitted by element handlers (without implementing IMeshQuery).
-        curve->GetCurvePrimitiveInfoW () = MeshSegmentInfo::Create (closeVertexId, segmentVertexId); // Segment defined by storing 2nd vertex id.
 
         CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create (CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId (CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
         curve->SetId (newId.get());
@@ -1423,24 +1421,24 @@ bool PickContext::PickElements (DgnViewportR vp, DPoint3dCR pickPointWorld, doub
 * @return   true if the point is on the path
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestPathStatus PickContext::TestPath (DisplayPathCR path, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
+TestPathStatus PickContext::TestHit (HitPathCR hit, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
     {
-    GeometricElementCP element = (nullptr != path.GetHeadElem() ? path.GetHeadElem()->ToGeometricElement() : nullptr);
+    GeometricElementCPtr element = hit.GetElement();
 
-    if (nullptr == element)
+    if (!element.IsValid())
         return TESTPATH_NotOnPath;
 
-    InitNpcSubRect (pickPointWorld, pickApertureScreen, vp); // Initialize prior to attach so frustum planes are set correctly.
+    InitNpcSubRect(pickPointWorld, pickApertureScreen, vp); // Initialize prior to attach so frustum planes are set correctly.
 
-    if (SUCCESS != Attach (&vp, DrawPurpose::Pick))
+    if (SUCCESS != Attach(&vp, DrawPurpose::Pick))
         return TESTPATH_TestAborted;
 
     // Re-test using same hit source as input path (See _AddHit locate behavior for linestyle components)...
-    m_options.SetHitSource (DisplayPathType::Hit <= path.GetPathType () ? ((HitPathCR) path).GetLocateSource () : HitSource::None);
+    m_options.SetHitSource (DisplayPathType::Hit <= hit.GetPathType() ? hit.GetLocateSource() : HitSource::None);
 
-    InitSearch (pickPointWorld, pickApertureScreen, hitList);
-    VisitElement (*element);
-    _Detach ();
+    InitSearch(pickPointWorld, pickApertureScreen, hitList);
+    VisitElement(*element);
+    _Detach();
 
-    return WasAborted() ? TESTPATH_TestAborted : ((m_output.GetHitList ()->GetCount () > 0) ? TESTPATH_IsOnPath : TESTPATH_NotOnPath);
+    return WasAborted() ? TESTPATH_TestAborted : ((m_output.GetHitList()->GetCount() > 0) ? TESTPATH_IsOnPath : TESTPATH_NotOnPath);
     }

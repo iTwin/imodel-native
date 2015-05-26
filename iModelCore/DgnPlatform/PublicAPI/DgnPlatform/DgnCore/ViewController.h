@@ -315,7 +315,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelP _GetTargetModel() const;
 
     //! Returns the project that is being viewed
-    virtual DgnDbR _GetDgnProject() const {return m_dgndb;}
+    virtual DgnDbR _GetDgnDb() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetProjectExtents() const;
@@ -372,7 +372,7 @@ public:
     DgnClassId GetClassId() const {return m_classId;}
 
     //! Get the DgnDb of this view.
-    DgnDbR GetDgnDb() const {return m_dgndb;}
+    DgnDbR GetDgnDb() const {return _GetDgnDb();}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
     AxisAlignedBox3d GetProjectExtents() const {return _GetProjectExtents();}

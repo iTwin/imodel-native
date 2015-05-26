@@ -290,9 +290,9 @@ DgnModelP PhysicalRedlineViewController::_GetTargetModel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbR PhysicalRedlineViewController::_GetDgnProject() const
+DgnDbR PhysicalRedlineViewController::_GetDgnDb() const
     {
-    return m_targetModelIsInSubjectView? m_subjectView.GetDgnDb(): T_Super::_GetDgnProject();
+    return m_targetModelIsInSubjectView? m_subjectView.GetDgnDb(): T_Super::_GetDgnDb();
     }
 
 #if defined (NEEDS_WORK_DGNITEM)
