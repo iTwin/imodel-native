@@ -179,6 +179,11 @@ protected:
     //! Override if the DgnElement subclass needs to validate the category.
     virtual BentleyStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return BentleyStatus::SUCCESS;}
 
+    //! Set the code of this DgnElement.
+    //! The default implementation sets the code without doing any checking.
+    //! Override if the DgnElement subclass needs to validate the code.
+    virtual BentleyStatus _SetCode(Utf8CP code) {m_code.AssignOrClear(code); return BentleyStatus::SUCCESS;}
+
     virtual DgnModelStatus _OnInsert() {return DGNMODEL_STATUS_Success;}
     virtual void _OnInserted() {}
     virtual GeometricElementCP _ToGeometricElement() const {return nullptr;}
@@ -335,7 +340,11 @@ public:
     Utf8CP GetCode() const {return m_code.c_str();}
 
     //! Set the code of this DgnElement.
-    void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
+    //! @see GetCode
+    //! @see _SetCode
+    //! @return BentleyStatus::SUCCESS if the code was set
+    //! @note This call can fail if a DgnElement subclass overrides _SetCode and rejects setting the code.
+    BentleyStatus SetCode(Utf8CP code) {return _SetCode(code);}
 
     //! Get the optional label (user-friendly name) of this DgnElement.
     //! @return the label or nullptr
