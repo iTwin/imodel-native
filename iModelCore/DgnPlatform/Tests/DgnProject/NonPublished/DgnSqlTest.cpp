@@ -316,7 +316,8 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
         }
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
-
+    ASSERT_TRUE( robot1.IsValid() );
+        
     // Note:  Can't use ECSql here. It only allows ECClases, and dgn_RTree3d is not in the ecschema
     
     Statement stmt;
