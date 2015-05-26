@@ -529,12 +529,12 @@ struct Placement2d
 {
 protected:
     DPoint2d            m_origin;
-    double              m_angle;
+    AngleInDegrees      m_angle;
     ElementAlignedBox2d m_boundingBox;
 
 public:
-    Placement2d() : m_origin(DPoint2d::FromZero()), m_angle(0.0)  {}
-    Placement2d(DPoint2dCR origin, double angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
+    Placement2d() : m_origin(DPoint2d::FromZero()) {}
+    Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
     Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
     Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
     Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
@@ -547,10 +547,10 @@ public:
     DPoint2dR GetOriginR() {return m_origin;}
 
     //! Get the angle of this Placement2d
-    double GetAngle() const {return m_angle;}
+    AngleInDegrees GetAngle() const {return m_angle;}
 
     //! Get a writable reference to the angle of this Placement2d.
-    double& GetAngleR() {return m_angle;}
+    AngleInDegrees& GetAngleR() {return m_angle;}
 
     //! Get the ElementAlignedBox2d of this Placement2d.
     ElementAlignedBox2d const& GetElementBox() const {return m_boundingBox;}
@@ -559,7 +559,7 @@ public:
     ElementAlignedBox2d& GetElementBoxR() {return m_boundingBox;}
 
     //! Convert the origin and angle of this Placement2d into a Transform.
-    Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle, 1.0, 1.0); return t;}
+    Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle.Radians(), 1.0, 1.0); return t;}
 
     //! Calculate an AxisAlignedBox3d for this Placement2d.
     //! @note the z values are arbitrarily set to +-.5 mm.

@@ -230,7 +230,7 @@ struct DGN_placement_angles : PlacementFunc
                 break;
 
             case sizeof(Placement2d):
-                angles = YawPitchRollAngles::FromDegrees(ToPlacement2d(args).GetAngle(), 0.0, 0.0);
+                angles = YawPitchRollAngles(ToPlacement2d(args).GetAngle(), AngleInDegrees(), AngleInDegrees());
                 break;
 
             default:
