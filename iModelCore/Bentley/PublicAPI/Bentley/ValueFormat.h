@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/ValueFormat.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,21 +24,6 @@ typedef RefCountedPtr<DoubleFormatter>      DoubleFormatterPtr;
 //=======================================================================================
 struct DoubleFormatterBase
 {
-///@cond
-#ifdef __clang__
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wunused-private-field"
-#endif // __clang__
-
-private:    
-    bool   m_dummy;    // published base class must have at least one member
-
-#ifdef __clang__
-    #pragma clang diagnostic pop
-#endif // __clang__
-///@endcond
-
-//__PUBLISH_SECTION_END__
 protected:  
     bool                m_leadingZero;
     bool                m_trailingZeros;
@@ -67,11 +52,7 @@ public:
 
     BENTLEYDLL_EXPORT void SetPrecision (PrecisionType type, Byte precision);
 
-/*__PUBLISH_SECTION_START__*/
-private:
-//__PUBLISH_SECTION_END__
-protected:                                  // Make sure this is not constructible in the published API
-/*__PUBLISH_SECTION_START__*/
+protected:
     BENTLEYDLL_EXPORT DoubleFormatterBase ();
 
 //! Get the precision used by this formatter.
@@ -136,15 +117,12 @@ public:
 //=======================================================================================
 struct DoubleFormatter : DoubleFormatterBase, RefCountedBase
 {
-//__PUBLISH_SECTION_END__
     DEFINE_T_SUPER(DoubleFormatterBase)
 private:  
     DoubleFormatter ();
     DoubleFormatter (DoubleFormatterCR other);
     void Init();
 
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
 public: 
     static BENTLEYDLL_EXPORT PrecisionFormat ToPrecisionEnum (PrecisionType type, Byte precisionByte);
     static BENTLEYDLL_EXPORT Byte GetByteFromPrecision (PrecisionFormat value);
