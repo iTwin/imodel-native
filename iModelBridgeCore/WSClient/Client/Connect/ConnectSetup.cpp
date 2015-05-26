@@ -22,6 +22,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 #define CONNECT_SIGNED_IN                           "BentleyConnect_SignedIn"
 #define BENTLEY_CONNECT_USERNAME                    "BentleyConnect_UserName"
 #define BENTLEY_CONNECT_DISPLAYUSERNAME             "BentleyConnect_DisplayUserName"
+#define BENTLEY_CONNECT_USERID                      "BentleyConnect_UserId"
 
 bool GetCredentials (JsonValueCR messageDataObj, CredentialsR cred);
 bool GetToken (JsonValueCR messageDataObj, Utf8StringR token);
@@ -74,6 +75,7 @@ void WebServices::ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
             displayUserName = givenName + " " + surName;
             }
         MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str ());
+        MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_CONNECT_USERID, attributes["userid"].c_str ());
         }
 
     Json::Value csSetup;

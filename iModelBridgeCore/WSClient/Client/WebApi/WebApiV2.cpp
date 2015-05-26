@@ -9,8 +9,7 @@
 #include "WebApiV2.h"
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 
-const BeVersion WebApiV2::s_minWebApi (2, 0);
-const BeVersion WebApiV2::s_maxWebApi (2, 2);
+const BeVersion WebApiV2::s_maxTestedWebApi (2, 3);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -34,8 +33,8 @@ WebApiV2::~WebApiV2 ()
 bool WebApiV2::IsSupported (WSInfoCR info)
     {
     return
-        info.GetWebApiVersion () >= s_minWebApi &&
-        info.GetWebApiVersion () <= s_maxWebApi &&
+        info.GetWebApiVersion () >= BeVersion (2, 0) &&
+        info.GetWebApiVersion () < BeVersion (3, 0) &&
         info.GetType () == WSInfo::Type::BentleyWSG;
     }
 
@@ -45,9 +44,9 @@ bool WebApiV2::IsSupported (WSInfoCR info)
 Utf8String WebApiV2::GetWebApiUrl () const
     {
     BeVersion webApiVersionToUse = m_info.GetWebApiVersion ();
-    if (webApiVersionToUse > s_maxWebApi)
+    if (webApiVersionToUse > s_maxTestedWebApi)
         {
-        webApiVersionToUse = s_maxWebApi; // Limit to tested version
+        webApiVersionToUse = s_maxTestedWebApi; // Limit queries to tested WebApi version
         }
 
     Utf8PrintfString url

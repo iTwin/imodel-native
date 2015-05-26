@@ -50,7 +50,7 @@ protected:
     virtual BeFileNameCR _GetLocalStateDirectory () const { return m_localStateDirectory; }
     virtual BeFileNameCR _GetAssetsRootDirectory () const { return m_platformAssetsDirectory; }
     virtual BeFileNameCR _GetDgnPlatformAssetsDirectory () const { return m_platformAssetsDirectory; }
-    virtual BeFileName   _GetMarkupSeedFilePath () const { return BeFileName (); }
+    virtual BeFileNameCR _GetMarkupSeedFilePath () const { static BeFileName s_blank; return s_blank; }
 
 public:
     TestAppPathProvider ();
