@@ -111,7 +111,7 @@ public:
 //=======================================================================================
 struct DgnCategories : DgnDbTable
     {
-    //! The Rank of a category indicates who created it and who may use it for elements
+    //! The Rank of a category indicates how it was created and where it can be used.
     enum class Rank
     {
         System      = 0,    //!< This category is predefined by the system

@@ -55,6 +55,7 @@
     </Part>
 
     <Part Name="DgnPlatformOverviewDocs" BentleyBuildMakeFile="docs/DgnPlatformOverviewDocs.mke">
+        <SubPart PartName="DgnPlatformDoc-Build-SampleCode" />
         <Bindings>
             <Directory SourceName="Docs/Source/DgnPlatform" SubPartDirectory="Docs/Source/DgnPlatform"/>
             <!-- *** TBD doc images + files TBD ***
@@ -62,6 +63,11 @@
             <Directory SourceName="Docs/Files/DgnPlatform" SubPartDirectory="Docs/Files/DgnPlatform"/>
             -->
         </Bindings>
+    </Part>
+
+    <!-- Check that code samples in docs/samplecode actually compile -->
+    <Part Name="DgnPlatformDoc-Build-SampleCode" BentleyBuildMakeFile="${SrcBsiCommon}build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SUB_DIR=samplecode -dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)DgnPlatform/docs/samplecode">
+        <SubPart PartName="PublishedApi"/>
     </Part>
 
     <Part Name="ImagePPComponents" ExcludePlatforms="Android*,Linux*,iOS*">
