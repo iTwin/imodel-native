@@ -384,7 +384,7 @@ public:
 * A context which provides a set of symbols for expression evaluation.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
-struct          SymbolExpressionContext : ExpressionContext
+struct EXPORT_VTABLE_ATTRIBUTE SymbolExpressionContext : ExpressionContext
 {
 /*__PUBLISH_SECTION_END__*/
 private:

@@ -25,7 +25,7 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //! StandaloneECRelationshipInstance is used to represent a relationship between
 //! two IECInstances
 //=======================================================================================
-struct StandaloneECRelationshipInstance : IECRelationshipInstance
+struct EXPORT_VTABLE_ATTRIBUTE StandaloneECRelationshipInstance : IECRelationshipInstance
     //__PUBLISH_SECTION_END__
     , MemoryECInstanceBase
     //__PUBLISH_SECTION_START__

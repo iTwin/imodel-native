@@ -1974,7 +1974,7 @@ typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct ECSchemaCache : public RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE ECSchemaCache : public RefCountedBase
 //__PUBLISH_SECTION_END__
     ,public IECSchemaLocater
 //__PUBLISH_SECTION_START__
