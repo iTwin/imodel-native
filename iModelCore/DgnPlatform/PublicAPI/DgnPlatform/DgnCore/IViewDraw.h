@@ -1189,7 +1189,6 @@ public:
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
     DGNPLATFORM_EXPORT void DrawTriStrip2d (int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range);
 
-    DGNPLATFORM_EXPORT void DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts);
 
     DGNPLATFORM_EXPORT RangeResult  PushBoundingRange3d (DPoint3dCP range);
     DGNPLATFORM_EXPORT RangeResult  PushBoundingRange2d (DPoint2dCP range, double zDepth);
@@ -1200,6 +1199,11 @@ public:
     void    PopMethodState ();
 
     //__PUBLISH_SECTION_START__
+    
+    //! @private
+    // Published to expose access for performance reasons for Bryan Oswalt's augmented reality prototyping.
+    DGNPLATFORM_EXPORT void DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts);
+
     // Helper Methods to draw simple SolidPrimitives.
     DGNPLATFORM_EXPORT void DrawTorus (DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped);
     DGNPLATFORM_EXPORT void DrawCone (DPoint3dCR centerA, DPoint3dCR centerB, double radiusA, double radiusB, bool capped);
