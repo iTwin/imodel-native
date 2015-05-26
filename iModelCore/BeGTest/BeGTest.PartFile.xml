@@ -207,12 +207,12 @@
         <SubPart PartName="PlatformUnitTests-Static" />
     </Part>
 
-    <Part Name="PlatformUnitTests-Windows" OnlyPlatforms="x86,x64,WinRT*,Linux*">
+    <Part Name="PlatformUnitTests-Windows" OnlyPlatforms="x86,x64,WinRT*,Linux*,MacOS*">
         <SubPart    PartName="PlatformUnitTests-Windows-No-View" />
         <SubPart    PartName="MobileDgnUnitTests"       PartFile="MobileDgn"            Repository="MobileDgn" />
     </Part>
 
-    <Part Name="PlatformUnitTests-Static" ExcludePlatforms="x86,x64,WinRT*,Linux*">
+    <Part Name="PlatformUnitTests-Static" ExcludePlatforms="x86,x64,WinRT*,Linux*,MacOS*">
         <SubPart    PartName="PlatformUnitTests-Static-No-View" />
         <SubPart    PartName="MobileDgnUnitTests"       PartFile="MobileDgn"            Repository="MobileDgn"              LibType="Static" />
     </Part>
@@ -222,7 +222,7 @@
         <SubPart PartName="PlatformUnitTests-Static-No-View" />
     </Part>
 
-    <Part Name="PlatformUnitTests-Windows-No-View" OnlyPlatforms="x86,x64,WinRT*,Linux*">
+    <Part Name="PlatformUnitTests-Windows-No-View" OnlyPlatforms="x86,x64,WinRT*,Linux*,MacOS*">
         <SubPart    PartName="BentleyUnitTests"         PartFile="Bentley"              Repository="Bentley" />
         <SubPart    PartName="ECObjectsUnitTests"       PartFile="ecobjects"            Repository="ecobjects" />
         <SubPart    PartName="GeomLibsUnitTests"        PartFile="geomlibs"             Repository="GeomLibs" />
@@ -234,7 +234,7 @@
         <SubPart    PartName="ConstructionSchemaUnitTests"  PartFile="ConstructionSchema"   Repository="ConstructionSchema" />
     </Part>
 
-    <Part Name="PlatformUnitTests-Static-No-View" ExcludePlatforms="x86,x64,WinRT*,Linux*">
+    <Part Name="PlatformUnitTests-Static-No-View" ExcludePlatforms="x86,x64,WinRT*,Linux*,MacOS*">
         <SubPart    PartName="BentleyUnitTests"         PartFile="Bentley"              Repository="Bentley"                LibType="Static" />
         <SubPart    PartName="ECObjectsUnitTests"       PartFile="ecobjects"            Repository="ecobjects"              LibType="Static" />
         <SubPart    PartName="GeomLibsUnitTests"        PartFile="geomlibs"             Repository="GeomLibs"               LibType="Static" />
@@ -256,6 +256,7 @@
         <SubPart PartName="BeGTest-iOS" />
         <SubPart PartName="BeGTest-WinRT" />
         <SubPart PartName="BeGTest-Linux" />
+        <SubPart PartName="BeGTest-MacOS" />
     </Part>
 
     <Part Name="BeGTest-Windows" OnlyPlatforms="x86,x64">
@@ -275,6 +276,10 @@
     </Part>
 
     <Part Name="BeGTest-Linux" OnlyPlatforms="Linux*">
+        <SubProduct ProductName="BeGTestTested" />
+    </Part>
+
+    <Part Name="BeGTest-MacOS" OnlyPlatforms="MacOS*">
         <SubProduct ProductName="BeGTestTested" />
     </Part>
 
