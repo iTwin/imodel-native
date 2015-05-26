@@ -911,7 +911,7 @@ void ElementGeomIO::Writer::Append (DgnSubCategoryId subCategory, TransformCR ge
 
     FlatBufferBuilder fbb;
 
-    auto mloc = FB::CreateBeginSubCategory (fbb, subCategory.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Radians(), angles.GetPitch().Radians(), angles.GetRoll().Radians());
+    auto mloc = FB::CreateBeginSubCategory (fbb, subCategory.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
 
     fbb.Finish (mloc);
     Append (Operation (OpCode::BeginSubCategory, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1179,7 +1179,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, DgnSubCategoryId& subCat
     subCategory = DgnSubCategoryId (ppfb->subCategoryId());
 
     DPoint3d            origin = *((DPoint3dCP) ppfb->origin());
-    YawPitchRollAngles  angles = YawPitchRollAngles::FromRadians (ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+    YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees (ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
     geomToWorld = angles.ToTransform (origin);
 
@@ -2552,8 +2552,15 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
             }
         else
             {
+            BeAssert(0 == BeNumerical::Compare(origin.z, 0.0));
+            if (0.0 != angles.GetPitch().Degrees() || 0.0 != angles.GetRoll().Degrees())
+                {
+                BentleyApi::YawPitchRollAngles tmpAngles(BentleyApi::AngleInDegrees(), angles.GetPitch(), angles.GetRoll());
+                localToWorld = Transform::FromProduct (localToWorld, tmpAngles.ToTransform(DPoint3d::FromZero()));
+                }
+
             m_placement2d.GetOriginR() = DPoint2d::From(origin);
-            m_placement2d.GetAngleR() = angles.GetRoll().Degrees();
+            m_placement2d.GetAngleR() = angles.GetYaw();
             }
     
         m_havePlacement = true;
@@ -2838,7 +2845,7 @@ ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
     if (!categoryId.IsValid() || !model.Is3d())
         return nullptr;
@@ -2854,7 +2861,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle)
     {
     if (!categoryId.IsValid() || model.Is3d())
         return nullptr;
@@ -2881,7 +2888,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld (DgnModelR model, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element, DPoint3dCR origin, YawPitchRollAngles angles)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
     return ElementGeometryBuilder::Create(element.GetDgnModel(), element.GetCategoryId(), origin, angles);
     }
@@ -2889,7 +2896,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement2dCR element, DPoint2dCR origin, double angle)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement2dCR element, DPoint2dCR origin, AngleInDegrees const& angle)
     {
     return ElementGeometryBuilder::Create(element.GetDgnModel(), element.GetCategoryId(), origin, angle);
     }
