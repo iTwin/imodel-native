@@ -20,13 +20,11 @@ DgnCoreDir      = $(baseDir)DgnCore/
 DgnHandlersDir  = $(baseDir)DgnHandlers/
 PrivateAPIDir   = $(baseDir)PrivateApi/
 
-dependencyDir    = $(DgnCoreDir)dependency/
 lineStyleDir     = $(DgnCoreDir)linestyle/
 
 DgnPlatformInternalDir = $(DgnCoreDir)../PrivateApi/DgnPlatformInternal/
 
 dimensionDir    = $(DgnHandlersDir)Dimension/
-markupDir       = $(DgnHandlersDir)Markup/
 
 contextDepends  =   $(DgnCoreAPISrc)ViewContext.h           \
                     $(DgnCoreAPISrc)IViewOutput.h           \
@@ -45,14 +43,8 @@ WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 PointCloudBaseModelDepends = $(DgnCoreAPISrc)PointCloudBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 
 txnManagerDepends = $(DgnCoreAPISrc)ITxnManager.h
-RmgrToolsPublicApi=$(BuildContext)PublicAPI/RmgrTools/
 toolsHeaders   = $(DgnPlatformToolsPublicApiSrc)KeyTree.h
-dgnfileioBaseH = $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnModel.h $(DgnCoreAPISrc)DgnElement.h
-DgnFileIOH     = $(DgnCoreAPISrc)ScanCriteria.h $(dgnfileioBaseH) $(toolsHeaders)
 LsLocalDepends = $(DgnCoreAPISrc)LsLocal.h $(DgnCoreAPISrc)LineStyle.h $(contextDepends)
-
-EnablerDepends =    $(HandlerDepends) \
-                    $(DgnPlatformAPISrc)DgnHandlers/IManipulator.h \
 
 #---------------------------------------------------------
 #  Set up for signing
@@ -142,8 +134,6 @@ $(coreObjs)LsPointComponent$(oext):    $(lineStyleDir)LsPointComponent.cpp $(LsL
 
 $(coreObjs)StrokePattern$(oext):   $(lineStyleDir)StrokePattern.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
-$(coreObjs)Scanner$(oext):     $(DgnCoreDir)Scanner.cpp $(DgnCoreAPISrc)ScanCriteria.h $(DgnFileIOPubH) $(contextDepends) $(DgnCoreAPISrc)NullContext.h ${MultiCompileDepends}
-
 $(coreObjs)DgnScan$(oext):     $(DgnCoreDir)DgnScan.cpp $(DgnCoreAPISrc)ScanCriteria.h $(DgnFileIOPubH) $(HandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)DgnRangeTree$(oext): $(DgnCoreDir)DgnRangeTree.cpp $(DgnCoreAPISrc)DgnRangeTree.h ${MultiCompileDepends}
@@ -162,8 +152,6 @@ $(coreObjs)DgnElements$(oext): $(DgnCoreDir)DgnElements.cpp $(DgnCoreAPISrc)DgnD
 
 $(coreObjs)DgnViewport$(oext):    $(DgnCoreDir)DgnViewport.cpp $(contextDepends) ${MultiCompileDepends}
 
-$(coreObjs)RealityDataHandlers$(oext):    $(DgnCoreDir)RealityDataHandlers.cpp $(RealityDataHandlerDepends) $(contextDepends) ${MultiCompileDepends}
-
 $(coreObjs)RealityDataCache$(oext) : $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)WebMercator$(oext):    $(DgnCoreDir)WebMercator.cpp $(contextDepends) $(WebMercatorDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
@@ -175,8 +163,6 @@ $(coreObjs)TextString$(oext):    $(DgnCoreDir)TextString.cpp $(contextDepends) $
 $(coreObjs)TextStyleInterop$(oext): $(DgnCoreDir)TextStyleInterop.cpp $(DgnCoreAPISrc)TextString.h $(DgnCoreAPISrc)Annotations/AnnotationTextStyle.h ${MultiCompileDepends}
 
 $(coreObjs)DgnPropertyJson$(oext): $(DgnCoreDir)DgnPropertyJson.cpp ${MultiCompileDepends}
-
-$(coreObjs)ElementUtil$(oext): $(DgnCoreDir)ElementUtil.cpp ${MultiCompileDepends}
 
 $(coreObjs)ElementGeometry$(oext): $(DgnCoreDir)ElementGeometry.cpp ${MultiCompileDepends}
 
@@ -222,13 +208,9 @@ $(coreObjs)GParray$(oext):      $(DgnCoreDir)GParray.cpp $(DgnCoreAPISrc)GPArray
 
 $(coreObjs)IAuxSystem$(oext):    $(DgnCoreDir)IAuxSystem.cpp $(contextDepends) ${MultiCompileDepends}
 
-$(coreObjs)BSISerializable$(oext): $(DgnCoreDir)BSISerializable.cpp $(DgnCoreAPISrc)BSISerializable.h ${MultiCompileDepends}
-
 $(coreObjs)GradientSettings$(oext): $(DgnCoreDir)GradientSettings.cpp $(DgnCoreAPISrc)GradientSettings.h ${MultiCompileDepends}
 
 $(coreObjs)UnitManager$(oext): $(DgnCoreDir)UnitManager.cpp $(DgnCoreAPISrc)UnitDefinition.h ${MultiCompileDepends}
-
-$(coreObjs)ScaleDefinition$(oext): $(DgnCoreDir)ScaleDefinition.cpp $(DgnCoreAPISrc)ScaleDefinition.h ${MultiCompileDepends}
 
 $(coreObjs)DgnCoreValueFormat$(oext): $(DgnCoreDir)DgnCoreValueFormat.cpp $(DgnCoreAPISrc)ValueFormat.h ${MultiCompileDepends}
 
@@ -400,8 +382,6 @@ o = $(coreObjs)
 
 %include MultiCppCompileRule.mki
 
-$(coreObjs)nonport_utilities$(oext): $(DgnCoreDir)nonport_utilities.cpp ${MultiCompileDepends}
-
 $(coreObjs)DgnTrueTypeFont$(oext): $(DgnCoreDir)DgnTrueTypeFont.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
 
 $(coreObjs)DgnTrueTypeFontData$(oext): $(DgnCoreDir)DgnTrueTypeFontData.cpp $(DgnCoreAPISrc)DgnFont.h $(DgnCoreAPISrc)DgnFontData.h ${MultiCompileDepends}
@@ -426,23 +406,12 @@ $(handlerObjs)DgnPlatformDLLInlines$(oext) : $(baseDir)DgnPlatformDLLInlines.cpp
 cppObjects +% $(handlerObjs)DgnPlatformDLLInlines$(oext)
 
 #----------------------------------------------------------------------
-#   Resources
-#----------------------------------------------------------------------
-%if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-
-$(handlerObjs)Icons.res : $(DgnHandlersDir)Icons.rc
-
-dgnHandlers_binaryResources = $(handlerObjs)Icons.res
-
-%endif
-
-#----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
 o = $(dgnPlatformObj)
 
 DLM_DEST                = $(o)
-DLM_OBJECT_FILES        = $(cppObjects) $(dgnHandlers_binaryResources)
+DLM_OBJECT_FILES        = $(cppObjects)
 DLM_OBJECT_PCH          = $(dgnPlatformObj)DgnPlatformInternal$(oext) 
 DLM_EXPORT_OBJS         = $(cppObjects)
 DLM_EXPORT_DEST         = $(o)
@@ -472,18 +441,11 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
 
 %ifndef CREATE_STATIC_LIBRARIES
     %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-        LINKER_LIBRARIES + $(ContextSubpartsLibs)BeLibXml2.lib 
-        
+
         #For CoCreateInstance, RegOpenKey, SHGetPathFromIDListA - used (in Windows build) for TrueType font support and by IntegrationManager.obj
         LINKER_LIBRARIES + $(oleLibs) $(guiLibs) kernel32.lib
         LINKER_LIBRARIES + wininet.lib
         
-        #for Xmlite, used by numerous files
-        LINKER_LIBRARIES + xmllite.lib
-        
-        # used by pagalloc
-        LINKER_LIBRARIES + dbghelp.lib
-
         # Add this to use the VTune API. It is a static library that finds the DLL's if they are on the system.
         # LINKER_LIBRARIES       + "C:\Program Files (x86)\Intel\VTune Amplifier XE\lib64\libittnotify.lib"
     %endif

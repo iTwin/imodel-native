@@ -927,12 +927,12 @@ bool IsRangeContainedInCurrentRange (DRange3dCR range, bool is3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR criteria, DRange3dCR scanRange, bool is3d) override
+virtual ScanCriteria::Result _CheckNodeRange (ScanCriteriaCR criteria, DRange3dCR scanRange, bool is3d) override
     {
-    if (ScanTestResult::Fail == T_Super::_CheckNodeRange (criteria, scanRange, is3d))
-        return  ScanTestResult::Fail;
+    if (ScanCriteria::Result::Fail == T_Super::_CheckNodeRange (criteria, scanRange, is3d))
+        return  ScanCriteria::Result::Fail;
 
-    return IsRangeContainedInCurrentRange (scanRange, is3d) ? ScanTestResult::Fail : ScanTestResult::Pass;
+    return IsRangeContainedInCurrentRange (scanRange, is3d) ? ScanCriteria::Result::Fail : ScanCriteria::Result::Pass;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -959,7 +959,7 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement (GeometricElementCR element) override
     {
-    if (IsRangeContainedInCurrentRange(element._GetRange3d(), element.Is3d()))
+    if (IsRangeContainedInCurrentRange(element._CalculateRange3d(), element.Is3d()))
         return SUCCESS;
 
     // NOTE: Can just draw bounding box instead of drawing element geometry...
