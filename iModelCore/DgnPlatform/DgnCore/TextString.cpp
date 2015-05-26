@@ -479,7 +479,9 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
     fbText.add_minorVersion(CURRENT_MINOR_VERSION);
     fbText.add_text(textValueOffset);
     fbText.add_style(fbStyleOffset);
-    fbText.add_transform(reinterpret_cast<FB::TextStringTransform*>(const_cast<TransformP>(&textTransform)));
+    
+    if (!textTransform.IsIdentity())
+        fbText.add_transform(reinterpret_cast<FB::TextStringTransform*>(const_cast<TransformP>(&textTransform)));
 
     textStringOffset = fbText.Finish();
 
