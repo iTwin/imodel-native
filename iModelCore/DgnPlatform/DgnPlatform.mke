@@ -266,8 +266,6 @@ $(coreObjs)UpdateLogging$(oext): $(DgnCoreDir)UpdateLogging.cpp $(DgnCoreDir)Upd
 
 $(coreObjs)DgnViewDb$(oext): $(DgnCoreDir)DgnViewDb.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
-$(coreObjs)RasterDb$(oext): $(DgnCoreDir)RasterDb.cpp $(DgnPlatformInternalDir)DgnCore/RasterDb.h ${MultiCompileDepends}
-
 $(coreObjs)DgnLink$(oext): $(DgnCoreDir)DgnLink.cpp $(DgnCoreAPISrc)DgnDbTables.h $(DgnCoreAPISrc)DgnLink.h ${MultiCompileDepends}
 
 $(coreObjs)DgnSchemaDomain$(oext): $(DgnCoreDir)DgnSchemaDomain.cpp ${MultiCompileDepends}
