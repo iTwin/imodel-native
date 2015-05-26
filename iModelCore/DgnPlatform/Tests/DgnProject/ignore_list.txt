@@ -124,4 +124,3 @@ EntityDependencyGraph.ParentChildTest2
 EntityDependencyGraph.PersistentHandlerTest
 NamedVolume.CrudTest
 NotificationManagerTest.GetPriority
-Compatibility_Test.SizeCheck

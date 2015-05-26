@@ -36,13 +36,15 @@ struct Compatibility_Test : public ::testing::Test
          static xmlXPathContextPtr m_xmlXPathContext;
          static void GetStructList(bvector<TypeNamePair>& list);
          static bool IsConfigLoadError;
+         static WString GetCompatibilityConfigFile();
          static void SetUpTestCase()
             {
                 printf("*** SetUpTestCase ***\n");
-                printf("Reading config file from : %ls \n", DgnDbTestDgnManager::GetSeedFilePath(L"CompatibilityTestDataTypes.xml").c_str());
+                WString configFilePath = GetCompatibilityConfigFile();
+                printf("Reading config file from : %ls \n", DgnDbTestDgnManager::GetSeedFilePath(configFilePath.c_str()).c_str());
                 BeXmlStatus status;
-                m_dom = BeXmlDom::CreateAndReadFromFile(status, DgnDbTestDgnManager::GetSeedFilePath(L"CompatibilityTestDataTypes.xml").c_str());
-                if (m_dom.IsValid())
+                m_dom = BeXmlDom::CreateAndReadFromFile(status, DgnDbTestDgnManager::GetSeedFilePath(configFilePath.c_str()).c_str());
+                if (BEXML_Success == status && m_dom.IsValid())
                 {
                     BeXmlNodeP          root = m_dom->GetRootElement();
                     if (NULL != root)
@@ -51,10 +53,10 @@ struct Compatibility_Test : public ::testing::Test
                         IsConfigLoadError = false;
                     }
                     else
-                        printf("ERROR: Can't find root node\n");
+                        printf("ERROR: Can't find root node., ERROR CODE (BeXmlStatus) = %d \n",(int)status);
                 }
                 else
-                    printf("ERROR: Unable to read/parse xml document, ERROR CODE = %d", (int)status);
+                    printf("ERROR: Unable to read/parse xml document, ERROR CODE (BeXmlStatus) = %d\n", (int)status);
             }
         //---------------------------------------------------------------------------------------
         // @bsimethod                                        Umar.Hayat                02/13
@@ -105,7 +107,17 @@ struct Compatibility_Test : public ::testing::Test
 BeXmlDomPtr Compatibility_Test::m_dom;
 xmlXPathContextPtr Compatibility_Test::m_xmlXPathContext;
 bool Compatibility_Test::IsConfigLoadError = true;
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                        Umar.Hayat                05/15
+//---------------------------------------------------------------------------------------
+WString Compatibility_Test::GetCompatibilityConfigFile()
+    {
+#if defined (_X86_)
+        return WString(L"CompatibilityTestDataTypes_x86.xml");
+#elif
+        return WString(L"CompatibilityTestDataTypes.xml");
+#endif
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                        Umar.Hayat                05/15
 //---------------------------------------------------------------------------------------
@@ -118,7 +130,7 @@ TEST_F(Compatibility_Test, SizeCheck)
     for (TypeNamePair param : structList)
         {
         //printf("size = %d\n", GetSizeOf(param.m_name));
-        EXPECT_EQ(param.m_size, GetSizeOf(param.m_name)) << param.m_name.c_str() << " size is not matching";
+        EXPECT_EQ(GetSizeOf(param.m_name), param.m_size ) << param.m_name.c_str() << " size is not matching";
         }
     }
 
