@@ -36,7 +36,6 @@
 #include <DgnPlatform/DgnCore/rtypes.r.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
 #include <DgnPlatformInternal/DgnCore/MaterialTokens.h>
-#include <DgnPlatformInternal/DgnCore/RasterDb.h>
 #include <DgnPlatform/DgnCore/LsLocal.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <DgnPlatform/DgnCore/NullContext.h>
@@ -80,6 +79,7 @@
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/DgnCore/IGeoCoordServices.h>
 #include <DgnPlatform/DgnCore/PointCloudBaseModel.h>
+#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 
 #include "DgnCore/DgnCoreLog.h"
 

@@ -99,6 +99,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
 
+    <ECClass typeName="RasterBaseModel" isDomainClass="True" >
+        <BaseClass>PhysicalModel</BaseClass>
+    </ECClass>
+
     <ECClass typeName="Category" isDomainClass="True" >
         <ECCustomAttributes>
             <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
