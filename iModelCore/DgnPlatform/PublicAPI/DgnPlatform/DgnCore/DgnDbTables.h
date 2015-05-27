@@ -457,7 +457,6 @@ public:
 
     //! Get an iterator over the SubCategories of a category or all SubCategories of all categories.
     //! @param[in] categoryId Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-    //! @param[in] whereClause an optional where clause
     SubCategoryIterator MakeSubCategoryIterator(DgnCategoryId categoryId=DgnCategoryId()) const {return SubCategoryIterator(m_dgndb, categoryId);}
     //@}
 
@@ -971,7 +970,7 @@ public:
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
-    //! @note This method is merely a shortcut to #GetElement(id) and then #Delete(element)
+    //! @note This method is merely a shortcut to #GetElement and then #Delete
     DgnModelStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DGNMODEL_STATUS_ElementNotFound;}
 
     //! Get the Heapzone for this DgnDb.

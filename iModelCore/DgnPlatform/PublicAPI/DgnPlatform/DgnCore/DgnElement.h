@@ -95,7 +95,7 @@ public:
         //! Called after this AppData's element was Inserted.
         //! @param[in]  el the new persistent DgnElement that was Inserted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
-        //! @note el will \not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
+        //! @note el will not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
         //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
         virtual bool _OnInserted(DgnElementCR el){return false;}
 
@@ -103,13 +103,13 @@ public:
         //! @param[in] orig the original DgnElement
         //! @param[in] modified the modified DgnElement about to replace orig
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
-        //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
+        //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
         virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR modified)  {return false;}
 
         //! Called after this AppData's element was Updated.
         //! @param[in] modified the modified DgnElement
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
-        //! @note This method is called for /b all AppData on both the original and the modified DgnElements.
+        //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
         virtual bool _OnUpdated(DgnElementCR modified) {return false;}
 
         //! Called before this AppData's element is Deleted.
@@ -164,7 +164,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
 
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass properties.
-    //! @note This method is called from #DgnElements::Update, on the persistent element, after its values have been
+    //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
     //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.
     //! @note If you override this method, you /em must call T_Super::_UpdateInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
