@@ -73,6 +73,7 @@ private:
     ItemState m_itemState;
     Utf8String m_testItemProperty;
 
+    virtual DgnModelStatus _InsertInDb() override;
     virtual DgnModelStatus _UpdateInDb() override;
     virtual DgnModelStatus _LoadFromDb() override;
     virtual DgnModelStatus _CopyFrom(DgnElementCR) override;
@@ -170,17 +171,10 @@ struct ElementDependencyGraph : TransactionManagerTests
         EC::ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
         };
 
-    EC::ECSqlStatement m_insertParentChildRelationshipStatement;
-    EC::ECSqlStatement m_insertElementDrivesElementRelationshipStatement;
-    EC::ECSqlStatement m_selectElementDrivesElementById;
-    
-    void FinalizeStatements();
-    ~ElementDependencyGraph();
-  
     WString GetTestFileName (WCharCP testname);
     ECN::ECClassCR GetElementDrivesElementClass();
 
-    EC::ECSqlStatement& GetSelectElementDrivesElementById();
+    EC::CachedECSqlStatementPtr GetSelectElementDrivesElementById();
     void SetUpForRelationshipTests (WCharCP testname);
     EC::ECInstanceKey InsertElementDrivesElementRelationship (DgnElementKeyCR root, DgnElementKeyCR dependent);
 
@@ -359,23 +353,6 @@ void TransactionManagerTests::TwiddleTime (DgnElementKeyCR ekey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementDependencyGraph::FinalizeStatements() 
-    {
-    m_insertParentChildRelationshipStatement.Finalize();
-    m_insertElementDrivesElementRelationshipStatement.Finalize();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementDependencyGraph::~ElementDependencyGraph() 
-    {
-    FinalizeStatements();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 WString ElementDependencyGraph::GetTestFileName (WCharCP testname)
     {
     return WPrintfString(L"ElementDependencyGraph_%ls.idgndb",testname);
@@ -392,26 +369,17 @@ ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECSqlStatement& ElementDependencyGraph::GetSelectElementDrivesElementById()
+EC::CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
     {
-    if (!m_selectElementDrivesElementById.IsPrepared())
-        {
-        BeSQLite::EC::ECSqlSelectBuilder b;
+    BeSQLite::EC::ECSqlSelectBuilder b;
     #ifdef WIP_ECSQL_BUG
         // ERROR ECDb - Invalid ECSQL 'SELECT DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,HandlerId,Status FROM ONLY [dgn].[ElementDrivesElement] WHERE ECInstanceId=?': ECProperty 'DependentElementId' not found in any of the ECClasses used in the ECSQL statement.
         b.Select("DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
     #else
         b.Select("TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
     #endif
-        m_selectElementDrivesElementById.Prepare(*m_db, b.ToString().c_str());
-        }
-    else
-        {
-        m_selectElementDrivesElementById.Reset();
-        m_selectElementDrivesElementById.ClearBindings();
-        }
 
-    return m_selectElementDrivesElementById;
+    return m_db->GetPreparedECSqlStatement(b.ToString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -435,32 +403,22 @@ void ElementDependencyGraph::SetUpForRelationshipTests (WCharCP testname)
 +---------------+---------------+---------------+---------------+---------------+------*/
 EC::ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship (DgnElementKeyCR root, DgnElementKeyCR dependent)
     {
-    if (!m_insertElementDrivesElementRelationshipStatement.IsPrepared())
-        {
-        EC::ECSqlInsertBuilder b;
-        b.InsertInto(GetElementDrivesElementClass());
-        b.AddValue ("SourceECClassId", "?");
-        b.AddValue ("SourceECInstanceId", "?");
-        b.AddValue ("TargetECClassId", "?");
-        b.AddValue ("TargetECInstanceId", "?");
+    EC::ECSqlInsertBuilder b;
+    b.InsertInto(GetElementDrivesElementClass());
+    b.AddValue ("SourceECClassId", "?");
+    b.AddValue ("SourceECInstanceId", "?");
+    b.AddValue ("TargetECClassId", "?");
+    b.AddValue ("TargetECInstanceId", "?");
 
-        EC::ECSqlStatus status = m_insertElementDrivesElementRelationshipStatement.Prepare (*m_db, b.ToString().c_str());
-        if (EC::ECSqlStatus::Success != status)
-            return EC::ECInstanceKey();
-        }
-    else
-        {
-        m_insertElementDrivesElementRelationshipStatement.Reset();
-        m_insertElementDrivesElementRelationshipStatement.ClearBindings();
-        }
+    EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(b.ToString().c_str());
 
-    m_insertElementDrivesElementRelationshipStatement.BindInt64 (1, root.GetECClassId());
-    m_insertElementDrivesElementRelationshipStatement.BindId    (2, root.GetECInstanceId());
-    m_insertElementDrivesElementRelationshipStatement.BindInt64 (3, dependent.GetECClassId());
-    m_insertElementDrivesElementRelationshipStatement.BindId    (4, dependent.GetECInstanceId());
+    stmt->BindInt64 (1, root.GetECClassId());
+    stmt->BindId    (2, root.GetECInstanceId());
+    stmt->BindInt64 (3, dependent.GetECClassId());
+    stmt->BindId    (4, dependent.GetECInstanceId());
 
     EC::ECInstanceKey rkey;
-    if (EC::ECSqlStepStatus::Done != m_insertElementDrivesElementRelationshipStatement.Step(rkey))
+    if (EC::ECSqlStepStatus::Done != stmt->Step(rkey))
         return EC::ECInstanceKey();
 
     return rkey;
@@ -517,6 +475,27 @@ void TestElement::SetTestItemProperty(Utf8CP value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus TestElement::_InsertInDb()
+    {
+    DgnModelStatus status = T_Super::_InsertInDb();
+    if (DGNMODEL_STATUS_Success != status)
+        return status;
+
+    if (HasTestItem())
+        {
+        BeSQLite::EC::CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " (ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES (?,?)");
+        insertStmt->BindId(1, GetElementId());
+        insertStmt->BindText(2, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        if (BeSQLite::EC::ECSqlStepStatus::Done != insertStmt->Step())
+            return DGNMODEL_STATUS_ElementWriteError;
+        }
+
+    return DGNMODEL_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus TestElement::_UpdateInDb()
     {
     DgnModelStatus status = T_Super::_UpdateInDb();
@@ -534,6 +513,12 @@ DgnModelStatus TestElement::_UpdateInDb()
         }
     else if (ItemState::Modified == m_itemState)
         {
+#ifdef ECSQL_SUPPORTS_INSERT_OR_REPLACE
+        BeSQLite::EC::CachedECSqlStatementPtr writeStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT OR REPLACE INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " (ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES (?,?)");
+        writeStmt->BindId(2, GetElementId());
+        writeStmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        rc = writeStmt->Step();
+#else
         BeSQLite::EC::CachedECSqlStatementPtr updStmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE (ECInstanceId=?)");
         updStmt->BindId(2, GetElementId());
         updStmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -545,6 +530,7 @@ DgnModelStatus TestElement::_UpdateInDb()
             insertStmt->BindText(2, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
             rc = insertStmt->Step();
             }
+#endif
         if (BeSQLite::EC::ECSqlStepStatus::Done == rc)
             m_itemState = ItemState::Exists;
         }
@@ -1298,26 +1284,26 @@ TEST_F (ElementDependencyGraph, FailureTest1)
     {
     SetUpForRelationshipTests (L"FailureTest1");
 
-    auto e1 = InsertElement ("E1");
-    auto e2 = InsertElement ("E2");
-    auto e1_e2 = InsertElementDrivesElementRelationship (e1, e2);
+    DgnElementKey e1 = InsertElement ("E1");
+    DgnElementKey e2 = InsertElement ("E2");
+    EC::ECInstanceKey e1_e2 = InsertElementDrivesElementRelationship (e1, e2);
 
-    auto& selectDepRel = GetSelectElementDrivesElementById();
-    selectDepRel.BindId(1, e1_e2.GetECInstanceId());
+    EC::CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
+    selectDepRel->BindId(1, e1_e2.GetECInstanceId());
 
     ITxnManagerR txnMgr = m_db->GetTxnManager();
     txnMgr.CloseCurrentTxn();
 
-    ASSERT_EQ( selectDepRel.Step(), EC::ECSqlStepStatus::HasRow );
-    ASSERT_EQ( selectDepRel.GetValueInt((int)ElementDrivesElementColumn::Status), (int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Satisfied );
+    ASSERT_EQ( selectDepRel->Step(), EC::ECSqlStepStatus::HasRow );
+    ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status), (int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Satisfied );
 
     AbcShouldFail fail;
     TwiddleTime(e1);
     txnMgr.CloseCurrentTxn();
 
-    selectDepRel.Reset();
-    ASSERT_EQ( selectDepRel.Step(), EC::ECSqlStepStatus::HasRow );
-    ASSERT_EQ( selectDepRel.GetValueInt((int)ElementDrivesElementColumn::Status), (int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Failed );
+    selectDepRel->Reset();
+    ASSERT_EQ( selectDepRel->Step(), EC::ECSqlStepStatus::HasRow );
+    ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status), (int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Failed );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1373,10 +1359,10 @@ TEST_F (ElementDependencyGraph, CycleTest2)
     SetUpForRelationshipTests (L"CycleTest1");
 
     //  Two Elements
-    auto e1 = InsertElement ("E1");
-    auto e2 = InsertElement ("E2");
-    auto e3 = InsertElement ("E3");
-    auto e4 = InsertElement ("E4");
+    DgnElementKey e1 = InsertElement ("E1");
+    DgnElementKey e2 = InsertElement ("E2");
+    DgnElementKey e3 = InsertElement ("E3");
+    DgnElementKey e4 = InsertElement ("E4");
 
     //  Forward dependency relationship
     InsertElementDrivesElementRelationship (e1, e2);
@@ -1389,7 +1375,7 @@ TEST_F (ElementDependencyGraph, CycleTest2)
     if (true)
         {
         // Attempt to create backward relationship, which would cause a cycle.
-        auto e4_e2 = InsertElementDrivesElementRelationship (e4, e2);
+        EC::ECInstanceKey e4_e2 = InsertElementDrivesElementRelationship (e4, e2);
 
         // Trigger graph evaluation, which will detect the cycle.
         TwiddleTime (e1);
@@ -1398,9 +1384,9 @@ TEST_F (ElementDependencyGraph, CycleTest2)
         txnMgr.CloseCurrentTxn(); 
  
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
-        auto& getRelDep = GetSelectElementDrivesElementById();
-        getRelDep.BindId(1, e4_e2.GetECInstanceId());
-        ASSERT_EQ( getRelDep.Step() , EC::ECSqlStepStatus::Done );
+        EC::CachedECSqlStatementPtr getRelDep = GetSelectElementDrivesElementById();
+        getRelDep->BindId(1, e4_e2.GetECInstanceId());
+        ASSERT_EQ( getRelDep->Step() , EC::ECSqlStepStatus::Done );
         }
     }
 
