@@ -1163,7 +1163,6 @@ struct ScalarFunction : DbFunction
     //! @param[in] name Function name
     //! @param[in] nArgs Number of function args
     //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
-    //! @param[in] val IScalar implementation
     ScalarFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal) : DbFunction(name, nArgs, returnType) {}
 };
 //=======================================================================================
@@ -2154,16 +2153,16 @@ public:
 
     //! Register a RepositoryLocalValue name with the Db.
     //! @remarks On closing the Db the registration is cleared.
-    //! @param[out] rlvIndex Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
-    //! @param[in] rlvName Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
+    //! @param[out] index Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
+    //! @param[in] name Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
     //! has to ensure that it remains valid for the entire lifetime of the Db object.
     //! @return BE_SQLITE_OK if registration was successful. Error code, if a RepositoryLocalValue with the same
     //! name has already been registered.
     BE_SQLITE_EXPORT DbResult Register(size_t& index, Utf8CP name);
 
     //! Look up the RepositoryLocalValue index for the given name
-    //! @param[out] rlvIndex Found index for the RepositoryLocalValue
-    //! @param[in] rlvName Name of the RepositoryLocalValue
+    //! @param[out] index Found index for the RepositoryLocalValue
+    //! @param[in] name Name of the RepositoryLocalValue
     //! @return true, if the RepositoryLocalValue index was found, i.e. a RepositoryLocalValue is registered for @p rlvName,
     //! false otherwise.
     BE_SQLITE_EXPORT bool TryGetIndex(size_t& index, Utf8CP name);
@@ -2185,7 +2184,7 @@ public:
     //! Increment the RepositoryLocalValue by one for the given @p rlvIndex.
     //! @param[out] newValue Incremented value
     //! @param[in] rlvIndex The index of the RepositoryLocalValue to increment.
-    //! @return BE_SQLITE_OK in case of success. Error code otherwise. If @initialValue is nullptr and
+    //! @return BE_SQLITE_OK in case of success. Error code otherwise. If initialValue is nullptr and
     //!         the RepositoryLocalValue does not exist, and error code is returned.
     //! @see RegisterRepositoryLocalValue
     BE_SQLITE_EXPORT DbResult IncrementValue(int64_t& newValue, size_t rlvIndex);
@@ -2839,9 +2838,10 @@ public:
     BE_SQLITE_EXPORT BeRepositoryId GetRepositoryId() const;
 
     //! Get the next available (unused) value for a BeRepositoryBasedId for the supplied Table/Column.
-    //! @param [in,out] value
-    //! @param [in] tableName
-    //! @param [in] columnName
+    //! @param[in,out] value
+    //! @param[in] tableName
+    //! @param[in] columnName
+    //! @param[in] whereParam optional where parameters
     BE_SQLITE_EXPORT DbResult GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP columnName, NamedParams* whereParam=NULL);
 
     //! Determine whether this Db was opened readonly.
@@ -2909,7 +2909,7 @@ public:
 //__PUBLISH_SECTION_START__
 
     //! Check if the Db is at or beyond its expiration date.
-    //! See #SetExpirationDate.
+    //! See CreateParams::SetExpirationDate.
     BE_SQLITE_EXPORT bool IsExpired() const;
 
     //! Query the ExpirationDate property of this database.
@@ -3068,7 +3068,7 @@ public:
 
     //! Save this compressed value as a blob in a Db.
     //! @param[in] db the SQLite database to write
-    //! @param[in] tablename the name of the table to write
+    //! @param[in] tableName the name of the table to write
     //! @param[in] column the column to write
     //! @param[in] rowId the rowId to write
     //! @note The cell in the db at tableName[column,rowId] must be an existing blob of #GetCompressedSize bytes. This method cannot be used to
