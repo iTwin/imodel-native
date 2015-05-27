@@ -25,8 +25,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterModel : BentleyApi::DgnPlatform::RasterBase
 
 protected:
     friend struct RasterModelHandler;
-    friend struct RasterProgressiveDisplay;
-
+    
     //! Destruct a RasterModel object.
     ~RasterModel();
 

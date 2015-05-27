@@ -82,7 +82,7 @@
     <!-- ////////////////////////////   PointCloudSchema   /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="PointCloudSchema" OnlyPlatforms="x86,x64" BMakeFile="PointCloudSchema/PointCloudSchema.mke" >
+    <Part Name="PointCloudSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="PointCloudSchema/PointCloudSchema.mke" >
         <SubPart PartName="PointCloudSchemaPublicAPI"/>
         <SubPart PartName="PointCloudSchemaSubParts"/>
         <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
@@ -113,19 +113,16 @@
     <!-- ////////////////////////////     RasterSchema     /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="RasterSchema" OnlyPlatforms="x86,x64" BMakeFile="RasterSchema/RasterSchema.mke" >
+    <Part Name="RasterSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="RasterSchema/RasterSchema.mke" >
         <SubPart PartName="RasterSchemaPublicAPI"/>
-        <SubPart PartName="RasterSchemaSubParts"/>
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="GeoCoord"        PartFile="GeoCoord"     Repository="geocoord"/>
+        <!-- Need full data to decode EPSG code -->
+        <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>
             <Assemblies ProductDirectoryName="RasterAssemblies">Delivery/$(shlibprefix)RasterSchema$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)RasterSchema$(libext)</Libs>
         </Bindings>
-    </Part>
-
-    <Part Name="RasterSchemaSubParts">
-        <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
     </Part>
 
     <Part Name="RasterSchemaPublicAPI" BentleyBuildMakeFile="RasterSchema/RasterSchema.prewire.mke">
