@@ -6,44 +6,44 @@
 #
 #--------------------------------------------------------------------------------------
 
-MkiPublicApiDir = $(ClientPublicApiDirectory)Client/
-MkiSourceDir = $(ClientSourceDirectory)Client/
+ClientMkiPublicApiDir = $(ClientPublicApiDirectory)Client/
+ClientMkiSourceDir = $(ClientSourceDirectory)Client/
 
 #--------------------------------------------------------------------------------------
-#   Set up build dependencies
+#   Set up build dependencies for precompiled header and Client.mki
 #--------------------------------------------------------------------------------------
-MkiHeaders =    $(MkiPublicApiDir)ObjectId.h                           \
-                $(MkiPublicApiDir)Response/WSCreateObjectResponse.h    \
-                $(MkiPublicApiDir)Response/WSFileResponse.h            \
-                $(MkiPublicApiDir)Response/WSObjectsReader.h           \
-                $(MkiPublicApiDir)Response/WSObjectsReaderV1.h         \
-                $(MkiPublicApiDir)Response/WSObjectsReaderV2.h         \
-                $(MkiPublicApiDir)Response/WSObjectsResponse.h         \
-                $(MkiPublicApiDir)WSClient.h                           \
-                $(MkiPublicApiDir)WSError.h                            \
-                $(MkiPublicApiDir)WSInfo.h                             \
-                $(MkiPublicApiDir)WSQuery.h                            \
-                $(MkiPublicApiDir)WSRepository.h                       \
-                $(MkiPublicApiDir)WSRepositoryClient.h                 \
-                $(MkiSourceDir)ChunkedUploadRequest.h                  \
-                $(MkiSourceDir)ClientConfiguration.h                   \
-                $(MkiSourceDir)ClientConnection.h                      \
-                $(MkiSourceDir)ClientInternal.h                        \
-                $(MkiSourceDir)ServerInfoProvider.h                    \
-                $(MkiSourceDir)Utils.h                                 \
-                $(MkiSourceDir)WebApi/WebApi.h                         \
-                $(MkiSourceDir)WebApi/WebApiV1.h                       \
-                $(MkiSourceDir)WebApi/WebApiV1BentleyConnect.h         \
-                $(MkiSourceDir)WebApi/WebApiV2.h                       \
-                $(MkiSourceDir)WSError.xliff.h                         
+ClientMkiHeaders =  $(ClientMkiPublicApiDir)ObjectId.h                           \
+                    $(ClientMkiPublicApiDir)Response/WSCreateObjectResponse.h    \
+                    $(ClientMkiPublicApiDir)Response/WSFileResponse.h            \
+                    $(ClientMkiPublicApiDir)Response/WSObjectsReader.h           \
+                    $(ClientMkiPublicApiDir)Response/WSObjectsReaderV1.h         \
+                    $(ClientMkiPublicApiDir)Response/WSObjectsReaderV2.h         \
+                    $(ClientMkiPublicApiDir)Response/WSObjectsResponse.h         \
+                    $(ClientMkiPublicApiDir)WSClient.h                           \
+                    $(ClientMkiPublicApiDir)WSError.h                            \
+                    $(ClientMkiPublicApiDir)WSInfo.h                             \
+                    $(ClientMkiPublicApiDir)WSQuery.h                            \
+                    $(ClientMkiPublicApiDir)WSRepository.h                       \
+                    $(ClientMkiPublicApiDir)WSRepositoryClient.h                 \
+                    $(ClientMkiSourceDir)ChunkedUploadRequest.h                  \
+                    $(ClientMkiSourceDir)ClientConfiguration.h                   \
+                    $(ClientMkiSourceDir)ClientConnection.h                      \
+                    $(ClientMkiSourceDir)ClientInternal.h                        \
+                    $(ClientMkiSourceDir)ServerInfoProvider.h                    \
+                    $(ClientMkiSourceDir)Utils.h                                 \
+                    $(ClientMkiSourceDir)WebApi/WebApi.h                         \
+                    $(ClientMkiSourceDir)WebApi/WebApiV1.h                       \
+                    $(ClientMkiSourceDir)WebApi/WebApiV1BentleyConnect.h         \
+                    $(ClientMkiSourceDir)WebApi/WebApiV2.h                       \
+                    $(ClientMkiSourceDir)WSError.xliff.h                         
 
 #----------------------------------------------------------------------
 #   Make sure that ClientInternal.pch is up-to-date.
 #----------------------------------------------------------------------
-PchCompiland        = $(MkiSourceDir)ClientInternal.cpp
+PchCompiland        = $(ClientMkiSourceDir)ClientInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
-PchExplicitDepends  = $(MkiHeaders)
+PchExplicitDepends  = $(ClientMkiHeaders)
 
 %if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
     # Avoid internal compiler error in GCC using windows ndk toolchain
@@ -65,46 +65,46 @@ MultiCompileDepends=$(_MakeFileSpec)
 #   Compile
 #--------------------------------------------------------------------------------------
 
-$(o)ChunkedUploadRequest$(oext)             : $(MkiSourceDir)ChunkedUploadRequest.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ChunkedUploadRequest$(oext)             : $(ClientMkiSourceDir)ChunkedUploadRequest.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)ClientConfiguration$(oext)              : $(MkiSourceDir)ClientConfiguration.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ClientConfiguration$(oext)              : $(ClientMkiSourceDir)ClientConfiguration.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)ClientConnection$(oext)                 : $(MkiSourceDir)ClientConnection.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ClientConnection$(oext)                 : $(ClientMkiSourceDir)ClientConnection.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)ObjectId$(oext)                         : $(MkiSourceDir)ObjectId.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ObjectId$(oext)                         : $(ClientMkiSourceDir)ObjectId.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)ServerInfoProvider$(oext)               : $(MkiSourceDir)ServerInfoProvider.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ServerInfoProvider$(oext)               : $(ClientMkiSourceDir)ServerInfoProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)Utils$(oext)                            : $(MkiSourceDir)Utils.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)Utils$(oext)                            : $(ClientMkiSourceDir)Utils.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSClient$(oext)                         : $(MkiSourceDir)WSClient.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSClient$(oext)                         : $(ClientMkiSourceDir)WSClient.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSError$(oext)                          : $(MkiSourceDir)WSError.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSError$(oext)                          : $(ClientMkiSourceDir)WSError.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSInfo$(oext)                           : $(MkiSourceDir)WSInfo.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSInfo$(oext)                           : $(ClientMkiSourceDir)WSInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSQuery$(oext)                          : $(MkiSourceDir)WSQuery.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSQuery$(oext)                          : $(ClientMkiSourceDir)WSQuery.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSRepository$(oext)                     : $(MkiSourceDir)WSRepository.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSRepository$(oext)                     : $(ClientMkiSourceDir)WSRepository.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSRepositoryClient$(oext)               : $(MkiSourceDir)WSRepositoryClient.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSRepositoryClient$(oext)               : $(ClientMkiSourceDir)WSRepositoryClient.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSCreateObjectResponse$(oext)           : $(MkiSourceDir)Response/WSCreateObjectResponse.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSCreateObjectResponse$(oext)           : $(ClientMkiSourceDir)Response/WSCreateObjectResponse.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSFileResponse$(oext)                   : $(MkiSourceDir)Response/WSFileResponse.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSFileResponse$(oext)                   : $(ClientMkiSourceDir)Response/WSFileResponse.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSObjectsReader$(oext)                  : $(MkiSourceDir)Response/WSObjectsReader.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSObjectsReader$(oext)                  : $(ClientMkiSourceDir)Response/WSObjectsReader.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSObjectsReaderV1$(oext)                : $(MkiSourceDir)Response/WSObjectsReaderV1.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSObjectsReaderV1$(oext)                : $(ClientMkiSourceDir)Response/WSObjectsReaderV1.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSObjectsReaderV2$(oext)                : $(MkiSourceDir)Response/WSObjectsReaderV2.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSObjectsReaderV2$(oext)                : $(ClientMkiSourceDir)Response/WSObjectsReaderV2.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSObjectsResponse$(oext)                : $(MkiSourceDir)Response/WSObjectsResponse.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WSObjectsResponse$(oext)                : $(ClientMkiSourceDir)Response/WSObjectsResponse.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WebApi$(oext)                           : $(MkiSourceDir)WebApi/WebApi.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WebApi$(oext)                           : $(ClientMkiSourceDir)WebApi/WebApi.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WebApiV1$(oext)                         : $(MkiSourceDir)WebApi/WebApiV1.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WebApiV1$(oext)                         : $(ClientMkiSourceDir)WebApi/WebApiV1.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WebApiV1BentleyConnect$(oext)           : $(MkiSourceDir)WebApi/WebApiV1BentleyConnect.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WebApiV1BentleyConnect$(oext)           : $(ClientMkiSourceDir)WebApi/WebApiV1BentleyConnect.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WebApiV2$(oext)                         : $(MkiSourceDir)WebApi/WebApiV2.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)WebApiV2$(oext)                         : $(ClientMkiSourceDir)WebApi/WebApiV2.cpp $(ClientMkiHeaders) ${MultiCompileDepends}

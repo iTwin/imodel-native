@@ -6,46 +6,46 @@
 #
 #---------------------------------------------------------------------------------------+
 
-MkiPublicApiDir = $(ClientPublicApiDirectory)Connect/
-MkiSourceDir = $(ClientSourceDirectory)Connect/
+ConnectMkiPublicApiDir = $(ClientPublicApiDirectory)Connect/
+ConnectMkiSourceDir = $(ClientSourceDirectory)Connect/
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-MkiHeaders =    $(MkiPublicApiDir)Authentication.h                      \
-                $(MkiPublicApiDir)Connect.h                             \
-                $(MkiPublicApiDir)ConnectAuthenticationHandler.h        \
-                $(MkiPublicApiDir)ConnectAuthenticationPersistence.h    \
-                $(MkiPublicApiDir)ConnectMessaging.h                    \
-                $(MkiPublicApiDir)ConnectSetup.h                        \
-                $(MkiPublicApiDir)ConnectSpaces.h                       \
-                $(MkiPublicApiDir)ConnectTokenProvider.h                \
-                $(MkiPublicApiDir)IConnectAuthenticationPersistence.h   \
-                $(MkiPublicApiDir)IConnectTokenProvider.h               \
-                $(MkiPublicApiDir)Passport.h                            \
-                $(MkiPublicApiDir)SamlToken.h                           \
-                $(MkiSourceDir)AuthenticationData.h
+ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                      \
+                    $(ConnectMkiPublicApiDir)Connect.h                             \
+                    $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h        \
+                    $(ConnectMkiPublicApiDir)ConnectAuthenticationPersistence.h    \
+                    $(ConnectMkiPublicApiDir)ConnectMessaging.h                    \
+                    $(ConnectMkiPublicApiDir)ConnectSetup.h                        \
+                    $(ConnectMkiPublicApiDir)ConnectSpaces.h                       \
+                    $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                \
+                    $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h   \
+                    $(ConnectMkiPublicApiDir)IConnectTokenProvider.h               \
+                    $(ConnectMkiPublicApiDir)Passport.h                            \
+                    $(ConnectMkiPublicApiDir)SamlToken.h                           \
+                    $(ConnectMkiSourceDir)AuthenticationData.h
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
 #---------------------------------------------------------------------------------------+
-$(o)Authentication$(oext)                   : $(MkiSourceDir)Authentication.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)Authentication$(oext)                   : $(ConnectMkiSourceDir)Authentication.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)AuthenticationData$(oext)               : $(MkiSourceDir)AuthenticationData.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)AuthenticationData$(oext)               : $(ConnectMkiSourceDir)AuthenticationData.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)Connect$(oext)                          : $(MkiSourceDir)Connect.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)Connect$(oext)                          : $(ConnectMkiSourceDir)Connect.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)ConnectAuthenticationHandler$(oext)     : $(MkiSourceDir)ConnectAuthenticationHandler.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ConnectAuthenticationHandler$(oext)     : $(ConnectMkiSourceDir)ConnectAuthenticationHandler.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)ConnectAuthenticationPersistence$(oext) : $(MkiSourceDir)ConnectAuthenticationPersistence.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ConnectAuthenticationPersistence$(oext) : $(ConnectMkiSourceDir)ConnectAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)ConnectSetup$(oext)                     : $(MkiSourceDir)ConnectSetup.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ConnectSetup$(oext)                     : $(ConnectMkiSourceDir)ConnectSetup.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)ConnectSpaces$(oext)                    : $(MkiSourceDir)ConnectSpaces.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ConnectSpaces$(oext)                    : $(ConnectMkiSourceDir)ConnectSpaces.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)ConnectTokenProvider$(oext)             : $(MkiSourceDir)ConnectTokenProvider.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)ConnectTokenProvider$(oext)             : $(ConnectMkiSourceDir)ConnectTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)Passport$(oext)                         : $(MkiSourceDir)Passport.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)Passport$(oext)                         : $(ConnectMkiSourceDir)Passport.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)SamlToken$(oext)                        : $(MkiSourceDir)SamlToken.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)SamlToken$(oext)                        : $(ConnectMkiSourceDir)SamlToken.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 

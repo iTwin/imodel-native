@@ -6,18 +6,18 @@
 #
 #--------------------------------------------------------------------------------------
 
-MkiPublicApiDir = $(ClientPublicApiDirectory)Licensing/
-MkiSourceDir = $(ClientSourceDirectory)Licensing/
+LicensingMkiPublicApiDir = $(ClientPublicApiDirectory)Licensing/
+LicensingMkiSourceDir = $(ClientSourceDirectory)Licensing/
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-MkiHeaders =    $(MkiPublicApiDir)MobileTracking.h \
-                $(MkiPublicApiDir)UsageTracking.h                     
+LicensingMkiHeaders =   $(LicensingMkiPublicApiDir)MobileTracking.h \
+                        $(LicensingMkiPublicApiDir)UsageTracking.h                     
 
 #--------------------------------------------------------------------------------------
 #   Compile
 #--------------------------------------------------------------------------------------
-$(o)MobileTracking$(oext)       : $(MkiSourceDir)MobileTracking.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)MobileTracking$(oext)       : $(LicensingMkiSourceDir)MobileTracking.cpp $(LicensingMkiHeaders) ${MultiCompileDepends}
 
-$(o)UsageTracking$(oext)        : $(MkiSourceDir)UsageTracking.cpp $(MkiHeaders) ${MultiCompileDepends}
+$(o)UsageTracking$(oext)        : $(LicensingMkiSourceDir)UsageTracking.cpp $(LicensingMkiHeaders) ${MultiCompileDepends}
