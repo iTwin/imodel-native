@@ -115,6 +115,7 @@
     @li @subpage ECDbTransactions
     @li @subpage ECDbCreatingECDbFromScratch
     @li @subpage ECDbCodeSamples
+    @li @subpage ECDbSchemaMappingCustomization
 
     @see @ref ECDbOverview
     */
