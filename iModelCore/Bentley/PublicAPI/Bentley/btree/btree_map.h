@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/btree/btree_map.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,7 +72,7 @@ To understand the @c bmap class, consult the documentation for @c std::map.
 @ingroup BeCollectionsGroup
 */
 //=======================================================================================
-template <typename Key, typename Value, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 32,
+template <typename Key, typename Value, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 16,
           typename Alloc = Bentley::BentleyAllocator<bpair<const Key, Value> > >
 class bmap : public bmap_container<
       btree<bmap_params<Key, Value, Compare, Alloc, EntriesPerNode*sizeof(bpair<Key, Value>) > > > {
