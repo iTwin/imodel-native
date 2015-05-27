@@ -538,23 +538,33 @@ TEST_F (TransactionManagerTests, ElementInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus insertItem(GeometricElementCR el, Utf8CP propValue)
+static BeSQLite::EC::ECSqlStepStatus deleteItem(GeometricElementCR el)
     {
-    BeSQLite::EC::CachedECSqlStatementPtr itemStmt = el.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " (ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES (?,?)");
+    BeSQLite::EC::CachedECSqlStatementPtr itemStmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " WHERE(ECInstanceId=?)");
     itemStmt->BindId(1, el.GetElementId());
-    itemStmt->BindText(2, propValue, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    return (BeSQLite::EC::ECSqlStepStatus::Done == itemStmt->Step())? BSISUCCESS: BSIERROR;
+    return itemStmt->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus updateItemProperty(GeometricElementCR el, Utf8CP propValue)
+static BeSQLite::EC::ECSqlStepStatus insertItem(GeometricElementCR el, Utf8CP propValue)
+    {
+    BeSQLite::EC::CachedECSqlStatementPtr itemStmt = el.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " (ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES (?,?)");
+    itemStmt->BindId(1, el.GetElementId());
+    itemStmt->BindText(2, propValue, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    return itemStmt->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeSQLite::EC::ECSqlStepStatus updateItemProperty(GeometricElementCR el, Utf8CP propValue)
     {
     BeSQLite::EC::CachedECSqlStatementPtr itemStmt = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE (ECInstanceId=?)");
     itemStmt->BindId(2, el.GetElementId());
     itemStmt->BindText(1, propValue, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    return (BeSQLite::EC::ECSqlStepStatus::Done == itemStmt->Step())? BSISUCCESS: BSIERROR;
+    return itemStmt->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -613,8 +623,13 @@ TEST_F (TransactionManagerTests, ElementItem)
 
     checkItemProperty(*el, false, nullptr);
 
-    //  Add an ElementItem
-    ASSERT_EQ( BSISUCCESS , insertItem(*el, TMTEST_TEST_ITEM_TestItemProperty) );
+    // ***
+    // *** NEEDS WORK: Must update element timestamp manually, before I insert an item, so that txn manager knows that I am modifying its content ***
+    // ***
+    el->GetDgnDb().Elements().UpdateLastModifiedTime(el->GetElementId());
+
+    //  Add an item
+    ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , insertItem(*el, initialTestPropValue) );
 
     checkItemProperty(*el, true, initialTestPropValue);
 
@@ -624,46 +639,11 @@ TEST_F (TransactionManagerTests, ElementItem)
 
     checkItemProperty(*el, true, changedTestPropValue); // item should now be in the DB
 
-#ifdef WIP_ECSQL_BUG_DELETE_ITEM 
-    if (true)
-        {
-        EditElementHandle elChange(key1.GetElementId(), GetDefaultModel());
-        GeometricElement* modifiedEl = const_cast<GeometricElement*>(elChange.GetWriteableElement()->_ToGeometricElement());
+    //  Delete the item
 
-        ECN::IECInstanceP existingItem = modifiedEl->GetItemP();
-        ASSERT_NE( existingItem , nullptr );
-        modifiedEl->RemoveItem();
-
-        checkItemProperty(*el, true, changedTestPropValue); // item property should still be there in the DB
-        checkItemProperty(*modifiedEl, false, nullptr); // item property should appear to be gone on the modified copy
-
-        ASSERT_EQ( BSISUCCESS , elChange.ReplaceInModel() );
-        }
+    ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , deleteItem(*el) );
 
     checkItemProperty(*el, false, nullptr); // item should now be gone in the DB
-#endif
-
-#ifdef WIP_ECSQL_BUG // *** ECDb - Invalid ECSQL 'SELECT TestItemProperty FROM ONLY [DgnPlatformTest].[TestItem] I JOIN ONLY [DgnPlatformTest].[TestElement] E USING [dgn].[ElementOwnsItem] WHERE SourceECInstanceId = ?': No ECClass in the FROM and JOIN clauses matches the ends of the relationship 'dgn:ElementOwnsItem'.
-    Utf8CP  testPropValueA = "Test";
-    ECN::ECClassCP testElementClass = TestElementHandler::GetHandler().GetTestElementECClass(*m_db);
-    ECN::ECRelationshipClassCP elementOwnsItemRelationshipClass = static_cast<ECN::ECRelationshipClassCP>(m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsItem));
-    // verify that the ElementOwnsItem relationship was created
-    EC::ECSqlSelectBuilder b;
-    b.Select(TMTEST_TEST_ITEM_TestItemPropertyA).From(*testItemClass, false).Join(*testElementClass, "e", false).Using(*elementOwnsItemRelationshipClass).Where("e", "?");
-
-    ECSqlStatement findItemViaRel;
-    findItemViaRel.Prepare(*m_db, b.ToString().c_str());
-    findItemViaRel.BindId(1, key1.GetElementId());
-    ASSERT_EQ( findItemViaRel.Step() , EC::ECSqlStepStatus::HasRow );
-    ASSERT_STREQ( findItemViaRel.GetValueText(0) , testPropValueA );
-#endif
-
-/* try:
-    "SELECT i.TestItemProperty "
-    " FROM " testItemClass " i "
-    " JOIN " testElementClass " e USING " elementOwnsItemRelationshipClass 
-    " WHERE e.ECInstanceId=?"
-*/
     }
 
 /*---------------------------------------------------------------------------------**//**
