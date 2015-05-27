@@ -6,15 +6,15 @@
 #
 #--------------------------------------------------------------------------------------
 
-MkiPublicApiDir = $(ClientPublicApiDirectory)Configuration/
-MkiSourceDir = $(ClientSourceDirectory)Configuration/
+ConfigurationMkiPublicApiDir = $(ClientPublicApiDirectory)Configuration/
+ConfigurationMkiSourceDir = $(ClientSourceDirectory)Configuration/
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-Headers   = $(MkiPublicApiDir)UrlProvider.h                      
+ConfigurationMkiHeaders = $(ConfigurationMkiPublicApiDir)UrlProvider.h                      
 
 #--------------------------------------------------------------------------------------
 #   Compile
 #--------------------------------------------------------------------------------------
-$(o)UrlProvider$(oext) : $(MkiSourceDir)UrlProvider.cpp $(Headers) ${MultiCompileDepends}
+$(o)UrlProvider$(oext) : $(ConfigurationMkiSourceDir)UrlProvider.cpp $(ConfigurationMkiHeaders) ${MultiCompileDepends}
