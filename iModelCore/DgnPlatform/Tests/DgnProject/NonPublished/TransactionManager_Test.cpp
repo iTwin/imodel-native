@@ -20,7 +20,7 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-namespace {
+BEGIN_UNNAMED_NAMESPACE
 
 static bool s_abcShouldFail;
 
@@ -33,31 +33,20 @@ struct ABCHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
     DOMAINHANDLER_DECLARE_MEMBERS (TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
 
     bvector<EC::ECInstanceId> m_relIds;
-
-    void _OnRootChanged (DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR) override
-        {
-        if (s_abcShouldFail)
-            db.GetTxnManager().ReportValidationError(*new ITxnManager::ValidationError(ITxnManager::ValidationError::Severity::Warning, "ABC failed"));
-        m_relIds.push_back (relationshipId);
-        }
-
+    void _OnRootChanged (DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR) override;
     void Clear() {m_relIds.clear();}
     };
 
 HANDLER_DEFINE_MEMBERS(ABCHandler)
 
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
 struct AbcShouldFail
     {
     AbcShouldFail() {s_abcShouldFail = true;}
     ~AbcShouldFail() {s_abcShouldFail = false;}
     };
-
-static bvector<EC::ECInstanceId>::const_iterator findRelId (bvector<EC::ECInstanceId> const& rels, EC::ECInstanceKey eid)
-    {
-    return std::find (rels.begin(), rels.end(), eid.GetECInstanceId());
-    }
-
-struct TestElementHandler;
 
 //=======================================================================================
 //! A test Element
@@ -66,31 +55,15 @@ struct TestElementHandler;
 struct TestElement : DgnPlatform::PhysicalElement
 {
     DEFINE_T_SUPER(DgnPlatform::PhysicalElement)
-
 private:
     friend struct TestElementHandler;
-
     TestElement(CreateParams const& params) : T_Super(params) {} 
+public:
+    static ECN::ECClassCP GetTestElementECClass (DgnDbR db) {return db.Schemas().GetECClass (TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME);}
+    static RefCountedPtr<TestElement> Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
 };
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-static CurveVectorPtr computeShape()
-    {
-    static const double PLANE_LEN = 100;
-
-    DPoint3d pts[6];
-    pts[0] = DPoint3d::From (-PLANE_LEN,-PLANE_LEN);
-    pts[1] = DPoint3d::From (+PLANE_LEN,-PLANE_LEN);
-    pts[2] = DPoint3d::From (+PLANE_LEN,+PLANE_LEN);
-    pts[3] = DPoint3d::From (-PLANE_LEN,+PLANE_LEN);
-    pts[4] = pts[0];
-    pts[5] = pts[0];
-    pts[5].z = 1;
-
-    return CurveVector::CreateLinear(pts, _countof(pts), CurveVector::BOUNDARY_TYPE_Open);
-    }
+typedef RefCountedPtr<TestElement> TestElementPtr;
 
 //=======================================================================================
 //! A test ElementHandler
@@ -99,33 +72,6 @@ static CurveVectorPtr computeShape()
 struct TestElementHandler : DgnPlatform::ElementHandler
 {
     ELEMENTHANDLER_DECLARE_MEMBERS ("TestElement", TestElement, TestElementHandler, DgnPlatform::ElementHandler, )
-
-
-    ECN::ECClassCP GetTestElementECClass (DgnDbR db)
-        {
-        return db.Schemas().GetECClass (TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME);
-        }
-
-    DgnElementKey InsertElement (DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
-        {
-        DgnModelP model = db.Models().GetModel(mid);
-        DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
-        GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
-
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
-
-        builder->Append(*computeShape());
-
-        if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
-            return DgnElementKey();
-
-        return db.Elements().Insert(*testElement)->GetElementKey();
-        }
-
-    DgnModelStatus DeleteElement (DgnDbR db, DgnElementId eid)
-        {
-        return db.Elements().Delete(eid);
-        }
 };
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
@@ -143,24 +89,6 @@ public:
 
 DOMAIN_DEFINE_MEMBERS(TransactionManagerTestDomain)
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransactionManagerTestDomain::TransactionManagerTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "DgnProject Test Schema", 1)
-    {
-    RegisterHandler(TestElementHandler::GetHandler());
-    RegisterHandler(ABCHandler::GetHandler());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .dgndb project file after copying it to out
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool isElementIdInKeySet (bset<EC::ECInstanceId> const& theSet, DgnElementId element)
-    {
-    return theSet.find (element) != theSet.end();
-    }
-
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
@@ -171,49 +99,17 @@ struct TxnMonitorVerifier : TxnMonitor
     bool m_OnTxnReversedCalled;
     bset<EC::ECInstanceId> m_adds, m_deletes, m_mods;
 
-    TxnMonitorVerifier () 
-        {
-        DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
-        Clear ();
-        }
-
-    ~TxnMonitorVerifier ()
-        {
-        DgnPlatformLib::GetHost().GetTxnAdmin().DropTxnMonitor(*this);
-        }
-
-    void Clear() 
-        {
-        m_OnTxnClosedCalled = m_OnTxnReverseCalled = m_OnTxnReversedCalled = false;
-        m_adds.clear(); m_deletes.clear(); m_mods.clear();
-        }
-
-    virtual void _OnTxnBoundary (TxnSummaryCR summary) override 
-        {
-        m_OnTxnClosedCalled = true;
-        Statement stmt;
-        stmt.Prepare (summary.GetDgnDb(), Utf8PrintfString("SELECT ElementId, Op FROM %s", summary.GetChangedElementsTableName().c_str()));
-        while (stmt.Step() == BE_SQLITE_ROW)
-            {
-            auto eid = stmt.GetValueId<DgnElementId> (0);
-            switch (*stmt.GetValueText(1))
-                {
-                case '+': m_adds.insert (eid); break;
-                case '-': m_deletes.insert (eid); break;
-                case '*': m_mods.insert (eid); break;
-                default:
-                    FAIL();
-                }
-            }
-        }
+    TxnMonitorVerifier();
+    ~TxnMonitorVerifier();
+    void Clear();
+    virtual void _OnTxnBoundary (TxnSummaryCR summary) override;
     virtual void _OnTxnReverse (TxnSummaryCR, TxnDirection isUndo) override {m_OnTxnReverseCalled = true;}
     virtual void _OnTxnReversed (TxnSummaryCR, TxnDirection isUndo) override {m_OnTxnReversedCalled = true;}
     };
 
-/*---------------------------------------------------------------------------------**//**
-* Test fixture for testing Transaction Manager
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
 struct TransactionManagerTests : public ::testing::Test
 {
 public:
@@ -222,36 +118,163 @@ public:
     DgnModelId    m_defaultModelId;
     DgnCategoryId m_defaultCategoryId;
 
-    TransactionManagerTests()
+    TransactionManagerTests();
+    ~TransactionManagerTests();
+    void CloseDb() {m_db->CloseDb();}
+    DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
+    void SetupProject (WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mode);
+    DgnElementKey InsertElement (Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    void TwiddleTime (DgnElementKeyCR ekey);
+};
+
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
+struct ElementDependencyGraph : TransactionManagerTests
+{
+    enum class ElementDrivesElementColumn {DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,Status};
+
+    struct ElementsAndRelationships
         {
-        // Must register my domain whenever I initialize a host
-        DgnDomains::RegisterDomain(TransactionManagerTestDomain::GetDomain()); 
-        }
+        DgnElementKey e99, e3, e31, e2, e1;
+        EC::ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
+        };
+
+    EC::ECSqlStatement m_insertParentChildRelationshipStatement;
+    EC::ECSqlStatement m_insertElementDrivesElementRelationshipStatement;
+    EC::ECSqlStatement m_selectElementDrivesElementById;
     
-    ~TransactionManagerTests()
-        {
-        FinalizeStatements();
-        m_db->GetTxnManager().Deactivate(); // finalizes TxnManager's prepared statements
-        }
+    void FinalizeStatements();
+    ~ElementDependencyGraph();
+  
+    WString GetTestFileName (WCharCP testname);
+    ECN::ECClassCR GetElementDrivesElementClass();
 
-    void CloseDb()
-        {
-        FinalizeStatements();
-        m_db->CloseDb();
-        }
+    EC::ECSqlStatement& GetSelectElementDrivesElementById();
+    void SetUpForRelationshipTests (WCharCP testname);
+    EC::ECInstanceKey InsertElementDrivesElementRelationship (DgnElementKeyCR root, DgnElementKeyCR dependent);
 
-    DgnModelR GetDefaultModel()
-        {
-        return *m_db->Models().GetModel(m_defaultModelId);
-        }
+    void TestTPS (DgnElementKeyCR e1, DgnElementKeyCR e2, size_t ntimes);
+    void TestOverlappingOrder(DgnElementKeyCR r1, EC::ECInstanceKeyCR r1_d3, EC::ECInstanceKeyCR r2_d3, bool r1First);
+    void TestRelationships (DgnDb& db, ElementsAndRelationships const&);
+};
 
-    virtual void FinalizeStatements() {}
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
+struct Performance_ElementDependencyGraph : ElementDependencyGraph
+{
+    void DoPerformanceShallow(size_t depCount);
+};
+
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SetupProject (WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mode)
+static bool isElementIdInKeySet (bset<EC::ECInstanceId> const& theSet, DgnElementId element)
+    {
+    return theSet.find (element) != theSet.end();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+static bvector<EC::ECInstanceId>::const_iterator findRelId (bvector<EC::ECInstanceId> const& rels, EC::ECInstanceKey eid)
+    {
+    return std::find (rels.begin(), rels.end(), eid.GetECInstanceId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnMonitorVerifier::TxnMonitorVerifier () 
+    {
+    DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
+    Clear ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnMonitorVerifier::~TxnMonitorVerifier ()
+    {
+    DgnPlatformLib::GetHost().GetTxnAdmin().DropTxnMonitor(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnMonitorVerifier::Clear() 
+    {
+    m_OnTxnClosedCalled = m_OnTxnReverseCalled = m_OnTxnReversedCalled = false;
+    m_adds.clear(); m_deletes.clear(); m_mods.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnMonitorVerifier::_OnTxnBoundary (TxnSummaryCR summary)
+    {
+    m_OnTxnClosedCalled = true;
+    Statement stmt;
+    stmt.Prepare (summary.GetDgnDb(), Utf8PrintfString("SELECT ElementId, Op FROM %s", summary.GetChangedElementsTableName().c_str()));
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        auto eid = stmt.GetValueId<DgnElementId> (0);
+        switch (*stmt.GetValueText(1))
+            {
+            case '+': m_adds.insert (eid); break;
+            case '-': m_deletes.insert (eid); break;
+            case '*': m_mods.insert (eid); break;
+            default:
+                FAIL();
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TransactionManagerTestDomain::TransactionManagerTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "DgnProject Test Schema", 1)
+    {
+    RegisterHandler(TestElementHandler::GetHandler());
+    RegisterHandler(ABCHandler::GetHandler());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+void ABCHandler::_OnRootChanged (DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR)
+    {
+    if (s_abcShouldFail)
+        db.GetTxnManager().ReportValidationError(*new ITxnManager::ValidationError(ITxnManager::ValidationError::Severity::Warning, "ABC failed"));
+    m_relIds.push_back (relationshipId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TransactionManagerTests::TransactionManagerTests ()
+    {
+    // Must register my domain whenever I initialize a host
+    DgnDomains::RegisterDomain(TransactionManagerTestDomain::GetDomain()); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TransactionManagerTests::~TransactionManagerTests ()
+    {
+    m_db->GetTxnManager().Deactivate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* set up method that opens an existing .dgndb project file after copying it to out
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TransactionManagerTests::SetupProject (WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mode)
     {
     BeFileName outFileName;
     ASSERT_EQ (SUCCESS, DgnDbTestDgnManager::GetTestDataOut (outFileName, projFile, testFile, __FILE__));
@@ -268,7 +291,7 @@ void SetupProject (WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mo
 
     auto schema = m_db->Schemas().GetECSchema (TMTEST_SCHEMA_NAME, true);
     ASSERT_NE( nullptr , schema );
-    ASSERT_NE( nullptr ,  TestElementHandler::GetHandler().GetTestElementECClass(*m_db) );
+    ASSERT_NE( nullptr ,  TestElement::GetTestElementECClass(*m_db) );
     ASSERT_NE( nullptr ,  m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
@@ -282,7 +305,7 @@ void SetupProject (WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey InsertElement (Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId())
+DgnElementKey TransactionManagerTests::InsertElement (Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId )
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -290,66 +313,66 @@ DgnElementKey InsertElement (Utf8CP elementCode, DgnModelId mid = DgnModelId(), 
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    return TestElementHandler::GetHandler().InsertElement (*m_db, mid, categoryId, elementCode);
+    TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+    return m_db->Elements().Insert(*el)->GetElementKey();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TwiddleTime (DgnElementKeyCR ekey)
+void TransactionManagerTests::TwiddleTime (DgnElementKeyCR ekey)
     {
     BeThreadUtilities::BeSleep(1); // make sure the new timestamp is after the one that's on the Element now
     m_db->Elements().UpdateLastModifiedTime (ekey.GetElementId());
     }
 
-};
-
 /*---------------------------------------------------------------------------------**//**
-* Test fixture for testing Transaction Manager
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ElementDependencyGraph : TransactionManagerTests
-{
-public:
-    EC::ECSqlStatement m_insertParentChildRelationshipStatement;
-    EC::ECSqlStatement m_insertElementDrivesElementRelationshipStatement;
-    EC::ECSqlStatement m_selectElementDrivesElementById;
-    
-    void FinalizeStatements() 
-        {
-        TransactionManagerTests::FinalizeStatements();
-        m_insertParentChildRelationshipStatement.Finalize();
-        m_insertElementDrivesElementRelationshipStatement.Finalize();
-        }
+void ElementDependencyGraph::FinalizeStatements() 
+    {
+    m_insertParentChildRelationshipStatement.Finalize();
+    m_insertElementDrivesElementRelationshipStatement.Finalize();
+    }
 
-    ~ElementDependencyGraph() {FinalizeStatements();}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementDependencyGraph::~ElementDependencyGraph() 
+    {
+    FinalizeStatements();
+    }
 
-    void TestTPS (DgnElementKeyCR e1, DgnElementKeyCR e2, size_t ntimes);
-    void TestOverlappingOrder(DgnElementKeyCR r1, EC::ECInstanceKeyCR r1_d3, EC::ECInstanceKeyCR r2_d3, bool r1First);
-
-WString GetTestFileName (WCharCP testname)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WString ElementDependencyGraph::GetTestFileName (WCharCP testname)
     {
     return WPrintfString(L"ElementDependencyGraph_%ls.idgndb",testname);
     }
 
-ECN::ECClassCR GetElementDrivesElementClass()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
     {
     return *m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);//"dgn", DGN_RELNAME_ElementDrivesElement);
     }
 
-enum class ElementDrivesElementColumn {DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,Status};
-
-EC::ECSqlStatement& GetSelectElementDrivesElementById()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+EC::ECSqlStatement& ElementDependencyGraph::GetSelectElementDrivesElementById()
     {
     if (!m_selectElementDrivesElementById.IsPrepared())
         {
         BeSQLite::EC::ECSqlSelectBuilder b;
-#ifdef WIP_ECSQL_BUG
+    #ifdef WIP_ECSQL_BUG
         // ERROR ECDb - Invalid ECSQL 'SELECT DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,HandlerId,Status FROM ONLY [dgn].[ElementDrivesElement] WHERE ECInstanceId=?': ECProperty 'DependentElementId' not found in any of the ECClasses used in the ECSQL statement.
         b.Select("DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
-#else
+    #else
         b.Select("TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
-#endif
+    #endif
         m_selectElementDrivesElementById.Prepare(*m_db, b.ToString().c_str());
         }
     else
@@ -364,7 +387,7 @@ EC::ECSqlStatement& GetSelectElementDrivesElementById()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SetUpForRelationshipTests (WCharCP testname)
+void ElementDependencyGraph::SetUpForRelationshipTests (WCharCP testname)
     {
     SetupProject (L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), BeSQLite::Db::OPEN_ReadWrite);
 
@@ -380,7 +403,7 @@ void SetUpForRelationshipTests (WCharCP testname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceKey InsertElementDrivesElementRelationship (DgnElementKeyCR root, DgnElementKeyCR dependent)
+EC::ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship (DgnElementKeyCR root, DgnElementKeyCR dependent)
     {
     if (!m_insertElementDrivesElementRelationshipStatement.IsPrepared())
         {
@@ -413,21 +436,42 @@ EC::ECInstanceKey InsertElementDrivesElementRelationship (DgnElementKeyCR root, 
     return rkey;
     }
 
-struct ElementsAndRelationships
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+static CurveVectorPtr computeShape()
     {
-    DgnElementKey e99, e3, e31, e2, e1;
-    EC::ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
-    };
+    static const double PLANE_LEN = 100;
 
-void TestRelationships (DgnDb& db, ElementsAndRelationships const&);
-};
+    DPoint3d pts[6];
+    pts[0] = DPoint3d::From (-PLANE_LEN,-PLANE_LEN);
+    pts[1] = DPoint3d::From (+PLANE_LEN,-PLANE_LEN);
+    pts[2] = DPoint3d::From (+PLANE_LEN,+PLANE_LEN);
+    pts[3] = DPoint3d::From (-PLANE_LEN,+PLANE_LEN);
+    pts[4] = pts[0];
+    pts[5] = pts[0];
+    pts[5].z = 1;
 
-struct Performance_ElementDependencyGraph : ElementDependencyGraph
-{
-    void DoPerformanceShallow(size_t depCount);
-};
+    return CurveVector::CreateLinear(pts, _countof(pts), CurveVector::BOUNDARY_TYPE_Open);
+    }
 
-} // anonymous ns
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+    {
+    DgnModelP model = db.Models().GetModel(mid);
+
+    TestElementPtr testElement = new TestElement(CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
+
+    //  Add some hard-wired geometry
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
+    builder->Append(*computeShape());
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+        return nullptr;
+
+    return testElement;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Test of StreetMapModel
@@ -498,7 +542,7 @@ TEST_F (TransactionManagerTests, CRUD)
     //  -------------------------------------------------------------
     //  Test deletes
     //  -------------------------------------------------------------
-    auto delStatus = TestElementHandler::GetHandler().DeleteElement (*m_db, key2.GetElementId());
+    auto delStatus = m_db->Elements().Delete(key2.GetElementId());
     ASSERT_TRUE( BSISUCCESS == delStatus );
 
     txnMgr.CloseCurrentTxn();
