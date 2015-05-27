@@ -157,10 +157,15 @@ struct Writer
     void AppendHeader () {Header hdr; Append (Operation (OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
     void Reset () {m_buffer.clear (); AppendHeader ();};
 
+    bool AppendSimplified (ICurvePrimitiveCR, bool isClosed, bool is3d);
+    bool AppendSimplified (CurveVectorCR, bool is3d);
+    bool AppendSimplified (ElementGeometryCR, bool is3d);
+
     void Append (Operation const& egOp);    
+    void Append (DPoint2dCP, size_t nPts, int8_t boundary);
     void Append (DPoint3dCP, size_t nPts, int8_t boundary);
     void Append (DEllipse3dCR, int8_t boundary);
-    void Append (ICurvePrimitiveCR, bool isClosed = false);
+    void Append (ICurvePrimitiveCR);
     void Append (CurveVectorCR);
     void Append (PolyfaceQueryCR);
     void Append (ISolidPrimitiveCR);
@@ -185,6 +190,7 @@ struct Reader
 
     static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 
+    bool Get (Operation const&, DPoint2dCP&, int& nPts, int8_t& boundary) const;
     bool Get (Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary) const;
     bool Get (Operation const&, DEllipse3dR, int8_t& boundary) const;
     bool Get (Operation const&, PolyfaceQueryCarrier&) const;
@@ -380,10 +386,10 @@ DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement); //! P
 DGNPLATFORM_EXPORT bool Append (ElementGeometryCR);
 DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
 DGNPLATFORM_EXPORT bool Append (CurveVectorCR);
-DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR);
-DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR);
-DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR);
-DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr);
+DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR); //! 3d only
+DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR); //! 3d only
+DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR); //! 3d only
+DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr); //! 3d only
 DGNPLATFORM_EXPORT bool Append (TextStringCR);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());

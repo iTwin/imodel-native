@@ -1,0 +1,45 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/DgnPlatform.overviewPage $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+/** @page PAGE_DgnPlatform DgnPlatform Overview
+
+The DgnPlatform library is a key part of the DgnDb technology stack from <a href="http://www.bentley.com/">Bentley</a>. 
+The DgnPlatform library contains the data access API for the DgnDb file format.
+It also provides the run-time services necessary for writing applications focused on sustaining infrastructure (buildings, bridges, transit, utilities, energy, water, etc.).
+Key requirements addressed by the DgnPlatform library include:
+
+@li Rich, first class support for geometry, graphics, and relational business data
+@li Scalable for large scale infrastructure projects
+@li Connected and disconnected operations
+@li Cross platform
+@li Standards based
+
+The DgnDb technology stack starts with the DgnDb file format which is based on SQLite.  %Bentley has extended SQLite to support 
+geometric queries in addition to the standard SQL relational database queries.  %Bentley has also added a way to store complex geometry
+and graphics within the DgnDb file.  The DgnDb file format provides the foundation for persisting infrastructure data.
+<p>
+With DgnDb, real-world objects are modeled using elements and element aspects.  An element represents that identity and function of the real-world object.
+Subclasses of DgnElement are created for each type of real-world object that is being modeled.  Elements focus on specification.  For example, a piece
+of equipment that performs a specific function.
+<p>
+Element aspects are additional data instances associated with and owned by the element. Element aspects focus on the unique form and instance-specific properties of the real-world object
+that fulfills the specification.  Standard element aspects like ElementItem (properties of the item ordered from a catalog) and ElementGeom (physical geometry of the element) may be used, 
+or applications can introduce their own aspects.  This composition-based pattern of data modeling is very flexible and powerful.
+<p>
+Elements are the center of the DgnDb universe and are described in more detail here:
+
+@li @subpage PAGE_ElementOverview
+
+The DgnPlatform library also adds other key concepts required by infrastructure applications.  These concepts include:
+
+@li @subpage PAGE_ModelOverview
+@li @subpage PAGE_CategoryOverview
+@li @subpage PAGE_ViewOverview
+
+*/
