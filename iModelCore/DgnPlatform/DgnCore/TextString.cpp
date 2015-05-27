@@ -178,6 +178,7 @@ void TextString::ComputeBoundingShape(DPoint3dP boxPts) const { ComputeBoundingS
 void TextString::ComputeBoundingShape(DPoint3dP boxPts, double uniformPadding) const { ComputeBoundingShape(boxPts, uniformPadding, uniformPadding); }
 void TextString::ComputeBoundingShape(DPoint3dP boxPts, double horizontalPadding, double verticalPadding) const
     {
+    Update();
     memset(boxPts, 0, sizeof(DPoint3d) * 5);
 
     boxPts[0].Init(m_range.low);
