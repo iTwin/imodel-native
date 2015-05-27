@@ -24,7 +24,7 @@
     <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012"/>
 
     <SubPart PartName="PointoolsIO_VS2012" PartFile="${srcroot}Pointools/PointoolsIO/PointoolsIO_VS2012" Repository="PointoolsIO"/>
-	
+
   </Part>
 
 
@@ -54,10 +54,10 @@
   
   
   <Part Name="PointoolsVortexAPI_DLL_VS2012" BMakeFile="PointoolsVortexAPI_DLL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-		
+
     <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
-		
-    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="bsibin-licensesdk" />	
+
+    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="bsibin-licensesdk" />
   
     <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon"/>
 
@@ -126,28 +126,28 @@
 
 
   <Product Name="Pointools_SDK_VS2012_x86">
-    <SubPart PartName ="InstallFrameworkBase" PartFile ="InstallFramework" Repository="InstallFramework"/>	
+    <SubPart PartName ="InstallFrameworkBase" PartFile ="InstallFramework" Repository="InstallFramework"/>
     <SubProduct ProductName="PointoolsVortexAPI_SDK_VS2012_x86"/>
     <SubProduct ProductName="PointoolsIO_SDK_VS2012_x86" PartFile="${srcroot}\Pointools\PointoolsIO\PointoolsIO_VS2012" Repository="PointoolsIO"/>
     <Directories DirectoryListName="PointoolsVortexAPI_API_List"/>
-    <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>	
+    <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
     <RequiredRepository>Bsitools-Wix_3.8.1128.0</RequiredRepository>
-    <!-- <SubPart PartName="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" /> -->	
+    <!-- <SubPart PartName="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" /> -->
   </Product>
 
   <Product Name="Pointools_SDK_VS2012_x64">
-    <SubPart PartName ="InstallFrameworkBase" PartFile ="InstallFramework" Repository="InstallFramework"/>	
+    <SubPart PartName ="InstallFrameworkBase" PartFile ="InstallFramework" Repository="InstallFramework"/>
     <SubProduct ProductName="PointoolsVortexAPI_SDK_VS2012_x64"/>
     <SubProduct ProductName="PointoolsIO_SDK_VS2012_x64" PartFile="${srcroot}\Pointools\PointoolsIO\PointoolsIO_VS2012" Repository="PointoolsIO"/>
     <Directories DirectoryListName="PointoolsVortexAPI_API_List"/>
-    <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>	
+    <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
     <RequiredRepository>Bsitools-Wix_3.8.1128.0</RequiredRepository>
-    <!-- <SubPart PartName="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" /> -->	
+    <!-- <SubPart PartName="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" /> -->
   </Product>
   
   
     <Part Name="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" OnlyPlatforms="x86,x64" BMakeFile="Pointools_SDK_VS2012_InstallerFiles.mke">
-	
+
         <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
 
         <Bindings>
@@ -156,17 +156,17 @@
               Install\*.wxs
               Install\*.cfg
               Install\*.xml
-<!--			  
+<!--  
               <TransKit SourceDirectory="PPInstallerFiles\Transkit\"/>
--->			  
+-->  
             </Files>
         </Bindings>
 <!--
         <InstallerWixFile   SourceFile="PPInstallerFiles\PowerPlatformInstaller"/>
--->		
+-->
 <!--
         <WixBundleFile SourceFile="Pointools_SDK_InstallerFiles\Pointools_SDK_Bundle" LanguagePackBundle="Pointools_SDK_InstallerFiles\PowerProductBundle_LanguagePack" LanguageBundle="Pointools_SDK_InstallerFiles\PowerProductBundle_Language"/>
--->		
+-->
         <WixBundleFile SourceFile="Install\Pointools_SDK_Bundle" />
     </Part>
   
@@ -185,7 +185,7 @@
   <Product Name="PointoolsVortexAPI_Runtime_VS2012_x86" BuildInstallSet="true" SaveProduct="true">
     <RequiredRepository>Bsitools-Wix_3.8.1128.0</RequiredRepository>
     <SubPart PartName="PointoolsVortexAPI_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
-    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>	
+    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
     <Directories DirectoryListName="PointoolsVortexAPI_Runtime_List"/>
     <InstallerWixFile SourceFile="PointoolsVortexAPI_Runtime_VS2012_x86"/>
     <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
@@ -194,7 +194,7 @@
   <Product Name="PointoolsVortexAPI_Runtime_VS2012_x64" BuildInstallSet="true" SaveProduct="true">
     <RequiredRepository>Bsitools-Wix_3.8.1128.0</RequiredRepository>
     <SubPart PartName="PointoolsVortexAPI_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
-    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>	
+    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
     <Directories DirectoryListName="PointoolsVortexAPI_Runtime_List"/>
     <InstallerWixFile SourceFile="PointoolsVortexAPI_Runtime_VS2012_x64"/>
     <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
@@ -229,7 +229,7 @@
   <Part Name="PointoolsVortexAPI_API_VS2012_x86" OnlyPlatforms="x86">
     <SubPart PartName="PointoolsVortexAPI_ReleaseNotes"/>
     <Bindings>
-	
+
       <Files Domain="PointoolsVortexAPI_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Src">
         VendorAPI\PointoolsVortexAPI_DLL\PTAPI\PointoolsVortexAPI_import.cpp
       </Files>
@@ -248,7 +248,7 @@
   <Part Name="PointoolsVortexAPI_API_VS2012_x64" OnlyPlatforms="x64">
     <SubPart PartName="PointoolsVortexAPI_ReleaseNotes"/>
     <Bindings>
-	
+
       <Files Domain="PointoolsVortexAPI_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Src">
         VendorAPI\PointoolsVortexAPI_DLL\PTAPI\PointoolsVortexAPI_import.cpp
       </Files>
@@ -292,7 +292,7 @@
     <SubPart PartName="GLUI_VS2012"     PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="GLEW_VS2012"     PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="GL_VS2012"       PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2012" Repository="PointoolsLibs"/>
-	
+
     <Bindings>
     
       <Files SubPartDirectory="Examples\Dependencies\Include" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Examples_Dependencies_Include_GL">
@@ -366,6 +366,8 @@
     <SubPart PartName="PointoolsVortexAPI_API_Example_Testing"/>
     <SubPart PartName="PointoolsVortexAPI_API_Example_Tuning"/>
     <SubPart PartName="PointoolsVortexAPI_API_Example_Snapping"/>
+    <SubPart PartName="PointoolsVortexAPI_API_Example_Clipping"/>
+    <SubPart PartName="PointoolsVortexAPI_API_Example_SubObjects"/>
     <SubPart PartName="PointoolsVortexAPI_API_Example_MetaData"/>
 
     <Bindings>
@@ -385,7 +387,8 @@
         Delivery\Examples\src\appFramework.cpp
         Delivery\Examples\src\BitmapTool.cpp
         Delivery\Examples\src\ClassificationRender.cpp
-        Delivery\Examples\src\ClientServerTool.cpp
+        Delivery\Examples\src\ClippingTool.cpp.cpp
+        Delivery\Examples\src\CloudVisibilityTool.cpp
         Delivery\Examples\src\DiagnosticRenderer.cpp
         Delivery\Examples\src\EditTool.cpp
         Delivery\Examples\src\ExtentsQueryTest.cpp
@@ -399,6 +402,7 @@
         Delivery\Examples\src\QueryRender.cpp
         Delivery\Examples\src\ShaderTool.cpp
         Delivery\Examples\src\timer.cpp
+        Delivery\Examples\src\TransformTool.cpp
         Delivery\Examples\src\TuningTool.cpp
         Delivery\Examples\src\VortexExampleApp.cpp
         Delivery\Examples\src\VortexRender.cpp
@@ -408,6 +412,8 @@
       <Files SubPartDirectory="Examples\include" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Examples_Include">
         Delivery\Examples\include\BitmapTool.h
         Delivery\Examples\include\ClassificationRender.h
+        Delivery\Examples\include\ClippingTool.h
+        Delivery\Examples\include\CloudVisibilityTool.h
         Delivery\Examples\include\DiagnosticRenderer.h
         Delivery\Examples\include\EditTool.h
         Delivery\Examples\include\FileTool.h
@@ -421,9 +427,13 @@
         Delivery\Examples\include\QueryRender.h
         Delivery\Examples\include\ShaderTool.h
         Delivery\Examples\include\timer.h
+        Delivery\Examples\include\TransformTool.h
         Delivery\Examples\include\TuningTool.h
         Delivery\Examples\include\VortexExampleApp.h
         Delivery\Examples\include\VortexRender.h
+
+        <!-- Delivery\Examples\include\matrix_math.h -->
+        <!-- Delivery\Examples\include\Plane.h -->		
 <!--        
         Delivery\Examples\include\GeomTypes.h
         Delivery\Examples\include\PodWriter.h
@@ -449,7 +459,7 @@
       </Files>
     </Bindings>
   </Part>
-  
+    
   <Part Name="PointoolsVortexAPI_API_Example_Channels" BMakeFile="PointoolsVortexAPI_API_Example">
     <Bindings>
       <Files SubPartDirectory="Examples\channels" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Channels">
@@ -591,7 +601,36 @@
       </Files>
     </Bindings>
   </Part>
+  
+  <Part Name="PointoolsVortexAPI_API_Example_Clipping" BMakeFile="PointoolsVortexAPI_API_Example">
+    <Bindings>
+      <Files SubPartDirectory="Examples\clipping" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Clipping">
+        Delivery\Examples\Clipping\clipping.vcproj
+        Delivery\Examples\Clipping\ClippingExampleApp.cpp
+        Delivery\Examples\Clipping\clipping_2012.vcxproj
+        Delivery\Examples\Clipping\clipping_2012.vcxproj.filters
+        Delivery\Examples\Clipping\stdafx.cpp
+        Delivery\Examples\Clipping\stdafx.h
+      </Files>
+    </Bindings>
+  </Part>
 
+  <Part Name="PointoolsVortexAPI_API_Example_SubObjects" BMakeFile="PointoolsVortexAPI_API_Example">
+    <Bindings>
+      <Files SubPartDirectory="Examples\subobjects" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_SubObjects">
+       Delivery\Examples\SubObjects\stdafx.cpp
+       Delivery\Examples\SubObjects\stdafx.h
+       Delivery\Examples\SubObjects\subobjects.vcproj
+       Delivery\Examples\SubObjects\SubObjectsExampleApp.cpp
+       Delivery\Examples\SubObjects\SubObjectsTool.cpp
+       Delivery\Examples\SubObjects\subobjectstool.h
+       Delivery\Examples\SubObjects\subobjects_2012.vcxproj
+       Delivery\Examples\SubObjects\subobjects_2012.vcxproj.filters
+      </Files>
+    </Bindings>
+  </Part>
+
+  
   <Part Name="PointoolsVortexAPI_API_Example_MetaData" BMakeFile="PointoolsVortexAPI_API_Example">
     <Bindings>
     
@@ -786,6 +825,9 @@
     <ProductDirectory Name="PointoolsVortexAPI_API_VS2012_Example_Snapping" Path="Examples/snapping" Deliver="true"/>
     <ProductDirectory Name="PointoolsVortexAPI_API_VS2012_Example_Testing" Path="Examples/testing" Deliver="true"/>
     <ProductDirectory Name="PointoolsVortexAPI_API_VS2012_Example_Tuning" Path="Examples/tuning" Deliver="true"/>
+    <ProductDirectory Name="PointoolsVortexAPI_API_VS2012_Example_Clipping" Path="Examples/clipping" Deliver="true"/>
+    <ProductDirectory Name="PointoolsVortexAPI_API_VS2012_Example_SubObjects" Path="Examples/subobjects" Deliver="true"/>
+	
 
   </ProductDirectoryList>
   

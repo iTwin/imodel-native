@@ -187,7 +187,7 @@
   <ItemGroup>
     <ClCompile Include="ClippingExampleApp.cpp" />
     <ClCompile Include="..\src\ExtentsQueryTest.cpp" />
-    <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp" />
+    <ClCompile Include="..\..\src\PointoolsVortexAPI_import.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="..\src\timer.cpp" />
     <ClCompile Include="..\src\VortexExampleApp.cpp" />

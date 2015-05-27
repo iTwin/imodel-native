@@ -188,11 +188,10 @@
     <ClCompile Include="..\src\CloudVisibilityTool.cpp" />
     <ClCompile Include="..\src\EditTool.cpp" />
     <ClCompile Include="SubObjectsExampleApp.cpp" />
-    <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp" />
+    <ClCompile Include="..\..\src\PointoolsVortexAPI_import.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="..\src\timer.cpp" />
     <ClCompile Include="..\src\VortexExampleApp.cpp" />
-    <ClCompile Include="..\src\ClientServerTool.cpp" />
     <ClCompile Include="..\src\FileTool.cpp" />
     <ClCompile Include="..\src\NavigationTool.cpp" />
     <ClCompile Include="..\src\ShaderTool.cpp" />
