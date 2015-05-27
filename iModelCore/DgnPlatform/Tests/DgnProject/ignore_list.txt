@@ -85,3 +85,5 @@ DgpRoundtripExpressionTests.Roundtrip
 ECDbInstances.SelectDgnLinksForDgnElement
 NamedVolume.CrudTest
 NotificationManagerTest.GetPriority
+
+DgnDb.GetCoordinateSystemProperties # Sam - make this work with GCS
