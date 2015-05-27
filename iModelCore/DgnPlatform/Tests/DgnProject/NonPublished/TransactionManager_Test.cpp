@@ -14,10 +14,9 @@
 #define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
 #define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
-#define TMTEST_TEST_ELEMENT_TestElementProperty         L"TestElementProperty"
+#define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
 #define TMTEST_TEST_ITEM_CLASS_NAME                       "TestItem"
-#define TMTEST_TEST_ITEM_TestItemProperty               L"TestItemProperty"
-#define TMTEST_TEST_ITEM_TestItemPropertyA               "TestItemProperty"
+#define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -513,7 +512,6 @@ TEST_F (TransactionManagerTests, CRUD)
     monitor.Clear();
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * Test of element instance access
 * @bsimethod                                    Sam.Wilson      01/15
@@ -530,36 +528,65 @@ TEST_F (TransactionManagerTests, ElementInstance)
 
     ASSERT_EQ( &el->GetElementHandler(), &TestElementHandler::GetHandler() );
 
+#ifdef WIP_NEED_SOME_OTHER_WAY_TO_ACCESS_SUB_CLASS_PROPERTIES
     ECN::IECInstanceCR e1props = el->GetSubclassProperties();
     ECN::ECValue v;
     ASSERT_EQ( e1props.GetValue(v, TMTEST_TEST_ELEMENT_TestElementProperty) , ECN::ECOBJECTS_STATUS_Success );
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void checkItemProperty(GeometricElementCR el, bool shouldBeThere, WCharCP propValue)
+static BentleyStatus insertItem(GeometricElementCR el, Utf8CP propValue)
     {
-    ECN::IECInstanceCP newItemAfter = el.GetItem();
+    BeSQLite::EC::CachedECSqlStatementPtr itemStmt = el.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " (ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES (?,?)");
+    itemStmt->BindId(1, el.GetElementId());
+    itemStmt->BindText(2, propValue, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    return (BeSQLite::EC::ECSqlStepStatus::Done == itemStmt->Step())? BSISUCCESS: BSIERROR;
+    }
 
-    if (!shouldBeThere)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus updateItemProperty(GeometricElementCR el, Utf8CP propValue)
+    {
+    BeSQLite::EC::CachedECSqlStatementPtr itemStmt = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE (ECInstanceId=?)");
+    itemStmt->BindId(2, el.GetElementId());
+    itemStmt->BindText(1, propValue, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    return (BeSQLite::EC::ECSqlStepStatus::Done == itemStmt->Step())? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeSQLite::EC::ECSqlStepStatus getItemProperty(Utf8StringR value, GeometricElementCR el)
+    {
+    BeSQLite::EC::CachedECSqlStatementPtr itemStmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " WHERE(ECInstanceId=?)");
+    itemStmt->BindId(1, el.GetElementId());
+    auto rc = itemStmt->Step();
+    if (BeSQLite::EC::ECSqlStepStatus::HasRow != rc)
+        return rc;
+    value = itemStmt->GetValueText(0);
+    return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void checkItemProperty(GeometricElementCR el, bool shouldBeThere, Utf8CP propValue)
+    {
+    Utf8String value;
+    auto rc = getItemProperty(value, el);
+
+    if (!shouldBeThere || nullptr == propValue)
         {
-        ASSERT_EQ( nullptr , newItemAfter );
+        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , rc ); 
         return;
         }
 
-    ASSERT_NE( nullptr , newItemAfter );
-
-    ECN::ECValue v;
-    if (!propValue)
-        {
-        ASSERT_NE( newItemAfter->GetValue(v, TMTEST_TEST_ITEM_TestItemProperty) , ECN::ECOBJECTS_STATUS_Success );
-        }
-    else
-        {
-        ASSERT_EQ( newItemAfter->GetValue(v, TMTEST_TEST_ITEM_TestItemProperty) , ECN::ECOBJECTS_STATUS_Success );
-        ASSERT_STREQ( propValue , v.GetString() );
-        }
+    ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow , rc ); 
+    ASSERT_TRUE( value.Equals(propValue) );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -568,12 +595,13 @@ static void checkItemProperty(GeometricElementCR el, bool shouldBeThere, WCharCP
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, ElementItem)
     {
-    WCharCP initialTestPropValue = L"Test";
-    WCharCP changedTestPropValue = L"Test - changed";
+    Utf8CP initialTestPropValue = "Test";
+    Utf8CP changedTestPropValue = "Test - changed";
 
     SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
 
     ECN::ECClassCP testItemClass = m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ITEM_CLASS_NAME);
+    ASSERT_NE( nullptr , testItemClass );
 
     auto key1 = InsertElement ("E1");
     ASSERT_TRUE( key1.GetElementId().IsValid() );
@@ -583,43 +611,16 @@ TEST_F (TransactionManagerTests, ElementItem)
 
     ASSERT_EQ( &el->GetElementHandler(), &TestElementHandler::GetHandler() );
 
-    checkItemProperty(*el, false, nullptr);  // element should have no item
+    checkItemProperty(*el, false, nullptr);
 
-    if (true)
-        {
-        //  Add an ElementItem
-        ECN::IECInstancePtr newItem = testItemClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        newItem->SetValue(TMTEST_TEST_ITEM_TestItemProperty, ECN::ECValue(initialTestPropValue));
+    //  Add an ElementItem
+    ASSERT_EQ( BSISUCCESS , insertItem(*el, TMTEST_TEST_ITEM_TestItemProperty) );
 
-        GeometricElementPtr modifiedEl = m_db->Elements().GetForEdit<GeometricElement>(key1.GetElementId());
-        modifiedEl->SetItem(*newItem);
+    checkItemProperty(*el, true, initialTestPropValue);
 
-        checkItemProperty(*el, false, nullptr); // element should still have no item
-        checkItemProperty(*modifiedEl, true, initialTestPropValue); // item should appear to be there on the modified copy
+    //  Update the item
 
-        DgnModelStatus modelStatus;
-        m_db->Elements().Update(*modifiedEl, &modelStatus);
-        ASSERT_EQ (BSISUCCESS, modelStatus);
-        }
-
-    checkItemProperty(*el, true, initialTestPropValue); // item should now be in the DB
-
-    if (true)
-        {
-        GeometricElementCPtr elChange = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
-        GeometricElementPtr modifiedEl = elChange->CopyForEdit()->ToGeometricElementP();
-
-        ECN::IECInstanceP existingItem = modifiedEl->GetItemP();
-        ASSERT_NE( existingItem , nullptr );
-        existingItem->SetValue(TMTEST_TEST_ITEM_TestItemProperty, ECN::ECValue(changedTestPropValue));
-
-        checkItemProperty(*el, true, initialTestPropValue); // item property should be unchanged in the DB
-        checkItemProperty(*modifiedEl, true, changedTestPropValue); // item property should appear to be changed on the modified copy
-
-        DgnModelStatus modelStatus;
-        m_db->Elements().Update(*modifiedEl, &modelStatus);
-        ASSERT_EQ (BSISUCCESS, modelStatus);
-        }
+    updateItemProperty(*el, changedTestPropValue);
 
     checkItemProperty(*el, true, changedTestPropValue); // item should now be in the DB
 
@@ -664,7 +665,6 @@ TEST_F (TransactionManagerTests, ElementItem)
     " WHERE e.ECInstanceId=?"
 */
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
