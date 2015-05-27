@@ -33,19 +33,22 @@ BENTLEY_LIBRARIES + $(ContextLibPrefix)BentleyGeom$(stlibext)
 BENTLEY_LIBRARIES + $(ContextLibPrefix)ECObjects$(stlibext)
 BENTLEY_LIBRARIES + $(ContextLibPrefix)BeSQLiteEC$(stlibext)
 BENTLEY_LIBRARIES + $(ContextLibPrefix)BeJsonCpp$(stlibext)
+BENTLEY_LIBRARIES + $(ContextLibPrefix)BaseGeoCoord$(stlibext)
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-rasterSchemaDepends             = $(_MakeFileSpec)                                          \
-                                  $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
+rasterSchemaDepends             = $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
                                   $(rasterSchemaPublicApiSrc)RasterSchemaApi.h              \
                                   $(rasterSchemaPublicApiSrc)RasterSchemaCommon.h           \
                                   $(rasterSchemaPublicApiSrc)RasterSchemaTypes.h            \
                                   $(rasterSchemaPublicApiSrc)RasterHandler.h                \
-                                  $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
-                                  $(rasterSchemaPublicApiSrc)RasterSchemaApi.h              \
-                                  
+                                  $(rasterSchemaPublicApiSrc)RasterDomain.h
+
+rasterDisplayDepends =  $(rasterSchemaSrc)RasterSource.h \
+                        $(rasterSchemaSrc)RasterQuadTree.h \
+                        $(rasterSchemaSrc)WmsSource.h
+                        
 %include MultiCppCompileRule.mki
 
 #----------------------------------------------------------------------
@@ -70,9 +73,15 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 #   Compile portable source
 #--------------------------------------------------------------------------------------
-$(o)RasterHandler$(oext)            : $(rasterSchemaSrc)RasterHandler.cpp              $(rasterSchemaDepends)  ${MultiCompileDepends} 
+$(o)RasterHandler$(oext)    : $(rasterSchemaSrc)RasterHandler.cpp   $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterDomain$(oext)             : $(rasterSchemaSrc)RasterDomain.cpp               $(rasterSchemaDepends)  ${MultiCompileDepends} 
+$(o)RasterDomain$(oext)     : $(rasterSchemaSrc)RasterDomain.cpp    $(rasterSchemaDepends) ${MultiCompileDepends}
+
+$(o)RasterQuadTree$(oext)   : $(rasterSchemaSrc)RasterQuadTree.cpp  $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+
+$(o)RasterSource$(oext)     : $(rasterSchemaSrc)RasterSource.cpp    $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+
+$(o)WmsSource$(oext)        : $(rasterSchemaSrc)WmsSource.cpp       $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
