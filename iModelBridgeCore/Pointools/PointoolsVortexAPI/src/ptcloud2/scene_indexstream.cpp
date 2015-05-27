@@ -349,7 +349,12 @@ int Scene::buildPreliminaryOctree( IncNode *root, int initial_depth, int target_
 	/*progress bar */ 
 	ptapp::CmdProgress *indexprogress = new ptapp::CmdProgress("Indexing Data...", buildInfo->startCloud, buildInfo->endCloud*100);
 
-	for (int readIterations = 0; readIterations < 2; readIterations++)
+	unsigned int maxIterations	= 5;
+	unsigned int numSubdivided	= 0;
+	unsigned int numMerged		= 0;
+
+
+	for (int readIterations = 0; readIterations == 0 || (numSubdivided > 0 && readIterations < maxIterations); readIterations++)
 	{
 		bool secondRun = readIterations ? true : false;
 
@@ -358,9 +363,8 @@ int Scene::buildPreliminaryOctree( IncNode *root, int initial_depth, int target_
 		{
 			cloud_info = buildInfo->stream->readCloud(C);
 
-		mat = cloud_info->matrix;
-		if (buildInfo->transform) mat.inv_translate( pt::vector4d(buildInfo->stream->xbounds().center()) );
-
+			mat = cloud_info->matrix;
+			if (buildInfo->transform) mat.inv_translate( pt::vector4d(buildInfo->stream->xbounds().center()) );
 
 			/* build octree */ 
 			for (j=0; j<cloud_info->numPoints; j++)
@@ -383,31 +387,33 @@ int Scene::buildPreliminaryOctree( IncNode *root, int initial_depth, int target_
 					indexprogress->set(C*100+percent_done);
 				}
 			}
+
+																				// 2M,	5M,		10M,	50M,	100M,	500M,	1Bn,	10Bn	Larger
+																				// 50k, 100k,	100k,	100k,	100k,	100k,	200k,	1M,		2M
+			const unsigned int numThresholds = 8;
+
+			int thresholds[numThresholds]	= { 2e6, 5e6, 1e7, 5e7, 1e8, 5e8, 1e9, 10e9 }; 
+			int points[numThresholds + 1]	= { 5e4, 1e5, 1e5, 1e5, 1e5, 1e5, 2e5, 1e6, 2e6 };
+
+			int				i;
+			unsigned int	minPointsTarget = points[numThresholds];					// Default to largest target
+
+			for (i=0; i< numThresholds; i++)
+			{
+				if(root->lodPointCount() < thresholds[i])
+				{
+					minPointsTarget = points[i];
+					break;
+				}
+			}
+															// check for large nodes requiring another iteration */ 
+			numSubdivided	= root->subdivideLarge(minPointsTarget, 4);
+															// merge nodes that have been subdivided past SUBDIVISION_COUNT and are deeper than req_depth
+			numMerged		= root->merge(minPointsTarget, target_depth);
+
+			PTTRACEOUT << "Num of large nodes = " << numSubdivided;
 		}
-		break;
-
-		/* check for large nodes requiring another iteration */ 
-		int numSubdivided = root->subdivideLarge(18e5, 4);
-
-		PTTRACEOUT << "Num of large nodes = " << numSubdivided;
-		
-		if (!numSubdivided) break;
 	}
-	/* merge nodes that have been subdivided past SUBDIVISION_COUNT and are deeper than req_depth */  
-	int thresholds [] = { 2e6, 5e6, 1e7, 5e7, 1e8, 5e8, 1e9, 10e9 }; 
-	int points[] = { 5e4, 1e5, 1e5, 1e5, 1e5, 1e5, 2e5, 1e6, 2e6 };
-
-
-	int i;
-	for (i=0; i<6; i++)
-	{
-		if (cloud_info->numPoints < thresholds[i])
-		{
-			root->merge(points[i], target_depth);
-			break;
-		}
-	}
-	if (i==6) root->merge(points[6], target_depth);
 
 	delete indexprogress;
 
@@ -650,8 +656,8 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 							static int problem = 0;
 							problem++;
 						}
-
-						break;
+																									// This is a critical error. We don't want a file with missing data, so exit
+						return OutOfMemory;
 					}
 				}
 			}
@@ -671,6 +677,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 
 			voxels.pop();
 		};
+
 
 		for (v=0; v<processvoxels.size(); v++)
 		{

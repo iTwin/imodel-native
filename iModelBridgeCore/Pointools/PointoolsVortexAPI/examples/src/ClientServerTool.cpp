@@ -10,7 +10,6 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 
-#include "ClientServerTest.h"
 
 ClientServerTest::ClientServerTest() : Tool(-1, -1) 
 {

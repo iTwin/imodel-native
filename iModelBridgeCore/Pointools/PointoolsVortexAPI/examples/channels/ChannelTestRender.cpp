@@ -41,9 +41,9 @@ void ChannelTestRenderer::modifyPointsWithChannelValues()
 		// if these are adjusted values, not default white
 		if (cols[i] != 255 && cols[i+1] != 255 && cols[i+2] != 255)
 		{
-			rgbBuffer[i] = ((1.0f-m_mixer) * rgbBuffer[i] ) + m_mixer * cols[i];
-			rgbBuffer[i+1] = ((1.0f-m_mixer) * rgbBuffer[i+1] ) + m_mixer * cols[i+1];
-			rgbBuffer[i+2] = ((1.0f-m_mixer) * rgbBuffer[i+2] ) + m_mixer * cols[i+2];
+			rgbBuffer[i] = (PTubyte) (((1.0f-m_mixer) * rgbBuffer[i] ) + m_mixer * cols[i]);
+			rgbBuffer[i+1] = (PTubyte) (((1.0f-m_mixer) * rgbBuffer[i+1] ) + m_mixer * cols[i+1]);
+			rgbBuffer[i+2] = (PTubyte) (((1.0f-m_mixer) * rgbBuffer[i+2] ) + m_mixer * cols[i+2]);
 		}
 	}
 }

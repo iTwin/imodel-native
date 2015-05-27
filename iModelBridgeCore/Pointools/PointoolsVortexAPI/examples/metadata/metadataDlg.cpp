@@ -11,7 +11,7 @@
 #include "metadataDlg.h"
 #include "MetaDataGrid.h"
 
-#include "../include/PointoolsVortexAPI_import.h"
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
 #include "../lic/vortexLicense.c"
 
 #include <shlwapi.h>

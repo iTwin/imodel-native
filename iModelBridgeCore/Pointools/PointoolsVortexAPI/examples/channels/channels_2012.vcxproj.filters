@@ -33,7 +33,7 @@
     <ClCompile Include="..\src\PodWriterWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp">
+    <ClCompile Include="..\..\src\PointoolsVortexAPI_import.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">

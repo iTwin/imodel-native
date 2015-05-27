@@ -29,10 +29,7 @@
     <ClCompile Include="..\src\EditTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\ExtentsQueryTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp">
+    <ClCompile Include="..\..\src\PointoolsVortexAPI_import.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
@@ -43,9 +40,6 @@
     </ClCompile>
     <ClCompile Include="..\src\VortexExampleApp.cpp">
       <Filter>Source Files\app</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\ClientServerTool.cpp">
-      <Filter>Source Files\tools</Filter>
     </ClCompile>
     <ClCompile Include="..\src\FileTool.cpp">
       <Filter>Source Files\tools</Filter>

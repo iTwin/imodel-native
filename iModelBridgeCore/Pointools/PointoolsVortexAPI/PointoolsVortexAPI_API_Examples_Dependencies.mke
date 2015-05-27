@@ -1,0 +1,52 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  $Source: PointoolsVortexAPI_API_Examples_Dependencies.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsVortexAPI_$(VSOutputSubfolder)/Delivery/
+
+PointoolsLibsDir=$(OutBuildContexts)PointoolsLibs_$(VSOutputSubfolder)/
+
+#---------------------------------------------------------------------------------------------------------
+# Symlink examples
+#---------------------------------------------------------------------------------------------------------
+
+always:
+    @CreateSymLinks.py   -d"$(DeliveryDir)ExamplesDependencies/include/GL"="$(PointoolsLibsDir)VendorAPI/GL"
+
+	
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"	
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/freeglut.lib"="$(PointoolsLibsDir)Delivery/freeglut.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/freeglutd.lib"="$(PointoolsLibsDir)Delivery/freeglutd.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/glui32.lib"="$(PointoolsLibsDir)Delivery/glui32.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/glui32d.lib"="$(PointoolsLibsDir)Delivery/glui32d.lib"
+	
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/bin/freeglut.dll"="$(PointoolsLibsDir)Delivery/freeglut.dll"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/bin/freeglutd.dll"="$(PointoolsLibsDir)Delivery/freeglutd.dll"
+
+%endif
+	
+	
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"	
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/freeglut.lib"="$(PointoolsLibsDir)Delivery/freeglut.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/freeglutd.lib"="$(PointoolsLibsDir)Delivery/freeglutd.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/glui64.lib"="$(PointoolsLibsDir)Delivery/glui64.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/glui64d.lib"="$(PointoolsLibsDir)Delivery/glui64d.lib"
+	
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/bin/freeglut.dll"="$(PointoolsLibsDir)Delivery/freeglut.dll"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/bin/freeglutd.dll"="$(PointoolsLibsDir)Delivery/freeglutd.dll"
+
+%endif
+	

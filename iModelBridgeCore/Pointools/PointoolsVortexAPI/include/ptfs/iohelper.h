@@ -837,7 +837,13 @@ namespace ptds
 				_H->closeAndDelete();
 		}
 
-		bool fileValid() { return _H->validHandle(); }
+		bool fileValid()
+		{
+			if(_H)
+				return _H->validHandle(); 
+
+			return false;
+		}
 
 		WriteBlock *rewriteBlock(DataSize buffersize, uint id, const char *note=0)
 		{

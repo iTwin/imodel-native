@@ -106,7 +106,9 @@
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>      
+    <PostBuildEvent>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -128,7 +130,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>      
+    <PostBuildEvent>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -153,8 +157,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
+      <IgnoreSpecificDefaultLibraries>glui32.lib;glut32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
-    <PostBuildEvent>      
+    <PostBuildEvent>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -179,8 +186,11 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
+      <IgnoreSpecificDefaultLibraries>glui32.lib;glut32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
-    <PostBuildEvent>      
+    <PostBuildEvent>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -192,7 +202,7 @@
     <ClCompile Include="..\src\NavigationTool.cpp" />
     <ClCompile Include="..\src\ShaderTool.cpp" />
     <ClCompile Include="clashApp.cpp" />
-    <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp" />
+    <ClCompile Include="..\..\src\PointoolsVortexAPI_import.cpp" />
     <ClCompile Include="..\src\timer.cpp" />
     <ClCompile Include="..\src\WriteBmp.cpp" />
     <ClCompile Include="..\src\ClassificationRender.cpp" />

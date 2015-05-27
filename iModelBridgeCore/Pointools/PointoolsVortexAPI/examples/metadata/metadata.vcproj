@@ -382,7 +382,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\PointoolsVortexAPI_import.cpp"
+				RelativePath="..\..\src\PointoolsVortexAPI_import.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

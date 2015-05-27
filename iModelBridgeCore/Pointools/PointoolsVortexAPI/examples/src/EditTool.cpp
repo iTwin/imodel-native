@@ -12,7 +12,6 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "EditTool.h"
-#include "../include/PointoolsVortexAPI_resultCodes.h"
 #include <math.h>
 
 static RGBc layerButtonCol(96,96,96);
@@ -472,13 +471,13 @@ bool	EditTool::onMouseButtonUp( int button, int x, int y )
 			{
 				pt::SimplePerformanceTimer t(time);
 
-				float minX = min(m_mouse.eventStartX, x);
-				float minY = min(m_mouse.eventStartY, y);
+				float minX = (float) std::min(m_mouse.eventStartX, x);
+				float minY = (float) std::min(m_mouse.eventStartY, y);
 
-				float maxX = max(m_mouse.eventStartX, x);
-				float maxY = max(m_mouse.eventStartY, y);
+				float maxX = (float) std::max(m_mouse.eventStartX, x);
+				float maxY = (float) std::max(m_mouse.eventStartY, y);
 
-				ptSelectPointsByRect( minX, minY, maxX - minX, maxY - minY); 
+				ptSelectPointsByRect( (PTint) minX, (PTint) minY, (PTint) (maxX - minX), (PTint) (maxY - minY)); 
 
 			}
 			char stat[64];
@@ -530,13 +529,13 @@ bool	EditTool::onMouseButtonUp( int button, int x, int y )
 			{
 				if (m_boxLower[i] < m_boxUpper[i])
 				{
-					lower[i] = m_boxLower[i];
-					upper[i] = m_boxUpper[i];
+					lower[i] = (PTfloat) m_boxLower[i];
+					upper[i] = (PTfloat) m_boxUpper[i];
 				}
 				else
 				{
-					lower[i] = m_boxUpper[i];
-					upper[i] = m_boxLower[i];
+					lower[i] = (PTfloat) m_boxUpper[i];
+					upper[i] = (PTfloat) m_boxLower[i];
 				}
 			}
 
@@ -573,11 +572,11 @@ bool	EditTool::onMouseButtonUp( int button, int x, int y )
 
 		m_mode = 0;
 															// Get box's rotation on two axes
-		float rx = m_boxRotation[0];
-		float ry = m_boxRotation[1];
+		float rx = (float) m_boxRotation[0];
+		float ry = (float) m_boxRotation[1];
 														// Convert degrees to radians
-		rx = m_boxRotation[0] * static_cast<float>(PI) / 180.0f;
-		ry = m_boxRotation[1] * static_cast<float>(PI) / 180.0f;
+		rx = ((float) m_boxRotation[0]) * static_cast<float>(PI) / 180.0f;
+		ry = ((float) m_boxRotation[1]) * static_cast<float>(PI) / 180.0f;
 
 		PTdouble uAxis[3];
 		PTdouble vAxis[3];
@@ -1092,6 +1091,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		GLUI_Panel *selectTools = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 		
 		spacer = new GLUI_StaticText( rolloutSelect, " " );
+		spacer->set_w( PANEL_WIDTH*0.5 - 12 );
 
 		new GLUI_Button( selectTools, "Rectangle", CmdRectangleSelect, &Tool::dispatchCmd );
 		new GLUI_Button( selectTools, "Brush", CmdBrushSelect, &Tool::dispatchCmd );
@@ -1104,6 +1104,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 
 		GLUI_Column* col = new GLUI_Column( selectTools, false );
 		col->set_w(1);
+		spacer->set_w( PANEL_WIDTH*0.5 -12);
 
 		new GLUI_Button( selectTools, "Polygon", CmdPolygonSelect, &Tool::dispatchCmd );
 		new GLUI_Button( selectTools, "Box", CmdBoxSelect, &Tool::dispatchCmd );
@@ -1131,7 +1132,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 	
 		new GLUI_StaticText( selectTools, "Brush Size" );
 		GLUI_Scrollbar* brush = new GLUI_Scrollbar( selectTools, "Brush Size", GLUI_SCROLL_HORIZONTAL, &m_brushSize, CmdBrushUpdate ,&Tool::dispatchCmd);
-		brush->set_float_limits(0.01,2.0);
+		brush->set_float_limits(0.01f,2.0f);
 
 	if (!m_simple)
 	{

@@ -53,7 +53,6 @@ This example demonstrates the layer based editing capabilities of Vortex
 #include "..\include\EditTool.h"		// editing features
 #include "..\include\TransformTool.h"		// move stuff about
 #include "..\include\VortexRender.h"	// Vortex OpenGL rendering
-#include "..\include\ClientServerTest.h"
 #include "..\include\CloudVisibilityTool.h"
 
 // Main Entry Point
@@ -69,7 +68,6 @@ int main(int argc, char* argv[])
 		example.addTool(new ShaderTool);
 		example.addTool(new CloudVisibilityTool);		// for switching the visibility of whole points clouds on and off
 		example.addTool(new CameraNavigation);			// must be last so it receives events last
-		example.addTool(new ClientServerTest);
 
 		example.getView().showLayerBounds = true;		// shows the bounding box of the layer - no bb caching so minor performance hit
 

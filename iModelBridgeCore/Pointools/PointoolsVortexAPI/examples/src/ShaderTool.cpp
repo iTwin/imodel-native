@@ -156,7 +156,7 @@ void ShaderTool::handleClassificationShader()
 	if (m_shader.useClassification)
 	{
 		if (!m_classificationRenderer)
-			m_classificationRenderer = new ClassificationRenderer(1e5);
+			m_classificationRenderer = new ClassificationRenderer((int) 1e5);
 
 		Renderer* currentRenderer = VortexExampleApp::instance()->getRenderer();
 		if (currentRenderer != m_classificationRenderer)

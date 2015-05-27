@@ -164,24 +164,7 @@ namespace pcloud
 		}
 		IncNode(){};
 		Node* newNode() const { return new IncNode; }
-
-		bool isLeaf(void) const
-		{
-			unsigned int	i;
-			bool			isChild = true;
-
-			for (i = 0; i < 8; i++)
-			{
-				if (_child[i] != NULL)
-				{
-					isChild = false;
-				}
-			}
-
-			return isChild;
-		}
-
-		void merge(int maxPointCount, int minDepth)
+		unsigned int merge(int maxPointCount, int minDepth, unsigned int mergedCount = 0)
 		{
 			if (!hasChildren())
 			{
@@ -191,35 +174,54 @@ namespace pcloud
 					PTTRACEOUT << "WARNING: Large node, unable to subdivide " << _pointCount << " points";
 				}
 #endif
-				return;
+				return mergedCount;
 			}
 
 			/*first kill off empties*/ 
 			int pcount = 0;
 			int i;
+			pt::BoundingBoxD bb;
+
 			for (i=0; i<8; i++)
 			{
-				if (_child[i] && !_child[i]->lodPointCount())
+				if(_child[i])
 				{
-					delete _child[i];
-					_child[i] =0;
+					if (_child[i]->lodPointCount() == 0 && _child[i]->flag(NODE_LARGE_SUBD_FLAG) == false)
+					{
+						delete _child[i];
+						_child[i] =0;
+						mergedCount++;
+					}
 				}
 			}
 			/*now merge (ie remove) children*/ 
-			if (_parent && _pointCount < maxPointCount && depth() >= minDepth)
+			if (_parent && _pointCount < maxPointCount && depth() >= minDepth && flag(NODE_LARGE_SUBD_FLAG) == false)
 			{
 				for (i=0; i<8; i++)
 				{
-					if (_child[i]) delete _child[i];
-					_child[i] =0;
+					if (_child[i])
+					{
+						delete _child[i];
+						_child[i] =0;
+						mergedCount++;
+					}
+
 				}
 			}
 			else
 			{
 				for (i=0; i<8; i++)
-					if (_child[i]) incChild(i)->merge(maxPointCount, minDepth);
+				{
+					if (_child[i])
+					{
+						mergedCount = incChild(i)->merge(maxPointCount, minDepth, mergedCount);
+					}
+				}
 			}
+
+			return mergedCount;
 		}
+
 		void collectLarge(std::vector<Node*> &nodes, int max_size)
 		{
 			if (!hasChildren())
@@ -233,13 +235,14 @@ namespace pcloud
 					if (_child[i]) incChild(i)->collectLarge(nodes, max_size);
 		}
 
+
 		int subdivideLarge(int max_size, int subd)
 		{
 			int res = 0;
 
 			if (!hasChildren())
 			{
-				if (_pointCount > max_size)
+				if(_pointCount > max_size && _localextents.maxDimensionSize() > 0.000001)
 				{
 					subdivide( subd );
 #ifdef PTTRACEOUT
@@ -249,32 +252,54 @@ namespace pcloud
 					res += 1;
 					_pointCount = 0;
 				}
+				else
+				{
+															// Clear NODE_LARGE_SUBD_FLAG flag for valid, non subdividing leaf node
+					flag(NODE_LARGE_SUBD_FLAG, false, false);
+				}
 			}
-			else for (int i=0; i<8; i++)
-					if (_child[i]) res += incChild(i)->subdivideLarge( max_size, subd );
+			else 
+			{
+															// Clear NODE_LARGE_SUBD_FLAG flag for all internal nodes
+				flag(NODE_LARGE_SUBD_FLAG, false, false);
+
+				for (int i=0; i<8; i++)
+				{
+					if (_child[i])
+					{
+						res += incChild(i)->subdivideLarge( max_size, subd );
+					}
+				}
+			}
 
 			return res;
 		}
 
+
 		void countPoint(const pt::vector3d &pt, const pt::vector3d &xpt, int max_depth, bool flagged_only=false)
 		{
-			if (!flagged_only || flagged_only && flag(NODE_LARGE_SUBD_FLAG))
+			if (flagged_only == false || flagged_only && flag(NODE_LARGE_SUBD_FLAG))
+			{
 				_pointCount++;
 
-			if (depth() < max_depth)
-			{
-				int c = inOctant(pt);
-				if (!_child[c])	buildChild(c);
-				if (_child[c] && flagged_only) _child[c]->flag(NODE_LARGE_SUBD_FLAG, true, false);
-				incChild(c)->countPoint(pt, xpt, max_depth, flagged_only);
-			}
-			if (!flagged_only || flagged_only && flag(NODE_LARGE_SUBD_FLAG))
-			{
 				_worldExtents.expand(xpt);
 				pt::vector3 p(pt);
 				_localextents.expand(p);
 			}
+
+			int c = inOctant(pt);
+
+			if(flagged_only == false && _child[c] == NULL && depth() < max_depth)
+			{
+				buildChild(c);
+			}
+
+			if(_child[c])
+			{
+				incChild(c)->countPoint(pt, xpt, max_depth, flagged_only);
+			}
 		}
+
 		void resetPointCount() { _pointCount = 0; }
 		void output()
 		{
@@ -353,88 +378,6 @@ namespace pcloud
 					else INCNODE(_child[i])->makeLeavesVoxels(voxels, rgb, intensity, normals, classification, gridded, geomtype, tolerance);
 				}
 			}
-		}
-
-		// merge up to maximum number of leaves - used to minimise number of leaves
-		void mergeToMaxLeaves(int maxLeaves, int minDepth, int maxPntsPerLeaf=500000)
-		{
-			int numLeaves = countNodes(true);
-			
-			int targetCull = numLeaves - maxLeaves;
-			
-			if (targetCull < 1) return;
-
-			// get leave sizes and sort to find threshold
-			std::vector<int> leaveSizes;
-			
-			Node *node = this;
-			
-			std::stack<Node*> process;
-			process.push(this);
-			
-			while (!process.empty())
-			{
-				node = process.top();
-				process.pop();
-				
-				if (!node->hasChildren())
-				{
-					leaveSizes.push_back( node->lodPointCount() );
-				}
-				else
-				{
-					for (int i=0; i<8; i++)
-					{
-						if (node->child(i)) 
-							process.push(node->child(i));
-					}
-				}
-			}
-			
-			std::sort(leaveSizes.begin(), leaveSizes.end());
-			
-			assert( leaveSizes.size() > maxLeaves);
-			
-			// determine what the threshold is for culling a leaf node
-			int threshold = leaveSizes[maxLeaves];
-			
-			// cull everything that is smaller than this
-			int numCulled = 0;
-
-			process.push(this);
-
-			while (!process.empty() && numCulled < targetCull)
-			{
-				node = process.top();
-				process.pop();
-				
-				if (!node->isLeaf())				
-				{
-					if (_pointCount < std::min(threshold * node->numChildren(), maxPntsPerLeaf))
-					{
-						for (int i=0; i<8; i++)
-						{
-							if (_child[i]) 
-								delete _child[i];
-							_child[i] =0;						
-						}
-					}					
-					else
-					{
-						for (int i=0; i<8; i++)
-						{
-							if (node->child(i)) 
-								process.push(node->child(i));
-						}								
-					}
-				}				
-			}			
-
-// Pip Test
-int numLeavesAfter = countNodes(true);
-
-
-			return;
 		}
 		pt::BoundingBox _localextents;
 	};

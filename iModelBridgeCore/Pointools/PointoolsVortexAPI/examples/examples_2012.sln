@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Clash", "clash\clashTest_20
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ClassificationChannel", "classif_channel\classif_channel_2012.vcxproj", "{65463C2B-E909-4952-8058-D81F6E21ACFF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ClientServer", "clientserver\clientserver_2012.vcxproj", "{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editing", "editing\editing_2012.vcxproj", "{1640F613-F0A2-42BB-8572-BBA78DFA9882}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FeatureExtraction", "feature-extraction\feature-extraction_2012.vcxproj", "{9341B0C8-3BCE-4545-B06E-D59A26A9E6DC}"
@@ -59,14 +57,6 @@ Global
 		{65463C2B-E909-4952-8058-D81F6E21ACFF}.Release|Win32.Build.0 = Release|Win32
 		{65463C2B-E909-4952-8058-D81F6E21ACFF}.Release|x64.ActiveCfg = Release|x64
 		{65463C2B-E909-4952-8058-D81F6E21ACFF}.Release|x64.Build.0 = Release|x64
-		{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}.Debug|Win32.ActiveCfg = Debug|Win32
-		{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}.Debug|Win32.Build.0 = Debug|Win32
-		{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}.Debug|x64.ActiveCfg = Debug|x64
-		{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}.Debug|x64.Build.0 = Debug|x64
-		{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}.Release|Win32.ActiveCfg = Release|Win32
-		{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}.Release|Win32.Build.0 = Release|Win32
-		{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}.Release|x64.ActiveCfg = Release|x64
-		{DAC51E37-ED0F-45D7-8FA2-7DF89616AA34}.Release|x64.Build.0 = Release|x64
 		{1640F613-F0A2-42BB-8572-BBA78DFA9882}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1640F613-F0A2-42BB-8572-BBA78DFA9882}.Debug|Win32.Build.0 = Debug|Win32
 		{1640F613-F0A2-42BB-8572-BBA78DFA9882}.Debug|x64.ActiveCfg = Debug|x64

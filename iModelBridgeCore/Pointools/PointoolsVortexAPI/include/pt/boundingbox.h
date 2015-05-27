@@ -146,6 +146,11 @@ public:
 	inline vec3<T> center() const { return diagonal() / 2.0 + vec3<T>(lower_bounds); }
 	inline vec3<T> diagonal() const { return vec3<T>(size(0), size(1), size(2)); }
 
+	inline T maxDimensionSize(void)
+	{
+		return std::max(dx(), std::max(dy(), dz()));
+	}
+
 	inline BBox<T>& operator = (const BBox<T>& box)
 	{
 		if (this != &box)

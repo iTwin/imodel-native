@@ -277,16 +277,20 @@ public:
 		{
 			valid = (m_buffer[m_pos]>44) && (m_buffer[m_pos]<58) ? true : false;
 
-			if (m_buffer[m_pos] == term) break;
+			if (m_buffer[m_pos] == term || m_buffer[m_pos] == 0x0)
+				break;
 
-			if (!start && valid) start = true;
+			if (!start && valid)
+				start = true;
 
 			if (valid)
 			{
 				m_valbuffer[pos++] = m_buffer[m_pos];
 			}
+
 			m_pos++;
 		}
+
 		while(m_pos < len && (valid || !start) && pos < LINE_BUFFER_SIZE);
 
 		m_valbuffer[pos] = '\0';

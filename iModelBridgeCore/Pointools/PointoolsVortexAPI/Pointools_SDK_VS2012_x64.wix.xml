@@ -1,0 +1,8 @@
+<BuildInstallSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\bsicommon\build\buildinstallset.wix.xsd">
+    <Product>
+        <ProductName>Pointools_SDK_VS2012_x64</ProductName>
+        <ProductShortName>Pointools_SDK_VS2012_</ProductShortName>
+        <ProductCode>{128f1824-9bf0-42e7-8e68-357ff0271fd6};{128f1824-9bf0-42e7-8e68-357ff0271fd6}</ProductCode>
+        <UpgradeCode>{a3cba9e2-8e26-4391-ab4d-b258230bdf12};{128f1824-9bf0-42e7-8e68-357ff0271fd6}</UpgradeCode>
+    </Product>
+</BuildInstallSet>

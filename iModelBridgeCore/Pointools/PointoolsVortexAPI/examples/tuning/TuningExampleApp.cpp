@@ -53,7 +53,6 @@ This example demonstrates the use and effect of Vortex's tuning parameters
 #include "..\include\MetaTagTool.h"		// editing features
 #include "..\include\TuningTool.h"		// editing features
 #include "..\include\VortexRender.h"	// Vortex OpenGL rendering
-#include "..\include\ClientServerTest.h"// Client Server Support
 #include "..\include\LoadMetricsTool.h"// Display Some Loading Metrics
 
 // Main Entry Point
@@ -67,7 +66,6 @@ int main(int argc, char* argv[])
 		example.addTool(new ShaderTool);
 		example.addTool(new TuningTool);				// see code in TuningTool.cpp for implementation of tuning features
 		example.addTool(new MetaTagTool);
-		example.addTool(new ClientServerTest);
 		example.addTool(new LoadMetrics);
 		example.addTool(new CameraNavigation);			// must be last so it receives events last
 

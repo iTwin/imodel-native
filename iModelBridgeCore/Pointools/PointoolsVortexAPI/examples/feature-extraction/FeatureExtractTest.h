@@ -13,7 +13,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #define POINTOOLS_EXAMPLE_APP_FEATURE_EXTRACT_TOOL_H_
 
 #include "VortexExampleApp.h"
-#include "VortexFeatureExtract.h"
+#include <PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtract.h>
 #include "DiagnosticRenderer.h"
 
 class FeatureExtractTool : public Tool

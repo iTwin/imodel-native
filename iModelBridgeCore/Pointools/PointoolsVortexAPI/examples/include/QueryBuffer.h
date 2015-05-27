@@ -12,7 +12,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #ifndef POINTOOLS_EXAMPLE_APP_QUERY_BUFFER_H_
 #define POINTOOLS_EXAMPLE_APP_QUERY_BUFFER_H_
 
-#include "../include/PointoolsVortexAPI_import.h"
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
 #include <memory>
 
 #define QUERY_BUFFER_MAX_CHANNELS 8

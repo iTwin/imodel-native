@@ -344,10 +344,10 @@ bool	MetaSurvey::getMetaDataString(const pt::String &item, pt::String &value ) c
 		value = site_location;
 	
 	else if (item.compare( L"SiteLat" ) == 0 && fabs(site_lat) > 0)
-		value.format( "%0.2f", (int)site_lat );
+		value.format( "%0.2f", site_lat );
 
 	else if (item.compare( L"SiteLong" ) == 0 && fabs(site_long) > 0 )
-		value.format( "%0.2f", (int)site_long );
+		value.format( "%0.2f", site_long );
 
 	else if (item.compare( L"PostCode" ) == 0)
 		value = post_code;

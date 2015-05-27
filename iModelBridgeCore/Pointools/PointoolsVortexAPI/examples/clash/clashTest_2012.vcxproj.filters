@@ -57,7 +57,7 @@
     <ClCompile Include="clashApp.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp">
+    <ClCompile Include="..\..\src\PointoolsVortexAPI_import.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
     <ClCompile Include="..\src\timer.cpp">

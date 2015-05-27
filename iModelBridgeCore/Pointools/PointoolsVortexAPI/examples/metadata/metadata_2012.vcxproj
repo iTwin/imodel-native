@@ -76,8 +76,8 @@
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)$(ConfigurationName)</OutDir>
-    <IntDir>$(ConfigurationName)</IntDir>
+    <OutDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\</OutDir>
+    <IntDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\$(ProjectName)\Build\</IntDir>
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -86,8 +86,8 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)$(ConfigurationName)</OutDir>
-    <IntDir>$(ConfigurationName)</IntDir>
+    <OutDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\</OutDir>
+    <IntDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\$(ProjectName)\Build\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -120,6 +120,8 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -130,7 +132,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x64_VS2012);$(Pointools_Vortex_Include_x64_VS2012);..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;WIN64;_WINDOWS;_DEBUG;_GWCPROPCTRL_STATIC_ ;_CRT_NON_CONFORMING_SWPRINTFS.;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -145,13 +147,16 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <OutputFile>..\bin\x64\metadata_d.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\lib</AdditionalLibraryDirectories>
+      <OutputFile>..\bin\vc110\x64\$(TargetName)_d.exe</OutputFile>
+      <AdditionalLibraryDirectories>$(Pointools_Libs_Libs_x64_VS2012);$(Pointools_Vortex_Libs_x64_VS2012);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
+      <IgnoreSpecificDefaultLibraries>glui32.lib;glut32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -184,6 +189,8 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -193,7 +200,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x64_VS2012);$(Pointools_Vortex_Include_x64_VS2012);..\include;PropertyGrid\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_GWCPROPCTRL_STATIC_;_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -207,22 +214,25 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <OutputFile>..\bin\x64\metadata.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\lib</AdditionalLibraryDirectories>
+      <OutputFile>$(TargetPath)</OutputFile>
+      <AdditionalLibraryDirectories>$(Pointools_Libs_Libs_x64_VS2012);$(Pointools_Vortex_Libs_x64_VS2012);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
+      <IgnoreSpecificDefaultLibraries>glui32.lib;glut32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="metadata.cpp" />
     <ClCompile Include="metadataDlg.cpp" />
     <ClCompile Include="MetaDataGrid.cpp" />
-    <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp">
+    <ClCompile Include="..\..\src\PointoolsVortexAPI_import.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

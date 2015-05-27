@@ -10,7 +10,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "FeatureExtractTest.h"
-#include "VortexFeatureExtract.h"
+#include <PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtract.h>
 //-----------------------------------------------------------------------------
 FeatureExtractTool::FeatureExtractTool() : Tool(CmdFitCylinder, CmdFitPlane)
 //-----------------------------------------------------------------------------

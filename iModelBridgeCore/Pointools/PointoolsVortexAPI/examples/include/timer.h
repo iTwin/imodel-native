@@ -12,7 +12,10 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #ifndef POINTOOLS_PEFORMANCE_TIMER_INCLUDE
 #define POINTOOLS_PEFORMANCE_TIMER_INCLUDE
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+
 #include <windows.h>
 
 namespace pt

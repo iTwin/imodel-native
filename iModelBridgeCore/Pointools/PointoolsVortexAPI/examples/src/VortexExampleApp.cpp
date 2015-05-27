@@ -32,8 +32,8 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #include "../include/timer.h"
 
 /* API headers */ 
-#include "../include/PointoolsVortexAPI_import.h"
-#include "../include/VortexFeatureExtract.h"
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
+#include <PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtract.h>
 
 /* license code -   Contact vortex@pointools.com if you do not have this*/ 
 /*					or replace with one you have been provided			*/ 
@@ -577,12 +577,12 @@ void VortexExampleApp::drawAxes( float scale )
   glVertex3f( 0.0, 0.0, 0.0 );  glVertex3f( 1.0, 0.0, 0.0 ); /* X axis      */
 
   glColor3f( 0.0, 1.0, 0.0 );
-  glVertex3f(0.05, 1.00, 0.0);
-  glVertex3f(0.15, 0.85, 0.0);
-  glVertex3f(0.25, 1.00, 0.0);
-  glVertex3f(0.15, 0.85, 0.0);
-  glVertex3f(0.15, 0.85, 0.0);
-  glVertex3f(0.15, 0.65, 0.0);
+  glVertex3f(0.05f, 1.00f, 0.0f);
+  glVertex3f(0.15f, 0.85f, 0.0f);
+  glVertex3f(0.25f, 1.00f, 0.0f);
+  glVertex3f(0.15f, 0.85f, 0.0f);
+  glVertex3f(0.15f, 0.85f, 0.0f);
+  glVertex3f(0.15f, 0.65f, 0.0f);
 
   glVertex3f( 0.0, 0.0, 0.0 );  glVertex3f( 0.0, 1.0, 0.0 ); /* Y axis      */
 
@@ -623,40 +623,40 @@ void View::drawBox( double *lower, double *upper, double *position, double *rota
 	if(position != NULL && rotation != NULL)
 	{
 		glPushMatrix();
-		glTranslatef(position[0], position[1], position[2]);
-		glRotatef(rotation[1], 0, 1, 0);
-		glRotatef(rotation[0], 1, 0, 0);
-		glTranslatef(-position[0], -position[1], -position[2]);
+		glTranslatef((float) position[0], (float) position[1], (float) position[2]);
+		glRotatef((float) rotation[1], 0, 1, 0);
+		glRotatef((float) rotation[0], 1, 0, 0);
+		glTranslatef((float) -position[0], (float) -position[1], (float) -position[2]);
 	}
 
 	glBegin( GL_LINE_STRIP );
-		glVertex3f( lower[0], lower[1], lower[2] );
-		glVertex3f( upper[0], lower[1], lower[2] );
-		glVertex3f( upper[0], upper[1], lower[2] );
-		glVertex3f( lower[0], upper[1], lower[2] );
-		glVertex3f( lower[0], lower[1], lower[2] );
+		glVertex3f( (float) lower[0], (float) lower[1], (float) lower[2] );
+		glVertex3f( (float) upper[0], (float) lower[1], (float) lower[2] );
+		glVertex3f( (float) upper[0], (float) upper[1], (float) lower[2] );
+		glVertex3f( (float) lower[0], (float) upper[1], (float) lower[2] );
+		glVertex3f( (float) lower[0], (float) lower[1], (float) lower[2] );
 	glEnd();
 
 	glBegin( GL_LINE_STRIP );
-		glVertex3f( lower[0], lower[1], upper[2] );
-		glVertex3f( upper[0], lower[1], upper[2] );
-		glVertex3f( upper[0], upper[1], upper[2] );
-		glVertex3f( lower[0], upper[1], upper[2] );
-		glVertex3f( lower[0], lower[1], upper[2] );
+		glVertex3f( (float) lower[0], (float) lower[1], (float) upper[2] );
+		glVertex3f( (float) upper[0], (float) lower[1], (float) upper[2] );
+		glVertex3f( (float) upper[0], (float) upper[1], (float) upper[2] );
+		glVertex3f( (float) lower[0], (float) upper[1], (float) upper[2] );
+		glVertex3f( (float) lower[0], (float) lower[1], (float) upper[2] );
 	glEnd();
 
 	glBegin( GL_LINES );
-		glVertex3f( lower[0], lower[1], lower[2] );
-		glVertex3f( lower[0], lower[1], upper[2] );
+		glVertex3f( (float) lower[0], (float) lower[1], (float) lower[2] );
+		glVertex3f( (float) lower[0], (float) lower[1], (float) upper[2] );
 
-		glVertex3f( upper[0], lower[1], lower[2] );
-		glVertex3f( upper[0], lower[1], upper[2] );
+		glVertex3f( (float) upper[0], (float) lower[1], (float) lower[2] );
+		glVertex3f( (float) upper[0], (float) lower[1], (float) upper[2] );
 
-		glVertex3f( upper[0], upper[1], lower[2] );
-		glVertex3f( upper[0], upper[1], upper[2] );
+		glVertex3f( (float) upper[0], (float) upper[1], (float) lower[2] );
+		glVertex3f( (float) upper[0], (float) upper[1], (float) upper[2] );
 
-		glVertex3f( lower[0], upper[1], lower[2] );
-		glVertex3f( lower[0], upper[1], upper[2] );
+		glVertex3f( (float) lower[0], (float) upper[1], (float) lower[2] );
+		glVertex3f( (float) lower[0], (float) upper[1], (float) upper[2] );
 	glEnd();
 
 	glPopMatrix();

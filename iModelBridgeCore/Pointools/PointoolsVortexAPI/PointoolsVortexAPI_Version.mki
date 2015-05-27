@@ -2,7 +2,7 @@
 # PointoolsVortexAPI Build Version number settings
 #------------------------------------------------------------------------------------------------------
 
-REL_V					= 02
-MAJ_V					= 00
-MIN_V					= 00
-SUBMIN_V				= 210
+REL_V					= 01
+MAJ_V					= 06
+MIN_V					= 05
+SUBMIN_V				= 01

@@ -5,8 +5,6 @@
 //#include "PTAPI\PointoolsVortexAPI_import.h"
 #include "..\VortexObjects\VortexObjects_import.h"
 #include "..\PTAPI\PointoolsVortexAPI_ResultCodes.h"
-
-
 namespace vortex
 {	
 	class IClashTree;

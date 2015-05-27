@@ -244,10 +244,21 @@ public:
 	void buildChild(int child_idx);
 
 	inline bool flag(int f) const { return (_flags[f/8] & 1 << (f % 8)) ? true : false; }
+
 	inline void flag(int f, bool v, bool propagate = false) 
 	{ 
-		if (v) _flags[f/8] |= 1 << (f % 8); else _flags[f/8] &= ~(1 << (f % 8)); 
-		if (propagate) for (int i=0; i<8; i++) if (_child[i]) _child[i]->flag(f,v, true);
+		if (v)
+			_flags[f/8] |= 1 << (f % 8);
+		else
+			_flags[f/8] &= ~(1 << (f % 8)); 
+
+		if (propagate)
+		{
+			for (int i=0; i<8; i++)
+			{
+				if (_child[i]) _child[i]->flag(f,v, true);
+			}
+		}
 	}
 
 	inline ubyte &layers(int i=0)	{ return _layers[i]; }

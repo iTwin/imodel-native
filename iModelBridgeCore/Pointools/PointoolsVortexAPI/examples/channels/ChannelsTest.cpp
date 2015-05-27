@@ -102,9 +102,9 @@ bool	ChannelsTest::onMouseButtonDown( int button, int x, int y )
 		
 			if (ptFindNearestScreenPoint( 0, x, y, pnt ) >= 0)
 			{
-				m_boxUpper[0] = m_boxLower[0] = pnt[0];
-				m_boxUpper[1] = m_boxLower[1] = pnt[1];
-				m_boxUpper[2] = m_boxLower[2] = pnt[2];
+				m_boxUpper[0] = m_boxLower[0] = (float) pnt[0];
+				m_boxUpper[1] = m_boxLower[1] = (float) pnt[1];
+				m_boxUpper[2] = m_boxLower[2] = (float) pnt[2];
 
 				m_boxPosition[0] = 0;
 				m_boxPosition[1] = 0;
@@ -132,9 +132,9 @@ bool ChannelsTest::onMouseDrag(int x, int y, int startX, int startY)
 		
 		if (ptFindNearestScreenPoint( 0, x, y, pnt ) >= 0)
 		{
-			m_boxUpper[0] = pnt[0];
-			m_boxUpper[1] = pnt[1];
-			m_boxUpper[2] = pnt[2];
+			m_boxUpper[0] = (float) pnt[0];
+			m_boxUpper[1] = (float) pnt[1];
+			m_boxUpper[2] = (float) pnt[2];
 			m_boxValid = true;
 
 			viewUpdate();
@@ -145,8 +145,8 @@ bool ChannelsTest::onMouseDrag(int x, int y, int startX, int startY)
 		
 		Tool::startDynamicView();
 
-		m_boxRotation[0] = (x - m_mouse.eventStartX);
-		m_boxRotation[1] = (y - m_mouse.eventStartY);			
+		m_boxRotation[0] = (float) (x - m_mouse.eventStartX);
+		m_boxRotation[1] = (float) (y - m_mouse.eventStartY);			
 			
 		viewUpdate();
 
@@ -216,9 +216,9 @@ bool ChannelsTest::onMouseButtonUp(int button, int x, int y)
 			m_boxColor[1] = 0;
 			m_boxColor[2] = 0;
 														// Calculate box center for rotation
-			m_boxPosition[0] = (m_boxLower[0] + m_boxUpper[0]) * 0.5;
-			m_boxPosition[1] = (m_boxLower[1] + m_boxUpper[1]) * 0.5;
-			m_boxPosition[2] = (m_boxLower[2] + m_boxUpper[2]) * 0.5;
+			m_boxPosition[0] = (m_boxLower[0] + m_boxUpper[0]) * 0.5f;
+			m_boxPosition[1] = (m_boxLower[1] + m_boxUpper[1]) * 0.5f;
+			m_boxPosition[2] = (m_boxLower[2] + m_boxUpper[2]) * 0.5f;
 
 			m_boxRotation[0] = 0;
 			m_boxRotation[1] = 0;
@@ -353,7 +353,7 @@ void ChannelsTest::savePOD()
 		}
 		
 		PThandle query = ptCreateVisPointsQuery();		// all points that are visible
-		QueryBufferf queryBuffer(1e6);					// extract into buffer
+		QueryBufferf queryBuffer((int) 1e6);				// extract into buffer
 		queryBuffer.executeQuery(query, m_offChannel);
 
 		/* scene information */ 

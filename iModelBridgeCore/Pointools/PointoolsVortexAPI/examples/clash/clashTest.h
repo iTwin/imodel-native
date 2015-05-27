@@ -13,10 +13,10 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #define POINTOOLS_EXAMPLE_APP_CLASH_TOOL_H_
 
 #include "VortexExampleApp.h"
-#include "VortexFeatureExtract.h"
+#include <PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtract.h>
 #include "DiagnosticRenderer.h"
-#include "IClashObject.h"
-#include "GeomTypes.h"
+#include <PointoolsVortexAPI_DLL/VortexObjects/IClashObject.h>
+#include <PointoolsVortexAPI_FeatureExtract_DLL/GeomTypes.h>
 #include <map>
 
 

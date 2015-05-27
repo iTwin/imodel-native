@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GWCPropertiesInc.h"
-#include "../include/PointoolsVortexAPI_import.h"
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
 
 class CMetaDataGrid : public GWCPropertiesCtrl
 {

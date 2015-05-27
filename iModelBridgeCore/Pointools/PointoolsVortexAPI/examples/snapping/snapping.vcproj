@@ -361,7 +361,7 @@
 				Name="app"
 				>
 				<File
-					RelativePath="..\src\PointoolsVortexAPI_import.cpp"
+					RelativePath="..\..\src\PointoolsVortexAPI_import.cpp"
 					>
 				</File>
 				<File

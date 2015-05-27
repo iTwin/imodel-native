@@ -10,12 +10,12 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "clashTest.h"
-#include "VortexFeatureExtract.h"
-#include "PointoolsVortexAPI_import.h"
-#include "PointoolsVortexAPI_resultCodes.h"
-#include "IClashObjectManager.h"
-#include "IClashTree.h"
-#include "IClashNode.h"
+#include <PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtract.h>
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_resultCodes.h>
+#include <PointoolsVortexAPI_DLL/VortexObjects/IClashObjectManager.h>
+#include <PointoolsVortexAPI_DLL/VortexObjects/IClashTree.h>
+#include <PointoolsVortexAPI_DLL/VortexObjects/IClashNode.h>
 
 
 //-----------------------------------------------------------------------------
@@ -280,7 +280,7 @@ void ClashTool::computeVertices(float* extents, double* center, float* xAxis, fl
 	vortex::Vector3f vaxisx(xAxis[0], xAxis[1], xAxis[2]);
 	vortex::Vector3f vaxisy(yAxis[0], yAxis[1], yAxis[2]);
 	vortex::Vector3f vaxisz(zAxis[0], zAxis[1], zAxis[2]);
-	vortex::Vector3f vcenter(center[0], center[1], center[2]);
+	vortex::Vector3f vcenter((float) center[0], (float) center[1], (float) center[2]);
 
 	vortex::Vector3f ext[] = {	vaxisx * extents[0],
 		vaxisy * extents[1],

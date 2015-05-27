@@ -185,7 +185,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ClientServerExampleApp.cpp" />
-    <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp" />
+    <ClCompile Include="..\..\src\PointoolsVortexAPI_import.cpp" />
     <ClCompile Include="..\tuning\stdafx.cpp" />
     <ClCompile Include="..\src\timer.cpp" />
     <ClCompile Include="..\src\VortexExampleApp.cpp" />
