@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Tools/BitMask.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,7 +48,6 @@ typedef BitMaskP* BitMaskH;
 +===============+===============+===============+===============+===============+======*/
 struct      BitMask : NonCopyableClass
 {
-//__PUBLISH_SECTION_END__
 private:
 #if defined (DEBUG_BITMASK)
     static size_t       s_totalBitMaskMemoryMalloced;
@@ -70,8 +69,6 @@ public:
     DGNPLATFORM_EXPORT StatusInt            SetByBitPosition (uint32_t arrayIndex, uint16_t bitPosition, bool value);
     DGNPLATFORM_EXPORT void                 SetAll (bool value);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
 
 //! Creates a new BitMask instance.
