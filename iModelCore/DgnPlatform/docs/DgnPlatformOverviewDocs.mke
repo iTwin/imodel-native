@@ -82,6 +82,18 @@ $(docsPublishingInputDir)DgnSqlFuncs.overviewPage $(overviewStampFileName) : $(b
 $(docsPublishingInputDir)Category.overviewPage $(overviewStampFileName) : $(_MakeFilePath)overview/Category.overviewPage
     $(LinkFirstDepToFirstTarget)
 
+$(docsPublishingInputDir)DgnPlatform.overviewPage $(overviewStampFileName) : $(_MakeFilePath)overview/DgnPlatform.overviewPage
+    $(LinkFirstDepToFirstTarget)
+
+$(docsPublishingInputDir)Element.overviewPage $(overviewStampFileName) : $(_MakeFilePath)overview/Element.overviewPage
+    $(LinkFirstDepToFirstTarget)
+
+$(docsPublishingInputDir)Model.overviewPage $(overviewStampFileName) : $(_MakeFilePath)overview/Model.overviewPage
+    $(LinkFirstDepToFirstTarget)
+
+$(docsPublishingInputDir)View.overviewPage $(overviewStampFileName) : $(_MakeFilePath)overview/View.overviewPage
+    $(LinkFirstDepToFirstTarget)
+
 #TODO: These macros are not used by the DgnPlatform docs. 
 #Might be able to remove this once issue in PublishAPI.py was resolved that requires a macro file to be specified
 $(docsBuildDir)macros.txt : $(_MakeFileSpec)
@@ -97,19 +109,12 @@ always:
     PublishAPI.py $(PUBLISH_VERBOSE) -o${readyForDoxygen} -d${docsPublishingInputDir} $(cleanopt) -x$(TARGET_PLATFORM) --insertFileDir=${extractionOutputDir} --insertFileMacros=@$(docsBuildDir)macros.txt
 
 ##----------------------------------------------------------------------
-# Link in .overviewPages and other files that do not need publishing
-##----------------------------------------------------------------------
-$(readyForDoxygen)overview : $(baseDir)overview
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
-##----------------------------------------------------------------------
 #Link doc resources to build context so that consuming SDKs can use it to generate the final
 ##----------------------------------------------------------------------
 #documentation (Note folders in build context are pascal cased)
 bcDocsDir = $(BuildContext)Docs/
 linkdocstobuildcontext:
     @CreateSymLinks.py -d"$(bcDocsDir)Source/DgnPlatform=${readyForDoxygen}"
-
 
 %ifdef TBD_doc_images_and_files
     @CreateSymLinks.py -d"$(bcDocsDir)Images/DgnPlatform=$(baseDir)images"

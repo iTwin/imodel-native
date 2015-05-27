@@ -32,16 +32,6 @@ Every Category has a default (unnamed) SubCategory associated with it.
 @see @ref BentleyApi::DgnPlatform::DgnSubCategoryId                         "DgnSubCategoryId"
 
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_Category_DgnV8Level Category vs. DgnV8 Level
-
-The concept of a DgnDb @b Category supercedes the concept of a DgnV8 @b Level.
-While both have the same primary role (filtering) there are some important differences:
-
-@li For DgnDb, category is equally important to all elements whether they have geometry or not.
-@li All DgnDb elements are in one and only one category. Complex elements in DgnV8 could be on multiple levels.
-@li There is one set of categories per DgnDb file.  Each model could have its own set of levels in DgnV8.
-
-<!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_Category_Includes Required include files
 
 __PUBLISH_INSERT_FILE__ Category_Includes.sampleCode
@@ -53,6 +43,16 @@ Many developers will just use categories set up by the system or domain.
 In the case that custom categories are required, here is how to create and insert a category:
 
 __PUBLISH_INSERT_FILE__ Category_CreateAndInsert.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_Category_DgnV8Level Category vs. DgnV8 Level
+
+The concept of a DgnDb @b Category supercedes the concept of a DgnV8 @b Level.
+While both have the same primary role (filtering) there are some important differences:
+
+@li For DgnDb, category is equally important to all elements whether they have geometry or not.
+@li All DgnDb elements are in one and only one category. Complex elements in DgnV8 could be on multiple levels.
+@li There is one set of categories per DgnDb file.  Each model could have its own set of levels in DgnV8.
 
 <!-- ---------------------------------------------------------------------------------- -->
 */
