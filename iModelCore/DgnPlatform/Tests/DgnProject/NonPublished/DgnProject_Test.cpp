@@ -412,7 +412,6 @@ TEST(DgnDb, OpenAlreadyOpen)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DgnDb, GetCoordinateSystemProperties)
     {
-    /*
     ScopedDgnHost autoDgnHost;
     BeFileName fullFileName;
     TestDataManager::FindTestData (fullFileName, L"GeoCoordinateSystem.i.idgndb", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
@@ -423,13 +422,12 @@ TEST(DgnDb, GetCoordinateSystemProperties)
     double azmthExpected = 178.2912;
     double eps = 0.0001;
     EXPECT_TRUE(fabs(azmthExpected - azmth) < eps )<<"Expected diffrent azimuth ";
-    double latitude = dgnProj->Units().GetOriginLatitude();
-    double latitudeExpected = 42.3413;
-    EXPECT_TRUE(fabs(latitudeExpected - latitude) < eps)<<"Expected diffrent latitude ";
-    double longitude = dgnProj->Units().GetOriginLongitude();
-    double longitudeExpected = -71.0806;
-    EXPECT_TRUE(fabs (longitudeExpected - longitude) < eps)<<"Expected diffrent longitude ";
-    */
+    GeoPoint gorigin;
+    dgnProj->Units().LatLongFromUors(gorigin, DPoint3d::FromZero());
+    double const latitudeExpected = 42.3413;
+    EXPECT_TRUE(fabs(latitudeExpected - gorigin.latitude) < eps)<<"Expected diffrent latitude ";
+    double const longitudeExpected = -71.0806;
+    EXPECT_TRUE(fabs (longitudeExpected - gorigin.longitude) < eps)<<"Expected diffrent longitude ";
     }
 
 //----------------------------------------------------------------------------------------
