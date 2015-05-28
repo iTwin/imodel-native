@@ -479,7 +479,7 @@ public:
     DGNPLATFORM_EXPORT DPoint3d GetTargetPoint() const;
 
     //! Change whether a DgnCatetory is display in this view.
-    //! @param[in] category the DgnCategoryId to change.
+    //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff) {_ChangeCategoryDisplay(categoryId, onOff);}
 
@@ -504,7 +504,7 @@ public:
     DgnCategoryIdSet& GetViewedCategoriesR() {return m_viewedCategories;}
 
     //! Get the Appearance of a DgnSubCategory for this view.
-    //! @param[in] the DgnSubCategoryId of interest
+    //! @param[in] id the DgnSubCategoryId of interest
     //! @return the appearance of the DgnSubCategory for this view.
     DGNPLATFORM_EXPORT DgnCategories::SubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 

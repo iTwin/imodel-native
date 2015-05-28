@@ -110,7 +110,6 @@ struct DgnElementDependencyGraph
         };
 
     //! An Element dependency was triggered, but the handler for it was not registered.
-    //! #GetDescription returns the ID of the missing handler.
     //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
     //! This error should be reported to the user for follow up.
     struct MissingHandlerError : ITxnManager::ValidationError
@@ -119,7 +118,6 @@ struct DgnElementDependencyGraph
         };
     
     //! The requirements of an Element dependency were violated by the actions taken by another dependency handler.
-    //! #GetDescription returns a description of dependency that was violated.
     //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
     //! This error should be reported to the user for follow up.
     struct DependencyValidationError : ITxnManager::ValidationError
@@ -273,19 +271,18 @@ public:
 
     //! Get the "Edge" that represents the specified ECRelationship instance
     //! @param[in] relid    Identifies the ECRelationship instance
-    //! @param[in] whichClass Specifies which type of ECRelationship this is: ElementDrivesElement or ElementDrivesElements
     DGNPLATFORM_EXPORT Edge QueryEdgeByRelationshipId(BeSQLite::EC::ECInstanceId relid);
 
     //! Set the priority of an ElementDrivesElement ECRelationship instance
     //! @param[in] relid    Identifies the ElementDrivesElement ECRelationship instance
     //! @param[in] newPriority The new priority value
-    //! @See Edge::GetPriority
+    //! @see Edge::GetPriority
     DGNPLATFORM_EXPORT BentleyStatus SetElementDrivesElementPriority(BeSQLite::EC::ECInstanceId relid, int64_t newPriority);
 
     //! Set the deferred status of an ElementDrivesElement or an ElementDrivesElements ECRelationship instance
     //! @param[in] edge         Identifies the ECRelationship instance
     //! @param[in] isDeferred   set the dependency to deferred?
-    //! @See Edge::IsDeferred
+    //! @see Edge::IsDeferred
     DGNPLATFORM_EXPORT BentleyStatus SetEdgeDeferred(Edge& edge, bool isDeferred);
 
     //! Get the name of the temp table that contains a list of the Entities that were directly changed during the current transaction.

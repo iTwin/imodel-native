@@ -17,6 +17,10 @@ USING_NAMESPACE_EC
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+////////////////////////////////////////////////////////////////////////////////////////
+// DgnDbExpressionContext
+////////////////////////////////////////////////////////////////////////////////////////
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015
 //---------------------------------------------------------------------------------------
@@ -60,6 +64,55 @@ DgnDbCR DgnDbExpressionContext::GetDgnDb()
 DgnDbExpressionContextPtr DgnDbExpressionContext::Create(DgnDbCR db) 
     { 
     return new DgnDbExpressionContext(db); 
+    }
+
+////////////////////////////////////////////////////////////////////////////////////////
+// DgnElementExpressionContext
+////////////////////////////////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+ECValue DgnElementExpressionContext::GetClassName() const
+    {
+    return ECValue(m_element.GetElementClass()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+ECValue DgnElementExpressionContext::GetFullClassName() const
+    {
+    return ECValue(m_element.GetElementClass()->GetFullName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+DgnElementCR DgnElementExpressionContext::GetElement()
+    {
+    return m_element;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+DgnElementExpressionContext::DgnElementExpressionContext(DgnElementCR element) : m_element(element), DgnDbExpressionContext(element.GetDgnDb())
+    {
+    SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create(NULL);
+
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>(L"ClassName", *this, &DgnElementExpressionContext::GetClassName));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>(L"FullClassName", *this, &DgnElementExpressionContext::GetFullClassName));
+
+    AddSymbol(*ContextSymbol::CreateContextSymbol(L"element", *methodContext));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+DgnElementExpressionContextPtr DgnElementExpressionContext::Create(DgnElementCR element)
+    {
+    return new DgnElementExpressionContext(element);
     }
 
 

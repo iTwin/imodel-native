@@ -708,6 +708,7 @@ BentleyStatus   DistanceFormatter::ToDwgUnitFormat (DwgUnitFormat& dwgUnitFormat
     return  ERROR;
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -730,6 +731,7 @@ void DistanceFormatter::InitializeForDwg (DgnModel::Properties const& modelInfo)
     SetDWGUnitFormat (dwgUnitFormat);
     SetPrecision (precision);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
@@ -1332,6 +1334,7 @@ void AreaOrVolumeFormatterBase::SetDWGUnitFormat (DwgUnitFormat newVal)
     m_insertThousandsSeparator = true;
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1354,6 +1357,7 @@ void            AreaOrVolumeFormatterBase::InitializeForDwg (DgnModel::Propertie
     SetDWGUnitFormat (dwgUnitFormat);
     SetPrecision (precision);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12

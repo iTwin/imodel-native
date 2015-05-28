@@ -457,7 +457,6 @@ public:
 
     //! Get an iterator over the SubCategories of a category or all SubCategories of all categories.
     //! @param[in] categoryId Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-    //! @param[in] whereClause an optional where clause
     SubCategoryIterator MakeSubCategoryIterator(DgnCategoryId categoryId=DgnCategoryId()) const {return SubCategoryIterator(m_dgndb, categoryId);}
     //@}
 
@@ -898,6 +897,8 @@ private:
     bool IsElementIdUsed(DgnElementId id) const;
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
+    DgnModelStatus PerformDelete(DgnElementCR);
+    DgnModelStatus ConfirmDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
@@ -908,8 +909,7 @@ public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
     DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
-    DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
-    DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
+    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.
@@ -971,7 +971,7 @@ public:
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
-    //! @note This method is merely a shortcut to #GetElement(id) and then #Delete(element)
+    //! @note This method is merely a shortcut to #GetElement and then #Delete
     DgnModelStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DGNMODEL_STATUS_ElementNotFound;}
 
     //! Get the Heapzone for this DgnDb.
