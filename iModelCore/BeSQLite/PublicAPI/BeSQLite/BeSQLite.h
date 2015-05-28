@@ -2150,16 +2150,16 @@ public:
 
     //! Register a RepositoryLocalValue name with the Db.
     //! @remarks On closing the Db the registration is cleared.
-    //! @param[out] index Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
-    //! @param[in] name Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
+    //! @param[out] rlvIndex Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
+    //! @param[in] rlvName Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
     //! has to ensure that it remains valid for the entire lifetime of the Db object.
     //! @return BE_SQLITE_OK if registration was successful. Error code, if a RepositoryLocalValue with the same
     //! name has already been registered.
     BE_SQLITE_EXPORT DbResult Register(size_t& rlvIndex, Utf8CP rlvName);
 
     //! Look up the RepositoryLocalValue index for the given name
-    //! @param[out] index Found index for the RepositoryLocalValue
-    //! @param[in] name Name of the RepositoryLocalValue
+    //! @param[out] rlvIndex Found index for the RepositoryLocalValue
+    //! @param[in] rlvName Name of the RepositoryLocalValue
     //! @return true, if the RepositoryLocalValue index was found, i.e. a RepositoryLocalValue is registered for @p rlvName,
     //! false otherwise.
     BE_SQLITE_EXPORT bool TryGetIndex(size_t& rlvIndex, Utf8CP rlvName);
