@@ -51,7 +51,7 @@ StatusInt Passport::HasUserPassport (Utf8StringCR userGuid)
     Utf8PrintfString credsPair ("%s:%s", HEADER_USERNAME, HEADER_API_KEY);
     Utf8PrintfString authorization ("Basic %s", Base64Utilities::Encode (credsPair).c_str ());
 
-    HttpClient client (s_customHttpHandler);
+    HttpClient client (nullptr, s_customHttpHandler);
     HttpRequest request = client.CreateGetRequest (getURL);
     request.GetHeaders ().SetContentType ("application/json");
     request.GetHeaders ().SetAuthorization (authorization);

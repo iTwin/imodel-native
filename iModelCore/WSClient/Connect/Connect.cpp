@@ -247,7 +247,7 @@ StatusInt Connect::GetStsToken (Utf8StringCR authorization, JsonValueCR issueExP
         }
 
     //    MOBILEDGN_LOGE("Bentley::MobileUtils::Connect::GetStsToken(): About to create HttpClient.");
-    HttpClient client (s_customHttpHandler);
+    HttpClient client (nullptr, s_customHttpHandler);
     HttpRequest request = client.CreatePostRequest (stsUrl);
     request.GetHeaders ().SetContentType ("application/json");
     request.GetHeaders ().SetAuthorization (authorization);

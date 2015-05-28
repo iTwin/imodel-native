@@ -71,7 +71,7 @@ StatusInt UsageTracking::RegisterUserUsages (bvector<MobileTracking> usages)
         return USAGE_NO_USAGES;
         }
 
-    HttpClient client (s_customHttpHandler);
+    HttpClient client (nullptr, s_customHttpHandler);
     HttpRequest request = client.CreatePostRequest (GetUsageTrackingUrl ());
     request.GetHeaders ().SetContentType ("application/json");
 
@@ -109,7 +109,7 @@ Json::Value UsageTracking::GetUserUsages (Utf8StringCR userGuid, Utf8StringCR de
     Utf8PrintfString getURL ("%s/%s/%s", GetUsageTrackingUrl ().c_str (), user.c_str (), deviceId.c_str ());
     Utf8StringCR ver = VerifyClientMobile (userGuid, deviceId);
 
-    HttpClient client (s_customHttpHandler);
+    HttpClient client (nullptr, s_customHttpHandler);
     HttpRequest request = client.CreateGetRequest (getURL);
     request.GetHeaders ().SetContentType ("application/json");
     request.GetHeaders ().AddValue ("ClientAuth", ver.c_str ());
@@ -130,7 +130,7 @@ Json::Value UsageTracking::GetUserUsages (Utf8StringCR userGuid, Utf8StringCR de
     Utf8PrintfString getURL ("%s/%s/%s/%s", GetUsageTrackingUrl ().c_str (), user.c_str (), deviceId.c_str (), date.c_str ());
     Utf8StringCR ver = VerifyClientMobile (userGuid, deviceId);
 
-    HttpClient client (s_customHttpHandler);
+    HttpClient client (nullptr, s_customHttpHandler);
     HttpRequest request = client.CreateGetRequest (getURL);
     request.GetHeaders ().SetContentType ("application/json");
     request.GetHeaders ().AddValue ("ClientAuth", ver.c_str ());
