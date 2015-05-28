@@ -381,7 +381,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp (NativeSqlBuilder::List& nativeSqlS
     if (exp->HasParentheses())
         nativeSqlBuilder.AppendParenRight();
 
-    nativeSqlSnippets.push_back(nativeSqlBuilder);
+    nativeSqlSnippets.push_back(move(nativeSqlBuilder));
     return ECSqlStatus::Success;
     }
 
