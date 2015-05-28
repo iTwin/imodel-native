@@ -384,10 +384,7 @@ struct SubqueryExp : QueryExp
 private:
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override
-        {
-        return "Subquery";
-        }
+    virtual Utf8String _ToString () const override {return "Subquery";}
 
 protected:
     virtual DerivedPropertyExp const* _FindProperty (Utf8StringCR propertyName) const override;
@@ -610,23 +607,20 @@ struct SubqueryValueExp : ValueExp
     {
     DEFINE_EXPR_TYPE(SubqueryValue)
 
-    private:
-        virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+private:
+    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual Utf8String _ToString () const override { return "SubqueryValue"; }
 
-        virtual Utf8String _ToString () const override
-            {
-            return "SubqueryValue";
-            }
+public:
+    explicit SubqueryValueExp (std::unique_ptr<SubqueryExp> subquery);
 
-    public:
-        explicit SubqueryValueExp (std::unique_ptr<SubqueryExp> subquery);
+    SubqueryExp const* GetQuery() const {return GetChild<SubqueryExp> (0);}
 
-        SubqueryExp const* GetQuery() const {return GetChild<SubqueryExp> (0);}
-
-        virtual Utf8String ToECSql() const override  
-            {
-            return GetQuery ()->ToECSql();  
-            }
+    virtual Utf8String ToECSql() const override  
+        {
+        //inner exp already wraps the ECSQL in parentheses
+        return GetQuery ()->ToECSql();  
+        }
     };
 
 

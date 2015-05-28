@@ -26,7 +26,7 @@ bool PropertyNameExp::PropertyRef::Prepare (NativeSqlBuilder::List const& snippe
         m_nativeSqlSnippets = snippets;
         if (m_nativeSqlSnippets.size () == 1LL)
             {
-            m_nativeSqlSnippets.front ().Rest ();
+            m_nativeSqlSnippets.front ().Reset ();
             m_nativeSqlSnippets.front ().AppendEscaped (alias.c_str ());
             m_isPrepared = true;
             }
@@ -38,7 +38,7 @@ bool PropertyNameExp::PropertyRef::Prepare (NativeSqlBuilder::List const& snippe
                 {
                 postfix.clear ();
                 postfix.Sprintf ("%s_%d", alias.c_str (), idx++);
-                snippet.Rest ();
+                snippet.Reset ();
                 snippet.AppendEscaped (postfix.c_str ());
                 }
 

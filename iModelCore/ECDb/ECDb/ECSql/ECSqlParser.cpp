@@ -811,7 +811,16 @@ unique_ptr<ValueExp> ECSqlParser::parse_value_exp_primary (ECSqlParseContext& ct
         ctx.SetError(ECSqlStatus::ProgrammerError, "Wrong grammar");
         return nullptr;
         }
-    return parse_value_exp(ctx,  parseNode->getChild(1));
+
+    unique_ptr<ValueExp> exp = parse_value_exp(ctx,  parseNode->getChild(1));
+    //This rule is expected to always have parentheses
+    BeAssert(parseNode->getChild(0)->getTokenValue() == "(" &&
+             parseNode->getChild(2)->getTokenValue() == ")");
+
+    if (parseNode->getChild(0)->getTokenValue().Equals("("))
+        exp->SetHasParentheses();
+
+    return exp;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1517,10 +1526,10 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             }
         case OSQLParseNode::boolean_primary:
             {
-            if (parseNode->getChild(0)->getTokenValue().Equals("("))
-                return parse_search_conditon(ctx, parseNode->getChild(1/*search_condition*/));
-
-            break;
+            BeAssert(parseNode->count() == 3);
+            unique_ptr<BooleanExp> exp = parse_search_conditon(ctx, parseNode->getChild(1/*search_condition*/));
+            exp->SetHasParentheses();
+            return exp;
             }
         case OSQLParseNode::unary_predicate:
             return parse_unary_predicate(ctx, parseNode);
@@ -1818,11 +1827,12 @@ unique_ptr<SubqueryExp> ECSqlParser::parse_subquery (ECSqlParseContext& ctx, OSQ
         ctx.SetError (ECSqlStatus::ProgrammerError, "Wrong grammar. Expecting subquery");
         return nullptr;
         }
-    auto compound_select = parse_select_statement (ctx, parseNode->getChild(1/*query_exp*/));
-    if (ctx.IsSuccess())
-        return unique_ptr<SubqueryExp> (new SubqueryExp (std::move(compound_select)));
 
-    return nullptr;
+    unique_ptr<SelectStatementExp> compound_select = parse_select_statement (ctx, parseNode->getChild(1/*query_exp*/));
+    if (!ctx.IsSuccess())
+        return nullptr;
+
+    return unique_ptr<SubqueryExp> (new SubqueryExp (std::move(compound_select)));
     }
 
 //-----------------------------------------------------------------------------------------

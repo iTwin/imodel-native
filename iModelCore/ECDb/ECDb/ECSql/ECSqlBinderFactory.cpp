@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinderFactory.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -40,7 +40,6 @@ bool enforceConstraints
         if (propNameExp->IsSystemProperty ())
             return unique_ptr<ECSqlBinder> (new SystemPropertyECSqlBinder (ecsqlStatement, typeInfo, *propNameExp, targetIsVirtual, enforceConstraints));
         }
-    
     
     return CreateBinder (ecsqlStatement, typeInfo);
     }

@@ -116,7 +116,7 @@ RelationshipClassEndTableMapCR classMap
         //virtual prop maps map to non-existing columns. So they don't need to be considered in the list of columns to be nulled out
         if (!propMap->IsVirtual () && (!propMap->IsSystemPropertyMap () || propMap == otherEndECInstanceIdPropMap || propMap == otherEndECClassIdPropMap))
             {
-            auto sqlSnippets = propMap->ToNativeSql (nullptr, ECSqlType::Delete);
+            auto sqlSnippets = propMap->ToNativeSql (nullptr, ECSqlType::Delete, false);
             propertyNamesToUnsetSqlSnippets.insert (propertyNamesToUnsetSqlSnippets.end (), sqlSnippets.begin (), sqlSnippets.end ());
             }
         }, 

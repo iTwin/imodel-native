@@ -62,7 +62,7 @@ public:
         if (clear)
             m_nativeSql.clear ();
         }
-    void Rest ()
+    void Reset ()
         {
         m_nativeSql.clear ();
         m_stack.clear ();

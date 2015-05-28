@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/UpdateStatementExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,10 +58,7 @@ private:
 
     ParameterExp* TryGetValueExpAsParameterExp () const;
 
-    virtual Utf8String _ToString () const override
-        {
-        return "Assignment";
-        }
+    virtual Utf8String _ToString () const override { return "Assignment"; }
 
 public:
     AssignmentExp (std::unique_ptr<PropertyNameExp> propNameExp, std::unique_ptr<ValueExp> valueExp);

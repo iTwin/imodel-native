@@ -114,7 +114,7 @@ struct PropertyMapRelationshipConstraintECInstanceId : PropertyMapRelationshipCo
 private:
     PropertyMapRelationshipConstraintECInstanceId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, Utf8CP columnAliasInView);
 
-    virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const override;
+    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
 
     virtual WString _ToString () const override;
 
@@ -134,7 +134,7 @@ private:
 
     PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, ECN::ECClassId defaultClassId, ECDbSqlTable const* primaryTable, Utf8CP columnAliasInView, ECDbSqlTable* table);
 
-    virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const override;
+    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
 
     virtual WString _ToString () const override;
 

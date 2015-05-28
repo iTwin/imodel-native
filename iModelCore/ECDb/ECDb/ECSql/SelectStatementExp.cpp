@@ -855,6 +855,7 @@ Utf8String SubqueryTestExp::_ToString() const
 SubqueryValueExp::SubqueryValueExp(std::unique_ptr<SubqueryExp> subquery)
     : ValueExp ()
     {
+    SetHasParentheses(); //subquery value exp always wrapped in parentheses
     AddChild (move (subquery));
     }
 

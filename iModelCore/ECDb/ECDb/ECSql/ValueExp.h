@@ -173,9 +173,8 @@ private:
     bool HasClassAlias () const { return !m_classAlias.empty ();}
 
 public:
-    explicit ECClassIdFunctionExp (Utf8CP classAlias)
-        : ValueExp (), m_classAlias (classAlias), m_classRefExp (nullptr)
-        {}
+    explicit ECClassIdFunctionExp(Utf8CP classAlias)
+        : ValueExp(), m_classAlias(classAlias), m_classRefExp(nullptr) {}
 
     ~ECClassIdFunctionExp () {}
 
@@ -226,10 +225,7 @@ private:
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override
-        {
-        return "LikeRhsValue";
-        }
+    virtual Utf8String _ToString () const override { return "LikeRhsValue"; }
 
 public:
     explicit LikeRhsValueExp (std::unique_ptr<ValueExp> rhsExp, std::unique_ptr<ValueExp> escapeExp = nullptr)
@@ -259,13 +255,7 @@ private:
     ComputedExp const* m_targetExp;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-
-    virtual Utf8String _ToString () const override
-        {
-        Utf8String str ("Parameter [Name: ");
-        str.append (m_parameterName).append ("]");
-        return str;
-        }
+    virtual Utf8String _ToString () const override;
 
 public:
     explicit ParameterExp (Utf8CP parameterName)
@@ -316,8 +306,7 @@ private:
     static Utf8CP ToString(Function function);
 public:
     SetFunctionCallExp(Function function, SqlSetQuantifier setQuantifier)
-        : FunctionCallExp(ToString(function)), m_function(function), m_setQuantifier(setQuantifier)
-        {}
+        : FunctionCallExp(ToString(function)), m_function(function), m_setQuantifier(setQuantifier) {}
 
     Function GetFunction() const { return m_function; }
     SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }

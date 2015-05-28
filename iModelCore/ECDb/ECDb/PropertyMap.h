@@ -71,7 +71,7 @@ public:
 struct PropertyMap : RefCountedBase, NonCopyableClass
 {
 private:
-    virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const;
+    virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const;
 
 protected:
     ECN::ECPropertyCR       m_ecProperty;
@@ -181,8 +181,9 @@ public:
     //!                            <classidentifier>.<columnname>
     //! @param[in] ecsqlType ECSQL type for which the native SQL is generated. SQL generation depends on the ECSQL type
     //!            which is why this parameter is needed
+    //! @param[in] wrapInParentheses true if the native SQL snippets should be wrapped in parentheses. false otherwise
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
-    NativeSqlBuilder::List ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const;
+    NativeSqlBuilder::List ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const;
 
 
     //! Saves the base column name, if it differs from the property name

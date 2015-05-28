@@ -23,19 +23,24 @@ struct ComputedExp : Exp
     DEFINE_EXPR_TYPE(Computed)
 
 private:
+    friend struct ECSqlParser;
+
+    bool m_hasParentheses;
     ECSqlTypeInfo m_typeInfo;
 
     static void FindHasTargetExpExpressions (std::vector<ParameterExp const*>& parameterExpList, ComputedExp const* expr);
 protected:
-    ComputedExp () : Exp () {}
+    explicit ComputedExp() : Exp(), m_hasParentheses(false) {}
 
     ECSqlStatus DetermineOperandsTargetTypes (ECSqlParseContext& ctx, ComputedExp const* lhs, ComputedExp const* rhs) const;
 
     void SetTypeInfo (ECSqlTypeInfo const& typeInfo) {m_typeInfo = typeInfo;}
+    void SetHasParentheses() { m_hasParentheses = true; }
 
 public:
     virtual ~ComputedExp () {}
 
+    bool HasParentheses() const { return m_hasParentheses; }
     ECSqlTypeInfo const& GetTypeInfo () const {return m_typeInfo;}
     };
 

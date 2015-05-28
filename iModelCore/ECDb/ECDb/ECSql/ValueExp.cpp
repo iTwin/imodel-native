@@ -135,7 +135,16 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing (ECSqlParseContext& ct
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String BinaryValueExp::ToECSql() const 
     {
-    return "(" + GetLeftOperand ()->ToECSql() + " " + ExpHelper::ToString(m_op) + " " + GetRightOperand ()->ToECSql() +")";
+    Utf8String ecsql;
+    if (HasParentheses())
+        ecsql.append("(");
+
+    ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ").append(GetRightOperand()->ToECSql());
+    
+    if (HasParentheses())
+        ecsql.append(")");
+
+    return std::move(ecsql);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -274,7 +283,16 @@ bool CastExp::NeedsCasting () const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String CastExp::ToECSql () const 
     {
-    return "CAST (" + GetCastOperand ()->ToECSql() +" AS " + m_castTargetType + ")" ;
+    Utf8String ecsql;
+    if (HasParentheses())
+        ecsql.append("(");
+
+    ecsql.append("CAST (").append(GetCastOperand ()->ToECSql()).append(" AS ").append(m_castTargetType).append (")");
+
+    if (HasParentheses())
+        ecsql.append(")");
+
+    return std::move(ecsql);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -387,31 +405,38 @@ Utf8String ConstantValueExp::ToECSql () const
     {
     auto const& typeInfo = GetTypeInfo ();
 
+    Utf8String ecsql;
+    if (HasParentheses())
+        ecsql.append("(");
+
     if (typeInfo.GetKind () == ECSqlTypeInfo::Kind::Null)
-        return "NULL";
-
-    if (typeInfo.IsPrimitive ())
+        ecsql.append("NULL");
+    else if (typeInfo.IsPrimitive())
         {
-        auto primType = typeInfo.GetPrimitiveType ();
+        auto primType = typeInfo.GetPrimitiveType();
         if (primType == PRIMITIVETYPE_String)
+            ecsql.append("'").append(m_value).append("'");
+        else if (primType == PRIMITIVETYPE_DateTime)
             {
-            return "'" + m_value + "'";
-            }
-
-        if (primType == PRIMITIVETYPE_DateTime)
-            {
-            if (BeStringUtilities::Strnicmp (m_value.c_str (), "CURRENT", 7) == 0)
-                return m_value;
-
-            auto const& dtInfo = typeInfo.GetDateTimeInfo ();
-            if (!dtInfo.IsComponentNull () && dtInfo.GetInfo (false).GetComponent () == DateTime::Component::Date)
-                return "DATE '" + m_value + "'";
+            if (BeStringUtilities::Strnicmp(m_value.c_str(), "CURRENT", 7) == 0)
+                ecsql.append(m_value);
             else
-                return "TIMESTAMP '" + m_value + "'";
+                {
+                auto const& dtInfo = typeInfo.GetDateTimeInfo();
+                if (!dtInfo.IsComponentNull() && dtInfo.GetInfo(false).GetComponent() == DateTime::Component::Date)
+                    ecsql.append("DATE '").append(m_value).append("'");
+                else
+                    ecsql.append("TIMESTAMP '").append(m_value).append("'");
+                }
             }
         }
+    else
+        ecsql.append(m_value);
 
-    return m_value;
+    if (HasParentheses())
+        ecsql.append(")");
+
+    return move(ecsql);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -792,6 +817,15 @@ Utf8String ParameterExp::ToECSql () const
     return str;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ParameterExp::_ToString() const
+    {
+    Utf8String str("Parameter [Name: ");
+    str.append(m_parameterName).append("]");
+    return str;
+    }
 
 
 //****************************** SetFunctionCallExp *****************************************
@@ -1010,7 +1044,16 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing (ECSqlParseContext& ctx
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String UnaryValueExp::ToECSql() const 
     {
-    return ExpHelper::ToString(m_op) + Utf8String("(") + GetOperand ()->ToECSql() + ")";
+    Utf8String ecsql;
+    if (HasParentheses())
+        ecsql.append("(");
+
+    ecsql.append(ExpHelper::ToString(m_op)).append(GetOperand()->ToECSql());
+
+    if (HasParentheses())
+        ecsql.append(")");
+
+    return move(ecsql);
     }
 
 //-----------------------------------------------------------------------------------------
