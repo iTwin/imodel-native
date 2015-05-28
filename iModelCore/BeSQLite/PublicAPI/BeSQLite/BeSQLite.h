@@ -2150,16 +2150,16 @@ public:
 
     //! Register a RepositoryLocalValue name with the Db.
     //! @remarks On closing the Db the registration is cleared.
-    //! @param[out] rlvIndex Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
-    //! @param[in] rlvName Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
+    //! @param[out] index Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
+    //! @param[in] name Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
     //! has to ensure that it remains valid for the entire lifetime of the Db object.
     //! @return BE_SQLITE_OK if registration was successful. Error code, if a RepositoryLocalValue with the same
     //! name has already been registered.
     BE_SQLITE_EXPORT DbResult Register(size_t& rlvIndex, Utf8CP rlvName);
 
     //! Look up the RepositoryLocalValue index for the given name
-    //! @param[out] rlvIndex Found index for the RepositoryLocalValue
-    //! @param[in] rlvName Name of the RepositoryLocalValue
+    //! @param[out] index Found index for the RepositoryLocalValue
+    //! @param[in] name Name of the RepositoryLocalValue
     //! @return true, if the RepositoryLocalValue index was found, i.e. a RepositoryLocalValue is registered for @p rlvName,
     //! false otherwise.
     BE_SQLITE_EXPORT bool TryGetIndex(size_t& rlvIndex, Utf8CP rlvName);
@@ -2181,7 +2181,7 @@ public:
     //! Increment the RepositoryLocalValue by one for the given @p rlvIndex.
     //! @param[out] newValue Incremented value
     //! @param[in] rlvIndex The index of the RepositoryLocalValue to increment.
-    //! @return BE_SQLITE_OK in case of success. Error code otherwise. If @initialValue is nullptr and
+    //! @return BE_SQLITE_OK in case of success. Error code otherwise. If initialValue is nullptr and
     //!         the RepositoryLocalValue does not exist, and error code is returned.
     //! @see RegisterRepositoryLocalValue
     BE_SQLITE_EXPORT DbResult IncrementValue(int64_t& newValue, size_t rlvIndex);
@@ -2907,7 +2907,7 @@ public:
 //__PUBLISH_SECTION_START__
 
     //! Check if the Db is at or beyond its expiration date.
-    //! @see QueryExpirationDate.
+    //! @see QueryExpirationDate, CreateParams::SetExpirationDate
     BE_SQLITE_EXPORT bool IsExpired() const;
 
     //! Query the ExpirationDate property of this database.
