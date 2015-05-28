@@ -847,7 +847,7 @@ void ElementGeomIO::Writer::Append (MSBsplineSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments, bool saveBRepOnly)
+void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOnly)
     {
     bool        saveBRep = saveBRepOnly, saveFacets = false, saveEdges = false, saveFaceIso = false;
 
@@ -860,10 +860,10 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
                 {
                 saveBRep = saveFacets = true;
                                             
-                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasOnlyPlanarFaces))
+                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     saveFaceIso = true;
                     
-                if (saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge))
+                if (saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge))
                     saveEdges = true;
                 break;
                 }
@@ -875,6 +875,8 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
                 }
             }
         }
+
+    // NEEDSWORK: IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     if (saveBRep)
         {
@@ -911,7 +913,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
         IFacetOptionsPtr       facetOpt = IFacetOptions::CreateForCurves();
         IFacetTopologyTablePtr facetsPtr;
 
-        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt, nullptr))
+        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt))
             {
             PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
 
@@ -1247,7 +1249,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ISolidKernelEntityPtr& e
 
     auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
 
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), ISolidKernelEntity::SolidKernel_PSolid, *((TransformCP) ppfb->entityTransform())))
+    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return false;
 
     return entity.IsValid();
@@ -2810,7 +2812,7 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP geomToElement, bool deferWrite)
+bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP geomToElement)
     {
     DRange3d localRange;
 
@@ -2819,11 +2821,8 @@ bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP ge
 
     OnNewGeom(localRange, geomToElement);
 
-    if (!deferWrite)
-        {
-        if (!m_writer.AppendSimplified(geom, m_model.Is3d()))
-            m_writer.Append(geom);
-        }
+    if (!m_writer.AppendSimplified(geom, m_model.Is3d()))
+        m_writer.Append(geom);
 
     return true;
     }
@@ -2831,12 +2830,12 @@ bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom, bool deferWrite)
+bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom)
     {
     if (!ConvertToLocal(geom))
         return false;
 
-    return AppendLocal(geom, nullptr, deferWrite);
+    return AppendLocal(geom, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3022,7 +3021,7 @@ bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAttachmentsCP attachments)
+bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom)
     {
     if (!m_model.Is3d())
         {
@@ -3038,7 +3037,7 @@ bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAtt
             return false;
 
         OnNewGeom (localRange, nullptr);
-        m_writer.Append(geom, attachments);
+        m_writer.Append(geom);
 
         return true;
         }
@@ -3051,12 +3050,7 @@ bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAtt
 
     ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
 
-    if (!AppendWorld (*geomPtr, true)) // Don't Append as ElementGeomentry for faceAttachments...
-        return false;
-
-    m_writer.Append(*geomPtr->GetAsISolidKernelEntity (), attachments);
-
-    return true;
+    return AppendWorld (*geomPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
