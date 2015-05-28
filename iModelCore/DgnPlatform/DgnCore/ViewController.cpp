@@ -1122,18 +1122,10 @@ double PhysicalViewController::CalculateMaxDepth (DVec3dCR delta, DVec3dCR zVec)
 //---------------------------------------------------------------------------------------
 static bool convertToWorldPointWithStatus (DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
     {
-    if (SUCCESS != units.ConvertToWorldPoint (worldPoint, location))
+    if (SUCCESS != units.UorsFromLatLong (worldPoint, location))
         {
-        if (!units.CanConvertBetweenGeoAndWorld())
-            status = GeoLocationEventStatus::NoGeoCoordinateSystem;
-        else if (!units.IsGeoPointWithinCoordinateSystem (location))
-            status = GeoLocationEventStatus::PointOutsideGeoCoordinateSystem;
-        else
-            {
-            BeAssert (false);
-            status = GeoLocationEventStatus::EventIgnored;
-            }
-
+        BeAssert (false);
+        status = GeoLocationEventStatus::EventIgnored;
         return false;
         }
 

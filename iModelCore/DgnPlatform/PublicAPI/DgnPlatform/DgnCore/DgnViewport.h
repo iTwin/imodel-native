@@ -986,7 +986,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt Zoom (DPoint3dCP newCenterRoot, double factor);
 
     //! Change the frustum for this DgnViewport. The frustum is an 8-point array of points in DgnCoordSystem::World coordinates
-    //! in the order specified by #NpcCorners.
+    //! in the order specified by NpcCorners.
     //! This method will change the DgnViewport's frustum, but does \em not update the screen (even if the DgnViewport happens
     //! to be a visible View.) This method \em does change the ViewController associated with the DgnViewport.
     //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController

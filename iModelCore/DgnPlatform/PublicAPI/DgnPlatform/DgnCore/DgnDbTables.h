@@ -111,7 +111,7 @@ public:
 //=======================================================================================
 struct DgnCategories : DgnDbTable
     {
-    //! The Rank of a category indicates who created it and who may use it for elements
+    //! The Rank of a category indicates how it was created and where it can be used.
     enum class Rank
     {
         System      = 0,    //!< This category is predefined by the system
@@ -457,7 +457,6 @@ public:
 
     //! Get an iterator over the SubCategories of a category or all SubCategories of all categories.
     //! @param[in] categoryId Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-    //! @param[in] whereClause an optional where clause
     SubCategoryIterator MakeSubCategoryIterator(DgnCategoryId categoryId=DgnCategoryId()) const {return SubCategoryIterator(m_dgndb, categoryId);}
     //@}
 
@@ -898,6 +897,8 @@ private:
     bool IsElementIdUsed(DgnElementId id) const;
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
+    DgnModelStatus PerformDelete(DgnElementCR);
+    DgnModelStatus ConfirmDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
@@ -908,8 +909,7 @@ public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
     DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
-    DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
-    DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
+    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.
@@ -971,7 +971,7 @@ public:
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
-    //! @note This method is merely a shortcut to #GetElement(id) and then #Delete(element)
+    //! @note This method is merely a shortcut to #GetElement and then #Delete
     DgnModelStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DGNMODEL_STATUS_ElementNotFound;}
 
     //! Get the Heapzone for this DgnDb.
@@ -1351,31 +1351,15 @@ public:
 //=======================================================================================
 struct DgnUnits : NonCopyableClass
 {
-    struct GeoTransform
-    {
-        RotMatrix   m_matrix;
-        double      m_xRadius;
-        double      m_yRadius;
-        bool        m_isValid;
-
-        GeoTransform() : m_isValid(false) {}
-        void Init(DgnUnits const& units);
-    };
-
 private:
     friend struct DgnDb;
     DgnDbR          m_dgndb;
     double          m_azimuth;
-    double          m_latitude;
-    double          m_longitude;
     AxisAlignedBox3d m_extent;
     DPoint3d        m_globalOrigin;      //!< in meters
-    DPoint2d        m_geoOriginBasis;
-    bool            m_hasCheckedForGCS;
-    bool            m_hasGeoOriginBasis;
-    mutable GeoTransform m_geoTransform;
-    GeoCoordinates::DgnGCS* m_gcs;
-    IGeoCoordinateServicesP m_geoServices;
+    mutable bool                    m_hasCheckedForGCS;
+    mutable GeoCoordinates::DgnGCS* m_gcs;
+    mutable IGeoCoordinateServicesP m_geoServices;
 
     DgnUnits(DgnDbR db);
     void LoadProjectExtents();
@@ -1401,57 +1385,23 @@ public:
     //! @param[out] outUors     The output XYZ point
     //! @param[in] inLatLong    The input GeoPoint
     //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT BentleyStatus UorsFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong);
+    DGNPLATFORM_EXPORT BentleyStatus UorsFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const;
 
     //! Convert a an XYZ point to a GeoPoint
     //! @param[out] outLatLong  The output GeoPoint
     //! @param[in] inUors    The input XYZ point
     //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT BentleyStatus LatLongFromUors(GeoPointR outLatLong, DPoint3dCR inUors);
+    DGNPLATFORM_EXPORT BentleyStatus LatLongFromUors(GeoPointR outLatLong, DPoint3dCR inUors) const;
 
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT GeoCoordinates::DgnGCS* GetDgnGCS();
+    DGNPLATFORM_EXPORT GeoCoordinates::DgnGCS* GetDgnGCS() const;
 
-    //! Get the latitude of the origin in the global coordinate system of this DgnDb.
-    double GetOriginLatitude() const {return m_latitude;}
-
-    //! Get the longitude of the origin in the global coordinate system of this DgnDb.
-    double GetOriginLongitude() const {return m_longitude;}
-
-    //! Get the coordinates in DgnCoordSystem::World of the origin latitude and longitude.
-    DPoint2d GetGeoOriginBasis() const {return m_geoOriginBasis;}
-
-    //! Get the azimuth (true north offset) of the global coordinate system of this DgnDb.
+    //! Gets the azimuth angle (true north offset) of the global coordinate system of this DgnDb <em>if it has one</em>.
     double GetAzimuth() const {return m_azimuth;}
 
-    //! Set the latitude of the origin in the global coordinate system of this DgnDb.
-    void SetOriginLatitude(double originLat) {m_latitude = originLat; m_geoTransform.m_isValid = false;}
-
-    //! Set the longitude of the origin in the global coordinate system of this DgnDb.
-    void SetOriginLongitude(double originLong) {m_longitude = originLong;m_geoTransform.m_isValid = false;}
-
-    //! Set the coordinates in DgnCoordSystem::World of the origin latitude and longitude.
-    void SetGeoOriginBasis(DPoint2dCR basis) {m_geoOriginBasis = basis; m_hasGeoOriginBasis = true; m_geoTransform.m_isValid = false;}
-
     //! Set the azimuth of the global coordinate system of this DgnDb.
-    void SetAzimuth(double azimuth) {m_azimuth = azimuth; m_geoTransform.m_isValid = false;}
-
-    //! Utility function to check if this DgnDb contains the necessary information to convert between
-    //! geographic and Cartesian coordinate systems.
-    //! @return true if ConvertToWorldPoint and ConvertToGeoPoint can succeed.
-    bool CanConvertBetweenGeoAndWorld() const{return m_hasGeoOriginBasis;}
-
-    //! @return true if point is close enough to this coordinate system's origin to be translated accurately.
-    DGNPLATFORM_EXPORT bool IsGeoPointWithinCoordinateSystem(GeoPointCR point) const;
-
-    //! Convert from WGS84 to storage units (millimeters).
-    //! @return ERROR if the DgnDb does not have a valid latitude and longitude, SUCCESS otherwise
-    DGNPLATFORM_EXPORT BentleyStatus ConvertToWorldPoint(DPoint3dR worldPoint, GeoPointCR geoPoint) const;
-
-    //! Convert from Storage units to WGS84.
-    //! @return ERROR if the DgnDb does not have a valid latitude and longitude, SUCCESS otherwise
-    DGNPLATFORM_EXPORT BentleyStatus ConvertToGeoPoint(GeoPointR geoPoint, DPoint3dCR worldPoint) const;
+    void SetAzimuth(double azimuth) {m_azimuth = azimuth;}
 };
 
 //=======================================================================================

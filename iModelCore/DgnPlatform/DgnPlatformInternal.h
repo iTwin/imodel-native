@@ -30,25 +30,21 @@
 #include <set>
 #include <sys/stat.h>
 #include <math.h>
-#include <ECObjects/ECInstanceIterable.h>
 #include <DgnPlatform/Tools/BitMask.h>
 #include <DgnPlatform/VecMath.h>
 #include <DgnPlatform/DgnCore/DgnCoreAPI.h>
 #include <DgnPlatform/DgnCore/rtypes.r.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
 #include <DgnPlatformInternal/DgnCore/MaterialTokens.h>
-#include <DgnPlatformInternal/DgnCore/RasterDb.h>
 #include <DgnPlatform/DgnCore/LsLocal.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <DgnPlatform/DgnCore/NullContext.h>
-#include <DgnPlatform/DgnCore/BSISerializable.h>
 #include <DgnPlatform/DgnCore/SimplifyViewDrawGeom.h>
 #include <DgnPlatform/DgnCore/ClipPrimitive.h>
 #include <DgnPlatform/DgnCore/ClipVector.h>
 #include <DgnPlatform/DgnCore/SectionClip.h>
 #include <DgnPlatform/DgnCore/DgnCoreEvent.h>
 #include <DgnPlatform/DgnCore/GPArray.h>
-#include <DgnPlatform/DgnCore/GradientSettings.h>
 #include <DgnPlatform/DgnCore/LineStyleApi.h>
 #include <DgnPlatform/DgnCore/LineStyleApi.h>
 #include <DgnPlatform/DgnCore/DgnRangeTree.h>
@@ -60,7 +56,6 @@
 #include <DgnPlatform/DgnCore/WebMercator.h>
 #include <DgnPlatform/DgnCore/ElementGeometry.h>
 #include <DgnPlatform/MSSmartPtr.h>
-#include <RmgrTools/Tools/DataExternalizer.h>
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeStringUtilities.h>
 #include <BeXml/BeXml.h>
@@ -70,8 +65,6 @@
 #include <DgnPlatform/DgnCore/TransformClipStack.h>
 #include "DgnCore/JsonUtils.h"
 #include <DgnPlatform/DgnHandlers/DgnHandlersAPI.h>
-#include <DgnPlatform/DgnHandlers/AssocGeom.h>
-#include <DgnPlatform/DgnHandlers/ElementUtil.h>
 #include <DgnPlatform/DgnHandlers/RegionUtil.h>
 #include <DgnPlatformInternal/DgnHandlers/MultilineStyle.h>
 #include <Mtg/MtgApi.h>
@@ -79,17 +72,14 @@
 #include <Regions/rimsbsAPI.h>
 #include <DgnPlatform/DgnHandlers/IEditActionSource.h>
 #include <DgnPlatform/DgnHandlers/RasterResolutionSolver.h>
-#include <DgnPlatform/DgnHandlers/FlatteningCollection.h>
-#include <DgnPlatformInternal/DgnHandlers/MarkupPlacemarkHandler.h>
 #include <Logging/bentleylogging.h>
-#include "DgnHandlers/Icons.h"
-#include <DgnPlatformInternal/DgnHandlers/DgnHandlersMessage.h>
 #include <DgnPlatform/Tools/ostime.fdf>
 #include <DgnPlatform/Tools/stringop.h>
 #include <RmgrTools/Tools/toolsubsStdio.h>
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/DgnCore/IGeoCoordServices.h>
 #include <DgnPlatform/DgnCore/PointCloudBaseModel.h>
+#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 
 #include "DgnCore/DgnCoreLog.h"
 

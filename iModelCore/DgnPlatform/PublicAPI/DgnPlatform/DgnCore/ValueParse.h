@@ -35,12 +35,8 @@ typedef RefCountedPtr<VolumeParser>         VolumeParserPtr;
 //=======================================================================================
 struct DoubleParser : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:  /* ctor */          DoubleParser ();
 private:  /* ctor */          DoubleParser (DoubleParserCR other);
-
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
 
 //! Construct a parser with default settings.
 public: static DGNPLATFORM_EXPORT  DoubleParserPtr     Create ();
@@ -65,7 +61,6 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in) const
 //=======================================================================================
 struct AngleParser : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private: AngleMode              m_angleMode;
 
 private:  /* ctor */            AngleParser ();
@@ -75,9 +70,6 @@ private:  void                  Init ();
 public:   void                  InitModelSettings (DgnModelCR);
 public: DGNPLATFORM_EXPORT  BentleyStatus   SetAngleModeFromLegacy (AngleFormatVals value);
 public: DGNPLATFORM_EXPORT  uint16_t        GetLegacyFormat () const;
-
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
 
 //! Construct a parser with default settings.
 public: static DGNPLATFORM_EXPORT  AngleParserPtr   Create ();
@@ -115,7 +107,6 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in) const
 //=======================================================================================
 struct DirectionParser : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private: double                 m_trueNorth;
 private: DirectionMode          m_mode;
 private: bool                   m_isClockwise;
@@ -129,8 +120,6 @@ private: void                  InitModelSettings (DgnModelCR);
 
 private: int StringToDirection (double& dir, WCharCP inputString) const;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 //! Construct a parser with default settings.
 public: static DGNPLATFORM_EXPORT  DirectionParserPtr   Create ();
 
@@ -186,7 +175,6 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
 //=======================================================================================
 struct DistanceParser : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 #if defined (DGNPLATFORM_WIP_UNITS)
 // This parser should store master/sub/storage unit definitions, not scales.  Need to change
 // API as well.
@@ -204,25 +192,23 @@ private: void                   Init ();
 public:  void                   InitModelSettings (DgnModelCR);
 
 //! Parse a string into a distance value in uors.
-//! @param[out] out         resulting distance in uors if successfully parsed.
-//! @param[out] out         number of characters consumed while parsing.
-//! @param[in]  in          input string.
-//! @return     SUCCESS if parsed successfully. ERROR otherwise. 
+//! @param[out] out resulting distance in uors if successfully parsed.
+//! @param[out] numCharsParsed number of characters consumed while parsing.
+//! @param[in] in input string.
+//! @return SUCCESS if parsed successfully. ERROR otherwise. 
 public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, size_t& numCharsParsed, WCharCP in);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 //! Construct a parser with default settings.
-public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create ();
+public: static DGNPLATFORM_EXPORT  DistanceParserPtr Create ();
 
 //! Construct a parser with settings from a model.
 //! @param[in] model Initialize the parser from the settings in this model.
-public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create (DgnModelCR model);
+public: static DGNPLATFORM_EXPORT  DistanceParserPtr Create (DgnModelCR model);
 
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the scale from the viewport's ACS.
-//! @param[in] vp                       Initialize the parser from the settings in this viewport.
-public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create (DgnViewportR vp);
+//! @param[in] vp Initialize the parser from the settings in this viewport.
+public: static DGNPLATFORM_EXPORT  DistanceParserPtr Create (DgnViewportR vp);
 
 //! Construct a parser with settings from a DgnModel and an Auxiliary Coordinate System.  
 //! The ACS provides the scale for the parser.
@@ -262,7 +248,6 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
 //=======================================================================================
 struct PointParser : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private: bool              m_is3d;
 private: DistanceParserPtr m_distanceParser;
 
@@ -274,14 +259,12 @@ private: void                   InitModelSettings (DgnModelCR);
 private:  BentleyStatus         StringToPoint (DPoint3dR out, Point3dP relativeFlags, WCharCP in);
 
 //! Parse a string into a point value in uors.
-//! @param[out] value           resulting distance in uors if successfully parsed.
+//! @param[out] out             resulting distance in uors if successfully parsed.
 //! @param[out] relativeFlags   true if a coordinate should be considered relative.
 //! @param[in]  in              input string.
 //! @return     SUCCESS if parsed successfully. ERROR otherwise. 
 public: DGNPLATFORM_EXPORT BentleyStatus ToValue (DPoint3dR out, Point3dR relativeFlags, WCharCP in);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 //! Construct a parser with default settings.
 public: static DGNPLATFORM_EXPORT  PointParserPtr     Create ();
 
@@ -326,7 +309,6 @@ public: DGNPLATFORM_EXPORT bool GetIs3d () const;
 //=======================================================================================
 struct AreaOrVolumeParser : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 #if defined (DGNPLATFORM_WIP_UNITS)
 // This parser should store master unit definitions, not scales.  Need to change
 // API as well.
@@ -343,14 +325,11 @@ private: void                   Init ();
 public:  DGNPLATFORM_EXPORT void    InitModelSettings (DgnModelCR);
 
 //! Parse a string into a distance value in uors.
-//! @param[out] out         resulting distance in uors if successfully parsed.
-//! @param[out] out         number of characters consumed while parsing.
-//! @param[in]  in          input string.
-//! @return     SUCCESS if parsed successfully. ERROR otherwise. 
+//! @param[out] out resulting distance in uors if successfully parsed.
+//! @param[out] numCharsParsed number of characters consumed while parsing.
+//! @param[in] in input string.
+//! @return SUCCESS if parsed successfully. ERROR otherwise. 
 public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, size_t& numCharsParsed, WCharCP in);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 
 //! Set Master and Sub Units manually. Normally, use the SetUnits()* method 
 public: DGNPLATFORM_EXPORT void     SetMasterUnitScale     (double scale);
@@ -375,12 +354,8 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
 //=======================================================================================
 struct AreaParser : AreaOrVolumeParser
 {
-//__PUBLISH_SECTION_END__
 private: /* ctor */             AreaParser ();
 private: /* ctor */             AreaParser (AreaParserCR other);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 
 //! Construct a parser with default settings.
 public: static DGNPLATFORM_EXPORT  AreaParserPtr    Create ();
@@ -404,12 +379,8 @@ public: DGNPLATFORM_EXPORT  AreaParserPtr    Clone () const;
 //=======================================================================================
 struct VolumeParser : AreaOrVolumeParser
 {
-//__PUBLISH_SECTION_END__
 private: /* ctor */             VolumeParser ();
 private: /* ctor */             VolumeParser (VolumeParserCR other);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 
 //! Construct a parser with default settings.
 public: static DGNPLATFORM_EXPORT  VolumeParserPtr    Create ();

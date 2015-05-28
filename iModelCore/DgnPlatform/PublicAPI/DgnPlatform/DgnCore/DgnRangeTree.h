@@ -32,6 +32,7 @@ struct DgnRangeTree
     //=======================================================================================
     struct Traverser
     {
+        virtual ~Traverser() {}
         virtual bool  _CheckRangeTreeNode(DRange3dCR, bool is3d) const = 0;   // true == process node
         virtual Match _VisitRangeTreeElem(GeometricElementCP, DRange3dCR) = 0;    // true == keep going, false == stop traversal
     };
@@ -159,7 +160,7 @@ public:
     void SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize);
     bool Is3d() const {return m_is3d;}
     Match FindMatches(Traverser&);
-    void AddGeomElement(GeometricElementCR geom){AddElement(Entry(geom._GetRange3d(), geom));}
+    void AddGeomElement(GeometricElementCR geom){AddElement(Entry(geom._CalculateRange3d(), geom));}
     StatusInt RemoveElement(Entry const&);
 
     DGNPLATFORM_EXPORT void ProcessOcclusionSorted(ViewContextR, DgnModelP, ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);

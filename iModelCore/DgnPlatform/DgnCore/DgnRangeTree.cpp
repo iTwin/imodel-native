@@ -1045,7 +1045,7 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
         {
         GeometricElementCP geom = element.second->ToGeometricElement();
         if (nullptr != geom)
-            AddElement(Entry(geom->_GetRange3d(), *geom));
+            AddElement(Entry(geom->_CalculateRange3d(), *geom));
         }
 
 #ifdef DRT_DEBUGGING
@@ -1672,11 +1672,11 @@ bool VisitRangeElement(GeometricElementCP element, DgnModelP modelRef, bool test
     {
     m_viewContext.ValidateScanRange();
 
-    DRange3dCR   elRange = element->_GetRange3d();
-    if (testRange && (ScanTestResult::Pass != m_scanCriteria->CheckRange(elRange, true)))
+    DRange3dCR   elRange = element->_CalculateRange3d();
+    if (testRange && (ScanCriteria::Result::Pass != m_scanCriteria->CheckRange(elRange, true)))
         return false;
 
-    if (ScanTestResult::Pass != m_scanCriteria->CheckElement(*element, false))
+    if (ScanCriteria::Result::Pass != m_scanCriteria->CheckElement(*element, false))
         return false;
 
     if (ClipPlaneContainment_StronglyOutside != m_viewContext.GetTransformClipStack().ClassifyRange(elRange, true))
@@ -1812,7 +1812,7 @@ void FindVisibleLeafs(DRTNodeR node, DgnModelR modelRef, bool testRange)
     DRange3dCR nodeRange = node.GetRange();
     if (testRange)
         {
-        if (ScanTestResult::Pass != m_scanCriteria->CheckRange(nodeRange, true) ||
+        if (ScanCriteria::Result::Pass != m_scanCriteria->CheckRange(nodeRange, true) ||
             ClipPlaneContainment_StronglyOutside == m_viewContext.GetTransformClipStack().ClassifyRange(nodeRange, true))
             return;
         }

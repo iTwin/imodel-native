@@ -234,6 +234,22 @@ DgnModelStatus DgnElement::_UpdateInDb()
     return (stmt->Step() != BE_SQLITE_DONE) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet DgnElement::QueryChildren() const
+    {
+    CachedStatementPtr stmt;
+    GetDgnDb().Elements().GetStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ParentId=?");
+    stmt->BindId(1, GetElementId());
+
+    DgnElementIdSet elementIdSet;
+    while (BE_SQLITE_ROW == stmt->Step())
+        elementIdSet.insert(stmt->GetValueId<DgnElementId>(0));
+
+    return elementIdSet;
+    }
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/10
 //=======================================================================================
@@ -792,8 +808,8 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
     // low and high are not allowed to be equal
     fixRange(range.low.x, range.high.x);
     fixRange(range.low.y, range.high.y);
-    range.low.z = -.005;
-    range.high.z = .005;
+    range.low.z = -s_smallVal;
+    range.high.z = s_smallVal;
 
     return range;
     }
@@ -818,11 +834,8 @@ DgnModelStatus ElementGroup::InsertMember(DgnElementCR member) const
         return status;
 
     CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement
-        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers) 
+        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers)
         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
-
-    if (!statement.IsValid())
-        return DGNMODEL_STATUS_BadRequest;
 
     statement->BindId(1, GetElementClassId());
     statement->BindId(2, GetElementId());
@@ -831,7 +844,7 @@ DgnModelStatus ElementGroup::InsertMember(DgnElementCR member) const
 
     if (ECSqlStepStatus::Done != statement->Step())
         return DGNMODEL_STATUS_BadRequest;
-    
+
     _OnMemberInserted(member); // notify subclass that member was inserted
     return DGNMODEL_STATUS_Success;
     }
@@ -850,16 +863,12 @@ DgnModelStatus ElementGroup::DeleteMember(DgnElementCR member) const
 
     CachedStatementPtr statement;
     GetDgnDb().Elements().GetStatement(statement, "DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=? AND MemberId=?");
-
-    if (!statement.IsValid())
-        return DGNMODEL_STATUS_BadRequest;
-
     statement->BindId(1, GetElementId());
     statement->BindId(2, member.GetElementId());
 
     if (BE_SQLITE_DONE != statement->Step())
         return DGNMODEL_STATUS_BadRequest;
-    
+
     _OnMemberDeleted(member); // notify subclass that member was deleted
     return DGNMODEL_STATUS_Success;
     }
@@ -871,10 +880,6 @@ DgnElementIdSet ElementGroup::QueryMembers() const
     {
     CachedStatementPtr statement;
     GetDgnDb().Elements().GetStatement(statement, "SELECT MemberId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=?");
-
-    if (!statement.IsValid())
-        return DgnElementIdSet();
-
     statement->BindId(1, GetElementId());
 
     DgnElementIdSet elementIdSet;
@@ -883,3 +888,4 @@ DgnElementIdSet ElementGroup::QueryMembers() const
 
     return elementIdSet;
     }
+
