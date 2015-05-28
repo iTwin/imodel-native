@@ -28,8 +28,6 @@ ECDbMapPersistenceTests.MappingStrategyTest
 #TFS Defect 201187
 ECDbHintTests.RelationshipTest_AllowDuplicateRelationships
 
-#Fails on 0504; notified Krischan on 2015-May-17
-ECSqlSelectTestFixture.UnionTests
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
