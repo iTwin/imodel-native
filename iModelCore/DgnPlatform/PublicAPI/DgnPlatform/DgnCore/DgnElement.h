@@ -750,11 +750,22 @@ public:
     //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
     DGNPLATFORM_EXPORT DgnModelStatus InsertMember(DgnElementCR) const;
+
     //! Deletes the ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
     DGNPLATFORM_EXPORT DgnModelStatus DeleteMember(DgnElementCR) const;
+
     //! Query for the set of members in this ElementGroup
+    //! @see QueryFromMember
     DGNPLATFORM_EXPORT DgnElementIdSet QueryMembers() const;
+
+    //! Query an ElementGroup from a member element.
+    //! @param[in] db the DgnDb to query
+    //! @param[in] groupClassId specify the type of ElementGroup to consider as a DgnElement could be in more than one ElementGroup.
+    //! @param[in] memberElementId the DgnElementId of the member element
+    //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
+    //! @see QUeryMembers
+    DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
