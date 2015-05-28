@@ -21,9 +21,8 @@ IHttpHandlerPtr customHandler
 m_serverUrl (serverUrl),
 m_repositoryId (repositoryId),
 m_schemaProvider (schemaProvider),
-m_httpClient (std::make_shared<HttpClient> (customHandler))
+m_httpClient (std::make_shared<HttpClient> (HttpHeaderProvider::Create (defaultHeaders), customHandler))
     {
-    m_httpClient->DefaultRequestHeaders () = defaultHeaders;
     }
 
 /*--------------------------------------------------------------------------------------+
