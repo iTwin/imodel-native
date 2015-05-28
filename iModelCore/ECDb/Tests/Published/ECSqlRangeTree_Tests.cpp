@@ -66,7 +66,7 @@ BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
 
     ecdb.SaveChanges();
 
-    //populate with data
+    //populate with data (sample data taken from https://www.sqlite.org/rtree.html)
     ECSqlStatement stmt;
     if (ECSqlStatus::Success != stmt.Prepare(ecdb, "INSERT INTO rt.DemoData (Name) VALUES(?)"))
         return ERROR;
@@ -106,6 +106,7 @@ TEST(ECSqlRangeTreeTests, SimpleQuery)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::OPEN_Readonly)));
 
+    //sample data taken from https ://www.sqlite.org/rtree.html
     Utf8CP ecsql = "SELECT d.Name FROM rt.DemoData d, rt.DemoRTree rt "
         "WHERE d.ECInstanceId = rt.ECInstanceId AND "
         "rt.MinX>=-81.08 AND rt.MaxX <=-80.58 AND rt.MinY>=35.00 AND rt.MaxY<=35.44";
@@ -123,6 +124,54 @@ TEST(ECSqlRangeTreeTests, SimpleQuery)
     ASSERT_EQ(1, rowCount) << "ECSQL " << ecsql << " is expected to only return SQLite headquarters entry";
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct BBox2DMatchFunction : RTreeMatchFunction
+    {
+private:
+    virtual int _TestRange(QueryInfo const& info) override
+        {
+        if (info.m_nParam != 4)
+            return BE_SQLITE_ERROR;
+
+        info.m_within = Within::Outside;
+        DRange2d bbox2d = DRange2d::From(info.m_args[0].GetValueDouble (), info.m_args[1].GetValueDouble (), info.m_args[2].GetValueDouble (), info.m_args[3].GetValueDouble ());
+
+        if (info.m_nCoord != 2)
+            {
+            BeAssert(false);
+            return BE_SQLITE_ERROR;
+            }
+
+        DPoint2d pt = DPoint2d::From(info.m_coords[0], info.m_coords[1]);
+
+        bool passedTest = (info.m_parentWithin == Within::Inside) ? true : bbox2d.Contains(pt);
+        if (!passedTest)
+            return BE_SQLITE_OK;
+
+        if (info.m_level > 0)
+            {
+            // For nodes, return 'level-score'.
+            info.m_score = info.m_level;
+            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : bbox2d.Contains(pt) ? Within::Inside : Within::Partly;
+            }
+        else
+            {
+            // For leaves (m_level==0), we return 0 so they are processed immediately (lowest score has highest priority).
+            info.m_score = 0;
+            info.m_within = Within::Partly;
+            }
+
+        return BE_SQLITE_OK;
+        }
+
+public:
+    BBox2DMatchFunction() : RTreeMatchFunction("BBOX2D", 4) {}
+    };
+
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -134,15 +183,17 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::OPEN_Readonly)));
 
+    BBox2DMatchFunction bbox2dFunc;
+    ASSERT_EQ(0, ecdb.AddRTreeMatchFunction(bbox2dFunc));
+
+    //sample data taken from https ://www.sqlite.org/rtree.html
     Utf8CP ecsql = "SELECT d.Name FROM rt.DemoData d, rt.DemoRTree rt "
         "WHERE d.ECInstanceId = rt.ECInstanceId AND "
-        "ECInstanceId MATCH BBOX2D(-81.08,35.00,-80.58,35.44)";
+        "rt.ECInstanceId MATCH BBOX2D(-81.08,35.00,-80.58,35.44)";
 
     ECSqlStatement stmt;
-    ASSERT_EQ((int) ECSqlStatus::InvalidECSql, (int) stmt.Prepare(ecdb, ecsql)) << stmt.GetLastStatusMessage();
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << stmt.GetLastStatusMessage();
 
-    /* defining a geometry function not yet possible in the BeSQLite API. Once this is available
-       this test will leverage that
     int rowCount = 0;
     while (stmt.Step() == ECSqlStepStatus::HasRow)
         {
@@ -150,7 +201,6 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
         }
 
     ASSERT_EQ(1, rowCount) << "ECSQL " << ecsql << " is expected to only return SQLite headquarters entry";
-    */
     }
 
 END_ECDBUNITTESTS_NAMESPACE
