@@ -14,12 +14,12 @@
 
 A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
 
-To connect your Domain's ECSChema with your C++ classes, create a subclass of @ref DgnDomain. A DgnDomain is a singleton - that is, 
+To connect your Domain's ECSChema with your C++ classes, create a subclass of @ref DgnPlatform::DgnDomain. A DgnDomain is a singleton - that is, 
 there is only one instance of a DgnDomain subclass that applies to all DgnDbs for a session. You tell the DgnDbPlatform 
-about your DgnDomain by calling the static method @ref DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name", 
+about your DgnDomain by calling the static method @ref DgnPlatform::DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name", 
 which must match the ECShema file name. That is how a DgnDomain is paired with its ECSchema.
 
-A DgnDomain holds an array of C++ singleton objects, each of which each derive from @ref DgnDomain::Handler. A DgnDomain::Handler 
+A DgnDomain holds an array of C++ singleton objects, each of which each derive from @ref DgnPlatform::DgnDomain::Handler. A DgnDomain::Handler 
 holds the name of the ECClass it "handles". DgnDomain::Handlers are added to a DgnDomain by calling DgnDomain::RegisterHandler. 
 Note that DgnDomain::Handlers are singletons - they apply to all DgnDbs, and have no instance data. 
 

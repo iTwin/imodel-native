@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 #include    "UnitDefinition.h"
+#include    "DgnModel.h"
 #include    <Bentley/ValueFormat.h>
 
 DGNPLATFORM_TYPEDEFS(AngleFormatter);

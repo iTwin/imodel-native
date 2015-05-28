@@ -79,6 +79,7 @@
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/DgnCore/IGeoCoordServices.h>
 #include <DgnPlatform/DgnCore/PointCloudBaseModel.h>
+#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 
 #include "DgnCore/DgnCoreLog.h"
 

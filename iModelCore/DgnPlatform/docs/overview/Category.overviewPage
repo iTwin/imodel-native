@@ -1,0 +1,58 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/Category.overviewPage $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+/** @page PAGE_CategoryOverview Category and SubCategory
+
+@b Categories are used to organize elements for reporting or filtering purposes. 
+Each element is in one and only one category.
+There is one set of categories per %DgnDb file.
+Categories do not nest, but a Category can have SubCategories.
+
+@see @ref BentleyApi::DgnPlatform::DgnCategories                "DgnCategories"
+@see @ref BentleyApi::DgnPlatform::DgnCategories::Category      "DgnCategories::Category"
+@see @ref BentleyApi::DgnPlatform::DgnCategories::Rank          "DgnCategories::Rank"
+@see @ref BentleyApi::DgnPlatform::DgnCategories::Scope         "DgnCategories::Scope"
+@see @ref BentleyApi::DgnPlatform::DgnCategories::Iterator      "DgnCategories::Iterator"
+@see @ref BentleyApi::DgnPlatform::DgnCategoryId                "DgnCategoryId"
+
+@b SubCategories are used to further organize and subdivide an element's geometry.  
+Each piece of geometry is in one and only one SubCategory.
+For display purposes, the symbology/appearance for and visibility of the geometry is determined by its SubCategory.
+Every Category has a default (unnamed) SubCategory associated with it.
+
+@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategory               "DgnCategories::SubCategory"
+@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategory::Appearance   "DgnCategories::SubCategory::Appearance"
+@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategoryIterator       "DgnCategories::SubCategoryIterator"
+@see @ref BentleyApi::DgnPlatform::DgnSubCategoryId                         "DgnSubCategoryId"
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_Category_Includes Required include files
+
+__PUBLISH_INSERT_FILE__ Category_Includes.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_Category_CreateAndInsert Creating and inserting a new category
+
+Many developers will just use categories set up by the system or domain.
+In the case that custom categories are required, here is how to create and insert a category:
+
+__PUBLISH_INSERT_FILE__ Category_CreateAndInsert.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_Category_DgnV8Level Category vs. DgnV8 Level
+
+The concept of a DgnDb @b Category supercedes the concept of a DgnV8 @b Level.
+While both have the same primary role (filtering) there are some important differences:
+
+@li For DgnDb, category is equally important to all elements whether they have geometry or not.
+@li All DgnDb elements are in one and only one category. Complex elements in DgnV8 could be on multiple levels.
+@li There is one set of categories per DgnDb file.  Each model could have its own set of levels in DgnV8.
+
+<!-- ---------------------------------------------------------------------------------- -->
+*/
