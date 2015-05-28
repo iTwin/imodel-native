@@ -1872,7 +1872,7 @@ BooleanSqlOperator ECSqlParser::parse_comparison(ECSqlParseContext& ctx, OSQLPar
         if (parseNode->count() == 4 /*SQL_TOKEN_IS sql_not SQL_TOKEN_DISTINCT SQL_TOKEN_FROM*/)
             {
             ctx.SetError(ECSqlStatus::InvalidECSql,"'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
-            return BooleanSqlOperator::LessThenOrEqualTo;
+            return BooleanSqlOperator::LessThanOrEqualTo;
             }
         if (parseNode->count() == 2 /*SQL_TOKEN_IS sql_not*/)
             {
@@ -1886,13 +1886,13 @@ BooleanSqlOperator ECSqlParser::parse_comparison(ECSqlParseContext& ctx, OSQLPar
         case SQL_NODE_NOTEQUAL: return BooleanSqlOperator::NotEqualTo;
         case SQL_NODE_EQUAL: return BooleanSqlOperator::EqualTo;
         case SQL_NODE_GREAT: return BooleanSqlOperator::GreaterThan;
-        case SQL_NODE_LESSEQ: return BooleanSqlOperator::LessThenOrEqualTo;
+        case SQL_NODE_LESSEQ: return BooleanSqlOperator::LessThanOrEqualTo;
         case SQL_NODE_GREATEQ: return BooleanSqlOperator::GreaterThanOrEqualTo;
         }
 
     BeAssert (false && "'comparison' rule not handled");
     ctx.SetError (ECSqlStatus::ProgrammerError,"'comparison' rule not handled");
-    return BooleanSqlOperator::LessThenOrEqualTo;
+    return BooleanSqlOperator::LessThanOrEqualTo;
     }
 
 //-----------------------------------------------------------------------------------------

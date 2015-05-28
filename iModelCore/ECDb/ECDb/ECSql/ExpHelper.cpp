@@ -181,7 +181,7 @@ Utf8CP ExpHelper::ToString(BooleanSqlOperator op)
         case BooleanSqlOperator::EqualTo:            return "=";
         case BooleanSqlOperator::GreaterThanOrEqualTo:            return ">=";
         case BooleanSqlOperator::GreaterThan:            return ">";
-        case BooleanSqlOperator::LessThenOrEqualTo:            return "<=";
+        case BooleanSqlOperator::LessThanOrEqualTo:            return "<=";
         case BooleanSqlOperator::LessThan:            return "<";
         case BooleanSqlOperator::NotEqualTo:            return "<>";
 

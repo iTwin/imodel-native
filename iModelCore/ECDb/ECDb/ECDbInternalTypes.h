@@ -96,7 +96,7 @@ enum class BooleanSqlOperator
     EqualTo,
     NotEqualTo,
     LessThan,
-    LessThenOrEqualTo,
+    LessThanOrEqualTo,
     GreaterThan,
     GreaterThanOrEqualTo,
     Is,
