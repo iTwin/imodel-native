@@ -156,21 +156,21 @@ protected:
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
     //! Called to load properties of a DgnElement from the DgnDb. Override to load subclass properties.
-    //! @note If you override this method, you /em must call T_Super::_LoadFromDb, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_LoadFromDb, forwarding its status.
     virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
 
     //! Called to insert a new DgnElement into the DgnDb. Override to save subclass properties.
-    //! @note If you override this method, you /em must call T_Super::_InsertInDb, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_InsertInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
 
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
     //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.
-    //! @note If you override this method, you /em must call T_Super::_UpdateInDb, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
 
     //! Called to delete a DgnElement from the DgnDb. Override to do any additional processing on delete.
-    //! @note If you override this method, you /em must call T_Super::_DeleteInDb, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_DeleteInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
 
     //! return code for _OnChild... methods
@@ -205,7 +205,7 @@ protected:
     virtual void _OnChildInserted(DgnElementCR child) const {}
 
     //! Called after an element, with this element as its parent, was successfully updated.
-    //! @note if the parent of an element is changed, this method will /em not be paired with a call to _OnChildUpdate
+    //! @note if the parent of an element is changed, this method will @em not be paired with a call to _OnChildUpdate
     virtual void _OnChildUpdated(DgnElementCR child) const {}
 
     //! Called after an element, with this element as its parent, was successfully deleted.
@@ -219,7 +219,7 @@ protected:
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
 
     //! Virtual assignment method. If your subclass has member variables, it \em must override this method and copy those values from other.
-    //! @note If you override this method, you /em must call T_Super::_CopyFrom, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_CopyFrom, forwarding its status.
     //! @note Implementers should presume this element starts in a valid state. Be careful to free existing state before overwriting it.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR other);
 
@@ -380,7 +380,7 @@ public:
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Static method to Query the DgnClassId of the dgn.Element ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the dgn.Element class - it does /em not return the class of a specific instance.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.Element class - it does @em not return the class of a specific instance.
     //! @see GetElementClassId
     DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 
@@ -409,7 +409,7 @@ public:
     Utf8CP GetCode() const {return m_code.c_str();}
 
     //! Set the code (business key) for this DgnElement.
-    //! @see GetCodem, _SetCode
+    //! @see GetCode, _SetCode
     //! @return SUCCESS if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
     DgnModelStatus SetCode(Utf8CP code) {return _SetCode(code);}
