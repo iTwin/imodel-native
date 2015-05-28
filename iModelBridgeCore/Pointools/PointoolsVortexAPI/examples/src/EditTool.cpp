@@ -13,6 +13,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 *******************************************************************************/
 #include "EditTool.h"
 #include <math.h>
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h>
 
 static RGBc layerButtonCol(96,96,96);
 static RGBc layerButtonSelCol(35,174,183);
