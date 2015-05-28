@@ -27,7 +27,7 @@ DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidKernelEntityCR, bo
 
 DGNPLATFORM_EXPORT static void Draw (ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 DGNPLATFORM_EXPORT static void Draw (MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
-DGNPLATFORM_EXPORT static void Draw (ISolidKernelEntityCR, ViewContextR, IFaceMaterialAttachmentsCP attachments = NULL, bool includeEdges = true, bool includeFaceIso = true);
+DGNPLATFORM_EXPORT static void Draw (ISolidKernelEntityCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 
 DGNPLATFORM_EXPORT static void DrawOutline (CurveVectorCR, IDrawGeomR);
 DGNPLATFORM_EXPORT static void DrawOutline2d (CurveVectorCR, IDrawGeomR, double zDepth);
@@ -123,11 +123,10 @@ virtual BentleyStatus   _ProcessSurface (MSBsplineSurfaceCR surface) {return ERR
 
 //! Collect output for surfaces and solids using a solid kernel entity.
 //! @param[in] entity The solid kernel entity.
-//! @param[in] attachments Optional face color/material attachment information.
 //! @note Requires host implementation of SolidsKernelAdmin methods that take or return a ISolidKernelEntity.
 //! @remarks Only called if _ProcessAsBody returns true.
 //! @return SUCCESS if handled.
-virtual BentleyStatus   _ProcessBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments) {return ERROR;}
+virtual BentleyStatus   _ProcessBody (ISolidKernelEntityCR entity) {return ERROR;}
 
 //! Collect output for surfaces and solids as facets.
 //! @param[in] meshData The indexed polyface data.

@@ -464,7 +464,7 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _ProcessBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP) override
+virtual BentleyStatus _ProcessBody (ISolidKernelEntityCR entity) override
     {
     if (SUCCESS != m_convertStatus)
         return SUCCESS;

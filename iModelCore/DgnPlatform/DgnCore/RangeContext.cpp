@@ -717,7 +717,7 @@ void RangeOutput::_DrawPointString2d (int numPoints, DPoint2dCP points, double z
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RangeOutput::_DrawBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP, double)
+StatusInt RangeOutput::_DrawBody (ISolidKernelEntityCR entity, double)
     {
     DRange3d    range;
 

@@ -872,7 +872,7 @@ StatusInt PickOutput::_ProcessFacetSet (PolyfaceQueryCR meshData, bool filled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PickOutput::_ProcessBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments)
+StatusInt PickOutput::_ProcessBody (ISolidKernelEntityCR)
     {
     // NOTE: We can't be creating/destroying breps every cursor motion. A handler that output breps
     //       must somehow cache their edge geometry for snapping; they can locate surfaces by QvElem.

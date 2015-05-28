@@ -564,19 +564,17 @@ public:
             //! @param[out] out Facet topology information for solid kernel entity.
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] pixelSize Used to support view dependent representations (ex. coarse facets when zoomed out)
-            //! @param[out] attachments Face symbology overrides (optional).
             //! @return SUCCESS if operation was handled.
-            //! @note: Required to display brep elements for an interactive host.
-            virtual BentleyStatus _FacetBody (IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, double pixelSize = 0.0, IFaceMaterialAttachmentsCP attachments = NULL) const {return ERROR;}
+            //! @note: Required to display brep geometry for an interactive host.
+            virtual BentleyStatus _FacetBody (IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, double pixelSize = 0.0) const {return ERROR;}
 
             //! Produce a facet topology table for the supplied ISolidKernelEntity.
             //! @param[out] out Facet topology information for solid kernel entity.
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] options Facet options.
-            //! @param[out] attachments Face symbology overrides (optional).
             //! @return SUCCESS if operation was handled.
-            //! @note: Required to drop brep elements to geometry.
-            virtual BentleyStatus _FacetBody (IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, IFacetOptionsR options, IFaceMaterialAttachmentsCP attachments = NULL) const {return _FacetBody (out, in, 0.0, attachments);}
+            //! @note: Required to drop brep geometry to polyface(s).
+            virtual BentleyStatus _FacetBody (IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, IFacetOptionsR options) const {return _FacetBody (out, in, 0.0);}
 
             //! Initialize per-face material and color information for the supplied ISolidKernelEntity using the supplied ElemDisplayParams.
             //! @param[in] in The solid kernel entity to draw.
@@ -590,18 +588,16 @@ public:
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] context The context to output the body to.
             //! @param[in] simplify if true faces are output as simple types (CurveVector, SolidPrimitive, and MSBSplineSurface) instead of sheet bodies.
-            //! @param[in] attachments Face symbology overrides. (Optional - From _ProcessBody, will be used to setup ElemDisplayParams)
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyAsSurfaces (ISolidKernelEntityCR in, ViewContextR context, bool simplify = true, IFaceMaterialAttachmentsCP attachments = NULL) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyAsSurfaces (ISolidKernelEntityCR in, ViewContextR context, bool simplify = true) const {return ERROR;}
 
             //! Output a ISolidKernelEntity as a wireframe representation.
             //! @param[in] in The solid kernel entity.
             //! @param[in] context The context to output the body to.
             //! @param[in] includeEdges Include wire geometry for body edges.
             //! @param[in] includeFaceIso Include wire geometry for face isoparametrics.
-            //! @param[in] attachments Face symbology overrides. (Optional - From _ProcessBody, will be used to setup ElemDisplayParams)
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyAsWireframe (ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true, IFaceMaterialAttachmentsCP attachments = NULL) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyAsWireframe (ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true) const {return ERROR;}
 
             //! Output a cut section through an ISolidKernelEntity to the supplied view context.
             //! @param[in] in The solid kernel entity to display a section cut through.
@@ -665,11 +661,20 @@ public:
             //! @return SUCCESS if transform was set.
             virtual BentleyStatus _GetEntityBasisTransform (TransformR transform, ISolidKernelEntityCR in) const {return ERROR;}
 
+            //! Simple yes/no type queries on ISolidKernelEntity
+            enum KernelEntityQuery
+                {
+                EntityQuery_HasCurvedFaceOrEdge = 0, //!< Check if body has only planar faces and linear edges.
+                EntityQuery_HasHiddenEdge       = 1, //!< Check if body has at least one edge with hidden attribute.
+                EntityQuery_HasHiddenFace       = 2, //!< Check if body has at least one face with hidden attribute.
+                EntityQuery_HasOnlyPlanarFaces  = 3, //!< Check if body has only planar faces.
+                };
+
             //! Query the supplied ISolidKernelEntity for information
             //! @param[in] in The solid kernel entity to query.
             //! @param[in] query The solid kernel entity property to query.
             //! @return true if the supplied entity has the specified query.
-            virtual bool _QueryEntityData (ISolidKernelEntityCR in, ISolidKernelEntity::KernelEntityQuery query) const {return false;}
+            virtual bool _QueryEntityData (ISolidKernelEntityCR in, KernelEntityQuery query) const {return false;}
 
             //! Query if input ISolidKernelEntity are geometrically equal (differ only by a transform).
             //! @param[in] entity1 The first of the solid kernel entities to compare.
@@ -720,13 +725,8 @@ public:
             //! @param[out] bufferSize Size of data referenced by ppBuffer.
             //! @param[in] in The solid kernel entity to transmit.
             //! @return SUCCESS if transmit of kernel entity was successful.
-            //! @note For Parasolid use PK_PART_transmit.
-            //!       The Parasolid data version is ISolidKernelEntity::DataVersion_Parasolid
-            //! @note For ACIS use api_save_entity_list_file.
-            //!       Set the ACIS data version using api_save_version (ISolidKernelEntity::DataVersion_ACIS % 100, (int) (ISolidKernelEntity::DataVersion_ACIS - minorVersion) / 100).
             //! @note The output ppBuffer is assumed to be owned by the input ISolidKernelEntityP who is responsible for freeing it
             //!       if necessary when its destructor is called.
-            //! @see BrepCellHeaderHandler::CreateBRepCellElement
             virtual BentleyStatus _SaveEntityToMemory (uint8_t** ppBuffer, size_t& bufferSize, ISolidKernelEntityCR in) const {return ERROR;}
 
             //! Receive a part archived in binary format and instantiate an entity in the solid kernel for the current session.
@@ -734,19 +734,9 @@ public:
             //! @param[out] out Ref counted pointer to new solid kernel entity.
             //! @param[in] pBuffer The input data (always stored using binary format)
             //! @param[in] bufferSize Size of pBuffer.
-            //! @param[in] kernelType The solid kernel that archived the byte data.
             //! @param[in] transform The body to uor transform to store on the output ISolidKernelEntity.
             //! @return SUCCESS if out holds a valid solid kernel entity.
-            //! @note For Parasolid use PK_PART_RECEIVE.
-            //! @note For ACIS use api_restore_entity_list_file.
-            //! @see IBRepQuery::GetBRepDataEntity
-            virtual BentleyStatus _RestoreEntityFromMemory (ISolidKernelEntityPtr& out, uint8_t const* pBuffer, size_t bufferSize, ISolidKernelEntity::SolidKernelType kernelType, TransformCR transform) const {return ERROR;}
-
-            //! Create an ISolidKernelEntity suitable for modification from the input entity.
-            //! @param[out] out Ref counted pointer to new solid kernel entity.
-            //! @param[in] in The solid kernel entity to copy.
-            //! @return SUCCESS if out holds a valid solid kernel entity.
-            virtual BentleyStatus _CopyEntity (ISolidKernelEntityPtr& out, ISolidKernelEntityCR in) const {return ERROR;}
+            virtual BentleyStatus _RestoreEntityFromMemory (ISolidKernelEntityPtr& out, uint8_t const* pBuffer, size_t bufferSize, TransformCR transform) const {return ERROR;}
 
             //! Create a non-owning ISolidKernelEntity from the input entity.
             //! @param[out] out Ref counted pointer to new solid kernel entity.
@@ -858,11 +848,18 @@ public:
             //! @return true if entity is the parent.
             virtual bool _IsParentEntity (ISubEntityCR subEntity, ISolidKernelEntityCR entity) const {return false;}
 
+            //! Simple yes/no type queries on ISubEntity
+            enum SubEntityQuery
+                {
+                SubEntityQuery_IsPlanarFace = 1, //!< Check if face sub-entity has as planar surface.
+                SubEntityQuery_IsSmoothEdge = 2, //!< Check if edge sub-entity is smooth by comparing the face normals along the edge.
+                };
+
             //! Query the supplied ISubEntity for information
             //! @param[in] subEntity The sub-entity to query.
             //! @param[in] query The sub-entity property to query.
             //! @return true if the supplied entity has the specified query.
-            virtual bool _QuerySubEntityData (ISubEntityCR subEntity, ISubEntity::SubEntityQuery query) const {return false;}
+            virtual bool _QuerySubEntityData (ISubEntityCR subEntity, SubEntityQuery query) const {return false;}
 
             //! Unify target body with tools. This will produce an unified output body with any shared faces and edges hidden.
             //! @param[in,out] targetEntity The target body to unify with.
