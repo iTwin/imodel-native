@@ -897,6 +897,8 @@ private:
     bool IsElementIdUsed(DgnElementId id) const;
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
+    DgnModelStatus PerformDelete(DgnElementCR);
+    DgnModelStatus ConfirmDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
@@ -907,8 +909,7 @@ public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
     DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
-    DGNPLATFORM_EXPORT void AllocatedMemory(int32_t) const;
-    DGNPLATFORM_EXPORT void ReturnedMemory(int32_t) const;
+    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.

@@ -94,6 +94,29 @@ struct DgnDbExpressionContext : ECN::SymbolExpressionContext
         DGNPLATFORM_EXPORT static DgnDbExpressionContextPtr Create(DgnDbCR db);
     };
 
+//=======================================================================================
+// Context that defines the DgnElement to use.
+// @bsiclass                                                     Bill.Steinbock  05/2015
+//=======================================================================================
+struct DgnElementExpressionContext : DgnDbExpressionContext
+    {
+    private:
+        DgnElementCR m_element;
+
+        ECN::ECValue  GetClassName() const;
+        ECN::ECValue  GetFullClassName() const;
+
+    protected:
+        // Create an ECExpression context that allows access to DgnDb.
+        DGNPLATFORM_EXPORT DgnElementExpressionContext(DgnElementCR element);
+        // Get the DgnDb associated with the Context.
+        DGNPLATFORM_EXPORT DgnElementCR GetElement();
+
+    public:
+        // Create an ECExpression context that allows access to DgnDb.
+        DGNPLATFORM_EXPORT static DgnElementExpressionContextPtr Create(DgnElementCR element);
+    };
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

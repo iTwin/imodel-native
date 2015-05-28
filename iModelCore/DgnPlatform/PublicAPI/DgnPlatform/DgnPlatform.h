@@ -142,6 +142,7 @@ DGNPLATFORM_TYPEDEFS (ViewContext)
 DGNPLATFORM_TYPEDEFS (ViewController)
 DGNPLATFORM_TYPEDEFS (ViewFlags)
 DGNPLATFORM_TYPEDEFS (DgnDbExpressionContext);
+DGNPLATFORM_TYPEDEFS (DgnElementExpressionContext);
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (TextString)
@@ -292,6 +293,7 @@ DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
 DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
 DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
+DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
@@ -452,7 +454,6 @@ typedef ElementItemKey const& ElementItemKeyCR;
 //! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.
 //! @note A BoundingBox3d makes no guarantee that the box is the minimum (smallest) box possible, just that no portion of the object
 //! described by it will extend beyond its values.
-// @bsiclass
 //=======================================================================================
 struct BoundingBox3d : DRange3d
 {
@@ -463,7 +464,6 @@ struct BoundingBox3d : DRange3d
 
 //=======================================================================================
 //! A BoundingBox3d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
-// @bsiclass
 //=======================================================================================
 struct AxisAlignedBox3d : BoundingBox3d
 {
@@ -475,7 +475,6 @@ struct AxisAlignedBox3d : BoundingBox3d
 
 //=======================================================================================
 //! A BoundingBox3d that is aligned with the local coordinate system of a DgnElement.
-// @bsiclass
 //=======================================================================================
 struct ElementAlignedBox3d : BoundingBox3d
 {
@@ -504,7 +503,6 @@ struct ElementAlignedBox3d : BoundingBox3d
 //! A DRange2d that holds min/max values for an object in each of x and y in some coordinate system.
 //! @note A BoundingBox2d makes no guarantee that the box is the minimum (smallest) box possible, just that no portion of the object
 //! described by it will extend beyond its values.
-// @bsiclass
 //=======================================================================================
 struct BoundingBox2d : DRange2d
 {
@@ -649,7 +647,6 @@ struct DgnDisplayCoreTypes
 /** @endcond */
 
 //=======================================================================================
-//! @ingroup ConfigManagement
 //! @private
 //=======================================================================================
 enum class ConfigurationVariableLevel

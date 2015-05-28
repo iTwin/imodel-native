@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! @bsiclass                                                     KeithBentley    10/02
+// @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
 template <class ITYPE> class AbstractEventHandlerList
 {
@@ -204,14 +204,14 @@ template <class CALLER> bool CallAllHandlers (CALLER const& caller, bool stopIfT
 };
 
 //=======================================================================================
-//! @bsiclass                                                     KeithBentley    10/02
+// @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
 template <class ITYPE> class EventHandlerList : public AbstractEventHandlerList<ITYPE>
 {
 };
 
 //=======================================================================================
-//! @bsiclass                                                     KeithBentley    10/02
+// @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
 template <class ITYPE> class PrioritizedEventHandlerList: public EventHandlerList<ITYPE>
 {
@@ -219,7 +219,6 @@ public:
     DEFINE_T_SUPER(EventHandlerList<ITYPE>);
     typedef typename T_Super::Entry Entry;
 
-//! @bsimethod                                                    KeithBentley    10/02
 void            AddPrioritized (ITYPE* handlerToAdd)
     {
     if (this->m_locked)
