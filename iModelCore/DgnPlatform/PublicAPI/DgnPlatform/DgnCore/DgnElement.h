@@ -24,7 +24,7 @@ typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 
 template <class _QvKey> struct QvElemSet;
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct QvKey32
 {
@@ -42,7 +42,7 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the lowest level building block of DgnDb.
-//! @bsiclass                                                     KeithBentley    10/13
+// @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
 {
@@ -285,12 +285,12 @@ public:
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
     ElementGroupP ToElementGroupP() const {return const_cast<ElementGroupP>(_ToElementGroup());}           //!< more efficient substitute for dynamic_cast<ElementGroupP>(el)
 
-    bool Is3d() const {return nullptr != _ToElement3d();} //! Determine whether this element is 3d or not
+    bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}
-    void SetMark1(bool yesNo) const {if (m_flags.m_mark1==yesNo) return; m_flags.m_mark1 = yesNo;} //<! @private
-    void SetMark2(bool yesNo) const {if (m_flags.m_mark2==yesNo) return; m_flags.m_mark2 = yesNo;} //<! @private
-    bool IsMarked1() const {return true == m_flags.m_mark1;} //<! @private
-    bool IsMarked2() const {return true == m_flags.m_mark2;} //<! @private
+    void SetMark1(bool yesNo) const {if (m_flags.m_mark1==yesNo) return; m_flags.m_mark1 = yesNo;} //!< @private
+    void SetMark2(bool yesNo) const {if (m_flags.m_mark2==yesNo) return; m_flags.m_mark2 = yesNo;} //!< @private
+    bool IsMarked1() const {return true == m_flags.m_mark1;} //!< @private
+    bool IsMarked2() const {return true == m_flags.m_mark2;} //!< @private
 
     Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;}
     void SetHilited(Hilited newState) const {m_flags.m_hilited = (uint8_t) newState;}
@@ -314,7 +314,7 @@ public:
     DGNPLATFORM_EXPORT DgnElementPtr CopyForEdit() const;
 
     //! Make a writable copy of this DgnElement so that the copy may be edited.
-    //! This is merely a templated shortcut to dynamic_cast the return of #CopyForEdit to a subclass of DgnElement.
+    //! This is merely a templated shortcut to dynamic_cast the return of CopyForEdit to a subclass of DgnElement.
     template<class T> RefCountedPtr<T> MakeCopy() const {return dynamic_cast<T*>(CopyForEdit().get());}
 
     //! Update the persistent state of a DgnElement in the DgnDb from a modified copy of it.
@@ -334,7 +334,8 @@ public:
 
 /** @name AppData Management */
 /** @{ */
-    //! Get the HeapZone for the this element.
+    //! Get the HeapZone for the DgnDb of this element.
+    //! @private
     DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
 
     //! Add Application Data to this element.
@@ -354,7 +355,7 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
 /** @} */
 
-    //! Get the DgnModel of this element.
+    //! Get the DgnModel of this DgnElement.
     DgnModelR GetDgnModel() const {return m_dgnModel;}
 
     //! Get the DgnDb of this element.
@@ -369,7 +370,7 @@ public:
     void InvalidateElementId() {m_elementId = DgnElementId();}
 
     //! Get the DgnClassId for this DgnElement
-    //! @see DgnElement::QueryClassId
+    //! @see QueryClassId
     DgnClassId GetElementClassId() const {return m_classId;}
 
     //! Get the DgnElementKey (the element DgnClassId and DgnElementId) for this DgnElement
@@ -380,7 +381,7 @@ public:
 
     //! Static method to Query the DgnClassId of the dgn.Element ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the dgn.Element class - it does /em not return the class of a specific instance.
-    //! @see DgnElement::GetElementClassId
+    //! @see GetElementClassId
     DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 
     //! Get the DgnElementId of the parent of this element.
@@ -389,8 +390,7 @@ public:
     DgnElementId GetParentId() const {return m_parentId;}
 
     //! Set the parent (owner) of this DgnElement.
-    //! @see GetParentId
-    //! @see _SetParentId
+    //! @see GetParentId, _SetParentId
     //! @return SUCCESS if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
     DgnModelStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
@@ -400,35 +400,34 @@ public:
     DgnCategoryId GetCategoryId() const {return m_categoryId;}
 
     //! Set the category of this DgnElement.
-    //! @see GetCategoryId
-    //! @see _SetCategoryId
+    //! @see GetCategoryId, _SetCategoryId
     //! @return SUCCESS if the category was set
     //! @note This call can fail if a subclass overrides _SetCategoryId and rejects the category.
     DgnModelStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 
-    //! Get the code (business key) of this DgnElement.
+    //! Get the code (business key) for this DgnElement.
     Utf8CP GetCode() const {return m_code.c_str();}
 
-    //! Set the code of this DgnElement.
-    //! @see GetCode
-    //! @see _SetCode
+    //! Set the code (business key) for this DgnElement.
+    //! @see GetCodem, _SetCode
     //! @return SUCCESS if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
     DgnModelStatus SetCode(Utf8CP code) {return _SetCode(code);}
 
     //! Get the optional label (user-friendly name) of this DgnElement.
-    //! @return the label or nullptr
     Utf8CP GetLabel() const {return m_label.c_str();}
 
     //! Set the label (user-friendly name) of this DgnElement.
     void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
 
     //! Get the display label (for use in the GUI) for this DgnElement.
-    //! @note The default implementation returns the label if set or the code if the label is not set.
-    //! @see GetLabel
-    //! @see GetCode
-    //! @see _GetDisplayLabel
+    //! @note The default implementation returns the label if it is set or the code if the label is not set.
+    //! @see GetLabel, GetCode, _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
+
+    //! Query the DgnDb for the children of this DgnElement.
+    //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
+    DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
 
     //! Create a new instance of a DgnElement using the specified params.
     //! @note This is a static method that only creates instances of the DgnElement class. To create instances of subclasses,
@@ -610,6 +609,7 @@ public:
 };
 
 //=======================================================================================
+//! A 3-dimensional GeometricElement.
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
