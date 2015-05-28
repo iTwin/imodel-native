@@ -860,7 +860,7 @@ DgnModelStatus ElementGroup::DeleteMember(DgnElementCR member) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet ElementGroup::QueryMembers() const
+DgnElementIdSet ElementGroup::_QueryMembers() const
     {
     CachedStatementPtr statement;
     GetDgnDb().Elements().GetStatement(statement, "SELECT MemberId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=?");

@@ -743,6 +743,9 @@ protected:
     //! Override if additional processing is required after a member is deleted.
     virtual void _OnMemberDeleted(DgnElementCR member) const {}
 
+    //! Called when members of the group are queried
+    DGNPLATFORM_EXPORT virtual DgnElementIdSet _QueryMembers() const;
+
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -754,7 +757,7 @@ public:
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
     DGNPLATFORM_EXPORT DgnModelStatus DeleteMember(DgnElementCR) const;
     //! Query for the set of members in this ElementGroup
-    DGNPLATFORM_EXPORT DgnElementIdSet QueryMembers() const;
+    DgnElementIdSet QueryMembers() const { return _QueryMembers(); }
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
