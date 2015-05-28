@@ -429,6 +429,8 @@ Utf8String ConstantValueExp::ToECSql () const
                     ecsql.append("TIMESTAMP '").append(m_value).append("'");
                 }
             }
+        else
+            ecsql.append(m_value);
         }
     else
         ecsql.append(m_value);

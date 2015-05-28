@@ -319,89 +319,71 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp (NativeSqlBuilder::List& nativeSqlS
 
     BeAssert (exp->GetTypeInfo ().IsPrimitive () && "For now only primitive types supported as CAST target type.");
     const auto targetType = exp->GetTypeInfo ().GetPrimitiveType ();
-    
+
+    if (targetType == PRIMITIVETYPE_Point2D || targetType == PRIMITIVETYPE_Point3D)
+        {
+        size_t expectedOperandSnippetCount = targetType == PRIMITIVETYPE_Point2D ? 2 : 3;
+        for (size_t i = 0; i < expectedOperandSnippetCount; i++)
+            {
+            NativeSqlBuilder nativeSqlBuilder;
+            if (exp->HasParentheses())
+                nativeSqlBuilder.AppendParenLeft();
+
+            //if cast operand is null, the snippet list contains a single NULL snippet. In this case we simply
+            //reuse the same snippet for all coordinates of the point.
+            auto const& operandSqlSnippet = castOperandIsNull ? operandNativeSqlSnippets[0] : operandNativeSqlSnippets[i];
+            nativeSqlBuilder.Append("CAST(").Append(operandSqlSnippet).Append(" AS DOUBLE)");
+
+            if (exp->HasParentheses())
+                nativeSqlBuilder.AppendParenRight();
+
+            nativeSqlSnippets.push_back(move(nativeSqlBuilder));
+            }
+        return ECSqlStatus::Success;
+        }
+
+
     NativeSqlBuilder nativeSqlBuilder;
     if (exp->HasParentheses())
         nativeSqlBuilder.AppendParenLeft();
 
-    Utf8CP const castToken = "CAST(";
-
-    //for checking that the operand type matches the target type
-    size_t expectedOperandSnippetCount = 0;
+    Utf8CP castFormat = nullptr;
     switch (targetType)
         {
-        case PRIMITIVETYPE_Binary:
-            {
-            expectedOperandSnippetCount = 1;
-            nativeSqlBuilder.Append(castToken).Append(operandNativeSqlSnippets[0]).Append(" AS BLOB)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        case PRIMITIVETYPE_Boolean:
-            {
-            expectedOperandSnippetCount = 1;
-            nativeSqlBuilder.Append ("CASE WHEN ").Append (operandNativeSqlSnippets[0]).Append (" <> 0 THEN 1 ELSE 0 END");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        case PRIMITIVETYPE_DateTime:
-            {
-            expectedOperandSnippetCount = 1;
-            nativeSqlBuilder.Append(castToken).Append(operandNativeSqlSnippets[0]).Append(" AS TIMESTAMP)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            }
-        case PRIMITIVETYPE_Double:
-            {
-            expectedOperandSnippetCount = 1;
-            nativeSqlBuilder.Append(castToken).Append(operandNativeSqlSnippets[0]).Append(" AS DOUBLE)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            }
-        case PRIMITIVETYPE_Integer:
-            {
-            expectedOperandSnippetCount = 1;
-            nativeSqlBuilder.Append(castToken).Append(operandNativeSqlSnippets[0]).Append(" AS INTEGER)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        case PRIMITIVETYPE_Long:
-            {
-            expectedOperandSnippetCount = 1;
-            nativeSqlBuilder.Append(castToken).Append(operandNativeSqlSnippets[0]).Append(" AS BIGINT)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        case PRIMITIVETYPE_Point2D:
-        case PRIMITIVETYPE_Point3D:
-            {
-            expectedOperandSnippetCount = targetType == PRIMITIVETYPE_Point2D ? 2 : 3;
-            for (size_t i = 0; i < expectedOperandSnippetCount; i++)
-                {
-                //if cast operand is null, the snippet list contains a single NULL snippet. In this case we simply
-                //reuse the same snippet for all coordinates of the point.
-                auto const& operandSqlSnippet = castOperandIsNull ? operandNativeSqlSnippets[0] : operandNativeSqlSnippets[i];
-                nativeSqlBuilder.Append(castToken).Append(operandSqlSnippet).Append(" AS DOUBLE)");
-                nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-                }
-            break;
-            }
-
-        case PRIMITIVETYPE_String:
-            {
-            expectedOperandSnippetCount = 1;
-            nativeSqlBuilder.Append(castToken).Append(operandNativeSqlSnippets[0]).Append(" AS TEXT)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        default:
-            BeAssert (false);
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "Unexpected cast target type during preparation (ECN::PRIMITIVETYPE %d)", targetType);
+            case PRIMITIVETYPE_Binary:
+                castFormat = "CAST(%s AS BLOB)";
+                break;
+            case PRIMITIVETYPE_Boolean:
+                castFormat = "CASE WHEN %s <> 0 THEN 1 ELSE 0 END";
+                break;
+            case PRIMITIVETYPE_DateTime:
+                castFormat = "CAST(%s AS TIMESTAMP)";
+                break;
+            case PRIMITIVETYPE_Double:
+                castFormat = "CAST(%s AS DOUBLE)";
+                break;
+            case PRIMITIVETYPE_Long:
+            case PRIMITIVETYPE_Integer:
+                castFormat = "CAST(%s AS INTEGER)";
+                break;
+            case PRIMITIVETYPE_String:
+                castFormat = "CAST(%s AS TEXT)";
+                break;
+            default:
+                BeAssert(false);
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Unexpected cast target type during preparation (ECN::PRIMITIVETYPE %d)", targetType);
         }
+
+    Utf8String castExpStr;
+    castExpStr.Sprintf(castFormat, operandNativeSqlSnippets[0]);
+    nativeSqlBuilder.Append(castExpStr.c_str(), false);
 
     if (exp->HasParentheses())
         nativeSqlBuilder.AppendParenRight();
 
     return ECSqlStatus::Success;
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -824,18 +806,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareHavingExp (ECSqlPrepareContext& ctx, Having
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LikeRhsValueExp const* exp)
     {
-    NativeSqlBuilder::List rhsSqlSnippets;
-    auto stat = PrepareValueExp(rhsSqlSnippets, ctx, exp->GetRhsExp());
+    auto stat = PrepareValueExp(nativeSqlSnippets, ctx, exp->GetRhsExp());
     if (stat != ECSqlStatus::Success)
         return stat;
 
-    if (rhsSqlSnippets.size() != 1)
+    if (nativeSqlSnippets.size() != 1)
         {
         //This is a programmer error as the parse step should already check that the like expression is of string type
         BeAssert (false && "LIKE RHS expression is expected to result in a single SQLite SQL snippet as LIKE only works with string operands.");
         return ctx.SetError (ECSqlStatus::ProgrammerError, "LIKE RHS expression is expected to result in a single SQLite SQL snippet as LIKE only works with string operands.");
         }
-
 
     if (exp->HasEscapeExp ())
         {
@@ -848,13 +828,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp (NativeSqlBuilder::List& na
             return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid type in LIKE ESCAPE expression. ESCAPE only works with a string value.");
 
         NativeSqlBuilder& builder = nativeSqlSnippets[0];
-        if (exp->HasParentheses())
-            builder.AppendParenLeft();
-
         builder.Append(" ESCAPE ").Append(escapeExpSqlSnippets[0]);
-
-        if (exp->HasParentheses())
-            builder.AppendParenRight();
         }
 
     return ECSqlStatus::Success;
@@ -1575,7 +1549,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSql
         case Exp::Type::LikeRhsValue:
             return PrepareLikeRhsValueExp (nativeSqlSnippets, ctx, static_cast<LikeRhsValueExp const*> (exp));
         case Exp::Type::Parameter:
-            return PrepareParameterExp (nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp), nullptr, false);
+            return PrepareParameterExp (nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp), false, false);
         case Exp::Type::PropertyName:
             return ECSqlPropertyNameExpPreparer::Prepare (nativeSqlSnippets, ctx, static_cast<PropertyNameExp const*>(exp));
         case Exp::Type::SubqueryValue:

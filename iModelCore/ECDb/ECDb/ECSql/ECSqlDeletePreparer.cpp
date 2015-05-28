@@ -188,11 +188,11 @@ NativeSqlSnippets const& deleteNativeSqlSnippets
     if (!deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet.IsEmpty ())
         {
         if (whereAlreadyAppended)
-            deleteBuilder.Append (" AND (");
+            deleteBuilder.Append (" AND ");
         else
-            deleteBuilder.Append (" WHERE (");
+            deleteBuilder.Append (" WHERE ");
 
-        deleteBuilder.Append (deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet).AppendParenRight ();
+        deleteBuilder.Append (deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
         }
     }
 
