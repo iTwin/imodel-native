@@ -1,0 +1,27 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/Model.overviewPage $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+/** @page PAGE_ModelOverview Model
+
+WIP
+
+@see @ref BentleyApi::DgnPlatform::DgnModels        "DgnModels"
+@see @ref BentleyApi::DgnPlatform::DgnModel         "DgnModel"
+@see @ref BentleyApi::DgnPlatform::DgnModelId       "DgnModelId"
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelSection1 WIP Model Section 1
+
+WIP
+
+@li List item 1
+@li List item 2
+@li List item 3
+
+*/

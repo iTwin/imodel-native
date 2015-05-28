@@ -234,6 +234,22 @@ DgnModelStatus DgnElement::_UpdateInDb()
     return (stmt->Step() != BE_SQLITE_DONE) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet DgnElement::QueryChildren() const
+    {
+    CachedStatementPtr stmt;
+    GetDgnDb().Elements().GetStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ParentId=?");
+    stmt->BindId(1, GetElementId());
+
+    DgnElementIdSet elementIdSet;
+    while (BE_SQLITE_ROW == stmt->Step())
+        elementIdSet.insert(stmt->GetValueId<DgnElementId>(0));
+
+    return elementIdSet;
+    }
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/10
 //=======================================================================================
@@ -872,3 +888,4 @@ DgnElementIdSet ElementGroup::_QueryMembers() const
 
     return elementIdSet;
     }
+
