@@ -144,24 +144,24 @@ Utf8CP ExpHelper::ToString(SubqueryTestOperator op)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString(SqlBinaryOperator op)
+Utf8CP ExpHelper::ToString(BinarySqlOperator op)
     {
     switch(op)
         {
         //Arthimatics
-        case SqlBinaryOperator::DIVIDE:        return "/";
-        case SqlBinaryOperator::MINUS:         return "-";
-        case SqlBinaryOperator::MODULUS:       return "%";
-        case SqlBinaryOperator::MULTIPLY:      return "*";
-        case SqlBinaryOperator::PLUS:          return "+";
+        case BinarySqlOperator::Divide:        return "/";
+        case BinarySqlOperator::Minus:         return "-";
+        case BinarySqlOperator::Modulo:       return "%";
+        case BinarySqlOperator::Multiply:      return "*";
+        case BinarySqlOperator::Plus:          return "+";
         //string concatination
-        case SqlBinaryOperator::CONCAT:        return "||";
+        case BinarySqlOperator::Concat:        return "||";
         //Bitwise
-        case SqlBinaryOperator::SHIFT_LEFT:    return "<<";
-        case SqlBinaryOperator::SHIFT_RIGHT:   return ">>";
-        case SqlBinaryOperator::BITWISE_AND:   return "&"; //Alternate BITWISE_OR(op1, op2) 
-        case SqlBinaryOperator::BITWISE_OR:    return "|"; //Alternate BITWISE_AND(op1, op2)  
-        case SqlBinaryOperator::BITWISE_XOR:   return "^"; //Alternate BITWISE_XOR(op1, op2)              
+        case BinarySqlOperator::ShiftLeft:    return "<<";
+        case BinarySqlOperator::ShiftRight:   return ">>";
+        case BinarySqlOperator::BitwiseAnd:   return "&"; //Alternate BITWISE_OR(op1, op2) 
+        case BinarySqlOperator::BitwiseOr:    return "|"; //Alternate BITWISE_AND(op1, op2)  
+        case BinarySqlOperator::BitwiseXOr:   return "^"; //Alternate BITWISE_XOR(op1, op2)              
         }
     BeAssert(false && "case not handled");
     return nullptr;
@@ -175,28 +175,28 @@ Utf8CP ExpHelper::ToString(BooleanSqlOperator op)
     switch(op)
         {
         //Relational
-        case BooleanSqlOperator::AND:           return "AND";
-        case BooleanSqlOperator::OR:            return "OR";
+        case BooleanSqlOperator::And:           return "AND";
+        case BooleanSqlOperator::Or:            return "OR";
         //Boolean
-        case BooleanSqlOperator::EQ:            return "=";
-        case BooleanSqlOperator::GE:            return ">=";
-        case BooleanSqlOperator::GT:            return ">";
-        case BooleanSqlOperator::LE:            return "<=";
-        case BooleanSqlOperator::LT:            return "<";
-        case BooleanSqlOperator::NE:            return "<>";
+        case BooleanSqlOperator::EqualTo:            return "=";
+        case BooleanSqlOperator::GreaterThanOrEqualTo:            return ">=";
+        case BooleanSqlOperator::GreaterThan:            return ">";
+        case BooleanSqlOperator::LessThenOrEqualTo:            return "<=";
+        case BooleanSqlOperator::LessThan:            return "<";
+        case BooleanSqlOperator::NotEqualTo:            return "<>";
 
-        case BooleanSqlOperator::IN:            return "IN";
-        case BooleanSqlOperator::NOT_IN:        return "NOT IN";
-        case BooleanSqlOperator::BETWEEN:       return "BETWEEN";
-        case BooleanSqlOperator::NOT_BETWEEN:   return "NOT BETWEEN";
-        case BooleanSqlOperator::IS:            return "IS";
-        case BooleanSqlOperator::IS_NOT:        return "IS NOT";
+        case BooleanSqlOperator::In:            return "IN";
+        case BooleanSqlOperator::NotIn:        return "NOT IN";
+        case BooleanSqlOperator::Between:       return "BETWEEN";
+        case BooleanSqlOperator::NotBetween:   return "NOT BETWEEN";
+        case BooleanSqlOperator::Is:            return "IS";
+        case BooleanSqlOperator::IsNot:        return "IS NOT";
         //Pattern
-        case BooleanSqlOperator::LIKE:          return "LIKE";
-        case BooleanSqlOperator::NOT_LIKE:      return "NOT LIKE";      
+        case BooleanSqlOperator::Like:          return "LIKE";
+        case BooleanSqlOperator::NotLike:      return "NOT LIKE";      
 
-        case BooleanSqlOperator::MATCH:         return "MATCH";
-        case BooleanSqlOperator::NOT_MATCH:     return "NOT MATCH";
+        case BooleanSqlOperator::Match:         return "MATCH";
+        case BooleanSqlOperator::NotMatch:     return "NOT MATCH";
         }
     BeAssert(false && "case not handled");
     return nullptr;

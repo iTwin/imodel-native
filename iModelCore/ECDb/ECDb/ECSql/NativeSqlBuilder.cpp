@@ -158,7 +158,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append (Utf8CP classIdentifier, Utf8CP ident
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append (SqlBinaryOperator op, bool appendTrailingSpace)
+NativeSqlBuilder& NativeSqlBuilder::Append (BinarySqlOperator op, bool appendTrailingSpace)
     {
     //No difference of operator in ECSQL and SQLite SQL
     return Append (ExpHelper::ToString (op), appendTrailingSpace);

@@ -73,20 +73,19 @@ enum class ECSqlType
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-enum class SqlBinaryOperator
+enum class BinarySqlOperator
     {
-    //WIP_ECSQL: use pascal casing
-    PLUS,
-    MINUS,
-    MODULUS,
-    DIVIDE,
-    MULTIPLY,
-    SHIFT_LEFT,
-    SHIFT_RIGHT,
-    BITWISE_OR,
-    BITWISE_AND,
-    BITWISE_XOR,
-    CONCAT
+    Plus,
+    Minus,
+    Divide,
+    Multiply,
+    Modulo,
+    ShiftLeft,
+    ShiftRight,
+    BitwiseOr,
+    BitwiseAnd,
+    BitwiseXOr,
+    Concat
     };
 
 //=======================================================================================
@@ -94,25 +93,24 @@ enum class SqlBinaryOperator
 //+===============+===============+===============+===============+===============+======
 enum class BooleanSqlOperator
     {
-    //WIP_ECSQL: use pascal casing
-    LE,
-    GE,
-    LT,
-    GT,
-    EQ,
-    NE,
-    OR,
-    AND,
-    IS,
-    IS_NOT,
-    IN,
-    NOT_IN,
-    BETWEEN,
-    NOT_BETWEEN,
-    LIKE,
-    NOT_LIKE,
-    MATCH,
-    NOT_MATCH
+    EqualTo,
+    NotEqualTo,
+    LessThan,
+    LessThenOrEqualTo,
+    GreaterThan,
+    GreaterThanOrEqualTo,
+    Is,
+    IsNot,
+    In,
+    NotIn,
+    Between,
+    NotBetween,
+    Like,
+    NotLike,
+    Or,
+    And,
+    Match,
+    NotMatch
     };
 
 //=======================================================================================
@@ -146,17 +144,6 @@ enum class SqlSetQuantifier
     };
 
 typedef int64_t ECContainerId;
-
-enum CreateTableStatus
-    {
-    CREATE_ECTABLE_Success                      = SUCCESS,
-    CREATE_ECTABLE_AlreadyExists                = 1,
-    CREATE_ECTABLE_IsEmpty                      = 2,
-    CREATE_ECTABLE_Error                        = 3, // Anything greater or equal to this is an error
-    CREATE_ECTABLE_SqlFailed                    = 4,
-    CREATE_ECTABLE_MapNotFound                  = 5,
-    CREATE_ECTABLE_MissingMappedTable           = 6,
-    };
 
 enum class MapStatus 
     {

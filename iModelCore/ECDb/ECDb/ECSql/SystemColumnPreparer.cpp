@@ -107,7 +107,7 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
         return ECSqlStatus::Success; //table doesn't have class id or all class ids need to be considered -> no filter needed
 
     if (!whereClauseBuilder.IsEmpty())
-        whereClauseBuilder.Append(BooleanSqlOperator::AND);
+        whereClauseBuilder.Append(BooleanSqlOperator::And);
 
     whereClauseBuilder.AppendParenLeft().Append(classIdCol->GetName().c_str(), true);
     horizPartition->AppendECClassIdFilterSql(whereClauseBuilder);

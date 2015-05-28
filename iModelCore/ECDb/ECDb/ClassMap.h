@@ -415,9 +415,9 @@ public:
     //! FinishTableDefinition will ensure there is a primary key for the table, and will add a
     //! ClassId column, if necessary
     //! It must be called prior to calling ECDbMap::CreateTableInDb()
-    StatusInt   FinishTableDefinition();
-    StatusInt   AddClassMap (ClassMapCR classMap);
-    bool        IsFinished() const { return m_generatedClassIdColumn;}
+    BentleyStatus FinishTableDefinition();
+    BentleyStatus AddClassMap(ClassMapCR classMap);
+    bool IsFinished() const { return m_generatedClassIdColumn;}
     };
 
 

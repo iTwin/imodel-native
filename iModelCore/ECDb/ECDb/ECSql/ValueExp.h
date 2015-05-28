@@ -20,9 +20,7 @@ struct ValueExp : ComputedExp
     {
     DEFINE_EXPR_TYPE(Value)
 protected:
-    ValueExp ()
-        : ComputedExp ()
-        {}
+    ValueExp () : ComputedExp () {}
 
 public:
     virtual ~ValueExp () {}
@@ -41,10 +39,7 @@ private:
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override
-        {
-        return "BetweenRangeValue";
-        }
+    virtual Utf8String _ToString () const override { return "BetweenRangeValue"; }
 
 public:
     BetweenRangeValueExp(std::unique_ptr<ValueExp> lowerBound, std::unique_ptr<ValueExp> upperBound)
@@ -73,14 +68,14 @@ struct BinaryValueExp : ValueExp
 private:
     size_t m_leftOperandExpIndex;
     size_t m_rightOperandExpIndex;
-    SqlBinaryOperator m_op;
+    BinarySqlOperator m_op;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToString () const override;
 
 public:
-    BinaryValueExp(std::unique_ptr<ValueExp> lhs, SqlBinaryOperator op ,std::unique_ptr<ValueExp> rhs)
+    BinaryValueExp(std::unique_ptr<ValueExp> lhs, BinarySqlOperator op ,std::unique_ptr<ValueExp> rhs)
         : ValueExp (), m_op(op)
         {
         m_leftOperandExpIndex = AddChild (std::move(lhs));
@@ -89,7 +84,7 @@ public:
 
     ValueExp const* GetLeftOperand() const {return GetChild<ValueExp> (m_leftOperandExpIndex);}
     ValueExp const* GetRightOperand() const {return GetChild<ValueExp> (m_rightOperandExpIndex);}
-    SqlBinaryOperator GetOperator() const {return m_op;}
+    BinarySqlOperator GetOperator() const {return m_op;}
 
     virtual Utf8String ToECSql() const override;
     };

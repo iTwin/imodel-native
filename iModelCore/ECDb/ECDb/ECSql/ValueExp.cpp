@@ -69,11 +69,11 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing (ECSqlParseContext& ct
     auto resolvedType = ECN::PRIMITIVETYPE_Integer;
     switch (m_op)
         {
-        case SqlBinaryOperator::PLUS:
-        case SqlBinaryOperator::MINUS:
-        case SqlBinaryOperator::MODULUS:
-        case SqlBinaryOperator::DIVIDE:
-        case SqlBinaryOperator::MULTIPLY:
+        case BinarySqlOperator::Plus:
+        case BinarySqlOperator::Minus:
+        case BinarySqlOperator::Modulo:
+        case BinarySqlOperator::Divide:
+        case BinarySqlOperator::Multiply:
             {
             if (!lhsTypeInfo.IsNumeric () || !rhsTypeInfo.IsNumeric ())
                 {
@@ -89,11 +89,11 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing (ECSqlParseContext& ct
 
             break;
             }
-        case SqlBinaryOperator::SHIFT_LEFT:
-        case SqlBinaryOperator::SHIFT_RIGHT:
-        case SqlBinaryOperator::BITWISE_OR:
-        case SqlBinaryOperator::BITWISE_AND:
-        case SqlBinaryOperator::BITWISE_XOR:
+        case BinarySqlOperator::ShiftLeft:
+        case BinarySqlOperator::ShiftRight:
+        case BinarySqlOperator::BitwiseOr:
+        case BinarySqlOperator::BitwiseAnd:
+        case BinarySqlOperator::BitwiseXOr:
             {
             if (!lhsTypeInfo.IsExactNumeric () || !rhsTypeInfo.IsExactNumeric ())
                 {
@@ -107,7 +107,7 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing (ECSqlParseContext& ct
             break;
             }
 
-        case SqlBinaryOperator::CONCAT:
+        case BinarySqlOperator::Concat:
             {
             if (lhsType == ECN::PRIMITIVETYPE_String  && lhsType == ECN::PRIMITIVETYPE_String)
                 resolvedType = ECN::PRIMITIVETYPE_String;

@@ -145,7 +145,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
         return stat;
         }
 
-    if (CreateOrUpdateRequiredTables () != CREATE_ECTABLE_Success)
+    if (CreateOrUpdateRequiredTables() != SUCCESS)
         {
         schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
             "Failed to import ECSchemas. Data tables could not be created or updated. Please see log for details.");
@@ -606,79 +606,12 @@ WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
 #endif // defined (_MSC_VER)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-CreateTableStatus ECDbMap::FinishTableDefinition (ECDbSqlTable& table) const
-    {
-    if (AssertIfNotMapping ())
-        return CreateTableStatus::CREATE_ECTABLE_Error;
-
-    BeMutexHolder mutex (m_criticalSection);
-
-    ClustersByTable::const_iterator cit = m_clustersByTable.find (&table);
-    if (m_clustersByTable.end() == cit)
-        {
-        LOG.errorv ("CreateTable: No mapped table found for table '%s'", table.GetName().c_str());
-        return CREATE_ECTABLE_MissingMappedTable;
-        }
-    MappedTableR mappedTable = *cit->second;
-    BeAssert (&table == &mappedTable.GetTable());
-
-    mappedTable.FinishTableDefinition();
-    return CREATE_ECTABLE_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-CreateTableStatus ECDbMap::FinishTableDefinition (ECN::ECClassCR ecClass) const
-    {
-    if (AssertIfNotMapping ())
-        return CREATE_ECTABLE_Error;
-
-    auto classMap = GetClassMap (ecClass, false);
-    if (classMap == nullptr)
-        {
-        LOG.errorv(L"In FinishTableDefinition, for '%ls' there is no ClassMap", ecClass.GetFullName());
-        return CREATE_ECTABLE_MapNotFound;
-        }
-
-    if (classMap->GetMapStrategy().IsUnmapped())
-        return CREATE_ECTABLE_IsEmpty;
-
-    CreateTableStatus createStatus = FinishTableDefinition (classMap->GetTable());
-    if (CREATE_ECTABLE_Success != createStatus)
-        return createStatus;
-
-    auto classId = ecClass.GetId ();
-    classMap->GetPropertyMaps ().Traverse ([&createStatus, this, classId] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        auto propertyMapToTable = propMap->GetAsPropertyMapToTable ();
-        if (propertyMapToTable == nullptr)
-            return;
-
-        ECClassCR elementType = propertyMapToTable->GetElementType ();
-        if (elementType.GetId () == classId)
-            return;
-
-        createStatus = FinishTableDefinition (elementType);
-        if (createStatus >= CREATE_ECTABLE_Error)
-            {
-            feedback = TraversalFeedback::Cancel;
-            return;
-            }
-        }, true);
-
-    return CREATE_ECTABLE_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
+BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
     {
     if (AssertIfNotMapping ())
-        return CreateTableStatus::CREATE_ECTABLE_Error;
+        return ERROR;
 
     BeMutexHolder lock (m_criticalSection);
     m_ecdb.GetStatementCache ().Empty ();
@@ -696,7 +629,7 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
         if (!mappedTable->IsFinished())
             {
             if (mappedTable->FinishTableDefinition() != SUCCESS)
-                return CREATE_ECTABLE_Error;
+                return ERROR;
             }
 
         if (table->GetPersistenceType () == PersistenceType::Virtual || table->GetOwnerType () == OwnerType::ExistingTable)           
@@ -709,7 +642,7 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
             if (GetSQLManager ().IsTableChanged (*table))
                 {
                 if (table->GetPersistenceManagerR ().Syncronize (GetECDbR ()) != BentleyStatus::SUCCESS)
-                    return CREATE_ECTABLE_Error;
+                    return ERROR;
                 }
             //*****************************************
             nSkipped++;
@@ -717,7 +650,7 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
         else
             {
             if (table->GetPersistenceManagerR ().Create (GetECDbR (), /*CreateIndexes = */ true) != BentleyStatus::SUCCESS)
-                return CREATE_ECTABLE_Error;
+                return ERROR;
 
             nCreated++;
             }
@@ -726,7 +659,7 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
     timer.Stop();
     LOG.infov("Created %d tables, Skipped %d and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
 
-    return CREATE_ECTABLE_Success;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

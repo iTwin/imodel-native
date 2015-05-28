@@ -91,7 +91,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing (ECSqlParseContext& 
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         //if operands are parameters set the target exp in those expressions
-        if (m_op != BooleanSqlOperator::AND && m_op != BooleanSqlOperator::OR)
+        if (m_op != BooleanSqlOperator::And && m_op != BooleanSqlOperator::Or)
             {
             if (DetermineOperandsTargetTypes (ctx, lhs, rhs) != ECSqlStatus::Success)
                 return FinalizeParseStatus::Error;
@@ -159,7 +159,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
         return FinalizeParseStatus::Error;
         }
 
-    if ((m_op == BooleanSqlOperator::LIKE || m_op == BooleanSqlOperator::NOT_LIKE) &&
+    if ((m_op == BooleanSqlOperator::Like || m_op == BooleanSqlOperator::NotLike) &&
         (!lhsTypeInfo.IsPrimitive () || !rhsTypeInfo.IsPrimitive () ||
         lhsTypeInfo.GetPrimitiveType () != PRIMITIVETYPE_String || rhsTypeInfo.GetPrimitiveType () != PRIMITIVETYPE_String))
         {
@@ -173,12 +173,12 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
         {
         switch (m_op)
             {
-            case BooleanSqlOperator::EQ:
-            case BooleanSqlOperator::NE:
-            case BooleanSqlOperator::IN:
-            case BooleanSqlOperator::NOT_IN:
-            case BooleanSqlOperator::IS:
-            case BooleanSqlOperator::IS_NOT:
+            case BooleanSqlOperator::EqualTo:
+            case BooleanSqlOperator::NotEqualTo:
+            case BooleanSqlOperator::In:
+            case BooleanSqlOperator::NotIn:
+            case BooleanSqlOperator::Is:
+            case BooleanSqlOperator::IsNot:
                 break;
 
             default:
@@ -194,7 +194,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
     //cannot assume both sides have same types as one can still represent the SQL NULL
     if (lhsTypeInfo.IsGeometry () || rhsTypeInfo.IsGeometry ())
         {
-        if ((m_op != BooleanSqlOperator::IS && m_op != BooleanSqlOperator::IS_NOT) ||
+        if ((m_op != BooleanSqlOperator::Is && m_op != BooleanSqlOperator::IsNot) ||
             ((lhsTypeInfo.IsGeometry () && rhsTypeKind != ECSqlTypeInfo::Kind::Null) ||
             (lhsTypeKind != ECSqlTypeInfo::Kind::Null && rhsTypeInfo.IsGeometry ())))
             {
@@ -209,7 +209,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
     if (lhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray ||
         rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray)
         {
-        if ((m_op != BooleanSqlOperator::IS && m_op != BooleanSqlOperator::IS_NOT) ||
+        if ((m_op != BooleanSqlOperator::Is && m_op != BooleanSqlOperator::IsNot) ||
             ((lhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray && rhsTypeKind != ECSqlTypeInfo::Kind::Null) ||
              (lhsTypeKind != ECSqlTypeInfo::Kind::Null && rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray)))
             {
@@ -241,7 +241,7 @@ Utf8String BinaryBooleanExp::ToECSql() const
     ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ");
 
     ComputedExp const* rhs = GetRightOperand();
-    const bool rhsNeedsParens = m_op == BooleanSqlOperator::NOT_IN || m_op == BooleanSqlOperator::IN;
+    const bool rhsNeedsParens = m_op == BooleanSqlOperator::NotIn || m_op == BooleanSqlOperator::In;
 
     if (rhsNeedsParens)
         ecsql.append("(");
