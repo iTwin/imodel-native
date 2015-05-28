@@ -29,10 +29,10 @@
     %endif
     
     %if !defined (REL_V)
-        REL_V=05
+        REL_V=06
     %endif
     %if !defined (MAJ_V)
-        MAJ_V=04
+        MAJ_V=00
     %endif
     %if !defined (MIN_V)
         MIN_V=999
