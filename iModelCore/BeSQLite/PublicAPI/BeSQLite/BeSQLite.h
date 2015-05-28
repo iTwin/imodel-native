@@ -1181,7 +1181,6 @@ struct AggregateFunction : DbFunction
     //! @param[in] name Function name
     //! @param[in] nArgs Number of function args
     //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
-    //! @param[in] val IAggregate implementation
     AggregateFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal) : DbFunction(name, nArgs, returnType) {}
 };
 
