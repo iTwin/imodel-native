@@ -128,9 +128,8 @@ ECSqlStatus EndTableSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContext& c
     if (!whereClauseBuilder.IsEmpty())
         whereClauseBuilder.Append(" AND ");
 
-    auto otherEndECInstanceIdColSqlSnippets = relClassMap.GetOtherEndECInstanceIdPropMap()->ToNativeSql(tableAlias, ecsqlType);
+    auto otherEndECInstanceIdColSqlSnippets = relClassMap.GetOtherEndECInstanceIdPropMap()->ToNativeSql(tableAlias, ecsqlType, false);
     BeAssert(!otherEndECInstanceIdColSqlSnippets.empty());
-    whereClauseBuilder.AppendParenLeft();
     bool isFirstItem = true;
     for (auto const& sqlSnippet : otherEndECInstanceIdColSqlSnippets)
         {
@@ -141,8 +140,6 @@ ECSqlStatus EndTableSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContext& c
 
         isFirstItem = false;
         }
-
-    whereClauseBuilder.AppendParenRight();
 
     return ECSqlStatus::Success;
     }

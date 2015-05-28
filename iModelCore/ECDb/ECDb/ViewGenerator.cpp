@@ -270,8 +270,8 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQu
         if (!prepareContext.GetSelectionOptions ().IsSelected (actualPropMap->GetPropertyAccessString()))
             continue;
 
-        auto aliasSqlSnippets = basePropMap->ToNativeSql (nullptr, ECSqlType::Select);
-        auto colSqlSnippets = actualPropMap->ToNativeSql (nullptr, ECSqlType::Select);
+        auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
+        auto colSqlSnippets = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
 
         const size_t snippetCount = colSqlSnippets.size ();
         if (aliasSqlSnippets.size () != snippetCount)
@@ -537,8 +537,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
             }
         }
 
-    viewSql.Append (" WHERE (").Append (relationMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select)).Append (" IS NOT NULL");
-    viewSql.Append (")");
+    viewSql.Append (" WHERE ").Append (relationMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false)).Append (" IS NOT NULL");
     return SUCCESS;
     }
 
@@ -721,7 +720,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
         viewSql.AppendEscaped (ecId->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
         }
 
-    viewSql.Append (relationMap.GetECInstanceIdPropertyMap ()->ToNativeSql ( nullptr, ECSqlType::Select)).AppendComma (true);
+    viewSql.Append (relationMap.GetECInstanceIdPropertyMap ()->ToNativeSql ( nullptr, ECSqlType::Select, false)).AppendComma (true);
     viewSql.Append (relationMap.GetClass ().GetId ()).AppendSpace ().Append (ECCLASSID_COLUMNNAME).AppendComma (true);
 
     //Source
@@ -775,30 +774,30 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView (NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, RelationshipClassMapCR relationMap, bool endWithComma)
     {
     //ECInstanceId and ECClassId
-    auto sqlSnippets = relationMap.GetECInstanceIdPropertyMap ()->ToNativeSql ( nullptr, ECSqlType::Select);
+    auto sqlSnippets = relationMap.GetECInstanceIdPropertyMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
     if (sqlSnippets.size () != 1)
         return ERROR;
     viewSql.Append ("SELECT NULL ").Append (sqlSnippets).AppendComma (true);
     viewSql.Append ("NULL ").Append (ECCLASSID_COLUMNNAME).AppendComma (true);
 
     //Source constraint
-    sqlSnippets = relationMap.GetSourceECInstanceIdPropMap ()->ToNativeSql ( nullptr, ECSqlType::Select);
+    sqlSnippets = relationMap.GetSourceECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
     if (sqlSnippets.size () != 1)
         return ERROR;
     viewSql.Append ("NULL ").Append (sqlSnippets).AppendComma (true);
 
-    sqlSnippets = relationMap.GetSourceECClassIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select);
+    sqlSnippets = relationMap.GetSourceECClassIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
     if (sqlSnippets.size () != 1)
         return ERROR;
     viewSql.Append ("NULL ").Append (sqlSnippets).AppendComma (true);
 
     //Target constraint
-    sqlSnippets = relationMap.GetTargetECInstanceIdPropMap ()->ToNativeSql ( nullptr, ECSqlType::Select);
+    sqlSnippets = relationMap.GetTargetECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
     if (sqlSnippets.size () != 1)
         return ERROR;
     viewSql.Append ("NULL ").Append (sqlSnippets).AppendComma (true);
 
-    sqlSnippets = relationMap.GetTargetECClassIdPropMap ()->ToNativeSql ( nullptr, ECSqlType::Select);
+    sqlSnippets = relationMap.GetTargetECClassIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
     if (sqlSnippets.size () != 1)
         return ERROR;
     viewSql.Append ("NULL ").Append (sqlSnippets);
@@ -829,7 +828,7 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap (NativeSqlBuilder& v
         const auto endClassId = classMap->GetClass ().GetId ();
 
         viewSql.Append (endClassId).AppendSpace ();
-        viewSql.Append (propMap.ToNativeSql ( nullptr, ECSqlType::Select));
+        viewSql.Append (propMap.ToNativeSql ( nullptr, ECSqlType::Select, false));
         }
     else
         propMap.AppendSelectClauseSqlSnippetForView (viewSql);
@@ -985,13 +984,13 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap (NativeSqlBuilder& v
             RelationshipClassMapCP relationshipMap = dynamic_cast<RelationshipClassMapCP>(classMaps[0]);// = static_cast
             BeAssert (relationshipMap != nullptr);
 
-            viewSql.Append ("\r\nUNION SELECT ");
+            viewSql.Append (" UNION SELECT ");
             AppendSystemPropMaps (viewSql, map, prepareContext, *relationshipMap);
             viewSql.Append (" FROM ").AppendEscaped (relationshipMap->GetTable ().GetName ().c_str ());
 
             if (RelationshipClassEndTableMapCP endTableMap = dynamic_cast<RelationshipClassEndTableMapCP>(relationshipMap))
                 {                
-                viewSql.Append (" WHERE ").Append (endTableMap->GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select)).Append (" IS NOT NULL");
+                viewSql.Append (" WHERE ").Append (endTableMap->GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false)).Append (" IS NOT NULL");
                 }
             }
         }

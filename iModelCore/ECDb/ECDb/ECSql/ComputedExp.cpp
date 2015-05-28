@@ -237,7 +237,9 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String BinaryBooleanExp::ToECSql() const 
     {
-    Utf8String ecsql("(");
+    Utf8String ecsql;
+    if (HasParentheses())
+        ecsql.append("(");
     ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ");
 
     ComputedExp const* rhs = GetRightOperand();
@@ -251,7 +253,8 @@ Utf8String BinaryBooleanExp::ToECSql() const
     if (rhsNeedsParens)
         ecsql.append(")");
 
-    ecsql.append (")");
+    if (HasParentheses())
+        ecsql.append(")");
     return std::move(ecsql);
     }
 
@@ -285,7 +288,14 @@ Utf8String BooleanFactorExp::ToECSql() const
     if (m_notOperator)
         ecsql.append("NOT ");
 
-    ecsql.append("(").append(GetOperand()->ToECSql()).append(")");
+    if (HasParentheses())
+        ecsql.append("(");
+
+    ecsql.append(GetOperand()->ToECSql());
+    
+    if (HasParentheses())
+        ecsql.append(")");
+
     return ecsql;
     }
 
@@ -341,7 +351,6 @@ Utf8String UnaryPredicateExp::ToECSql() const
     {
     return GetValueExp()->ToECSql();
     }
-
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -112,9 +112,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp (NativeSqlBuilder::Lis
 
     for (size_t i = 0; i < tokenCount; i++)
         {
-        auto& betweenToken = lowerBoundSqlTokens[i];
-        betweenToken.Append (" AND ").Append (upperBoundSqlTokens[i]);
-        nativeSqlSnippets.push_back (betweenToken);
+        NativeSqlBuilder sql;
+        if (exp->HasParentheses())
+            sql.AppendParenLeft();
+
+        sql.Append (lowerBoundSqlTokens[i]).Append (" AND ").Append (upperBoundSqlTokens[i]);
+        if (exp->HasParentheses())
+            sql.AppendParenRight();
+
+        nativeSqlSnippets.push_back(sql);
         }
 
     return ECSqlStatus::Success;
@@ -146,7 +152,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp (NativeSqlBuilder::List& nat
     for (size_t i = 0; i < tokenCount; i++)
         {
         NativeSqlBuilder nativeSqlBuilder;
-        nativeSqlBuilder.AppendParenLeft ().Append (lhsSqlTokens[i], true).Append (exp->GetOperator (), true).Append (rhsSqlTokens[i]).AppendParenRight ();
+        if (exp->HasParentheses())
+            nativeSqlBuilder.AppendParenLeft();
+
+        nativeSqlBuilder.Append(lhsSqlTokens[i], true).Append(exp->GetOperator(), true).Append(rhsSqlTokens[i]);
+        
+        if (exp->HasParentheses())
+            nativeSqlBuilder.AppendParenRight();
+
         nativeSqlSnippets.push_back (move (nativeSqlBuilder));
         }
 
@@ -203,7 +216,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp (NativeSqlBuilder::List& n
         return ctx.SetError (ECSqlStatus::ProgrammerError, "Expression '%s' could not be translated into SQLite SQL. Operands yielded different number of SQLite SQL expressions.", exp->ToECSql ().c_str ());
 
     NativeSqlBuilder sqlBuilder;
-    sqlBuilder.AppendParenLeft ();
+    if (exp->HasParentheses ())
+        sqlBuilder.AppendParenLeft ();
+
     auto isFirstSnippet = true;
     for (size_t i = 0; i < nativeSqlSnippetCount; i++)
         {
@@ -214,7 +229,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp (NativeSqlBuilder::List& n
 
         isFirstSnippet = false;
         }
-    sqlBuilder.AppendParenRight ();
+
+    if (exp->HasParentheses())
+        sqlBuilder.AppendParenRight();
 
     nativeSqlSnippets.push_back (move (sqlBuilder));
     return ECSqlStatus::Success;
@@ -259,12 +276,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp (NativeSqlBuilder::List& n
     for (auto const& operandSqlSnippet : operandSqlSnippets)
         {
         NativeSqlBuilder sqlBuilder;
+        if (exp->HasParentheses())
+            sqlBuilder.AppendParenLeft();
+
         if (exp->HasNotOperator ())
             sqlBuilder.Append ("NOT ");
 
-        sqlBuilder.AppendParenLeft ();
         sqlBuilder.Append (operandSqlSnippet, false);
-        sqlBuilder.AppendParenRight ();
+
+        if (exp->HasParentheses())
+            sqlBuilder.AppendParenRight();
 
         nativeSqlSnippets.push_back (move (sqlBuilder));
         }
@@ -298,88 +319,72 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp (NativeSqlBuilder::List& nativeSqlS
 
     BeAssert (exp->GetTypeInfo ().IsPrimitive () && "For now only primitive types supported as CAST target type.");
     const auto targetType = exp->GetTypeInfo ().GetPrimitiveType ();
-    
-    //for checking that the operand type matches the target type
-    size_t expectedOperandSnippetCount = 0;
-    switch (targetType)
-        {
-        case PRIMITIVETYPE_Binary:
-            {
-            expectedOperandSnippetCount = 1;
-            NativeSqlBuilder nativeSqlBuilder ("CAST (");
-            nativeSqlBuilder.Append (operandNativeSqlSnippets[0]).Append (" AS BLOB)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        case PRIMITIVETYPE_Boolean:
-            {
-            expectedOperandSnippetCount = 1;
-            NativeSqlBuilder nativeSqlBuilder ("(CASE WHEN ");
-            nativeSqlBuilder.Append (operandNativeSqlSnippets[0]).Append (" <> 0 THEN 1 ELSE 0 END)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        case PRIMITIVETYPE_DateTime:
-            {
-            expectedOperandSnippetCount = 1;
-            NativeSqlBuilder nativeSqlBuilder ("CAST (");
-            nativeSqlBuilder.Append (operandNativeSqlSnippets[0]).Append (" AS TIMESTAMP)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            }
-        case PRIMITIVETYPE_Double:
-            {
-            expectedOperandSnippetCount = 1;
-            NativeSqlBuilder nativeSqlBuilder ("CAST (");
-            nativeSqlBuilder.Append (operandNativeSqlSnippets[0]).Append (" AS DOUBLE)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            }
-        case PRIMITIVETYPE_Integer:
-            {
-            expectedOperandSnippetCount = 1;
-            NativeSqlBuilder nativeSqlBuilder ("CAST (");
-            nativeSqlBuilder.Append (operandNativeSqlSnippets[0]).Append (" AS INTEGER)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        case PRIMITIVETYPE_Long:
-            {
-            expectedOperandSnippetCount = 1;
-            NativeSqlBuilder nativeSqlBuilder ("CAST (");
-            nativeSqlBuilder.Append (operandNativeSqlSnippets[0]).Append (" AS BIGINT)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
-            }
-        case PRIMITIVETYPE_Point2D:
-        case PRIMITIVETYPE_Point3D:
-            {
-            expectedOperandSnippetCount = targetType == PRIMITIVETYPE_Point2D ? 2 : 3;
-            for (size_t i = 0; i < expectedOperandSnippetCount; i++)
-                {
-                //if cast operand is null, the snippet list contains a single NULL snippet. In this case we simply
-                //reuse the same snippet for all coordinates of the point.
-                auto const& operandSqlSnippet = castOperandIsNull ? operandNativeSqlSnippets[0] : operandNativeSqlSnippets[i];
-                NativeSqlBuilder nativeSqlBuilder ("CAST (");
-                nativeSqlBuilder.Append (operandSqlSnippet).Append (" AS DOUBLE)");
-                nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-                }
-            break;
-            }
 
-        case PRIMITIVETYPE_String:
+    if (targetType == PRIMITIVETYPE_Point2D || targetType == PRIMITIVETYPE_Point3D)
+        {
+        size_t expectedOperandSnippetCount = targetType == PRIMITIVETYPE_Point2D ? 2 : 3;
+        for (size_t i = 0; i < expectedOperandSnippetCount; i++)
             {
-            expectedOperandSnippetCount = 1;
-            NativeSqlBuilder nativeSqlBuilder ("CAST (");
-            nativeSqlBuilder.Append (operandNativeSqlSnippets[0]).Append (" AS TEXT)");
-            nativeSqlSnippets.push_back (move (nativeSqlBuilder));
-            break;
+            NativeSqlBuilder nativeSqlBuilder;
+            if (exp->HasParentheses())
+                nativeSqlBuilder.AppendParenLeft();
+
+            //if cast operand is null, the snippet list contains a single NULL snippet. In this case we simply
+            //reuse the same snippet for all coordinates of the point.
+            auto const& operandSqlSnippet = castOperandIsNull ? operandNativeSqlSnippets[0] : operandNativeSqlSnippets[i];
+            nativeSqlBuilder.Append("CAST(").Append(operandSqlSnippet).Append(" AS DOUBLE)");
+
+            if (exp->HasParentheses())
+                nativeSqlBuilder.AppendParenRight();
+
+            nativeSqlSnippets.push_back(move(nativeSqlBuilder));
             }
-        default:
-            BeAssert (false);
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "Unexpected cast target type during preparation (ECN::PRIMITIVETYPE %d)", targetType);
+        return ECSqlStatus::Success;
         }
 
+
+    NativeSqlBuilder nativeSqlBuilder;
+    if (exp->HasParentheses())
+        nativeSqlBuilder.AppendParenLeft();
+
+    Utf8CP castFormat = nullptr;
+    switch (targetType)
+        {
+            case PRIMITIVETYPE_Binary:
+                castFormat = "CAST(%s AS BLOB)";
+                break;
+            case PRIMITIVETYPE_Boolean:
+                castFormat = "CASE WHEN %s <> 0 THEN 1 ELSE 0 END";
+                break;
+            case PRIMITIVETYPE_DateTime:
+                castFormat = "CAST(%s AS TIMESTAMP)";
+                break;
+            case PRIMITIVETYPE_Double:
+                castFormat = "CAST(%s AS DOUBLE)";
+                break;
+            case PRIMITIVETYPE_Long:
+            case PRIMITIVETYPE_Integer:
+                castFormat = "CAST(%s AS INTEGER)";
+                break;
+            case PRIMITIVETYPE_String:
+                castFormat = "CAST(%s AS TEXT)";
+                break;
+            default:
+                BeAssert(false);
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Unexpected cast target type during preparation (ECN::PRIMITIVETYPE %d)", targetType);
+        }
+
+    Utf8String castExpStr;
+    castExpStr.Sprintf(castFormat, operandNativeSqlSnippets[0].ToString ());
+    nativeSqlBuilder.Append(castExpStr.c_str(), false);
+
+    if (exp->HasParentheses())
+        nativeSqlBuilder.AppendParenRight();
+
+    nativeSqlSnippets.push_back(move(nativeSqlBuilder));
     return ECSqlStatus::Success;
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -541,6 +546,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareConstantValueExp (NativeSqlBuilder::List& n
     auto expValue = exp->GetValue ().c_str ();
 
     NativeSqlBuilder nativeSqlConstValueBuilder;
+    if (exp->HasParentheses())
+        nativeSqlConstValueBuilder.AppendParenLeft();
+
     if (typeInfo.IsPrimitive ())
         {
         switch (typeInfo.GetPrimitiveType ())
@@ -582,6 +590,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareConstantValueExp (NativeSqlBuilder::List& n
     else
         nativeSqlConstValueBuilder.Append (expValue);
 
+    if (exp->HasParentheses())
+        nativeSqlConstValueBuilder.AppendParenRight();
+
     nativeSqlSnippets.push_back (move (nativeSqlConstValueBuilder));
     return ECSqlStatus::Success;
     }
@@ -598,11 +609,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullConstantValueExp (NativeSqlBuilder::Lis
         return ctx.SetError (ECSqlStatus::ProgrammerError, "NULL expression could not be translated into SQLite SQL. Target operand yielded empty SQLite SQL expression.");
         }
 
-    Utf8CP const NullToken = "NULL";
     for (size_t i = 0; i < targetExpNativeSqlSnippetCount; i++)
         {
-        NativeSqlBuilder nativeSqlConstValueBuilder (NullToken);
-        nativeSqlSnippets.push_back (move (nativeSqlConstValueBuilder));
+        if (exp->HasParentheses ())
+            nativeSqlSnippets.push_back (NativeSqlBuilder("(NULL)"));
+        else
+            nativeSqlSnippets.push_back(NativeSqlBuilder("NULL"));
         }
 
     return ECSqlStatus::Success;
@@ -721,6 +733,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
 
     NativeSqlBuilder nativeSqlSnippet;
 
+    if (exp->HasParentheses())
+        nativeSqlSnippet.AppendParenLeft();
+
     if (classIdColumn != nullptr)
         {
         auto classRefId = classRefExp->GetId ().c_str ();
@@ -742,6 +757,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
             nativeSqlSnippet.Append (classMap.GetClass ().GetId ());
             }
         }
+
+    if (exp->HasParentheses())
+        nativeSqlSnippet.AppendParenRight();
 
     nativeSqlSnippets.push_back (move (nativeSqlSnippet));
     return ECSqlStatus::Success;
@@ -789,17 +807,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareHavingExp (ECSqlPrepareContext& ctx, Having
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LikeRhsValueExp const* exp)
     {
-    auto stat = PrepareValueExp (nativeSqlSnippets, ctx, exp->GetRhsExp ());
+    auto stat = PrepareValueExp(nativeSqlSnippets, ctx, exp->GetRhsExp());
     if (stat != ECSqlStatus::Success)
         return stat;
 
-    if (nativeSqlSnippets.size () != 1)
+    if (nativeSqlSnippets.size() != 1)
         {
         //This is a programmer error as the parse step should already check that the like expression is of string type
         BeAssert (false && "LIKE RHS expression is expected to result in a single SQLite SQL snippet as LIKE only works with string operands.");
         return ctx.SetError (ECSqlStatus::ProgrammerError, "LIKE RHS expression is expected to result in a single SQLite SQL snippet as LIKE only works with string operands.");
         }
-
 
     if (exp->HasEscapeExp ())
         {
@@ -808,10 +825,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp (NativeSqlBuilder::List& na
         if (stat != ECSqlStatus::Success)
             return stat;
 
-        if (nativeSqlSnippets.size () != 1)
+        if (escapeExpSqlSnippets.size() != 1)
             return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid type in LIKE ESCAPE expression. ESCAPE only works with a string value.");
 
-        nativeSqlSnippets[0].Append (" ESCAPE ").Append (escapeExpSqlSnippets[0]);
+        NativeSqlBuilder& builder = nativeSqlSnippets[0];
+        builder.Append(" ESCAPE ").Append(escapeExpSqlSnippets[0]);
         }
 
     return ECSqlStatus::Success;
@@ -947,12 +965,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp (NativeSqlBuilder::List& nativ
     for (int i = 0; i < nativeSqlParameterCount; i++)
         {
         NativeSqlBuilder parameterBuilder;
+        if (exp->HasParentheses())
+            parameterBuilder.AppendParenLeft();
+
         if (binderAlreadyExists)
             parameterBuilder.AppendParameter (parameterName, i);
         else
             {
             parameterBuilder.AppendParameter (parameterName, exp->GetParameterIndex (), i);
             }
+
+        if (exp->HasParentheses())
+            parameterBuilder.AppendParenRight();
 
         nativeSqlSnippets.push_back (move (parameterBuilder));
         }
@@ -1207,7 +1231,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     sql.Append (" ON ");
     auto fromECInstanceIdPropMap = fromEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
     PRECONDITION (fromECInstanceIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto fromECInstanceIdNativeSqlSnippets = fromECInstanceIdPropMap->ToNativeSql (fromEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType);
+    auto fromECInstanceIdNativeSqlSnippets = fromECInstanceIdPropMap->ToNativeSql (fromEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
     if (fromECInstanceIdNativeSqlSnippets.size () > 1)
         return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
 
@@ -1217,7 +1241,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
 
     auto fromRelatedIdPropMap = relationshipClassNameExp->GetInfo ().GetMap ().GetPropertyMap (fromRelatedKey);
     PRECONDITION (fromRelatedIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto fromRelatedIdNativeSqlSnippets = fromRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType);
+    auto fromRelatedIdNativeSqlSnippets = fromRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
     if (fromRelatedIdNativeSqlSnippets.size () > 1)
         return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
 
@@ -1233,7 +1257,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     sql.Append(" ON ");
     auto toECInstanceIdPropMap = toEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
     PRECONDITION (toECInstanceIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto toECInstanceIdSqlSnippets = toECInstanceIdPropMap->ToNativeSql (toEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType);
+    auto toECInstanceIdSqlSnippets = toECInstanceIdPropMap->ToNativeSql (toEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
     if (toECInstanceIdSqlSnippets.size () > 1)
         return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
     sql.Append (toECInstanceIdSqlSnippets);
@@ -1241,7 +1265,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     sql.Append(" = ");
     auto toRelatedIdPropMap = relationshipClassNameExp->GetInfo().GetMap().GetPropertyMap(toRelatedKey);
     PRECONDITION(toRelatedIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto toRelatedIdSqlSnippets = toRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType);
+    auto toRelatedIdSqlSnippets = toRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
     if (toRelatedIdSqlSnippets.size () > 1)
         return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
     sql.Append (toRelatedIdSqlSnippets);
@@ -1294,14 +1318,21 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
         }
 
     Utf8CP functionName = exp->GetFunctionName();
-    NativeSqlBuilder nativeSql(functionName);
-    nativeSql.AppendSpace().AppendParenLeft();
+    NativeSqlBuilder nativeSql;
+    if (exp->HasParentheses())
+        nativeSql.AppendParenLeft();
+
+    nativeSql.Append(functionName).AppendParenLeft();
 
     ECSqlStatus stat = PrepareFunctionArgExpList(nativeSql, ctx, *exp);
     if (stat != ECSqlStatus::Success)
         return stat;
 
-    nativeSql.AppendParenRight();
+    nativeSql.AppendParenRight(); //function arg list parent
+
+    if (exp->HasParentheses())
+        nativeSql.AppendParenLeft(); 
+
     nativeSqlSnippets.push_back(move(nativeSql));
 
     return ECSqlStatus::Success;
@@ -1313,13 +1344,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const& exp)
     {
+    NativeSqlBuilder nativeSql;
+    if (exp.HasParentheses())
+        nativeSql.AppendParenLeft();
+
     const SetFunctionCallExp::Function function = exp.GetFunction();
 
     if (function == SetFunctionCallExp::Function::Count)
         {
         //We simply use * as this is the same semantically and it is faster anyways in SQLite
-        NativeSqlBuilder nativeSql(exp.GetFunctionName());
-        nativeSql.AppendParenLeft().Append(Exp::ASTERISK_TOKEN).AppendParenRight();
+        nativeSql.Append(exp.GetFunctionName()).AppendParenLeft().Append(Exp::ASTERISK_TOKEN).AppendParenRight();
         nativeSqlSnippets.push_back(move(nativeSql));
         return ECSqlStatus::Success;
         }
@@ -1328,7 +1362,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& 
         function == SetFunctionCallExp::Function::Every ||
         function == SetFunctionCallExp::Function::Some;
 
-    NativeSqlBuilder nativeSql;
     if (isAnyEveryOrSome)
         {
         //ANY, EVERY, SOME is not directly supported by SQLite. But they can be expressed by standard functions
@@ -1349,7 +1382,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& 
     if (isAnyEveryOrSome)
         nativeSql.Append(" <> 0");
 
-    nativeSql.AppendParenRight();
+    nativeSql.AppendParenRight(); // function arg list end paren
+
+    if (exp.HasParentheses())
+        nativeSql.AppendParenLeft();
+
     nativeSqlSnippets.push_back(move(nativeSql));
     return ECSqlStatus::Success;
     }
@@ -1420,7 +1457,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp (ECSqlPrepareContext& ctx, Subq
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, SubqueryRefExp const* exp)
     {   
-
     auto status = PrepareSubqueryExp (ctx, exp->GetSubquery ());
     if (status != ECSqlStatus::Success)
         return status;
@@ -1475,12 +1511,19 @@ ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp (NativeSqlBuilder::List& nati
 
     BeAssert (unaryOperandSqlBuilders.size () <= 1 && "UnaryExp with Points and non-primitive types not supported yet.");
 
-    const auto unaryOp = exp->GetOperator ();
+    const UnarySqlOperator unaryOp = exp->GetOperator ();
     for (NativeSqlBuilder const& unaryOperandSqlBuilder : unaryOperandSqlBuilders)
         {
         NativeSqlBuilder unaryExpBuilder;
-        unaryExpBuilder.Append (unaryOp, false).AppendParenLeft ().Append (unaryOperandSqlBuilder, false).AppendParenRight ();
-        nativeSqlSnippets.push_back (move (unaryExpBuilder));
+        if (exp->HasParentheses())
+            unaryExpBuilder.AppendParenLeft();
+
+        unaryExpBuilder.Append (unaryOp, false).Append (unaryOperandSqlBuilder, false);
+
+        if (exp->HasParentheses())
+            unaryExpBuilder.AppendParenRight();
+
+        nativeSqlSnippets.push_back(move(unaryExpBuilder));
         }
 
     return ECSqlStatus::Success;
@@ -1507,7 +1550,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSql
         case Exp::Type::LikeRhsValue:
             return PrepareLikeRhsValueExp (nativeSqlSnippets, ctx, static_cast<LikeRhsValueExp const*> (exp));
         case Exp::Type::Parameter:
-            return PrepareParameterExp (nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp), nullptr, false);
+            return PrepareParameterExp (nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp), false, false);
         case Exp::Type::PropertyName:
             return ECSqlPropertyNameExpPreparer::Prepare (nativeSqlSnippets, ctx, static_cast<PropertyNameExp const*>(exp));
         case Exp::Type::SubqueryValue:
@@ -1723,7 +1766,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext
             auto structRootMap = preparedStatement->GetECDb ().GetECDbImplR().GetECDbMap ().GetClassMap (*structRoot);
             auto sourcePropertyMap = structRootMap->GetPropertyMap(sourcePropertyPath.c_str());
 
-            auto nativeSqlSnippets = sourcePropertyMap->ToNativeSql (classAlias, ctx.GetCurrentScope ().GetECSqlType ());
+            auto nativeSqlSnippets = sourcePropertyMap->ToNativeSql (classAlias, ctx.GetCurrentScope ().GetECSqlType (), false);
             if (nativeSqlSnippets.empty ())
                 {
                 BeAssert (false && "Expecting column names");
