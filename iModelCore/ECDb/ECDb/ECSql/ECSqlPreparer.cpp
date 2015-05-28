@@ -375,12 +375,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp (NativeSqlBuilder::List& nativeSqlS
         }
 
     Utf8String castExpStr;
-    castExpStr.Sprintf(castFormat, operandNativeSqlSnippets[0]);
+    castExpStr.Sprintf(castFormat, operandNativeSqlSnippets[0].ToString ());
     nativeSqlBuilder.Append(castExpStr.c_str(), false);
 
     if (exp->HasParentheses())
         nativeSqlBuilder.AppendParenRight();
 
+    nativeSqlSnippets.push_back(nativeSqlBuilder);
     return ECSqlStatus::Success;
     }
 

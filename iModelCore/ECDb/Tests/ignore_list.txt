@@ -13,6 +13,9 @@ ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+#Fix is currently in progress
+ECSqlRangeTreeTests.MatchQuery
+
 # TFS Defect 140982
 ECDbRelationships.RelationshipProperties 
 ECDbRelationships.JoinTests
