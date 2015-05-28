@@ -773,12 +773,12 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
             ExpressionStatus exprStatus = ExprStatus_UnknownError;
             switch (evalResult.GetValueType())
                 {
-            case ValType_InstanceList:
-                exprStatus = callNode->InvokeInstanceMethod (methodResult, *evalResult.GetInstanceList(), globalContext);
-                break;
-            case ValType_ValueList:
-                exprStatus = callNode->InvokeValueListMethod (methodResult, *evalResult.GetValueList(), globalContext);
-                break;
+                case ValType_InstanceList:
+                    exprStatus = callNode->InvokeInstanceMethod (methodResult, *evalResult.GetInstanceList(), globalContext);
+                    break;
+                case ValType_ValueList:
+                    exprStatus = callNode->InvokeValueListMethod (methodResult, *evalResult.GetValueList(), globalContext);
+                    break;
                 }
 
             if (ExprStatus_Success != exprStatus)
