@@ -609,7 +609,7 @@ Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan)
     if (BE_SQLITE_OK != queryPlan.Prepare (*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql)))
         return GetLastError();
 
-    Utf8CP fmt = !explainPlan ? "%-3s %-12s %-4s %-4s\n" : "%s %s %s %s\n";
+    Utf8CP fmt = explainPlan ? "%s %s %s %s\n" : "%-3s %-12s %-4s %-4s\n";
     Utf8String plan;
     while (BE_SQLITE_ROW == queryPlan.Step())
         plan.append (Utf8PrintfString(fmt, queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3)));

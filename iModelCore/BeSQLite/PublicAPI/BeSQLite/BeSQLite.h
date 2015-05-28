@@ -1152,7 +1152,6 @@ public:
 //=======================================================================================
 //! A user-defined scalar function. See discussion of scalar functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
 //! This object is must survive as long as the Db to which it is added survives, or until it is removed.
-//! It holds a pointer to an "IScalar" implementation. That pointer may be changed via calls to #SetScalar during the lifetime of the ScalarFunction.
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
 struct ScalarFunction : DbFunction
@@ -1168,7 +1167,6 @@ struct ScalarFunction : DbFunction
 //=======================================================================================
 //! A user-defined aggregate function. See discussion of aggregate functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
 //! This object is must survive as long as the Db to which it is added survives, or until it is removed.
-//! It holds a pointer to an "IAggregate" implementation. That pointer may be changed via calls to #SetAggregate during the lifetime of the AggregateFunction.
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
 struct AggregateFunction : DbFunction
@@ -2152,19 +2150,19 @@ public:
 
     //! Register a RepositoryLocalValue name with the Db.
     //! @remarks On closing the Db the registration is cleared.
-    //! @param[out] index Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
-    //! @param[in] name Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
+    //! @param[out] rlvIndex Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
+    //! @param[in] rlvName Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
     //! has to ensure that it remains valid for the entire lifetime of the Db object.
     //! @return BE_SQLITE_OK if registration was successful. Error code, if a RepositoryLocalValue with the same
     //! name has already been registered.
-    BE_SQLITE_EXPORT DbResult Register(size_t& index, Utf8CP name);
+    BE_SQLITE_EXPORT DbResult Register(size_t& rlvIndex, Utf8CP rlvName);
 
     //! Look up the RepositoryLocalValue index for the given name
-    //! @param[out] index Found index for the RepositoryLocalValue
-    //! @param[in] name Name of the RepositoryLocalValue
+    //! @param[out] rlvIndex Found index for the RepositoryLocalValue
+    //! @param[in] rlvName Name of the RepositoryLocalValue
     //! @return true, if the RepositoryLocalValue index was found, i.e. a RepositoryLocalValue is registered for @p rlvName,
     //! false otherwise.
-    BE_SQLITE_EXPORT bool TryGetIndex(size_t& index, Utf8CP name);
+    BE_SQLITE_EXPORT bool TryGetIndex(size_t& rlvIndex, Utf8CP rlvName);
 
     //! Save an RepositoryLocalValue into the BEDB_TABLE_Local table.
     //! @param[in] rlvIndex The index of the RepositoryLocalValue to query.
@@ -2837,10 +2835,11 @@ public:
     BE_SQLITE_EXPORT BeRepositoryId GetRepositoryId() const;
 
     //! Get the next available (unused) value for a BeRepositoryBasedId for the supplied Table/Column.
-    //! @param[in,out] value
-    //! @param[in] tableName
-    //! @param[in] columnName
-    //! @param[in] whereParam optional where parameters
+    //! @param [in,out] value the next available value of the BeRepositoryBasedId
+    //! @param [in] tableName the name of the table holding the BeRepositoryBasedId
+    //! @param [in] columnName the name of the column holding the BeRepositoryBasedId
+    //! @param [in] whereParam optional addtional where criteria. Supply both the additional where clause (do not include the WHERE keyword) and any
+    //! parameters to bind.
     BE_SQLITE_EXPORT DbResult GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP columnName, NamedParams* whereParam=NULL);
 
     //! Determine whether this Db was opened readonly.
@@ -2908,19 +2907,19 @@ public:
 //__PUBLISH_SECTION_START__
 
     //! Check if the Db is at or beyond its expiration date.
-    //! See CreateParams::SetExpirationDate.
+    //! @see QueryExpirationDate, CreateParams::SetExpirationDate
     BE_SQLITE_EXPORT bool IsExpired() const;
 
     //! Query the ExpirationDate property of this database.
     //! @param[out] xdate   The expiration date, if any.
     //! @return BE_SQLITE_ROW if the ExpirationDate property was successfully found, BE_SQLITE_NOTFOUND if this database does not have an expiration data, or BE_SQLITE_ERROR if the expiration date could not be read.
-    //! See #SaveExpirationDate, #IsExpired
+    //! @see SaveExpirationDate, IsExpired
     BE_SQLITE_EXPORT DbResult QueryExpirationDate (DateTime& xdate) const;
 
     //! Saves the specified date as the ExpirationDate property of the database.
     //! @param[in] xdate   The expiration date. <em>Must be UTC.</em>
     //! @return BE_SQLITE_OK if property was successfully saved, or a non-zero error status if the expiration date is invalid, is not UTC, or could not be saved to the database.
-    //! See #QueryExpirationDate, #IsExpired
+    //! @see QueryExpirationDate, IsExpired
     BE_SQLITE_EXPORT DbResult SaveExpirationDate (DateTime const& xdate);
 };
 
