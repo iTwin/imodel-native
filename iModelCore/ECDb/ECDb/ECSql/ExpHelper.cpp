@@ -16,30 +16,28 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 ECSqlStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8StringCR type)  
     {
-    Utf8String strType = type;
-    strType.ToLower();
-    if (strType.Equals("int") || strType.Equals("integer") || strType.Equals("int32"))
+    if (type.EqualsI("int") || type.EqualsI("integer") || type.EqualsI("int32"))
         primitiveType = PRIMITIVETYPE_Integer;
-    else if (strType.Equals("float") || strType.Equals("double")  || strType.Equals("real"))
+    else if (type.EqualsI("float") || type.EqualsI("double") || type.EqualsI("real"))
         primitiveType = PRIMITIVETYPE_Double;
-    else if (strType.Equals("long") || strType.Equals("int64") || strType.Equals("bigint"))
+    else if (type.EqualsI("long") || type.EqualsI("int64") || type.EqualsI("bigint"))
         primitiveType = PRIMITIVETYPE_Long;
-    else if (strType.Equals("string"))
+    else if (type.EqualsI("string"))
         primitiveType = PRIMITIVETYPE_String;
-    else if (strType.Equals("timestamp") || strType.Equals ("datetime") || strType.Equals("date"))
+    else if (type.EqualsI("timestamp") || type.EqualsI("datetime") || type.EqualsI("date"))
         primitiveType = PRIMITIVETYPE_DateTime;
-    else if (strType.Equals("binary"))
+    else if (type.EqualsI("binary") || type.EqualsI("blob"))
         primitiveType = PRIMITIVETYPE_Binary;
-    else if (strType.Equals("point2d"))
+    else if (type.EqualsI("point2d"))
         primitiveType = PRIMITIVETYPE_Point2D;
-    else if (strType.Equals("point3d"))
+    else if (type.EqualsI("point3d"))
         primitiveType = PRIMITIVETYPE_Point3D;
-    else if (strType.Equals("boolean"))
+    else if (type.EqualsI("boolean") || type.EqualsI("bool"))
         primitiveType = PRIMITIVETYPE_Boolean;
+    else if (type.EqualsI("geometry"))
+        primitiveType = PRIMITIVETYPE_IGeometry;
     else
-        {
         return ECSqlStatus::InvalidECSql;
-        }
 
     return ECSqlStatus::Success;
     }
@@ -60,7 +58,7 @@ Utf8CP ExpHelper::ToString (ECN::PrimitiveType type)
         case PRIMITIVETYPE_Double:
             return "Double";
         case PRIMITIVETYPE_IGeometry:
-            return "IGeometry";
+            return "Geometry";
         case PRIMITIVETYPE_Integer:
             return "Integer";
         case PRIMITIVETYPE_Long:
