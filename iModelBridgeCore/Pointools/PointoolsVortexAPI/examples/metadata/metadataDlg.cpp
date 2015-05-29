@@ -12,7 +12,7 @@
 #include "MetaDataGrid.h"
 
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
-#include "../lic/vortexLicense.c"
+//#include "../lic/vortexLicense.c"
 
 #include <shlwapi.h>
 

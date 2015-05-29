@@ -71,7 +71,7 @@ this.
 
 /* license code -   Contact vortex@pointools.com if you do not have this*/ 
 /*					or replace with one you have been provided			*/ 
-#include "../lic/vortexLicense.c"
+//#include "../lic/vortexLicense.c"
 
 /* vortex initialization state */ 
 bool	isVortexLoaded = false;

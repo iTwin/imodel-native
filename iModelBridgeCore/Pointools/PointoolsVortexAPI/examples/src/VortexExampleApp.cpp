@@ -37,7 +37,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 /* license code -   Contact vortex@pointools.com if you do not have this*/ 
 /*					or replace with one you have been provided			*/ 
-#include "../lic/vortexLicense.c"
+//#include "../lic/vortexLicense.c"
 
 /* vortex initialization state */ 
 bool	isVortexLoaded = false;
@@ -293,7 +293,7 @@ bool VortexExampleApp::initializeVortexAPI(bool debugVortexDll)
 		ptGetVersionNum(version);
 
 		std::cout << "Pointools Vortex " << (int)version[0] << "." << (int)version[1] << std::endl;
-		if (ptInitialize( vortexLicCode ) == PT_FALSE)
+		if (ptInitialize( NULL /*vortexLicCode*/ ) == PT_FALSE)
 		{
 			std::cout << "Failed to initialize Vortex API" << std::endl;
 			std::cout << wcToAscii(ptGetLastErrorString()) << std::endl;
@@ -431,11 +431,11 @@ void	VortexExampleApp::buildUserInterface()
 	versionStr += m_title;
 	
 	GLUI_StaticText *txt = new GLUI_StaticText( m_ui.panelSide, versionStr.c_str() );
-	txt->set_col( RGBc(255,255,255) );
+//	txt->set_col( RGBc(255,255,255) );
 	txt = new GLUI_StaticText( m_ui.panelSide, "   CONFIDENTIAL" );
-	txt->set_col( RGBc(128,128,128) );
+//	txt->set_col( RGBc(128,128,128) );
 	txt = new GLUI_StaticText( m_ui.panelSide, COPYRIGHT_NOTICE );
-	txt->set_col( RGBc(128,128,128) );
+//	txt->set_col( RGBc(128,128,128) );
 	new GLUI_StaticText( m_ui.panelSide, " " );
 
 	// Add Tool UI

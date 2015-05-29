@@ -184,8 +184,8 @@
 
   <Product Name="PointoolsVortexAPI_Runtime_VS2012_x86" BuildInstallSet="true" SaveProduct="true">
     <RequiredRepository>Bsitools-Wix_3.8.1128.0</RequiredRepository>
-    <SubPart PartName="PointoolsVortexAPI_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
-    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
+    <SubPart PartName="PointoolsVortexAPI_DLL_VS2012" />
+    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" />
     <Directories DirectoryListName="PointoolsVortexAPI_Runtime_List"/>
     <InstallerWixFile SourceFile="PointoolsVortexAPI_Runtime_VS2012_x86"/>
     <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
@@ -193,14 +193,14 @@
 
   <Product Name="PointoolsVortexAPI_Runtime_VS2012_x64" BuildInstallSet="true" SaveProduct="true">
     <RequiredRepository>Bsitools-Wix_3.8.1128.0</RequiredRepository>
-    <SubPart PartName="PointoolsVortexAPI_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
-    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
+    <SubPart PartName="PointoolsVortexAPI_DLL_VS2012" />
+    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" />
     <Directories DirectoryListName="PointoolsVortexAPI_Runtime_List"/>
     <InstallerWixFile SourceFile="PointoolsVortexAPI_Runtime_VS2012_x64"/>
     <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
   </Product>
   
-
+  
   <Product Name="PointoolsVortexAPI_SDK_API_VS2012_x86" BuildInstallSet="true" SaveProduct="true" OnlyPlatforms="x86">
     <RequiredRepository>Bsitools-Wix_3.8.1128.0</RequiredRepository>  
     <SubPart PartName="PointoolsVortexAPI_API_VS2012_x86"/>
@@ -225,7 +225,7 @@
     <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
   </Product>
   
-    
+  
   <Part Name="PointoolsVortexAPI_API_VS2012_x86" OnlyPlatforms="x86">
     <SubPart PartName="PointoolsVortexAPI_ReleaseNotes"/>
     <Bindings>
@@ -387,7 +387,7 @@
         Delivery\Examples\src\appFramework.cpp
         Delivery\Examples\src\BitmapTool.cpp
         Delivery\Examples\src\ClassificationRender.cpp
-        Delivery\Examples\src\ClippingTool.cpp.cpp
+        Delivery\Examples\src\ClippingTool.cpp
         Delivery\Examples\src\CloudVisibilityTool.cpp
         Delivery\Examples\src\DiagnosticRenderer.cpp
         Delivery\Examples\src\EditTool.cpp
@@ -431,9 +431,8 @@
         Delivery\Examples\include\TuningTool.h
         Delivery\Examples\include\VortexExampleApp.h
         Delivery\Examples\include\VortexRender.h
-
-        <!-- Delivery\Examples\include\matrix_math.h -->
-        <!-- Delivery\Examples\include\Plane.h -->		
+        Delivery\Examples\include\Plane.h
+        Delivery\Examples\include\matrix_math.h
 <!--        
         Delivery\Examples\include\GeomTypes.h
         Delivery\Examples\include\PodWriter.h
@@ -761,6 +760,8 @@
     <ProductDirectory Name="PointoolsIO_VS2012_Assemblies" Path="" Deliver="true"/>
     
     <ProductDirectory Name="PointoolsVortexAPI_API_VS2012_Examples" Path="Examples" Deliver="true"/>
+	
+    <ProductDirectory Name="LicenseAssemblies" Parth="" Deliver="true"/>
     
     <ProductDirectory Name="BentleyEulaDelivery" Path="Eula" Deliver="true"/>
 

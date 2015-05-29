@@ -708,14 +708,14 @@ void EditTool::setCurrentLayer(int layer)
 	{
 		if (!m_simple)
 		{
-			m_lyrButtons[lastCurrent]->set_back_col( &layerButtonCol );
-			m_lyrButtons[layer]->set_back_col( &layerButtonSelCol );
+//			m_lyrButtons[lastCurrent]->set_back_col( &layerButtonCol );
+//			m_lyrButtons[layer]->set_back_col( &layerButtonSelCol );
 
 			m_lyrButtons[lastCurrent]->redraw();
 			m_lyrButtons[layer]->redraw();
 
 			/* current layer will always be visible */ 
-			m_lyrVis[layer]->set_back_col( &layerButtonSelCol );
+//			m_lyrVis[layer]->set_back_col( &layerButtonSelCol );
 		}
 		VortexExampleApp::instance()->updateBoundingBox();
 	}
@@ -728,7 +728,7 @@ void	EditTool::toggleLayerVisibility(int layer)
 	
 	if (ptShowLayer( layer, vis ))
 	{
-		m_lyrVis[layer]->set_back_col( vis ? &layerButtonSelCol : &layerButtonCol );
+//		m_lyrVis[layer]->set_back_col( vis ? &layerButtonSelCol : &layerButtonCol );
 		m_lyrVis[layer]->redraw();
 
 		VortexExampleApp::instance()->updateBoundingBox();
@@ -743,7 +743,7 @@ void	EditTool::toggleLayerLock(int layer)
 	bool lock = !ptIsLayerLocked( layer );
 	if (ptLockLayer( layer, lock ))
 	{
-		m_lyrLock[layer]->set_back_col( lock ? &layerButtonSelCol : &layerButtonCol );
+//		m_lyrLock[layer]->set_back_col( lock ? &layerButtonSelCol : &layerButtonCol );
 		m_lyrLock[layer]->redraw();
 	}
 }
@@ -1087,7 +1087,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 	rolloutSelect->set_w( PANEL_WIDTH );
 
 		GLUI_StaticText *spacer = new GLUI_StaticText( rolloutSelect, "Tools" );
-		spacer->set_col( labelCol );
+//		spacer->set_col( labelCol );
 
 		GLUI_Panel *selectTools = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 		
@@ -1118,7 +1118,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 
 		/* selection modes */ 
 		GLUI_StaticText *lblm = new GLUI_StaticText( rolloutSelect, "Selection Mode" );
-		lblm->set_col( labelCol );
+//		lblm->set_col( labelCol );
 
 		GLUI_RadioGroup *selectMode = new GLUI_RadioGroup( rolloutSelect, &m_selectMode, CmdSelectMode, &Tool::dispatchCmd );
 		new GLUI_RadioButton( selectMode, "Select  " ); 
@@ -1143,10 +1143,10 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 
 		new GLUI_StaticText( rolloutSelect, " " );
 		GLUI_StaticText *lbll = new GLUI_StaticText( rolloutSelect, "LAYERS" );
-		lbll->set_col( labelCol );
+//		lbll->set_col( labelCol );
 
 		GLUI_StaticText *lbld = new GLUI_StaticText( rolloutSelect, "V=Visibility, L=Lock, S=Select, DS=Deselect" );
-		lbld->set_col( labelCol );
+//		lbld->set_col( labelCol );
 		
 		GLUI_Panel *selectLayers = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 
@@ -1155,7 +1155,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		for (lyr =0; lyr < PT_EDIT_MAX_LAYERS; lyr++)
 		{
 			m_lyrVis[lyr] = new GLUI_Button( selectLayers, "V", CmdVisLayer1+lyr, &Tool::dispatchCmd );
-			m_lyrVis[lyr]->set_back_col( lyr ? &layerButtonCol : &layerButtonSelCol );
+//			m_lyrVis[lyr]->set_back_col( lyr ? &layerButtonCol : &layerButtonSelCol );
 			m_lyrVis[lyr]->set_w(8);
 		}
 		/* lock */ 
@@ -1163,7 +1163,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		for (lyr =0; lyr < PT_EDIT_MAX_LAYERS; lyr++)
 		{
 			m_lyrLock[lyr] = new GLUI_Button( selectLayers, "L", CmdLockLayer1+lyr, &Tool::dispatchCmd );
-			m_lyrLock[lyr]->set_back_col( &layerButtonCol );
+//			m_lyrLock[lyr]->set_back_col( &layerButtonCol );
 			m_lyrLock[lyr]->set_w(8);
 		}
 		/*current */ 
@@ -1171,7 +1171,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		for (int lyr=0;lyr<PT_EDIT_MAX_LAYERS;lyr++)
 		{
 			m_lyrButtons[lyr] = new GLUI_Button( selectLayers, num[lyr], CmdLayer1+lyr, &Tool::dispatchCmd );
-			m_lyrButtons[lyr]->set_back_col( lyr ? &layerButtonCol : &layerButtonSelCol );
+//			m_lyrButtons[lyr]->set_back_col( lyr ? &layerButtonCol : &layerButtonSelCol );
 			m_lyrButtons[lyr]->set_w(100);
 		}
 		/*select */ 
@@ -1179,7 +1179,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		for (int lyr=0;lyr<PT_EDIT_MAX_LAYERS;lyr++)
 		{
 			m_lyrSel[lyr] = new GLUI_Button( selectLayers, "S", CmdSelLayer1+lyr, &Tool::dispatchCmd );
-			m_lyrSel[lyr]->set_back_col( &layerButtonCol );
+//			m_lyrSel[lyr]->set_back_col( &layerButtonCol );
 			m_lyrSel[lyr]->set_w(8);
 		}
 		/*deselect */ 
@@ -1187,26 +1187,26 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		for (int lyr=0;lyr<PT_EDIT_MAX_LAYERS;lyr++)
 		{
 			m_lyrSel[lyr] = new GLUI_Button( selectLayers, "DS", CmdDeselLayer1+lyr, &Tool::dispatchCmd );
-			m_lyrSel[lyr]->set_back_col( &layerButtonCol );
+//			m_lyrSel[lyr]->set_back_col( &layerButtonCol );
 			m_lyrSel[lyr]->set_w(8);
 		}
 
 		/* Copy / Move to layer */ 
 		GLUI_Panel *selectCopy = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 		GLUI_Button *btn = new GLUI_Button( selectCopy, "Copy", CmdCopyPoints, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );
+//		btn->set_back_col( &layerButtonCol );
 		col = new GLUI_Column( selectCopy, false );
 		btn = new GLUI_Button( selectCopy, "Move", CmdMovePoints, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );
+//		btn->set_back_col( &layerButtonCol );
 
 		btn = new GLUI_Button( selectCopy, "Occupancy", CmdCheckPointLayers, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );
+//		btn->set_back_col( &layerButtonCol );
 
 		/* Scope */ 
 		GLUI_Panel *selectScope = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 
 		GLUI_StaticText *lbl = new GLUI_StaticText( rolloutSelect, "Editing Scope" );
-		lbl->set_col( labelCol );
+//		lbl->set_col( labelCol );
 
 		GLUI_RadioGroup *scope = new GLUI_RadioGroup( rolloutSelect, &m_scope, CmdSetScope, &Tool::dispatchCmd );
 		new GLUI_RadioButton( scope, "Global  " ); 
@@ -1223,7 +1223,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		GLUI_Panel *evalMode = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 
 		GLUI_StaticText *lbl2 = new GLUI_StaticText( rolloutSelect, "Evaluation Mode" );
-		lbl2->set_col( labelCol );
+//		lbl2->set_col( labelCol );
 
 		GLUI_RadioGroup *eval = new GLUI_RadioGroup( rolloutSelect, &m_evalMode, CmdEvalMode, &Tool::dispatchCmd );
 		new GLUI_RadioButton( eval, "View Based (Default) " ); 
@@ -1236,67 +1236,67 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		/* Selection tests */ 
 		new GLUI_StaticText( rolloutSelect, " " );
 		GLUI_StaticText *lbl3 = new GLUI_StaticText( rolloutSelect, "Selection Tests" );
-		lbl3->set_col( labelCol );
+//		lbl3->set_col( labelCol );
 
 		GLUI_Panel *selectTests = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 
 		btn = new GLUI_Button( selectTests, "ptSelectAll", CmdSelAll, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );	
+//		btn->set_back_col( &layerButtonCol );	
 		btn->set_w(90);
 		col = new GLUI_Column( selectTests, false );
 
 		btn = new GLUI_Button( selectTests, "ptSelectScene", CmdSelScene, &Tool::dispatchCmd );
 		btn->set_w(90);
-		btn->set_back_col( &layerButtonCol );	
+//		btn->set_back_col( &layerButtonCol );	
 
 		col = new GLUI_Column( selectTests, false );
 
 		btn = new GLUI_Button( selectTests, "ptSelectCloud", CmdSelCloud, &Tool::dispatchCmd );
 		btn->set_w(90);
-		btn->set_back_col( &layerButtonCol );
+//		btn->set_back_col( &layerButtonCol );
 
 		/* Persitent tests */ 
 		new GLUI_StaticText( rolloutSelect, " " );
 		GLUI_StaticText *lbl4 = new GLUI_StaticText( rolloutSelect, "Persistence Tests" );
-		lbl4->set_col( labelCol );
+//		lbl4->set_col( labelCol );
 	
 		GLUI_Panel *persistenceTests = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 
 		btn = new GLUI_Button( persistenceTests, "to Channel", CmdLayersToChannel, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );	
+//		btn->set_back_col( &layerButtonCol );	
 		btn->set_w(90);
 		col = new GLUI_Column( persistenceTests, false );
 
 		btn = new GLUI_Button( persistenceTests, "from Channel", CmdChannelToLayers, &Tool::dispatchCmd );
 		btn->set_w(90);
-		btn->set_back_col( &layerButtonCol );	
+//		btn->set_back_col( &layerButtonCol );	
 
 		btn = new GLUI_Button( persistenceTests, "to Ch File", CmdSaveLayersFile, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );	
+//		btn->set_back_col( &layerButtonCol );	
 		btn->set_w(90);
 		col = new GLUI_Column( persistenceTests, false );
 
 		btn = new GLUI_Button( persistenceTests, "from Ch File (S)", CmdLoadScopeLayersFile, &Tool::dispatchCmd );
 		btn->set_w(90);
-		btn->set_back_col( &layerButtonCol );
+//		btn->set_back_col( &layerButtonCol );
 
 		btn = new GLUI_Button( persistenceTests, "to Ch File (S)", CmdSaveScopeLayersFile, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );	
+//		btn->set_back_col( &layerButtonCol );	
 		btn->set_w(90);
 		col = new GLUI_Column( persistenceTests, false );
 
 		btn = new GLUI_Button( persistenceTests, "from Ch File", CmdLoadLayersFile, &Tool::dispatchCmd );
 		btn->set_w(90);
-		btn->set_back_col( &layerButtonCol );
+//		btn->set_back_col( &layerButtonCol );
 
 
 		btn = new GLUI_Button( persistenceTests, "to Stack File", CmdSaveEditStack, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );	
+//		btn->set_back_col( &layerButtonCol );	
 		btn->set_w(90);
 		col = new GLUI_Column( persistenceTests, false );
 
 		btn = new GLUI_Button( persistenceTests, "from Stack File", CmdLoadEditStack, &Tool::dispatchCmd );
 		btn->set_w(90);
-		btn->set_back_col( &layerButtonCol );
+//		btn->set_back_col( &layerButtonCol );
 	}
 }

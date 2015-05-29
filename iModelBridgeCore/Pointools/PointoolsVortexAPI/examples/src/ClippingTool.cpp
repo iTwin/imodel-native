@@ -12,7 +12,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #include <GL/glui.h>
 #include "ClippingTool.h"
 #include <math.h>
-#include "../include/PointoolsVortexAPI_resultCodes.h"
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_resultCodes.h>
 #include <assert.h>
 
 static RGBc layerButtonCol(96,96,96);
@@ -156,10 +156,10 @@ void	ClippingTool::drawPostDisplay()
 					glColor4f(0.0f, 0.5f, 1.0f, 0.5f);
 							
 				glBegin(GL_QUADS); 		
-				glVertex3f(pt0.x, pt0.y, pt0.z);		
-				glVertex3f(pt1.x, pt1.y, pt1.z);				
-				glVertex3f(pt3.x, pt3.y, pt3.z);		
-				glVertex3f(pt2.x, pt2.y, pt2.z);		
+				glVertex3f(static_cast<GLfloat>(pt0.x), static_cast<GLfloat>(pt0.y), static_cast<GLfloat>(pt0.z));		
+				glVertex3f(static_cast<GLfloat>(pt1.x), static_cast<GLfloat>(pt1.y), static_cast<GLfloat>(pt1.z));				
+				glVertex3f(static_cast<GLfloat>(pt3.x), static_cast<GLfloat>(pt3.y), static_cast<GLfloat>(pt3.z));
+				glVertex3f(static_cast<GLfloat>(pt2.x), static_cast<GLfloat>(pt2.y), static_cast<GLfloat>(pt2.z));		
 				glEnd(); 
 
 				// draw the plane normal
@@ -167,8 +167,8 @@ void	ClippingTool::drawPostDisplay()
 				glColor4f(1.0f, 0.5f, 0.0f, 1.0f);
 
 				glBegin(GL_LINES); 		
-				glVertex3f(ptn.x, ptn.y, ptn.z);		
-				glVertex3f(ptn.x+m_planes[i].normal().x, ptn.y+m_planes[i].normal().y, ptn.z+m_planes[i].normal().z);				
+				glVertex3f(static_cast<GLfloat>(ptn.x), static_cast<GLfloat>(ptn.y), static_cast<GLfloat>(ptn.z));		
+				glVertex3f(static_cast<GLfloat>(ptn.x+m_planes[i].normal().x), static_cast<GLfloat>(ptn.y+m_planes[i].normal().y), static_cast<GLfloat>(ptn.z+m_planes[i].normal().z));				
 				glEnd(); 
 			}
 		}
@@ -197,41 +197,41 @@ void ClippingTool::drawSceneBounds()
 
 				glBegin(GL_LINES); 		
 
-				glVertex3f(lower[0], lower[1], lower[2]);
-				glVertex3f(upper[0], lower[1], lower[2]);
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(lower[2]));
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(lower[2]));
 
-				glVertex3f(lower[0], lower[1], lower[2]);
-				glVertex3f(lower[0], upper[1], lower[2]);
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(lower[2]));
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(lower[2]));
 
-				glVertex3f(lower[0], lower[1], lower[2]);
-				glVertex3f(lower[0], lower[1], upper[2]);
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(lower[2]));
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(upper[2]));
 
-				glVertex3f(upper[0], upper[1], upper[2]);
-				glVertex3f(lower[0], upper[1], upper[2]);
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(upper[2]));
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(upper[2]));
 
-				glVertex3f(upper[0], upper[1], upper[2]);
-				glVertex3f(upper[0], lower[1], upper[2]);
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(upper[2]));
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(upper[2]));
 
-				glVertex3f(upper[0], upper[1], upper[2]);
-				glVertex3f(upper[0], upper[1], lower[2]);
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(upper[2]));
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(lower[2]));
 
-				glVertex3f(lower[0], upper[1], lower[2]);
-				glVertex3f(upper[0], upper[1], lower[2]);
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(lower[2]));
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(lower[2]));
 
-				glVertex3f(upper[0], lower[1], upper[2]);
-				glVertex3f(lower[0], lower[1], upper[2]);
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(upper[2]));
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(upper[2]));
 
-				glVertex3f(upper[0], lower[1], lower[2]);
-				glVertex3f(upper[0], upper[1], lower[2]);
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(lower[2]));
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(lower[2]));
 
-				glVertex3f(lower[0], upper[1], upper[2]);
-				glVertex3f(lower[0], lower[1], upper[2]);
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(upper[2]));
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(upper[2]));
 
-				glVertex3f(upper[0], lower[1], lower[2]);
-				glVertex3f(upper[0], lower[1], upper[2]);
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(lower[2]));
+				glVertex3f(static_cast<GLfloat>(upper[0]), static_cast<GLfloat>(lower[1]), static_cast<GLfloat>(upper[2]));
 
-				glVertex3f(lower[0], upper[1], upper[2]);
-				glVertex3f(lower[0], upper[1], lower[2]);
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(upper[2]));
+				glVertex3f(static_cast<GLfloat>(lower[0]), static_cast<GLfloat>(upper[1]), static_cast<GLfloat>(lower[2]));
 
 				glEnd(); 
 				
@@ -249,7 +249,7 @@ void ClippingTool::buildUserInterface(GLUI_Node *parent)
 
 	GLUI_Panel *clipTools = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 	GLUI_StaticText *spacer = new GLUI_StaticText( clipTools, " " );
-	spacer->set_w( PANEL_WIDTH*0.5 - 12 );
+	spacer->set_w(static_cast<int>(PANEL_WIDTH*0.5 - 12));
 
 	m_fitPlanesButton = new GLUI_Button( clipTools, "Fit Planes to Bounds", CmdFitPlanesToBB, &Tool::dispatchCmd );			
 	m_toggleClipping = new GLUI_Button( clipTools, "Switch Clipping Off", CmdToggleClipping, &Tool::dispatchCmd );			
@@ -387,10 +387,10 @@ void ClippingTool::planeDefSelected(int selected)
 		{
 			getConstValsFromDef(def, a, b, c, d);
 		
-			m_planeDefInputs[0]->set_float_val(a);
-			m_planeDefInputs[1]->set_float_val(b);		
-			m_planeDefInputs[2]->set_float_val(c);
-			m_planeDefInputs[3]->set_float_val(d);
+			m_planeDefInputs[0]->set_float_val(static_cast<float>(a));
+			m_planeDefInputs[1]->set_float_val(static_cast<float>(b));		
+			m_planeDefInputs[2]->set_float_val(static_cast<float>(c));
+			m_planeDefInputs[3]->set_float_val(static_cast<float>(d));
 		}
 	}
 }

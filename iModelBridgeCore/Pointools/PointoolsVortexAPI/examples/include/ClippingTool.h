@@ -13,7 +13,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #define POINTOOLS_EXAMPLE_APP_CLIPPING_TOOL_H_
 
 #include "VortexExampleApp.h"
-#include "GeomTypes.h"
+#include <PointoolsVortexAPI_FeatureExtract_DLL/GeomTypes.h>
 #include "Plane.h"
 #include <assert.h>
 

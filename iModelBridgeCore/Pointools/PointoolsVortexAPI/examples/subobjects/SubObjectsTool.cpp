@@ -184,7 +184,7 @@ void	SubObjectsTool::syncScenes( void )
 		}
 	}
 	/* do the remove */ 
-	for (int i=0;i<remove.size();i++)
+	for (unsigned int i=0;i<remove.size();i++)
 	{
 		PCMap::iterator it = m_pointClouds.find(remove[i]);
 		delete it->second;
