@@ -273,13 +273,13 @@ TEST(ECDbTests, checkPrimaryKeyForTablesIsBasedOnECInstanceId)
     ASSERT_EQ(BE_SQLITE_OK, sqlstmt0.Prepare(ecdbr, "SELECT sql FROM sqlite_master WHERE type='table' AND tbl_name='sc_Furniture'"));
     sqlstmt0.Step();
     Utf8CP sqlValue0 = sqlstmt0.GetValueText(0);
-    ASSERT_TRUE(1 == strcmp(sc_Furniture, sqlValue0));
+    ASSERT_TRUE(strcmp(sc_Furniture, sqlValue0) > 0);
 
     Statement sqlstmt;
     ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(ecdbr, "SELECT sql FROM sqlite_master WHERE type='table' AND tbl_name='sc_Employee'"));
     sqlstmt.Step();
     Utf8CP sqlValue = sqlstmt.GetValueText(0);
-    ASSERT_TRUE(1 == strcmp(sc_Employee, sqlValue));
+    ASSERT_TRUE(strcmp(sc_Employee, sqlValue) > 0);
 }
 
 END_ECDBUNITTESTS_NAMESPACE
