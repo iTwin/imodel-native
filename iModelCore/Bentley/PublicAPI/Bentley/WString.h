@@ -201,6 +201,16 @@ public:
     //! Pads, if necessary, to the given totalSize by adding charToPadWith to the right side.
     BENTLEYDLL_EXPORT void PadRight (size_t totalSize, value_type charToPadWith);
 
+    //! Determines if this instance starts with the provided string.
+    BENTLEYDLL_EXPORT bool StartsWith(WCharCP) const;
+    //! Determines if this instance starts with the provided string, ignoring case.
+    BENTLEYDLL_EXPORT bool StartsWithI(WCharCP) const;
+
+    //! Determines if this instance ends with the provided string.
+    BENTLEYDLL_EXPORT bool EndsWith(WCharCP) const;
+    //! Determines if this instance ends with the provided string, ignoring case.
+    BENTLEYDLL_EXPORT bool EndsWithI(WCharCP) const;
+
     //! Test for whether this string contains another string. @param other The other string. @return true if this string contains the other string. 
     BENTLEYDLL_EXPORT bool Contains (WStringCR other) const;
     //! Test for whether this string contains another string. @param other The other string. @return true if this string contains the other string. 
