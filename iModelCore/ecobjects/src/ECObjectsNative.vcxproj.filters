@@ -146,7 +146,7 @@
     <ClCompile Include="Units\ECUnitsClassLocater.cpp">
       <Filter>ECUnits\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DateTimeInfoAccessor.cpp">
+    <ClCompile Include="SchemaLocalizedStrings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -261,6 +261,9 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECUnits\ECUnitsClassLocater.h">
       <Filter>ECUnits\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

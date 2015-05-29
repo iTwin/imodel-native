@@ -12,6 +12,7 @@
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects/CalculatedProperty.h>
+#include <ECObjects/SchemaLocalizedStrings.h>
 /*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
@@ -240,6 +241,9 @@ protected:
 
 public:
     ECSchemaP                           GetContainerSchema();
+    //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
+    //! a consolidated attribute it will be copied and added to the consolidated list before it is returned.
+    IECInstancePtr                      GetLocalAttributeAsConsolidated(WStringCR className);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -630,6 +634,7 @@ public:
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
+    bool                                IsForSupplementation() const { return m_forSupplementation; }
 
     //! Intended to be called by ECDb or a similar system
     ECOBJECTS_EXPORT void SetId(ECPropertyId id) { BeAssert (0 == m_ecPropertyId); m_ecPropertyId = id; };
@@ -675,12 +680,16 @@ public:
     ECOBJECTS_EXPORT WString            GetTypeName() const;
     //! Sets the description for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
-    //! The Description of this ECProperty.
+    //! The Description of this ECProperty.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    //! Gets the invariant description for this ECProperty.
+    ECOBJECTS_EXPORT WStringCR          GetInvariantDescription() const;
     //! Sets the Display Label for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
     //! Gets the Display Label for this ECProperty.  If no label has been set explicitly, it will return the Name of the property
     ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    //! Gets the invariant display label for this ECSchema.
+    ECOBJECTS_EXPORT WStringCR          GetInvariantDisplayLabel() const;
     //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
     //! Gets whether this ECProperty's value is read only
@@ -1048,12 +1057,16 @@ public:
 
     //! Sets the description of this ECClass
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
-    //! Gets the description of this ECClass.
+    //! Gets the description of this ECClass.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    //! Gets the invariant description for this ECClass.
+    ECOBJECTS_EXPORT WStringCR          GetInvariantDescription() const;
     //! Sets the display label of this ECClass
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
     //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
     ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    //! Gets the invariant display label for this ECClass.
+    ECOBJECTS_EXPORT WStringCR          GetInvariantDisplayLabel() const;
 
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
@@ -1442,6 +1455,9 @@ public:
     //! Gets the label of the constraint role in the relationship.
     //! If the role label is not defined, the display label of the relationship class is returned
     ECOBJECTS_EXPORT WString const              GetRoleLabel() const;
+    //! Gets the invariant label of the constraint role in the relationship.
+    //! If the role label is not defined, the invariant display label of the relationship class is returned
+    ECOBJECTS_EXPORT WString const              GetInvariantRoleLabel() const;
 
     //! Returns whether the RoleLabel has been set explicitly
     ECOBJECTS_EXPORT bool                       IsRoleLabelDefined() const;
@@ -2091,7 +2107,8 @@ private:
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
     bool                        m_immutable;
 
-    bmap<ECSchemaP, WString> m_referencedSchemaNamespaceMap;
+    bmap<ECSchemaP, WString>    m_referencedSchemaNamespaceMap;
+    SchemaLocalizedStrings      m_localizedStrings;
 
     ECSchema ();
     virtual ~ECSchema();
@@ -2138,6 +2155,7 @@ public:
 
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
     ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, WCharCP newName);
+    SchemaLocalizedStringsCR            GetLocalizedStrings() const { return m_localizedStrings; }
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -2164,12 +2182,17 @@ public:
     ECOBJECTS_EXPORT WStringCR          GetNamespacePrefix() const;
     //! Sets the description for this ECSchema
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
-    //! Gets the description for this ECSchema
+    //! Gets the description for this ECSchema.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    //! Gets the invariant description for this ECSchema.
+    ECOBJECTS_EXPORT WStringCR          GetInvariantDescription() const;
     //! Sets the display label for this ECSchema
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
     //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema
+    //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema.
     ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    //! Gets the invariant display label for this ECSchema.
+    ECOBJECTS_EXPORT WStringCR          GetInvariantDisplayLabel() const;
     //! Sets the major version of this schema
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(uint32_t value);
     //! Gets the major version of this schema

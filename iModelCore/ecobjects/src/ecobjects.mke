@@ -62,9 +62,9 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)CalculatedProperty.h \
                     $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                     $(baseDir)DateTimeInfoAccessor.h \
-                    $(ecobjectsPublicAPISrc)ECDiff.h 			
+                    $(ecobjectsPublicAPISrc)ECDiff.h \
+                    $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
 
-                    
 
 ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
                         $(ecpresentationPublicAPISrc)auiitem.h \
@@ -160,6 +160,8 @@ $(o)StandardCustomAttributeHelper$(oext)                   : $(baseDir)StandardC
 $(o)PresentationMetadataHelper$(oext)                      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECDiff$(oext)                                          : $(baseDir)ECDiff.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLocalizedStrings.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentation
 

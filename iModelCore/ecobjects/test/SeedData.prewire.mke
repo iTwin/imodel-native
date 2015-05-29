@@ -17,9 +17,12 @@ always:
     !~@mkdir $(buildDir)
     !~@mkdir $(buildDir)ECObjectsTest_Data
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData=$(seedDataSource)*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/ur-PK/=$(ecobjectsSrc)test/SeedData/ur-PK/*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/en-GB/=$(ecobjectsSrc)test/SeedData/en-GB/*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/it/=$(ecobjectsSrc)test/SeedData/it/*.xml"
 
 %ifdef winNT
-always:
+always:    
     $(unzipCmd) -n $(seedDataSource)performance.zip -d $(buildDir)ECObjectsTest_Data/
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/=$(buildDir)ECObjectsTest_Data/performance/*.xml"
 %endif
