@@ -11,10 +11,10 @@ BEGIN_UNNAMED_NAMESPACE
 
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-/** @addtogroup DgnSchemaDomainSqlFunctions SQL extensions for DgnSchemaDomain
+/** @addtogroup DgnDbSqlFunctions DgnDb SQL Functions
  *  @{
 
-DgnSchemaDomain defines types and built-in functions that you can use in SQL statements to work with DgnSchemaDomain classes.
+DgnDb defines types and built-in functions that you can use in SQL statements.
 
 @see DGN_placement, DGN_angles, DGN_bbox, DGN_point
 */
@@ -553,7 +553,7 @@ struct DGN_bbox_overlaps : ScalarFunction
     @return 1 if bb_outer contains bb_inner or 0 if not.
     @see DGN_bbox_overlaps
 */
-int DGN_bbox_contains(DGN_bbox bb1, DGN_bbox bb2);
+int DGN_bbox_contains(DGN_bbox bb_outer, DGN_bbox bb_inner);
 // __PUBLISH_SECTION_END__
 #endif
 struct DGN_bbox_contains : ScalarFunction
@@ -829,7 +829,7 @@ void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
         db.AddRTreeMatchFunction(*func);
     }
 
-#ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup DgnSchemaDomainSqlFunctions @{  at the top of the file
+#ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup DgnDbSqlFunctions @{  at the top of the file
 // __PUBLISH_SECTION_START__
 //! @}
 // __PUBLISH_SECTION_END__
