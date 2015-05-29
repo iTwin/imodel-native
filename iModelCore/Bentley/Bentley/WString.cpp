@@ -232,6 +232,68 @@ bool WString::ContainsI (WCharCP other) const
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     01/2014
+//---------------------------------------------------------------------------------------
+bool WString::StartsWith(WCharCP value) const
+    {
+    if (WString::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = wcslen(value);
+    if (valueLen > size())
+        return false;
+    
+    return (0 == memcmp(c_str(), value, sizeof(WChar) * valueLen));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dan.East        07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WString::StartsWithI (WCharCP value) const
+    {
+    if (WString::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = wcslen(value);
+    if (valueLen > size())
+        return false;
+    
+    WString temp = this->substr (0, valueLen);
+    return (0 == temp.CompareToI (value));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dan.East        07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WString::EndsWith (WCharCP value) const
+    {
+    if (WString::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = wcslen(value);
+    if (valueLen > size())
+        return false;
+    
+    WString temp = this->substr (size()-valueLen);
+    return (0 == temp.CompareTo (value));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dan.East        07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WString::EndsWithI (WCharCP value) const
+    {
+    if (WString::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = wcslen(value);
+    if (valueLen > size())
+        return false;
+    
+    WString temp = this->substr (size()-valueLen);
+    return (0 == temp.CompareToI (value));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/12
