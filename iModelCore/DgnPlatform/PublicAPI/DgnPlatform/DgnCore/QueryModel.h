@@ -18,7 +18,7 @@ struct DgnDbRTree3dViewFilter;
                                                                                                                     
 //=======================================================================================
 /**
-A QueryModel is a virtual DgnModel that holds \ref DgnElementGroup loaded from the database according to a custom query criteria.
+A QueryModel is a virtual DgnModel that holds @ref DgnElementGroup loaded from the database according to a custom query criteria.
 A QueryModel caches the results of the query.
 
 A QueryModel is used in conjunction with a QueryViewController to display the results of the query. 
@@ -26,7 +26,7 @@ Applications do not directly deal with QueryModel's. Instead, the query that pop
 
 The method MobileDgn::MobileDgnApplication::OpenDgnDb creates a default QueryModel for an application. 
 Applications may use MobileDgn::MobileDgnApplication::GetQueryModel to retrieve a reference to that QueryModel. 
-QueryModel's are associated with a QueryViewController by passing a QueryModel to the QueryViewController constructor.
+QueryModels are associated with a QueryViewController by passing a QueryModel to the QueryViewController constructor.
 */
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================

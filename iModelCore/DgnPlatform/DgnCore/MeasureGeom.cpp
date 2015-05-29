@@ -868,7 +868,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR en
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP)
+BentleyStatus MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity)
     {
     switch (m_opType)
         {
@@ -880,7 +880,7 @@ BentleyStatus MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, I
                 }
             else if (ISolidKernelEntity::EntityType_Sheet == entity.GetEntityType ())
                 {
-                if (!T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasOnlyPlanarFaces))
+                if (!T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     return SUCCESS; // Not valid type for operation...
 
                 // Output curve vector for each face of sheet...(further limit this to a set of coplanar faces?!?)

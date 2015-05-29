@@ -68,7 +68,7 @@ protected:
     virtual StatusInt   _ProcessSolidPrimitive (ISolidPrimitiveCR) override;
     virtual StatusInt   _ProcessSurface (MSBsplineSurfaceCR) override;
     virtual StatusInt   _ProcessFacetSet (PolyfaceQueryCR, bool filled) override;
-    virtual StatusInt   _ProcessBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL) override;
+    virtual StatusInt   _ProcessBody (ISolidKernelEntityCR) override;
 
     virtual void        _PushTransClip (TransformCP trans, ClipPlaneSetCP clip) override;
     virtual void        _PopTransClip () override;

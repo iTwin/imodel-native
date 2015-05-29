@@ -155,21 +155,21 @@ protected:
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
     //! Called to load properties of a DgnElement from the DgnDb. Override to load subclass properties.
-    //! @note If you override this method, you /em must call T_Super::_LoadFromDb, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_LoadFromDb, forwarding its status.
     virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
 
     //! Called to insert a new DgnElement into the DgnDb. Override to save subclass properties.
-    //! @note If you override this method, you /em must call T_Super::_InsertInDb, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_InsertInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
 
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
     //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.
-    //! @note If you override this method, you /em must call T_Super::_UpdateInDb, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
 
     //! Called to delete a DgnElement from the DgnDb. Override to do any additional processing on delete.
-    //! @note If you override this method, you /em must call T_Super::_DeleteInDb, forwarding its status.
+    //! @note If you override this method, you @em must call T_Super::_DeleteInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
 
     //! return code for _OnChild... methods
@@ -204,7 +204,7 @@ protected:
     virtual void _OnChildInserted(DgnElementCR child) const {}
 
     //! Called after an element, with this element as its parent, was successfully updated.
-    //! @note if the parent of an element is changed, this method will /em not be paired with a call to _OnChildUpdate
+    //! @note if the parent of an element is changed, this method will @em not be paired with a call to _OnChildUpdate
     virtual void _OnChildUpdated(DgnElementCR child) const {}
 
     //! Called after an element, with this element as its parent, was successfully deleted.
@@ -386,7 +386,7 @@ public:
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Static method to Query the DgnClassId of the dgn.Element ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the dgn.Element class - it does /em not return the class of a specific instance.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.Element class - it does @em not return the class of a specific instance.
     //! @see GetElementClassId
     DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 
@@ -415,7 +415,7 @@ public:
     Utf8CP GetCode() const {return m_code.c_str();}
 
     //! Set the code (business key) of this DgnElement.
-    //! @see GetCodem, _SetCode
+    //! @see GetCode, _SetCode
     //! @return SUCCESS if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
     DgnModelStatus SetCode(Utf8CP code) {return _SetCode(code);}
@@ -764,12 +764,23 @@ public:
     //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
     DGNPLATFORM_EXPORT DgnModelStatus InsertMember(DgnElementCR member) const;
+
     //! Deletes the ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
     //! @param[in] member The element to remove from this ElementGroup.
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
     DGNPLATFORM_EXPORT DgnModelStatus DeleteMember(DgnElementCR member) const;
-    //! Query for the set of members in this ElementGroup
+
+    //! Query for the set of members of this ElementGroup
+    //! @see QueryFromMember
     DGNPLATFORM_EXPORT DgnElementIdSet QueryMembers() const;
+
+    //! Query an ElementGroup from a member element.
+    //! @param[in] db the DgnDb to query
+    //! @param[in] groupClassId specify the type of ElementGroup to consider as a DgnElement could be in more than one ElementGroup.
+    //! @param[in] memberElementId the DgnElementId of the member element
+    //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
+    //! @see QueryMembers
+    DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

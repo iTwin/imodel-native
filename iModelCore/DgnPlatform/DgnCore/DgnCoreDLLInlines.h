@@ -189,17 +189,6 @@ DG_INLINE IAuxCoordSysPtr   IAuxCoordSys::Clone() const {return _Clone();}
 
 DG_INLINE StatusInt IAuxCoordSys::GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 DG_INLINE StatusInt IAuxCoordSys::SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
-DG_INLINE bool ISolidKernelEntity::IsEqual(ISolidKernelEntityCR entity) const {return _IsEqual(entity);}
-DG_INLINE ISolidKernelEntity::KernelEntityType ISolidKernelEntity::GetEntityType() const {return _GetEntityType();}
-DG_INLINE TransformCR ISolidKernelEntity::GetEntityTransform() const {return _GetEntityTransform();}
-DG_INLINE void ISolidKernelEntity::SetEntityTransform(TransformCR transform) {return _SetEntityTransform(transform);}
-DG_INLINE void ISolidKernelEntity::PostMultiplyEntityTransformInPlace(TransformCR solidTransform)  { SetEntityTransform(Transform::FromProduct(_GetEntityTransform(), solidTransform)); }
-DG_INLINE void ISolidKernelEntity::PreMultiplyEntityTransformInPlace(TransformCR uorTransform) { SetEntityTransform(Transform::FromProduct(uorTransform,_GetEntityTransform())); }
-DG_INLINE ISolidKernelEntityPtr ISolidKernelEntity::Clone() const {ISolidKernelEntityPtr clone; return SUCCESS == T_HOST.GetSolidsKernelAdmin()._CopyEntity(clone, *this) ? clone : nullptr;}
-
-DG_INLINE BentleyStatus ISubEntity::ToString(WStringR subEntityStr) const {return _ToString(subEntityStr);}
-DG_INLINE bool ISubEntity::IsEqual(ISubEntityCR subEntity) const {return _IsEqual(subEntity);}
-DG_INLINE ISubEntity::SubEntityType ISubEntity::GetSubEntityType() const {return _GetSubEntityType();}
 
 DG_INLINE DgnDbR                  ViewContext::GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
 DG_INLINE void                    ViewContext::SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
@@ -316,8 +305,8 @@ DG_INLINE void        IDrawGeom::DrawCurveVector(CurveVectorCR curves, bool isFi
 DG_INLINE void        IDrawGeom::DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_DrawCurveVector2d(curves, isFilled, zDepth);}
 DG_INLINE void        IDrawGeom::DrawSolidPrimitive(ISolidPrimitiveCR primitive) {_DrawSolidPrimitive(primitive);}
 DG_INLINE void        IDrawGeom::DrawBSplineSurface(MSBsplineSurfaceCR surface) {_DrawBSplineSurface(surface);}
-DG_INLINE void        IDrawGeom::DrawPolyface(PolyfaceQueryCR meshData, bool filled)                                                   { _DrawPolyface(meshData, filled); }
-DG_INLINE StatusInt   IDrawGeom::DrawBody(ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments, double pixelSize)       { return _DrawBody(entity, attachments, pixelSize); }
+DG_INLINE void        IDrawGeom::DrawPolyface(PolyfaceQueryCR meshData, bool filled) { _DrawPolyface(meshData, filled); }
+DG_INLINE StatusInt   IDrawGeom::DrawBody(ISolidKernelEntityCR entity, double pixelSize) { return _DrawBody(entity, pixelSize); }
 DG_INLINE void        IDrawGeom::DrawTextString(TextStringCR text, double* zDepth) {_DrawTextString(text, zDepth);}
 DG_INLINE void        IDrawGeom::DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_DrawMosaic(numX,numY,tileIds,verts);}
 

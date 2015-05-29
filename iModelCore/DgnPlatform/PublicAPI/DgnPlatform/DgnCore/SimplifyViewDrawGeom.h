@@ -71,7 +71,7 @@ virtual StatusInt                   _ProcessCurvePrimitive  (ICurvePrimitiveCR, 
 virtual StatusInt                   _ProcessCurveVector     (CurveVectorCR, bool filled) {return ERROR;}
 virtual StatusInt                   _ProcessSolidPrimitive  (ISolidPrimitiveCR) {return ERROR;}
 virtual StatusInt                   _ProcessSurface         (MSBsplineSurfaceCR) {return ERROR;}
-virtual StatusInt                   _ProcessBody            (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL) {return ERROR;}
+virtual StatusInt                   _ProcessBody            (ISolidKernelEntityCR) {return ERROR;}
 virtual StatusInt                   _ProcessFacetSet        (PolyfaceQueryCR, bool filled) {return ERROR;} 
 virtual StatusInt                   _ProcessLinearSegments  (DPoint3dCP points, size_t numPoints, bool closed, bool filled) {return ERROR;}
 
@@ -99,7 +99,7 @@ DGNPLATFORM_EXPORT virtual void         _DrawCurveVector2d          (CurveVector
 DGNPLATFORM_EXPORT virtual void         _DrawSolidPrimitive         (ISolidPrimitiveCR primitive) override;
 DGNPLATFORM_EXPORT virtual void         _DrawBSplineSurface         (MSBsplineSurfaceCR) override;
 DGNPLATFORM_EXPORT virtual void         _DrawPolyface               (PolyfaceQueryCR meshData, bool filled = false) override;
-DGNPLATFORM_EXPORT virtual StatusInt    _DrawBody                   (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0) override;
+DGNPLATFORM_EXPORT virtual StatusInt    _DrawBody                   (ISolidKernelEntityCR entity, double pixelSize = 0.0) override;
 DGNPLATFORM_EXPORT virtual void         _DrawTextString             (TextStringCR text, double* zDepth) override;
 DGNPLATFORM_EXPORT virtual void         _DrawRaster                 (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override;
 DGNPLATFORM_EXPORT virtual void         _DrawRaster2d               (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override;
@@ -142,8 +142,8 @@ DGNPLATFORM_EXPORT ClipVectorCP     GetCurrClip ();
 DGNPLATFORM_EXPORT void             ClipAndProcessCurveVector       (CurveVectorCR, bool filled);
 DGNPLATFORM_EXPORT void             ClipAndProcessSolidPrimitive    (ISolidPrimitiveCR);
 DGNPLATFORM_EXPORT void             ClipAndProcessSurface           (MSBsplineSurfaceCR);
-DGNPLATFORM_EXPORT void             ClipAndProcessBody              (ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor*, IFaceMaterialAttachmentsCP attachments = NULL);
-DGNPLATFORM_EXPORT void             ClipAndProcessBodyAsFacets      (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments = NULL);
+DGNPLATFORM_EXPORT void             ClipAndProcessBody              (ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor*);
+DGNPLATFORM_EXPORT void             ClipAndProcessBodyAsFacets      (ISolidKernelEntityCR entity);
 DGNPLATFORM_EXPORT void             ClipAndProcessFacetSet          (PolyfaceQueryCR, bool filled);
 DGNPLATFORM_EXPORT void             ClipAndProcessFacetSetAsCurves  (PolyfaceQueryCR);
 DGNPLATFORM_EXPORT void             ClipAndProcessText              (TextStringCR, double* zDepth);
@@ -155,7 +155,7 @@ StatusInt                       ProcessCurvePrimitive           (ICurvePrimitive
 StatusInt                       ProcessCurveVector              (CurveVectorCR profile, bool filled) {return _ProcessCurveVector (profile, filled);}
 StatusInt                       ProcessSolidPrimitive           (ISolidPrimitiveCR primitive) {return _ProcessSolidPrimitive (primitive);}
 StatusInt                       ProcessSurface                  (MSBsplineSurfaceCR surface) {return _ProcessSurface (surface);}
-StatusInt                       ProcessBody                     (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments = NULL) {return _ProcessBody (entity, attachments);}
+StatusInt                       ProcessBody                     (ISolidKernelEntityCR entity) {return _ProcessBody (entity);}
 StatusInt                       ProcessFacetSet                 (PolyfaceQueryCR facets, bool filled) {return _ProcessFacetSet (facets, filled);}
 StatusInt                       ProcessGeometryMapOrFacetSet    (PolyfaceQueryCR facets, bool filled);
 

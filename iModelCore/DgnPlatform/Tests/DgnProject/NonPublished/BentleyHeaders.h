@@ -91,8 +91,8 @@ void GetBentleyStructList(bvector<TypeNamePair>& list)
     list.push_back(TypeNamePair(sizeof(Iota), L"Iota"));
     list.push_back(TypeNamePair(sizeof(NonCopyableClass), L"NonCopyableClass"));
     //list.push_back(TypeNamePair(sizeof(ReleaseMarshaller), L"ReleaseMarshaller"));
-    list.push_back(TypeNamePair(sizeof(DoubleFormatterBase), L"DoubleFormatterBase"));
-    list.push_back(TypeNamePair(sizeof(DoubleFormatter), L"DoubleFormatter"));
+    //list.push_back(TypeNamePair(sizeof(DoubleFormatterBase), L"DoubleFormatterBase"));
+    //list.push_back(TypeNamePair(sizeof(DoubleFormatter), L"DoubleFormatter"));
     list.push_back(TypeNamePair(sizeof(WString), L"WString"));
 
 }

@@ -77,7 +77,7 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR, bool isFilled) overrid
 virtual BentleyStatus _ProcessSolidPrimitive (ISolidPrimitiveCR) override;
 virtual BentleyStatus _ProcessSurface (MSBsplineSurfaceCR) override;
 virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR, bool isFilled) override;
-virtual BentleyStatus _ProcessBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP) override;
+virtual BentleyStatus _ProcessBody (ISolidKernelEntityCR) override;
 
 virtual DrawPurpose _GetDrawPurpose () override {return DrawPurpose::Measure;}
 virtual void _OutputGraphics (ViewContextR context) override;
