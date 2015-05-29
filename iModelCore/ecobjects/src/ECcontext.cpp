@@ -170,6 +170,22 @@ void  ECSchemaReadContext::AddSchemaPath (WCharCP path)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Colin.Kerr                      05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaReadContext::AddCulture(WCharCP culture)
+    {
+    m_cultureStrings.push_back(WString(culture));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Colin.Kerr                      05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<WString>* ECSchemaReadContext::GetCultures()
+    {
+    return &m_cultureStrings;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                        ECSchemaReadContext::SetFinalSchemaLocater (IECSchemaLocaterR locater)

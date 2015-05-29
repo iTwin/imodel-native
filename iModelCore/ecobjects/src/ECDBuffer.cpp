@@ -2361,6 +2361,14 @@ ECObjectsStatus ECDBuffer::CopyFromBuffer (ECDBufferCR source)    { return _Copy
 ClassLayoutCR ECDBuffer::GetClassLayout() const                             { return _GetClassLayout(); }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPrimitiveType (ECPropertyCR prop)
+    {
+    return prop.GetIsPrimitive() || (prop.GetIsArray() && ARRAYKIND_Primitive == prop.GetAsArrayProperty()->GetKind());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source, bool ignoreErrors)
@@ -2385,7 +2393,7 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         else 
             {
             ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
-            if (NULL != ecProp && ecProp->GetIsPrimitive() && ECOBJECTS_STATUS_Success != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+            if (NULL != ecProp && isPrimitiveType (*ecProp) && ECOBJECTS_STATUS_Success != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
                 {
                 if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;

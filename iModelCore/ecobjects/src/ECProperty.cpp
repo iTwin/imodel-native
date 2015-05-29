@@ -97,7 +97,15 @@ ECObjectsStatus ECProperty::SetName (WStringCR name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECProperty::GetDescription () const
     {
-    return m_description;        
+    return GetClass().GetSchema().GetLocalizedStrings().GetPropertyDescription(this, m_description);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ECProperty::GetInvariantDescription () const
+    {
+    return m_description;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,6 +121,14 @@ ECObjectsStatus ECProperty::SetDescription (WStringCR description)
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECProperty::GetDisplayLabel () const
+    {
+    return GetClass().GetSchema().GetLocalizedStrings().GetPropertyDisplayLabel(this, GetInvariantDisplayLabel());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ECProperty::GetInvariantDisplayLabel () const
     {
     return m_validatedName.GetDisplayLabel();
     }
@@ -301,9 +317,9 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
     else
         propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
         
-    propertyNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetDescription().c_str());
+    propertyNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        propertyNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetDisplayLabel().c_str());
+        propertyNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
     propertyNode->AddAttributeBooleanValue (READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
     
     WriteCustomAttributes (*propertyNode);
