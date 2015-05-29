@@ -73,13 +73,12 @@ ECClassCP ECUnitsClassLocater::_LocateClass (WCharCP schemaName, WCharCP classNa
         return NULL;
 
     if (0 == wcscmp(UNITS_SCHEMA, schemaName))
-        return m_unitsSchema->GetClassCP (className);
-    else if (0 == wcscmp(KOQ_SCHEMA, schemaName))
-        return m_koqSchema->GetClassCP (className);
-    /* else */
-    return NULL;
+        return m_unitsSchema->GetClassCP(className);
+    
+    if (0 == wcscmp(KOQ_SCHEMA, schemaName))
+        return m_koqSchema->GetClassCP(className);
+
+    return nullptr;
     }
 
-
 END_BENTLEY_ECOBJECT_NAMESPACE
-
