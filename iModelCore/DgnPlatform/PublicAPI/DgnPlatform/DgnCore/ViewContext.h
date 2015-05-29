@@ -210,11 +210,6 @@ struct ViewContext : NonCopyableClass, ICheckStop, IRangeNodeCheck
     friend struct SimplifyViewDrawGeom;
 
 public:
-    enum VisitPathStatus
-    {
-        VISIT_PATH_Filtered = 1,
-    };
-
     enum RasterPlane
     {
         RasterPlane_Background = (1<<0),
@@ -394,49 +389,49 @@ protected:
     double                  m_levelOfDetail;
 
     DGNPLATFORM_EXPORT void PopOneTransformClip ();
-    void                    InvalidateScanRange ();
+    void InvalidateScanRange ();
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange ();
     DGNPLATFORM_EXPORT bool CheckThicknessVector ();
-    DGNPLATFORM_EXPORT virtual StatusInt       _Attach (DgnViewportP, DrawPurpose purpose);
-    DGNPLATFORM_EXPORT virtual void            _Detach ();
-    DGNPLATFORM_EXPORT virtual void            _SetupOutputs () = 0;
-    DGNPLATFORM_EXPORT virtual void            _OutputElement (GeometricElementCR);
-    DGNPLATFORM_EXPORT virtual uint32_t        _GetDisplayInfo (bool isRenderable);
-    DGNPLATFORM_EXPORT virtual bool            _WantAreaPatterns ();
-    DGNPLATFORM_EXPORT virtual void            _DrawAreaPattern (ClipStencil& boundary);
-    DGNPLATFORM_EXPORT virtual void            _DrawSymbol (IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
-    DGNPLATFORM_EXPORT virtual void            _DeleteSymbol (IDisplaySymbol*);
-    DGNPLATFORM_EXPORT virtual ILineStyleCP    _GetCurrLineStyle (LineStyleSymbP*);
-    DGNPLATFORM_EXPORT virtual void            _DrawStyledLineString2d (int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
-    DGNPLATFORM_EXPORT virtual void            _DrawStyledLineString3d (int nPts, DPoint3dCP pts,  DPoint3dCP range, bool closed = false);
-    DGNPLATFORM_EXPORT virtual void            _DrawStyledArc2d (DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
-    DGNPLATFORM_EXPORT virtual void            _DrawStyledArc3d (DEllipse3dCR, bool isEllipse, DPoint3dCP range);
-    DGNPLATFORM_EXPORT virtual void            _DrawStyledBSplineCurve3d (MSBsplineCurveCR);
-    DGNPLATFORM_EXPORT virtual void            _DrawStyledBSplineCurve2d (MSBsplineCurveCR, double zDepth);
-    DGNPLATFORM_EXPORT virtual void            _DrawTextString (TextStringCR);
-    DGNPLATFORM_EXPORT virtual QvElem*         _DrawCached (IStrokeForCache&);
+    DGNPLATFORM_EXPORT virtual StatusInt _Attach (DgnViewportP, DrawPurpose purpose);
+    DGNPLATFORM_EXPORT virtual void _Detach ();
+    DGNPLATFORM_EXPORT virtual void _SetupOutputs () = 0;
+    DGNPLATFORM_EXPORT virtual void _OutputElement (GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual uint32_t _GetDisplayInfo (bool isRenderable);
+    DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns ();
+    DGNPLATFORM_EXPORT virtual void _DrawAreaPattern (ClipStencil& boundary);
+    DGNPLATFORM_EXPORT virtual void _DrawSymbol (IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
+    DGNPLATFORM_EXPORT virtual void _DeleteSymbol (IDisplaySymbol*);
+    DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle (LineStyleSymbP*);
+    DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d (int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
+    DGNPLATFORM_EXPORT virtual void _DrawStyledLineString3d (int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
+    DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d (DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
+    DGNPLATFORM_EXPORT virtual void _DrawStyledArc3d (DEllipse3dCR, bool isEllipse, DPoint3dCP range);
+    DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve3d (MSBsplineCurveCR);
+    DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d (MSBsplineCurveCR, double zDepth);
+    DGNPLATFORM_EXPORT virtual void _DrawTextString (TextStringCR);
+    DGNPLATFORM_EXPORT virtual QvElem* _DrawCached (IStrokeForCache&);
     virtual bool _CheckFillOutline () {return true;}
-    DGNPLATFORM_EXPORT virtual StatusInt       _InitContextForView ();
-    DGNPLATFORM_EXPORT virtual StatusInt       _VisitElement (GeometricElementCR);
-    DGNPLATFORM_EXPORT virtual void            _InitScanRangeAndPolyhedron ();
-    DGNPLATFORM_EXPORT virtual bool            _VisitAllModelElements (bool includeTransients);
-    DGNPLATFORM_EXPORT virtual StatusInt       _VisitDgnModel (DgnModelP);
-    DGNPLATFORM_EXPORT virtual void            _PushTransform (TransformCR trans);
-    DGNPLATFORM_EXPORT virtual void            _PushClip (ClipVectorCR clip);
+    DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView ();
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement (GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron ();
+    DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements (bool includeTransients);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel (DgnModelP);
+    DGNPLATFORM_EXPORT virtual void _PushTransform (TransformCR trans);
+    DGNPLATFORM_EXPORT virtual void _PushClip (ClipVectorCR clip);
     virtual QvExtSymbID _BuildExtSymbID (uint32_t rasterWidth, int styleIndex) const { BeAssert (false); return 0; }
-    DGNPLATFORM_EXPORT virtual void            _PushViewIndependentOrigin (DPoint3dCP origin);
-    DGNPLATFORM_EXPORT virtual void            _PopTransformClip ();
-    DGNPLATFORM_EXPORT virtual bool            _FilterRangeIntersection (GeometricElementCR);
-    DGNPLATFORM_EXPORT virtual DgnModelP       _GetViewTarget();
-    virtual IPickGeomP      _GetIPickGeom () {return NULL;}
-    DGNPLATFORM_EXPORT virtual void            _VisitTransientGraphics (bool isPreUpdate);
-    DGNPLATFORM_EXPORT virtual bool            _WantShowDefaultFieldBackground ();
-    DGNPLATFORM_EXPORT virtual void            _AllocateScanCriteria ();
-    DGNPLATFORM_EXPORT virtual void            _SetupScanCriteria ();
+    DGNPLATFORM_EXPORT virtual void _PushViewIndependentOrigin (DPoint3dCP origin);
+    DGNPLATFORM_EXPORT virtual void _PopTransformClip ();
+    DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection (GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual DgnModelP _GetViewTarget();
+    virtual IPickGeomP _GetIPickGeom () {return NULL;}
+    DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics (bool isPreUpdate);
+    DGNPLATFORM_EXPORT virtual bool _WantShowDefaultFieldBackground ();
+    DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria ();
+    DGNPLATFORM_EXPORT virtual void _SetupScanCriteria ();
     virtual bool _WantUndisplayed () {return false;}
     virtual bool _WantUndisplayedClips () {return false;}
     virtual bool _UseCachedDisplay () {return m_useCachedGraphics;}
-    DGNPLATFORM_EXPORT virtual bool            _WantSaveQvElem (DrawExpense expense);
+    DGNPLATFORM_EXPORT virtual bool _WantSaveQvElem (DrawExpense expense);
 
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides (OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides (OvrMatSymbR);
@@ -553,9 +548,8 @@ public:
 
 public:
 
-/** @cond BENTLEY_SDK_Scope1 */
 DGNPLATFORM_EXPORT StatusInt VisitElement (GeometricElementCR);    
-/** @endcond */
+
 /// @name Coordinate Query and Conversion
 //@{
 
@@ -666,11 +660,9 @@ DGNPLATFORM_EXPORT BentleyStatus GetLocalToFrustumTrans (TransformR trans, size_
 //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
 DGNPLATFORM_EXPORT double GetPixelSizeAtPoint (DPoint3dCP origin) const;
 
-//__PUBLISH_SECTION_END__
 DGNPLATFORM_EXPORT void FrustumToView (DPoint3dP viewPts, DPoint3dCP frustumPt, int nPts) const;
 
 DGNPLATFORM_EXPORT void GetViewIndTransform (TransformP trans, DPoint3dCP originLocal);
-//__PUBLISH_SECTION_START__
 
 //! Check whether the current transform is view independent. Several MicroStation element types can display
 //! as "View independent" (e.g. text, text nodes, point cells). They do this by pushing the inverse of the current

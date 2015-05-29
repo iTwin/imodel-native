@@ -915,9 +915,7 @@ double  DistanceFormatter::GetMinimumResolution () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DistanceFormatter::GetSubPerMaster() const
     {
-    double subPerMaster;
-    m_subUnit.ConvertDistanceFrom (subPerMaster, 1.0, m_masterUnit);
-    return subPerMaster;
+    return m_subUnit.ConvertDistanceFrom(1.0, m_masterUnit);
     }
 
 /*---------------------------------------------------------------------------------**//**

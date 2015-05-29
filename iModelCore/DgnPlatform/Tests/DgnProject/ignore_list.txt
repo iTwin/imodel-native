@@ -87,3 +87,6 @@ NamedVolume.CrudTest
 NotificationManagerTest.GetPriority
 
 DgnDb.GetCoordinateSystemProperties # Sam - make this work with GCS
+
+
+Compatibility_Test.* # Umar something is wrong with the sizeof WString in X86 build

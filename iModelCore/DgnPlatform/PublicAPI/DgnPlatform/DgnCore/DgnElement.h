@@ -23,6 +23,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 
 template <class _QvKey> struct QvElemSet;
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -123,8 +124,9 @@ public:
         virtual bool _OnDeleted(DgnElementCR el) {return false;}
     };
 
-protected:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+protected:
 
     struct Flags
         {
@@ -173,32 +175,43 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
 
     //! return code for _OnChild... methods
-    enum ChildChange : bool {Ok=0, Block=1};
+    enum PreChange : bool {Ok=0, Block=1};
+
+    //! Called when an element is about to be deleted from the DgnDb.
+    //! Subclasses may override this method to control when/if their instances are deleted.
+    //! @return PreChange::Ok to allow the delete, otherwise the delete will fail with DGNMODEL_STATUS_ElementBlockedChange.
+    virtual PreChange _OnDelete() const {return PreChange::Ok;}
+
+    //! Called when an element is about to be updated in the DgnDb.
+    //! @param [in] replacement the modified state of this element.
+    //! Subclasses may override this method to control whether their instances are updated.
+    //! @return PreChange::Ok to allow the update, otherwise the delete will fail with DGNMODEL_STATUS_ElementBlockedChange.
+    virtual PreChange _OnUpdate(DgnElementCR replacement) {return PreChange::Ok;}
 
     //! Called when a new element is to be inserted into a DgnDb with this element as its parent.
     //! Subclasses may override this method to control which other elements may become children.
     //! @param[in] child the new element that will become a child of this element.
-    //! @return ChildChange::Ok to allow child insert, otherwise the insert of child will fail with DGNMODEL_STATUS_ParentBlockedChange.
-    //! @note implementers should not presume that returning ChildChange::Ok means that the element will become a child element,
+    //! @return PreChange::Ok to allow child insert, otherwise the insert of child will fail with DGNMODEL_STATUS_ParentBlockedChange.
+    //! @note implementers should not presume that returning PreChange::Ok means that the element will become a child element,
     //! since the insert may fail for other reasons. Instead, rely on _OnChildInserted for that purpose.
-    virtual ChildChange _OnChildInsert(DgnElementCR child) const {return ChildChange::Ok;}
+    virtual PreChange _OnChildInsert(DgnElementCR child) const {return PreChange::Ok;}
 
     //! Called when an element that has this element as its parent is about to be updated in the DgnDb.
     //! Subclasses may override this method to control modifications to its children.
     //! @param [in] child element in its original state
     //! @param [in] replacement the child element in its modified state
-    //! @return ChildChange::Ok to allow child update, otherwise the update of child will fail with DGNMODEL_STATUS_ParentBlockedChange.
-    //! @note implementers should not presume that returning ChildChange::Ok means that the element was updated,
+    //! @return PreChange::Ok to allow child update, otherwise the update of child will fail with DGNMODEL_STATUS_ParentBlockedChange.
+    //! @note implementers should not presume that returning PreChange::Ok means that the element was updated,
     //! since the update may fail for other reasons. Instead, rely on _OnChildUpdated for that purpose.
-    virtual ChildChange _OnChildUpdate(DgnElementCR child, DgnElementCR replacement) const {return ChildChange::Ok;}
+    virtual PreChange _OnChildUpdate(DgnElementCR child, DgnElementCR replacement) const {return PreChange::Ok;}
 
     //! Called when an child element of this element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to block deletion of their children.
     //! @param[in] child that will be deleted.
-    //! @return ChildChange::Ok to allow child deletion, otherwise the delete will fail with DGNMODEL_STATUS_ParentBlockedChange.
-    //! @note implementers should not presume that returning ChildChange::Ok means that the element was deleted,
+    //! @return PreChange::Ok to allow child deletion, otherwise the delete will fail with DGNMODEL_STATUS_ParentBlockedChange.
+    //! @note implementers should not presume that returning PreChange::Ok means that the element was deleted,
     //! since the delete may fail for other reasons. Instead, rely on _OnChildDeleted for that purpose.
-    virtual ChildChange _OnChildDelete(DgnElementCR child) const {return ChildChange::Ok;}
+    virtual PreChange _OnChildDelete(DgnElementCR child) const {return PreChange::Ok;}
 
     //! Called after a new element was inserted with this element as its parent.
     virtual void _OnChildInserted(DgnElementCR child) const {}
@@ -317,7 +330,7 @@ public:
     //! @return a DgnElementPtr that holds the editable copy of this element.
     //! @note This method may only be used on a DgnElement this is the readonly persistent element returned by DgnElements::GetElement, and then
     //! only one editing copy of this element at a time may exist. If another copy is extant, this method will return an invalid DgnElementPtr.
-    //! @see MakeCopy
+    //! @see MakeCopy IsPersistent
     DGNPLATFORM_EXPORT DgnElementPtr CopyForEdit() const;
 
     //! Make a writable copy of this DgnElement so that the copy may be edited.
@@ -397,7 +410,7 @@ public:
 
     //! Set the parent (owner) of this DgnElement.
     //! @see GetParentId, _SetParentId
-    //! @return SUCCESS if the parent was set
+    //! @return DGNMODEL_STATUS_Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
     DgnModelStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
 
@@ -407,7 +420,7 @@ public:
 
     //! Set the category of this DgnElement.
     //! @see GetCategoryId, _SetCategoryId
-    //! @return SUCCESS if the category was set
+    //! @return DGNMODEL_STATUS_Success if the category was set
     //! @note This call can fail if a subclass overrides _SetCategoryId and rejects the category.
     DgnModelStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 
@@ -416,7 +429,7 @@ public:
 
     //! Set the code (business key) of this DgnElement.
     //! @see GetCode, _SetCode
-    //! @return SUCCESS if the code was set
+    //! @return DGNMODEL_STATUS_Success if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
     DgnModelStatus SetCode(Utf8CP code) {return _SetCode(code);}
 
@@ -461,15 +474,14 @@ public:
     DGNPLATFORM_EXPORT GeomStream& operator=(GeomStream const&);
     GeomStream& operator=(GeomStream&& rhs) {GeomStream(std::move(rhs)).swap(*this); return *this;}
 
-    //! Get the size in bytes of the current data in this GeomStream.
-    uint32_t GetSize() const {return m_size;}
-    //! Get the size in bytes of the memory allocated for this GeomStream.
+    //! Get the size, in bytes, of the memory allocated for this GeomStream.
     //! @note The allocated size may be larger than the currently used size returned by GetSize.
     uint32_t GetAllocSize() const {return m_allocSize;}
-    //! Get a const pointer to the GeomStream.
-    uint8_t const* GetData() const {return m_data;}
-    //! Get a writable pointer to the GeomStream.
-    uint8_t* GetDataR() const {return m_data;}
+    uint32_t GetSize() const {return m_size;}   //!< Get the size in bytes of the current data in this GeomStream.
+    uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the GeomStream.
+    uint8_t* GetDataR() const {return m_data;}      //!< Get a writable pointer to the GeomStream.
+    bool HasGeometry() const {return 0 != m_size;}  //!< return false if this GeomStream is empty.
+
     //! Reserve memory for this GeomStream.
     //! @param[in] size the number of bytes to reserve
     DGNPLATFORM_EXPORT void ReserveMemory(uint32_t size);
@@ -595,10 +607,9 @@ protected:
     DgnModelStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-
-public:
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
+public:
     DGNPLATFORM_EXPORT QvCache* GetMyQvCache() const;
     DGNPLATFORM_EXPORT QvElem* GetQvElem(uint32_t index) const;
     DGNPLATFORM_EXPORT bool SetQvElem(QvElem* qvElem, uint32_t index);
@@ -606,6 +617,8 @@ public:
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitPathCR, ViewContextR) const;
+    bool HasGeometry() const {return m_geom.HasGeometry();}  //!< return false if this GeometricElement currently has no geometry (is empty).
+    AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
 
     //! Get the GeomStream for this GeometricElement.
     GeomStreamCR GetGeomStream() const {return m_geom;}

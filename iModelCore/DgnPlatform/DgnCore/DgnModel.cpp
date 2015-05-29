@@ -314,6 +314,7 @@ DgnModelStatus DgnModel2d::_OnInsertElement(DgnElementR element)
     return DGNMODEL_STATUS_Success;
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -337,7 +338,6 @@ void SectionDrawingModel::_FromPropertiesJson(Json::Value const& val)
         m_annotationScale = 1.0;
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -464,7 +464,7 @@ void DgnModel::AddToRangeIndex(DgnElementCR element)
         return;
 
     GeometricElementCP geom = element._ToGeometricElement();
-    if (nullptr != m_rangeIndex && nullptr != geom)
+    if (nullptr != m_rangeIndex && nullptr != geom && geom->HasGeometry())
         m_rangeIndex->AddGeomElement(*geom);
     }
 
@@ -477,8 +477,8 @@ void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
         return;
 
     GeometricElementCP geom = element._ToGeometricElement();
-    if (nullptr != geom)
-        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->_CalculateRange3d(), *geom));
+    if (nullptr != geom && geom->HasGeometry())
+        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->CalculateRange3d(), *geom));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -831,18 +831,16 @@ DPoint3d DgnModel::_GetGlobalOrigin() const
     return GetDgnDb().Units().GetGlobalOrigin();
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 SectioningViewControllerPtr SectionDrawingModel::GetSourceView()
     {
-#if defined (NEEDS_WORK_DRAWINGS)
     auto sectioningViewId = GetDgnDb().GeneratedDrawings().QuerySourceView(GetModelId());
     return dynamic_cast<SectioningViewController*>(GetDgnDb().Views().LoadViewController(sectioningViewId, DgnViews::FillModels::No).get());
-#else
-    return nullptr;
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ChuckKirschman  04/01
@@ -857,9 +855,7 @@ double DgnModel::GetMillimetersPerMaster() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DgnModel::GetSubPerMaster() const
     {
-    double  subPerMast;
-    m_properties.GetSubUnit().ConvertDistanceFrom(subPerMast, 1.0, m_properties.GetMasterUnit());
-    return subPerMast;
+    return m_properties.GetSubUnit().ConvertDistanceFrom(1.0, m_properties.GetMasterUnit());
     }
 
 /*---------------------------------------------------------------------------------**//**
