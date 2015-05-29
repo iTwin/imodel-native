@@ -128,15 +128,17 @@ DG_INLINE void               CameraViewController::ClearClipVector() {m_clipVect
 DG_INLINE ClipVectorPtr      CameraViewController::_GetClipVector() const {return m_clipVector;}
 DG_INLINE IAuxCoordSysP      PhysicalViewController::GetAuxCoordinateSystem() const {return _GetAuxCoordinateSystem();}
 
-DG_INLINE void  DisplayPath::GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const {_GetInfoString(pathDescr, delimiter);}
-DG_INLINE void  DisplayPath::DrawInVp(DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
-
+DG_INLINE void            HitPath::GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const {_GetInfoString(pathDescr, delimiter);}
+DG_INLINE void            HitPath::DrawInVp(DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
 DG_INLINE HitSource       HitPath::GetLocateSource() const {return m_locateSource;}
 DG_INLINE DPoint3dCR      HitPath::GetTestPoint() const {return m_testPoint;}
 DG_INLINE GeomDetailCR    HitPath::GetGeomDetail() const {return m_geomDetail;}
 DG_INLINE GeomDetailR     HitPath::GetGeomDetailW() {return m_geomDetail;}
 DG_INLINE ViewFlagsCR     HitPath::GetViewFlags() const {return m_viewFlags; }
 DG_INLINE IElemTopologyCP HitPath::GetElemTopology() const {return m_elemTopo;}
+DG_INLINE DgnViewportR    HitPath::GetViewport() const {return m_viewport;}
+DG_INLINE DgnElementId    HitPath::GetElementId() const {return m_elementId;}
+
 DG_INLINE SnapMode        SnapPath::GetSnapMode() const {return m_snapMode;}
 DG_INLINE SnapMode        SnapPath::GetOriginalSnapMode() const {return m_originalSnapMode;}
 DG_INLINE void            SnapPath::SetSnapMode(SnapMode s, bool isOriginal) {m_snapMode=s; if(isOriginal) m_originalSnapMode=s;}
@@ -151,7 +153,7 @@ DG_INLINE DPoint3dCR      SnapPath::GetSnapPoint() const {return m_snapPoint;}
 DG_INLINE int             SnapPath::GetSnapDivisor() const {return m_divisor;}
 DG_INLINE double          SnapPath::GetMinScreenDist() const {return m_minScreenDist;}
 DG_INLINE Point2d const&  SnapPath::GetScreenPoint() const {return m_screenPt;}
-DG_INLINE HitPath*        IntersectPath::GetSecondPath() const {return m_secondPath;}
+DG_INLINE HitPath*        IntersectPath::GetSecondHit() const {return m_secondHit;}
 
 DG_INLINE IACSManagerR  IACSManager::GetManager() {return T_HOST.GetAcsManager();}
 
@@ -187,17 +189,6 @@ DG_INLINE IAuxCoordSysPtr   IAuxCoordSys::Clone() const {return _Clone();}
 
 DG_INLINE StatusInt IAuxCoordSys::GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 DG_INLINE StatusInt IAuxCoordSys::SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
-DG_INLINE bool ISolidKernelEntity::IsEqual(ISolidKernelEntityCR entity) const {return _IsEqual(entity);}
-DG_INLINE ISolidKernelEntity::KernelEntityType ISolidKernelEntity::GetEntityType() const {return _GetEntityType();}
-DG_INLINE TransformCR ISolidKernelEntity::GetEntityTransform() const {return _GetEntityTransform();}
-DG_INLINE void ISolidKernelEntity::SetEntityTransform(TransformCR transform) {return _SetEntityTransform(transform);}
-DG_INLINE void ISolidKernelEntity::PostMultiplyEntityTransformInPlace(TransformCR solidTransform)  { SetEntityTransform(Transform::FromProduct(_GetEntityTransform(), solidTransform)); }
-DG_INLINE void ISolidKernelEntity::PreMultiplyEntityTransformInPlace(TransformCR uorTransform) { SetEntityTransform(Transform::FromProduct(uorTransform,_GetEntityTransform())); }
-DG_INLINE ISolidKernelEntityPtr ISolidKernelEntity::Clone() const {ISolidKernelEntityPtr clone; return SUCCESS == T_HOST.GetSolidsKernelAdmin()._CopyEntity(clone, *this) ? clone : nullptr;}
-
-DG_INLINE BentleyStatus ISubEntity::ToString(WStringR subEntityStr) const {return _ToString(subEntityStr);}
-DG_INLINE bool ISubEntity::IsEqual(ISubEntityCR subEntity) const {return _IsEqual(subEntity);}
-DG_INLINE ISubEntity::SubEntityType ISubEntity::GetSubEntityType() const {return _GetSubEntityType();}
 
 DG_INLINE DgnDbR                  ViewContext::GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
 DG_INLINE void                    ViewContext::SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
@@ -314,8 +305,8 @@ DG_INLINE void        IDrawGeom::DrawCurveVector(CurveVectorCR curves, bool isFi
 DG_INLINE void        IDrawGeom::DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_DrawCurveVector2d(curves, isFilled, zDepth);}
 DG_INLINE void        IDrawGeom::DrawSolidPrimitive(ISolidPrimitiveCR primitive) {_DrawSolidPrimitive(primitive);}
 DG_INLINE void        IDrawGeom::DrawBSplineSurface(MSBsplineSurfaceCR surface) {_DrawBSplineSurface(surface);}
-DG_INLINE void        IDrawGeom::DrawPolyface(PolyfaceQueryCR meshData, bool filled)                                                   { _DrawPolyface(meshData, filled); }
-DG_INLINE StatusInt   IDrawGeom::DrawBody(ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments, double pixelSize)       { return _DrawBody(entity, attachments, pixelSize); }
+DG_INLINE void        IDrawGeom::DrawPolyface(PolyfaceQueryCR meshData, bool filled) { _DrawPolyface(meshData, filled); }
+DG_INLINE StatusInt   IDrawGeom::DrawBody(ISolidKernelEntityCR entity, double pixelSize) { return _DrawBody(entity, pixelSize); }
 DG_INLINE void        IDrawGeom::DrawTextString(TextStringCR text, double* zDepth) {_DrawTextString(text, zDepth);}
 DG_INLINE void        IDrawGeom::DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_DrawMosaic(numX,numY,tileIds,verts);}
 
@@ -644,4 +635,4 @@ DG_INLINE double            AreaOrVolumeParser::GetMasterUnitScale()            
 DG_INLINE void              AreaOrVolumeParser::SetScale          (double scale) { m_scale = scale; }
 DG_INLINE double            AreaOrVolumeParser::GetScale          ()             { return m_scale; }
 
-DG_INLINE DgnDbR               DgnElement::GetDgnDb() const {return m_dgnModel.GetDgnDb();}
+DG_INLINE DgnDbR DgnElement::GetDgnDb() const {return m_dgnModel.GetDgnDb();}

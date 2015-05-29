@@ -85,7 +85,6 @@ enum LocateFailureValue
     LOCATE_FAILURE_Transient         = 11,
     LOCATE_FAILURE_FileNotAllowed    = 12,
     LOCATE_FAILURE_FileReadOnly      = 13,
-    LOCATE_FAILURE_RefernceFile      = 14,
     LOCATE_FAILURE_NotSnappable      = 15,
     LOCATE_FAILURE_NonSnappableRef   = 16,
     LOCATE_FAILURE_ParentNoLocate    = 17,
@@ -183,7 +182,7 @@ public:
     DGNVIEW_EXPORT void      ResetCurrentHit ();
     
     DGNVIEW_EXPORT int DoPickElements (bool* wasAborted, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, StopLocateTest*, LocateOptions const& options);
-    DGNVIEW_EXPORT TestPathStatus TestPath (DisplayPathCR path, HitListP hitList, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, StopLocateTest*, LocateOptions const& options);
+    DGNVIEW_EXPORT TestPathStatus TestHit (HitPathCR hit, HitListP hitList, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, StopLocateTest*, LocateOptions const& options);
 
 }; // ElementPicker
 
@@ -205,11 +204,11 @@ private:
     HitPathP GetPreLocatedPath ();
 
 protected:
-    typedef bvector<RefCountedPtr<DisplayPath>> HilitedArray;
+    typedef bvector<RefCountedPtr<HitPath>> HilitedArray;
 
     HilitedArray    m_hilitedElems;
     HitList*        m_hitList;
-    DisplayPath*    m_currHit;
+    HitPath*        m_currHit;
     ElementPicker   m_picker;
     LocateOptions   m_options;
 
@@ -223,8 +222,8 @@ protected:
     virtual int _GetKeypointDivisor() {return 1;}
     DGNVIEW_EXPORT virtual void _GetLocateError (Utf8StringR reasonString, int reason);
     DGNVIEW_EXPORT virtual void _AdjustSnapPath (SnapContext&);
-    virtual bool _IsSnappableDgnAttachment (DgnModelP modelRef) {return true;}
-    virtual DisplayPathCP _GetAppFilterPath () {return nullptr;}
+    virtual bool _IsSnappableModel(DgnModelP modelRef) {return true;}
+    virtual HitPathCP _GetAppFilterPath () {return nullptr;}
     virtual LocateFilterStatus _AppFilterHit (LocateFailureValue*, Utf8StringP explanation, HitPathCP path, LocateFilterFunc internalFilter, bool preLocate, LOCATE_Action action) {return LOCATE_FILTER_STATUS_Neutral;}
     virtual SnapStatus _PerformConstraintSnap(SnapPathP, double hotDistance, HitSource snapSource) {return SnapStatus::Success;}
     DGNVIEW_EXPORT virtual void _GetPreferredPointSnapModes (bvector<SnapMode>& snaps, HitSource source);
@@ -239,34 +238,32 @@ public:
     DGNVIEW_EXPORT ElementLocateManager();
     virtual ~ElementLocateManager() {}
 
-    DisplayPathCP GetCurrPath () {return m_currHit;}
+    HitPathCP GetCurrPath () {return m_currHit;}
     HitListCP GetHitList () {return m_hitList;}
     ElementPicker& GetElementPicker() {return m_picker;}
     LocateOptions& GetLocateOptions() {return m_options;}
     DGNVIEW_EXPORT double ComputeSnapTolerance (DgnViewportCR, double);
     int GetKeypointDivisor();
-    DGNVIEW_EXPORT DisplayPathCP GetAppFilterPath ();
+    DGNVIEW_EXPORT HitPathCP GetAppFilterPath ();
     LocateFilterStatus AppFilterHit (LocateFailureValue*, Utf8StringP, HitPathCP, LocateFilterFunc, bool, LOCATE_Action);
-    void DoHilite (DisplayPathCP, bool doGroups);
+    void DoHilite (HitPathCP, bool doGroups);
     DGNVIEW_EXPORT bool IsElementHilited () const;
-    DGNVIEW_EXPORT DisplayPathCP GetHilitedPath (int index) const;
+    DGNVIEW_EXPORT HitPathCP GetHilitedPath (int index) const;
     DGNVIEW_EXPORT void Clear ();
-    DGNVIEW_EXPORT void SetCurrHit (DisplayPathCP);
+    DGNVIEW_EXPORT void SetCurrHit (HitPathCP);
     DGNVIEW_EXPORT HitPathP GetNextHit ();
-    DGNVIEW_EXPORT StatusInt ChangeCurrentHit (DgnElementP newRef, DgnModelP newModel);
     DGNVIEW_EXPORT void ClearHilited (bool redraw);
-    DGNVIEW_EXPORT void DropFromHilited (DisplayPathCP);
+    DGNVIEW_EXPORT void DropFromHilited (HitPathCP);
     DGNVIEW_EXPORT void SetHitList (HitList* list);
-    DGNVIEW_EXPORT void HiliteAndSave (DisplayPathCP, bool doHilite, bool checkHilited);
+    DGNVIEW_EXPORT void HiliteAndSave (HitPathCP, bool doHilite, bool checkHilited);
     DGNVIEW_EXPORT void ClearFrom (DgnModelP);
-    DGNVIEW_EXPORT StatusInt ChangeCurrentHit (DisplayPathCP newPath);
     DGNVIEW_EXPORT void DropFromHilited (DgnModelP modelRef);
     DGNVIEW_EXPORT bool FilterHit (HitPathP* swapPathP, HitPathCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, ComponentMode complexComponent, LOCATE_Action);
     DGNVIEW_EXPORT double GetAperture();
     DGNVIEW_EXPORT void GetLocateError (Utf8StringR reasonString, int reason);
     DGNVIEW_EXPORT void InitToolLocate ();
     DGNVIEW_EXPORT void ShowErrorExplanation (Utf8CP cantAcceptExplanation, int reason);
-    DGNVIEW_EXPORT void ShowPathInfo (DisplayPathCP);
+    DGNVIEW_EXPORT void ShowPathInfo (HitPathCP);
     DGNVIEW_EXPORT void SetPathIndex (HitPathP hit, ComponentMode complexComponent);
 
 //__PUBLISH_CLASS_VIRTUAL__

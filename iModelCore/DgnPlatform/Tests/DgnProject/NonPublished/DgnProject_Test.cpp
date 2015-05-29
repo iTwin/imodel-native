@@ -10,10 +10,6 @@
 #include <DgnPlatform/DgnCore/DgnIModel.h>
 #include <DgnPlatform/DgnCore/ColorUtil.h>
 
-#if defined (_MSC_VER)
-#pragma warning (disable:4702)
-#endif
-
 USING_NAMESPACE_BENTLEY_SQLITE 
 
 //=======================================================================================
@@ -44,25 +40,6 @@ struct TestModelProperties
             };
     };
 
-
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/2005
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt createLineElement (EditElementHandle& eh, DgnModelR model, size_t nLinesCreated)
-    {
-    DSegment3d      segment;
-    segment.Init (0,0,0, 0,0,0);
-    segment.point[1].x += 10000;
-    segment.point[0].y = segment.point[1].y = (double)nLinesCreated * 10000;
-    GraphicElementHandler::InitializeElement (eh, model);
-
-    // WIP: add line data
-
-    return SUCCESS;
-    }
-#endif
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
@@ -88,89 +65,6 @@ static void openProject (DgnDbPtr& project, BeFileName const& projectFileName, B
     Utf8String projectFileNameUtf8 (projectFileName.GetName());
     ASSERT_TRUE( projectFileNameUtf8 == Utf8String(project->GetDbFileName  ()));
     }
-
-#if defined (NEEDS_WORK_DGNITEM)
-static size_t findElementById (ElementRefP* refH, DgnModelR model, DgnElementId eid)
-    {
-    size_t found = 0;
-    for (ElementRefP ref : model)
-        {
-        if (ref->GetElementId() == eid)
-            {
-            if (refH)
-                *refH = ref;
-            ++found;
-            }
-        }
-    return found;
-    }
-
-// This test checks that we can use DgnFile/DgnModel API to modify elements in a dgndb
-TEST(DgnDb,AddDeleteLine)
-    {
-    ScopedDgnHost autoDgnHost;
-    BeFileName projectName;
-
-    DgnElementId eid;
-
-
-    if (true)
-        {
-        DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
-        DgnDbP project = tdm.GetDgnProjectP();
-        ASSERT_TRUE( project != NULL);
-        
-        projectName.SetNameUtf8 (project->GetDbFileName());
-
-        DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
-        defaultModel->FillModel();
-
-        size_t nLinesCreated = 0;
-        EditElementHandle eh;
-        createLineElement (eh, *defaultModel, nLinesCreated); // WIP: must pass an DgnElementId to create an element
-
-        ASSERT_TRUE( eh.AddToModel () == SUCCESS );
-
-        eid = eh.GetElementId();
-
-        ASSERT_TRUE( findElementById (NULL, *defaultModel, eid) == 1 );
-        }
-
-    // re-open and check that element is there.
-    if (true)
-        {
-        DgnDbPtr project;
-        openProject (project, projectName, BeSQLite::Db::OPEN_ReadWrite);
-        ASSERT_TRUE( project != NULL);
-
-        DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
-        ASSERT_TRUE( defaultModel != NULL );
-        ASSERT_TRUE( defaultModel->FillModel() == SUCCESS );
-
-        ElementRefP ref = NULL;
-        ASSERT_TRUE( findElementById (&ref, *defaultModel, eid) == 1 );
-
-        // delete the line
-        EditElementHandle eh (ref);
-        eh.DeleteFromModel ();
-
-        ASSERT_TRUE( findElementById (NULL, *defaultModel, eid) == 0 );
-        }
-
-    // re-open and check that element is still gone.
-    if (true)
-        {
-        DgnDbPtr project;
-        openProject (project, projectName, BeSQLite::Db::OPEN_Readonly);
-        ASSERT_TRUE( project != NULL);
-
-        DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
-        ASSERT_TRUE( defaultModel != NULL );
-        ASSERT_TRUE( defaultModel->FillModel() == SUCCESS );
-
-        }
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
@@ -243,16 +137,17 @@ TEST (DgnDb, CheckStandardProperties)
     ASSERT_TRUE( project != NULL );
 
     // Check that std properties are in the be_Props table. We can only check the value of a few using this API.
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("DbGuid",            "be_Db"         )    ) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("ProjectGuid",       "be_Db"         )    ) );
-
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("SchemaVersion",     "dgn_Proj"      )    ) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("LastEditor",        "dgn_Proj"      )    ) );
-    ASSERT_TRUE( val=="SampleIDgnToIDgnDbPublisher" ) << "BeTest overrides _SupplyProductName";
-    ASSERT_TRUE( project->HasProperty (PropertySpec("ColorTable",        "dgn_Proj"      )    ) );
-
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("ModelSettings",     "dgn_Model"     ),  0) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("ModelProps",        "dgn_Model"     ),  0) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("DbGuid",            "be_Db"         )) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("BeSQLiteBuild",     "be_Db"         )) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("CreationDate",      "be_Db"         )) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("Description",       "dgn_Proj"      )) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("Units",             "dgn_Proj"      )) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("LastEditor",        "dgn_Proj"      )) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("DefaultView",       "dgn_View"      )) );
+    
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("SchemaVersion",     "be_Db"         )) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("SchemaVersion",     "ec_Db"         )) );
+    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty (val, PropertySpec("SchemaVersion",     "dgn_Proj"      )) );
 
     //  Use the model API to access model properties and check their values
     DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
@@ -299,14 +194,11 @@ TEST(DgnDb, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = project->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ (3, iter.QueryCount());
+    ASSERT_EQ (1, iter.QueryCount());
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[4], testModel;
-    models[0].SetTestModelProperties (L"Default", L"Master Model", false, DgnModelType::Drawing);
-    models[1].SetTestModelProperties (L"Model2d", L"", false, DgnModelType::Drawing);
-    models[2].SetTestModelProperties (L"Default [master]", L"Master Model", false, DgnModelType::Drawing);
-    models[3].SetTestModelProperties (L"Default [ref]", L"Master Model", false, DgnModelType::Drawing);
+    models[0].SetTestModelProperties (L"Default", L"Master Model", true, DgnModelType::Physical);
 
     //Iterate through the model and verify it's contents. TODO: Add more checks
     int i = 0;
@@ -347,14 +239,14 @@ TEST(DgnDb, LoadModelThroughProject)
 
     //Load a Model directly. First get the ModelId
     DgnModels& modelTable = project->Models();
-    DgnModelId modelId = modelTable.QueryModelId("Model2d");
+    DgnModelId modelId = modelTable.QueryModelId("Default");
     ASSERT_TRUE (modelId.IsValid());
 
     DgnModelP model = project->Models().GetModel (modelId);
     ASSERT_TRUE (NULL != model);
 
     //Just one more check to see that we got the right model
-    EXPECT_STREQ ("Model2d", model->GetModelName());
+    EXPECT_STREQ ("Default", model->GetModelName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -530,12 +422,12 @@ TEST(DgnDb, GetCoordinateSystemProperties)
     double azmthExpected = 178.2912;
     double eps = 0.0001;
     EXPECT_TRUE(fabs(azmthExpected - azmth) < eps )<<"Expected diffrent azimuth ";
-    double latitude = dgnProj->Units().GetOriginLatitude();
-    double latitudeExpected = 42.3413;
-    EXPECT_TRUE(fabs(latitudeExpected - latitude) < eps)<<"Expected diffrent latitude ";
-    double longitude = dgnProj->Units().GetOriginLongitude();
-    double longitudeExpected = -71.0806;
-    EXPECT_TRUE(fabs (longitudeExpected - longitude) < eps)<<"Expected diffrent longitude ";
+    GeoPoint gorigin;
+    dgnProj->Units().LatLongFromUors(gorigin, DPoint3d::FromZero());
+    double const latitudeExpected = 42.3413;
+    EXPECT_TRUE(fabs(latitudeExpected - gorigin.latitude) < eps)<<"Expected diffrent latitude ";
+    double const longitudeExpected = -71.0806;
+    EXPECT_TRUE(fabs (longitudeExpected - gorigin.longitude) < eps)<<"Expected diffrent longitude ";
     }
 
 //----------------------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 #include    "UnitDefinition.h"
+#include    "DgnModel.h"
 #include    <Bentley/ValueFormat.h>
 
 DGNPLATFORM_TYPEDEFS(AngleFormatter);
@@ -51,8 +52,6 @@ typedef RefCountedPtr<DateTimeFormatter>    DateTimeFormatterPtr;
 //=======================================================================================
 struct AngleFormatter : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
-
 private: 
     enum AngleUnit
     {
@@ -95,8 +94,6 @@ public:
     DGNPLATFORM_EXPORT bool GetAllowUnclamped() const;
     DGNPLATFORM_EXPORT void SetAllowUnclamped(bool newVal);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
 
     //! Get the AngleMode used by this formatter.
@@ -202,7 +199,6 @@ public:
 //=======================================================================================
 struct DirectionFormatter : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:    
     AngleFormatterPtr   m_angleFormatter;
     DirectionMode       m_mode;
@@ -223,9 +219,6 @@ public:
 
     DGNPLATFORM_EXPORT StatusInt SetDirectionModeFromLegacy(int value);
     DGNPLATFORM_EXPORT int GetLegacyAngleMode() const;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 
     //! Get the angle formatter used by this formatter for the numeric portion of the direction.
     //! Changes made to this object will affect the future behavior of the DirectionFormatter.
@@ -330,7 +323,6 @@ public:
 //=======================================================================================
 struct DistanceFormatter : DoubleFormatterBase, RefCountedBase
 {
-//__PUBLISH_SECTION_END__
     DEFINE_T_SUPER(DoubleFormatterBase)
 private:
     bool                m_unitFlag;
@@ -358,12 +350,8 @@ public:
     DGNPLATFORM_EXPORT DwgUnitFormat GetDWGUnitFormat() const;
     DGNPLATFORM_EXPORT void SetDWGUnitFormat(DwgUnitFormat newVal);
     DGNPLATFORM_EXPORT void SetPrecisionByte(Byte newVal);
-    DGNPLATFORM_EXPORT void InitializeForDwg(DgnModel::Properties const&);
 
     static DGNPLATFORM_EXPORT BentleyStatus ToDwgUnitFormat(DwgUnitFormat& dwgUnitFormatOut, DgnUnitFormat dgnUnitFormat, PrecisionFormat dgnPrecision, UnitDefinitionCR masterUnit, UnitDefinitionCR subUnit);
-
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
 
     //! Get the DgnUnitFormat used by this formatter.
     DGNPLATFORM_EXPORT DgnUnitFormat GetUnitFormat() const;
@@ -445,7 +433,6 @@ public:
 //=======================================================================================
 struct PointFormatter : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 
 private:
     RefCountedPtr<IAuxCoordSys>     m_acs;
@@ -458,8 +445,6 @@ private:
     void Init();
     void InitModelSettings(DgnModelCR, bool addGlobalOrigin);
 
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
 public:
 
     //! Get the distance formatter used by this formatter for rectangular coordinates.
@@ -516,19 +501,6 @@ public:
 //=======================================================================================
 struct AreaOrVolumeFormatterBase : DoubleFormatterBase
 {
-#ifdef __clang__
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wunused-private-field"
-#endif // __clang__
-
-private:   
-    bool m_dummy;    // published base class must have at least one member
-
-#ifdef __clang__
-    #pragma clang diagnostic pop
-#endif // __clang__
-
-//__PUBLISH_SECTION_END__
     DEFINE_T_SUPER(DoubleFormatterBase)
 protected:  
     bool                m_showUnitLabel;
@@ -547,13 +519,8 @@ public:
     DGNPLATFORM_EXPORT void SetUseDWGFormattingLogic(bool newVal);
     DGNPLATFORM_EXPORT DwgUnitFormat GetDWGUnitFormat() const;
     DGNPLATFORM_EXPORT void SetDWGUnitFormat(DwgUnitFormat newVal);
-    DGNPLATFORM_EXPORT void InitializeForDwg(DgnModel::Properties const&);
 
-/*__PUBLISH_SECTION_START__*/
-private:
-//__PUBLISH_SECTION_END__
-protected:                                  // Make sure this is not constructible in the published API
-/*__PUBLISH_SECTION_START__*/
+protected:
     AreaOrVolumeFormatterBase();
 
 //! Get the Master UnitDefinition used by this formatter.
@@ -591,7 +558,6 @@ public:
 //=======================================================================================
 struct AreaFormatter : AreaOrVolumeFormatterBase, RefCountedBase
 {
-//__PUBLISH_SECTION_END__
     DEFINE_T_SUPER(AreaOrVolumeFormatterBase)
 private:
     AreaFormatter();
@@ -602,8 +568,6 @@ private:
 
     DGNPLATFORM_EXPORT void SetPrecisionByte(Byte newVal);
 
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
 public:
     //! Construct a formatter with default settings.
     static DGNPLATFORM_EXPORT AreaFormatterPtr Create();
@@ -638,15 +602,11 @@ public:
 //=======================================================================================
 struct VolumeFormatter : AreaOrVolumeFormatterBase, RefCountedBase
 {
-//__PUBLISH_SECTION_END__
     DEFINE_T_SUPER(AreaOrVolumeFormatterBase)
 private:    
     VolumeFormatter();
     VolumeFormatter(VolumeFormatterCR other);
     void Init();
-
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
 
 public: 
     //! Construct a formatter with default settings.
@@ -687,7 +647,6 @@ public:
 //=======================================================================================
 struct DateTimeFormatter : RefCountedBase
     {
-//__PUBLISH_SECTION_END__
 private:
     typedef bvector<DateTimeFormatPart> PartList;
 
@@ -702,8 +661,6 @@ private:
     DateTimeFormatter();
     DateTimeFormatter(DateTimeFormatterCR other);
 public:
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
     //! Get the character used as a decimal separator.
     DGNPLATFORM_EXPORT WChar GetDecimalSeparator() const;
     //! Get the character used to separate time components. Ex: ':' in "4:50"

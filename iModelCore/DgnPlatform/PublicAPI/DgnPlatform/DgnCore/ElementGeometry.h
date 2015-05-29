@@ -19,7 +19,6 @@ typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, ISolidKernelEntity.
-//! @bsiclass 
 //=======================================================================================
 struct ElementGeometry : RefCountedBase
 {
@@ -86,9 +85,8 @@ DGNPLATFORM_EXPORT static ElementGeometryPtr Create (TextStringPtr const& source
 
 }; // ElementGeometry
 
-//! @cond DONTINCLUDEINDOC
 //=======================================================================================
-//! @bsiclass
+//! @private
 //=======================================================================================
 struct ElementGeomIO
 {
@@ -120,7 +118,7 @@ enum class OpCode : uint32_t
     };
 
 //=======================================================================================
-//! @bsiclass
+//! Internal Header op code
 //=======================================================================================
 struct Header
     {
@@ -133,7 +131,7 @@ struct Header
     }; // Header
 
 //=======================================================================================
-//! @bsiclass
+//! Internal op code
 //=======================================================================================
 struct Operation
     {
@@ -147,7 +145,7 @@ struct Operation
     }; // Operation
 
 //=======================================================================================
-//! @bsiclass
+//! Internal op code writer
 //=======================================================================================
 struct Writer
     {
@@ -159,15 +157,20 @@ struct Writer
     void AppendHeader () {Header hdr; Append (Operation (OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
     void Reset () {m_buffer.clear (); AppendHeader ();};
 
+    bool AppendSimplified (ICurvePrimitiveCR, bool isClosed, bool is3d);
+    bool AppendSimplified (CurveVectorCR, bool is3d);
+    bool AppendSimplified (ElementGeometryCR, bool is3d);
+
     void Append (Operation const& egOp);    
+    void Append (DPoint2dCP, size_t nPts, int8_t boundary);
     void Append (DPoint3dCP, size_t nPts, int8_t boundary);
     void Append (DEllipse3dCR, int8_t boundary);
-    void Append (ICurvePrimitiveCR, bool isClosed = false);
+    void Append (ICurvePrimitiveCR);
     void Append (CurveVectorCR);
     void Append (PolyfaceQueryCR);
     void Append (ISolidPrimitiveCR);
     void Append (MSBsplineSurfaceCR);
-    void Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
+    void Append (ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
     void Append (ElementGeometryCR);
     void Append (DgnSubCategoryId, TransformCR geomToWorld);
     void Append (DgnGeomPartId);
@@ -177,7 +180,7 @@ struct Writer
     }; // Writer;
     
 //=======================================================================================
-//! @bsiclass
+//! Internal op code reader
 //=======================================================================================
 struct Reader
     {
@@ -187,6 +190,7 @@ struct Reader
 
     static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 
+    bool Get (Operation const&, DPoint2dCP&, int& nPts, int8_t& boundary) const;
     bool Get (Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary) const;
     bool Get (Operation const&, DEllipse3dR, int8_t& boundary) const;
     bool Get (Operation const&, PolyfaceQueryCarrier&) const;
@@ -204,7 +208,7 @@ struct Reader
     }; // Reader
 
 //=======================================================================================
-//! @bsiclass
+//! Iternal op code iterator
 //=======================================================================================
 struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
@@ -232,7 +236,7 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     }; // Iterator
 
 //=======================================================================================
-//! @bsiclass
+//! Internal op code helper
 //=======================================================================================
 struct Collection
     {
@@ -259,14 +263,13 @@ struct Collection
 
 }; // ElementGeomIO
 
-//! @endcond
 //=======================================================================================
-//! @bsiclass
+//! ElementGeometryCollection provides iterator for a Geometric Element's GeomStream.
 //=======================================================================================
 struct ElementGeometryCollection
 {
 //=======================================================================================
-//! @bsiclass
+//! Iterator
 //=======================================================================================
 struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
@@ -328,32 +331,30 @@ DGNPLATFORM_EXPORT ~ElementGeometryCollection ();
 typedef RefCountedPtr<ElementGeometryBuilder> ElementGeometryBuilderPtr;
 
 //=======================================================================================
-// ElementGeometryBuilder provides methods for setting up an element's GeomStream and Placement(2d/3d).
-// An element's geometry should always be stored relative to its placement. A placement defines the
-// element to world transform.
-//
-// Example: To create a 10m line defined by its start point and located at 5,5,0 you could call Create and specify a 
-//          placement origin of 5,5,0 and append a line curve primitive with start point 0,0,0 and endpoint 10,0,0.
-//          This result could also be achieve more simply by using CreateWorld and supplying a line from 5,5,0 to 15,5,0.
-//
-//          A reason to use Create instead of CreateWorld is to specify a placement that is more meaningful to 
-//          the application. The application might want to set things up so that the element origin was the line’s 
-//          midpoint instead of the start point. In this case the line curve primitive would be created with start 
-//          point -5,0,0 and end point 5,0,0. To create a line parallel to the y axis instead of x, specify a yaw angle of 90, etc.
-//
-// An element can be "moved" simply by updating it's placement. It may be convenient for the the application to initially specify
-// an identity placement, append the geometry, and then just update the placement to reflect the element’s world coordinates and
-// orientation. It’s not expected for the placement to remain identity unless the element is really at the origin.
-//
-// For repeated geometry that can be shared in a single GeomStream or by multiple GeomStreams, a DgnGeomPart should be
-// created. When appending a DgnGeomPartId you specify the part geometry to element transform in order to position the 
-// part's geometry relative to the other geometry/parts display by the element.
-//
-//! @bsiclass
+//! ElementGeometryBuilder provides methods for setting up an element's GeomStream and Placement(2d/3d).
+//! An element's geometry should always be stored relative to its placement. A placement defines the
+//! element to world transform.
+//!
+//! Example: To create a 10m line defined by its start point and located at 5,5,0 you could call Create and specify a 
+//!          placement origin of 5,5,0 and append a line curve primitive with start point 0,0,0 and endpoint 10,0,0.
+//!          This result could also be achieve more simply by using CreateWorld and supplying a line from 5,5,0 to 15,5,0.
+//!
+//!          A reason to use Create instead of CreateWorld is to specify a placement that is more meaningful to 
+//!          the application. The application might want to set things up so that the element origin was the line’s 
+//!          midpoint instead of the start point. In this case the line curve primitive would be created with start 
+//!          point -5,0,0 and end point 5,0,0. To create a line parallel to the y axis instead of x, specify a yaw angle of 90, etc.
+//!
+//! An element can be "moved" simply by updating it's placement. It may be convenient for the the application to initially specify
+//! an identity placement, append the geometry, and then just update the placement to reflect the element’s world coordinates and
+//! orientation. It’s not expected for the placement to remain identity unless the element is really at the origin.
+//!
+//! For repeated geometry that can be shared in a single GeomStream or by multiple GeomStreams, a DgnGeomPart should be
+//! created. When appending a DgnGeomPartId you specify the part geometry to element transform in order to position the 
+//! part's geometry relative to the other geometry/parts display by the element.
 //=======================================================================================
 struct ElementGeometryBuilder : RefCountedBase
 {
-protected:
+private:
 
 bool                    m_appearanceChanged;
 bool                    m_haveLocalGeom;
@@ -371,8 +372,8 @@ ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement2dCR
 ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId);
 
 bool ConvertToLocal (ElementGeometryR);
-bool AppendWorld (ElementGeometryR, bool deferWrite = false);
-bool AppendLocal (ElementGeometryCR, TransformCP geomToElement, bool deferWrite = false);
+bool AppendWorld (ElementGeometryR);
+bool AppendLocal (ElementGeometryCR, TransformCP geomToElement);
 void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
 
 public:
@@ -385,18 +386,18 @@ DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement); //! P
 DGNPLATFORM_EXPORT bool Append (ElementGeometryCR);
 DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
 DGNPLATFORM_EXPORT bool Append (CurveVectorCR);
-DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR);
-DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR);
-DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR);
-DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr);
+DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR); //! 3d only
+DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR); //! 3d only
+DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR); //! 3d only
+DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (TextStringCR);
 
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle = 0.0);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (DgnModelR model, DgnCategoryId categoryId);
 
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement3dCR, DPoint3dCR origin, YawPitchRollAngles angles = YawPitchRollAngles());
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement2dCR, DPoint2dCR origin, double angle = 0.0);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement3dCR, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement2dCR, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (GeometricElementCR);
 
 }; // ElementGeometryBuilder

@@ -718,11 +718,11 @@ public:
     //! @return the current TBGR hilite color.
     DGNPLATFORM_EXPORT ColorDef GetHiliteColor () const;
 
-    //! Get the hilite color value for a DisplayPath. Display paths that are to elements currently in the Selection Set
-    //! are hilited with the Selection Set Color and paths that are not in the selection set use the normal hilite color.
-    //! @param[in]          path            Display path to check
+    //! Get the hilite color value for an element. Elements currently in the Selection Set
+    //! are hilited with the Selection Set Color and elements that are not in the selection set use the normal hilite color.
+    //! @param[in]          element to check
     //! @return             the hilite color for \c path
-    DGNPLATFORM_EXPORT ColorDef GetHiliteColor (DisplayPathCP path) const;
+    DGNPLATFORM_EXPORT ColorDef GetHiliteColor (GeometricElementCR element) const;
 
     //! Set the current display symbology for this DgnViewport by TBGR color values, a pixel width, and 0-7 line code.
     //! @param[in]          lineColor Line color
@@ -986,7 +986,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt Zoom (DPoint3dCP newCenterRoot, double factor);
 
     //! Change the frustum for this DgnViewport. The frustum is an 8-point array of points in DgnCoordSystem::World coordinates
-    //! in the order specified by #NpcCorners.
+    //! in the order specified by NpcCorners.
     //! This method will change the DgnViewport's frustum, but does \em not update the screen (even if the DgnViewport happens
     //! to be a visible View.) This method \em does change the ViewController associated with the DgnViewport.
     //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController

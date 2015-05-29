@@ -41,7 +41,7 @@ virtual void        _DrawCurveVector2d (CurveVectorCR curves, bool isFilled, dou
 virtual void        _DrawSolidPrimitive (ISolidPrimitiveCR primitive) override {}
 virtual void        _DrawBSplineSurface (MSBsplineSurfaceCR surface) override {}
 virtual void        _DrawPolyface (PolyfaceQueryCR meshData, bool filled = false) override {}
-virtual StatusInt   _DrawBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0) override {return ERROR;}
+virtual StatusInt   _DrawBody (ISolidKernelEntityCR, double pixelSize = 0.0) override {return ERROR;}
 virtual void        _DrawTextString (TextStringCR text, double* zDepth = NULL) override {}
 virtual void        _DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
 virtual void        _DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}

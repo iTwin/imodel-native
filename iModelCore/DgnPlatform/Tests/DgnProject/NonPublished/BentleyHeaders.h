@@ -67,18 +67,18 @@ void GetBentleyStructList(bvector<TypeNamePair>& list)
     list.push_back(TypeNamePair(sizeof(BeFileName), L"BeFileName"));
     list.push_back(TypeNamePair(sizeof(BeIconUtilities), L"BeIconUtilities"));
     list.push_back(TypeNamePair(sizeof(BeNumerical), L"BeNumerical"));
-    list.push_back(TypeNamePair(sizeof(BeSharedMutex), L"BeSharedMutex"));
+    //list.push_back(TypeNamePair(sizeof(BeSharedMutex), L"BeSharedMutex"));
     list.push_back(TypeNamePair(sizeof(BeSharedMutexHolder), L"BeSharedMutexHolder"));
     list.push_back(TypeNamePair(sizeof(BeStringUtilities), L"BeStringUtilities"));
     list.push_back(TypeNamePair(sizeof(BeSystemInfo), L"BeSystemInfo"));
     list.push_back(TypeNamePair(sizeof(BeTest), L"BeTest"));
-    list.push_back(TypeNamePair(sizeof(BeMutex), L"BeMutex"));
+    //list.push_back(TypeNamePair(sizeof(BeMutex), L"BeMutex"));
     list.push_back(TypeNamePair(sizeof(BeMutexHolder), L"BeMutexHolder"));
-    list.push_back(TypeNamePair(sizeof(BeConditionVariable), L"BeConditionVariable"));
+    //list.push_back(TypeNamePair(sizeof(BeConditionVariable), L"BeConditionVariable"));
     list.push_back(TypeNamePair(sizeof(BeThreadUtilities), L"BeThreadUtilities"));
     list.push_back(TypeNamePair(sizeof(BeThread), L"BeThread"));
     list.push_back(TypeNamePair(sizeof(BeSystemMutexHolder), L"BeSystemMutexHolder"));
-    list.push_back(TypeNamePair(sizeof(BeThreadLocalStorage), L"BeThreadLocalStorage"));
+    //list.push_back(TypeNamePair(sizeof(BeThreadLocalStorage), L"BeThreadLocalStorage"));
     list.push_back(TypeNamePair(sizeof(BeTimeUtilities), L"BeTimeUtilities"));
     list.push_back(TypeNamePair(sizeof(StopWatch), L"StopWatch"));
     list.push_back(TypeNamePair(sizeof(BeVersion), L"BeVersion"));
@@ -91,9 +91,8 @@ void GetBentleyStructList(bvector<TypeNamePair>& list)
     list.push_back(TypeNamePair(sizeof(Iota), L"Iota"));
     list.push_back(TypeNamePair(sizeof(NonCopyableClass), L"NonCopyableClass"));
     //list.push_back(TypeNamePair(sizeof(ReleaseMarshaller), L"ReleaseMarshaller"));
-    list.push_back(TypeNamePair(sizeof(DoubleFormatterBase), L"DoubleFormatterBase"));
-    list.push_back(TypeNamePair(sizeof(DoubleFormatter), L"DoubleFormatter"));
-    //list.push_back(TypeNamePair(sizeof(WStringddddddddddd), L"WStringddddddddddd"));
+    //list.push_back(TypeNamePair(sizeof(DoubleFormatterBase), L"DoubleFormatterBase"));
+    //list.push_back(TypeNamePair(sizeof(DoubleFormatter), L"DoubleFormatter"));
     list.push_back(TypeNamePair(sizeof(WString), L"WString"));
 
 }

@@ -55,6 +55,7 @@
     </Part>
 
     <Part Name="DgnPlatformOverviewDocs" BentleyBuildMakeFile="docs/DgnPlatformOverviewDocs.mke">
+        <SubPart PartName="DgnPlatformDoc-Build-SampleCode" />
         <Bindings>
             <Directory SourceName="Docs/Source/DgnPlatform" SubPartDirectory="Docs/Source/DgnPlatform"/>
             <!-- *** TBD doc images + files TBD ***
@@ -62,6 +63,11 @@
             <Directory SourceName="Docs/Files/DgnPlatform" SubPartDirectory="Docs/Files/DgnPlatform"/>
             -->
         </Bindings>
+    </Part>
+
+    <!-- Check that code samples in docs/samplecode actually compile -->
+    <Part Name="DgnPlatformDoc-Build-SampleCode" BentleyBuildMakeFile="${SrcBsiCommon}build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SUB_DIR=samplecode -dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)DgnPlatform/docs/samplecode">
+        <SubPart PartName="PublishedApi"/>
     </Part>
 
     <Part Name="ImagePPComponents" ExcludePlatforms="Android*,Linux*,iOS*">
@@ -352,33 +358,6 @@
     <!-- *** NEEDS WORK: We should not need any special "bootstrapping". AssertToolSet.mki should set up toolcontext for any/all platforms. *** -->
     <!-- The first part ever built causes the tool context to be generated. This is actually a little intricate and has certain requirements, so explicitly cause it to happen in a controlled way. -->
     <Part Name="BootStrapToolContext" BentleyBuildMakeFile="BootStrapToolContext.mke"/>
-
-    <!-- *** NEEDS WORK: We should not need a special part for Linux. *** -->
-    <Product Name="DgnPlatformLinux" OnlyPlatforms="LinuxX64">
-        <Directories DirectoryListName="DgnPlatformLinux" />
-        
-        <SubPart PartName="BootStrapToolContext"/>
-        <SubPart PartName="DgnPlatformLib"/>
-    </Product>
-
-    <ProductDirectoryList ListName="DgnPlatformLinux">
-        <ProductDirectory Name="PublicAPI" Path="include/publicapi"/>
-        <ProductDirectory Name="VendorAPI" Path="include/vendorapi"/>
-
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="lib"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="lib"/>
-        <ProductDirectory Name="ECObjectsNativeAssemblies" Path="lib"/>
-        <ProductDirectory Name="GeomNativeAssemblies" Path="lib"/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="lib"/>
-
-        <ProductDirectory Name="DgnPlatformFont" Path="etc/fonts"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts" Path="etc/fonts"/>
-        <ProductDirectory Name="ECSchemas" Path="etc"/>
-        <ProductDirectory Name="VendorNotices" Path="etc/notices"/>
-        <ProductDirectory Name="VendorNotices" LibType="static" Path="etc/notices"/>
-
-        <ProductDirectory Name="Libs" Deliver="False"/>
-    </ProductDirectoryList>
 
     <Part Name="DgnPlatform-Tested">
         <!-- Build the SDK -->

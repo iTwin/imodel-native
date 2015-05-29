@@ -178,6 +178,7 @@ void TextString::ComputeBoundingShape(DPoint3dP boxPts) const { ComputeBoundingS
 void TextString::ComputeBoundingShape(DPoint3dP boxPts, double uniformPadding) const { ComputeBoundingShape(boxPts, uniformPadding, uniformPadding); }
 void TextString::ComputeBoundingShape(DPoint3dP boxPts, double horizontalPadding, double verticalPadding) const
     {
+    Update();
     memset(boxPts, 0, sizeof(DPoint3d) * 5);
 
     boxPts[0].Init(m_range.low);
@@ -324,7 +325,12 @@ void TextString::ComputeAndLayoutGlyphs()
     
     m_glyphIds.clear();
     for (DgnGlyphCP glyph : layoutResult.m_glyphs)
-        m_glyphIds.push_back(glyph->GetId());
+        {
+        if (nullptr == glyph)
+            m_glyphIds.push_back(0);
+        else
+            m_glyphIds.push_back(glyph->GetId());
+        }
 
     m_glyphOrigins.resize(numGlyphs);
     memcpy(&m_glyphOrigins[0], &layoutResult.m_glyphOrigins[0], sizeof(decltype(m_glyphOrigins)::value_type) * numGlyphs);
@@ -467,14 +473,16 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
 
     //.............................................................................................
     Offset<String> textValueOffset = encoder.CreateString(text.m_text);
-    Transform textTransform = Transform::FromMatrixAndFixedPoint(text.m_orientation, text.m_origin);
+    Transform textTransform = Transform::From(text.m_orientation, text.m_origin);
 
     FB::TextStringBuilder fbText(encoder);
     fbText.add_majorVersion(CURRENT_MAJOR_VERSION);
     fbText.add_minorVersion(CURRENT_MINOR_VERSION);
     fbText.add_text(textValueOffset);
     fbText.add_style(fbStyleOffset);
-    fbText.add_transform(reinterpret_cast<FB::TextStringTransform*>(const_cast<TransformP>(&textTransform)));
+    
+    if (!textTransform.IsIdentity())
+        fbText.add_transform(reinterpret_cast<FB::TextStringTransform*>(const_cast<TransformP>(&textTransform)));
 
     textStringOffset = fbText.Finish();
 

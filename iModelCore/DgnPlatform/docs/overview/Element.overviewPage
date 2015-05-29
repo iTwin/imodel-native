@@ -1,0 +1,27 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/Element.overviewPage $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+/** @page PAGE_ElementOverview Element and Element Apsect
+
+WIP
+
+@see @ref BentleyApi::DgnPlatform::DgnElements      "DgnElements"
+@see @ref BentleyApi::DgnPlatform::DgnElement       "DgnElement"
+@see @ref BentleyApi::DgnPlatform::DgnElementId     "DgnElementId"
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ElementSection1 WIP Element Section 1
+
+WIP
+
+@li List item 1
+@li List item 2
+@li List item 3
+
+*/

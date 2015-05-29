@@ -786,6 +786,7 @@ public:
     static Utf8CP StorageId() {return "BeSQLite";}
 
     //! Creates a new BeSQLiteRealityDataStorage.
+    //! @param[in] filename     the file to create
     //! @param[in] idleTime     Time (in miliseconds) for the worker thread to wait before commiting changes to the database.
     //! @param[in] cacheSize    Sets max size (in bytes) which is allowed for RealityDataCache database.
     DGNPLATFORM_EXPORT static BeSQLiteRealityDataStoragePtr Create(BeFileName const& filename, uint32_t idleTime = 5000, uint64_t cacheSize = 0);

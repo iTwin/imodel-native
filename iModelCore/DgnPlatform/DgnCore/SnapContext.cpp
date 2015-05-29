@@ -335,7 +335,6 @@ Byte*           customKeypointData
     {
     SnapPathP   snap = GetSnapPath ();
 
-    snap->SetCursorIndex (0);
     snap->SetSnapMode (snapMode);
     snap->SetSprite (sprite);
 
@@ -472,13 +471,13 @@ void GetSpacePointAndCurveTransform (DPoint3dR spacePoint, TransformR curveToHit
 bool IsEdgePointVisible (DPoint3dCR edgePoint, SnapPathCR snap)
     {
     // See HitList::Compare doZCompareOfSurfaceAndEdge...
-    DgnViewportP   vp = snap.GetViewport ();
-    DPoint4d    homogeneousPlane;
+    DgnViewportR vp = snap.GetViewport ();
+    DPoint4d     homogeneousPlane;
     
-    if (!vp || !homogeneousPlane.PlaneFromOriginAndNormal (snap.GetGeomDetail ().GetClosestPointLocal (), snap.GetGeomDetail ().GetSurfaceNormal ()))
+    if (!homogeneousPlane.PlaneFromOriginAndNormal (snap.GetGeomDetail ().GetClosestPointLocal (), snap.GetGeomDetail ().GetSurfaceNormal ()))
         return true;
 
-    DMap4d      worldToViewMap = *vp->GetWorldToViewMap ();
+    DMap4d      worldToViewMap = *vp.GetWorldToViewMap ();
     DMap4d      localToWorldMap, localToViewMap;
     DMatrix4d   worldToLocal;
 
@@ -631,9 +630,9 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
         // Surface w/o curve is interior hit...only nearest should "track" surface...
         if (HitGeomType::Surface == detail.GetGeomType ())
             {
-            GeometricElementCP element = (nullptr != snap->GetHeadElem() ? snap->GetHeadElem()->ToGeometricElement() : nullptr);
+            GeometricElementCPtr element = snap->GetElement();
 
-            if (nullptr == element)
+            if (!element.IsValid())
                 return SnapStatus::NotSnappable;
 
             if (SnapMode::Origin != snapMode)
@@ -734,8 +733,12 @@ SnapStatus      SnapContext::DoTextSnap ()
         case SnapMode::Origin:
         case SnapMode::NearestKeypoint:
             {
-            DgnElementP element = snap->GetHeadElem();
-            DPoint3d    hitPoint = (element->Is3d() ? element->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(element->ToElement2d()->GetPlacement().GetOrigin()));
+            GeometricElementCPtr element = snap->GetElement();
+
+            if (!element.IsValid())
+                return SnapStatus::NotSnappable;
+
+            DPoint3d hitPoint = (element->Is3d() ? element->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(element->ToElement2d()->GetPlacement().GetOrigin()));
             
             ElmLocalToWorld (hitPoint);
             SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);

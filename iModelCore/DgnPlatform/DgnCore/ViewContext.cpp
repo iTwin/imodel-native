@@ -8,8 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include "UpdateLogging.h"
 
-IDrawRasterAttachment*   ViewContext::s_pRasterAttInterface = NULL;
-
 enum FrustCorners
     {
     FRUST_Org    = 0,
@@ -867,19 +865,15 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     // get enclosing bounding box around polyhedron (outside scan range).
     DRange3d scanRange = polyhedron.ToRange();
 
-#ifdef WIP_NO_RANGE_INDEX_FOR_2D
     if (!Is3dView())
         {
-        scanRange.low.z = -1.0e20;
-        scanRange.high.z = 1.0e20;
+        scanRange.low.z = -1;
+        scanRange.high.z = 1;
         }
-#endif
 
     if (m_scanCriteria)
         {
-        if (!Is3dView())    // WIP_NO_RANGE_INDEX_FOR_2D
-            m_scanCriteria->SetRangeTest (NULL);
-        else if (RangeResult::Inside == m_parentRangeResult)
+        if (RangeResult::Inside == m_parentRangeResult)
             m_scanCriteria->SetRangeTest (NULL);
         else
             {
@@ -940,7 +934,7 @@ bool ViewContext::_FilterRangeIntersection (GeometricElementCR element)
     if (RangeResult::Outside == m_parentRangeResult)
         return true;
 
-    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange (element._GetRange3d(), element.Is3d());
+    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange (element._CalculateRange3d(), element.Is3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1138,7 +1132,7 @@ StatusInt ViewContext::_VisitElement (GeometricElementCR element)
                 break;
 
             DPoint3d  p[8];
-            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(element._GetRange3d()) : 
+            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(element._CalculateRange3d()) : 
                                    (element.Is3d() ? BoundingBox3d(element.ToElement3d()->GetPlacement().GetElementBox()) : BoundingBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
             Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform()));
 
@@ -1187,16 +1181,17 @@ void            ViewContext::_VisitTransientGraphics (bool isPreUpdate)
 * private callback (called from scanner)
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt visitElementFunc (DgnElementCR element, ViewContextP context, ScanCriteriaR sc)
+static StatusInt visitElementFunc (DgnElementCR element, void* inContext, ScanCriteriaR sc)
     {
     GeometricElementCP geomElement = element.ToGeometricElement();
     if (nullptr == geomElement)
         return SUCCESS;
     
-    if (SUCCESS == context->VisitElement(*geomElement))
-        context->ValidateScanRange(); // re-validate because scanner is going to use it for future elements.
+    ViewContextR context = *(ViewContext*)inContext;
+    if (SUCCESS == context.VisitElement(*geomElement))
+        context.ValidateScanRange(); // re-validate because scanner is going to use it for future elements.
 
-    return context->WasAborted() ? ERROR : SUCCESS;
+    return context.WasAborted() ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1204,20 +1199,16 @@ static StatusInt visitElementFunc (DgnElementCR element, ViewContextP context, S
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetScanReturn()
     {
-    bool isScanRangeValid = Is3dView() && (RangeResult::Inside != m_parentRangeResult); // WIP_NO_RANGE_INDEX_FOR_2D
-    int  returnType = (isScanRangeValid ? _GetScanReturnType() : MSSCANCRIT_ITERATE_ELEMENT);
-
     m_scanCriteria->SetRangeNodeCheck (this);
-    m_scanCriteria->SetReturnType (returnType, false, true);
-    m_scanCriteria->SetElementCallback ((PFScanElementCallback) visitElementFunc, this);
+    m_scanCriteria->SetElementCallback (visitElementFunc, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanTestResult  ViewContext::_CheckNodeRange (ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d, bool isElement)
+ScanCriteria::Result  ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
     {
-    return ClipPlaneContainment_StronglyOutside != m_transformClipStack.ClassifyElementRange(testRange, is3d, true) ? ScanTestResult::Pass : ScanTestResult::Fail;
+    return ClipPlaneContainment_StronglyOutside != m_transformClipStack.ClassifyElementRange(testRange, is3d, true) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1824,22 +1815,6 @@ double ViewContext::GetPixelSizeAtPoint (DPoint3dCP inPoint) const
     ViewToLocal (vec, vec, 2);
 
     return vec[0].distance (vec+1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin    02/2004
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetRasterAttInterface (IDrawRasterAttachment* pRasterAttInterface)
-    {
-    s_pRasterAttInterface = pRasterAttInterface;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-IDrawRasterAttachment* ViewContext::GetRasterAttInterface()
-    {
-    return s_pRasterAttInterface;
     }
 
 /*---------------------------------------------------------------------------------**//**

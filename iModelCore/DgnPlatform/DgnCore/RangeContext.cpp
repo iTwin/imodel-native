@@ -717,7 +717,7 @@ void RangeOutput::_DrawPointString2d (int numPoints, DPoint2dCP points, double z
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RangeOutput::_DrawBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP, double)
+StatusInt RangeOutput::_DrawBody (ISolidKernelEntityCR entity, double)
     {
     DRange3d    range;
 
@@ -927,12 +927,12 @@ bool IsRangeContainedInCurrentRange (DRange3dCR range, bool is3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ScanTestResult _CheckNodeRange (ScanCriteriaCR criteria, DRange3dCR scanRange, bool is3d, bool isElement) override
+virtual ScanCriteria::Result _CheckNodeRange (ScanCriteriaCR criteria, DRange3dCR scanRange, bool is3d) override
     {
-    if (ScanTestResult::Fail == T_Super::_CheckNodeRange (criteria, scanRange, is3d, isElement))
-        return  ScanTestResult::Fail;
+    if (ScanCriteria::Result::Fail == T_Super::_CheckNodeRange (criteria, scanRange, is3d))
+        return  ScanCriteria::Result::Fail;
 
-    return IsRangeContainedInCurrentRange (scanRange, is3d) ? ScanTestResult::Fail : ScanTestResult::Pass;
+    return IsRangeContainedInCurrentRange (scanRange, is3d) ? ScanCriteria::Result::Fail : ScanCriteria::Result::Pass;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -957,18 +957,9 @@ bool _ScanRangeFromPolyhedron()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            _SetScanReturn () override
-    {
-    T_Super::_SetScanReturn ();
-    m_scanCriteria->SetReturnType (MSSCANCRIT_ITERATE_ELEMENT_UNORDERED, false, true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/06
-+---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement (GeometricElementCR element) override
     {
-    if (IsRangeContainedInCurrentRange(element._GetRange3d(), element.Is3d()))
+    if (IsRangeContainedInCurrentRange(element._CalculateRange3d(), element.Is3d()))
         return SUCCESS;
 
     // NOTE: Can just draw bounding box instead of drawing element geometry...

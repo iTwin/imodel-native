@@ -868,7 +868,7 @@ size_t DgnRangeTree::InternalNode::GetMaxChildDepth()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnRangeTree::Match DgnRangeTree::InternalNode::Traverse(DgnRangeTree::Traverser& traverser, bool is3d)
     {
-    if (traverser._CheckRangeTreeNode(GetRange(), is3d, /*isElement*/true))   // WIP_VANCOUVER_MERGE rangeindex
+    if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
@@ -996,11 +996,11 @@ void DgnRangeTree::LeafNode::SplitLeafNode(DgnRangeTreeR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnRangeTree::Match DgnRangeTree::LeafNode::Traverse(DgnRangeTree::Traverser& traverser, bool is3d)
     {
-    if (traverser._CheckRangeTreeNode(GetRange(), is3d, /*isElement*/true))   // WIP_VANCOUVER_MERGE rangeindex
+    if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            DgnRangeTree::Match stat = traverser._VisitRangeTreeElem(curr->m_elm);
+            DgnRangeTree::Match stat = traverser._VisitRangeTreeElem(curr->m_elm, curr->m_range);
             if (DgnRangeTree::Match::Ok != stat)
                 return  stat;
             }
@@ -1045,7 +1045,7 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
         {
         GeometricElementCP geom = element.second->ToGeometricElement();
         if (nullptr != geom)
-            AddElement(Entry(geom->_GetRange3d(), *geom));
+            AddElement(Entry(geom->_CalculateRange3d(), *geom));
         }
 
 #ifdef DRT_DEBUGGING
@@ -1672,11 +1672,11 @@ bool VisitRangeElement(GeometricElementCP element, DgnModelP modelRef, bool test
     {
     m_viewContext.ValidateScanRange();
 
-    DRange3dCR   elRange = element->_GetRange3d();
-    if (testRange && (ScanTestResult::Pass != m_scanCriteria->CheckRange(elRange, true)))
+    DRange3dCR   elRange = element->_CalculateRange3d();
+    if (testRange && (ScanCriteria::Result::Pass != m_scanCriteria->CheckRange(elRange, true)))
         return false;
 
-    if (ScanTestResult::Pass != m_scanCriteria->CheckElement(*element, false))
+    if (ScanCriteria::Result::Pass != m_scanCriteria->CheckElement(*element, false))
         return false;
 
     if (ClipPlaneContainment_StronglyOutside != m_viewContext.GetTransformClipStack().ClassifyRange(elRange, true))
@@ -1812,7 +1812,7 @@ void FindVisibleLeafs(DRTNodeR node, DgnModelR modelRef, bool testRange)
     DRange3dCR nodeRange = node.GetRange();
     if (testRange)
         {
-        if (ScanTestResult::Pass != m_scanCriteria->CheckRange(nodeRange, true) ||
+        if (ScanCriteria::Result::Pass != m_scanCriteria->CheckRange(nodeRange, true) ||
             ClipPlaneContainment_StronglyOutside == m_viewContext.GetTransformClipStack().ClassifyRange(nodeRange, true))
             return;
         }

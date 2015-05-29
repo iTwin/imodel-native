@@ -128,7 +128,7 @@ CurveVectorPtr      m_textBoundaries; // Union region collected from draw
 
 protected:
 
-DisplayPath*        GetCurrentGeomPath ();
+GeometricElementCP  GetCurrentElement();
 
 bool                ComputePostFlattenTransform (CurveVectorCR region);
 void                ResetPostFlattenTransform ();
@@ -144,7 +144,7 @@ virtual StatusInt   _ProcessCurvePrimitive (ICurvePrimitiveCR, bool closed, bool
 virtual StatusInt   _ProcessCurveVector (CurveVectorCR, bool filled) override;
 virtual StatusInt   _ProcessSolidPrimitive (ISolidPrimitiveCR) override {return SUCCESS;}
 virtual StatusInt   _ProcessSurface (MSBsplineSurfaceCR surface) override {return SUCCESS;}
-virtual StatusInt   _ProcessBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP) override {return SUCCESS;}
+virtual StatusInt   _ProcessBody (ISolidKernelEntityCR entity) override {return SUCCESS;}
 virtual StatusInt   _ProcessFacetSet (PolyfaceQueryCR facets, bool isFilled) override {return SUCCESS;}
 
 virtual void        _DrawTextString (TextStringCR text, double* zDepth) override;
@@ -182,9 +182,9 @@ void                GetFaceLoops (CurveVectorPtr& region, bvector<MTGNodeId>& fa
 BentleyStatus       GetActiveRegions (CurveVectorPtr& region);
 BentleyStatus       GetMarkedRegions (CurveVectorPtr& region, MTG_MarkSet* markSet);
 
-BentleyStatus       GetRoots (bvector<DisplayPathCP>& regionRoots);                           // No duplicates...
-BentleyStatus       GetRoots (bvector<DisplayPathCP>& regionRoots, CurveVectorCR region);     // May contain duplicates...
-BentleyStatus       GetRoots (bvector<DisplayPathCP>& regionRoots, ICurvePrimitiveCR curve);  // May contain duplicates...
+BentleyStatus       GetRoots (bvector<DgnElementId>& regionRoots);               // No duplicates...
+BentleyStatus       GetRoots (bvector<DgnElementId>&, CurveVectorCR region);      // May contain duplicates...
+BentleyStatus       GetRoots (bvector<DgnElementId>&, ICurvePrimitiveCR curve);   // May contain duplicates...
 
 }; // RegionGraphicsDrawGeom
 
@@ -235,8 +235,8 @@ BentleyStatus           SetTargetModel (DgnModelR targetModel);
 BentleyStatus           VisitFloodCandidate (GeometricElementCR element, TransformCP trans);
 BentleyStatus           VisitBooleanCandidate (GeometricElementCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
 
-BentleyStatus           CreateRegionElement (DgnElementPtr& elm, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d);
-BentleyStatus           CreateRegionElements (DgnElementPtrVec& out, CurveVectorCR region, bvector<DisplayPathCP>* regionRoots, bool is3d);
+BentleyStatus           CreateRegionElement (DgnElementPtr& elm, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d);
+BentleyStatus           CreateRegionElements (DgnElementPtrVec& out, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d);
 
 public:
 
@@ -258,9 +258,9 @@ DGNPLATFORM_EXPORT int           GetCurrentFaceNodeId (); // NOTE: Valid after c
 DGNPLATFORM_EXPORT bool          GetActiveFaces (CurveVectorPtr& region);
 DGNPLATFORM_EXPORT bool          IsFaceAtPointSelected (DPoint3dCR seedPoint);
 
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DisplayPathCP>& regionRoots) {return m_output.GetRoots (regionRoots);}                                 // No duplicates...
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DisplayPathCP>& regionRoots, CurveVectorCR region) {return m_output.GetRoots (regionRoots, region);}   // May contain duplicates...
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DisplayPathCP>& regionRoots, ICurvePrimitiveCR curve) {return m_output.GetRoots (regionRoots, curve);} // May contain duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots) {return m_output.GetRoots (regionRoots);}                                 // No duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots, CurveVectorCR region) {return m_output.GetRoots (regionRoots, region);}   // May contain duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curve) {return m_output.GetRoots (regionRoots, curve);} // May contain duplicates...
 
 void                             EnableOriginalLoopSymbology () {m_setLoopSymbology = true;} // Legacy behavior of create grouped hole tool...
 
