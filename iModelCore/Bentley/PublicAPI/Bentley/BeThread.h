@@ -47,9 +47,8 @@ BEGIN_BENTLEY_NAMESPACE
 //! @see std::recursive_mutex
 //  @bsiclass 
 //=======================================================================================
-struct BeMutex
+struct BeMutex : NonCopyableClass
     {
-
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
