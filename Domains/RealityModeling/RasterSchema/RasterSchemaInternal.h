@@ -16,6 +16,7 @@
 #include <DgnPlatform/DgnCore/RasterBaseModel.h>
 
 #include <GeoCoord/BaseGeoCoord.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
 
 #include <RasterSchema/RasterSchemaTypes.h>
 #include <RasterSchema/RasterSchemaCommon.h>

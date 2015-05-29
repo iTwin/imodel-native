@@ -8,6 +8,10 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
+// On some hardware this the tile size limit.
+#define TILESIZE_LIMIT 1024
+#define IsPowerOfTwo(X) (((X)&((X)-1))==0)
+
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 //----------------------------------------------------------------------------------------
@@ -103,13 +107,17 @@ private:
 //----------------------------------------------------------------------------------------
 struct RasterSource : RefCountedBase
 {
+    //! Raster resolution definition. Tile size cannot exceed TILESIZE_LIMIT and must be a power of two.
     struct Resolution
         {
         Resolution(uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY)
         :m_width(width), m_height(height), m_tileSizeX(tileSizeX), m_tileSizeY(tileSizeY)
             {
-            m_tileCountX = (width + (tileSizeX-1)) / tileSizeX;
-            m_tileCountY = (height + (tileSizeY-1)) / tileSizeY;
+            BeAssert(GetTileSizeX() <= TILESIZE_LIMIT && GetTileSizeY() <= TILESIZE_LIMIT);
+            BeAssert(IsPowerOfTwo(GetTileSizeX()) && IsPowerOfTwo(GetTileSizeY()));
+
+            m_tileCountX = (width + (tileSizeX - 1)) / tileSizeX;
+            m_tileCountY = (height + (tileSizeY - 1)) / tileSizeY;
             }
 
         uint32_t GetWidth() const {return m_width;}
@@ -151,8 +159,8 @@ struct RasterSource : RefCountedBase
     //! Compute tiles corners in Cartesian.
     void ComputeTileCorners(DPoint3dP pCorners, TileId const& id) const;
 
-    //! Return the raster Gcs. &&MM it can be NULL make sure we handle that properly.
-    GeoCoordinates::BaseGCSP GetGcsP() {return m_pGcs.get();} 
+    //! Return the raster Gcs. Can be NULL.
+    GeoCoordinates::BaseGCSP GetGcsP() { return m_pGcs.get(); }
 
 protected:
     static void GenerateResolution(bvector<Resolution>& resolution, uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY);

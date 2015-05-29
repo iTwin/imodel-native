@@ -9,7 +9,17 @@
 #include <DgnPlatform/DgnCore/ImageUtilities.h>
 #include "RasterQuadTree.h"
 
-    
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  5/2015
+//----------------------------------------------------------------------------------------
+static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
+    {
+    if(REPROJECT_CSMAPERR_OutOfUsefulRange == status)   // This a warning
+        return REPROJECT_Success;
+
+    return status;   
+    }
+
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterTile --------------------------------------------
 //----------------------------------------------------------------------------------------
@@ -24,53 +34,14 @@ RasterTilePtr RasterTile::CreateRoot(RasterQuadTreeR tree)
 
     TileId id(tree.GetSource().GetResolutionCount()-1,0,0);
 
+    //&&MM TODO clip to gcs domain. For now, make sure we can compute the corners in UOR.
+    DPoint3d srcCorners[4];
+    DPoint3d uorCorners[4];
+    tree.GetSource().ComputeTileCorners(srcCorners, id); 
+    if(BSISUCCESS != ReprojectCorners(uorCorners, srcCorners, tree))
+        return NULL;
+
     return new RasterTile(id, NULL, tree);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  5/2015
-//----------------------------------------------------------------------------------------
-bool RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian)
-    {
-    //&&MM review how we do things here. 
-    //  - how we handle conversion errors. also handle warnings.
-    //  - Which service should be on the source, tile , lodTree,
-    //  - What happen when there is no GCS, in the source, in the dgndb or both.
-    GeoCoordinates::BaseGCSP pSourceGCS = m_tree.GetSource().GetGcsP();
-
-    GeoPoint srcGeoCorners[4];
-    for(size_t i=0; i < 4; ++i)
-        {
-        if(REPROJECT_Success != pSourceGCS->LatLongFromCartesian(srcGeoCorners[i], srcCartesian[i]))
-            {
-            BeAssert(!"A source should always be able to represent itself in its GCS. &&MM that operation cannot fail or can it?");
-            }
-        }
-
-    DgnGCSP pDgnGcs = m_tree.GetDgnDb().Units().GetDgnGCS();
-    
-    // Source latlong to DgnDb latlong.
-    GeoPoint dgnGeoCorners[4];
-    for(size_t i=0; i < 4; ++i)
-        {
-        if(REPROJECT_Success != pSourceGCS->LatLongFromLatLong(dgnGeoCorners[i], srcGeoCorners[i], (GeoCoordinates::BaseGCSR)/*&&MM BAD*/*pDgnGcs))
-            {
-            m_status = TileStatus::OutOfDomain;
-            BeAssert(!"&&MM handle properly");
-            break;
-            }
-        }
-
-    // Finally to UOR
-    for(uint32_t i=0; i < 4; ++i)
-        {
-        if(BSISUCCESS != m_tree.GetDgnDb().Units().UorsFromLatLong(outUors[i], dgnGeoCorners[i]))
-            {
-            m_status = TileStatus::OutOfDomain;
-            break;
-            }
-        }
-    return true;    //&&MM todo
     }
 
 //----------------------------------------------------------------------------------------
@@ -89,7 +60,54 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
     DPoint3d srcCorners[4];
     source.ComputeTileCorners(srcCorners, id); 
 
-    ReprojectCorners(m_corners, srcCorners);
+    ReprojectCorners(m_corners, srcCorners, tree);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  5/2015
+//----------------------------------------------------------------------------------------
+BentleyStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree)
+    {
+    GeoCoordinates::BaseGCSP pSourceGcs = tree.GetSource().GetGcsP();
+
+    DgnGCSP pDgnGcs = tree.GetDgnDb().Units().GetDgnGCS();
+
+    if(NULL == pSourceGcs || NULL == pDgnGcs)
+        {
+        // Assume raster to be coincident.
+        memcpy(outUors, srcCartesian, sizeof(DPoint3d)*4);
+        return BSISUCCESS;
+        }
+
+    ReprojectStatus status = REPROJECT_Success;
+
+    GeoPoint srcGeoCorners[4];
+    for(size_t i=0; i < 4; ++i)
+        {
+        if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromCartesian(srcGeoCorners[i], srcCartesian[i]))))
+            {
+            if(REPROJECT_CSMAPERR_OutOfUsefulRange)
+            BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
+            return BSIERROR;
+            }
+        }
+    
+    // Source latlong to DgnDb latlong.
+    GeoPoint dgnGeoCorners[4];
+    for(size_t i=0; i < 4; ++i)
+        {
+        if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromLatLong(dgnGeoCorners[i], srcGeoCorners[i], *pDgnGcs))))
+            return BSIERROR;
+        }
+
+    //Finally to UOR
+    for(uint32_t i=0; i < 4; ++i)
+        {
+        if(BSISUCCESS != tree.GetDgnDb().Units().UorsFromLatLong(outUors[i], dgnGeoCorners[i]))
+            return BSIERROR;
+        }
+
+    return REPROJECT_Success == status ? BSISUCCESS : BSISUCCESS;    
     }
 
 //----------------------------------------------------------------------------------------
@@ -219,7 +237,7 @@ void RasterTile::AllocateChildren()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context)
+void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context)
     { 
     double factor;
     if (IsVisible(context, factor))
@@ -240,7 +258,6 @@ bool RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR con
             visibles.push_back(this);
             }
         }    
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,15 +296,14 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     DPoint3d viewCorners[4];
     viewContext.GetFrustumToView().M0.MultiplyAndRenormalize(viewCorners, frustCorners, 4);
 
-    //&&MM Avoid the sqrt by using distanceSquared. update factor usage afterwards 
     uint64_t physWidth = m_tree.GetSource().GetEffectiveTileSizeX(m_tileId);
     uint64_t physHeight = m_tree.GetSource().GetEffectiveTileSizeY(m_tileId);
 
-    double physicalDiag = sqrt(physWidth*physWidth + physHeight*physHeight);
-    double viewDiag1 = viewCorners[3].distance(&viewCorners[0]);
-    double viewDiag2 = viewCorners[2].distance(&viewCorners[1]);
-    double averageViewDiag = (viewDiag1 + viewDiag2) / 2.0;
-    factor = averageViewDiag / physicalDiag;
+    double physicalDiagSquared = (double)(physWidth*physWidth + physHeight*physHeight);
+    double viewDiag1Squared = viewCorners[3].distanceSquared(&viewCorners[0]);
+    double viewDiag2Squared = viewCorners[2].distanceSquared(&viewCorners[1]);
+    double averageViewDiagSquared = (viewDiag1Squared + viewDiag2Squared) / 2.0;
+    factor = averageViewDiagSquared / physicalDiagSquared;
 
     return true;
     }
@@ -318,11 +334,11 @@ RasterQuadTree::RasterQuadTree(RasterSourceR source, DgnDbR dgnDb)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context)
+void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context)
     {
     visibles.clear();
 
-    return m_pRoot->QueryVisible(visibles, context);
+    m_pRoot->QueryVisible(visibles, context);
     }
 
 //----------------------------------------------------------------------------------------

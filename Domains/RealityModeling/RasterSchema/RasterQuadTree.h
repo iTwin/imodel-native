@@ -41,6 +41,7 @@ public:
         OutOfDomain,    // reprojection error  
         };
 
+    //! Create a root node(without a parent)
     static RasterTilePtr CreateRoot(RasterQuadTreeR tree);
 
     //! return NULL if not available.
@@ -56,13 +57,16 @@ public:
 
     TileId const& GetId() const {return m_tileId;}
 
+    //! Direct access to coarser resolution. Might be NULL it its the root.
     RasterTileP GetParentP() {return m_pParent;}
 
     //! Return allocated child only. May be NULL.
     RasterTileP GetChildP(size_t index) {return m_pChilds[index].get();}
 
-    bool QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context);
+    //! Build the list of visibles tiles in this context. Nodes will be created as we walk the tree but pixels won't.
+    void QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context);
 
+    //! Return true if the tiles pixels are loaded.
     bool IsLoaded() const {return m_pDisplayTile.IsValid();}
 
 private:
@@ -76,12 +80,12 @@ private:
 
     RasterSource::Resolution const& GetResolution() const;
 
-    DisplayTilePtr m_pDisplayTile;      // Can be NULL, will be loaded when needed. 
-
     //! Allocate children according to the resolution description.
     void AllocateChildren();
 
-    bool ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian);
+    static BentleyStatus ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree);
+
+    DisplayTilePtr m_pDisplayTile;      // Can be NULL, will be loaded when needed. 
 
     TileId m_tileId; 
     RasterQuadTreeR m_tree;          // Hold a ref only.
@@ -89,6 +93,10 @@ private:
     DPoint3d m_corners[4];      // Corners in uor.
 
     TileStatus m_status;
+
+    //&&MM add the concept of lastDrawTime and use that to cleanup old tiles. Make sure it does impact performance.
+    //it might be better to use the same time for the all tiles of a single draw operation. Set during QueryVisible?
+    // use time and proximity to the current visibles tile to select what needs to be clean.
 
     RasterTileP m_pParent;      // NULL for root node.
     RasterTilePtr m_pChilds[4];    
@@ -98,7 +106,7 @@ private:
 //----------------------------------------------------------------------------------------
 // Quad-tree that hold raster tiles.
 // The tree structure use the rasterSource resolutions and tile to define the nodes.
-// Pixels are not resampled by this class it use the 'source' object resolution and tiles size
+// Pixels are not resampled by this class it uses the 'source' object resolution and tiles size
 // to define the tree nodes.
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
@@ -107,23 +115,21 @@ struct RasterQuadTree : public RefCountedBase
 public:
     static RasterQuadTreePtr Create(RasterSourceR source, DgnDbR dgnDb);
 
-    RasterTileR GetTileR(TileId const& id);
-
     RasterTileR GetRoot() {return *m_pRoot;}
 
     RasterSourceR GetSource() {return *m_pSource;}
 
-    bool QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context);
+    //! Build the list of visibles tiles in this context. Nodes will be created as we walk the tree but pixels won't.
+    void QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context);
 
     DgnDbR GetDgnDb() {return m_dgnDb;}
 private:
     
     RasterQuadTree(RasterSourceR source, DgnDbR dgnDb);
 
-    //&&MM need to have 4 valid corners. Need to intersect with domain.
     DgnDbR m_dgnDb;                 
     RasterSourcePtr m_pSource; 
-    RasterTilePtr m_pRoot;          // The lowest resolution. 
+    RasterTilePtr m_pRoot;          // The lowest/corser resolution. 
 };
 
 
