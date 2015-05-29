@@ -70,7 +70,7 @@ private:
         Modified,       // item may or may not exist in the Db and is modified in memory
         Deleted         // item exists in the Db and should be deleted
         };
-    ItemState m_itemState;
+    ItemState  m_itemState;
     Utf8String m_testItemProperty;
 
     virtual DgnModelStatus _InsertInDb() override;
@@ -78,9 +78,9 @@ private:
     virtual DgnModelStatus _LoadFromDb() override;
     virtual DgnModelStatus _CopyFrom(DgnElementCR) override;
 
+public:
     TestElement(CreateParams const& params) : T_Super(params), m_itemState(ItemState::Unknown) {} 
 
-public:
     static ECN::ECClassCP GetTestElementECClass (DgnDbR db) {return db.Schemas().GetECClass (TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME);}
     static RefCountedPtr<TestElement> Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
 
@@ -1964,3 +1964,47 @@ TEST_F (ElementDependencyGraph, TestPriority)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (TransactionManagerTests, ElementAssembly)
+{
+    SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+
+    DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
+    DgnModelP model = m_db->Models().GetModel(m_defaultModelId);
+
+    TestElement::CreateParams params(*model, testClass, m_defaultCategoryId);
+    TestElementPtr e1 = new TestElement(params);
+
+    DgnElementCPtr el1 = e1->Insert();
+    ASSERT_TRUE(el1.IsValid());
+
+    params.SetParentId(el1->GetElementId());     // set the parent id in the CreateParams
+    TestElementPtr e2 = new TestElement(params);
+    DgnElementCPtr el2 = e2->Insert();
+    ASSERT_TRUE(el2.IsValid());
+    ASSERT_EQ(el2->GetParentId(), el1->GetElementId());
+
+    DgnElementCPtr el3 = e2->Insert(); // insert a second copy of the same element (that should not be a problem).
+    ASSERT_TRUE(el3.IsValid());
+
+    int count = (int) el1->QueryChildren().size(); // now
+    ASSERT_EQ(count, 2);
+
+    auto stat = el3->Delete();
+    ASSERT_EQ(stat, DGNMODEL_STATUS_Success);
+    ASSERT_TRUE(!el3->IsPersistent());
+
+    count = (int) el1->QueryChildren().size();
+    ASSERT_EQ(count, 1);
+
+    ASSERT_TRUE(el1->IsPersistent());
+    ASSERT_TRUE(el2->IsPersistent());
+
+    stat = el1->Delete();
+    ASSERT_EQ(stat, DGNMODEL_STATUS_Success);
+
+    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(!el2->IsPersistent());
+}

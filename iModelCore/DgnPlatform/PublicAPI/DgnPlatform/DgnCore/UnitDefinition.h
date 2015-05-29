@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/UnitDefinition.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -119,12 +119,12 @@ public:
     //! Compute the scale factor used to convert distance from the input unit to this unit.
     //! The factor is defined by the equation: distInA = distInB * factorFromBtoA.  The
     //! method #ConvertDistanceFrom is preferable since that calculation is more direct.
-    //! @return ERROR if the units are not comparable.  See #AreComparable.
-    DGNPLATFORM_EXPORT StatusInt GetConversionFactorFrom (double& factor, UnitDefinitionCR from) const;
+    //! @return conversion factor, if units are not comparable, return 1.0.
+    DGNPLATFORM_EXPORT double GetConversionFactorFrom(UnitDefinitionCR from) const;
 
     //! Convert a distance expressed in the input unit to this unit.
-    //! @return ERROR if the units are not comparable.  See #AreComparable.
-    DGNPLATFORM_EXPORT StatusInt ConvertDistanceFrom (double& outputVal, double inputVal, UnitDefinitionCR fromUnit) const;
+    //! @return the distance in this units. If units are not compareable, return inputVal.
+    DGNPLATFORM_EXPORT double ConvertDistanceFrom (double inputVal, UnitDefinitionCR fromUnit) const;
 
     bool IsLinear() const {return m_base == UnitBase::Meter;}
     UnitBase GetBase() const { return m_base; };

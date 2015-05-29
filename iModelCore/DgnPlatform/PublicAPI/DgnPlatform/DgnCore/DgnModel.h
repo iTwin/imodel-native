@@ -45,7 +45,6 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
         }
     };
 
-
 //========================================================================================
 //! Application-defined object that is stored with a DgnModel. This object is notified as significant events occur
 //! for its "host" DgnModel. Create a subclass of this class to maintain relevant information about
@@ -434,10 +433,11 @@ public:
     };
 
 //=======================================================================================
-//! A PlanarPhysicalModel is a infinite planar model that subdivides physical space into two halves. The plane of a PhysicalPlanar model
-//! may be mapped into physical space in non-linear way, but every finite point in physical space is either "in front" or "in back" of the plane.
-//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional. Also note that any (2d) point in a
-//! PlanarPhysicalModel corresponds to a single point in physical space.
+//! A PlanarPhysicalModel is an infinite planar model that subdivides physical space into two halves. The plane of a
+//! PhysicalPlanar model may be mapped into physical space in non-linear way, but every finite point in physical space is
+//! either "in front" or "in back" of the plane. 
+//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional. 
+//! Also note that any (2d) point on a PlanarPhysicalModel corresponds to a single point in physical space.
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
@@ -453,13 +453,13 @@ public:
 };
 
 //=======================================================================================
-//! A SectionDrawingModel is a PlanarPhysicalModel that is mapped into physical space such that the vertical direction (Y vector)
-//! of the SectionDrawingModel is constant in physical space. That is, physical space is divided in half (cut) by a
-//! series of line segments, continuous along the X axis, in the XZ plane of the drawing. This is called the "section
-//! plane", and the line segments are called the "section lines". In AEC section drawings, a further restriction is that
-//! the section lines always parallel but may be disjoint (some mechanical section drawings allow continuous but
-//! non-parallel section lines). Physical space in the positive Z direction of the section plane is called "in front" of
-//! the section plane, and space in negative Z is called "behind" the section plane.
+//! A SectionDrawingModel is a PlanarPhysicalModel that is mapped into physical space such that the vertical direction (Y
+//! vector) of the SectionDrawingModel is constant in physical space. That is, physical space is divided in half (cut) by a
+//! series of line segments, continuous and monotonically increasing along the X axis, in the XZ plane of the drawing. This
+//! is called the "section plane", and the line segments are called the "section lines". In AEC section drawings, a further
+//! restriction is that the section lines always parallel but may be disjoint (some mechanical section drawings allow
+//! continuous but non-parallel section lines). Physical space in the positive Z direction of the section plane is called
+//! "in front" of the section plane, and space in negative Z is called "behind" the section plane.
 //! <p> All of the graphics in a SectionDrawingModel are 2d elements. Some elements are
 //! computed by intersecting the section plane with elements in some physical models according to some rules. These
 //! elements are called "section graphics". Some elements in the SectionDrawingModel are computed by projecting element in
@@ -473,27 +473,8 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
     {
     DEFINE_T_SUPER(PlanarPhysicalModel)
 
-protected:
-    double m_annotationScale; // the intended viewing scale of annotations in this drawing
-    void _FromPropertiesJson(Json::Value const&) override;
-    void _ToPropertiesJson(Json::Value&) const override;
-
 public:
-    SectionDrawingModel(CreateParams const& params) : T_Super(params)
-        {
-        m_annotationScale = 1.0;
-        }
-
-    //! Query and load the sectioning view that was used to generate this drawing.
-    //! @return an invalid pointer if this drawing was not generated or if the section view cannot be found or loaded.
-    DGNPLATFORM_EXPORT SectioningViewControllerPtr GetSourceView();
-
-public:
-    //! Set the scale of annotations in this drawing
-    void SetAnnotationScale (double scale) {m_annotationScale = scale;}
-
-    //! Get the scale of annotations in this drawing
-    double GetAnnotationScale() const {return m_annotationScale;}
+    SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
     };
 
 //=======================================================================================
@@ -540,11 +521,11 @@ protected:
     DGNPLATFORM_EXPORT SheetModel(CreateParams const& params);
 
 public:
-    //! construct a SheetModel object, as part of creating a new SheetModel in the Db.
+    //! Construct a SheetModel
     //! @param[in] params The CreateParams for the new SheetModel
     DGNPLATFORM_EXPORT static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
 
-    //! get the sheet size, in meters
+    //! Get the sheet size, in meters
     DPoint2d GetSize() const {return m_size;}
     };
 
