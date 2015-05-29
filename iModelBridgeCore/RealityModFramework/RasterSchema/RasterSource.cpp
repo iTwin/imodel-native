@@ -25,7 +25,6 @@ static bool s_ComputeUnitSquareToQuadrilateralTransfoModel(DMatrix4dR outMat, DP
     double x0, x1, x2, x3;
     double y0, y1, y2, y3;
 
-    //&&MM need to receive 2D input since we ignore the z-component.
     x0 = ul.x;
     x1 = ur.x;
     x2 = lr.x;

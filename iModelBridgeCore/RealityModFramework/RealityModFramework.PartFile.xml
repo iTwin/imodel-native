@@ -116,7 +116,7 @@
     <Part Name="RasterSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="RasterSchema/RasterSchema.mke" >
         <SubPart PartName="RasterSchemaPublicAPI"/>
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <SubPart PartName="GeoCoord"        PartFile="GeoCoord"     Repository="geocoord"/>
+        <SubPart PartName="DgnGeoCoord"     PartFile="DgnGeoCoord"  Repository="geocoord"/>
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>
@@ -184,6 +184,7 @@
 
 	
     <Product Name="RealityModFramework">
+        <!--SubPart PartName="RasterSchema"/-->
         <SubPart PartName="RealityFramework-Tested"/>
         <SubPart PartName="RealityDataHandlerTester"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
