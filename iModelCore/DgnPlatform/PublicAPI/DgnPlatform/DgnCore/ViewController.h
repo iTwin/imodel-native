@@ -39,25 +39,25 @@ struct FullUpdateInfo;
 struct DynamicUpdateInfo;
 
 enum class OrientationMode
-    {
+{
     CompassHeading  = 0,    //!< Use compass heading from device
     RelativeHeading = 1,    //!< Use heading relative to device's default orientation
     IgnoreHeading   = 2,    //!< Do not modify orientation from device heading
-    };
+};
 
 enum class UiOrientation
-    {
+{
     Portrait            = 0,    //!< Up vector is positive device y, right vector is positive device x
     LandscapeRight      = 1,    //!< Up vector is negative device x, right vector is positive device y
     PortraitUpsideDown  = 2,    //!< Up vector is negative device y, right vector is negative device x
     LandscapeLeft       = 3,    //!< Up vector is positive device x, right vector is negative device y
-    };
+};
 
 //=======================================================================================
 //! The current position, lens angle, and focus distance of a camera.
 //=======================================================================================
 struct CameraInfo
-    {
+{
 private:
     double   m_lensAngle;
     double   m_focusDistance;
@@ -76,8 +76,7 @@ public:
     DPoint3dCR GetEyePoint() const {return m_eyePoint;}
     void     SetEyePoint(DPoint3dCR pt) {m_eyePoint = pt;}
     bool     IsValid() const {return IsLensValid() && IsFocusValid();}
-    };
-
+};
 
 //=======================================================================================
 //! @ingroup DgnViewGroup
