@@ -72,9 +72,9 @@ ECClassCP ECUnitsClassLocater::_LocateClass (WCharCP schemaName, WCharCP classNa
     if (!Initialize())
         return NULL;
 
-    if (UNITS_SCHEMA == schemaName)
+    if (0 == wcscmp(UNITS_SCHEMA, schemaName))
         return m_unitsSchema->GetClassCP (className);
-    else if (KOQ_SCHEMA == schemaName)
+    else if (0 == wcscmp(KOQ_SCHEMA, schemaName))
         return m_koqSchema->GetClassCP (className);
     /* else */
     return NULL;
