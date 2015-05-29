@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
 /** @page PAGE_CategoryOverview Category and SubCategory
 
 @b Categories are used to organize elements for reporting or filtering purposes. 
@@ -14,22 +16,22 @@ Each element is in one and only one category.
 There is one set of categories per %DgnDb file.
 Categories do not nest, but a Category can have SubCategories.
 
-@see @ref BentleyApi::DgnPlatform::DgnCategories                "DgnCategories"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::Category      "DgnCategories::Category"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::Rank          "DgnCategories::Rank"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::Scope         "DgnCategories::Scope"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::Iterator      "DgnCategories::Iterator"
-@see @ref BentleyApi::DgnPlatform::DgnCategoryId                "DgnCategoryId"
+@see DgnCategories
+@see DgnCategories::Category
+@see DgnCategories::Rank
+@see DgnCategories::Scope
+@see DgnCategories::Iterator
+@see DgnCategoryId
 
 @b SubCategories are used to further organize and subdivide an element's geometry.  
 Each piece of geometry is in one and only one SubCategory.
 For display purposes, the symbology/appearance for and visibility of the geometry is determined by its SubCategory.
 Every Category has a default (unnamed) SubCategory associated with it.
 
-@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategory               "DgnCategories::SubCategory"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategory::Appearance   "DgnCategories::SubCategory::Appearance"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategoryIterator       "DgnCategories::SubCategoryIterator"
-@see @ref BentleyApi::DgnPlatform::DgnSubCategoryId                         "DgnSubCategoryId"
+@see DgnCategories::SubCategory
+@see DgnCategories::SubCategory::Appearance
+@see DgnCategories::SubCategoryIterator
+@see DgnSubCategoryId
 
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_Category_Includes Required include files
@@ -56,3 +58,5 @@ While both have the same primary role (filtering) there are some important diffe
 
 <!-- ---------------------------------------------------------------------------------- -->
 */
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

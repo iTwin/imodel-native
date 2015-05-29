@@ -44,8 +44,12 @@ public:
     void SetMirrorPlane(RotMatrixCR mirrorPlane) {m_mirrorPlane = mirrorPlane, m_haveMirrorPlane = true;}
 };
 
-//! This macro us usually the entire contents of an ElementHandler class declaration.
-//! @param[in] __ECClassName__ the name of the ECClass this 
+// This macro declares the required members for an ElementHandler. It is often the entire contents of an ElementHandler's class declaration.
+// @param[in] __ECClassName__ a string with the ECClass this ElementHandler manaages
+// @param[in] __classname__ the name of the C++ class (must be a subclass of DgnElement) this ElementHandler creates
+// @param[in] __handlerclass__ This ElementHandler's C++ classname
+// @param[in] __handlersuperclass__ This ElementHandler's C++ superclass' classname
+// @param[in] __exporter__ Macro name that exports this class in its implementing DLL (may be blank)
 #define ELEMENTHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
         private: virtual DgnElementP _CreateInstance(DgnPlatform::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
