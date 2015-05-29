@@ -1989,22 +1989,22 @@ TEST_F (TransactionManagerTests, ElementAssembly)
     DgnElementCPtr el3 = e2->Insert(); // insert a second copy of the same element (that should not be a problem).
     ASSERT_TRUE(el3.IsValid());
 
-    int count = (int) el1->QueryChildren().size(); // now
+    int count = (int) el1->QueryChildren().size(); // now make sure there are two children of el1
     ASSERT_EQ(count, 2);
 
-    auto stat = el3->Delete();
+    auto stat = el3->Delete();      // delete one of the children
     ASSERT_EQ(stat, DGNMODEL_STATUS_Success);
-    ASSERT_TRUE(!el3->IsPersistent());
+    ASSERT_TRUE(!el3->IsPersistent()); // make sure it is no longer persistent
 
-    count = (int) el1->QueryChildren().size();
+    count = (int) el1->QueryChildren().size(); // should be down to 1 child
     ASSERT_EQ(count, 1);
 
-    ASSERT_TRUE(el1->IsPersistent());
+    ASSERT_TRUE(el1->IsPersistent());    // both parent and child are currently persistent
     ASSERT_TRUE(el2->IsPersistent());
 
-    stat = el1->Delete();
+    stat = el1->Delete();               // delete the parent, should also delete child.
     ASSERT_EQ(stat, DGNMODEL_STATUS_Success);
 
-    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(!el1->IsPersistent());  // neither should now be persistent
     ASSERT_TRUE(!el2->IsPersistent());
 }

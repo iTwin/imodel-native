@@ -35,13 +35,14 @@ The DgnDomain for the base "dgn" schema is is called @ref DgnSchemaDomain. It is
 
 */
 
+// This macro declares the required members for a DgnDomain
 #define DOMAIN_DECLARE_MEMBERS(__classname__,__exporter__) \
     private:   __exporter__ static __classname__*& z_PeekDomain(); \
                             static __classname__* z_CreateDomain(); \
     public:    __exporter__ static __classname__& GetDomain() {return z_Get##__classname__##Domain();}\
                __exporter__ static __classname__& z_Get##__classname__##Domain();
 
-// This macro must be included within the source file that implements a DgnDomain
+// This macro must be included somewhere within a source file that implements a DgnDomain
 #define DOMAIN_DEFINE_MEMBERS(__classname__) \
     __classname__*  __classname__::z_CreateDomain() {__classname__* instance= new __classname__(); return instance;}\
     __classname__*& __classname__::z_PeekDomain() {static __classname__* s_instance = 0; return s_instance;}\
@@ -54,30 +55,35 @@ The DgnDomain for the base "dgn" schema is is called @ref DgnSchemaDomain. It is
     public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
                __exporter__ static __classname__& z_Get##__classname__##Instance();
 
+// This macro declares the required members for an DgnDomain::Handler. 
 #define DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__superclass__,__exporter__) \
     private:   typedef __superclass__ T_Super; \
     protected: __classname__()  {m_ecClassName =  __ECClassName__ ;} \
     DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__)
 
-// This macro must be included within the source file that implements an DgnDomain::Handler
+// This macro must be included somewhere within a source file that implements a DgnDomain::Handler
 #define HANDLER_DEFINE_MEMBERS(__classname__) \
     __classname__*  __classname__::z_CreateInstance() {__classname__* instance= new __classname__(); instance->SetSuperClass(&T_Super::GetHandler()); return instance;}\
     __classname__*& __classname__::z_PeekInstance() {static __classname__* s_instance = 0; return s_instance;}\
     __classname__&  __classname__::z_Get##__classname__##Instance(){__classname__*& instance=z_PeekInstance(); if (nullptr==instance) instance=z_CreateInstance(); return *instance;}
 
+// This macro declares the required members for an DgnDomain::Handler::Extension. 
 #define HANDLER_EXTENSION_DECLARE_MEMBERS(__classname__,__exporter__) \
     private: __exporter__ static Token& z_Get##__classname__##Token();\
     public: static BentleyStatus RegisterExtension(DgnDomain::Handler& handler, __classname__& obj) {return obj.RegisterExt(handler,z_Get##__classname__##Token());}\
             static BentleyStatus DropExtension    (DgnDomain::Handler& handler) {return DropExt(handler,z_Get##__classname__##Token());}\
             static __classname__* Cast            (DgnDomain::Handler& handler) {return (__classname__*) CastExt(handler,z_Get##__classname__##Token());}
 
+// This macro must be included somewhere within a source file that implements a DgnDomain::Handler::Extension
 #define HANDLER_EXTENSION_DEFINE_MEMBERS(__classname__) \
     DgnDomain::Handler::Extension::Token& __classname__::z_Get##__classname__##Token(){static DgnDomain::Handler::Extension::Token* s_token=0; if (0==s_token) s_token = NewToken(); return *s_token;}
 
+// This macro declares the required members for an DgnDomain::TableHandler. 
 #define TABLEHANDLER_DECLARE_MEMBERS(__tableName__,__classname__,__exporter__) \
     public:  __classname__() : DgnDomain::TableHandler(__tableName__) {} \
     public:  __exporter__ static __classname__& GetHandler();
 
+// This macro must be included somewhere within a source file that implements a DgnDomain::TableHandler
 #define TABLEHANDLER_DEFINE_MEMBERS(__classname__) \
     __classname__&  __classname__::GetHandler(){static __classname__* s_instance=nullptr; if (nullptr==s_instance) s_instance=new __classname__(); return *s_instance;}
 
@@ -86,7 +92,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
 //! A DgnDomain is a singleton C++ object that provides the runtime implementation for an ECSchema.
-//! A given DgnDomain supplies set of "handlers," each of which are singleton C++ objects derived from DgnDomain::Handler,
+//! A given DgnDomain supplies set of "Handlers," each of which are singleton C++ objects derived from DgnDomain::Handler,
 //! that provide the implementation for one of its ECClasses. Stated differently, a DgnDomain is a collection of DgnDomain::Handlers
 //! for its ECClasses. It is not possible for one DgnDomain to supply a DgnDomain::Handler for a different DgnDomain.
 //! Domains are "registered" at program startup time (via that static method DgnDomains::RegisterDomain),
@@ -113,7 +119,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 
         /**
     @verbatim
-    struct ExampleInterface : Handler::Extension
+    struct ExampleInterface : DgnDomain::Handler::Extension
         {
         HANDLER_EXTENSION_DECLARE_MEMBERS (ExampleInterface,)
         virtual void _DoExample(ElementHandleCR) = 0;
@@ -124,11 +130,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         @verbatim
     struct Example1 : ExampleInterface
         {
-        virtual void _DoExample(ElementHandleCR) override {printf("Example1");}
+        virtual void _DoExample(DgnElementCR) override {printf("Example1");}
         };
     struct Example2 : ExampleInterface
         {
-        virtual void _DoExample(ElementHandleCR) override {printf("Example2");}
+        virtual void _DoExample(DgnElementCR) override {printf("Example2");}
         };
         @endverbatim
         Then, register your Handler::Extension on an existing Handler by calling the Handler::Extension's "RegisterExtension" method.
@@ -150,11 +156,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         with "Example2".<p>
         You can then look up your extension on a Handler by calling the Handler::Extension's "Cast" method. E.g.:
         @verbatim
-    void doExample (ElementHandleCR eh)
+    void doExample (DgnElementCR el)
         {
-        ExampleInterface* exampleExt = ExampleInterface::Cast(eh.GetHandler());
+        ExampleInterface* exampleExt = ExampleInterface::Cast(el.GetElementHandler());
         if (NULL != exampleExt)
-            exampleExt->_DoExample(eh);
+            exampleExt->_DoExample(el);
         }
         @endverbatim
         This will print "Example2" for all Model2ds and "Example1" for all other types of Models.<p>
@@ -241,6 +247,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     }; // Handler
 
     //=======================================================================================
+    //! A handler for a specfic SQLite table. Needed for processing ChangeSets.
     // @bsiclass                                                    Keith.Bentley   07/11
     //=======================================================================================
     struct TableHandler
