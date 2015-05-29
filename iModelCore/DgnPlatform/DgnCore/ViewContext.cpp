@@ -8,8 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include "UpdateLogging.h"
 
-IDrawRasterAttachment*   ViewContext::s_pRasterAttInterface = NULL;
-
 enum FrustCorners
     {
     FRUST_Org    = 0,
@@ -1817,22 +1815,6 @@ double ViewContext::GetPixelSizeAtPoint (DPoint3dCP inPoint) const
     ViewToLocal (vec, vec, 2);
 
     return vec[0].distance (vec+1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin    02/2004
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetRasterAttInterface (IDrawRasterAttachment* pRasterAttInterface)
-    {
-    s_pRasterAttInterface = pRasterAttInterface;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-IDrawRasterAttachment* ViewContext::GetRasterAttInterface()
-    {
-    return s_pRasterAttInterface;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -92,7 +92,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! Domains are "registered" at program startup time (via that static method DgnDomains::RegisterDomain),
 //! remain for an entire session, and apply to all DgnDb's that are opened
 //! or created during that session. If a DgnDomain is registered, its name is recorded in every DgnDb accessed during the session
-//! and becomes "required" to access that DgnDb in the future.
+//! and becomes required to access that DgnDb in the future.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
@@ -173,19 +173,17 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
                 Token() {}
             };
 
-    #if !defined (DOCUMENTATION_GENERATOR)
         protected:
-            BentleyStatus RegisterExt (Handler& handler, Token& extensionToken) {return handler.AddExtension(extensionToken, *this);}
-            static BentleyStatus DropExt (Handler& handler, Token& extensionToken) {return handler.DropExtension(extensionToken);}
-            static Extension* CastExt (Handler& handler, Token& extensionToken) {return handler.FindExtension(extensionToken);}
-            static Token* NewToken() {return new Token();}
-    #endif
-        }; // Extension
+            BentleyStatus RegisterExt(Handler& handler, Token& extensionToken) {return handler.AddExtension(extensionToken, *this);}//!< @private
+            static BentleyStatus DropExt(Handler& handler, Token& extensionToken) {return handler.DropExtension(extensionToken);}   //!< @private
+            static Extension* CastExt(Handler& handler, Token& extensionToken) {return handler.FindExtension(extensionToken);}      //!< @private
+            static Token* NewToken() {return new Token();}                                                                           //!< @private
+        };
 
         private:
-            DGNPLATFORM_EXPORT BentleyStatus AddExtension (Extension::Token&, Extension&);
-            DGNPLATFORM_EXPORT BentleyStatus DropExtension (Extension::Token&);
-            DGNPLATFORM_EXPORT Extension* FindExtension (Extension::Token&);
+            DGNPLATFORM_EXPORT BentleyStatus AddExtension(Extension::Token&, Extension&);
+            DGNPLATFORM_EXPORT BentleyStatus DropExtension(Extension::Token&);
+            DGNPLATFORM_EXPORT Extension* FindExtension(Extension::Token&);
 
         struct ExtensionEntry
         {
@@ -195,7 +193,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
             Extension::Token&   m_token;
             Extension&          m_extension;
             ExtensionEntry*     m_next;
-        }; // ExtensionEntry
+        };
 
         friend struct DgnDomain;
         static Handler*  z_CreateInstance();
@@ -238,10 +236,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual ModelHandlerP _ToModelHandler() {return nullptr;}     //!< dynamic_cast this Handler to a ModelHandler
         virtual ViewHandlerP _ToViewHandler() {return nullptr;}       //!< dynamic_cast this Handler to a ViewHandler
 
-        #if !defined (DOCUMENTATION_GENERATOR)
-        static Handler& z_GetHandlerInstance();
-        DGNPLATFORM_EXPORT static Handler& GetHandler() {return z_GetHandlerInstance();}
-        #endif
+        static Handler& z_GetHandlerInstance(); //!< @private
+        DGNPLATFORM_EXPORT static Handler& GetHandler() {return z_GetHandlerInstance();}//!< @private
     }; // Handler
 
     //=======================================================================================
@@ -261,7 +257,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual void _OnAdd(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
         virtual void _OnDelete(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
         virtual void _OnUpdate(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
-    }; //TableHandler
+    };
 
 protected:
     int32_t         m_version;

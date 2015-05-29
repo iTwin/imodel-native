@@ -187,7 +187,7 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name)
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props)
     {
     m_rangeIndex = nullptr;
     m_wasFilled = false;
@@ -315,35 +315,12 @@ DgnModelStatus DgnModel2d::_OnInsertElement(DgnElementR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PlanarPhysicalModel::_ToPropertiesJson(Json::Value& val) const
-    {
-    T_Super::_ToPropertiesJson(val);
-    JsonUtils::TransformToJson(val["worldTrans"], m_worldTrans);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PlanarPhysicalModel::_FromPropertiesJson(Json::Value const& val) 
-    {
-    T_Super::_FromPropertiesJson(val);
-    if (val.isMember("worldTrans"))
-        JsonUtils::TransformFromJson(m_worldTrans, val["worldTrans"]);
-    else
-        m_worldTrans.InitIdentity();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SectionDrawingModel::_ToPropertiesJson(Json::Value& val) const
     {
     T_Super::_ToPropertiesJson(val);
 
-    val["zlow"] = m_zrange.low;
-    val["zhigh"] = m_zrange.high;
     val["annotation_scale"] = m_annotationScale;
     }
 
@@ -353,15 +330,6 @@ void SectionDrawingModel::_ToPropertiesJson(Json::Value& val) const
 void SectionDrawingModel::_FromPropertiesJson(Json::Value const& val) 
     {
     T_Super::_FromPropertiesJson(val);
-    if (val.isMember("zlow"))
-        {
-        m_zrange.low = JsonUtils::GetDouble(val["zlow"], 0);
-        m_zrange.high = JsonUtils::GetDouble(val["zhigh"], 0);
-        }
-    else
-        {
-        m_zrange.InitNull();
-        }
 
     if (val.isMember ("annotation_scale"))
         m_annotationScale = val["annotation_scale"].asDouble();
@@ -369,6 +337,7 @@ void SectionDrawingModel::_FromPropertiesJson(Json::Value const& val)
         m_annotationScale = 1.0;
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -401,6 +370,7 @@ Transform SectionDrawingModel::GetFlatteningMatrix(double zdelta) const
 
     return trans;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
@@ -770,7 +740,7 @@ DgnModelP DgnModels::CreateDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), modelId);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), DgnModel::Properties(), modelId);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -895,7 +865,7 @@ double DgnModel::GetSubPerMaster() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnFileStatus DgnModel::FillModel()
+DgnFileStatus DgnModel::_FillModel()
     {
     if (IsFilled())
         return  DGNFILE_STATUS_Success;
@@ -990,24 +960,7 @@ AxisAlignedBox3d DgnModel::_QueryModelRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetModel::SheetModel(CreateParams const& params) : T_Super(params) {m_size = DPoint2d::FromZero();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SheetModel::SheetModel(DgnDbR db, Utf8CP name, DPoint2dCR size, Units unitsPicker) 
-    : 
-    T_Super(CreateParams(db, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)), name)),
-    m_size(size)
-    {
-    UnitDefinition units;
-    if (unitsPicker == Units::Inches)
-        units = UnitDefinition(UnitBase::Meter, UnitSystem::English, 0.02539998628, 1, L""); // *** NEEDS WORK: how to express a unit system in inches?
-    else if (unitsPicker == Units::Millimeters)
-        units = UnitDefinition(UnitBase::Meter, UnitSystem::Metric, 0.001, 1, L""); // *** NEEDS WORK: How to express a unit system in mms?
-
-    m_properties.SetWorkingUnits(units, units);
-    }
+SheetModel::SheetModel(CreateParams const& params) : T_Super(params), m_size(params.m_size) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
