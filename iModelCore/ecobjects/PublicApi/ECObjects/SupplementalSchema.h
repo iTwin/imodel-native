@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SupplementalSchema.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -186,9 +186,9 @@ public:
 //! The SupplementedSchemaBuilder merges ECCustomAttributes from multiple schemas into one combined Schema
 //! @remarks
 //!
-//! The input schemas consit of one primary schema and any number of supplemental schemas.  The primary
+//! The input schemas consist of one primary schema and any number of supplemental schemas.  The primary
 //! schema contains all of the actual class definitions.  The supplemental schemas only contain ECCustomAttributes applied
-//! to a skeleton of classes and properties.  Each supplemental achema is identified by a custom attribute instance of class
+//! to a skeleton of classes and properties.  Each supplemental schema is identified by a custom attribute instance of class
 //! 'SupplementalSchemaMetaData/'  This class can be found in the 'Bentley_Standard_CustomAttributes' schema.h  It contains
 //! entries that give a back reference to the primary schema, a precedence value, and a context.
 //! \n\n
@@ -261,7 +261,9 @@ private:
     bool m_createCopyOfSupplementalCustomAttribute;
     static const int PRECEDENCE_THRESHOLD = 199;
 
-    SupplementedSchemaStatus OrderSupplementalSchemas(bmap<uint32_t, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP> localizationSchemas );
+    SupplementedSchemaStatus OrderSupplementalSchemas(bmap<uint32_t, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP>& localizationSchemas );
+
+    void ApplyLocalizationSupplementals(ECSchemaR primarySchema, WCharCP locale, bvector<ECSchemaP>& localizationSchemas);
 
     //! Merges two schemas of the same precedence into one schema.
     //! @remarks Used internally if two schemas are input that have the same precedence
@@ -355,6 +357,17 @@ public:
     //! the primary schema.
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
     ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute = true);
+
+    //! Calling this method supplements the custom attributes of the primarySchema and all sub-containers, applies the
+    //! supplemented custom attributes back to the primarySchema, and applies the localizations from the supplemental with the matching locale.
+    //! @remarks This method updates the custom attribute container on the primarySchema in addition to the input classes.
+    //! @param[in,out]  primarySchema   The schema containing the actual class and property definitions.  This schema will
+    //! have the supplemented custom attributes added to it, and it will be marked as supplemented
+    //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
+    //! and properties needed to hold the supplementary custom attributes
+    //! @param[in]  locale  The localization supplemental with this locale will be applied if found.
+    //! @returns A status code indicating whether the primarySchema was successfully supplemented
+    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, WCharCP locale, bool createCopyOfSupplementalCustomAttribute = true);
     }; // SupplementalSchemaBuilder
 
 //=======================================================================================

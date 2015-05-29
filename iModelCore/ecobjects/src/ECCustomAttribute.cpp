@@ -200,6 +200,37 @@ bool      includeSupplementalAttributes
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Colin.Kerr                      05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsConsolidated(WStringCR className)
+    {
+    for(auto const& caIter : m_consolidatedCustomAttributes)
+        {
+        ECClassCR caClass = caIter->GetClass();
+        if (0 == className.compare(caClass.GetName()))
+            return caIter;
+        }
+    
+    IECInstancePtr customAttribute;
+    for(auto const& caIter : m_primaryCustomAttributes)
+        {
+        ECClassCR caClass = caIter->GetClass();
+        if(0 == className.compare(caClass.GetName()))
+            {
+            customAttribute = caIter;
+            break;
+            }
+        }
+
+    if (!customAttribute.IsValid())
+        return customAttribute;
+
+    IECInstancePtr caCopy = customAttribute->CreateCopyThroughSerialization();
+    SetConsolidatedCustomAttribute(*caCopy);
+    return caCopy;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
