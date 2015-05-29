@@ -79,7 +79,7 @@ public:
 //! @see std::unique_lock
 //  @bsiclass 
 //=======================================================================================
-struct BeMutexHolder
+struct BeMutexHolder : NonCopyableClass
     {
 private:
     BeMutex* m_mutex;
