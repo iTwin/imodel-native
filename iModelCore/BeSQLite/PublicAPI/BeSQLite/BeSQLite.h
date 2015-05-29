@@ -119,7 +119,7 @@ character set. However, applications can extend BeSQLite by implementing the #Be
     #define BE_SQLITE_EXPORT EXPORT_ATTRIBUTE
 #else
 //__PUBLISH_SECTION_START__
-    #define BE_SQLITE_EXPORT IMPORT_ATTRIBUTE
+#define BE_SQLITE_EXPORT IMPORT_ATTRIBUTE
 //__PUBLISH_SECTION_END__
 #endif
 
@@ -1101,7 +1101,7 @@ struct DbValue
 //! See http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
-struct DbFunction
+struct DbFunction : NonCopyableClass
 {
 public:
     //=======================================================================================
@@ -1461,16 +1461,16 @@ public:
 //! Holds a mutex to synchronize multi-thread access to data.
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
-struct BeDbMutex
+struct BeDbMutex : NonCopyableClass
 {
 private:
     void*  m_mux;
 public:
     enum class MutexType : bool {Fast=0, Recursive=1};
-    BE_SQLITE_EXPORT BeDbMutex(MutexType mutexType=MutexType::Fast);       //! create a new SQLite mutex, see sqlite3_mutex_alloc
-    BE_SQLITE_EXPORT ~BeDbMutex();      //! free mutex
-    BE_SQLITE_EXPORT void Enter();      //! acquire mutex's lock
-    BE_SQLITE_EXPORT void Leave();      //! release mutex's lock
+    BE_SQLITE_EXPORT BeDbMutex(MutexType mutexType=MutexType::Fast);       //!< create a new SQLite mutex, see sqlite3_mutex_alloc
+    BE_SQLITE_EXPORT ~BeDbMutex();      //!< free mutex
+    BE_SQLITE_EXPORT void Enter();      //!< acquire mutex's lock
+    BE_SQLITE_EXPORT void Leave();      //!< release mutex's lock
 #ifndef NDEBUG
     BE_SQLITE_EXPORT bool IsHeld();
 #endif
@@ -1480,7 +1480,7 @@ public:
 //! A convenience class for acquiring and releasing a mutex lock. Lock is acquired on construction and released on destruction.
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
-struct BeDbMutexHolder
+struct BeDbMutexHolder : NonCopyableClass
 {
     BeDbMutex& m_mutex;
     BeDbMutexHolder(BeDbMutex& mutex) : m_mutex(mutex) {m_mutex.Enter();}
@@ -1517,7 +1517,7 @@ typedef RefCountedPtr<CachedStatement> CachedStatementPtr;
 //! By default, the cache holds 20 SharedStatements and releases the oldest statement when a new entry is added to a full cache.
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
-struct StatementCache
+struct StatementCache : NonCopyableClass
 {
 private:
     mutable BeDbMutex m_mutex;
