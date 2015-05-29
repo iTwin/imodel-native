@@ -12,6 +12,7 @@
 #include "ClassRefExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct ParameterExp;
 
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
@@ -24,6 +25,8 @@ protected:
 
 public:
     virtual ~ValueExp () {}
+
+    ParameterExp* TryGetAsParameterExpP() const;
     };
 
 //=======================================================================================
@@ -39,7 +42,11 @@ private:
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override { return "BetweenRangeValue"; }
+    virtual void _DoToECSql(Utf8StringR ecsql) const override
+        {
+        ecsql.append(GetLowerBoundOperand()->ToECSql()).append(" AND ").append(GetUpperBoundOperand()->ToECSql());
+        }
+    virtual Utf8String _ToString() const override { return "BetweenRangeValue"; }
 
 public:
     BetweenRangeValueExp(std::unique_ptr<ValueExp> lowerBound, std::unique_ptr<ValueExp> upperBound)
@@ -52,10 +59,6 @@ public:
     ValueExp const* GetLowerBoundOperand () const {return GetChild<ValueExp> (m_lowerBoundOperandExpIndex);}
     ValueExp const* GetUpperBoundOperand() const {return GetChild<ValueExp> (m_upperBoundOperandExpIndex);}
 
-    virtual Utf8String ToECSql() const override  
-        {
-        return GetLowerBoundOperand ()->ToECSql() + " AND "  + GetUpperBoundOperand ()->ToECSql(); 
-        }
     };
 
 //=======================================================================================
@@ -72,7 +75,8 @@ private:
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     BinaryValueExp(std::unique_ptr<ValueExp> lhs, BinarySqlOperator op ,std::unique_ptr<ValueExp> rhs)
@@ -85,8 +89,6 @@ public:
     ValueExp const* GetLeftOperand() const {return GetChild<ValueExp> (m_leftOperandExpIndex);}
     ValueExp const* GetRightOperand() const {return GetChild<ValueExp> (m_rightOperandExpIndex);}
     BinarySqlOperator GetOperator() const {return m_op;}
-
-    virtual Utf8String ToECSql() const override;
     };
 
 //=======================================================================================
@@ -101,7 +103,8 @@ private:
   
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     CastExp (std::unique_ptr<ValueExp> castOperand, Utf8CP castTargetType)
@@ -114,8 +117,6 @@ public:
     Utf8String GetCastTargetType() const {return m_castTargetType;}
 
     bool NeedsCasting () const;
-
-    virtual Utf8String ToECSql () const override;
     };
 
 
@@ -136,6 +137,7 @@ private:
 
     ECSqlStatus ResolveDataType (ECSqlParseContext& ctx);
 
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString () const override;
 
 public:
@@ -145,7 +147,6 @@ public:
     int64_t GetValueAsInt64() const;
     bool GetValueAsBoolean() const;
 
-    virtual Utf8String ToECSql() const override;
     static Utf8String EscapeStringLiteral (Utf8StringCR constantStringLiteral)
         {
         Utf8String tmp = constantStringLiteral;
@@ -168,7 +169,8 @@ private:
     RangeClassRefExp const* m_classRefExp;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    virtual Utf8String _ToString () const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override;
 
     bool HasClassAlias () const { return !m_classAlias.empty ();}
 
@@ -181,8 +183,6 @@ public:
     Utf8CP GetClassAlias () const { return m_classAlias.c_str ();}
 
     RangeClassRefExp const* GetClassRefExp () const { return m_classRefExp;}
-
-    virtual Utf8String ToECSql () const override;
     };
 
 //=======================================================================================
@@ -197,7 +197,8 @@ private:
     static bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> s_builtinFunctionNonDefaultReturnTypes;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    virtual Utf8String _ToString () const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     explicit FunctionCallExp (Utf8CP functionName) : ValueExp (), m_functionName(functionName) {}
@@ -206,8 +207,6 @@ public:
     Utf8CP GetFunctionName() const { return m_functionName.c_str();}
 
     void AddArgument (std::unique_ptr<ValueExp> argument);
-
-    virtual Utf8String ToECSql() const override;
 
     static ECN::PrimitiveType DetermineReturnType(ECSqlParseContext& ctx, Utf8CP functionName, int argCount);
     };
@@ -225,7 +224,8 @@ private:
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override { return "LikeRhsValue"; }
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override { return "LikeRhsValue"; }
 
 public:
     explicit LikeRhsValueExp (std::unique_ptr<ValueExp> rhsExp, std::unique_ptr<ValueExp> escapeExp = nullptr)
@@ -239,8 +239,6 @@ public:
     ValueExp const* GetRhsExp () const {return GetChild<ValueExp> (m_rhsExpIndex);}
     bool HasEscapeExp () const { return m_escapeExpIndex >= 0;}
     ValueExp const* GetEscapeExp () const;
-
-    virtual Utf8String ToECSql() const override;
     };
 
 //=======================================================================================
@@ -255,7 +253,8 @@ private:
     ComputedExp const* m_targetExp;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    virtual Utf8String _ToString () const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     explicit ParameterExp (Utf8CP parameterName)
@@ -273,7 +272,6 @@ public:
     bool IsNamedParameter () const { return !m_parameterName.empty (); }
     Utf8CP GetParameterName () const { return m_parameterName.c_str (); }
     int GetParameterIndex () const { return m_parameterIndex; }
-    virtual Utf8String ToECSql () const override;
     };
 
 
@@ -301,7 +299,8 @@ private:
     SqlSetQuantifier m_setQuantifier;
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual Utf8String _ToString () const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override;
 
     static Utf8CP ToString(Function function);
 public:
@@ -310,8 +309,6 @@ public:
 
     Function GetFunction() const { return m_function; }
     SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
-
-    virtual Utf8String ToECSql() const override;
     };
 
 //=======================================================================================
@@ -350,7 +347,7 @@ private:
     UnarySqlOperator m_op;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString () const override;
 
 public:
@@ -362,8 +359,6 @@ public:
 
     ValueExp const* GetOperand() const {return GetChild<ValueExp> (m_operandExpIndex);}
     UnarySqlOperator GetOperator() const {return m_op;}
-
-    virtual Utf8String ToECSql() const override;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

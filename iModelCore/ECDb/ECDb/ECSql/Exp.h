@@ -518,6 +518,7 @@ private:
     bool m_isComplete;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode);
+    virtual Utf8String _ToECSql() const = 0;
     virtual Utf8String _ToString () const = 0;
 
 protected:
@@ -561,7 +562,7 @@ public:
     //! Converts this expression into an ECSQL snippet.
     //! The child expressions are considered in this conversion.
     //! @return ECSQL snippet representing this expression graph
-    virtual Utf8String ToECSql() const = 0;
+    Utf8String ToECSql() const;
     
     //! Returns a string description of this expression without recursion into its child expressions.
     //! @return string description of this expression

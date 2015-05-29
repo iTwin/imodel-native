@@ -19,10 +19,7 @@ struct ClassRefExp : Exp
     {
 DEFINE_EXPR_TYPE(ClassRef) 
 private:
-    virtual Utf8String _ToString () const override
-        {
-        return "ClassRef";
-        }
+    virtual Utf8String _ToString () const override { return "ClassRef"; }
 
 protected:
     ClassRefExp () : Exp () {}
@@ -43,19 +40,14 @@ struct RangeClassRefExp : ClassRefExp
     DEFINE_EXPR_TYPE(RangeClassRef) 
 private:
     Utf8String m_alias;
-    bool       m_isPolymorphic;
+    bool m_isPolymorphic;
     virtual Utf8StringCR _GetId() const = 0;
     virtual bool _ContainProperty(Utf8StringCR propertyName) const = 0;
     virtual ECSqlStatus _CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
 
 protected:
-    RangeClassRefExp ()
-        : ClassRefExp (), m_isPolymorphic(true)
-        {}
-
-    explicit RangeClassRefExp (bool isPolymorphic)
-        : ClassRefExp (), m_isPolymorphic(isPolymorphic)
-        {}
+    RangeClassRefExp () : ClassRefExp (), m_isPolymorphic(true) {}
+    explicit RangeClassRefExp (bool isPolymorphic) : ClassRefExp (), m_isPolymorphic(isPolymorphic) {}
 
 public:
     virtual ~RangeClassRefExp () {}
@@ -81,7 +73,6 @@ struct ClassNameExp : RangeClassRefExp
 friend struct ECSqlParser;
 DEFINE_EXPR_TYPE(ClassName) 
 
-
 public:
     //=======================================================================================
     //! @bsiclass                                                Affan.Khan      05/2013
@@ -92,17 +83,10 @@ public:
         IClassMap const& m_classMap;
 
     public:
-        explicit Info (IClassMap const& classMap)
-            : m_classMap(classMap)
-            {
-            }
-
-        static std::shared_ptr<Info> Create (IClassMap const& classMap)
-            {
-            return std::make_shared<Info> (classMap);
-            }
+        explicit Info (IClassMap const& classMap) : m_classMap(classMap) {}
 
         IClassMap const& GetMap () const { return m_classMap; }
+        static std::shared_ptr<Info> Create(IClassMap const& classMap) { return std::make_shared<Info>(classMap); }
         };
 
 private:
@@ -128,6 +112,19 @@ private:
 
     virtual ECSqlStatus _CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
 
+    virtual Utf8String _ToECSql() const override
+        {
+        Utf8String tmp;
+        if (!IsPolymorphic())
+            tmp.append("ONLY ");
+
+        tmp.append(GetFullName());
+
+        if (!GetAlias().empty())
+            tmp.append(" ").append(GetAlias());
+        return tmp;
+        }
+
     virtual Utf8String _ToString () const override
         {
         Utf8String str ("ClassName [Catalog: ");
@@ -139,8 +136,7 @@ private:
 public:
     ClassNameExp(Utf8CP className, Utf8CP schemaPrefix, Utf8CP catalog, std::shared_ptr<Info> info, bool isPolymorphic = true)
         : RangeClassRefExp(isPolymorphic), m_className(className), m_schemaPrefix(schemaPrefix), m_catalogName(catalog), m_info(info)
-        {
-        }
+        {}
 
     bool HasMetaInfo() const { return m_info != nullptr;}
     ClassNameExp::Info const&  GetInfo() const { return *m_info;}
@@ -162,19 +158,6 @@ public:
     Utf8StringCR GetClassName() const { return m_className;}
     Utf8StringCR GetSchemaName() const { return m_schemaPrefix;}
     Utf8StringCR GetCatalogName() const { return m_catalogName;}
-
-    virtual Utf8String ToECSql () const override
-        {
-        Utf8String tmp;
-        if (!IsPolymorphic())
-            tmp.append ("ONLY ");
-
-        tmp.append (GetFullName ());
-
-        if(!GetAlias().empty())
-            tmp.append(" ").append (GetAlias());
-        return tmp;
-        }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

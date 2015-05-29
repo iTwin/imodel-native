@@ -33,7 +33,7 @@ BooleanExp const* WhereExp::GetSearchConditionExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WhereExp::ToECSql() const
+Utf8String WhereExp::_ToECSql() const
     {
     return "WHERE " + GetSearchConditionExp ()->ToECSql();
     }

@@ -53,14 +53,11 @@ AllOrAnyExp::AllOrAnyExp(unique_ptr<ValueExp> operand, BooleanSqlOperator op, Sq
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-//virtual
-Utf8String AllOrAnyExp::ToECSql() const
+void AllOrAnyExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    auto tmp = Utf8String ();
-    tmp.append(GetOperand ()->ToECSql()).append (" ");
-    tmp.append(ExpHelper::ToString (m_operator)).append (" ").append (ExpHelper::ToString (m_type)).append (" ");
-    tmp.append(GetSubquery ()->ToECSql());
-    return tmp;       
+    ecsql.append(GetOperand()->ToECSql()).append(" ");
+    ecsql.append(ExpHelper::ToString(m_operator)).append(" ").append(ExpHelper::ToString(m_type)).append(" ");
+    ecsql.append(GetSubquery()->ToECSql());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -134,7 +131,7 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String DerivedPropertyExp::ToECSql () const
+Utf8String DerivedPropertyExp::_ToECSql () const
     {
     if (m_columnAlias.empty())
         return GetExpression ()->ToECSql();
@@ -273,7 +270,7 @@ unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String FromExp::ToECSql() const
+Utf8String FromExp::_ToECSql() const
     {
     Utf8String tmp = "FROM ";
     bool isFirstItem = true;
@@ -338,7 +335,7 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String GroupByExp::ToECSql() const
+Utf8String GroupByExp::_ToECSql() const
     {
     Utf8String str("GROUP BY ");
     str.append(GetGroupingValueListExp()->ToECSql());
@@ -365,7 +362,7 @@ BooleanExp const* HavingExp::GetSearchConditionExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String HavingExp::ToECSql() const
+Utf8String HavingExp::_ToECSql() const
     {
     Utf8String str("HAVING ");
     str.append(GetSearchConditionExp()->ToECSql());
@@ -390,7 +387,7 @@ LimitOffsetExp::LimitOffsetExp (std::unique_ptr<ValueExp> limitExp, std::unique_
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String LimitOffsetExp::ToECSql () const 
+Utf8String LimitOffsetExp::_ToECSql () const 
     {
     Utf8String str ("LIMIT ");
     str.append (GetLimitExp ()->ToECSql ());
@@ -511,7 +508,7 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing (ECSqlParse
 // @bsimethod                                    Affan.Khan                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-Utf8String OrderBySpecExp::ToECSql () const
+Utf8String OrderBySpecExp::_ToECSql () const
     {
     auto ecsql = GetSortExpression()->ToECSql();
     AppendSortDirection (ecsql, true);
@@ -651,6 +648,25 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing (ECSqlParseContext& c
     return FinalizeParseStatus::Completed;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       08/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8String SelectClauseExp::_ToECSql() const
+    {
+    Utf8String tmp;
+    bool isFirstItem = true;
+    for (auto childExp : GetChildren())
+        {
+        if (!isFirstItem)
+            tmp.append(", ");
+
+        tmp.append(childExp->ToECSql());
+        isFirstItem = false;
+        }
+
+    return tmp;
+    }
+
 //*************************** SingleSelectStatementExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
@@ -736,7 +752,7 @@ Utf8String SingleSelectStatementExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String SingleSelectStatementExp::ToECSql() const 
+Utf8String SingleSelectStatementExp::_ToECSql() const 
     {
     Utf8String tmp ("SELECT ");
 
@@ -794,7 +810,7 @@ Exp::FinalizeParseStatus SubqueryExp::_FinalizeParsing( ECSqlParseContext& ctx, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SubqueryExp::ToECSql() const
+Utf8String SubqueryExp::_ToECSql() const
     {
     return "(" + GetQuery ()->ToECSql() + ")";
     }
@@ -831,9 +847,9 @@ SubqueryTestExp::SubqueryTestExp (SubqueryTestOperator op, std::unique_ptr<Subqu
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SubqueryTestExp::ToECSql() const 
+void SubqueryTestExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    return ExpHelper::ToString(m_op) + Utf8String(" ") + GetQuery ()->ToECSql();
+    ecsql.append(ExpHelper::ToString(m_op)).append(" ").append(GetQuery ()->ToECSql());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -879,8 +895,6 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing (ECSqlParseContext& 
 
     return FinalizeParseStatus::Completed;
     }
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

@@ -173,7 +173,7 @@ ValueExpListExp const* InsertStatementExp::GetValuesExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String InsertStatementExp::ToECSql() const 
+Utf8String InsertStatementExp::_ToECSql() const 
     {
     Utf8String ecsql ("INSERT INTO ");
 

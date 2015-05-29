@@ -17,6 +17,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************** ComputedExp ******************************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       05/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ComputedExp::_ToECSql() const
+    {
+    Utf8String ecsql;
+    if (HasParentheses())
+        ecsql.append("(");
+
+    _DoToECSql(ecsql);
+
+    if (HasParentheses())
+        ecsql.append(")");
+
+    return std::move(ecsql);
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -235,11 +252,8 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BinaryBooleanExp::ToECSql() const 
+void BinaryBooleanExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    Utf8String ecsql;
-    if (HasParentheses())
-        ecsql.append("(");
     ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ");
 
     ComputedExp const* rhs = GetRightOperand();
@@ -252,10 +266,6 @@ Utf8String BinaryBooleanExp::ToECSql() const
 
     if (rhsNeedsParens)
         ecsql.append(")");
-
-    if (HasParentheses())
-        ecsql.append(")");
-    return std::move(ecsql);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -282,21 +292,12 @@ BooleanFactorExp::BooleanFactorExp (unique_ptr<BooleanExp> operand, bool notOper
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BooleanFactorExp::ToECSql() const 
+void BooleanFactorExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    Utf8String ecsql;
     if (m_notOperator)
         ecsql.append("NOT ");
 
-    if (HasParentheses())
-        ecsql.append("(");
-
     ecsql.append(GetOperand()->ToECSql());
-    
-    if (HasParentheses())
-        ecsql.append(")");
-
-    return ecsql;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -347,9 +348,9 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String UnaryPredicateExp::ToECSql() const
+void UnaryPredicateExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    return GetValueExp()->ToECSql();
+    ecsql.append (GetValueExp()->ToECSql());
     }
 
 

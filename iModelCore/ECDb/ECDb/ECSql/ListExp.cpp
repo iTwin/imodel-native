@@ -54,8 +54,7 @@ AssignmentExp const* AssignmentListExp::GetAssignmentExp (size_t index) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-//virtual
-Utf8String AssignmentListExp::ToECSql () const
+Utf8String AssignmentListExp::_ToECSql () const
     {
     Utf8String ecsql;
 
@@ -115,8 +114,7 @@ PropertyNameExp const* PropertyNameListExp::GetPropertyNameExp (size_t index) co
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-//virtual
-Utf8String PropertyNameListExp::ToECSql () const
+Utf8String PropertyNameListExp::_ToECSql () const
     {
     Utf8String tmp ("(");
 
@@ -179,10 +177,8 @@ ParameterExp* ValueExpListExp::TryGetAsParameterExpP(size_t index) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-//virtual
-Utf8String ValueExpListExp::ToECSql () const
+void ValueExpListExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    Utf8String ecsql;
     bool isFirstItem = true;
     for(auto childExp : GetChildren ())
         {
@@ -192,8 +188,6 @@ Utf8String ValueExpListExp::ToECSql () const
         ecsql.append(childExp->ToECSql ());
         isFirstItem = false;
         }
-
-    return ecsql;
     }
 
 

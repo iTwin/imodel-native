@@ -367,15 +367,12 @@ bool PropertyNameExp::TryGetSystemProperty (ECSqlSystemProperty& systemProperty)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String PropertyNameExp::ToECSql () const 
+void PropertyNameExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    Utf8String ecsql;
     if (!m_classAlias.empty ())
         ecsql.append (m_classAlias).append (".");
 
     ecsql.append (m_propertyPath.ToString ());
-
-    return ecsql;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -108,9 +108,16 @@ Exp::FinalizeParseStatus Exp::_FinalizeParsing (ECSqlParseContext& ctx, Finalize
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    05/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8String Exp::ToECSql() const
+    {
+    return _ToECSql();
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-//virtual
 Utf8String Exp::ToString () const
     {
     return _ToString ();
