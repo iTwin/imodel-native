@@ -203,4 +203,40 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
     ASSERT_EQ(1, rowCount) << "ECSQL " << ecsql << " is expected to only return SQLite headquarters entry";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECSqlRangeTreeTests, MatchQueryWithParameters)
+    {
+    Utf8String ecdbPath;
+    ASSERT_EQ(SUCCESS, CreateRangeTreeTestProject(ecdbPath));
+
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::OPEN_Readonly)));
+
+    BBox2DMatchFunction bbox2dFunc;
+    ASSERT_EQ(0, ecdb.AddRTreeMatchFunction(bbox2dFunc));
+
+    //sample data taken from https ://www.sqlite.org/rtree.html
+    Utf8CP ecsql = "SELECT d.Name FROM rt.DemoData d, rt.DemoRTree rt "
+        "WHERE d.ECInstanceId = rt.ECInstanceId AND "
+        "rt.ECInstanceId MATCH BBOX2D(?,?,?,?)";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << stmt.GetLastStatusMessage();
+
+    stmt.BindDouble(1, -81.08);
+    stmt.BindDouble(2, 35.00);
+    stmt.BindDouble(3, -80.58);
+    stmt.BindDouble(4, 35.44);
+
+    int rowCount = 0;
+    while (stmt.Step() == ECSqlStepStatus::HasRow)
+        {
+        ASSERT_STREQ("SQLite headquarters", stmt.GetValueText(0));
+        }
+
+    ASSERT_EQ(1, rowCount) << "ECSQL " << ecsql << " is expected to only return SQLite headquarters entry";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
