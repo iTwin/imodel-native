@@ -34,10 +34,6 @@
 #define END_RASTER_NAMESPACE                } END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define USING_NAMESPACE_RASTER              using namespace BentleyApi::DgnPlatform::Raster;
 
-#define BEGIN_BENTLEY_POINTCLOUD_NAMESPACE  BEGIN_BENTLEY_API_NAMESPACE namespace PointCloud {
-#define END_BENTLEY_POINTCLOUD_NAMESPACE    } END_BENTLEY_API_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_POINTCLOUD  using namespace BentleyApi::PointCloud;
-
 #define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
     structunion _sName_; \
     namespace BENTLEY_API_NAMESPACE_NAME {\
