@@ -350,9 +350,6 @@ public:
     DGNPLATFORM_EXPORT DwgUnitFormat GetDWGUnitFormat() const;
     DGNPLATFORM_EXPORT void SetDWGUnitFormat(DwgUnitFormat newVal);
     DGNPLATFORM_EXPORT void SetPrecisionByte(Byte newVal);
-#if defined (NEEDS_WORK_ELEMENTS_API)
-    DGNPLATFORM_EXPORT void InitializeForDwg(DgnModel::Properties const&);
-#endif
 
     static DGNPLATFORM_EXPORT BentleyStatus ToDwgUnitFormat(DwgUnitFormat& dwgUnitFormatOut, DgnUnitFormat dgnUnitFormat, PrecisionFormat dgnPrecision, UnitDefinitionCR masterUnit, UnitDefinitionCR subUnit);
 
@@ -522,9 +519,6 @@ public:
     DGNPLATFORM_EXPORT void SetUseDWGFormattingLogic(bool newVal);
     DGNPLATFORM_EXPORT DwgUnitFormat GetDWGUnitFormat() const;
     DGNPLATFORM_EXPORT void SetDWGUnitFormat(DwgUnitFormat newVal);
-#if defined (NEEDS_WORK_ELEMENTS_API)
-    DGNPLATFORM_EXPORT void InitializeForDwg(DgnModel::Properties const&);
-#endif
 
 protected:
     AreaOrVolumeFormatterBase();

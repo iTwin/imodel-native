@@ -992,6 +992,7 @@ public:
     SectionDrawingModel* GetSectionDrawing() const {return dynamic_cast<SectionDrawingModel*>(GetTargetModel());}
 
     //! Convenience method to get the flattening matrix from the drawing
+#if defined (NEEDS_WORK_ELEMENTS_API)
     DGNPLATFORM_EXPORT Transform GetFlatteningMatrix (double zdelta = 0.0) const;
 
     //! Convenience method to get the flattening matrix from the drawing, but only if the viewport is 2-D
@@ -999,6 +1000,8 @@ public:
 
     //! Convenience method to ask the drawing for the transform needed to display it in the context of a physical view.
     DGNPLATFORM_EXPORT Transform GetTransformToWorld() const;
+#endif
+
     //! Convenience method to query the source section `view
     DGNPLATFORM_EXPORT SectioningViewControllerPtr GetSectioningViewController() const;
 
