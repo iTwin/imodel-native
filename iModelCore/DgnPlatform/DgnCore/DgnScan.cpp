@@ -194,7 +194,7 @@ ScanCriteria::Result  ScanCriteria::CheckRange(DRange3dCR elemRange, bool is3d) 
 bool ScanCriteria::CheckElementRange(DgnElementCR element) const
     {
     GeometricElementCP geom = element.ToGeometricElement();
-    return geom ? _CheckRangeTreeNode(geom->_CalculateRange3d(), geom->Is3d()) : false;
+    return geom ? _CheckRangeTreeNode(geom->CalculateRange3d(), geom->Is3d()) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**

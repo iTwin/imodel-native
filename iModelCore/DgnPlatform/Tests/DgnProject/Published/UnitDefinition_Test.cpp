@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/UnitDefinition_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -202,26 +202,12 @@ TEST (UnitDefinition, CompareByScale_1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, GetConversionFactorFrom_ERROR)
-    {
-    ScopedDgnHost autoDgnHost;
-    double result = 0.0;
-    UnitDefinition s1 = GenerateMeter_1_10();
-    UnitDefinition s2 = GenerateDegree_1_10();
-
-    ASSERT_TRUE (Bentley::ERROR == s1.GetConversionFactorFrom (result, s2));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman  03/09
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST (UnitDefinition, GetConversionFactorFrom)
     {
     ScopedDgnHost autoDgnHost;
-    double result = 0.0;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s3 = GenerateMeter_10_10();
-    s3.GetConversionFactorFrom (result, s1);
+    double result = s3.GetConversionFactorFrom(s1);
 
     // s3 is 10 times bigger than s1
     EXPECT_NEAR (10.0, result, 0.0000001);
@@ -230,28 +216,13 @@ TEST (UnitDefinition, GetConversionFactorFrom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, ConvertDistanceFrom_ERROR)
-    {
-    ScopedDgnHost autoDgnHost;
-    double result   = 0.0;
-    double in       = 0.0;
-    UnitDefinition s1 = GenerateMeter_1_10();
-    UnitDefinition s2 = GenerateDegree_1_10();
-
-    ASSERT_TRUE (Bentley::ERROR == s1.ConvertDistanceFrom (result, in, s2));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman  03/09
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST (UnitDefinition, ConvertDistanceFrom)
     {
     ScopedDgnHost autoDgnHost;
-    double result = 0.0;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s3 = GenerateMeter_10_10();
 
-    s3.ConvertDistanceFrom (result, 5.0, s1);
+    double result = s3.ConvertDistanceFrom(5.0, s1);
     // s3 conversion distance should be 50
     EXPECT_NEAR (50.0, result, 0.0000001);
     }

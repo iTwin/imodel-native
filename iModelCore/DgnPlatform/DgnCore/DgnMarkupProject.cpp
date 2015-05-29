@@ -1221,8 +1221,7 @@ RedlineModelP RedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP
         // *** WIP_REDLINE_SHEETDEF - copy sheet def from template model??
         UnitDefinition const& units = rdlModel->GetDgnDb().Units().GetStorageUnits();
         UnitDefinitionCR masterUnits = rdlModel->GetModelInfo().GetMasterUnit();
-        double uorPerMaster;
-        units.ConvertDistanceFrom (uorPerMaster, 1.0, masterUnits);
+        double uorPerMaster = units.ConvertDistanceFrom(1.0, masterUnits);
         RDLSheetDef sheetDef;
         sheetDef.m_origin.Init (0,0);
         sheetDef.m_size.Init (uorPerMaster*5, uorPerMaster*5);

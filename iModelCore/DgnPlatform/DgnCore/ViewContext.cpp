@@ -934,7 +934,7 @@ bool ViewContext::_FilterRangeIntersection (GeometricElementCR element)
     if (RangeResult::Outside == m_parentRangeResult)
         return true;
 
-    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange (element._CalculateRange3d(), element.Is3d());
+    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange (element.CalculateRange3d(), element.Is3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1132,7 +1132,7 @@ StatusInt ViewContext::_VisitElement (GeometricElementCR element)
                 break;
 
             DPoint3d  p[8];
-            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(element._CalculateRange3d()) : 
+            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(element.CalculateRange3d()) : 
                                    (element.Is3d() ? BoundingBox3d(element.ToElement3d()->GetPlacement().GetElementBox()) : BoundingBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
             Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform()));
 

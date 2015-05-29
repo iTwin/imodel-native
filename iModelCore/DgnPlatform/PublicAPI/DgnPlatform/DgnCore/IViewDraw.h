@@ -953,7 +953,7 @@ public:
 explicit StrokeElementForCache (GeometricElementCR element) : m_element (element) {}
 
 virtual DgnDbR _GetDgnDb () const override {return m_element.GetDgnDb();}
-virtual DRange3d _GetRange() const override {return m_element._CalculateRange3d();}
+virtual DRange3d _GetRange() const override {return m_element.CalculateRange3d();}
 virtual QvCacheP _GetQVCache() const override {return m_element.GetMyQvCache();}
 
 DGNPLATFORM_EXPORT virtual QvElemP _GetQvElem (double pixelSize) const;
