@@ -8,9 +8,9 @@
 #include    <DgnPlatformInternal.h>
 
 static double const VIEW_NOCLIP_ZMargin  = .01;
-static double const MIN_VIEWDELTA        = .1;
+static double const MIN_VIEWDELTA        = .00001;
 static double const MAX_VIEWDELTA        = 1.0e20;
-static double const CAMERA_PLANE_RATIO  = 300.0;
+static double const CAMERA_PLANE_RATIO   = 300.0;
 
 static  uint32_t s_rasterLinePatterns[8] =
     {
