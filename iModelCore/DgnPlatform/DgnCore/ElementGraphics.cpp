@@ -112,11 +112,11 @@ virtual StatusInt _ProcessFacetSet (PolyfaceQueryCR facets, bool filled) overrid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments) override
+virtual StatusInt _ProcessBody (ISolidKernelEntityCR entity) override
     {
     AnnounceCurrentState();
 
-    return m_dropObj->_ProcessBody (entity, attachments);
+    return m_dropObj->_ProcessBody (entity);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1157,9 +1157,9 @@ void WireframeGeomUtil::Draw (MSBsplineSurfaceCR surface, ViewContextR context, 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw (ISolidKernelEntityCR entity, ViewContextR context, IFaceMaterialAttachmentsCP attachments, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw (ISolidKernelEntityCR entity, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
-    T_HOST.GetSolidsKernelAdmin()._OutputBodyAsWireframe (entity, context, includeEdges, includeFaceIso, attachments);
+    T_HOST.GetSolidsKernelAdmin()._OutputBodyAsWireframe (entity, context, includeEdges, includeFaceIso);
     }
 
 BEGIN_UNNAMED_NAMESPACE
@@ -1236,7 +1236,7 @@ virtual void _OutputGraphics (ViewContextR context) override
     else if (m_primitive)
         WireframeGeomUtil::Draw (*m_primitive, context, m_includeEdges, m_includeFaceIso);
     else if (m_entity)
-        WireframeGeomUtil::Draw (*m_entity, context, NULL, m_includeEdges, m_includeFaceIso);
+        WireframeGeomUtil::Draw (*m_entity, context, m_includeEdges, m_includeFaceIso);
     }
 
 /*---------------------------------------------------------------------------------**//**

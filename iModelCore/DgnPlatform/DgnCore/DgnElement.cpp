@@ -889,3 +889,21 @@ DgnElementIdSet ElementGroup::QueryMembers() const
     return elementIdSet;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ElementGroup::QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberId)
+    {
+    if (!groupClassId.IsValid() || !memberId.IsValid())
+        return DgnElementId();
+
+    CachedStatementPtr statement;
+    db.Elements().GetStatement(statement, "SELECT GroupId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupClassId=? AND MemberId=?");
+    statement->BindId(1, groupClassId);
+    statement->BindId(2, memberId);
+
+    if (BE_SQLITE_ROW != statement->Step())
+        return DgnElementId();
+
+    return statement->GetValueId<DgnElementId>(0);
+    }

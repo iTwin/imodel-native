@@ -142,6 +142,7 @@ DGNPLATFORM_TYPEDEFS (ViewContext)
 DGNPLATFORM_TYPEDEFS (ViewController)
 DGNPLATFORM_TYPEDEFS (ViewFlags)
 DGNPLATFORM_TYPEDEFS (DgnDbExpressionContext);
+DGNPLATFORM_TYPEDEFS (DgnElementExpressionContext);
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (TextString)
@@ -292,6 +293,7 @@ DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
 DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
 DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
+DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)

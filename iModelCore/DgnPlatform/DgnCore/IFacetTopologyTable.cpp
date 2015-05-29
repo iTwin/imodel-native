@@ -382,8 +382,6 @@ FaceAttachment::FaceAttachment ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams, ViewContextR context)
     {
-    // WIP_FACEATTACHMENTS - Make sure that "Resolve" has been called...should save SubCategory/color is from SubCategory appearance...
-    m_category      = sourceParams.GetCategoryId ();
     m_color         = sourceParams.GetLineColor();
     m_transparency  = sourceParams.GetTransparency ();
     m_material      = sourceParams.GetMaterial ();
@@ -394,7 +392,6 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams, ViewContextR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
     {
-    elParams.SetCategoryId (m_category);
     elParams.SetLineColor (m_color);
     elParams.SetTransparency (m_transparency);
     elParams.SetMaterial (m_material);
@@ -416,8 +413,7 @@ void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
     {
-    if (m_category      != rhs.m_category ||
-        m_color         != rhs.m_color ||
+    if (m_color         != rhs.m_color ||
         m_transparency  != rhs.m_transparency ||
         m_material      != rhs.m_material)
         return false;
@@ -440,8 +436,7 @@ bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
     {
-    return (m_category         < rhs.m_category ||
-            m_color.GetValue() < rhs.m_color.GetValue() ||
+    return (m_color.GetValue() < rhs.m_color.GetValue() ||
             m_transparency     < rhs.m_transparency ||
             m_material         < rhs.m_material);
-}
+    }

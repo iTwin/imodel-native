@@ -12,6 +12,9 @@
 The DgnPlatform library is a key part of the DgnDb technology stack from <a href="http://www.bentley.com/">Bentley</a>. 
 The DgnPlatform library contains the data access API for the DgnDb file format.
 It also provides the run-time services necessary for writing applications focused on sustaining infrastructure (buildings, bridges, transit, utilities, energy, water, etc.).
+The technology stack is designed to leverage whatever system resources are available without strictly requiring them.
+This allows applications to run on everything from mobile devices to high-powered desktop environments.
+<p>
 Key requirements addressed by the DgnPlatform library include:
 
 @li Rich, first class support for geometry, graphics, and relational business data

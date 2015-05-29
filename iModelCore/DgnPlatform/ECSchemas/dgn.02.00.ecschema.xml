@@ -386,6 +386,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </ECDbPropertyHint>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="ParentId" typeName="long">
+            <!-- Foreign key relationship: ElementOwnsChildElements.ParentId -->
+            <ECCustomAttributes>
+                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                    <!-- Null means a "root level" element -->
+                    <IsNullable>True</IsNullable>
+                </ECDbPropertyHint>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="Code" typeName="string">
             <!-- The "business key" for this Element. Typically used to link this Element with a record in an external system. -->
             <ECCustomAttributes>

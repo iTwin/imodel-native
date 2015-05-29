@@ -153,7 +153,7 @@ public:
     StatusInt       _ProcessCurvePrimitive (ICurvePrimitiveCR primitive, bool closed, bool filled) override;
     StatusInt       _ProcessSolidPrimitive (ISolidPrimitiveCR primitive) override;
     void            _DrawPointString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
-    StatusInt       _DrawBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP, double) override;
+    StatusInt       _DrawBody (ISolidKernelEntityCR entity, double) override;
     void            _DrawLineString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
     void            _DrawShape2d (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override;
     void            _DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range) override;
