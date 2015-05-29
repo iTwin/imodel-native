@@ -1268,7 +1268,7 @@ void HitList::Dump (WCharCP label) const
     HitPathP thisHit;
 
     for (int i=0; NULL != (thisHit = GetHit(i)); i++)
-        printf ("\n -> ElementId : %llu", thisHit->GetElementId().GetValue());
+        printf ("\n -> ElementId : %lld", (long long int)thisHit->GetElementId().GetValue());
 
     printf ("\n");
     }
