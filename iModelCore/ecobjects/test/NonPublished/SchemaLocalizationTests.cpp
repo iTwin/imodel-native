@@ -8,7 +8,7 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-#include <ECObjects\ECSchema.h>
+#include <ECObjects/ECSchema.h>
 using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE

@@ -21,7 +21,6 @@ static WCharCP const STANDARD           = L"Standard";
 static WCharCP const DISPLAYLABEL       = L"DisplayLabel";
 static WCharCP const DESCRIPTION        = L"Description";
 static WCharCP const SOURCE             = L"Source";
-static WCharCP const TARGET             = L"Target";
 static WCharCP const SOURCEROLELABEL    = L"SourceRoleLabel";
 static WCharCP const TARGETROLELABEL    = L"TargetRoleLabel";
 static WCharCP const COLON              = L":";
@@ -231,7 +230,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
         WString caPropertyAccessor;
         if(ECOBJECTS_STATUS_Success != ParseCaKeyString(containerAccessor, caClassName, caPropertyAccessor, it.first, prefixLength, it.second.first))
             {
-            LOG.errorv(L"Invalid key '%ls' for localized string '%ls' for schema '%ls'", it.first, it.second.second, primarySchema.GetFullSchemaName());
+            LOG.errorv(L"Invalid key '%ls' for localized string '%ls' for schema '%ls'", it.first.c_str(), it.second.second.c_str(), primarySchema.GetFullSchemaName().c_str());
             continue;
             }
         
@@ -248,7 +247,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
             caInstance = caContainer->GetLocalAttributeAsConsolidated(caClassName);
             if (!caInstance.IsValid())
                 {
-                LOG.errorv(L"Cannot apply the localized string '%ls' because the custom attribute or container cannot be found given the key '%ls'", it.second.second, it.first);
+                LOG.errorv(L"Cannot apply the localized string '%ls' because the custom attribute or container cannot be found given the key '%ls'", it.second.second.c_str(), it.first.c_str());
                 continue;
                 }
             }
@@ -258,7 +257,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
         if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor(accessor, *caInstance, caPropertyAccessor.c_str()) ||
             ECOBJECTS_STATUS_Success != caInstance->SetValueUsingAccessor(accessor, ECValue(it.second.second.c_str())))
                 LOG.errorv(L"Cannot apply the localized string '%ls' using the property accessor '%ls' on the custom attribute class '%ls' on the container '%ls'",
-                    it.second.second, caPropertyAccessor, caClassName, containerAccessor);
+                    it.second.second.c_str(), caPropertyAccessor.c_str(), caClassName.c_str(), containerAccessor.c_str());
         }
     }
 
@@ -267,7 +266,7 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<WString, bpair<size_t, 
     IECInstancePtr localizationSpec = localizationSupplemental->GetCustomAttribute(LOC_SPEC);
     if (!localizationSpec.IsValid())
         {
-        LOG.errorv(L"Unable to load schema localizations from '%ls' because it does not have a '%ls' Custom Attribute", localizationSupplemental->GetFullSchemaName(), LOC_SPEC);
+        LOG.errorv(L"Unable to load schema localizations from '%ls' because it does not have a '%ls' Custom Attribute", localizationSupplemental->GetFullSchemaName().c_str(), LOC_SPEC);
         return false;
         }
 
@@ -275,7 +274,7 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<WString, bpair<size_t, 
     if (ECOBJECTS_STATUS_Success != localizationSpec->GetValue(resource, RESOURCE))
         {
         LOG.errorv(L"Unable to load schema localizations from '%ls' because the Custom Attribute '%ls' does not have a value for '%ls'",
-            localizationSupplemental->GetFullSchemaName(), LOC_SPEC, RESOURCE);
+            localizationSupplemental->GetFullSchemaName().c_str(), LOC_SPEC, RESOURCE);
         return false;
         }
 
@@ -340,7 +339,7 @@ IECCustomAttributeContainerP SchemaLocalizedStrings::GetContainer(WStringCR cont
     WString propertyName;
     if (ECOBJECTS_STATUS_Success != ParseContainerAccessor(className, relEndPoint, propertyName, containerAccessor))
         {
-        LOG.errorv(L"Unable to parse '%ls' to set a localized string for schema '%ls'", containerAccessor, primarySchema.GetFullSchemaName());
+        LOG.errorv(L"Unable to parse '%ls' to set a localized string for schema '%ls'", containerAccessor.c_str(), primarySchema.GetFullSchemaName().c_str());
         return nullptr;
         }
     
@@ -366,7 +365,7 @@ IECCustomAttributeContainerP SchemaLocalizedStrings::GetClassContainer(WStringCR
     ECClassP ecClass = primarySchema.GetClassP(className.c_str());
     if (nullptr == ecClass)
         {
-        LOG.errorv(L"Cannot find the class '%ls' in schema '%ls'", className, primarySchema.GetFullSchemaName());
+        LOG.errorv(L"Cannot find the class '%ls' in schema '%ls'", className.c_str(), primarySchema.GetFullSchemaName().c_str());
         return nullptr;
         }
 
@@ -377,7 +376,7 @@ IECCustomAttributeContainerP SchemaLocalizedStrings::GetClassContainer(WStringCR
         ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
         if (nullptr == relClass)
             {
-            LOG.errorv(L"The class '%ls' is not a relationship class, cannot apply localized '%ls'", className, relEndPoint);
+            LOG.errorv(L"The class '%ls' is not a relationship class, cannot apply localized '%ls'", className.c_str(), relEndPoint.c_str());
             return nullptr;
             }
         if (relEndPoint.Equals(SOURCE))
@@ -392,13 +391,13 @@ IECCustomAttributeContainerP SchemaLocalizedStrings::GetPropertyContainer(WStrin
     ECClassP ecClass = primarySchema.GetClassP(className.c_str());
     if (nullptr == ecClass)
         {
-        LOG.errorv(L"Cannot find the class '%ls' in schema '%ls'", className, primarySchema.GetFullSchemaName());
+        LOG.errorv(L"Cannot find the class '%ls' in schema '%ls'", className.c_str(), primarySchema.GetFullSchemaName().c_str());
         return nullptr;
         }
     ECPropertyP ecProperty = ecClass->GetPropertyP(propertyName.c_str());
     if (nullptr == ecProperty)
         {
-        LOG.errorv(L"Cannot find the property '%ls' in the class '%ls' from the schema '%ls'", propertyName, className, primarySchema.GetFullSchemaName());
+        LOG.errorv(L"Cannot find the property '%ls' in the class '%ls' from the schema '%ls'", propertyName.c_str(), className.c_str(), primarySchema.GetFullSchemaName().c_str());
         return nullptr;
         }
     

@@ -431,7 +431,7 @@ bvector<ECSchemaP>& localizationSchemas
     if (nullptr == locSchema)
         return;
 
-    LOG.debugv("Applying localizations from %ls to %ls", locSchema->GetName(), primarySchema.GetName());
+    LOG.debugv("Applying localizations from %ls to %ls", locSchema->GetName().c_str(), primarySchema.GetName().c_str());
 
     primarySchema.m_localizedStrings = SchemaLocalizedStrings(locSchema, primarySchema);
     }
