@@ -93,6 +93,7 @@
     <ClCompile Include="presentation\eccontentdefinition.cpp" />
     <ClCompile Include="presentation\ECResourceProvider.cpp" />
     <ClCompile Include="presentation\ecviewdefinition.cpp" />
+    <ClCompile Include="SchemaLocalizedStrings.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
@@ -110,6 +111,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECInstanceIterable.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\auicommand.h" />

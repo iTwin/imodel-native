@@ -2,7 +2,7 @@
 #
 #     $Source: test/SeedData.prewire.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -11,6 +11,9 @@ PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 # Wire in seed data
 always:
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData=$(ecobjectsSrc)test/SeedData/*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/ur-PK/=$(ecobjectsSrc)test/SeedData/ur-PK/*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/en-GB/=$(ecobjectsSrc)test/SeedData/en-GB/*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/it/=$(ecobjectsSrc)test/SeedData/it/*.xml"
     $(unzipCmd) -n $(ecobjectsSrc)test/SeedData/performance.zip -d $(buildDir)ECObjectsTest_Data/
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/=$(buildDir)ECObjectsTest_Data/performance/*.xml"
 

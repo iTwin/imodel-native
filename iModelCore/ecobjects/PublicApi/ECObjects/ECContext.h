@@ -72,6 +72,7 @@ private:
     bvector<SearchPathSchemaFileLocaterPtr> m_ownedLocators;
     IECSchemaRemapperCP                     m_remapper;
     bool                                    m_acceptLegacyImperfectLatestCompatibleMatch;
+    bvector<WString>                        m_cultureStrings;
 
     
     SchemaLocatorSet::iterator  GetHighestLocatorInRange (uint32_t& prioirty);
@@ -124,6 +125,14 @@ public:
     //! Adds a file path that should be used to search for a matching schema name
     //! @param[in] path Path to the directory where schemas can be found
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP path);
+
+    //! Adds a culture string that will be appended to the existing search paths
+    //! when looking for localization supplemental schemas.
+    //! @param[in] culture string in format cu-CU or just cu
+    ECOBJECTS_EXPORT void AddCulture(WCharCP culture);
+
+    //! Gets culture strings
+    ECOBJECTS_EXPORT bvector<WString>* GetCultures();
 
     //! Set the last locater to be used when trying to find a schema
     //! @param[in] locater  Locater that should be used as the last locater when trying to find a schema

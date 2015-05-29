@@ -2,7 +2,7 @@
 |
 |     $Source: src/SupplementalSchema.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -348,6 +348,19 @@ ECSchemaR primarySchema,
 bvector<ECSchemaP>& supplementalSchemaList
 )
     {
+    return UpdateSchema(primarySchema, supplementalSchemaList, L"");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema
+(
+ECSchemaR           primarySchema,
+bvector<ECSchemaP>& supplementalSchemaList,
+WCharCP             locale
+)
+    {
     StopWatch timer (L"", true);
     bmap<uint32_t, ECSchemaP> schemasByPrecedence;
     bvector<ECSchemaP> localizationSchemas;
@@ -364,18 +377,60 @@ bvector<ECSchemaP>& supplementalSchemaList
         //else
         //    UnsupplementClasses (m_supplementedSchema.GetClasses ());
         }
-    
+    if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
+        return status;
+
     status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
     primarySchema.SetIsSupplemented(true);
     SupplementalSchemaInfoPtr info = SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes);
     primarySchema.SetSupplementalSchemaInfo(info.get());
 
+    ApplyLocalizationSupplementals(primarySchema, locale, localizationSchemas);
+    
     timer.Stop();
     WString primarySchemaName = primarySchema.GetFullSchemaName();
     LOG.infov ("Supplemented (in %.4f seconds) %ls with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
         primarySchemaName.c_str(), supplementalSchemaList.size());
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Colin.Kerr                      03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SupplementedSchemaBuilder::ApplyLocalizationSupplementals
+(
+ECSchemaR primarySchema,
+WCharCP locale,
+bvector<ECSchemaP>& localizationSchemas
+)
+    {
+    ECSchemaP locSchema = nullptr;
+    // If not locale specified use the first localization supplemental found.
+    if (0 == wcscmp(L"", locale))
+        {
+        if (localizationSchemas.begin() != localizationSchemas.end ())
+            {
+            LOG.debugv("No locale set choosing first localization supplemental found");
+            locSchema = *(localizationSchemas.begin());
+            }
+        }
+    else // Find the localization supplemental with the matching locale
+        {
+        for (ECSchemaP supplemental : localizationSchemas)
+            {
+            if (0 == wcscmp(locale, SchemaLocalizedStrings::GetLocaleFromSupplementalSchema(supplemental).c_str()))
+                {
+                locSchema = supplemental;
+                }
+            }
+        }
+    if (nullptr == locSchema)
+        return;
+
+    LOG.debugv("Applying localizations from %ls to %ls", locSchema->GetName(), primarySchema.GetName());
+
+    primarySchema.m_localizedStrings = SchemaLocalizedStrings(locSchema, primarySchema);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -386,14 +441,19 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::OrderSupplementalSchemas
 bmap<uint32_t, ECSchemaP>& schemasByPrecedence, 
 ECSchemaR primarySchema, 
 const bvector<ECSchemaP>& supplementalSchemaList, 
-bvector<ECSchemaP> localizationSchemas 
+bvector<ECSchemaP>& localizationSchemas 
 )
     {
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-    for (bvector<ECSchemaP>::const_iterator iter = supplementalSchemaList.begin(); iter != supplementalSchemaList.end(); iter++)
+    for (ECSchemaP supplemental : supplementalSchemaList)
         {
+        if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(supplemental))
+            {
+            localizationSchemas.push_back(supplemental);
+            continue;
+            }
+
         SupplementalSchemaMetaDataPtr metaData;
-        ECSchemaP supplemental = *iter;
         if (!SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplemental))
             return SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing;
         if (!metaData.IsValid())
@@ -401,8 +461,6 @@ bvector<ECSchemaP> localizationSchemas
 
         m_supplementalSchemaNamesAndPurposes[supplemental->GetFullSchemaName()] = metaData->GetSupplementalSchemaPurpose();
         uint32_t precedence = metaData->GetSupplementalSchemaPrecedence();
-
-        // Not supporting localization schemas
 
         bmap<uint32_t, ECSchemaP>::const_iterator precedenceIterator = schemasByPrecedence.find(precedence);
 

@@ -280,6 +280,14 @@ ECObjectsStatus ECSchema::SetNamespacePrefix (WStringCR namespacePrefix)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECSchema::GetDescription () const
     {
+    return m_localizedStrings.GetSchemaDescription(this, m_description);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ECSchema::GetInvariantDescription() const
+    {
     return m_description;
     }
 
@@ -298,6 +306,14 @@ ECObjectsStatus ECSchema::SetDescription (WStringCR description)
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECSchema::GetDisplayLabel () const
+    {
+    return m_localizedStrings.GetSchemaDisplayLabel(this, m_displayLabel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ECSchema::GetInvariantDisplayLabel() const
     {
     return m_displayLabel;
     }
@@ -617,8 +633,8 @@ ECClassCR sourceClass
     targetClass->SetIsDomainClass(sourceClass.GetIsDomainClass());
     targetClass->SetIsStruct(sourceClass.GetIsStruct());
     if (sourceClass.GetIsDisplayLabelDefined())
-        targetClass->SetDisplayLabel(sourceClass.GetDisplayLabel());
-    targetClass->SetDescription(sourceClass.GetDescription());
+        targetClass->SetDisplayLabel(sourceClass.GetInvariantDisplayLabel());
+    targetClass->SetDescription(sourceClass.GetInvariantDescription());
 
     // Set the base classes on the target class from the source class
     // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
@@ -627,15 +643,14 @@ ECClassCR sourceClass
         targetClass->AddBaseClass(*baseClass);
         }
 
-    if (!sourceClass.GetSchema().IsSupplemented())
+    for(ECPropertyP sourceProperty: sourceClass.GetProperties(false))
         {
-        for(ECPropertyP sourceProperty: sourceClass.GetProperties(false))
-            {
-            ECPropertyP destProperty;
-            status = targetClass->CopyProperty(destProperty, sourceProperty, true);
-            if (ECOBJECTS_STATUS_Success != status)
-                return status;
-            }
+        if (sourceProperty->IsForSupplementation())
+            continue;
+        ECPropertyP destProperty;
+        status = targetClass->CopyProperty(destProperty, sourceProperty, true);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
         }
 
     return sourceClass.CopyCustomAttributesTo(*targetClass);
@@ -860,7 +875,7 @@ ECSchemaPtr& schemaOut
 
     schemaOut->SetDescription(m_description);
     if (GetIsDisplayLabelDefined())
-        schemaOut->SetDisplayLabel(GetDisplayLabel());
+        schemaOut->SetDisplayLabel(GetInvariantDisplayLabel());
 
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
@@ -1446,6 +1461,16 @@ bvector<WString>&               searchPaths
         // Now check this same path for supplemental schemas
         bvector<ECSchemaP> supplementalSchemas;
         TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), schemaPathStr, schemaContext, supplementalSchemas);
+        
+        // Check for localization supplementals
+        for(WString culture : *(schemaContext.GetCultures()))
+            {
+            if(culture.Equals(L"en")) // not sure
+                continue;
+            BeFileName locDir(schemaPathStr.c_str());
+            locDir.AppendToPath(culture.c_str());
+            TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), locDir, schemaContext, supplementalSchemas);
+            }
         if (supplementalSchemas.size() > 0)
             {
             Bentley::ECN::SupplementedSchemaBuilder builder;
@@ -1782,9 +1807,9 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
     schemaNode->AddAttributeStringValue (SCHEMA_NAME_ATTRIBUTE, this->GetName().c_str());
     schemaNode->AddAttributeStringValue (SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, this->GetNamespacePrefix().c_str());
     schemaNode->AddAttributeStringValue (SCHEMA_VERSION_ATTRIBUTE, versionString);
-    schemaNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetDescription().c_str());
+    schemaNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        schemaNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetDisplayLabel().c_str());
+        schemaNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
     // make sure the schema node has a namespace, and if it doesn't set its default namespace.
     if (NULL == schemaNode->GetNamespace())
