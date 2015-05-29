@@ -576,14 +576,6 @@ public:
             //! @note: Required to drop brep geometry to polyface(s).
             virtual BentleyStatus _FacetBody (IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, IFacetOptionsR options) const {return _FacetBody (out, in, 0.0);}
 
-            //! Initialize per-face material and color information for the supplied ISolidKernelEntity using the supplied ElemDisplayParams.
-            //! @param[in] in The solid kernel entity to draw.
-            //! @param[in] context The context to output the body to.
-            //! @param[in] baseParams The "natural" ElemDisplayParams to use for faces that won't have an explicit material/color set.
-            //! @param[in] subElemIdOffset Sub-entity base id (optional: for multi-body face material attachments).
-            //! @return IFaceMaterialAttachmentsPtr with face attachment information.
-            virtual IFaceMaterialAttachmentsPtr _InitFaceMaterialAttachments (ISolidKernelEntityCR in, ViewContextR context, ElemDisplayParamsCR baseParams, int subElemIdOffset = 0) const {return NULL;}
-
             //! Output a ISolidKernelEntity as one or more closed planar shapes (may have holes) and surfaces to the supplied view context.
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] context The context to output the body to.
