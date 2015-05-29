@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <RmgrTools/RscMgr/rmgrsubs.h>
 #include <ECDb/ECDb.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 BeThreadLocalStorage g_hostForThread;
 double const fc_hugeVal = 1e37;
@@ -315,12 +316,15 @@ void DgnPlatformLib::Host::InitializeDgnCore ()
     // establish the NotificationAdmin first, in case other _Supply methods generate errors
     BeAssert (NULL == m_notificationAdmin); m_notificationAdmin = &_SupplyNotificationAdmin();
     BeAssert (NULL == m_realityDataAdmin); m_realityDataAdmin = &_SupplyRealityDataAdmin();
+    BeAssert (NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
 
     BeStringUtilities::Initialize(m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory());
     ECDb::Initialize (m_knownLocationsAdmin->GetLocalTempDirectoryBaseName (),
                       &m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory (),
                       m_notificationAdmin->_GetLogSQLiteErrors () ? BeSQLiteLib::LogErrors::Yes : BeSQLiteLib::LogErrors::No);
     L10N::Initialize (_SupplySqlangFiles());
+
+    GeoCoordinates::BaseGCS::Initialize (GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
 
     AdoptHost (*this);
     BeAssert (NULL != DgnPlatformLib::QueryHost());
@@ -435,7 +439,6 @@ bool DgnPlatformLib::Host::LineStyleAdmin::_GetLocalLineStylePaths (WStringR pat
 DgnPlatformLib::Host::GraphicsAdmin&         DgnPlatformLib::Host::_SupplyGraphicsAdmin()         {return *new GraphicsAdmin();}
 DgnPlatformLib::Host::SolidsKernelAdmin&     DgnPlatformLib::Host::_SupplySolidsKernelAdmin()     {return *new SolidsKernelAdmin();}
 DgnPlatformLib::Host::MaterialAdmin&         DgnPlatformLib::Host::_SupplyMaterialAdmin()         {return *new MaterialAdmin();}
-DgnPlatformLib::Host::GeoCoordinationAdmin&  DgnPlatformLib::Host::_SupplyGeoCoordinationAdmin () {return *new GeoCoordinationAdmin();}
 DgnPlatformLib::Host::FontAdmin&             DgnPlatformLib::Host::_SupplyFontAdmin()             {return *new FontAdmin();}
 DgnPlatformLib::Host::NotificationAdmin&     DgnPlatformLib::Host::_SupplyNotificationAdmin()     {return *new NotificationAdmin();}
 DgnPlatformLib::Host::LineStyleAdmin&        DgnPlatformLib::Host::_SupplyLineStyleAdmin()        {return *new LineStyleAdmin();}
@@ -444,6 +447,16 @@ DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormat
 DgnPlatformLib::Host::RealityDataAdmin&      DgnPlatformLib::Host::_SupplyRealityDataAdmin()      {return *new RealityDataAdmin();}
 
 DgnPlatformLib::SessionAdmin&   DgnPlatformLib::InteractiveHost::_SupplySessionAdmin() {return *new SessionAdmin();}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      10/2014
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::GeoCoordinationAdmin& DgnPlatformLib::Host::_SupplyGeoCoordinationAdmin()
+    {
+    BeFileName path = GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    path.AppendToPath (L"DgnGeoCoord");
+    return *DgnGeoCoordinationAdmin::Create (path);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      07/14
