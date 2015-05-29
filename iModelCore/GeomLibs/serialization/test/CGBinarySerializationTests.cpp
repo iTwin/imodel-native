@@ -2,14 +2,16 @@
 |
 |     $Source: test/NonPublished/CGBinarySerializationTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include <Serialization/GeomLibsSerializationAPI.h>
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+#include <GeomSerialization/GeomSerializationApi.h>
+#include "../TestFixture/TestFixture.h"
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+using namespace BentleyApi::ECN;
+
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct CGBinarySerializationTests : ECTestFixture
     {
@@ -20,7 +22,7 @@ struct CGBinarySerializationTests : ECTestFixture
         ASSERT_TRUE(BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, extendedData, 0)) << "Failed to deserialize string: " << xml.c_str();
         ASSERT_EQ(1, geoms.size()) << "Expected 1 geometry object returned for string deserialization but got " << geoms.size() << " for " << xml.c_str();
 
-        bvector<byte> bytes;
+        bvector<Byte> bytes;
         //    BeXmlCGWriter::WriteBytes(bytes, *(originalArc.get()));
         BeXmlCGWriter::WriteBytes(bytes, *geoms[0], &extendedData);
 
@@ -67,7 +69,7 @@ TEST_F(CGBinarySerializationTests, WriterTest)
     Roundtrip(Utf8String("<SurfacePatch xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><ExteriorLoop><CurveChain><ListOfCurve><LineString><ListOfPoint><xyz>-5,0,0</xyz><xyz>5,0,0</xyz><xyz>5,3,0</xyz><xyz>-5,3,0</xyz><xyz>-5,0,0</xyz></ListOfPoint></LineString></ListOfCurve></CurveChain></ExteriorLoop></SurfacePatch>"));
     }
 
-TEST (CGSerializationTests, DeserializeEllipticDisc)
+TEST_F (CGBinarySerializationTests, DeserializeEllipticDisc)
     {
     Utf8String xml("<EllipticDisk xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radiusA>1</radiusA><radiusB>1.5</radiusB></EllipticDisk>");
     bvector<IGeometryPtr> geoms;
@@ -84,7 +86,7 @@ TEST (CGSerializationTests, DeserializeEllipticDisc)
     ASSERT_FALSE(arc.IsCircular ());
     }
 
-TEST (CGSerializationTests, DeserializeExtendedData)
+TEST_F (CGBinarySerializationTests, DeserializeExtendedData)
     {
     Utf8String xml("<ExtendedObject xmlns=\"http://www.bentley.com/schemas/Bentley.ECSerializable.1.0\"> \
                         <LineSegment xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"> \
@@ -99,7 +101,7 @@ TEST (CGSerializationTests, DeserializeExtendedData)
                         </ExtendedData> \
                     ExtendedObject>");
 
-    byte bytes[] = {0x40, 0x0E, 0x45, 0x78, 0x74, 0x65, 0x6E, 0x64, 0x65, 0x64, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74, 0x08, 0x39, 0x68, 0x74,
+    Byte bytes[] = {0x40, 0x0E, 0x45, 0x78, 0x74, 0x65, 0x6E, 0x64, 0x65, 0x64, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74, 0x08, 0x39, 0x68, 0x74,
                      0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x77, 0x77, 0x77, 0x2E, 0x62, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x63, 0x6F, 0x6D,
                      0x2F, 0x73, 0x63, 0x68, 0x65, 0x6D, 0x61, 0x73, 0x2F, 0x42, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x45, 0x43, 0x53,
                      0x65, 0x72, 0x69, 0x61, 0x6C, 0x69, 0x7A, 0x61, 0x62, 0x6C, 0x65, 0x2E, 0x31, 0x2E, 0x30, 0x40, 0x0B, 0x4C, 0x69, 0x6E,
@@ -143,12 +145,12 @@ TEST (CGSerializationTests, DeserializeExtendedData)
     BeXmlCGWriter::Write(beCgXml, *geoms[0], &extendedData);
     printf("%s\n", beCgXml.c_str());
 
-    bvector<byte> outputBytes;
+    bvector<Byte> outputBytes;
     BeXmlCGWriter::WriteBytes(outputBytes, *geoms[0], &extendedData);
 
     }
 
-TEST (CGSerializationTests, DeserializeNestedExtendedData)
+TEST_F (CGBinarySerializationTests, DeserializeNestedExtendedData)
     {
     Utf8String xml("<CurveChain xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\">\
                         <ListOfCurve>\
@@ -187,4 +189,4 @@ TEST (CGSerializationTests, DeserializeNestedExtendedData)
 
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE
