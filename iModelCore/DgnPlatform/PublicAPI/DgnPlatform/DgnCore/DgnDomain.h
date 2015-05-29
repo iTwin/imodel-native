@@ -368,13 +368,13 @@ public:
     //! @param[in] handlerId The DgnClassId for which the handler is desired.
     //! @param[in] baseClassId The root DgnClassId of the handler of interest. This method will walk through the base class hierarchy
     //! of handlerId towards baseClassId until it finds a registered handler.
-    //! @note The DgnClassId /b is a ECClassId.
+    //! @note The DgnClassId @b is a ECClassId.
     DGNPLATFORM_EXPORT DgnDomain::Handler* FindHandler(DgnClassId handlerId, DgnClassId baseClassId);
 };
 
 //=======================================================================================
 //! The DgnDomain for the base "dgn" schema.
-//! @see DgnSchemaDomainSqlFunctions for a list of built-in functions that you can call in SQL statements.
+//! @see DgnDbSqlFunctions for a list of built-in functions that you can call in SQL statements.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct DgnSchemaDomain : DgnDomain
