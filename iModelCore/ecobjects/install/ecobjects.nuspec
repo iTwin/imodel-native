@@ -12,12 +12,12 @@
         <language>en-US</language>
     </metadata>
     <files>
-        <file src="ECObjects6.dll" target="lib\net45\ECObjects6.dll" />
-        <file src="BeLibxml2.dll" target="lib\net45\BeLibxml2.dll" />
-        <file src="Bentley5.dll" target="lib\net45\Bentley5.dll" />
-        <file src="BentleyAllocator.dll" target="lib\net45\BentleyAllocator.dll" />
-        <file src="BentleyGeom5.dll" target="lib\net45\BentleyGeom5.dll" />
-        <file src="BentleyGeomSerialization5.dll" target="lib\net45\BentleyGeomSerialization5.dll" />
-        <file src="BeXml1.dll" target="lib\net45\BeXml1.dll" />
+        <file src="Assemblies\ECObjects6.dll" target="lib\net45\ECObjects6.dll" />
+        <file src="Assemblies\BeLibxml2.dll" target="lib\net45\BeLibxml2.dll" />
+        <file src="Assemblies\Bentley5.dll" target="lib\net45\Bentley5.dll" />
+        <file src="Assemblies\BentleyAllocator.dll" target="lib\net45\BentleyAllocator.dll" />
+        <file src="Files\BentleyGeom5.dll" target="lib\net45\BentleyGeom5.dll" />
+        <file src="Files\BentleyGeomSerialization5.dll" target="lib\net45\BentleyGeomSerialization5.dll" />
+        <file src="Assemblies\BeXml1.dll" target="lib\net45\BeXml1.dll" />
     </files>
 </package>
