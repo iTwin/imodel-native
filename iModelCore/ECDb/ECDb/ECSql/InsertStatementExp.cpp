@@ -133,7 +133,7 @@ void InsertStatementExp::ResolveParameters () const
             {
             auto propNameExp = propNameListExp->GetPropertyNameExp (i);
             BeAssert (propNameExp != nullptr);
-            parameterExp->SetTargetExp(*propNameExp);
+            parameterExp->SetTargetExpInfo(*propNameExp);
             }
         }
     }

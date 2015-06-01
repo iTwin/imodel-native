@@ -75,12 +75,12 @@ ECSqlStatus ComputedExp::DetermineOperandsTargetTypes (ECSqlParseContext& ctx, C
 
     for (auto parameterExp : lhsParameterExpList)
         {
-        const_cast<ParameterExp*> (parameterExp)->SetTargetExp (*rhs);
+        const_cast<ParameterExp*> (parameterExp)->SetTargetExpInfo (*rhs);
         }
 
     for (auto parameterExp : rhsParameterExpList)
         {
-        const_cast<ParameterExp*> (parameterExp)->SetTargetExp (*lhs);
+        const_cast<ParameterExp*> (parameterExp)->SetTargetExpInfo(*lhs);
         }
 
     return ECSqlStatus::Success;

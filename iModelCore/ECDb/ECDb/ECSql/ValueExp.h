@@ -261,13 +261,10 @@ public:
         : ValueExp (), m_parameterName (parameterName), m_parameterIndex (-1), m_targetExp (nullptr)
         {}
 
-    void SetTargetExp (ComputedExp const& exp);
-    void SetTypeInfoFromTarget (ECSqlTypeInfo const& targetTypeInfo);
+    void SetTargetExpInfo(ComputedExp const& exp);
+    void SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo);
 
-    ComputedExp const* GetTargetExp () const
-        {
-        return m_targetExp;
-        }
+    ComputedExp const* GetTargetExp () const { return m_targetExp; }
 
     bool IsNamedParameter () const { return !m_parameterName.empty (); }
     Utf8CP GetParameterName () const { return m_parameterName.c_str (); }

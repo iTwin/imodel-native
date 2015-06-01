@@ -562,7 +562,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& c
             //We don't know the data type for function args. We choose Double
             //as default type as it can take any numeric value and SQLite supports implicit conversions
             //between the primitive types anyways
-            parameterExp->SetTypeInfoFromTarget(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+            parameterExp->SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
             }
         else
             {
@@ -695,7 +695,7 @@ Exp::FinalizeParseStatus LikeRhsValueExp::_FinalizeParsing (ECSqlParseContext& c
         {
         ParameterExp* parameterExp = GetRhsExp ()->TryGetAsParameterExpP();
         if (parameterExp != nullptr)
-            parameterExp->SetTypeInfoFromTarget(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
+            parameterExp->SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
 
         SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
         }
@@ -741,9 +741,9 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing (ECSqlParseContext& ctx,
             {
             auto const& targetTypeInfo = targetExp->GetTypeInfo ();
             if (targetTypeInfo.GetKind () == ECSqlTypeInfo::Kind::Unset)
-                SetTypeInfoFromTarget (ECSqlTypeInfo (PRIMITIVETYPE_Long));
+                SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_Long));
             else
-                SetTypeInfoFromTarget (targetTypeInfo);
+                SetTypeInfo (targetTypeInfo);
             }
         else
             {
@@ -752,7 +752,7 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing (ECSqlParseContext& ctx,
             if (stat != ECSqlStatus::Success)
                 return FinalizeParseStatus::Error;
 
-            SetTypeInfoFromTarget (targetExp->GetTypeInfo ());
+            SetTypeInfo (targetExp->GetTypeInfo ());
             }
         }
     //For some expressions there is no target exp, but a target type. If that has been set, we don't need to do anything anymore.
@@ -761,7 +761,7 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing (ECSqlParseContext& ctx,
         //In some cases the parameter exp has no target type (e.g. in limit/offset clauses. In
         //that case just assume a numeric type.
         //TODO: assumption to choose numeric type in that case is error-prone. 
-        SetTypeInfoFromTarget(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
         }
 
     m_parameterIndex = ctx.TrackECSqlParameter (*this);
@@ -771,18 +771,17 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing (ECSqlParseContext& ctx,
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ParameterExp::SetTargetExp (ComputedExp const& exp)
+void ParameterExp::SetTargetExpInfo(ComputedExp const& targetExp)
     {
-    if (GetTypeInfo ().GetKind() == ECSqlTypeInfo::Kind::Unset && m_targetExp == nullptr)
-        m_targetExp = &exp;
+    m_targetExp = &targetExp;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ParameterExp::SetTypeInfoFromTarget (ECSqlTypeInfo const& targetTypeInfo)
+void ParameterExp::SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo)
     {
-    SetTypeInfo (targetTypeInfo);
+    SetTypeInfo(targetTypeInfo);
     m_targetExp = nullptr;
     }
 

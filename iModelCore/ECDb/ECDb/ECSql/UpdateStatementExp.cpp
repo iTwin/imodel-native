@@ -121,7 +121,7 @@ Exp::FinalizeParseStatus AssignmentExp::_FinalizeParsing (ECSqlParseContext& ctx
         if (parameterExp != nullptr)
             {
             BeAssert (GetPropertyNameExp () != nullptr);
-            parameterExp->SetTargetExp (*GetPropertyNameExp ());
+            parameterExp->SetTargetExpInfo (*GetPropertyNameExp ());
             }
 
         return FinalizeParseStatus::NotCompleted;

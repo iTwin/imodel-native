@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveToSingleColumnECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -268,6 +268,10 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindId (BeRepositoryBasedId val
     if (sqliteStat != BE_SQLITE_OK)
         return SetError (sqliteStat, "ECSqlStatement::BindId");
 
+ /*   auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler();
+    if (onBindEventHandler != nullptr)
+        onBindEventHandler(value);
+        */
     return ResetStatus ();
     }
 
