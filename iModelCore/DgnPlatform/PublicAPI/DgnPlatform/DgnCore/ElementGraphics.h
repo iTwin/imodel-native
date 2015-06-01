@@ -21,6 +21,8 @@ DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidPrimitiveCR, DgnDb
 DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (MSBsplineSurfaceCR, DgnDbR dgnDb, bool includeEdges = true, bool includeFaceIso = false);
 DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidKernelEntityCR, DgnDbR dgnDb, bool includeEdges = true, bool includeFaceIso = false);
 
+DGNPLATFORM_EXPORT static void CollectCurves (ISolidKernelEntityCR, DgnDbR dgnDb, bvector<CurveVectorPtr>& curves, bvector<ElemDisplayParams>& params, bool includeEdges = true, bool includeFaceIso = false);
+
 DGNPLATFORM_EXPORT static void Draw (ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 DGNPLATFORM_EXPORT static void Draw (MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 DGNPLATFORM_EXPORT static void Draw (ISolidKernelEntityCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
