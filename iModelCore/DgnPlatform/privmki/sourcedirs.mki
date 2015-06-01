@@ -2,7 +2,7 @@
 #
 #     $Source: privmki/sourcedirs.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__SourceDirs_MKI__)
@@ -18,7 +18,6 @@ __SourceDirs_MKI__=1
 SrcDgnPlatform          =       $(SrcRoot)/DgnPlatform/
 DgnCoreDir              =       $(SrcDgnPlatform)DgnCore/
 DgnFileIODir            =       $(SrcDgnPlatform)DgnFileIO/
-DgnGeoCoordDir          =       $(SrcDgnPlatform)DgnGeoCoord/
 DgnHandlersDir          =       $(SrcDgnPlatform)DgnHandlers/
 DgnViewDir              =       $(SrcDgnPlatform)DgnView/
 PlatformToolsDir        =       $(SrcDgnPlatform)PlatformTools/
@@ -35,7 +34,6 @@ DgnPlatformSrc              =  $(DgnPlatformPublicAPISrc)DgnPlatform/
 DgnPlatformToolsPublicApiSrc = $(DgnPlatformSrc)Tools/
 DgnDesktopToolsAPISrc       =  $(DgnPlatformSrc)DesktopTools/
 DgnCoreAPISrc               =  $(DgnPlatformSrc)DgnCore/
-DgnGeoCoordAPISrc           =  $(DgnPlatformSrc)DgnGeoCoord/
 DgnHandlersAPISrc           =  $(DgnPlatformSrc)DgnHandlers/
 DgnHandlersTextBlockSrc     =  $(DgnHandlersAPISrc)TextBlock/
 DistributedDgnAPISrc        =  $(DgnPlatformSrc)DistributedDgn/
