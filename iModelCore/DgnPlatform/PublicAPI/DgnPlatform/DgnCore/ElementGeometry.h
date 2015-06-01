@@ -149,10 +149,10 @@ struct Operation
 //=======================================================================================
 struct Writer
     {
-    DgnDbP m_db;
+    DgnDbR m_db;
     bvector<uint8_t> m_buffer;
 
-    Writer (DgnDbR db) : m_db(&db) {AppendHeader ();}
+    Writer (DgnDbR db) : m_db(db) {AppendHeader ();}
 
     void AppendHeader () {Header hdr; Append (Operation (OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
     void Reset () {m_buffer.clear (); AppendHeader ();};
@@ -184,9 +184,9 @@ struct Writer
 //=======================================================================================
 struct Reader
     {
-    DgnDbP m_db;
+    DgnDbR m_db;
     
-    Reader(DgnDbR db) : m_db(&db) {}
+    Reader(DgnDbR db) : m_db(db) {}
 
     static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 

@@ -750,7 +750,7 @@ SnapPath* IntersectPath::_Clone () const
 bool IntersectPath::_IsSameHit (HitPathCP otherPath) const
     {
     // check base paths
-    if (!SnapPath::IsSameHit(otherPath))
+    if (!T_Super::_IsSameHit(otherPath))
         return false;
 
     // for IntersectPaths, it can't be the same hit unless both are of type InteresctPath and BOTH paths match
@@ -758,7 +758,7 @@ bool IntersectPath::_IsSameHit (HitPathCP otherPath) const
         return false;
 
     // now check the "second" paths
-    HitPathCP    o2 = ((IntersectPath*) otherPath)->GetSecondHit();
+    HitPathCP o2 = ((IntersectPath*) otherPath)->GetSecondHit();
 
     return GetSecondHit()->IsSameHit(o2);
     }
@@ -768,7 +768,7 @@ bool IntersectPath::_IsSameHit (HitPathCP otherPath) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IntersectPath::_SetHilited (DgnElement::Hilited newState) const
     {
-    SnapPath::SetHilited (newState);
+    T_Super::_SetHilited (newState);
 
     // when we're turning on the hilite flag, we need to set the second path to "dashed hilite"
     if (DgnElement::Hilited::Normal == newState)
@@ -1268,7 +1268,7 @@ void HitList::Dump (WCharCP label) const
     HitPathP thisHit;
 
     for (int i=0; NULL != (thisHit = GetHit(i)); i++)
-        printf ("\n -> ElementId : %lld", (long long int)thisHit->GetElementId().GetValue());
+        printf ("\n -> ElementId : %llu", (long long unsigned int) thisHit->GetElementId().GetValue());
 
     printf ("\n");
     }
