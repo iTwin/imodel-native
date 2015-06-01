@@ -770,7 +770,7 @@ private:
 
 private:
     BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime, uint64_t cacheSize);
-    void                     wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler);
+    bool                     wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler);
     void                     wt_Cleanup();
     void                     wt_Persist(Data const& data);
     RealityDataStorageResult wt_Select(Data& data, Utf8CP id, SelectOptions const& options);
@@ -931,7 +931,7 @@ private:
     bool ShouldIgnoreRequests() const;
 
 protected:
-    AsyncRealityDataSource(int numThreads) : m_threadPool(RealityDataThreadPool::Create(numThreads, 0)) {}
+    AsyncRealityDataSource(int numThreads) : m_threadPool(RealityDataThreadPool::Create(numThreads, 0)), m_ignoreRequestsUntil(0) {}
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
