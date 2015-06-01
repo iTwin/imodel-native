@@ -324,7 +324,7 @@ END_BENTLEY_API_NAMESPACE
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 ECINSTANCE_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory.
-ECINSTANCE_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element.
+ECINSTANCE_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
 ECINSTANCE_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart. A collection of DgnGeomParts make up the geometry aspect.
 ECINSTANCE_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 ECINSTANCE_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements.

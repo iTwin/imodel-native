@@ -54,10 +54,11 @@ public:
         private: virtual DgnElementP _CreateInstance(DgnPlatform::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
 
-/*=================================================================================**//**
-//! An ElementHandler supplies instances of (a subclass of) DgnElement.
- @bsiclass                                                     SamWilson       11/04
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! An ElementHandler creates instances of (a subclass of) DgnElement.
+//! @see DgnElement
+//! @ingroup DgnElementGroup
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElementHandler : DgnDomain::Handler
 {
     friend struct DgnElement;
@@ -78,25 +79,31 @@ public:
     DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
 };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  05/2007
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A PhysicalElementHandler creates instances of PhysicalElement.
+//! @see PhysicalElement
+//! @ingroup DgnElementGroup
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElementHandler : ElementHandler
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, PhysicalElementHandler, ElementHandler, DGNPLATFORM_EXPORT)
 };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  05/2007
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A DrawingElementHandler creates instances of DrawingElement.
+//! @see DrawingElement
+//! @ingroup DgnElementGroup
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingElementHandler : ElementHandler
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, DrawingElementHandler, ElementHandler, DGNPLATFORM_EXPORT)
 };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Shaun.Sewall    05/2015
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! An ElementGroupHandler creates instances of ElementGroup.
+//! @see ElementGroup
+//! @ingroup DgnElementGroup
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroupHandler : ElementHandler
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, ElementGroupHandler, ElementHandler, DGNPLATFORM_EXPORT)
