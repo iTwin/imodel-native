@@ -25,16 +25,19 @@ struct FaceAttachment
 {
 private:
 
-ColorDef    m_color;
-double      m_transparency;
-MaterialCP  m_material;
+DgnCategoryId       m_categoryId;
+DgnSubCategoryId    m_subCategoryId;
+ColorDef            m_color;
+double              m_transparency;
+MaterialCP          m_material;
+DPoint2d            m_uv;
 
 public:
 
 DGNPLATFORM_EXPORT FaceAttachment ();
-DGNPLATFORM_EXPORT FaceAttachment (ElemDisplayParamsCR, ViewContextR);
+DGNPLATFORM_EXPORT FaceAttachment (ElemDisplayParamsCR);
 
-DGNPLATFORM_EXPORT void ToElemDisplayParams (ElemDisplayParamsR) const; // NOTE: ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams if you need anything more than color/transparency/level.
+DGNPLATFORM_EXPORT void ToElemDisplayParams (ElemDisplayParamsR) const; // NOTE: ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams if you need anything more than color/transparency/category.
 DGNPLATFORM_EXPORT void ToElemMatSymb (ElemMatSymbR) const; // NOTE: For QvOutput use only, other callers should use ToElemDisplayParams and FromElemDisplayParams/CookDisplayParams.
 
 DGNPLATFORM_EXPORT bool operator== (struct FaceAttachment const&) const;
@@ -96,6 +99,8 @@ virtual void _SetEntityTransform (TransformCR) = 0;
 //! @private
 virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
 //! @private
+virtual bool _InitFaceMaterialAttachments(ElemDisplayParamsCP) = 0;
+//! @private
 virtual ISolidKernelEntityPtr _Clone() const = 0;
 
 public:
@@ -135,6 +140,9 @@ void PostMultiplyEntityTransformInPlace (TransformCR solidTransform) {_SetEntity
 
 //! Optional per-face color/material overrides.
 IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMaterialAttachments();}
+
+//! Initialize per-face color/material using the supplied ElemDisplayParams or clear if nullptr.
+bool InitFaceMaterialAttachments(ElemDisplayParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
 
 //! Create deep copy of this ISolidKernelEntity.
 ISolidKernelEntityPtr Clone() const {return _Clone();}
