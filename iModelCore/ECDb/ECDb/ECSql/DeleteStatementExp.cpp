@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DeleteStatementExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -71,7 +71,7 @@ WhereExp const* DeleteStatementExp::GetOptWhereClauseExp () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String DeleteStatementExp::ToECSql () const
+Utf8String DeleteStatementExp::_ToECSql () const
     {
     Utf8String ecsql ("DELETE FROM ");
 

@@ -25,20 +25,15 @@ private:
     SystemPropertyExpIndexMap m_specialTokenExpIndexMap;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    virtual Utf8String _ToString () const override
-        {
-        return "AssignmentListExp";
-        }
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override { return "AssignmentListExp"; }
 
 public:
-    AssignmentListExp ()
-        : Exp ()
-        {}
+    AssignmentListExp () : Exp () {}
 
     void AddAssignmentExp (std::unique_ptr<AssignmentExp> assignmentExp);
     AssignmentExp const* GetAssignmentExp (size_t index) const;
     SystemPropertyExpIndexMap const& GetSpecialTokenExpIndexMap () const { return m_specialTokenExpIndexMap; }
-    virtual Utf8String ToECSql () const override;
     };
 
 //************************ PropertyNameListExp ******************************
@@ -52,10 +47,8 @@ private:
     SystemPropertyExpIndexMap m_specialTokenExpIndexMap;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    virtual Utf8String _ToString () const override
-        {
-        return "PropertyNameList";
-        }
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override { return "PropertyNameList"; }
 
 public :
     PropertyNameListExp ()
@@ -65,7 +58,6 @@ public :
     void AddPropertyNameExp (std::unique_ptr<PropertyNameExp>& propertyNameExp);
     PropertyNameExp const* GetPropertyNameExp (size_t index) const;
     SystemPropertyExpIndexMap const& GetSpecialTokenExpIndexMap () const { return m_specialTokenExpIndexMap; }
-    virtual Utf8String ToECSql() const override;
     };
 
 
@@ -80,7 +72,7 @@ public:
 
 private:
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString () const override { return "ValueExpList"; }
 
 public:
@@ -89,7 +81,6 @@ public:
     void AddValueExp (std::unique_ptr<ValueExp>& valueExp);
     ParameterExp* TryGetAsParameterExpP(size_t index) const;
     ValueExp const* GetValueExp(size_t index) const;
-    virtual Utf8String ToECSql() const override;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

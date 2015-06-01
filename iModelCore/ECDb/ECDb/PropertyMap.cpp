@@ -260,16 +260,16 @@ Utf8CP PropertyMap::GetColumnBaseName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const
+NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
     {
-    return _ToNativeSql (classIdentifier, ecsqlType);
+    return _ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const
+NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
     {
     std::vector<ECDbSqlColumn const*> columns;
     GetColumns (columns);
@@ -280,7 +280,14 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql (Utf8CP classIdentifier, ECSqlT
         BeAssert (!column->GetName ().empty());
 
         NativeSqlBuilder sqlSnippet;
+        if (wrapInParentheses)
+            sqlSnippet.AppendParenLeft();
+
         sqlSnippet.Append (classIdentifier, column->GetName ().c_str());
+
+        if (wrapInParentheses)
+            sqlSnippet.AppendParenRight();
+
         nativeSqlSnippets.push_back (std::move (sqlSnippet));
         }
 

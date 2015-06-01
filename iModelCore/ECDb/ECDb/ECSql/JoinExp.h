@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JoinExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,9 +63,7 @@ struct JoinSpecExp : Exp
     {
 DEFINE_EXPR_TYPE(JoinSpec) 
 public:
-    JoinSpecExp ()
-        : Exp ()
-        {}
+    JoinSpecExp () : Exp () {}
     virtual ~JoinSpecExp () {}
     };
 
@@ -77,20 +75,12 @@ struct CrossJoinExp: JoinExp
     {
 DEFINE_EXPR_TYPE(CrossJoin) 
 private:
-    virtual Utf8String _ToString () const override
-        {
-        return "CrossJoin";
-        }
+    virtual Utf8String _ToECSql() const override { return GetFromClassRef()->ToECSql() + " CROSS JOIN " + GetToClassRef()->ToECSql(); }
+    virtual Utf8String _ToString() const override { return "CrossJoin"; }
 public:
     CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
         :JoinExp(ECSqlJoinType::CrossJoin, std::move (from), std::move (to))
-        {
-        }
-
-    virtual Utf8String ToECSql() const override
-        {
-        return GetFromClassRef()->ToECSql() + " CROSS JOIN " + GetToClassRef()->ToECSql();
-        }
+        {}
     };
 
 //=======================================================================================
@@ -102,16 +92,15 @@ DEFINE_EXPR_TYPE(NaturalJoin)
 private:
     ECSqlJoinType m_appliedJoinType;
 
-    virtual Utf8String _ToString () const override;
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     NaturalJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType appliedJoinType)
         :JoinExp(ECSqlJoinType::NaturalJoin, std::move(from), std::move(to)), m_appliedJoinType(appliedJoinType)
-        {
-        }
+        {}
 
     ECSqlJoinType GetAppliedJoinType() const {return m_appliedJoinType;}
-    virtual Utf8String ToECSql() const override;
     };
 
 
@@ -124,17 +113,13 @@ struct QualifiedJoinExp: JoinExp
 
 private:
     size_t m_nJoinSpecIndex;
-    virtual Utf8String _ToString () const override
-        {
-        return "QualifiedJoin";
-        }
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override { return "QualifiedJoin"; }
 
 public:
     QualifiedJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType joinType, std::unique_ptr<JoinSpecExp> joinSpecExp);
 
     JoinSpecExp const* GetJoinSpec() const { return GetChild<JoinSpecExp> (m_nJoinSpecIndex);}
-
-    virtual Utf8String ToECSql() const override;
     };
 
 
@@ -156,34 +141,31 @@ public:
     struct ResolvedEndPoint
         {
         friend RelationshipJoinExp;
-        private:
-            ClassNameExp const*    m_classRef;
-            ClassLocation           m_location;
-            bool                   m_anyClass;
-        protected:
-            ResolvedEndPoint()
-                :m_classRef (nullptr), m_location (ClassLocation::NotResolved), m_anyClass (false)
-                {
-                }
-            void SetClassRef(ClassNameExp const* classRef)
-                {
-                m_classRef = classRef;
-                }
-            void SetLocation(ClassLocation location, bool append)
-                {
-                if (append)
-                    m_location = static_cast<ClassLocation>(static_cast<int>(m_location) | static_cast<int>(location));
-                else
-                    m_location = location;
-                }
-            void SetAnyClass (bool isAnyClass)
-                {
-                m_anyClass = isAnyClass;
-                }
-        public:
-            ClassNameExp const* GetClassNameRef() const { return m_classRef;}
-            ClassLocation       GetLocation() const { return m_location;}
-            bool                IsAnyClass () const { return m_anyClass; }
+    private:
+        ClassNameExp const*    m_classRef;
+        ClassLocation           m_location;
+        bool                   m_anyClass;
+    protected:
+        ResolvedEndPoint() :m_classRef (nullptr), m_location (ClassLocation::NotResolved), m_anyClass (false) {}
+        void SetClassRef(ClassNameExp const* classRef)
+            {
+            m_classRef = classRef;
+            }
+        void SetLocation(ClassLocation location, bool append)
+            {
+            if (append)
+                m_location = static_cast<ClassLocation>(static_cast<int>(m_location) | static_cast<int>(location));
+            else
+                m_location = location;
+            }
+        void SetAnyClass (bool isAnyClass)
+            {
+            m_anyClass = isAnyClass;
+            }
+    public:
+        ClassNameExp const* GetClassNameRef() const { return m_classRef;}
+        ClassLocation       GetLocation() const { return m_location;}
+        bool                IsAnyClass () const { return m_anyClass; }
         };
 private:
     JoinDirection           m_direction;
@@ -191,7 +173,8 @@ private:
     ResolvedEndPoint        m_resolvedFrom;
     ResolvedEndPoint        m_resolvedTo;
 
-    virtual Utf8String _ToString () const override;
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override;
     ECSqlStatus ResolveRelationshipEnds (ECSqlParseContext& ctx);
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
@@ -208,8 +191,6 @@ public:
     ResolvedEndPoint const&  GetResolvedToEndPoint() const { return m_resolvedTo;}
 
     JoinDirection GetDirection() const { return m_direction;}
-
-    virtual Utf8String ToECSql() const override;
     };
 
 
@@ -222,6 +203,20 @@ struct NamedPropertiesJoinExp : JoinSpecExp
     DEFINE_EXPR_TYPE(NamedPropertiesJoin) 
 private:
     std::vector<Utf8String> m_properties;
+
+    virtual Utf8String _ToECSql() const override
+        {
+        Utf8String tmp = "USING (";
+        auto end = &m_properties.at(m_properties.size() - 1);
+        for (auto& property : m_properties)
+            {
+            tmp.append(property);
+            if (&property != end)
+                tmp.append(", ");
+            }
+        tmp.append(")");
+        return tmp;
+        }
 
     virtual Utf8String _ToString () const override
         {
@@ -241,28 +236,9 @@ private:
         }
 
 public:
-    NamedPropertiesJoinExp()
-        : JoinSpecExp ()
-        {}
+    NamedPropertiesJoinExp() : JoinSpecExp () {}
 
-    void Append(Utf8StringCR propertyName)
-        {
-        m_properties.push_back(propertyName);
-        }
-
-    virtual Utf8String ToECSql () const override
-        {
-        Utf8String tmp = "USING (";
-        auto end = &m_properties.at(m_properties.size() - 1);
-        for(auto& property: m_properties)
-            {
-            tmp.append(property);
-            if (&property != end)
-                tmp.append(", ");
-            }
-        tmp.append(")");
-        return tmp;
-        }
+    void Append(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
     };
 
 //=======================================================================================
@@ -272,16 +248,13 @@ struct JoinConditionExp: JoinSpecExp
     {
     DEFINE_EXPR_TYPE(JoinCondition)
 private:
-    virtual Utf8String _ToString () const override
-        {
-        return "JoinCondition [Properties: ";
-        }
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override { return "JoinCondition"; }
 
 public:
     explicit JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition);
 
     BooleanExp const* GetSearchCondition() const {return GetChild<BooleanExp> (0);}
-    virtual Utf8String ToECSql() const override;
     };
 
 

@@ -32,7 +32,7 @@ public:
     static Utf8CP ToString(ECSqlJoinType joinType);
     static Utf8CP ToString(SqlSetQuantifier setQuantifier);
     static Utf8CP ToString(SubqueryTestOperator op);
-    static Utf8CP ToString(SqlBinaryOperator op);
+    static Utf8CP ToString(BinarySqlOperator op);
     static Utf8CP ToString(BooleanSqlOperator op);
     static Utf8CP ToString(UnarySqlOperator op);
     static Utf8CP ToString(ECSqlType);

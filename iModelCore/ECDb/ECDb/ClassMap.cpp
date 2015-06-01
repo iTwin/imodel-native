@@ -965,7 +965,7 @@ MappedTablePtr MappedTable::Create (ECDbMapR ecDbMap, ClassMapCR classMap)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt MappedTable::FinishTableDefinition ()
+BentleyStatus MappedTable::FinishTableDefinition ()
     {
     if (m_table.GetOwnerType () == OwnerType::ECDb)
         {
@@ -1008,18 +1008,17 @@ StatusInt MappedTable::FinishTableDefinition ()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt MappedTable::AddClassMap (ClassMapCR classMap)
+BentleyStatus MappedTable::AddClassMap (ClassMapCR classMap)
     {
     if (&classMap.GetTable () != &m_table)
         {
         LOG.errorv ("Attempted to add a ClassMap for table '%s' to MappedTable for table '%s'.", classMap.GetTable ().GetName ().c_str (), m_table.GetName ().c_str ());
         return ERROR;
         }
-    if (std::find (m_classMaps.begin (), m_classMaps.end (), &classMap) != m_classMaps.end ())
-        {
 
+    if (std::find (m_classMaps.begin (), m_classMaps.end (), &classMap) != m_classMaps.end ())
         return SUCCESS;
-        }
+
     m_classMaps.push_back (&classMap);
     return SUCCESS;
     }
@@ -1742,12 +1741,12 @@ void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder)
         if (classIds->empty())
             return; //no filter needed, as all class ids should be considered
 
-        inOperator = BooleanSqlOperator::NOT_IN;
+        inOperator = BooleanSqlOperator::NotIn;
         }
     else
         {
         classIds = &m_partitionClassIds;
-        inOperator = BooleanSqlOperator::IN;
+        inOperator = BooleanSqlOperator::In;
         }
 
     sqlBuilder.Append(inOperator);

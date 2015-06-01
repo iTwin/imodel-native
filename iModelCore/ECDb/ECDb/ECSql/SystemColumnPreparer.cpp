@@ -107,7 +107,7 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
         return ECSqlStatus::Success; //table doesn't have class id or all class ids need to be considered -> no filter needed
 
     if (!whereClauseBuilder.IsEmpty())
-        whereClauseBuilder.Append(BooleanSqlOperator::AND);
+        whereClauseBuilder.Append(BooleanSqlOperator::And);
 
     whereClauseBuilder.AppendParenLeft().Append(classIdCol->GetName().c_str(), true);
     horizPartition->AppendECClassIdFilterSql(whereClauseBuilder);
@@ -128,9 +128,8 @@ ECSqlStatus EndTableSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContext& c
     if (!whereClauseBuilder.IsEmpty())
         whereClauseBuilder.Append(" AND ");
 
-    auto otherEndECInstanceIdColSqlSnippets = relClassMap.GetOtherEndECInstanceIdPropMap()->ToNativeSql(tableAlias, ecsqlType);
+    auto otherEndECInstanceIdColSqlSnippets = relClassMap.GetOtherEndECInstanceIdPropMap()->ToNativeSql(tableAlias, ecsqlType, false);
     BeAssert(!otherEndECInstanceIdColSqlSnippets.empty());
-    whereClauseBuilder.AppendParenLeft();
     bool isFirstItem = true;
     for (auto const& sqlSnippet : otherEndECInstanceIdColSqlSnippets)
         {
@@ -141,8 +140,6 @@ ECSqlStatus EndTableSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContext& c
 
         isFirstItem = false;
         }
-
-    whereClauseBuilder.AppendParenRight();
 
     return ECSqlStatus::Success;
     }

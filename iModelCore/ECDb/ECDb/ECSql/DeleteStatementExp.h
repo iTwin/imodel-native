@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DeleteStatementExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,19 +25,14 @@ private:
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-
-    virtual Utf8String _ToString () const override
-        {
-        return "Delete";
-        }
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString () const override { return "Delete"; }
 
 public:
     DeleteStatementExp (std::unique_ptr<ClassRefExp> classNameExp, std::unique_ptr<WhereExp> whereClauseExp);
 
     ClassNameExp const* GetClassNameExp () const;
     WhereExp const* GetOptWhereClauseExp () const;
-
-    virtual Utf8String ToECSql () const override;
     };
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/UpdateStatementExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -82,7 +82,7 @@ WhereExp const* UpdateStatementExp::GetOptWhereClauseExp () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String UpdateStatementExp::ToECSql () const
+Utf8String UpdateStatementExp::_ToECSql () const
     {
     Utf8String ecsql ("UPDATE ");
 
@@ -169,7 +169,7 @@ ParameterExp* AssignmentExp::TryGetValueExpAsParameterExp () const
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //virtual
-Utf8String AssignmentExp::ToECSql () const
+Utf8String AssignmentExp::_ToECSql () const
     {
     Utf8String ecsql = GetPropertyNameExp ()->ToECSql ();
     ecsql.append (" = ").append (GetValueExp ()->ToECSql ());

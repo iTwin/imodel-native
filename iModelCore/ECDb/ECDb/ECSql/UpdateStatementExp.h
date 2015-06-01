@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/UpdateStatementExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,11 +27,8 @@ private:
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-
-    virtual Utf8String _ToString () const override
-        {
-        return "Update";
-        }
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString () const override { return "Update"; }
 
 public:
     UpdateStatementExp (std::unique_ptr<ClassRefExp> classNameExp, std::unique_ptr<AssignmentListExp> assignmentListExp, std::unique_ptr<WhereExp> whereClauseExp);
@@ -39,8 +36,6 @@ public:
     ClassNameExp const* GetClassNameExp () const;
     AssignmentListExp const* GetAssignmentListExp () const;
     WhereExp const* GetOptWhereClauseExp () const;
-
-    virtual Utf8String ToECSql () const override;
     };
 
 
@@ -58,18 +53,14 @@ private:
 
     ParameterExp* TryGetValueExpAsParameterExp () const;
 
-    virtual Utf8String _ToString () const override
-        {
-        return "Assignment";
-        }
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override { return "Assignment"; }
 
 public:
     AssignmentExp (std::unique_ptr<PropertyNameExp> propNameExp, std::unique_ptr<ValueExp> valueExp);
 
     PropertyNameExp const* GetPropertyNameExp () const;
     ValueExp const* GetValueExp () const;
-
-    virtual Utf8String ToECSql () const override;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

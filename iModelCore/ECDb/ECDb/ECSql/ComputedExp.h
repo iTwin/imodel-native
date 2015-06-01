@@ -23,19 +23,27 @@ struct ComputedExp : Exp
     DEFINE_EXPR_TYPE(Computed)
 
 private:
+    friend struct ECSqlParser;
+
+    bool m_hasParentheses;
     ECSqlTypeInfo m_typeInfo;
+
+    virtual Utf8String _ToECSql() const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const = 0;
 
     static void FindHasTargetExpExpressions (std::vector<ParameterExp const*>& parameterExpList, ComputedExp const* expr);
 protected:
-    ComputedExp () : Exp () {}
+    explicit ComputedExp() : Exp(), m_hasParentheses(false) {}
 
     ECSqlStatus DetermineOperandsTargetTypes (ECSqlParseContext& ctx, ComputedExp const* lhs, ComputedExp const* rhs) const;
 
     void SetTypeInfo (ECSqlTypeInfo const& typeInfo) {m_typeInfo = typeInfo;}
+    void SetHasParentheses() { m_hasParentheses = true; }
 
 public:
     virtual ~ComputedExp () {}
 
+    bool HasParentheses() const { return m_hasParentheses; }
     ECSqlTypeInfo const& GetTypeInfo () const {return m_typeInfo;}
     };
 
@@ -70,8 +78,8 @@ private:
     FinalizeParseStatus CanCompareTypes (ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-
-    virtual Utf8String _ToString () const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     BinaryBooleanExp(std::unique_ptr<ComputedExp> left, BooleanSqlOperator op, std::unique_ptr<ComputedExp> right);
@@ -80,7 +88,6 @@ public:
     ComputedExp const* GetRightOperand() const {return GetChild<ComputedExp> (m_rightOperandExpIndex);}
     BooleanSqlOperator GetOperator() const {return m_op;}
 
-    virtual Utf8String ToECSql() const override;
     };
 
 
@@ -95,6 +102,7 @@ private:
     bool m_notOperator;
     size_t m_operandExpIndex;
 
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
 
 public:
@@ -102,8 +110,6 @@ public:
 
     BooleanExp const* GetOperand() const { return GetChild<BooleanExp>(m_operandExpIndex); }
     bool HasNotOperator() const { return m_notOperator; }
-
-    virtual Utf8String ToECSql() const override;
     };
 
 //=======================================================================================
@@ -116,17 +122,13 @@ private:
     size_t m_booleanValueExpIndex;
 
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override { return "UnaryPredicate"; }
 
 public:
     explicit UnaryPredicateExp(std::unique_ptr<ValueExp> predicateExp);
 
     ValueExp const* GetValueExp() const { return GetChild<ValueExp>(m_booleanValueExpIndex); }
-
-    virtual Utf8String ToECSql() const override;
     };
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

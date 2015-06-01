@@ -62,7 +62,7 @@ public:
         if (clear)
             m_nativeSql.clear ();
         }
-    void Rest ()
+    void Reset ()
         {
         m_nativeSql.clear ();
         m_stack.clear ();
@@ -88,7 +88,7 @@ public:
     NativeSqlBuilder& Append (List const& lhsBuilderList, Utf8CP operatorStr, List const& rhsBuilderList, Utf8CP separator = nullptr);
 
     NativeSqlBuilder& Append (Utf8CP classIdentifier, Utf8CP identifier);
-    NativeSqlBuilder& Append (SqlBinaryOperator op, bool appendTrailingSpace = true);
+    NativeSqlBuilder& Append (BinarySqlOperator op, bool appendTrailingSpace = true);
     NativeSqlBuilder& Append (BooleanSqlOperator op, bool appendTrailingSpace = true);
     NativeSqlBuilder& Append (SqlSetQuantifier setQuantifier, bool appendTrailingSpace = true);
     NativeSqlBuilder& Append (UnarySqlOperator op, bool appendTrailingSpace = true);

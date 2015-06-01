@@ -246,7 +246,6 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp (NativeSqlBuilder::Lis
         BeAssert (childExp != nullptr);
 
         auto assignmentExp = static_cast<AssignmentExp const*> (childExp);
-        //propertyValueMap.Set (*assignmentExp->GetPropertyNameExp (), nullptr);
         NativeSqlBuilder::List nativeSqlSnippets;
         auto stat = ECSqlPropertyNameExpPreparer::Prepare (nativeSqlSnippets, ctx, assignmentExp->GetPropertyNameExp ());
         if (stat != ECSqlStatus::Success)

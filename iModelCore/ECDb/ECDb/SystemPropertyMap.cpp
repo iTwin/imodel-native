@@ -305,13 +305,19 @@ PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const
+NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
     {
     NativeSqlBuilder nativeSqlSnippet;
+
+    if (wrapInParentheses)
+        nativeSqlSnippet.AppendParenLeft();
     //view column alias is only relevant for SELECT as in the native SQL the FROM table is a view
     //whose columns differ from the actual DbColumn name for end table mappings
     auto columnExp = ecsqlType == ECSqlType::Select && HasViewColumnAlias () ? GetViewColumnAlias () : GetColumn ().GetName ().c_str();
     nativeSqlSnippet.Append (classIdentifier, columnExp);
+
+    if (wrapInParentheses)
+        nativeSqlSnippet.AppendParenRight();
 
     NativeSqlBuilder::List nativeSqlSnippets;
     nativeSqlSnippets.push_back (std::move (nativeSqlSnippet));
@@ -388,9 +394,13 @@ ECDbSqlTable* table
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const
+NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
     {
     NativeSqlBuilder nativeSqlSnippet;
+
+    if (wrapInParentheses)
+        nativeSqlSnippet.AppendParenLeft();
+
     if (ecsqlType == ECSqlType::Select)
         {
         //view column alias is only relevant for SELECT as in the native SQL the FROM table is a view
@@ -405,6 +415,9 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (U
         else
             nativeSqlSnippet.Append (classIdentifier, GetColumn ().GetName ().c_str());
         }
+
+    if (wrapInParentheses)
+        nativeSqlSnippet.AppendParenRight();
 
     NativeSqlBuilder::List nativeSqlSnippets;
     nativeSqlSnippets.push_back (std::move (nativeSqlSnippet));

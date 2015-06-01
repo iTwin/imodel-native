@@ -17,6 +17,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************** ComputedExp ******************************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       05/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ComputedExp::_ToECSql() const
+    {
+    Utf8String ecsql;
+    if (HasParentheses())
+        ecsql.append("(");
+
+    _DoToECSql(ecsql);
+
+    if (HasParentheses())
+        ecsql.append(")");
+
+    return std::move(ecsql);
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -91,7 +108,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing (ECSqlParseContext& 
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         //if operands are parameters set the target exp in those expressions
-        if (m_op != BooleanSqlOperator::AND && m_op != BooleanSqlOperator::OR)
+        if (m_op != BooleanSqlOperator::And && m_op != BooleanSqlOperator::Or)
             {
             if (DetermineOperandsTargetTypes (ctx, lhs, rhs) != ECSqlStatus::Success)
                 return FinalizeParseStatus::Error;
@@ -159,7 +176,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
         return FinalizeParseStatus::Error;
         }
 
-    if ((m_op == BooleanSqlOperator::LIKE || m_op == BooleanSqlOperator::NOT_LIKE) &&
+    if ((m_op == BooleanSqlOperator::Like || m_op == BooleanSqlOperator::NotLike) &&
         (!lhsTypeInfo.IsPrimitive () || !rhsTypeInfo.IsPrimitive () ||
         lhsTypeInfo.GetPrimitiveType () != PRIMITIVETYPE_String || rhsTypeInfo.GetPrimitiveType () != PRIMITIVETYPE_String))
         {
@@ -173,12 +190,12 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
         {
         switch (m_op)
             {
-            case BooleanSqlOperator::EQ:
-            case BooleanSqlOperator::NE:
-            case BooleanSqlOperator::IN:
-            case BooleanSqlOperator::NOT_IN:
-            case BooleanSqlOperator::IS:
-            case BooleanSqlOperator::IS_NOT:
+            case BooleanSqlOperator::EqualTo:
+            case BooleanSqlOperator::NotEqualTo:
+            case BooleanSqlOperator::In:
+            case BooleanSqlOperator::NotIn:
+            case BooleanSqlOperator::Is:
+            case BooleanSqlOperator::IsNot:
                 break;
 
             default:
@@ -194,7 +211,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
     //cannot assume both sides have same types as one can still represent the SQL NULL
     if (lhsTypeInfo.IsGeometry () || rhsTypeInfo.IsGeometry ())
         {
-        if ((m_op != BooleanSqlOperator::IS && m_op != BooleanSqlOperator::IS_NOT) ||
+        if ((m_op != BooleanSqlOperator::Is && m_op != BooleanSqlOperator::IsNot) ||
             ((lhsTypeInfo.IsGeometry () && rhsTypeKind != ECSqlTypeInfo::Kind::Null) ||
             (lhsTypeKind != ECSqlTypeInfo::Kind::Null && rhsTypeInfo.IsGeometry ())))
             {
@@ -209,7 +226,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
     if (lhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray ||
         rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray)
         {
-        if ((m_op != BooleanSqlOperator::IS && m_op != BooleanSqlOperator::IS_NOT) ||
+        if ((m_op != BooleanSqlOperator::Is && m_op != BooleanSqlOperator::IsNot) ||
             ((lhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray && rhsTypeKind != ECSqlTypeInfo::Kind::Null) ||
              (lhsTypeKind != ECSqlTypeInfo::Kind::Null && rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray)))
             {
@@ -235,13 +252,12 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BinaryBooleanExp::ToECSql() const 
+void BinaryBooleanExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    Utf8String ecsql("(");
     ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ");
 
     ComputedExp const* rhs = GetRightOperand();
-    const bool rhsNeedsParens = m_op == BooleanSqlOperator::NOT_IN || m_op == BooleanSqlOperator::IN;
+    const bool rhsNeedsParens = m_op == BooleanSqlOperator::NotIn || m_op == BooleanSqlOperator::In;
 
     if (rhsNeedsParens)
         ecsql.append("(");
@@ -250,9 +266,6 @@ Utf8String BinaryBooleanExp::ToECSql() const
 
     if (rhsNeedsParens)
         ecsql.append(")");
-
-    ecsql.append (")");
-    return std::move(ecsql);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -279,14 +292,12 @@ BooleanFactorExp::BooleanFactorExp (unique_ptr<BooleanExp> operand, bool notOper
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BooleanFactorExp::ToECSql() const 
+void BooleanFactorExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    Utf8String ecsql;
     if (m_notOperator)
         ecsql.append("NOT ");
 
-    ecsql.append("(").append(GetOperand()->ToECSql()).append(")");
-    return ecsql;
+    ecsql.append(GetOperand()->ToECSql());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -337,11 +348,10 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String UnaryPredicateExp::ToECSql() const
+void UnaryPredicateExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    return GetValueExp()->ToECSql();
+    ecsql.append (GetValueExp()->ToECSql());
     }
-
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JoinExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -26,7 +26,7 @@ JoinConditionExp::JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition)
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-Utf8String JoinConditionExp::ToECSql() const
+Utf8String JoinConditionExp::_ToECSql() const
     {
     return "ON " + GetSearchCondition ()->ToECSql();
     }
@@ -49,7 +49,7 @@ FromExp const* JoinExp::FindFromExpression() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String NaturalJoinExp::ToECSql() const 
+Utf8String NaturalJoinExp::_ToECSql() const 
     {
     return GetFromClassRef()->ToECSql() + " NATURAL " + ExpHelper::ToString(m_appliedJoinType)+ " " + GetToClassRef()->ToECSql();
     }
@@ -77,7 +77,7 @@ QualifiedJoinExp::QualifiedJoinExp (std::unique_ptr<ClassRefExp> from, std::uniq
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String QualifiedJoinExp::ToECSql() const 
+Utf8String QualifiedJoinExp::_ToECSql() const 
     {
     return GetFromClassRef()->ToECSql() + " " + ExpHelper::ToString(GetJoinType()) + " " + GetToClassRef()->ToECSql() + " "+ GetJoinSpec ()->ToECSql();
     }
@@ -264,7 +264,7 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String RelationshipJoinExp::ToECSql() const 
+Utf8String RelationshipJoinExp::_ToECSql() const 
     {
     auto tmp = GetFromClassRef()->ToECSql() + " JOIN " + GetToClassRef()->ToECSql() + " USING " + GetRelationshipClass ()->ToECSql();
     if (m_direction != JoinDirection::Implied)

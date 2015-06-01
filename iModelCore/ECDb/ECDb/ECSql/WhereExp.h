@@ -20,13 +20,13 @@ struct WhereExp : Exp
 DEFINE_EXPR_TYPE(Where) 
 
 private:
-    virtual Utf8String _ToString () const override;
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     explicit WhereExp(std::unique_ptr<BooleanExp> expression);
 
     BooleanExp const* GetSearchConditionExp() const;
-    virtual Utf8String ToECSql() const override;
     };
 
 

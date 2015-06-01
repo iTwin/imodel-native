@@ -43,6 +43,7 @@ private:
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
     mutable int                 m_classMapLoadAccessCounter;
     mutable std::unique_ptr<MapContext> m_mapContext;
+
     bool                        TryGetClassMap (ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const;
     ClassMapPtr                 DoGetClassMap (ECN::ECClassCR ecClass) const;
     ClassMapPtr                 LoadAddClassMap (ECN::ECClassCR ecClass);
@@ -50,12 +51,10 @@ private:
     MapStatus                   MapClass (SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, bool forceRevaluationOfMapStrategy);
     MapStatus                   AddClassMap (ClassMapPtr& classMap);
     void                        RemoveClassMap (IClassMap const& classMap);
-    CreateTableStatus           FinishTableDefinition (ECN::ECClassCR ecClass) const;
-    CreateTableStatus           FinishTableDefinition (ECDbSqlTable& table) const;
     bool                        FinishTableDefinition () const;
     DbResult                    Save ();
     //! Create a table to persist ECInstances of the given ECClass in the Db
-    CreateTableStatus           CreateOrUpdateRequiredTables ();
+    BentleyStatus               CreateOrUpdateRequiredTables ();
     void BeginMapping ();
     void EndMapping ();
 

@@ -461,7 +461,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey (ECSqlPrepareContext& ctx, NativeSql
                 return;
                 }
 
-            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back (move (ecInstanceIdPropMap->ToNativeSql (nullptr, ECSqlType::Insert)));
+            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back (move (ecInstanceIdPropMap->ToNativeSql (nullptr, ECSqlType::Insert, false)));
             nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back (NativeSqlBuilder::List {NativeSqlBuilder ()});
             }
         else if (ecinstanceIdMode == ECInstanceIdMode::UserProvidedNull)
@@ -617,7 +617,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId (NativeSqlSnippets& in
     if (constraintClassIdPropMap.IsVirtual ())
         return ECSqlStatus::Success;
 
-    auto classIdColSqlSnippet = constraintClassIdPropMap.ToNativeSql (nullptr, ECSqlType::Insert);
+    auto classIdColSqlSnippet = constraintClassIdPropMap.ToNativeSql (nullptr, ECSqlType::Insert, false);
     if (!classIdColSqlSnippet.empty ())
         {
         insertNativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back (move (classIdColSqlSnippet));
@@ -699,7 +699,7 @@ RelationshipClassEndTableMapCR classMap
     updateBuilder.Append (" WHERE ").Append (insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, " = ", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
     //add expression to WHERE clause that only updates the row if the other end id is NULL. If it wasn't NULL, it would mean
     //a cardinality constraint violation, as by definition the other end's cardinality in an end table mapping is 0 or 1.
-    auto otherEndECInstanceIdColumnSqlSnippets = classMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Update);
+    auto otherEndECInstanceIdColumnSqlSnippets = classMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Update, false);
     for (auto const& otherEndECInstanceIdColSnippet : otherEndECInstanceIdColumnSqlSnippets)
         {
         updateBuilder.Append (" AND ").Append (otherEndECInstanceIdColSnippet).Append (" IS NULL");

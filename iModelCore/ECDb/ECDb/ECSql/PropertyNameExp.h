@@ -58,7 +58,8 @@ private:
         {
         m_propertyRef = std::unique_ptr<PropertyRef> (new PropertyRef (derivedPropertyExpInSubqueryRefExp));
         }
-    virtual Utf8String _ToString () const override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     explicit PropertyNameExp (PropertyPath&& propPath);
@@ -78,11 +79,7 @@ public:
     PropertyRef const* GetPropertyRef () const { return m_propertyRef.get (); }
     PropertyRef* GetPropertyRefP () { return m_propertyRef.get (); }
     Utf8CP GetClassAlias () const;
-    bool IsPropertyRef () const
-        {
-        return m_propertyRef != nullptr;
-        }
-    virtual Utf8String ToECSql() const override;
+    bool IsPropertyRef () const { return m_propertyRef != nullptr; }
     };
 
 

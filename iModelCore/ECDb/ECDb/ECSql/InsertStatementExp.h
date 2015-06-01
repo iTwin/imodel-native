@@ -31,10 +31,8 @@ private:
     FinalizeParseStatus Validate (ECSqlParseContext& ctx) const;
     void ResolveParameters () const;
 
-    virtual Utf8String _ToString () const override
-        {
-        return "Insert";
-        }
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString() const override { return "Insert"; }
 
     PropertyNameListExp* GetPropertyNameListExpP () const;
 
@@ -47,8 +45,6 @@ public :
     ClassNameExp const* GetClassNameExp () const;
     PropertyNameListExp const* GetPropertyNameListExp () const;
     ValueExpListExp const* GetValuesExp() const;
-
-    virtual Utf8String ToECSql() const override;
     };
 
 

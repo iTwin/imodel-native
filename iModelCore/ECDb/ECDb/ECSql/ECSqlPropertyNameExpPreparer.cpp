@@ -40,8 +40,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativ
     //    return ECSqlStatus::NotYetSupported;
     //    }
 
-    auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType);
-
+    auto propNameNativeSqlSnippets = exp->GetPropertyMap().ToNativeSql(classIdentifier, currentScopeECSqlType, exp->HasParentheses());
     nativeSqlSnippets.insert (nativeSqlSnippets.end (), propNameNativeSqlSnippets.begin (), propNameNativeSqlSnippets.end ());
    
     return ECSqlStatus::Success;
@@ -103,7 +102,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
                 {
                 if (!propertyRef->IsPrepared ())
                     {
-                    auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select);
+                    auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select, false);
                     auto r = propertyRef->Prepare (snippets);
                     if (!r)
                         return ECSqlStatus::ProgrammerError;
