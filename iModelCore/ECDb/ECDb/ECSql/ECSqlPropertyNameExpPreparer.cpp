@@ -87,7 +87,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
         BeAssert ("Nested expression must have a name/alias" && false);
         return ECSqlStatus::ProgrammerError;
         }
-    printf ("%s %s %s %s %s \r\n", exp.ToECSql ().c_str (), propertyRef->LinkedTo ().ToECSql ().c_str (), propertyRef->LinkedTo ().GetName ().c_str (), propertyRef->LinkedTo ().GetColumnAlias ().c_str (), propertyRef->LinkedTo ().GetNestedAlias ().c_str ());
 
     auto valueExp = derviedPropertyExp.GetExpression ();
     //1. Exp-> PropertyName    useSameColumnNames
