@@ -229,25 +229,10 @@ bool ECSqlTypeInfo::Matches (ECSqlTypeInfo const& rhs, Utf8String* errorMessage)
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool ECSqlTypeInfo::Equals (ECSqlTypeInfo const& rhs, bool ignoreDateTimeInfo) const
     {
-   bool r = m_kind == rhs.m_kind && 
+    return m_kind == rhs.m_kind && 
         m_primitiveType == rhs.m_primitiveType && 
         (ignoreDateTimeInfo || m_dateTimeInfo == rhs.m_dateTimeInfo) &&
         m_structType == rhs.m_structType;
-
-   if (r == false)
-       {
- 
-       LOG.warningv ("Kind %#010x == %#010x", m_kind, rhs.m_kind);
-       LOG.warningv ("PrimitiveType %#010x == %#010x", m_primitiveType, rhs.m_primitiveType);
-       if (!ignoreDateTimeInfo)
-           {
-           LOG.warningv (L"DateTimeInfo %s == %s", m_dateTimeInfo.ToString().c_str(), rhs.m_dateTimeInfo.ToString().c_str());
-           }
-
-       LOG.warningv ("StructType sizeof(%d) %" PRIxPTR " == %" PRIxPTR, sizeof(uintptr_t), (uintptr_t)m_structType, (uintptr_t)rhs.m_structType);
-       }
-
-   return r;
     }
 
 //-----------------------------------------------------------------------------------------
