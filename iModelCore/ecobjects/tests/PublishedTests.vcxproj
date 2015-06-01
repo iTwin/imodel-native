@@ -64,7 +64,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
-    <ClCompile Include="Published\CGSerializationTests.cpp" />
     <ClCompile Include="Published\CustomAttributeTests.cpp" />
     <ClCompile Include="Published\ECRelationshipTests.cpp" />
     <ClCompile Include="Published\InstanceTests.cpp" />

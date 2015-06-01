@@ -2,7 +2,7 @@
 |
 |     $Source: tests/Published/InstanceXMLTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -803,6 +803,54 @@ TEST_F (InstanceSerializationTest, EmptyPropertyTags)
 
     EXPECT_EQ (0, instance->GetValue (v, L"LongMember"));
     EXPECT_TRUE (v.IsNull());
+    }
+
+TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
+    {
+    ECSchemaPtr testSchema;
+    ECSchema::CreateSchema(testSchema, L"GeometrySchema", 1, 0);
+    ECClassP geomClass;
+    testSchema->CreateClass(geomClass, L"GeometryStore");
+
+    PrimitiveECPropertyP stringProp;
+    geomClass->CreatePrimitiveProperty(stringProp, L"Name");
+
+    PrimitiveECPropertyP geomProperty;
+    geomClass->CreatePrimitiveProperty(geomProperty, L"MyGeometry");
+    geomProperty->SetTypeName (L"Bentley.Geometry.Common.IGeometry");
+
+    IECInstancePtr instance = geomClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    DEllipse3d ellipse;
+    ellipse.Init (0.0, 0.0, 0.0, 10000, 0.0, 0.0, 0.0, 10000, 0.0, 0.0, msGeomConst_2pi);
+    ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (ellipse);
+    IGeometryPtr geometryPtr = IGeometry::Create (arc);
+    ECValue v;
+    BentleyStatus vStatus = v.SetIGeometry (*geometryPtr);
+    ASSERT_EQ(SUCCESS ,vStatus);
+
+    IGeometryPtr storedGeometryPtr1 = v.GetIGeometry ();
+    ASSERT_TRUE(storedGeometryPtr1.IsValid());
+    ECObjectsStatus status = instance->SetValue (L"MyGeometry", v);
+    ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
+
+    Utf8String ecInstanceXml;
+    if (instance->WriteToXmlString(ecInstanceXml, true, false) != SUCCESS)
+        ASSERT_TRUE(false);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*testSchema);
+    IECInstancePtr newInstancePtr;
+    InstanceReadStatus readStatus = IECInstance::ReadFromXmlString(newInstancePtr, ecInstanceXml.c_str(), *instanceContext);
+    if(readStatus != SUCCESS)
+        EXPECT_TRUE(false);
+
+    ECValue deserializedGeomProp;
+    ECObjectsStatus stat = newInstancePtr->GetValue (deserializedGeomProp, L"MyGeometry");
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::GetValue";
+
+    IGeometryPtr geomPtr = deserializedGeomProp.GetIGeometry();
+    ASSERT_TRUE(geomPtr.IsValid());
+    ASSERT_TRUE(geomPtr->IsSameStructureAndGeometry(*storedGeometryPtr1)) << "Did not get same structure for " << ecInstanceXml.c_str();
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
