@@ -159,7 +159,7 @@ bool UnitDefinition::AreComparable (UnitDefinitionCR other) const
     if (m_base != other.m_base)
         return false;
 
-    if ( ! (IsValid() && other.IsValid()) )
+    if (!(IsValid() && other.IsValid()))
         return false;
 
     return true;
@@ -170,7 +170,7 @@ bool UnitDefinition::AreComparable (UnitDefinitionCR other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 int UnitDefinition::CompareByScale (UnitDefinitionCR other) const
     {
-    if ( ! AreComparable(other))
+    if (!AreComparable(other))
         return ERROR;
 
     return CompareRatios (m_numerator, m_denominator, other.m_numerator, other.m_denominator);
@@ -179,29 +179,23 @@ int UnitDefinition::CompareByScale (UnitDefinitionCR other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UnitDefinition::GetConversionFactorFrom (double& factor, UnitDefinitionCR from) const
+double UnitDefinition::GetConversionFactorFrom (UnitDefinitionCR from) const
     {
-    if ( ! AreComparable (from))
-        { factor = 1.0; return ERROR; }
+    if (!AreComparable(from))
+        return 1.0;
 
-    factor = (m_numerator   * from.m_denominator) /
-             (m_denominator * from.m_numerator);
-
-    return  SUCCESS;
+    return (m_numerator   * from.m_denominator) / (m_denominator * from.m_numerator);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UnitDefinition::ConvertDistanceFrom (double& outputVal, double inputVal, UnitDefinitionCR from) const
+double UnitDefinition::ConvertDistanceFrom(double inputVal, UnitDefinitionCR from) const
     {
-    if ( ! AreComparable (from))
-        { outputVal = inputVal; return ERROR; }
+    if (!AreComparable(from))
+        return inputVal;
 
-    outputVal = (inputVal * m_numerator   * from.m_denominator) / 
-                           (m_denominator * from.m_numerator);
-
-    return SUCCESS;
+    return (inputVal * m_numerator   * from.m_denominator) / (m_denominator * from.m_numerator);
     }
 
 /*---------------------------------------------------------------------------------**//**

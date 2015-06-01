@@ -251,20 +251,6 @@ virtual void _CookDisplayParams (ElemDisplayParamsR elParams, ElemMatSymbR elMat
 }; // ElementGraphicsContext
 
 /*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    John.Gooding    09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, IDisplaySymbolR dispSymbol, DgnDbR dgnDb)
-    {
-    ElementGraphicsDrawGeom output;
-    ElementGraphicsContext  context (&dropObj, output);
-
-    context.GetCurrentDisplayParams()->Init();
-    context.SetDgnDb (dgnDb);
-
-    dispSymbol._Draw (context);
-    }
-
-/*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, GeometricElementCR element)
@@ -288,18 +274,6 @@ void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, DgnDbR 
     context.SetDgnDb (dgnDb);
 
     dropObj._OutputGraphics (context);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  09/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj)
-    {
-    ElementGraphicsDrawGeom output;
-    ElementGraphicsContext  context (&dropObj, output);
-
-    context.GetCurrentDisplayParams()->Init();
-    dropObj._OutputGraphics (context); // Processor is expected to setup DgnDb in _OutputGraphics...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -634,7 +608,7 @@ static int wireframe_drawSurfaceCurveCallback (void* userArg, MSBsplineCurveP bc
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WireframeGeomUtil::CollectRules (DgnExtrusionDetailR detail, bvector<DSegment3d>& rules, bvector<bool>& interior, ViewContextP context)
+static bool wireframe_collectRules (DgnExtrusionDetailR detail, bvector<DSegment3d>& rules, bvector<bool>& interior, ViewContextP context)
     {
     bvector<DPoint3d> pts;
 
@@ -654,7 +628,7 @@ bool WireframeGeomUtil::CollectRules (DgnExtrusionDetailR detail, bvector<DSegme
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WireframeGeomUtil::CollectRules (DgnRotationalSweepDetailR detail, bvector<DEllipse3d>& rules, bvector<bool>& interior, ViewContextP context)
+static bool wireframe_collectRules (DgnRotationalSweepDetailR detail, bvector<DEllipse3d>& rules, bvector<bool>& interior, ViewContextP context)
     {
     double ruleTolerance = wireframe_getTolerance (*detail.m_baseCurve);
     bvector<bool> tmpInterior;
@@ -710,7 +684,7 @@ bool WireframeGeomUtil::CollectRules (DgnRotationalSweepDetailR detail, bvector<
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WireframeGeomUtil::CollectRules (DgnRuledSweepDetailR detail, bvector<DSegment3d>& rules, bvector<bool>& interior, ViewContextP context)
+static bool wireframe_collectRules (DgnRuledSweepDetailR detail, bvector<DSegment3d>& rules, bvector<bool>& interior, ViewContextP context)
     {
     for (size_t iProfile = 0; iProfile < detail.m_sectionCurves.size ()-1; ++iProfile)
         {
@@ -1001,7 +975,7 @@ void WireframeGeomUtil::Draw (ISolidPrimitiveCR primitive, ViewContextR context,
             bvector<bool> interior;
             bvector<DSegment3d> rules;
 
-            if (CollectRules (detail, rules, interior, &context))
+            if (wireframe_collectRules (detail, rules, interior, &context))
                 return;
 
             for (uint32_t iRule = 0; iRule < rules.size (); ++iRule)
@@ -1070,7 +1044,7 @@ void WireframeGeomUtil::Draw (ISolidPrimitiveCR primitive, ViewContextR context,
             bvector<bool> interior;
             bvector<DEllipse3d> rules;
 
-            if (CollectRules (detail, rules, interior, &context))
+            if (wireframe_collectRules (detail, rules, interior, &context))
                 return;
 
             for (uint32_t uRule = 0; uRule < rules.size (); ++uRule)
@@ -1106,7 +1080,7 @@ void WireframeGeomUtil::Draw (ISolidPrimitiveCR primitive, ViewContextR context,
             bvector<bool> interior;
             bvector<DSegment3d> rules;
 
-            if (CollectRules (detail, rules, interior, &context))
+            if (wireframe_collectRules (detail, rules, interior, &context))
                 return;
 
             for (size_t uRule = 0; uRule < rules.size (); ++uRule)
@@ -1258,12 +1232,12 @@ END_UNNAMED_NAMESPACE
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves (ISolidPrimitiveCR primitive, bool includeEdges, bool includeFaceIso)
+CurveVectorPtr WireframeGeomUtil::CollectCurves (ISolidPrimitiveCR primitive, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
     RuleCollector   rules (includeEdges, includeFaceIso);
 
     rules.SetSolidPrimitive (primitive);
-    ElementGraphicsOutput::Process (rules);
+    ElementGraphicsOutput::Process (rules, dgnDb);
 
     return rules.GetCurveVector ();
     }
@@ -1271,12 +1245,12 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves (ISolidPrimitiveCR primitive, bo
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves (MSBsplineSurfaceCR surface, bool includeEdges, bool includeFaceIso)
+CurveVectorPtr WireframeGeomUtil::CollectCurves (MSBsplineSurfaceCR surface, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
     RuleCollector   rules (includeEdges, includeFaceIso);
 
     rules.SetBsplineSurface (surface);
-    ElementGraphicsOutput::Process (rules);
+    ElementGraphicsOutput::Process (rules, dgnDb);
 
     return rules.GetCurveVector ();
     }
@@ -1284,12 +1258,12 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves (MSBsplineSurfaceCR surface, boo
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves (ISolidKernelEntityCR entity, bool includeEdges, bool includeFaceIso)
+CurveVectorPtr WireframeGeomUtil::CollectCurves (ISolidKernelEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
     RuleCollector   rules (includeEdges, includeFaceIso);
 
     rules.SetSolidEntity (entity);
-    ElementGraphicsOutput::Process (rules);
+    ElementGraphicsOutput::Process (rules, dgnDb);
 
     return rules.GetCurveVector ();
     }

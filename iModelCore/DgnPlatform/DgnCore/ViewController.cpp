@@ -961,6 +961,7 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
     return sectionView->GetInsideForwardClipVector();
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -995,6 +996,7 @@ Transform SectionDrawingViewController::GetTransformToWorld() const
 
     return drawing->GetTransformToWorld();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
@@ -1013,7 +1015,9 @@ bool SectionDrawingViewController::GetSectionHasDogLeg() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt SectionDrawingViewController::_VisitHit(HitPathCR hit, ViewContextR context) const
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     context.PushTransform (GetFlatteningMatrixIf2D(context));
+#endif
     StatusInt status = T_Super::_VisitHit (hit, context);
     context.PopTransformClip();
     return status;
@@ -1024,7 +1028,9 @@ StatusInt SectionDrawingViewController::_VisitHit(HitPathCR hit, ViewContextR co
 //--------------+------------------------------------------------------------------------
 void SectionDrawingViewController::_DrawView (ViewContextR context)
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     context.PushTransform (GetFlatteningMatrixIf2D(context));
+#endif
     T_Super::_DrawView (context);
     context.PopTransformClip();
     }

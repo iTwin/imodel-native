@@ -160,7 +160,7 @@ public:
     void SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize);
     bool Is3d() const {return m_is3d;}
     Match FindMatches(Traverser&);
-    void AddGeomElement(GeometricElementCR geom){AddElement(Entry(geom._CalculateRange3d(), geom));}
+    void AddGeomElement(GeometricElementCR geom){AddElement(Entry(geom.CalculateRange3d(), geom));}
     StatusInt RemoveElement(Entry const&);
 
     DGNPLATFORM_EXPORT void ProcessOcclusionSorted(ViewContextR, DgnModelP, ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);

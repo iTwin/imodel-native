@@ -188,7 +188,10 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_EQ( 0 , countSheets(*db) );
 
         //  Create a sheet
-        SheetModelPtr sheet1 = SheetModel::Create(*db, s_sheet1Name, DPoint2d::From(100, 100), SheetModel::Units::Millimeters);
+        DPoint2d sheetSize = DPoint2d::From(.100, .100);
+        SheetModel::CreateParams params(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
+                                s_sheet1Name, sheetSize);
+        SheetModelPtr sheet1 = SheetModel::Create(params);
         ASSERT_TRUE( sheet1.IsValid() );
         ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet1, "a sheet model (in mm)") );
         ASSERT_TRUE( sheet1->GetModelId().IsValid() );
@@ -198,14 +201,15 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         //  Test some insert errors
         ASSERT_NE( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet1, "") ) << "Should be illegal to add sheet that is already persistent";
 
-        SheetModelPtr sheetSameName = SheetModel::Create(*db, s_sheet1Name, DPoint2d::From(100, 100), SheetModel::Units::Inches);
+        SheetModelPtr sheetSameName = SheetModel::Create(params);
         ASSERT_NE( DGNMODEL_STATUS_Success, db->Models().Insert(*sheetSameName, "") ) << "Should be illegal to add a second sheet with the same name";
-        ASSERT_NE( DGNMODEL_STATUS_Success, db->Models().Insert(*sheetSameName, "") ) << "Should be illegal to add a second sheet with the same name .. even if case is different";
 
         //  Create a second sheet
-        SheetModelPtr sheet2 = SheetModel::Create(*db, s_sheet2Name, DPoint2d::From(100, 100), SheetModel::Units::Inches);
+        SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
+                                s_sheet2Name, sheetSize);
+        SheetModelPtr sheet2 = SheetModel::Create(params2);
         ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet2, "a second sheet model (in inches)") );
+        ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet2, "a second sheet model") );
         ASSERT_TRUE( sheet2->GetModelId().IsValid() );
         ASSERT_NE( sheet2->GetModelId() , sheet1->GetModelId() );
 
@@ -224,8 +228,9 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_STREQ( sheet1->GetModelName() , mname.c_str() );
 
         sheet1Size = sheet1->GetSize();
-        dbFileName = db->GetFileName();
+        ASSERT_TRUE(sheet1Size.IsEqual(sheetSize));
 
+        dbFileName = db->GetFileName();   
         db->SaveChanges();
         db->CloseDb();
         }

@@ -14,13 +14,11 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//__PUBLISH_SECTION_END__
 struct DgnDbRTree3dViewFilter;
-//__PUBLISH_SECTION_START__
                                                                                                                     
 //=======================================================================================
 /**
-A QueryModel is a virtual DgnModel that holds \ref DgnElementGroup loaded from the database according to a custom query criteria.
+A QueryModel is a virtual DgnModel that holds @ref DgnElementGroup loaded from the database according to a custom query criteria.
 A QueryModel caches the results of the query.
 
 A QueryModel is used in conjunction with a QueryViewController to display the results of the query. 
@@ -28,13 +26,12 @@ Applications do not directly deal with QueryModel's. Instead, the query that pop
 
 The method MobileDgn::MobileDgnApplication::OpenDgnDb creates a default QueryModel for an application. 
 Applications may use MobileDgn::MobileDgnApplication::GetQueryModel to retrieve a reference to that QueryModel. 
-QueryModel's are associated with a QueryViewController by passing a QueryModel to the QueryViewController constructor.
+QueryModels are associated with a QueryViewController by passing a QueryModel to the QueryViewController constructor.
 */
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct QueryModel : PhysicalModel
 {
-//__PUBLISH_SECTION_END__
     friend struct QueryViewController;
 
     //=======================================================================================
@@ -127,6 +124,7 @@ private:
     virtual DgnModelType _GetModelType() const override {return DgnModelType::Query;}
     void ResetResults(){ ReleaseAllElements(); ClearRangeIndex(); m_wasFilled=true;}
     DGNPLATFORM_EXPORT explicit QueryModel (DgnDbR);
+    virtual DgnFileStatus _FillModel() override {return DGNFILE_STATUS_Success;} // QueryModels are never filled.
 
 public:
     Selector& GetSelector() {return m_selector;}
@@ -138,9 +136,6 @@ public:
 
     //! Returns a count of elements held by the QueryModel. This is the count of elements returned by the most recent query.
     uint32_t GetElementCount() const;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

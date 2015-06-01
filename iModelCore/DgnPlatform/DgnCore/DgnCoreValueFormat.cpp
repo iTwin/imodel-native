@@ -72,8 +72,6 @@ AngleFormatterPtr AngleFormatter::Create (DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint16_t AngleFormatter::GetLegacyFormat () const
     {
-    /* Used to call old format asyncs */
-
     AngleFormatVals angleFormat;
     StatusInt       status = SUCCESS;
 
@@ -708,31 +706,6 @@ BentleyStatus   DistanceFormatter::ToDwgUnitFormat (DwgUnitFormat& dwgUnitFormat
     return  ERROR;
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          11/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DistanceFormatter::InitializeForDwg (DgnModel::Properties const& modelInfo)
-    {
-    DgnUnitFormat       dgnUnitFormat   = modelInfo.GetLinearUnitMode();
-    PrecisionFormat     precision       = modelInfo.GetLinearPrecision();
-    UnitDefinitionCR    masterUnit      = modelInfo.GetMasterUnit();
-    UnitDefinitionCR    subUnit         = modelInfo.GetSubUnit();
-
-    DwgUnitFormat       dwgUnitFormat;
-
-    if (SUCCESS != DistanceFormatter::ToDwgUnitFormat (dwgUnitFormat, dgnUnitFormat, precision, masterUnit, subUnit))
-        {
-        precision       = PrecisionFormat::Decimal4Places;
-        dwgUnitFormat   = DwgUnitFormat::Decimal;
-        }
-
-    SetUseDWGFormattingLogic (true);
-    SetDWGUnitFormat (dwgUnitFormat);
-    SetPrecision (precision);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -942,9 +915,7 @@ double  DistanceFormatter::GetMinimumResolution () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DistanceFormatter::GetSubPerMaster() const
     {
-    double subPerMaster;
-    m_subUnit.ConvertDistanceFrom (subPerMaster, 1.0, m_masterUnit);
-    return subPerMaster;
+    return m_subUnit.ConvertDistanceFrom(1.0, m_masterUnit);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1333,31 +1304,6 @@ void AreaOrVolumeFormatterBase::SetDWGUnitFormat (DwgUnitFormat newVal)
     m_precisionType = precisionTypeForDWGUnitFormat (newVal);
     m_insertThousandsSeparator = true;
     }
-
-#if defined (NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          11/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            AreaOrVolumeFormatterBase::InitializeForDwg (DgnModel::Properties const& modelInfo)
-    {
-    DgnUnitFormat       dgnUnitFormat   = modelInfo.GetLinearUnitMode();
-    PrecisionFormat     precision       = modelInfo.GetLinearPrecision();
-    UnitDefinitionCR    masterUnit      = modelInfo.GetMasterUnit();
-    UnitDefinitionCR    subUnit         = modelInfo.GetSubUnit();
-
-    DwgUnitFormat       dwgUnitFormat;
-
-    if (SUCCESS != DistanceFormatter::ToDwgUnitFormat (dwgUnitFormat, dgnUnitFormat, precision, masterUnit, subUnit))
-        {
-        precision       = PrecisionFormat::Decimal4Places;
-        dwgUnitFormat   = DwgUnitFormat::Decimal;
-        }
-
-    SetUseDWGFormattingLogic (true);
-    SetDWGUnitFormat (dwgUnitFormat);
-    SetPrecision (precision);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
