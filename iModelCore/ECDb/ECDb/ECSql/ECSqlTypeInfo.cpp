@@ -240,7 +240,7 @@ bool ECSqlTypeInfo::Equals (ECSqlTypeInfo const& rhs, bool ignoreDateTimeInfo) c
            LOG.warningv (L"DateTimeInfo %s == %s", m_dateTimeInfo.ToString().c_str(), rhs.m_dateTimeInfo.ToString().c_str());
            }
 
-       LOG.warningv ("StructType sizeof(%d) %zx == %zx", sizeof(m_structType), m_structType, rhs.m_structType);
+       LOG.warningv ("StructType sizeof(%d) %" PRIxPTR " == %" PRIxPTR, sizeof(uintptr_t), (uintptr_t)m_structType, (uintptr_t)rhs.m_structType);
        }
 
    return r;
