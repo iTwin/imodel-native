@@ -136,15 +136,10 @@ bool RasterTile::Draw(ViewContextR context)
 
     if(!m_pDisplayTile.IsValid())
         return false;
-    
-    //&&MM how do we handle border tiles? We need clipping
 
-    // Get 4 corners in this order:
-    //  [0]         ul_mid_ur       [1]
-    //   
-    //  ul_mid_ll     mid          ur_mid_lr
-    // 
-    //  [2]         ll_mid_lr       [3]
+    // Corners are in this order:
+    //  [0]  [1]
+    //  [2]  [3]
     DPoint3d uvPts[4];
     memcpy(uvPts, m_corners, sizeof(uvPts));
     static bool s_invert = true;
@@ -296,8 +291,8 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     DPoint3d viewCorners[4];
     viewContext.GetFrustumToView().M0.MultiplyAndRenormalize(viewCorners, frustCorners, 4);
 
-    uint64_t physWidth = m_tree.GetSource().GetEffectiveTileSizeX(m_tileId);
-    uint64_t physHeight = m_tree.GetSource().GetEffectiveTileSizeY(m_tileId);
+    uint64_t physWidth = m_tree.GetSource().GetTileSizeX(m_tileId);
+    uint64_t physHeight = m_tree.GetSource().GetTileSizeY(m_tileId);
 
     double physicalDiagSquared = (double)(physWidth*physWidth + physHeight*physHeight);
     double viewDiag1Squared = viewCorners[3].distanceSquared(&viewCorners[0]);
