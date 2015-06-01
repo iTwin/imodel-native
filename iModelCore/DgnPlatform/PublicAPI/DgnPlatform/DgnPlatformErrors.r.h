@@ -170,6 +170,7 @@ enum DgnModelStatus
     DGNMODEL_STATUS_NoGeometry                  = DGNMODEL_ERROR_BASE + 0x30,
     DGNMODEL_STATUS_WrongElement                = DGNMODEL_ERROR_BASE + 0x31,
     DGNMODEL_STATUS_ParentBlockedChange         = DGNMODEL_ERROR_BASE + 0x32,
+    DGNMODEL_STATUS_ElementBlockedChange        = DGNMODEL_ERROR_BASE + 0x33,
     };
 
 //=======================================================================================

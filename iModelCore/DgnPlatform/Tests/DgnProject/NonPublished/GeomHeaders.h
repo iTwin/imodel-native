@@ -13,17 +13,23 @@
 #include <Geom/rotmatrix.h>
 #include <Geom/transform.h>
 
+#define MakeTypeInfo(typeName) \
+    TypeInfo(sizeof(typeName), __alignof(typeName), WString(#typeName , true))
+
+#define MakeTypeInfoAndAddToList(typeName) \
+    list.push_back(MakeTypeInfo(typeName))
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                        Umar.Hayat                05/15
 //---------------------------------------------------------------------------------------
-void GetGeomStructList(bvector<TypeNamePair>& list)
+void GetGeomStructList(bvector<TypeInfo>& list)
 {
-    list.push_back(TypeNamePair(sizeof(DPoint2d), L"DPoint2d"));
-    list.push_back(TypeNamePair(sizeof(DPoint3d), L"DPoint3d"));
-    list.push_back(TypeNamePair(sizeof(DVec2d), L"DVec2d"));
-    list.push_back(TypeNamePair(sizeof(DVec3d), L"DVec3d"));
-    list.push_back(TypeNamePair(sizeof(RotMatrix), L"RotMatrix"));
-    list.push_back(TypeNamePair(sizeof(Transform), L"Transform"));
+    MakeTypeInfoAndAddToList(DPoint2d);
+    MakeTypeInfoAndAddToList(DPoint3d);
+    MakeTypeInfoAndAddToList(DVec2d);
+    MakeTypeInfoAndAddToList(DVec3d);
+    MakeTypeInfoAndAddToList(RotMatrix);
+    MakeTypeInfoAndAddToList(Transform);
 }
 
 

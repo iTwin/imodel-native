@@ -169,9 +169,9 @@ struct ITxnOptions
     };
 
 
-#if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
 //! The first and last entry number that forms a single transaction.
+//! @private
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
 class TxnRange
@@ -188,6 +188,7 @@ public:
 
 //=======================================================================================
 //! To reinstate a reversed transaction, we need to know the first and last entry number.
+//! @private
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
 struct RevTxn
@@ -196,7 +197,6 @@ struct RevTxn
     bool        m_multiStep;
     RevTxn(TxnRange& range, bool multiStep) : m_range(range) {m_multiStep = multiStep;}
 };
-#endif
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/11
@@ -245,14 +245,6 @@ struct UndoDb : BeSQLite::Db
 
 //=======================================================================================
 //! This class provides a transaction mechanism for handling changes to Elements in DgnDbs.
-//! 
-//! <h2>API Summary</h2>
-//!  * #Activate @copydoc Activate
-//!  * #CloseCurrentTxn @copydoc CloseCurrentTxn
-//!  * #ReverseSingleTxn @copydoc ReverseSingleTxn
-//!  * #CancelToPos @copydoc CancelToPos
-//! 
-//! @ingroup TxnMgr
 // @bsiclass
 //=======================================================================================
 struct ITxnManager
@@ -262,14 +254,14 @@ struct ITxnManager
     {
         enum class Severity
         {
-        Fatal,      //!< Validation could not be completed, and the transaction should be rolled back.
-        Warning,    //!< Validation was completed. Consistency checks may have failed. The results should be reviewed.
+            Fatal,   //!< Validation could not be completed, and the transaction should be rolled back.
+            Warning, //!< Validation was completed. Consistency checks may have failed. The results should be reviewed.
         };
 
         Utf8String  m_description;
         Severity    m_severity;
 
-        ValidationError(Severity sev, Utf8CP desc) : m_severity(sev), m_description(desc) {;}
+        ValidationError(Severity sev, Utf8CP desc) : m_severity(sev), m_description(desc) {}
 
         //! Return the severity of the error
         Severity GetSeverity() const {return m_severity;}
@@ -480,7 +472,6 @@ public:
     DGNPLATFORM_EXPORT DgnDbR GetDgnDb();
     //@}
 };
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

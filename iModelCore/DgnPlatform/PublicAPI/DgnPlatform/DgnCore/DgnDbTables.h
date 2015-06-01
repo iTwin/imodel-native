@@ -898,7 +898,6 @@ private:
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
     DgnModelStatus PerformDelete(DgnElementCR);
-    DgnModelStatus ConfirmDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 

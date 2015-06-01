@@ -7,13 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
 /** @page PAGE_ViewOverview View and ViewController
 
 WIP
 
-@see @ref BentleyApi::DgnPlatform::DgnView              "DgnView"
-@see @ref BentleyApi::DgnPlatform::DgnViewId            "DgnViewId"
-@see @ref BentleyApi::DgnPlatform::ViewController       "ViewController"
+@see DgnViewport
+@see DgnViewId
+@see ViewController
 
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_ViewSection1 WIP View Section 1
@@ -25,3 +27,5 @@ WIP
 @li List item 3
 
 */
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

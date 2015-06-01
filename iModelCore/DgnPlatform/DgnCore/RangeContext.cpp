@@ -959,7 +959,7 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement (GeometricElementCR element) override
     {
-    if (IsRangeContainedInCurrentRange(element._CalculateRange3d(), element.Is3d()))
+    if (IsRangeContainedInCurrentRange(element.CalculateRange3d(), element.Is3d()))
         return SUCCESS;
 
     // NOTE: Can just draw bounding box instead of drawing element geometry...
