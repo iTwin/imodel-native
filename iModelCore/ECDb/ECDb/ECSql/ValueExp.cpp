@@ -556,9 +556,9 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& c
     for (size_t i = 0; i < argCount; i++)
         {
         ValueExp* argExp = GetChildP<ValueExp>(i);
-        if (argExp->GetType() == Exp::Type::Parameter)
+        ParameterExp* parameterExp = argExp->TryGetAsParameterExpP();
+        if (parameterExp != nullptr)
             {
-            ParameterExp* parameterExp = static_cast<ParameterExp*> (argExp);
             //We don't know the data type for function args. We choose Double
             //as default type as it can take any numeric value and SQLite supports implicit conversions
             //between the primitive types anyways
@@ -692,9 +692,14 @@ void FunctionCallExp::_DoToECSql(Utf8StringR ecsql) const
 Exp::FinalizeParseStatus LikeRhsValueExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
+        {
+        ParameterExp* parameterExp = GetRhsExp ()->TryGetAsParameterExpP();
+        if (parameterExp != nullptr)
+            parameterExp->SetTypeInfoFromTarget(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
 
-    SetTypeInfo (GetRhsExp ()->GetTypeInfo ());
+        SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
+        }
+
     return FinalizeParseStatus::Completed;
     }
 
@@ -768,7 +773,8 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing (ECSqlParseContext& ctx,
 //+---------------+---------------+---------------+---------------+---------------+------
 void ParameterExp::SetTargetExp (ComputedExp const& exp)
     {
-    m_targetExp = &exp;
+    if (GetTypeInfo ().GetKind() == ECSqlTypeInfo::Kind::Unset && m_targetExp == nullptr)
+        m_targetExp = &exp;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -777,6 +783,7 @@ void ParameterExp::SetTargetExp (ComputedExp const& exp)
 void ParameterExp::SetTypeInfoFromTarget (ECSqlTypeInfo const& targetTypeInfo)
     {
     SetTypeInfo (targetTypeInfo);
+    m_targetExp = nullptr;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1035,9 +1042,17 @@ Utf8String UnaryValueExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    05/2015
 //+---------------+---------------+---------------+---------------+---------------+------
+bool ValueExp::IsParameterExp () const
+    {
+    return GetType() == Exp::Type::Parameter;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    05/2015
+//+---------------+---------------+---------------+---------------+---------------+------
 ParameterExp* ValueExp::TryGetAsParameterExpP() const
     {
-    if (GetType() != Exp::Type::Parameter)
+    if (!IsParameterExp ())
         return nullptr;
 
     return const_cast<ParameterExp*> (static_cast<ParameterExp const*> (this));
