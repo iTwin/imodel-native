@@ -2690,6 +2690,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT PStruct_Array FROM ecsql.SAStruct";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1,  20);
 
+    ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SAStruct) GROUP BY ECClassId";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 2);
+
+    ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId, 'SAStruct' Name FROM ecsql.SAStruct) GROUP BY ECClassId, Name";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 2);
+
+
     ecsql = "SELECT S FROM ecsql.P UNION SELECT Dt FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 

@@ -5,12 +5,12 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#include <Windows.h>
 #include <Bentley/Bentley.h>
 #include <Logging/BentleyLogging.h>
 #include <ECDb/ECDbApi.h>
 #include "ECSqlConsole.h"
 #include "Console.h"
-//#include <BeXml/BeXml.h>
 
 static WCharCP s_configFileName = L"logging.config.xml";
 
@@ -18,11 +18,10 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.eberle     07/2013
+// @bsimethod                                                 Krischan.Eberle     07/2013
 //---------------------------------------------------------------------------------------
 void ECSqlConsoleBeAssertHandler (wchar_t const* message, wchar_t const* file, unsigned line, BeAssertFunctions::AssertType atype)
     {
-     
     WString errorMessage;
     errorMessage.Sprintf (L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
     Utf8String errorMessageUtf8 (errorMessage.c_str ());
@@ -31,15 +30,15 @@ void ECSqlConsoleBeAssertHandler (wchar_t const* message, wchar_t const* file, u
     Console::WriteErrorLine (errorMessageUtf8.c_str ());
     }
 
-bool TryGetLogConfigPath (BeFileNameR logConfigPath, WCharCP exePath);
+bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir);
     
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2014
 //---------------------------------------------------------------------------------------
-void InitLogging (WCharCP exeName)
+void InitLogging (BeFileNameCR exeDir)
     {
     BeFileName configFilePath;
-    if (TryGetLogConfigPath (configFilePath, exeName))
+    if (TryGetLogConfigPath(configFilePath, exeDir))
         {
         NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_CONFIG_FILE, configFilePath);
         NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::LOG4CXX_LOGGING_PROVIDER);
@@ -49,19 +48,18 @@ void InitLogging (WCharCP exeName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2014
 //---------------------------------------------------------------------------------------
-bool TryGetLogConfigPath (BeFileNameR logConfigPath, WCharCP exePathStr)
+bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir)
     {
-    Utf8String configFilePathStr (getenv ("ECSQLCONSOLE_LOGGING_CONFIG"));
-    logConfigPath = BeFileName (configFilePathStr);
-    if (!configFilePathStr.empty () && logConfigPath.DoesPathExist ())
+    Utf8String configFilePathStr(getenv("ECSQLCONSOLE_LOGGING_CONFIG"));
+    logConfigPath = BeFileName(configFilePathStr);
+    if (!configFilePathStr.empty() && logConfigPath.DoesPathExist())
         return true;
 
-    BeFileName exePath (exePathStr);
-    logConfigPath = exePath.GetDirectoryName ();
-    logConfigPath.AppendToPath (L"logging.config.xml");
-    logConfigPath.BeGetFullPathName ();
+    logConfigPath = exeDir;
+    logConfigPath.AppendToPath(L"logging.config.xml");
+    logConfigPath.BeGetFullPathName();
 
-    return logConfigPath.DoesPathExist ();
+    return logConfigPath.DoesPathExist();
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,7 +74,28 @@ int wmain (int argc, WCharP argv[])
     _setmode(_fileno(stderr), _O_U16TEXT);  // so we can output any and all unicode to the console
 #endif
 
-    InitLogging (argv[0]);
+    WChar exePathW[MAX_PATH];
+    if (0 == ::GetModuleFileNameW(nullptr, exePathW, MAX_PATH))
+        {
+        BeAssert(false);
+        return 1;
+        }
+
+    BeFileName exePath(BeFileName::DevAndDir, exePathW);
+    if (!exePath.DoesPathExist ())
+        {
+        BeAssert(false && "argv[0] is expected to contain the exe path.");
+        return 1;
+        }
+
+    BeFileName exeDir = exePath.GetDirectoryName();
+    if (!exeDir.DoesPathExist())
+        {
+        BeAssert(false && "Exe path's directory should always exist.");
+        return 1;
+        }
+
+    InitLogging(exeDir);
 
     // C++ programs start-up with the "C" locale in effect by default, and the "C" locale does not support conversions of any characters outside 
     // the "basic character set". ... The call to setlocale() says "I want to use the user's default narrow string encoding". This encoding is 
@@ -96,17 +115,12 @@ int wmain (int argc, WCharP argv[])
         }
 
     BeFileName tempDir (tempDirUtf8);
-    if (argv[0])
+
+    if (BeSQLite::BE_SQLITE_OK != ECDb::Initialize(tempDir, &exeDir))
         {
-        auto str = BeFileName::GetDirectoryName(argv[0]);
-        if (!str.empty ())
-            {
-            BeFileName dbDir (str);
-            ECDb::Initialize (tempDir, &dbDir);
-            }
+        Console::WriteErrorLine("Could not initialize ECDb.");
+        return 1;
         }
-    else
-        ECDb::Initialize (tempDir, nullptr); 
 
     //set customized assert handler as default handler causes exception which makes console crash.
     BeAssertFunctions::SetBeAssertHandler (ECSqlConsoleBeAssertHandler);

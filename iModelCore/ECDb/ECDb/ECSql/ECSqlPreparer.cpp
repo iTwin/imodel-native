@@ -523,7 +523,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareComputedExp (NativeSqlBuilder::List& native
         return PrepareValueExp (nativeSqlSnippets, ctx, valueExp);
 
     if (exp->GetType () == Exp::Type::ValueExpList)
-        return PrepareValueExpListExp (nativeSqlSnippets, ctx, static_cast<ValueExpListExp const*> (exp));
+        return PrepareValueExpListExp (nativeSqlSnippets, ctx, static_cast<ValueExpListExp const*> (exp), /* encloseInParentheses = */ true);
 
     BeAssert (false && "ECSqlPreparer::PrepareComputedExp: Unhandled ComputedExp subclass.");
     return ctx.SetError (ECSqlStatus::ProgrammerError, "ECSqlPreparer::PrepareComputedExp: Unhandled ComputedExp subclass.");
@@ -778,7 +778,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp (ECSqlPrepareContext& ctx, Group
     ctx.GetSqlBuilderR().Append(" GROUP BY ");
 
     NativeSqlBuilder::List groupingValuesSnippetList;
-    const ECSqlStatus stat = PrepareValueExpListExp(groupingValuesSnippetList, ctx, exp->GetGroupingValueListExp());
+    const ECSqlStatus stat = PrepareValueExpListExp (groupingValuesSnippetList, ctx, exp->GetGroupingValueListExp (), /* encloseInParentheses = */ false);
     if (ECSqlStatus::Success != stat)
         return stat;
 
@@ -1573,7 +1573,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSql
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const* exp, bool encloseInParentheses)
     {
     BeAssert (nativeSqlSnippets.empty ());
     auto isFirstExp = true;
@@ -1589,7 +1589,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& na
             if (isFirstExp)
                 {
                 NativeSqlBuilder builder;
-                builder.AppendParenLeft ().Append (listItemExpBuilders[i], false);
+                if (encloseInParentheses)
+                    builder.AppendParenLeft ();
+
+                builder.Append (listItemExpBuilders[i], false);
                 nativeSqlSnippets.push_back (move (builder));
                 }
             else
@@ -1603,7 +1606,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& na
         }
 
     //finally add closing parenthesis to all list snippets we created
-    for_each (nativeSqlSnippets.begin (), nativeSqlSnippets.end (), [] (NativeSqlBuilder& builder) {builder.AppendParenRight ();});
+    if (encloseInParentheses)
+        for_each (nativeSqlSnippets.begin (), nativeSqlSnippets.end (), [] (NativeSqlBuilder& builder) {builder.AppendParenRight ();});
+
     return ECSqlStatus::Success;
     }
 
