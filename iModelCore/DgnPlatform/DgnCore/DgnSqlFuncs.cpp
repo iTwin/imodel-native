@@ -11,10 +11,10 @@ BEGIN_UNNAMED_NAMESPACE
 
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-/** @addtogroup DgnSchemaDomainSqlFunctions SQL extensions for DgnSchemaDomain
+/** @addtogroup DgnDbSqlFunctions DgnDb SQL Functions
  *  @{
 
-DgnSchemaDomain defines types and built-in functions that you can use in SQL statements to work with DgnSchemaDomain classes.
+DgnDb defines types and built-in functions that you can use in SQL statements.
 
 @see DGN_placement, DGN_angles, DGN_bbox, DGN_point
 */
@@ -230,7 +230,7 @@ struct DGN_placement_angles : PlacementFunc
                 break;
 
             case sizeof(Placement2d):
-                angles = YawPitchRollAngles::FromDegrees(ToPlacement2d(args).GetAngle(), 0.0, 0.0);
+                angles = YawPitchRollAngles(ToPlacement2d(args).GetAngle(), AngleInDegrees(), AngleInDegrees());
                 break;
 
             default:
@@ -553,7 +553,7 @@ struct DGN_bbox_overlaps : ScalarFunction
     @return 1 if bb_outer contains bb_inner or 0 if not.
     @see DGN_bbox_overlaps
 */
-int DGN_bbox_contains(DGN_bbox bb1, DGN_bbox bb2);
+int DGN_bbox_contains(DGN_bbox bb_outer, DGN_bbox bb_inner);
 // __PUBLISH_SECTION_END__
 #endif
 struct DGN_bbox_contains : ScalarFunction
@@ -744,7 +744,10 @@ struct DGN_point_value : ScalarFunction
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    A rtree MATCH function that accepts objects that overlap an aabb.
+    An rtree MATCH function that only accepts objects from the RTree whose range overlap an aabb.
+    <p><b>Example (C++)</b>
+    <p>Here is an example of DGN_rtree_aabb_overlap that searches for elements using both an Axis-aligned box and addtional WHERE criteria.
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_rtree_overlap_aabb.sampleCode
 */
 void DGN_rtree_aabb_overlap(DGN_aabb);
 // __PUBLISH_SECTION_END__
@@ -826,7 +829,7 @@ void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
         db.AddRTreeMatchFunction(*func);
     }
 
-#ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup DgnSchemaDomainSqlFunctions @{  at the top of the file
+#ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup DgnDbSqlFunctions @{  at the top of the file
 // __PUBLISH_SECTION_START__
 //! @}
 // __PUBLISH_SECTION_END__

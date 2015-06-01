@@ -2,10 +2,11 @@
 |
 |     $Source: DgnCore/GradientSettings.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnCore/GradientSettings.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley    03/04
@@ -16,12 +17,11 @@ int GradientSettings::s_currentVersion = 4;
 * @bsimethod                                                    RayBentley    03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 GradientSettings::GradientSettings ()
-    : BsiSerializable (s_currentVersion)
     {
-    SerSetId (PERSISTENT_DATA_GradientSettings);
-    SerInitFields();
+    //SerInitFields();
     }
 
+#ifdef WIP_DGNV8_SETTINGS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -110,6 +110,7 @@ StatusInt       GradientSettings::SerReadFields (DataInternalizer& reader)
 
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/04

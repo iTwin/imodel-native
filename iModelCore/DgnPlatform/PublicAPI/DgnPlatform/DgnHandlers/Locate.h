@@ -18,9 +18,6 @@ enum class ComponentMode
     {
     None            = 0, //! Set cursor index to head of path (0).
     Innermost       = 1, //! Set cursor index to last entry in path (-1).
-//__PUBLISH_SECTION_END__
-    InnermostHeader = 2, //! Set cursor index to innermost complex header (legacy mode of extremely limited usefulness)...
-//__PUBLISH_SECTION_START__
     NormalChild     = 3, //! Set cursor index to innermost public component of a complex element (same as None if no normal cells in path)...
     SharedChild     = 4, //! Set cursor index to innermost public shared component (same as NormalChild if no shared cells in path)...
     };
@@ -85,7 +82,6 @@ enum LocateFailureValue
     LOCATE_FAILURE_Transient         = 11,
     LOCATE_FAILURE_FileNotAllowed    = 12,
     LOCATE_FAILURE_FileReadOnly      = 13,
-    LOCATE_FAILURE_RefernceFile      = 14,
     LOCATE_FAILURE_NotSnappable      = 15,
     LOCATE_FAILURE_NonSnappableRef   = 16,
     LOCATE_FAILURE_ParentNoLocate    = 17,
@@ -223,7 +219,7 @@ protected:
     virtual int _GetKeypointDivisor() {return 1;}
     DGNVIEW_EXPORT virtual void _GetLocateError (Utf8StringR reasonString, int reason);
     DGNVIEW_EXPORT virtual void _AdjustSnapPath (SnapContext&);
-    virtual bool _IsSnappableDgnAttachment (DgnModelP modelRef) {return true;}
+    virtual bool _IsSnappableModel(DgnModelP modelRef) {return true;}
     virtual HitPathCP _GetAppFilterPath () {return nullptr;}
     virtual LocateFilterStatus _AppFilterHit (LocateFailureValue*, Utf8StringP explanation, HitPathCP path, LocateFilterFunc internalFilter, bool preLocate, LOCATE_Action action) {return LOCATE_FILTER_STATUS_Neutral;}
     virtual SnapStatus _PerformConstraintSnap(SnapPathP, double hotDistance, HitSource snapSource) {return SnapStatus::Success;}

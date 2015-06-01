@@ -1,15 +1,10 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
+Performance*
 
-CopyContextTestColorRemap.CopyContextRemapColor # CopyContext will be reimplemented as part of TxnManager
-CopyContextTestLevelRemap.CopyContextRemapLevel # CopyContext will be reimplemented as part of TxnManager
-BeDemo*
-CopyContextTestTagRemap.* # CopyContext will be reimplemented as part of TxnManager
-CopyContextTestSharedCellRemap.* # CopyContext will be reimplemented as part of TxnManager
 DimensionHandler.CreateAngularTypes # Jeff -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 DimensionHandler.CreateLabelLineDimension # Jeff -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
-Performance*
 DgnStylesTest.ReadLineStylesDsc
 DgnMaterialsTest.InsertMaterialDuplicateName
 DgnMaterialsTest.UpdateMaterialDuplicateName
@@ -26,7 +21,6 @@ TextBlockTest.EnforcingAtomicEdfsOnInsert               # Jeff - We'll need this
 TextBlockTest.RoundTripMultiFormat                      # Jeff - We'll need this for markups in Graphite04
 TextBlockTest.TextBlockEqualsNegativeUnitTest           # Jeff - We'll need this for markups in Graphite04
 XGraphicsTests.SplitLargeMeshes #TFS 19411
-DgnProjectImporterTestsWithHosts.ConfigFile TFS #36135, TFS #35741, TFS #33694
 DgnGraphicsTest3d.AddWithSymbology                      # John -- no longer works because XGraphics cooks when dumping XGraphicsContainer
 
 #----------------------------------------------------------------------------------------
@@ -36,22 +30,9 @@ SqlFunctionsTest.spatialQueryECSql
 
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 
-DgnLevelTableTests.IModelCopyAndRenameLevels # can't create this scenario without separate options .xml file for each dgn file published
-
 DgnECNavigator.ElementInfoWithSecondaryInstances # Raman claims this is a mismatch between tip CVS data and unmerged code from 05, but repeated merges haven't fixed... someone needs to spend more time on this.
 
-DgnProjectTable.* # Merged from 05, but Hassan needs to re-visit these tests in Graphite06 due to conceptual changes
-DgnProjectImporterTests.ImportSeedTwice # fails an expected condition; notified Raman May 7 2014
-
 DgnECNavigatorTest.Ifc_WithLatestDgnDb # Failing after 0501 to 06 merge; EC team notified on 2014-July-03
-
-TextAnnotationTest* # Platform code needs cleanup after 0501 to 06 merge.
-
-DgnViewsTest.GetRelatedDrawings # Failing after 0501 to 06 merge.
-RefImport.DupDirectAttachments # Failing after 0501 to 06 merge.
-RefImport.LiveNesting # Failing after 0501 to 06 merge.
-RefImport.NoNesting # Failing after 0501 to 06 merge.
-RefImport.BFS # Failing after 0501 to 06 merge.
 
 ECDbInstances.JsonValueStructure # Fails after geomlibs/ecobjects merge from topaz
 
@@ -61,15 +42,9 @@ ECDbInstances.FieldEngineerStructArray
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-AnnotationTextBlockTest.DeepCopy
-AnnotationTextBlockTest.DefaultsAndAccessors
-AnnotationTextStyleTest.DefaultsAndAccessors
 BeSQLiteRealityDataStorageTests.*
 DgnColorsTest.GetElementColor
 DgnColorsTest.ImportElement
-DgnDb.AddDeleteLine
-DgnDb.CheckStandardProperties
-DgnDb.GetCoordinateSystemProperties
 DgnDb.LoadModelThroughProject
 DgnDb.WorkWithDgnModelTable
 DgnGraphicsTest2d.AddCurveVector
@@ -108,19 +83,10 @@ DgnViewsTest.InsertView
 DgnViewsTest.WorkWithViewTable
 DgpRoundtripExpressionTests.Roundtrip
 ECDbInstances.SelectDgnLinksForDgnElement
-EntityDependencyGraph.CycleTest1
-EntityDependencyGraph.CycleTest2
-EntityDependencyGraph.DiamondTest2
-EntityDependencyGraph.FailureTest1
-EntityDependencyGraph.MixedTest1
-EntityDependencyGraph.MixedTest2
-EntityDependencyGraph.ModelDependenciesTest
-EntityDependencyGraph.ModelDependenciesWithCycleTest
-EntityDependencyGraph.NonDependencyOrderTest
-EntityDependencyGraph.OverlappingOutputOrderTest1
-EntityDependencyGraph.OverlappingOutputOrderTest2
-EntityDependencyGraph.ParentChildTest1
-EntityDependencyGraph.ParentChildTest2
-EntityDependencyGraph.PersistentHandlerTest
 NamedVolume.CrudTest
 NotificationManagerTest.GetPriority
+
+DgnDb.GetCoordinateSystemProperties # Sam - make this work with GCS
+
+
+Compatibility_Test.* # Umar something is wrong with the sizeof WString in X86 build

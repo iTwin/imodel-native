@@ -764,7 +764,7 @@ void ElemIdTree::RemoveElement(DgnElementCR element, bool killingWholeTree)
         ++m_stats.m_purged;
         }
 
-    m_dgndb.Elements().ReturnedMemory(element._GetMemSize());
+    m_dgndb.Elements().ChangeMemoryUsed(0 - (int32_t) element._GetMemSize());
     element.SetInPool(false);
     }
 
@@ -873,29 +873,13 @@ void DgnElements::Destroy()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::AllocatedMemory(int32_t size) const
+void DgnElements::ChangeMemoryUsed(int32_t delta) const
     {
-    if (size<0)
-        {
-        BeAssert(false);
+    if (delta==0) // nothing happened, don't bother to get mutex
         return;
-        }
-    BeDbMutexHolder _v(m_mutex);
-    m_tree->m_totals.m_allocedBytes += size;
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::ReturnedMemory(int32_t size) const
-    {
-    if (size<0)
-        {
-        BeAssert(false);
-        return;
-        }
     BeDbMutexHolder _v(m_mutex);
-    m_tree->m_totals.m_allocedBytes -= size;
+    m_tree->m_totals.m_allocedBytes += delta;
     BeAssert(m_tree->m_totals.m_allocedBytes >= 0);
     }
 
@@ -932,7 +916,7 @@ void DgnElements::AddToPool(DgnElementR element) const
     BeAssert(!element.IsPersistent());
     element.SetInPool(true);
 
-    AllocatedMemory(element._GetMemSize());
+    ChangeMemoryUsed(element._GetMemSize());
 
     m_tree->AddElement(element);
     ++m_tree->m_stats.m_newElements;
@@ -1273,11 +1257,15 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     {
     DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
-    if (element.GetElementId().IsValid() || element.IsPersistent())
+    // We can't change the Id of the input element if it is a persistent element, so don't allow it. 
+    // But, we don't care what the current id is otherwise - we're going to overwrite it.
+    if (element.IsPersistent()) 
         {
-        stat = DGNMODEL_STATUS_IdExists;
+        stat = DGNMODEL_STATUS_WrongElement;
         return nullptr;
         }
+
+    element.m_elementId = DgnElementId(); // in case the insert fails.
 
     DgnModelR model = element.GetDgnModel();
     if (&model.GetDgnDb() != &m_dgndb)
@@ -1286,13 +1274,17 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
         return nullptr;
         }
 
-    stat = element._OnInsert();
-    if (DGNMODEL_STATUS_Success != stat)
-        return nullptr;
-
     stat = model._OnInsertElement(element);
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr;
+
+    // ask parent whether its ok to add this child.
+    auto parent = GetElement(element.m_parentId);
+    if (parent.IsValid() && DgnElement::PreChange::Ok != parent->_OnChildInsert(element))
+        {
+        stat = DGNMODEL_STATUS_ParentBlockedChange;
+        return nullptr;
+        }
 
     CallAppData(OnInsertCaller(), element);
 
@@ -1312,8 +1304,10 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
 
     AddToPool(*newElement);
 
-    newElement->_OnInserted();
     model._OnInsertedElement(*newElement);
+    if (parent.IsValid())
+        parent->_OnChildInserted(*newElement);
+
     CallAppData(OnInsertedCaller(*newElement), element);
 
     return newElement;
@@ -1352,6 +1346,20 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     if (DGNMODEL_STATUS_Success != stat)
         return nullptr; // model rejected proposed change
 
+    if (DgnElement::PreChange::Ok != element._OnUpdate(replacement))
+        {
+        stat = DGNMODEL_STATUS_ElementBlockedChange;
+        return nullptr;
+        }
+
+    // ask parent whether its ok to update his child.
+    auto parent = GetElement(element.m_parentId);
+    if (parent.IsValid() && DgnElement::PreChange::Ok != parent->_OnChildUpdate(element, replacement))
+        {
+        stat = DGNMODEL_STATUS_ParentBlockedChange;
+        return nullptr;
+        }
+
     // we need to call the pre/post update events on BOTH sets of appdata
     CallAppData(OnUpdateCaller(element, replacement), element);
     CallAppData(OnUpdateCaller(element, replacement), replacement);
@@ -1371,15 +1379,15 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
         return nullptr;
         }
 
+    parent = GetElement(element.m_parentId); // look it up again, may have changed
+    if (parent.IsValid())
+        parent->_OnChildUpdated(element);
+
     // we need to call the pre/post update events on BOTH sets of appdata
     CallAppData(OnUpdatedCaller(element), element);
     CallAppData(OnUpdatedCaller(element), replacement);
 
-    int32_t sizeChange = element._GetMemSize() - oldSize; // figure out whether the element data is larger now than before
-    BeAssert(0 <= sizeChange); // we never shrink
-
-    if (0 < sizeChange) // report the number or bytes the element grew.
-        AllocatedMemory(sizeChange);
+    ChangeMemoryUsed(element._GetMemSize() - oldSize); // report size change
 
     model._OnUpdatedElement(element); // notify model that update finished successfully
     return &element;
@@ -1388,28 +1396,62 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElements::Delete(DgnElementCR element)
+DgnModelStatus DgnElements::PerformDelete(DgnElementCR element)
     {
-    DgnModelR model = element.GetDgnModel();
-    if (&model.GetDgnDb() != &m_dgndb || !element.IsPersistent())
-        return DGNMODEL_STATUS_WrongElement;
+    // delete children, if any.
+    DgnElementIdSet children = element.QueryChildren();
+    for (auto childId : children)
+        {
+        auto child = GetElement(childId);
+        if (!child.IsValid())
+            continue;
 
-    DgnModelStatus stat = model._OnDeleteElement(element);
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
-
-    // TODO: delete children here.
+        auto stat = PerformDelete(*child);
+        if (DGNMODEL_STATUS_Success != stat)
+            return stat;
+        }
 
     CallAppData(OnDeleteCaller(), element);
 
-    stat = element._DeleteInDb();
+    auto stat = element._DeleteInDb();
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
     CallAppData(OnDeletedCaller(), element);
 
     DropFromPool(element);
-    model._OnDeletedElement(element);
+    element.GetDgnModel()._OnDeletedElement(element);
+    return DGNMODEL_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelStatus DgnElements::Delete(DgnElementCR element)
+    {
+    DgnModelR model = element.GetDgnModel();
+    if (&model.GetDgnDb() != &m_dgndb || !element.IsPersistent() || !element.GetElementId().IsValid())
+        return DGNMODEL_STATUS_WrongElement;
+
+    DgnModelStatus stat = model._OnDeleteElement(element);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    if (DgnElement::PreChange::Ok != element._OnDelete())
+        return DGNMODEL_STATUS_ElementBlockedChange;
+
+    // ask parent whether its ok to delete his child.
+    auto parent = GetElement(element.m_parentId);
+    if (parent.IsValid() && DgnElement::PreChange::Ok != parent->_OnChildDelete(element))
+        return DGNMODEL_STATUS_ParentBlockedChange;
+
+    stat = PerformDelete(element);
+    if (DGNMODEL_STATUS_Success != stat)
+        return stat;
+
+    if (parent.IsValid())
+        parent->_OnChildDeleted(element);
+
     return DGNMODEL_STATUS_Success;
     }
 

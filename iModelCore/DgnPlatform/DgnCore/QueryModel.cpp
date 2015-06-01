@@ -263,7 +263,11 @@ void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dVi
         if (!elRef.IsValid())
             continue; // id is in the list but not in the file
 
-        rtreeRange.FromRange(elRef->ToGeometricElement()->_GetRange3d());
+        GeometricElementCP geom=elRef->ToGeometricElement();
+        if (nullptr==geom || !geom->HasGeometry())
+            continue;
+
+        rtreeRange.FromRange(geom->CalculateRange3d());
 
         RTreeAcceptFunction::Tester::QueryInfo info;
         info.m_nCoord = 6;

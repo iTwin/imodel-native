@@ -961,6 +961,7 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
     return sectionView->GetInsideForwardClipVector();
     }
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -995,6 +996,7 @@ Transform SectionDrawingViewController::GetTransformToWorld() const
 
     return drawing->GetTransformToWorld();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
@@ -1013,7 +1015,9 @@ bool SectionDrawingViewController::GetSectionHasDogLeg() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt SectionDrawingViewController::_VisitHit(HitPathCR hit, ViewContextR context) const
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     context.PushTransform (GetFlatteningMatrixIf2D(context));
+#endif
     StatusInt status = T_Super::_VisitHit (hit, context);
     context.PopTransformClip();
     return status;
@@ -1024,7 +1028,9 @@ StatusInt SectionDrawingViewController::_VisitHit(HitPathCR hit, ViewContextR co
 //--------------+------------------------------------------------------------------------
 void SectionDrawingViewController::_DrawView (ViewContextR context)
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     context.PushTransform (GetFlatteningMatrixIf2D(context));
+#endif
     T_Super::_DrawView (context);
     context.PopTransformClip();
     }
@@ -1122,18 +1128,10 @@ double PhysicalViewController::CalculateMaxDepth (DVec3dCR delta, DVec3dCR zVec)
 //---------------------------------------------------------------------------------------
 static bool convertToWorldPointWithStatus (DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
     {
-    if (SUCCESS != units.ConvertToWorldPoint (worldPoint, location))
+    if (SUCCESS != units.UorsFromLatLong (worldPoint, location))
         {
-        if (!units.CanConvertBetweenGeoAndWorld())
-            status = GeoLocationEventStatus::NoGeoCoordinateSystem;
-        else if (!units.IsGeoPointWithinCoordinateSystem (location))
-            status = GeoLocationEventStatus::PointOutsideGeoCoordinateSystem;
-        else
-            {
-            BeAssert (false);
-            status = GeoLocationEventStatus::EventIgnored;
-            }
-
+        BeAssert (false);
+        status = GeoLocationEventStatus::EventIgnored;
         return false;
         }
 

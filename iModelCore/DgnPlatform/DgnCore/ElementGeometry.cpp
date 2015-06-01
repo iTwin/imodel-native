@@ -585,6 +585,26 @@ void ElementGeomIO::Writer::Append (Operation const& egOp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomIO::Writer::Append (DPoint2dCP pts, size_t nPts, int8_t boundary)
+    {
+    FlatBufferBuilder fbb;
+
+    auto coords = fbb.CreateVectorOfStructs ((FB::DPoint2d*) pts, nPts);
+
+    FB::PointPrimitive2dBuilder builder (fbb);
+
+    builder.add_coords (coords);
+    builder.add_boundary ((FB::BoundaryType) boundary);
+
+    auto mloc = builder.Finish();
+
+    fbb.Finish (mloc);
+    Append (Operation (OpCode::PointPrimitive2d, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Writer::Append (DPoint3dCP pts, size_t nPts, int8_t boundary)
     {
     FlatBufferBuilder fbb;
@@ -618,34 +638,72 @@ void ElementGeomIO::Writer::Append (DEllipse3dCR arc, int8_t boundary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePrimitiveCR curvePrimitive, bool isClosed)
+bool ElementGeomIO::Writer::AppendSimplified (ICurvePrimitiveCR curvePrimitive, bool isClosed, bool is3d)
     {
     // Special case single/simple curve primitives to avoid having to call new during draw...
     switch (curvePrimitive.GetCurvePrimitiveType())
         {
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
             {
-            DSegment3dCP  segment = curvePrimitive.GetLineCP();
+            DSegment3dCP segment = curvePrimitive.GetLineCP();
 
-            writer.Append (segment->point, 2, FB::BoundaryType_Open);
+            if (!is3d)
+                {
+                DPoint2d localPoints2dBuf[2];
+
+                localPoints2dBuf[0].Init(segment->point[0]);
+                localPoints2dBuf[1].Init(segment->point[1]);
+
+                Append(localPoints2dBuf, 2, FB::BoundaryType_Open);
+
+                return true;
+                }
+
+            Append(segment->point, 2, FB::BoundaryType_Open);
 
             return true;
             }
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
             {
-            bvector<DPoint3d> const*  points = curvePrimitive.GetLineStringCP();
+            bvector<DPoint3d> const* points = curvePrimitive.GetLineStringCP();
 
-            writer.Append (&points->front(), points->size(), (int8_t) (isClosed ? FB::BoundaryType_Closed : FB::BoundaryType_Open));
+            if (!is3d)
+                {
+                int nPts = (int) points->size();
+                std::valarray<DPoint2d> localPoints2dBuf(nPts);
+
+                for (int iPt = 0; iPt < nPts; ++iPt)
+                    localPoints2dBuf[iPt].Init(points->at(iPt));
+
+                Append(&localPoints2dBuf[0], nPts, (int8_t) (isClosed ? FB::BoundaryType_Closed : FB::BoundaryType_Open));
+
+                return true;
+                }
+
+            Append(&points->front(), points->size(), (int8_t) (isClosed ? FB::BoundaryType_Closed : FB::BoundaryType_Open));
 
             return true;
             }
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
             {
-            bvector<DPoint3d> const*  points = curvePrimitive.GetPointStringCP();
+            bvector<DPoint3d> const* points = curvePrimitive.GetPointStringCP();
 
-            writer.Append (&points->front(), points->size(), FB::BoundaryType_None);
+            if (!is3d)
+                {
+                int nPts = (int) points->size();
+                std::valarray<DPoint2d> localPoints2dBuf(nPts);
+
+                for (int iPt = 0; iPt < nPts; ++iPt)
+                    localPoints2dBuf[iPt].Init(points->at(iPt));
+
+                Append(&localPoints2dBuf[0], nPts, FB::BoundaryType_None);
+
+                return true;
+                }
+
+            Append(&points->front(), points->size(), FB::BoundaryType_None);
 
             return true;
             }
@@ -654,7 +712,7 @@ static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePri
             {
             DEllipse3dCP  ellipse = curvePrimitive.GetArcCP();
 
-            writer.Append (*ellipse, (int8_t) (isClosed ? FB::BoundaryType_Closed : FB::BoundaryType_Open));
+            Append(*ellipse, (int8_t) (isClosed ? FB::BoundaryType_Closed : FB::BoundaryType_Open));
 
             return true;
             }
@@ -667,12 +725,38 @@ static bool appendSimpleCurvePrimitive (ElementGeomIO::Writer& writer, ICurvePri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (CurveVectorCR curves)
+bool ElementGeomIO::Writer::AppendSimplified (CurveVectorCR curves, bool is3d)
     {
     // Special case to avoid having to call new during draw...
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive() && appendSimpleCurvePrimitive (*this, *curves.front(), curves.IsClosedPath()))
-        return;
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid == curves.HasSingleCurvePrimitive())
+        return false;
+    
+    return AppendSimplified(*curves.front(), curves.IsClosedPath(), is3d);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeomIO::Writer::AppendSimplified (ElementGeometryCR geom, bool is3d)
+    {
+    switch (geom.GetGeometryType())
+        {
+        case ElementGeometry::GeometryType::CurvePrimitive:
+            return AppendSimplified(*geom.GetAsICurvePrimitive(), false, is3d);
+
+        case ElementGeometry::GeometryType::CurveVector:
+            return AppendSimplified(*geom.GetAsCurveVector(), is3d);
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomIO::Writer::Append (CurveVectorCR curves)
+    {
     bvector<Byte> buffer;
 
     BentleyGeometryFlatBuffer::GeometryToBytes (curves, buffer);
@@ -689,27 +773,13 @@ void ElementGeomIO::Writer::Append (CurveVectorCR curves)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (ICurvePrimitiveCR curvePrimitive, bool isClosed)
+void ElementGeomIO::Writer::Append (ICurvePrimitiveCR curvePrimitive)
     {
-    // Special case to avoid having to call new during draw...
-    if (appendSimpleCurvePrimitive (*this, curvePrimitive, isClosed))
-        return;
-
     OpCode        opCode;
     bvector<Byte> buffer;
 
-    if (isClosed)
-        {
-        CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, curvePrimitive.Clone());
-
-        BentleyGeometryFlatBuffer::GeometryToBytes (*curve, buffer);
-        opCode = OpCode::CurveVector;
-        }
-    else
-        {
-        BentleyGeometryFlatBuffer::GeometryToBytes (curvePrimitive, buffer);
-        opCode = OpCode::CurvePrimitive;
-        }
+    BentleyGeometryFlatBuffer::GeometryToBytes (curvePrimitive, buffer);
+    opCode = OpCode::CurvePrimitive;
 
     if (0 == buffer.size())
         {
@@ -777,7 +847,7 @@ void ElementGeomIO::Writer::Append (MSBsplineSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments, bool saveBRepOnly)
+void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOnly)
     {
     bool        saveBRep = saveBRepOnly, saveFacets = false, saveEdges = false, saveFaceIso = false;
 
@@ -790,10 +860,10 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
                 {
                 saveBRep = saveFacets = true;
                                             
-                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasOnlyPlanarFaces))
+                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     saveFaceIso = true;
                     
-                if (saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge))
+                if (saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge))
                     saveEdges = true;
                 break;
                 }
@@ -805,6 +875,8 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
                 }
             }
         }
+
+    // NEEDSWORK: IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     if (saveBRep)
         {
@@ -841,7 +913,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
         IFacetOptionsPtr       facetOpt = IFacetOptions::CreateForCurves();
         IFacetTopologyTablePtr facetsPtr;
 
-        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt, nullptr))
+        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt))
             {
             PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
 
@@ -864,7 +936,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
         {
         // When facetted representation is an approximation, we need to store the edge curves for snapping...
         // NEEDSWORK: Face attachments affect color...
-        CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, true, false);
+        CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, m_db, true, false);
 
         if (edgeCurves.IsValid ())
             {
@@ -881,7 +953,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
         {
         // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
         // NEEDSWORK: Face attachments affect color...
-        CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves (entity, false, true);
+        CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves (entity, m_db, false, true);
 
         if (faceCurves.IsValid ())
             {
@@ -911,7 +983,7 @@ void ElementGeomIO::Writer::Append (DgnSubCategoryId subCategory, TransformCR ge
 
     FlatBufferBuilder fbb;
 
-    auto mloc = FB::CreateBeginSubCategory (fbb, subCategory.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Radians(), angles.GetPitch().Radians(), angles.GetRoll().Radians());
+    auto mloc = FB::CreateBeginSubCategory (fbb, subCategory.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
 
     fbb.Finish (mloc);
     Append (Operation (OpCode::BeginSubCategory, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1048,10 +1120,27 @@ void ElementGeomIO::Writer::Append (ElementGeometryCR elemGeom)
 void ElementGeomIO::Writer::Append(TextStringCR text)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, *m_db))
+    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db))
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeomIO::Reader::Get (Operation const& egOp, DPoint2dCP& pts, int& nPts, int8_t& boundary) const
+    {
+    if (OpCode::PointPrimitive2d != egOp.m_opCode)
+        return false;
+
+    auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive2d>(egOp.m_data);
+
+    boundary = (int8_t) ppfb->boundary();
+    nPts = (int) ppfb->coords()->Length();
+    pts = (DPoint2dCP) ppfb->coords()->Data();
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1160,7 +1249,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ISolidKernelEntityPtr& e
 
     auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
 
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), ISolidKernelEntity::SolidKernel_PSolid, *((TransformCP) ppfb->entityTransform())))
+    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return false;
 
     return entity.IsValid();
@@ -1179,7 +1268,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, DgnSubCategoryId& subCat
     subCategory = DgnSubCategoryId (ppfb->subCategoryId());
 
     DPoint3d            origin = *((DPoint3dCP) ppfb->origin());
-    YawPitchRollAngles  angles = YawPitchRollAngles::FromRadians (ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+    YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees (ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
     geomToWorld = angles.ToTransform (origin);
 
@@ -1334,7 +1423,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, TextStringR text) const
     if (OpCode::TextString != egOp.m_opCode)
         return false;
 
-    return (SUCCESS == TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, *m_db));
+    return (SUCCESS == TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, m_db));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1344,6 +1433,38 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
     {
     switch (egOp.m_opCode)
         {
+        case ElementGeomIO::OpCode::PointPrimitive2d:
+            {
+            int         nPts;
+            int8_t      boundary;
+            DPoint2dCP  pts;
+            
+            if (!Get (egOp, pts, nPts, boundary))
+                break;
+
+            std::valarray<DPoint3d> localPoints3dBuf (nPts);
+
+            for (int iPt = 0; iPt < nPts; ++iPt)
+                localPoints3dBuf[iPt].Init(pts[iPt]);
+
+            switch (boundary)
+                {
+                case FB::BoundaryType_None:
+                    elemGeom = ElementGeometry::Create (ICurvePrimitive::CreatePointString (&localPoints3dBuf[0], nPts));
+                    break;
+
+                case FB::BoundaryType_Open:
+                    elemGeom = ElementGeometry::Create (ICurvePrimitive::CreateLineString (&localPoints3dBuf[0], nPts));
+                    break;
+
+                case FB::BoundaryType_Closed:
+                    elemGeom = ElementGeometry::Create (CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString (&localPoints3dBuf[0], nPts)));
+                    break;
+                }
+
+            return true;
+            }
+
         case ElementGeomIO::OpCode::PointPrimitive:
             {
             int         nPts;
@@ -1489,7 +1610,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
         case ElementGeomIO::OpCode::TextString:
             {
             TextStringPtr text = TextString::Create();
-            if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, *m_db))
+            if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, m_db))
                 break;
             
             elemGeom = ElementGeometry::Create(text);
@@ -1737,6 +1858,37 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 break;
                 }
 
+            case ElementGeomIO::OpCode::PointPrimitive2d:
+                {
+                if (!state.IsGeometryVisible())
+                    break;
+
+                int         nPts;
+                int8_t      boundary;
+                DPoint2dCP  pts;
+                
+                if (!reader.Get(egOp, pts, nPts, boundary))
+                    break;
+
+                state.CookElemDisplayParams();
+
+                switch (boundary)
+                    {
+                    case FB::BoundaryType_None:
+                        context.GetIDrawGeom().DrawPointString2d(nPts, pts, context.GetCurrentDisplayParams()->GetNetDisplayPriority(), nullptr);
+                        break;
+
+                    case FB::BoundaryType_Open:
+                        context.GetIDrawGeom().DrawLineString2d(nPts, pts, context.GetCurrentDisplayParams()->GetNetDisplayPriority(), nullptr);
+                        break;
+
+                    case FB::BoundaryType_Closed:
+                        context.GetIDrawGeom().DrawShape2d(nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), context.GetCurrentDisplayParams()->GetNetDisplayPriority(), nullptr);
+                        break;
+                    }
+                break;
+                }
+
             case ElementGeomIO::OpCode::PointPrimitive:
                 {
                 if (!state.IsGeometryVisible())
@@ -1781,6 +1933,15 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 state.CookElemDisplayParams();
 
+                if (!context.Is3dView())
+                    {
+                    if (FB::BoundaryType_Closed != boundary)
+                        context.GetIDrawGeom().DrawArc2d(arc, false, false, context.GetCurrentDisplayParams()->GetNetDisplayPriority(), nullptr);
+                    else
+                        context.GetIDrawGeom().DrawArc2d(arc, true, FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), context.GetCurrentDisplayParams()->GetNetDisplayPriority(), nullptr);
+                    break;
+                    }
+
                 if (FB::BoundaryType_Closed != boundary)
                     context.GetIDrawGeom().DrawArc3d(arc, false, false, nullptr);
                 else
@@ -1800,7 +1961,14 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 state.CookElemDisplayParams();
 
-                CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr); // Only open stored as curve primitive for element...
+                // A single curve primitive is always open (or none for a point string)...
+                CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr);
+
+                if (!context.Is3dView())
+                    {
+                    context.GetIDrawGeom().DrawCurveVector2d(*curvePtr, false, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
+                    break;
+                    }
 
                 context.GetIDrawGeom().DrawCurveVector(*curvePtr, false);
                 break;
@@ -1818,6 +1986,12 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 state.CookElemDisplayParams();
 
+                if (!context.Is3dView())
+                    {
+                    context.GetIDrawGeom().DrawCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay(), context.GetCurrentDisplayParams()->GetNetDisplayPriority());
+                    break;
+                    }
+                    
                 context.GetIDrawGeom().DrawCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams()->GetFillDisplay());
                 break;
                 }
@@ -1975,7 +2149,8 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 
                 state.CookElemDisplayParams();
 
-                context.GetIDrawGeom().DrawTextString(text);                
+                double zDepth = context.GetCurrentDisplayParams()->GetNetDisplayPriority();
+                context.GetIDrawGeom().DrawTextString(text, context.Is3dView() ? nullptr : &zDepth);                
                 break;
                 }
             
@@ -2001,6 +2176,41 @@ virtual int32_t _GetQvIndex () const override
     {
     // NEEDSWORK: Won't need this when QVElems are per-view...will just have QVElem per sub-category/transform...
     return (DgnRenderMode::Wireframe != m_flags.GetRenderMode() ? 1 : (m_flags.fill ? 2 : 3));
+    }
+
+virtual double _GetDisplayPriority (ViewContextR context) const override
+    {
+    if (context.Is3dView())
+        return 0.0;
+
+    // Yuck...dig out display priority, needed up front to create QvElem2d...NEEDSWORK: Allow display priority sub-category?
+    ElementGeomIO::Collection collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize());
+    DgnSubCategoryId subCategoryId;
+    int32_t displayPriority = 0;
+
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case ElementGeomIO::OpCode::BeginSubCategory:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::BeginSubCategory>(egOp.m_data);
+
+                subCategoryId = DgnSubCategoryId (ppfb->subCategoryId());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BasicSymbology:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+
+                displayPriority = ppfb->displayPriority();
+                break;
+                }
+            }
+        }
+
+    return context.ResolveNetDisplayPriority(displayPriority, subCategoryId);
     }
 
 virtual void _StrokeForCache (ViewContextR context, double pixelSize) override
@@ -2475,6 +2685,21 @@ bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCR geomT
         if (!geom.IsValid())
             continue;
 
+        if (!m_model.Is3d())
+            {
+            switch (geom->GetGeometryType())
+                {
+                case ElementGeometry::GeometryType::SolidPrimitive:
+                case ElementGeometry::GeometryType::BsplineSurface:
+                case ElementGeometry::GeometryType::Polyface:
+                case ElementGeometry::GeometryType::SolidKernelEntity:
+                    {
+                    BeAssert(false); // 3d only geometry...
+                    return false;
+                    }
+                }
+            }
+
         DRange3d range;
 
         if (!geom->GetRange(range))
@@ -2509,7 +2734,7 @@ void ElementGeometryBuilder::OnNewGeom (DRange3dCR localRange, TransformCP geomT
 
     Transform geomToWorld = (nullptr == geomToElement ? elementToWorld : Transform::FromProduct(elementToWorld, *geomToElement));
 
-    // Only establish "geometry group" boundaries at sub-category or transform changes...
+    // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...priority/class?)
     if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToWorld.IsEqual(geomToWorld)))
         {
         m_writer.Append(m_elParams.GetSubCategoryId(), geomToWorld);
@@ -2552,8 +2777,15 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
             }
         else
             {
+            BeAssert(0 == BeNumerical::Compare(origin.z, 0.0));
+            if (0.0 != angles.GetPitch().Degrees() || 0.0 != angles.GetRoll().Degrees())
+                {
+                BentleyApi::YawPitchRollAngles tmpAngles(BentleyApi::AngleInDegrees(), angles.GetPitch(), angles.GetRoll());
+                localToWorld = Transform::FromProduct (localToWorld, tmpAngles.ToTransform(DPoint3d::FromZero()));
+                }
+
             m_placement2d.GetOriginR() = DPoint2d::From(origin);
-            m_placement2d.GetAngleR() = angles.GetRoll().Degrees();
+            m_placement2d.GetAngleR() = angles.GetYaw();
             }
     
         m_havePlacement = true;
@@ -2580,7 +2812,7 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP geomToElement, bool deferWrite)
+bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP geomToElement)
     {
     DRange3d localRange;
 
@@ -2589,7 +2821,7 @@ bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP ge
 
     OnNewGeom(localRange, geomToElement);
 
-    if (!deferWrite)
+    if (!m_writer.AppendSimplified(geom, m_model.Is3d()))
         m_writer.Append(geom);
 
     return true;
@@ -2598,12 +2830,12 @@ bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom, bool deferWrite)
+bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom)
     {
     if (!ConvertToLocal(geom))
         return false;
 
-    return AppendLocal(geom, nullptr, deferWrite);
+    return AppendLocal(geom, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2611,6 +2843,21 @@ bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom, bool deferWrite
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append (ElementGeometryCR geom)
     {
+    if (!m_model.Is3d())
+        {
+        switch (geom.GetGeometryType())
+            {
+            case ElementGeometry::GeometryType::SolidPrimitive:
+            case ElementGeometry::GeometryType::BsplineSurface:
+            case ElementGeometry::GeometryType::Polyface:
+            case ElementGeometry::GeometryType::SolidKernelEntity:
+                {
+                BeAssert(false); // 3d only geometry...
+                return false;
+                }
+            }
+        }
+
     if (m_haveLocalGeom)
         return AppendLocal(geom, nullptr);
 
@@ -2647,7 +2894,9 @@ bool ElementGeometryBuilder::Append (ICurvePrimitiveCR geom)
             return false;
 
         OnNewGeom (localRange, nullptr);
-        m_writer.Append(geom);
+
+        if (!m_writer.AppendSimplified(geom, false, m_model.Is3d()))
+            m_writer.Append(geom);
 
         return true;
         }
@@ -2670,7 +2919,9 @@ bool ElementGeometryBuilder::Append (CurveVectorCR geom)
             return false;
 
         OnNewGeom (localRange, nullptr);
-        m_writer.Append(geom);
+
+        if (!m_writer.AppendSimplified(geom, m_model.Is3d()))
+            m_writer.Append(geom);
 
         return true;
         }
@@ -2685,6 +2936,12 @@ bool ElementGeometryBuilder::Append (CurveVectorCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom)
     {
+    if (!m_model.Is3d())
+        {
+        BeAssert(false); // 3d only geometry...
+        return false;
+        }
+
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
@@ -2708,6 +2965,12 @@ bool ElementGeometryBuilder::Append (ISolidPrimitiveCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append (MSBsplineSurfaceCR geom)
     {
+    if (!m_model.Is3d())
+        {
+        BeAssert(false); // 3d only geometry...
+        return false;
+        }
+
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
@@ -2731,6 +2994,12 @@ bool ElementGeometryBuilder::Append (MSBsplineSurfaceCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom)
     {
+    if (!m_model.Is3d())
+        {
+        BeAssert(false); // 3d only geometry...
+        return false;
+        }
+
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
@@ -2752,8 +3021,14 @@ bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAttachmentsCP attachments)
+bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom)
     {
+    if (!m_model.Is3d())
+        {
+        BeAssert(false); // 3d only geometry...
+        return false;
+        }
+
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
@@ -2762,7 +3037,7 @@ bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAtt
             return false;
 
         OnNewGeom (localRange, nullptr);
-        m_writer.Append(geom, attachments);
+        m_writer.Append(geom);
 
         return true;
         }
@@ -2775,12 +3050,7 @@ bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAtt
 
     ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
 
-    if (!AppendWorld (*geomPtr, true)) // Don't Append as ElementGeomentry for faceAttachments...
-        return false;
-
-    m_writer.Append(*geomPtr->GetAsISolidKernelEntity (), attachments);
-
-    return true;
+    return AppendWorld (*geomPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2838,7 +3108,7 @@ ElementGeometryBuilder::ElementGeometryBuilder (DgnModelR model, DgnCategoryId c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles angles)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
     if (!categoryId.IsValid() || !model.Is3d())
         return nullptr;
@@ -2854,7 +3124,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, double angle)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle)
     {
     if (!categoryId.IsValid() || model.Is3d())
         return nullptr;
@@ -2881,7 +3151,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld (DgnModelR model, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element, DPoint3dCR origin, YawPitchRollAngles angles)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
     return ElementGeometryBuilder::Create(element.GetDgnModel(), element.GetCategoryId(), origin, angles);
     }
@@ -2889,7 +3159,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement2dCR element, DPoint2dCR origin, double angle)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement2dCR element, DPoint2dCR origin, AngleInDegrees const& angle)
     {
     return ElementGeometryBuilder::Create(element.GetDgnModel(), element.GetCategoryId(), origin, angle);
     }

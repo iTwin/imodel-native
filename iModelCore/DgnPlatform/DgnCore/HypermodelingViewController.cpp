@@ -10,6 +10,7 @@
 
 static int s_flatten = 2; // 0 = don't flatten, 1 = flatten and draw on natural plane, 2 = flatten and draw on foremost section plane
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  03/14
 //--------------+------------------------------------------------------------------------
@@ -32,12 +33,14 @@ double static getSizeofPixelInDrawing (ViewContextR context, DrawingViewControll
 
     return vec.Magnitude();                          
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  03/14
 //--------------+------------------------------------------------------------------------
 Transform static getTransformToForemostCutPlane (SectioningViewControllerCR section, SectionDrawingViewControllerCR drawing)
     {
+#if defined (NEEDS_WORK_ELEMENTS_API)
     //  Get the foremost section cut plane as a DPlane3d
     DPlane3d cutPlane = section.GetForemostCutPlane();
 
@@ -57,9 +60,12 @@ Transform static getTransformToForemostCutPlane (SectioningViewControllerCR sect
     //  Compose a transform that translates from drawing's origin to the foremost cut plane
     DPoint3d toCutPlane = DPoint3d::From (cutPlane.normal.x, cutPlane.normal.y, cutPlane.normal.z);
     toCutPlane.Scale (-distanceToCutPlane);
+#endif
 
     Transform xlat = Transform::FromIdentity();
+#if defined (NEEDS_WORK_ELEMENTS_API)
     xlat.SetTranslation (toCutPlane);
+#endif
 
     return xlat;
     }
@@ -93,6 +99,7 @@ void HypermodelingViewController::PushClipsForInContextViewPass (ViewContextR co
     if (/*drawing.GetSectionHasDogLeg() &&*/ s_flatten > 1)  
         context.PushTransform (getTransformToForemostCutPlane (*drawing.GetSectioningViewController(), drawing));
 
+#if defined (NEEDS_WORK_ELEMENTS_API)
     //  2. Next, transform section graphics from z-up drawing coordinates into 3D project space.
     context.PushTransform (drawing.GetTransformToWorld());
          
@@ -112,6 +119,7 @@ void HypermodelingViewController::PushClipsForInContextViewPass (ViewContextR co
 
         context.PushTransform (drawing.GetFlatteningMatrix (pixelOffset));
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -185,7 +193,7 @@ DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR dr
 
     DRange3d range = DRange3d::NullRange();
     for (auto const& el : *model)
-        range.Extend(el.second->ToGeometricElement()->_GetRange3d());
+        range.Extend(el.second->ToGeometricElement()->CalculateRange3d());
 
     range.ScaleAboutCenter (range, 1.10);
 
@@ -233,7 +241,9 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
 
         if (ShouldDraw (PASS_Hatch) && drawing.GetSectionHasDogLeg()) // draw cuts only in their ORIGINAL PLANES to cover holes in the clipped 3d graphics
             {
+#if defined (NEEDS_WORK_ELEMENTS_API)
             context.PushTransform (drawing.GetTransformToWorld());
+#endif
             ViewContext::ContextMark mark (&context);
             m_pass = PASS_Hatch;
             SetOverrideMatSymb (context);

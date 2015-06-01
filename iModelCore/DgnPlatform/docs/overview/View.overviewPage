@@ -1,0 +1,31 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/View.overviewPage $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/** @page PAGE_ViewOverview View and ViewController
+
+WIP
+
+@see DgnViewport
+@see DgnViewId
+@see ViewController
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ViewSection1 WIP View Section 1
+
+WIP
+
+@li List item 1
+@li List item 2
+@li List item 3
+
+*/
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

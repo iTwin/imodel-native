@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ExportMacros.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -88,10 +88,6 @@
 
 #if defined (__RASTERCORE_BUILD__)
 #define RASTERCORE_EXPORT EXPORT_ATTRIBUTE
-#endif
-
-#if defined (__POINTCLOUD_BUILD__)
-#define POINTCLOUD_EXPORT EXPORT_ATTRIBUTE
 #endif
 
 #if defined (__RASTEREXT_BUILD__)
@@ -186,9 +182,6 @@
 #endif
 #if !defined (RASTERCORE_EXPORT)
 #define RASTERCORE_EXPORT IMPORT_ATTRIBUTE
-#endif
-#if !defined (POINTCLOUD_EXPORT)
-#define POINTCLOUD_EXPORT IMPORT_ATTRIBUTE
 #endif
 #if !defined (RASTEREXT_EXPORT)
 #define RASTEREXT_EXPORT IMPORT_ATTRIBUTE

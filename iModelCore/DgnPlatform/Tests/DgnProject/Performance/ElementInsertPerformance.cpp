@@ -11,7 +11,6 @@
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECDbApi.h>
-#include <DgnPlatform/DgnHandlers/DgnECPersistence.h>
 #include <Logging/bentleylogging.h>
 #include "PerformanceTestFixture.h"
 
@@ -119,10 +118,6 @@ struct PTestElementHandler : DgnPlatform::ElementHandler
         DgnModelP model = db.Models().GetModel(mid);
         DgnElementPtr testElement = PTestElementHandler::Create(PTestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
         GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
-
-#ifdef WIP_ITEM_HANDLER
-        geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
-#endif
 
         ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
 

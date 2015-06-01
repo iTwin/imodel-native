@@ -19,7 +19,7 @@ Classes for creating and opening a DgnDb.
 
 A DgnDb is a database that holds graphic and non-graphic data. A DgnDb object is used to access the database.
 
-@ref Overview_BIS
+@ref PAGE_DgnPlatform
 */
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

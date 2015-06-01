@@ -17,17 +17,13 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //__PUBLISH_SECTION_END__
 struct EXPORT_VTABLE_ATTRIBUTE WireframeGeomUtil
 {
-static bool CollectRules (DgnExtrusionDetailR, bvector<DSegment3d>&, bvector<bool>&, ViewContextP = NULL);
-static bool CollectRules (DgnRotationalSweepDetailR, bvector<DEllipse3d>&, bvector<bool>&, ViewContextP = NULL);
-static bool CollectRules (DgnRuledSweepDetailR, bvector<DSegment3d>&, bvector<bool>&, ViewContextP = NULL);
-
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidPrimitiveCR, bool includeEdges = true, bool includeFaceIso = false);
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (MSBsplineSurfaceCR, bool includeEdges = true, bool includeFaceIso = false);
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidKernelEntityCR, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidPrimitiveCR, DgnDbR dgnDb, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (MSBsplineSurfaceCR, DgnDbR dgnDb, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidKernelEntityCR, DgnDbR dgnDb, bool includeEdges = true, bool includeFaceIso = false);
 
 DGNPLATFORM_EXPORT static void Draw (ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 DGNPLATFORM_EXPORT static void Draw (MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
-DGNPLATFORM_EXPORT static void Draw (ISolidKernelEntityCR, ViewContextR, IFaceMaterialAttachmentsCP attachments = NULL, bool includeEdges = true, bool includeFaceIso = true);
+DGNPLATFORM_EXPORT static void Draw (ISolidKernelEntityCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 
 DGNPLATFORM_EXPORT static void DrawOutline (CurveVectorCR, IDrawGeomR);
 DGNPLATFORM_EXPORT static void DrawOutline2d (CurveVectorCR, IDrawGeomR, double zDepth);
@@ -123,11 +119,10 @@ virtual BentleyStatus   _ProcessSurface (MSBsplineSurfaceCR surface) {return ERR
 
 //! Collect output for surfaces and solids using a solid kernel entity.
 //! @param[in] entity The solid kernel entity.
-//! @param[in] attachments Optional face color/material attachment information.
 //! @note Requires host implementation of SolidsKernelAdmin methods that take or return a ISolidKernelEntity.
 //! @remarks Only called if _ProcessAsBody returns true.
 //! @return SUCCESS if handled.
-virtual BentleyStatus   _ProcessBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments) {return ERROR;}
+virtual BentleyStatus   _ProcessBody (ISolidKernelEntityCR entity) {return ERROR;}
 
 //! Collect output for surfaces and solids as facets.
 //! @param[in] meshData The indexed polyface data.
@@ -169,11 +164,6 @@ DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, Ge
 //! @param[in] dgnDb The DgnDb to set for the ViewContext.
 //! @bsimethod
 DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, DgnDbR dgnDb);
-
-//__PUBLISH_SECTION_END__
-DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, IDisplaySymbolR dispSymbol, DgnDbR dgnDb);
-DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor); //! !!!FOR INTERNAL USE ONLY!!! Must call context.SetDgnDb in _OutputGraphics...
-//__PUBLISH_SECTION_START__
 
 }; // ElementGraphicsOutput
 
