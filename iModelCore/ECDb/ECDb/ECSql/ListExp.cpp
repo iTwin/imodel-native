@@ -147,7 +147,7 @@ void ValueExpListExp::AddValueExp (unique_ptr<ValueExp>& valueExp)
 Exp::FinalizeParseStatus ValueExpListExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
-        //Indicate that the exp per se doesn't have a single type info, because in can vary across it children
+        //Indicate that the exp per se doesn't have a single type info, because it can vary across it children
         SetTypeInfo (ECSqlTypeInfo (ECSqlTypeInfo::Kind::Varies));
 
     return FinalizeParseStatus::Completed;

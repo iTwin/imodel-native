@@ -1533,7 +1533,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::LikeOperatorTests( int rowCountPerClass
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 10";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE NULL";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);

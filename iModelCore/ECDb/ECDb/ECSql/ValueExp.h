@@ -26,6 +26,7 @@ protected:
 public:
     virtual ~ValueExp () {}
 
+    bool IsParameterExp() const;
     ParameterExp* TryGetAsParameterExpP() const;
     };
 
@@ -251,7 +252,6 @@ private:
     int m_parameterIndex;
     Utf8String m_parameterName;
     ComputedExp const* m_targetExp;
-
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
