@@ -8,7 +8,6 @@
 #include "RasterSchemaInternal.h"
 #include "RasterSource.h"
 
-//&&MM review redefinition from IPP.  Maybe geomlib has equivalent.
 #define SQUARE(a) (a*a)
 #define EPSILON 0.0000001
 #define EQUAL_EPSILON(v1,v2)  ((v1 <= (v2+EPSILON)) && (v1 >= (v2-EPSILON)))
@@ -279,8 +278,8 @@ void RasterSource::GenerateResolution(bvector<Resolution>& resolution, uint32_t 
 bool RasterSource::IsValidTileId(TileId const& id) const
     {
     if(id.resolution >= GetResolutionCount() || 
-       id.tileX >= GetResolution(id.resolution).m_tileCountX ||
-       id.tileY >= GetResolution(id.resolution).m_tileCountY)
+       id.tileX >= GetResolution(id.resolution).GetTileCountX() ||
+       id.tileY >= GetResolution(id.resolution).GetTileCountY())
         return false;
 
     return true;
@@ -293,18 +292,16 @@ void RasterSource::ComputeTileCorners(DPoint3dP pCorners, TileId const& id) cons
     {
     BeAssert(IsValidTileId(id));
 
-    uint32_t xMin = id.tileX * GetTileSizeX();
-    uint32_t yMin = id.tileY * GetTileSizeY();
-    uint32_t xMax = xMin + GetTileSizeX();
-    uint32_t yMax = yMin + GetTileSizeY();
+    uint32_t xMinInRes = id.tileX * GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMinInRes = id.tileY * GetResolution(id.resolution).GetTileSizeY();
+    uint32_t xMaxInRes = xMinInRes + GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMaxInRes = yMinInRes + GetResolution(id.resolution).GetTileSizeY();
 
-    xMin = xMin << id.resolution;
-    yMin = yMin << id.resolution;
-    xMax = xMax << id.resolution;
-    yMax = yMax << id.resolution;
+    uint32_t xMin = xMinInRes << id.resolution;
+    uint32_t yMin = yMinInRes << id.resolution;
+    uint32_t xMax = xMaxInRes << id.resolution;
+    uint32_t yMax = yMaxInRes << id.resolution;
 
-    //&&MM not sure about limiting to physical. review. if we do we must limit the query bitmap width/height.
-    
     // Limit the tile extent to the raster physical size 
     if (xMax > GetWidth())
         xMax = GetWidth();
@@ -331,25 +328,4 @@ void RasterSource::ComputeTileCorners(DPoint3dP pCorners, TileId const& id) cons
         }
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  5/2015
-//----------------------------------------------------------------------------------------
-uint32_t RasterSource::GetEffectiveTileSizeX(TileId const& id) const
-    {
-    if((id.tileX+1)*GetTileSizeX() > GetResolution(id.resolution).GetWidth())
-        return GetResolution(id.resolution).GetWidth() - id.tileX*GetTileSizeX();
-
-    return GetTileSizeX();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  5/2015
-//----------------------------------------------------------------------------------------
-uint32_t RasterSource::GetEffectiveTileSizeY(TileId const& id) const
-    {
-    if((id.tileY+1)*GetTileSizeY() > GetResolution(id.resolution).GetHeight())
-        return GetResolution(id.resolution).GetHeight() - id.tileY*GetTileSizeY();
-
-    return GetTileSizeY();
-    }
     

@@ -94,7 +94,7 @@ private:
 
     TileStatus m_status;
 
-    //&&MM add the concept of lastDrawTime and use that to cleanup old tiles. Make sure it does impact performance.
+    //&&MM add the concept of lastDrawTime and use that to cleanup old tiles. Make sure time query does impact performance.
     //it might be better to use the same time for the all tiles of a single draw operation. Set during QueryVisible?
     // use time and proximity to the current visibles tile to select what needs to be clean.
 
@@ -129,7 +129,7 @@ private:
 
     DgnDbR m_dgnDb;                 
     RasterSourcePtr m_pSource; 
-    RasterTilePtr m_pRoot;          // The lowest/corser resolution. 
+    RasterTilePtr m_pRoot;          // The lowest/coarser resolution. 
 };
 
 

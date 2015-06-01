@@ -110,32 +110,37 @@ struct RasterSource : RefCountedBase
     //! Raster resolution definition. Tile size cannot exceed TILESIZE_LIMIT and must be a power of two.
     struct Resolution
         {
-        Resolution(uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY)
-        :m_width(width), m_height(height), m_tileSizeX(tileSizeX), m_tileSizeY(tileSizeY)
-            {
-            BeAssert(GetTileSizeX() <= TILESIZE_LIMIT && GetTileSizeY() <= TILESIZE_LIMIT);
-            BeAssert(IsPowerOfTwo(GetTileSizeX()) && IsPowerOfTwo(GetTileSizeY()));
+        public:
+            Resolution(uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY)
+            :m_width(width), m_height(height), m_tileSizeX(tileSizeX), m_tileSizeY(tileSizeY)
+                {
+                BeAssert(GetTileSizeX() <= TILESIZE_LIMIT && GetTileSizeY() <= TILESIZE_LIMIT);
+                BeAssert(IsPowerOfTwo(GetTileSizeX()) && IsPowerOfTwo(GetTileSizeY()));
 
-            m_tileCountX = (width + (tileSizeX - 1)) / tileSizeX;
-            m_tileCountY = (height + (tileSizeY - 1)) / tileSizeY;
-            }
+                m_tileCountX = (width + (tileSizeX - 1)) / tileSizeX;
+                m_tileCountY = (height + (tileSizeY - 1)) / tileSizeY;
+                }
 
-        uint32_t GetWidth() const {return m_width;}
-        uint32_t GetHeight() const {return m_height;}
-        uint32_t GetTileCountX() const {return m_tileCountX;}
-        uint32_t GetTileCountY() const {return m_tileCountY;}
-        uint32_t GetTileSizeX() const {return m_tileSizeX;}
-        uint32_t GetTileSizeY() const {return m_tileSizeY;}
+            uint32_t GetWidth() const {return m_width;}
+            uint32_t GetHeight() const {return m_height;}
+            uint32_t GetTileCountX() const {return m_tileCountX;}
+            uint32_t GetTileCountY() const {return m_tileCountY;}
 
-        uint32_t m_width;
-        uint32_t m_height;
-        uint32_t m_tileCountX;
-        uint32_t m_tileCountY;
-        uint32_t m_tileSizeX;
-        uint32_t m_tileSizeY;
+            uint32_t GetTileSizeX() const {return m_tileSizeX;}
+            uint32_t GetTileSizeY() const {return m_tileSizeY;}
+
+        private:           
+
+            uint32_t m_width;
+            uint32_t m_height;
+            uint32_t m_tileCountX;
+            uint32_t m_tileCountY;
+            uint32_t m_tileSizeX;
+            uint32_t m_tileSizeY;
         };
 
-    //! Query for tile data. Null is returned if not yet available.  &&MM we need better error handling. (server error, time out, pending...)
+    //! Query for tile data. Null might be returned if not yet available.  &&MM we need better error handling. (server error, time out, pending...)
+    //! Border tiles are assumed to be clipped to the raster physical extent.
     DisplayTilePtr QueryTile(TileId const& id, bool request);
 
     uint32_t GetResolutionCount() const {return (uint32_t)m_resolution.size();}
@@ -150,11 +155,9 @@ struct RasterSource : RefCountedBase
     uint32_t GetWidth() const {return GetResolution(0).GetWidth();}
     uint32_t GetHeight() const {return GetResolution(0).GetHeight();}
 
-    //&&MM Keep the effective version only?
-    uint32_t GetTileSizeX() const {return GetResolution(0).GetTileSizeX();}
-    uint32_t GetTileSizeY() const {return GetResolution(0).GetTileSizeY();}
-    uint32_t GetEffectiveTileSizeX(TileId const& id) const;
-    uint32_t GetEffectiveTileSizeY(TileId const& id) const;
+    //! return tile size. Border tiles are clipped to their effective size in pixels
+    uint32_t GetTileSizeX(TileId const& id) const {return MIN(GetResolution(id.resolution).GetTileSizeX(), GetResolution(id.resolution).GetWidth() - GetResolution(id.resolution).GetTileSizeX()*id.tileX);}
+    uint32_t GetTileSizeY(TileId const& id) const {return MIN(GetResolution(id.resolution).GetTileSizeY(), GetResolution(id.resolution).GetHeight() - GetResolution(id.resolution).GetTileSizeY()*id.tileY);}
     
     //! Compute tiles corners in Cartesian.
     void ComputeTileCorners(DPoint3dP pCorners, TileId const& id) const;

@@ -12,11 +12,8 @@
 
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnCore/DgnDomain.h>
-
 #include <DgnPlatform/DgnCore/RasterBaseModel.h>
-
-#include <GeoCoord/BaseGeoCoord.h>
-#include <DgnGeoCoord/DgnGeoCoord.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 #include <RasterSchema/RasterSchemaTypes.h>
 #include <RasterSchema/RasterSchemaCommon.h>

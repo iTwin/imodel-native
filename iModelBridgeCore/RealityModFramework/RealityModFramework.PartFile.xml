@@ -95,8 +95,9 @@
     <Part Name="PointCloudSchemaSubParts">
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <SubPart PartName="DgnGeoCoord"     PartFile="DgnGeoCoord"  Repository="geocoord"/>
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
+        <!-- Need full data to decode EPSG code -->
+        <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
     </Part>
 
     <Part Name="PointCloudSchemaPublicAPI" BentleyBuildMakeFile="PointCloudSchema/PointCloudSchema.prewire.mke">
@@ -116,7 +117,6 @@
     <Part Name="RasterSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="RasterSchema/RasterSchema.mke" >
         <SubPart PartName="RasterSchemaPublicAPI"/>
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <SubPart PartName="DgnGeoCoord"     PartFile="DgnGeoCoord"  Repository="geocoord"/>
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>

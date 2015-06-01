@@ -56,7 +56,7 @@ WmsSource::WmsSource(Utf8CP url, Utf8CP version, Utf8CP layers, Utf8CP styles, U
     Initialize(WString(url, true).c_str(), corners, resolution);
             
     GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(m_gcs);
-    BeAssert(pGcs.IsValid()); //&&MM for WMS it must be an error if we do not have a GCS.
+    BeAssert(pGcs.IsValid()); //Is it an error if we do not have a GCS? We will assume conincident.
     SetGcsP(pGcs.get());
     }
 
@@ -98,14 +98,14 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
 
     //&&MM I don't understand this concept of expected image info. Why we need it?
     ImageUtilities::RgbImageInfo expectedImageInfo;
-    expectedImageInfo.width = GetEffectiveTileSizeX(id);
-    expectedImageInfo.height = GetEffectiveTileSizeY(id);
+    expectedImageInfo.width = GetTileSizeX(id);
+    expectedImageInfo.height = GetTileSizeY(id);
     expectedImageInfo.hasAlpha = false;
     expectedImageInfo.isBGR = false;
     expectedImageInfo.isTopDown = true;
 
 #if 0 //&&MM not now. need our own tiledraster
-    //&&MM We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
+    //      We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
     //      Maybe we should create a better Image object than RgbImageInfo and use that.
     RefCountedPtr<TiledRaster::RequestOptions> pOptions;
     if(request)
@@ -169,7 +169,6 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     ComputeTileCorners(tileCorners, tileId);
 
     // &&MM need to limit our request for border tiles to the data window range?  
-    // &&MM Snap border tiles to requested data window?
     GeoPoint2d tileOrigin;
     tileOrigin.latitude = tileCorners[0].y;
     tileOrigin.longitude = tileCorners[0].x;
@@ -191,7 +190,7 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     tileUrl.Sprintf("%s?VERSION=%s&REQUEST=GetMap&LAYERS=%s&STYLES=%s&%s=%s&BBOX=%f,%f,%f,%f&WIDTH=%d&HEIGHT=%d&FORMAT=%s", 
         m_serverUrl.c_str(), m_version.c_str(), m_layers.c_str(), m_styles.c_str(), m_gcsType.c_str(), m_gcs.c_str(), 
         minX, minY, maxX, maxY,
-        GetEffectiveTileSizeX(tileId), GetEffectiveTileSizeY(tileId), m_format.c_str());
+        GetTileSizeX(tileId), GetTileSizeY(tileId), m_format.c_str());
        
     // Optional parameters
     if(!m_transparent.empty())
