@@ -46,9 +46,9 @@ DGNPLATFORM_EXPORT bool operator< (struct FaceAttachment const&) const;
 }; // FaceAttachment
 
 //! @private
-typedef bmap <int, FaceAttachment> T_FaceAttachmentsMap;
+typedef bmap <uint32_t, FaceAttachment> T_FaceAttachmentsMap;
 //! @private
-typedef bmap <int, int> T_FaceToSubElemIdMap;
+typedef bmap <uint32_t, int32_t> T_FaceToSubElemIdMap;
 
 //=======================================================================================
 //! @private
