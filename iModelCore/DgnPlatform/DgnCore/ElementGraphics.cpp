@@ -1204,7 +1204,6 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics (ViewContextR context) override
     {
-    // NOTE: Can't set DgnDb because we don't have one to use...that's ok, WireframeGeomUtil methods don't need it...
     if (m_surface)
         WireframeGeomUtil::Draw (*m_surface, context, m_includeEdges, m_includeFaceIso);
     else if (m_primitive)
@@ -1266,6 +1265,110 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves (ISolidKernelEntityCR entity, Dg
     ElementGraphicsOutput::Process (rules, dgnDb);
 
     return rules.GetCurveVector ();
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct FaceAttachmentRuleCollector : IElementGraphicsProcessor
+{
+protected:
+
+Transform                           m_currentTransform;
+ElemDisplayParams                   m_currentDisplayParams;
+
+ISolidKernelEntityCR                m_entity;
+bool                                m_includeEdges;
+bool                                m_includeFaceIso;
+bmap<FaceAttachment, CurveVectorP>  m_uniqueAttachments;
+
+bvector<CurveVectorPtr>&            m_curves;
+bvector<ElemDisplayParams>&         m_params;
+
+public:
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+explicit FaceAttachmentRuleCollector (ISolidKernelEntityCR entity, bvector<CurveVectorPtr>& curves, bvector<ElemDisplayParams>& params, bool includeEdges, bool includeFaceIso) : m_entity(entity), m_curves(curves), m_params(params)
+    {
+    m_includeEdges   = includeEdges;
+    m_includeFaceIso = includeFaceIso;
+    }
+
+virtual ~FaceAttachmentRuleCollector () {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _WantClipping () const override {return false;}
+virtual bool _ProcessAsBody (bool isCurved) const override {return false;}
+virtual bool _ProcessAsFacets (bool isPolyface) const override {return false;}
+virtual void _AnnounceTransform (TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity ();}
+virtual void _AnnounceElemDisplayParams (ElemDisplayParams const& params) override {m_currentDisplayParams = params;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) override
+    {
+    FaceAttachment attachment(m_currentDisplayParams);
+    bmap<FaceAttachment, CurveVectorP>::iterator found = m_uniqueAttachments.find(attachment);
+
+    if (found == m_uniqueAttachments.end())
+        return SUCCESS;
+
+    CurveVectorPtr  childCurve = curves.Clone ();
+
+    if (!m_currentTransform.IsIdentity ())
+        childCurve->TransformInPlace (m_currentTransform);
+
+    found->second->Add(childCurve);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _OutputGraphics (ViewContextR context) override
+    {
+    IFaceMaterialAttachmentsCP attachments = m_entity.GetFaceMaterialAttachments();
+
+    if (nullptr == attachments)
+        return; // No reason to call this method when there aren't attachments...
+
+    T_FaceAttachmentsMap const& faceAttachmentsMap = attachments->_GetFaceAttachmentsMap();
+
+    for (T_FaceAttachmentsMap::const_iterator curr = faceAttachmentsMap.begin(); curr != faceAttachmentsMap.end(); ++curr)
+        {
+        bmap<FaceAttachment, CurveVectorP>::iterator found = m_uniqueAttachments.find(curr->second);
+
+        if (found != m_uniqueAttachments.end())
+            continue;
+
+        CurveVectorPtr    curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        ElemDisplayParams params;
+
+        curr->second.ToElemDisplayParams(params);
+        m_params.push_back(params);
+        m_curves.push_back(curve);
+        m_uniqueAttachments[curr->second] = curve.get();
+        }
+
+    WireframeGeomUtil::Draw (m_entity, context, m_includeEdges, m_includeFaceIso);
+    }
+
+}; // FaceAttachmentRuleCollector
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void WireframeGeomUtil::CollectCurves (ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<CurveVectorPtr>& curves, bvector<ElemDisplayParams>& params, bool includeEdges, bool includeFaceIso)
+    {
+    FaceAttachmentRuleCollector rules (entity, curves, params, includeEdges, includeFaceIso);
+
+    ElementGraphicsOutput::Process (rules, dgnDb);
     }
 
 /*----------------------------------------------------------------------------------*//**
