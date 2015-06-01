@@ -21,7 +21,7 @@
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
-            <Files ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Files>
+            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -130,7 +130,16 @@
         <SubPart PartName="ECObjectsPerformanceTests" />
     </Part>
 
-  <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
+    <!-- NuGet automatic packages generation -->
+    <Part Name="ECObjectsPackage" BMakeFile="install\NuGetPacking.mke" >
+        <SubPart PartName="ECObjectsNative" />
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="ECObjectsNuGet">Install\ecobjects.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
       <SubPart PartName="ECObjectsNative"  LibType="Static"/>
       <Directories DirectoryListName="ECObjects" />
   </Product>
@@ -165,11 +174,13 @@
         <ProductDirectory Name="PublishedApi"                       Path="Include"/>        
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
         <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
+        <ProductDirectory Name="ECObjectsNuGet"                     Path="Install" />
     </ProductDirectoryList>
 
     <Product Name="ECObjects">
         <SubPart PartName="ECObjectsNative"/>
         <SubPart PartName="PublishedApi_Doc" />
+        <SubPart PartName="ECObjectsPackage" />
         <Directories DirectoryListName="ECObjects"/>
     </Product>
 

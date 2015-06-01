@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>ECObjects</id>
+        <version>$version$</version>
+        <title>Bentley ECObjects (native)</title>
+        <authors>Bentley Systems, Incorporated</authors>
+        <owners>Bentley Systems, Incorporated</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Native ECObjects and its dependencies</description>
+        <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <language>en-US</language>
+    </metadata>
+    <files>
+        <file src="Assemblies\ECObjects6.dll" target="lib\net45\ECObjects6.dll" />
+        <file src="Assemblies\BeLibxml2.dll" target="lib\net45\BeLibxml2.dll" />
+        <file src="Assemblies\Bentley5.dll" target="lib\net45\Bentley5.dll" />
+        <file src="Assemblies\BentleyAllocator.dll" target="lib\net45\BentleyAllocator.dll" />
+        <file src="Files\BentleyGeom5.dll" target="lib\net45\BentleyGeom5.dll" />
+        <file src="Files\BentleyGeomSerialization5.dll" target="lib\net45\BentleyGeomSerialization5.dll" />
+        <file src="Assemblies\BeXml1.dll" target="lib\net45\BeXml1.dll" />
+    </files>
+</package>

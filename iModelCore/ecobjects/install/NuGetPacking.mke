@@ -1,0 +1,25 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: install/NuGetPacking.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
+%include mdl.mki
+
+outputTemplates=$(OutECObjects)NuGetTemplates/
+outputPackages=$(OutECObjects)NuGetPackages/
+
+%include $(SharedMki)stdversion.mki
+ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+
+always:
+    !~@mkdir $(outputPackages)
+    !~@mkdir $(outputTemplates)
+
+always:
+    ~task Exec -i:Command="$(SrcRoot)bsitools/nuget/nuget pack $(SrcRoot)ecobjects/install/ecobjects.nuspec -BasePath $(BuildContext)Subparts -OutputDirectory $(outputPackages) -Version $(ASSEMBLY_FILE_VERSION)"
+    
+$(BuildContext)Install/ecobjects.nupkg: $(outputPackages)ecobjects.$(ASSEMBLY_FILE_VERSION).nupkg
+    $(LinkFirstDepToFirstTarget)
