@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformApi.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,7 +56,6 @@
              @defgroup  CurveElements        Curve Elements
              @defgroup  RegionElements       Region Elements
              @defgroup  3DElements           Surface And Solid Elements
-             @defgroup  RasterElements       Raster Elements
              @defgroup  DigitalSignatures    Digital Signature Elements
              @defgroup  MultilineElements    Multi-line Elements
              @defgroup
