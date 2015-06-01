@@ -36,6 +36,7 @@ TEST_F (ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalledOnOtherPer
     EXPECT_FALSE (token->AsString ().empty ());
 
     p1.SetToken (token);
+    ASSERT_NE(nullptr, p2.GetToken ());
     EXPECT_EQ (token->AsString (), p2.GetToken ()->AsString ());
     }
 
