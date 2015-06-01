@@ -32,7 +32,7 @@ struct PointCloudGcsFacility
         static GeoCoordinates::BaseGCS::WktFlavor                   GetWKTFlavor(WStringP wktStrWithoutFlavor, const WString& wktStr);       
         static bool                                                 MapWktFlavorEnum(GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, PointCloudGcsFacility::WktFlavor wktFlavor);
 
-        POINTCLOUDSCHEMA_EXPORT static GeoCoordinates::DgnGCSPtr    CreateGcsFromWkt(WStringCR spatialReferenceWkt, DgnDbR dgnDb, bool reprojectElevation);
+        POINTCLOUDSCHEMA_EXPORT static DgnGCSPtr                    CreateGcsFromWkt(WStringCR spatialReferenceWkt, DgnDbR dgnDb, bool reprojectElevation);
         POINTCLOUDSCHEMA_EXPORT static BentleyStatus                ComputeLocalTransform(DRange3dCR range, DgnGCSR src, DgnGCSR dst, TransformR approxTransform);
         POINTCLOUDSCHEMA_EXPORT static BentleyStatus                GetTransformToUor(TransformR transform, WString wktStringGeoreference, DRange3dCR rangeUOR, DgnDbR dgnDb);
     };
