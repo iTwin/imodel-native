@@ -1356,8 +1356,8 @@ private:
     double          m_azimuth;
     AxisAlignedBox3d m_extent;
     DPoint3d        m_globalOrigin;      //!< in meters
-    mutable bool                    m_hasCheckedForGCS;
-    mutable GeoCoordinates::DgnGCS* m_gcs;
+    mutable bool    m_hasCheckedForGCS;
+    mutable DgnGCS* m_gcs;
     mutable IGeoCoordinateServicesP m_geoServices;
 
     DgnUnits(DgnDbR db);
@@ -1394,7 +1394,7 @@ public:
 
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT GeoCoordinates::DgnGCS* GetDgnGCS() const;
+    DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
 
     //! Gets the azimuth angle (true north offset) of the global coordinate system of this DgnDb <em>if it has one</em>.
     double GetAzimuth() const {return m_azimuth;}
