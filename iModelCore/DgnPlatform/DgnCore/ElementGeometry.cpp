@@ -936,7 +936,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
         {
         // When facetted representation is an approximation, we need to store the edge curves for snapping...
         // NEEDSWORK: Face attachments affect color...
-        CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, true, false);
+        CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, m_db, true, false);
 
         if (edgeCurves.IsValid ())
             {
@@ -953,7 +953,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
         {
         // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
         // NEEDSWORK: Face attachments affect color...
-        CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves (entity, false, true);
+        CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves (entity, m_db, false, true);
 
         if (faceCurves.IsValid ())
             {
@@ -1120,7 +1120,7 @@ void ElementGeomIO::Writer::Append (ElementGeometryCR elemGeom)
 void ElementGeomIO::Writer::Append(TextStringCR text)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, *m_db))
+    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db))
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
@@ -1423,7 +1423,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, TextStringR text) const
     if (OpCode::TextString != egOp.m_opCode)
         return false;
 
-    return (SUCCESS == TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, *m_db));
+    return (SUCCESS == TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, m_db));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1610,7 +1610,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
         case ElementGeomIO::OpCode::TextString:
             {
             TextStringPtr text = TextString::Create();
-            if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, *m_db))
+            if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, m_db))
                 break;
             
             elemGeom = ElementGeometry::Create(text);

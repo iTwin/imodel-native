@@ -28,7 +28,6 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert (NULL == m_graphicsAdmin);         m_graphicsAdmin         = &_SupplyGraphicsAdmin();
     BeAssert (NULL == m_materialAdmin);         m_materialAdmin         = &_SupplyMaterialAdmin();
     BeAssert (NULL == m_solidsKernelAdmin);     m_solidsKernelAdmin     = &_SupplySolidsKernelAdmin();
-    BeAssert (NULL == m_geoCoordAdmin);         m_geoCoordAdmin         = &_SupplyGeoCoordinationAdmin();
     BeAssert (NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin ();
     }
 

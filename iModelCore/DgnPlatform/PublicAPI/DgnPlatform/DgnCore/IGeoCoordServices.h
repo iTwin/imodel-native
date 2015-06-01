@@ -2,26 +2,24 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/IGeoCoordServices.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_API_NAMESPACE
-
-namespace GeoCoordinates {
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //! Status values returned by IGeoCoordinateServices methods.
 enum GeoReferenceStatus
     {
     GEOREF_STATUS_Success                = 0,
-    GEOREF_STATUS_ReprojectDisabled      = DgnPlatform::GEOREFERENCE_ERROR_BASE,
-    GEOREF_STATUS_BadDgnModel            = DgnPlatform::GEOREFERENCE_ERROR_BASE + 1,
-    GEOREF_STATUS_MasterHasNoGCS         = DgnPlatform::GEOREFERENCE_ERROR_BASE + 2,
-    GEOREF_STATUS_AttachmentHasNoGCS     = DgnPlatform::GEOREFERENCE_ERROR_BASE + 3,
-    GEOREF_STATUS_BadArg                 = DgnPlatform::GEOREFERENCE_ERROR_BASE + 4,
-    GEOREF_STATUS_NoLinearTransform      = DgnPlatform::GEOREFERENCE_ERROR_BASE + 5,
+    GEOREF_STATUS_ReprojectDisabled      = GEOREFERENCE_ERROR_BASE,
+    GEOREF_STATUS_BadDgnModel            = GEOREFERENCE_ERROR_BASE + 1,
+    GEOREF_STATUS_MasterHasNoGCS         = GEOREFERENCE_ERROR_BASE + 2,
+    GEOREF_STATUS_AttachmentHasNoGCS     = GEOREFERENCE_ERROR_BASE + 3,
+    GEOREF_STATUS_BadArg                 = GEOREFERENCE_ERROR_BASE + 4,
+    GEOREF_STATUS_NoLinearTransform      = GEOREFERENCE_ERROR_BASE + 5,
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -49,7 +47,7 @@ virtual bool                                HasGCS (DgnDbR) = 0;
 //! Returns true if a reprojection operation is required to convert UORs from sourceGCS to targetGCS.
 virtual bool                                RequiresReprojection (DgnGCSP sourceGCS, DgnGCSP targetGCS) = 0;
 
-virtual bool                                GetUnitDefinition (DgnGCSP sourceGCS, UnitDefinitionR unitDef, DgnPlatform::StandardUnit&  standardUnitNumber) = 0;
+virtual bool                                GetUnitDefinition (DgnGCSP sourceGCS, UnitDefinitionR unitDef, StandardUnit&  standardUnitNumber) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * Calculates the design coordinates (UORS) of the input Longitude/Latitude/Elevation point.
@@ -80,6 +78,4 @@ DgnGCS&                 gcs
 ) = 0;
 };
 
-} // ends GeoCoordinates namespace
-
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_DGNPLATFORM_NAMESPACE
