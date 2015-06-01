@@ -13,9 +13,9 @@ USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordinates::DgnGCSPtr PointCloudGcsFacility::CreateGcsFromWkt(WStringCR spatialReferenceWkt, DgnDbR dgnDb, bool reprojectElevation)
+DgnGCSPtr PointCloudGcsFacility::CreateGcsFromWkt(WStringCR spatialReferenceWkt, DgnDbR dgnDb, bool reprojectElevation)
     {
-    GeoCoordinates::DgnGCSPtr sceneGcs;
+    DgnGCSPtr sceneGcs;
 //    WString spatialReferenceWktStr(spatialReferenceWkt);
 
     if (!spatialReferenceWkt.empty())
@@ -33,7 +33,7 @@ GeoCoordinates::DgnGCSPtr PointCloudGcsFacility::CreateGcsFromWkt(WStringCR spat
             pSrcBaseGcs->InitFromWellKnownText(&warning, &warningErrorMsg, wktFlavor, wktWithoutFlavor.GetWCharCP());
             if(pSrcBaseGcs->IsValid())
                 // POINTCLOUD_WIP_GR06_GCS - Dont create DgnGCS; keep the base, because PC exposes a baseGCS, not a DgnGCS
-                sceneGcs = GeoCoordinates::DgnGCS::CreateGCS(pSrcBaseGcs.get(), dgnDb);
+                sceneGcs = DgnGCS::CreateGCS(pSrcBaseGcs.get(), dgnDb);
             }
         }
 
@@ -167,13 +167,13 @@ BentleyStatus PointCloudGcsFacility::GetLocalTransformForReprojection(TransformR
     transform.initIdentity();
 
     // Must be able to create a valid GCS
-    GeoCoordinates::DgnGCSPtr pDstGcs(dgnDb.Units().GetDgnGCS());
+    DgnGCSPtr pDstGcs(dgnDb.Units().GetDgnGCS());
 
     if (pDstGcs == NULL || !pDstGcs->IsValid())
         return ERROR;
 
     // Must be able to create a valid GCS
-    GeoCoordinates::DgnGCSPtr pSrcGcs = PointCloudGcsFacility::CreateGcsFromWkt(wktStringGeoreference, dgnDb, true);
+    DgnGCSPtr pSrcGcs = PointCloudGcsFacility::CreateGcsFromWkt(wktStringGeoreference, dgnDb, true);
     if (pSrcGcs.IsNull() || !pSrcGcs->IsValid())
         return ERROR;
 
