@@ -2675,7 +2675,7 @@ const CSDefinition  &csDef
 void            ZonesFromCsDef
 (
 ZONE                *zone,
-long                *numZones,
+int32_t             *numZones,
 const double        *src
 )
     {
