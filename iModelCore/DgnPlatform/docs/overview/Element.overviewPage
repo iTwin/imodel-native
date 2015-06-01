@@ -26,6 +26,10 @@ WIP
 @li List item 2
 @li List item 3
 
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ElementSection2 WIP Element Section 2
+
+@see DgnElementGroup
 */
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
