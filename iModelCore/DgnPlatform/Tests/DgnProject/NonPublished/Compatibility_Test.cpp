@@ -11,16 +11,16 @@
 #include <BeXml/BeXml.h>
 #include <wchar.h>
 
-
 //#ifdef WIP_NOT_PORTABLE
 
-struct TypeNamePair
+struct TypeInfo
 {
     WString m_name;
     int32_t m_size;
     int32_t m_alignment;
-    TypeNamePair() :m_size(-1), m_alignment(-1), m_name(L"UnIntializedName"){}
-    TypeNamePair(int32_t size, WString name) :m_size(size), m_name(name){}
+    TypeInfo() :m_size(-1), m_alignment(-1), m_name(L"UnIntializedName"){}
+    TypeInfo(int32_t size, WString name) :m_size(size), m_name(name){}
+    TypeInfo(int32_t size, int32_t align, WString name) :m_size(size), m_alignment(align), m_name(name){}
 };
 
 #include "BentleyHeaders.h"
@@ -34,15 +34,17 @@ struct Compatibility_Test : public ::testing::Test
      public:
          static BeXmlDomPtr m_dom;
          static xmlXPathContextPtr m_xmlXPathContext;
-         static void GetStructList(bvector<TypeNamePair>& list);
+         static void GetStructList(bvector<TypeInfo>& list);
          static bool IsConfigLoadError;
+         static WString GetCompatibilityConfigFile();
          static void SetUpTestCase()
             {
                 printf("*** SetUpTestCase ***\n");
-                printf("Reading config file from : %ls \n", DgnDbTestDgnManager::GetSeedFilePath(L"CompatibilityTestDataTypes.xml").c_str());
+                WString configFilePath = GetCompatibilityConfigFile();
+                printf("Reading config file from : %ls \n", DgnDbTestDgnManager::GetSeedFilePath(configFilePath.c_str()).c_str());
                 BeXmlStatus status;
-                m_dom = BeXmlDom::CreateAndReadFromFile(status, DgnDbTestDgnManager::GetSeedFilePath(L"CompatibilityTestDataTypes.xml").c_str());
-                if (m_dom.IsValid())
+                m_dom = BeXmlDom::CreateAndReadFromFile(status, DgnDbTestDgnManager::GetSeedFilePath(configFilePath.c_str()).c_str());
+                if (BEXML_Success == status && m_dom.IsValid())
                 {
                     BeXmlNodeP          root = m_dom->GetRootElement();
                     if (NULL != root)
@@ -51,10 +53,10 @@ struct Compatibility_Test : public ::testing::Test
                         IsConfigLoadError = false;
                     }
                     else
-                        printf("ERROR: Can't find root node\n");
+                        printf("ERROR: Can't find root node., ERROR CODE (BeXmlStatus) = %d \n",(int)status);
                 }
                 else
-                    printf("ERROR: Unable to read/parse xml document, ERROR CODE = %d", (int)status);
+                    printf("ERROR: Unable to read/parse xml document, ERROR CODE (BeXmlStatus) = %d\n", (int)status);
             }
         //---------------------------------------------------------------------------------------
         // @bsimethod                                        Umar.Hayat                02/13
@@ -81,7 +83,7 @@ struct Compatibility_Test : public ::testing::Test
         //---------------------------------------------------------------------------------------
         // @bsimethod                                        Umar.Hayat                02/13
         //---------------------------------------------------------------------------------------
-        int32_t GetAlignOf(WString typeName)
+        int32_t GetAlignOf(WString typeName) 
         {
             BeXmlDom::IterableNodeSet iterableNodeSet;
             WString expressionW = L"//struct[@name='%ls']";
@@ -93,7 +95,6 @@ struct Compatibility_Test : public ::testing::Test
             if (iterableNodeSet.size())
             {
                 //printf("node name %ls \n", (*(iterableNodeSet.begin()++))->GetName());
-                printf("node name %s \n", iterableNodeSet.front()->GetName());
                 int32_t size = -1;
                 iterableNodeSet.front()->GetAttributeInt32Value(size, "alignment");
                 return size;
@@ -105,21 +106,46 @@ struct Compatibility_Test : public ::testing::Test
 BeXmlDomPtr Compatibility_Test::m_dom;
 xmlXPathContextPtr Compatibility_Test::m_xmlXPathContext;
 bool Compatibility_Test::IsConfigLoadError = true;
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                        Umar.Hayat                05/15
+//---------------------------------------------------------------------------------------
+WString Compatibility_Test::GetCompatibilityConfigFile()
+    {
+#if defined (_X86_)
+        return WString(L"CompatibilityTestDataTypes_x86.xml");
+#else
+        return WString(L"CompatibilityTestDataTypes.xml");
+#endif
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                        Umar.Hayat                05/15
 //---------------------------------------------------------------------------------------
 TEST_F(Compatibility_Test, SizeCheck)
     {
     ASSERT_FALSE(IsConfigLoadError) << "Configuration file not loaded properly";
-    bvector<TypeNamePair> structList; 
+    bvector<TypeInfo> structList; 
     GetBentleyStructList(structList);
     GetGeomStructList(structList);
-    for (TypeNamePair param : structList)
+    for (TypeInfo param : structList)
         {
         //printf("size = %d\n", GetSizeOf(param.m_name));
-        EXPECT_EQ(param.m_size, GetSizeOf(param.m_name)) << param.m_name.c_str() << " size is not matching";
+        EXPECT_EQ(GetSizeOf(param.m_name), param.m_size ) << param.m_name.c_str() << " size is not matching";
         }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                        Umar.Hayat                05/15
+//---------------------------------------------------------------------------------------
+TEST_F(Compatibility_Test, AlignCheck) 
+{
+    ASSERT_FALSE(IsConfigLoadError) << "Configuration file not loaded properly";
+    bvector<TypeInfo> structList;
+    GetBentleyStructList(structList);
+    GetGeomStructList(structList);
+    for (TypeInfo param : structList)
+    {
+    //printf("size = %d\n", GetSizeOf(param.m_name));
+    EXPECT_EQ(GetAlignOf(param.m_name), param.m_alignment) << param.m_name.c_str() << " alignment is not matching";
+    }
+}
 
 //#endif // WIP_NOT_PORTABLE

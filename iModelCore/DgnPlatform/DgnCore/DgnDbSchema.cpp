@@ -76,19 +76,6 @@ DbResult DgnDb::CreateProjectTables()
     ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
                     " WHERE Namespace=\"" PROPERTY_APPNAME_DgnView "\" AND Id=OLD.Id; END");
 
-    CreateTable(DGN_TABLE_RasterFile,"RasterId INTEGER PRIMARY KEY,"
-                                            "Name CHAR NOT NULL,"
-                                            "Header BLOB");
-
-    CreateTable(DGN_TABLE_RasterData,"RasterId INTEGER,"
-                                            "ResolutionLevel INT,"
-                                            "RowBlockId INT,"
-                                            "ColumnBlockId INT,"
-                                            "Data BLOB");
-
-    ExecuteSql("CREATE INDEX dgn_rasterDataIdx ON " DGN_TABLE_RasterData "(RasterId,ResolutionLevel,RowBlockId,ColumnBlockId)");
-    ExecuteSql("CREATE TRIGGER delete_rasterData AFTER DELETE ON " DGN_TABLE_RasterFile " BEGIN DELETE FROM " DGN_TABLE_RasterData " WHERE RasterId=OLD.RasterId; END");
-
     return  BE_SQLITE_OK;
     }
 

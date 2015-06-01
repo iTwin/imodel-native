@@ -47,8 +47,6 @@
 #define DGN_TABLE_Domain            DGN_TABLE("Domain")
 #define DGN_TABLE_Font              DGN_TABLE("Font")
 #define DGN_TABLE_Handler           DGN_TABLE("Handler")
-#define DGN_TABLE_RasterData        DGN_TABLE("RasterData")
-#define DGN_TABLE_RasterFile        DGN_TABLE("RasterFile")
 #define DGN_TABLE_Session           DGN_TABLE("Session")
 
 #define DGN_VTABLE_RTree3d         DGN_TABLE("RTree3d")
@@ -837,6 +835,7 @@ public:
 //! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
 //! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
 //! their reference count goes to 0 and the cache is subsequently purged.
+//! @ingroup DgnElementGroup
 //=======================================================================================
 struct DgnElements : DgnDbTable
 {
@@ -1356,8 +1355,8 @@ private:
     double          m_azimuth;
     AxisAlignedBox3d m_extent;
     DPoint3d        m_globalOrigin;      //!< in meters
-    mutable bool                    m_hasCheckedForGCS;
-    mutable GeoCoordinates::DgnGCS* m_gcs;
+    mutable bool    m_hasCheckedForGCS;
+    mutable DgnGCS* m_gcs;
     mutable IGeoCoordinateServicesP m_geoServices;
 
     DgnUnits(DgnDbR db);
@@ -1394,7 +1393,7 @@ public:
 
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT GeoCoordinates::DgnGCS* GetDgnGCS() const;
+    DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
 
     //! Gets the azimuth angle (true north offset) of the global coordinate system of this DgnDb <em>if it has one</em>.
     double GetAzimuth() const {return m_azimuth;}

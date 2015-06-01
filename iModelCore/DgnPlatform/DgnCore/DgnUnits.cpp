@@ -23,7 +23,7 @@ DgnUnits::DgnUnits(DgnDbR project) : m_dgndb(project)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordinates::DgnGCS* DgnUnits::GetDgnGCS() const
+DgnGCS* DgnUnits::GetDgnGCS() const
     {
     if (!m_hasCheckedForGCS)
         {

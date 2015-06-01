@@ -30,10 +30,6 @@
 #define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 #define USING_NAMESPACE_BENTLEY_EC          using namespace BentleyApi::ECN;
 
-#define BEGIN_RASTER_NAMESPACE              BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE namespace Raster {
-#define END_RASTER_NAMESPACE                } END_BENTLEY_DGNPLATFORM_NAMESPACE
-#define USING_NAMESPACE_RASTER              using namespace BentleyApi::DgnPlatform::Raster;
-
 #define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
     structunion _sName_; \
     namespace BENTLEY_API_NAMESPACE_NAME {\
@@ -59,18 +55,6 @@
 #define DGNPLATFORM_CLASS_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE class _name_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
     ADD_BENTLEY_API_TYPEDEFS1(DgnPlatform,_name_,_name_,class)
-
-#define RASTER_TYPEDEFS(t) \
-    BEGIN_RASTER_NAMESPACE struct t; END_RASTER_NAMESPACE \
-    ADD_BENTLEY_API_TYPEDEFS (DgnPlatform::Raster,t);
-
-#define RASTER_REF_COUNTED_PTR(_sname_) \
-    BEGIN_RASTER_NAMESPACE struct _sname_; END_RASTER_NAMESPACE \
-    BEGIN_BENTLEY_API_NAMESPACE DEFINE_REF_COUNTED_PTR(DgnPlatform::Raster::_sname_) END_BENTLEY_API_NAMESPACE
-
-#define RASTER_TYPEDEF1(_sourceName_,_name_,_structclass_) \
-    BEGIN_RASTER_NAMESPACE _structclass_ _sourceName_; END_RASTER_NAMESPACE  \
-    ADD_BENTLEY_API_TYPEDEFS1(DgnPlatform::Raster,_sourceName_,_name_,_structclass_)
 
 #define GEOCOORD_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_API_NAMESPACE namespace GeoCoordinates { struct _name_; } END_BENTLEY_API_NAMESPACE \
@@ -265,15 +249,12 @@ DGNPLATFORM_TYPEDEFS (UpdateContext)
 DGNPLATFORM_TYPEDEFS (ViewHandler)
 DGNPLATFORM_TYPEDEFS (ViewManager)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
-
 /** @endcond */
-
-/** @cond BENTLEY_SDK_Internal */
-GEOCOORD_TYPEDEFS (IGeoCoordinateServices)
-GEOCOORD_TYPEDEFS (DgnGCS)
-/** @endcond */
+DGNPLATFORM_TYPEDEFS (DgnGCS)
+DGNPLATFORM_TYPEDEFS (IGeoCoordinateServices)
 
 DGNPLATFORM_REF_COUNTED_PTR (DgnDb)
+DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR (DgnElement)
 DGNPLATFORM_REF_COUNTED_PTR (DgnFont)
@@ -297,7 +278,6 @@ DGNPLATFORM_REF_COUNTED_PTR (ClipVector)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (DisplayStyleHandlerSettings)
 DGNPLATFORM_REF_COUNTED_PTR (IProgressiveDisplay)
-DGNPLATFORM_REF_COUNTED_PTR (IRasterSourceFileQuery)
 DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 /** @endcond */
 
@@ -327,7 +307,7 @@ END_BENTLEY_API_NAMESPACE
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 ECINSTANCE_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory.
-ECINSTANCE_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element.
+ECINSTANCE_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
 ECINSTANCE_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart. A collection of DgnGeomParts make up the geometry aspect.
 ECINSTANCE_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 ECINSTANCE_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements.
@@ -337,7 +317,6 @@ ECINSTANCE_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true co
 ECINSTANCE_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController.
 
 BEREPOSITORYBASED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
-BEREPOSITORYBASED_ID_CLASS(DgnRasterFileId)    //!< An Id that is assigned to a raster file.
 BEREPOSITORYBASED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 
 BESERVER_ISSUED_ID_CLASS(DgnFontId);
