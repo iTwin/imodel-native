@@ -323,15 +323,15 @@ END_BENTLEY_API_NAMESPACE
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-ECINSTANCE_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory.
+ECINSTANCE_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory. @ingroup DgnCategoryGroup
 ECINSTANCE_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
-ECINSTANCE_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart. A collection of DgnGeomParts make up the geometry aspect.
+ECINSTANCE_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
 ECINSTANCE_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
-ECINSTANCE_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements.
+ECINSTANCE_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
 ECINSTANCE_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
-ECINSTANCE_ID_CLASS(DgnSubCategoryId)   //!< An Id that is assigned to a SubCategory of a DgnCategory.
+ECINSTANCE_ID_CLASS(DgnSubCategoryId)   //!< An Id that is assigned to a SubCategory of a DgnCategory. @ingroup DgnCategoryGroup
 ECINSTANCE_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
-ECINSTANCE_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController.
+ECINSTANCE_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
 
 BEREPOSITORYBASED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
 BEREPOSITORYBASED_ID_CLASS(DgnRasterFileId)    //!< An Id that is assigned to a raster file.
@@ -387,9 +387,9 @@ public:
     BeRepositoryBasedIdSet const& GetRepositoryBasedIdSet() const { return m_set; }
 };
 
-typedef IdSet<DgnElementId> DgnElementIdSet;
-typedef IdSet<DgnModelId> DgnModelIdSet;
-typedef IdSet<DgnCategoryId> DgnCategoryIdSet;
+typedef IdSet<DgnElementId> DgnElementIdSet;    //!< IdSet with DgnElementId members. @ingroup DgnElementGroup
+typedef IdSet<DgnModelId> DgnModelIdSet;        //!< IdSet with DgnModelId members. @ingroup DgnModelGroup
+typedef IdSet<DgnCategoryId> DgnCategoryIdSet;  //!< IdSet with DgnCategoryId members. @ingroup DgnCategoryGroup
 
 //=======================================================================================
 //! A DgnClassId is the local id for an ECClass in a DgnDb.
