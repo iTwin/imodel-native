@@ -835,6 +835,7 @@ public:
 //! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
 //! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
 //! their reference count goes to 0 and the cache is subsequently purged.
+//! @ingroup DgnElementGroup
 //=======================================================================================
 struct DgnElements : DgnDbTable
 {

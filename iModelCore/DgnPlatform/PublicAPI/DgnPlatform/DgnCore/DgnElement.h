@@ -10,7 +10,7 @@
 
 /** @addtogroup DgnElementGroup
 
-Classes for working with DgnElements in memory.
+Classes for working with %DgnElements in memory.
 @ref PAGE_ElementOverview
 
 */
@@ -44,6 +44,7 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
+//! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
@@ -590,6 +591,7 @@ public:
 //=======================================================================================
 //! A DgnElement that has a Geometry Aspect.
 //! @note This an abstract class. Subclasses DgnElement2d and DgnElement3d provide concrete implementations.
+//! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
@@ -630,6 +632,7 @@ public:
 
 //=======================================================================================
 //! A 3-dimensional GeometricElement.
+//! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
@@ -664,6 +667,7 @@ public:
 
 //=======================================================================================
 //! A DgnElement3d that exists in the physical coordinate space of a DgnDb.
+//! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
@@ -694,6 +698,7 @@ public:
 
 //=======================================================================================
 //! A 2-dimensional GeometricElement.
+//! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
@@ -727,6 +732,7 @@ public:
 
 //=======================================================================================
 //! A DgnElement2d that holds geometry in a DrawingModel
+//! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
@@ -746,6 +752,7 @@ public:
 //! A "logical Group" of elements.
 //! "Logical" groups hold a referencing (not an owning) relationship with their members.
 //! ElementGroup can be subclassed for custom grouping behavior.
+//! @ingroup DgnElementGroup
 // @bsiclass                                                    Shaun.Sewall    05/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
