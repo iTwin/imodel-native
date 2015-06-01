@@ -3016,6 +3016,16 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                         break;
                         }
                     }
+                else
+                    {
+                    bvector<IGeometryPtr> geoms;
+                    bmap<OrderedIGeometryPtr, BeExtendedData> extendedData;
+                    if (BeXmlCGStreamReader::TryParse(Utf8String(propertyValueString.c_str()).c_str(), geoms, extendedData, 0))
+                        {
+                        ecValue.SetIGeometry(*geoms[0]);
+                        break;
+                        }
+                    }
                 LOG.warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString.c_str ());
                 return INSTANCE_READ_STATUS_TypeMismatch;
                 }
@@ -3386,6 +3396,17 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
                 convertByteArrayToString (byteString, byteData, numBytes);
                 propertyValueNode.SetContentFast (byteString.c_str());
                 }
+            return INSTANCE_WRITE_STATUS_Success;
+            break;
+            }
+
+        case PRIMITIVETYPE_IGeometry:
+            {
+            bmap<OrderedIGeometryPtr, BeExtendedData> extendedData;
+            Utf8String beCgXml;
+            BeXmlCGWriter::Write(beCgXml, *(ecValue.GetIGeometry()), &extendedData);
+            propertyValueNode.SetContentFast (beCgXml.c_str());
+            //strcpy(outString, beCgXml.c_str());
             return INSTANCE_WRITE_STATUS_Success;
             break;
             }
