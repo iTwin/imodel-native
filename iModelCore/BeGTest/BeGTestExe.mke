@@ -19,6 +19,14 @@ o            = $(OutputRootDir)build/BeGTest/bin/
 tmp          = $(OutputRootDir)build/BeGTest/tmp/
 obj          = $(OutputRootDir)build/BeGTest/obj/
 
+%ifdef BMAKE_DELETE_ALL_TARGETS    
+always:
+    $(rmdirRecursiveCmd) $(o)
+    $(rmdirRecursiveCmd) $(obj)
+    $(rmdirRecursiveCmd) $(tmp)
+%return
+%endif
+
 always:
     !~@mkdir $(o)
     !~@mkdir $(obj)
