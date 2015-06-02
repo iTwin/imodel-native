@@ -15,6 +15,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 typedef std::shared_ptr<struct WebApi> WebApiPtr;
 
 /*--------------------------------------------------------------------------------------+
@@ -29,79 +31,79 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
         WebApi (std::shared_ptr<const ClientConfiguration> configuration);
         virtual ~WebApi ();
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSFileResult> SendGetFileRequest
+        virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendQueryRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName (),
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
+        virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
+        virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
+        virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
     };
 

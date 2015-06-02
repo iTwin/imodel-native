@@ -13,6 +13,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -31,7 +33,7 @@ private:
 public:
     WSCLIENT_EXPORT static StatusInt HasUserPassport(Utf8StringCR userGuid);
     WSCLIENT_EXPORT static Utf8String GetPassportUrl();
-    WSCLIENT_EXPORT static void Initialize(std::shared_ptr<MobileDgn::Utils::IHttpHandler> customHttpHandler = nullptr);
+    WSCLIENT_EXPORT static void Initialize(std::shared_ptr<IHttpHandler> customHttpHandler = nullptr);
     WSCLIENT_EXPORT static void Uninintialize();
 };
 

@@ -15,6 +15,11 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
 struct Connect
     {
     public:
@@ -29,13 +34,13 @@ struct Connect
         static StatusInt GetStsToken (Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
 
     public:
-        WSCLIENT_EXPORT static StatusInt Login (MobileDgn::Utils::CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
-        WSCLIENT_EXPORT static StatusInt GetStsToken (MobileDgn::Utils::CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
+        WSCLIENT_EXPORT static StatusInt Login (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
+        WSCLIENT_EXPORT static StatusInt GetStsToken (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
         WSCLIENT_EXPORT static StatusInt GetStsToken (SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
 
         // Checks if given response is IMS Login redirect that should be treated as invalid credentials.
         // This is workaround because IMS does not give any other indication.
-        WSCLIENT_EXPORT static bool IsImsLoginRedirect (MobileDgn::Utils::HttpResponseCR response);
+        WSCLIENT_EXPORT static bool IsImsLoginRedirect (HttpResponseCR response);
 
         WSCLIENT_EXPORT static Utf8StringCR GetWsgUrl ();
         WSCLIENT_EXPORT static void SetWsgUrl (Utf8StringCR url);
@@ -48,7 +53,7 @@ struct Connect
         WSCLIENT_EXPORT static void SetAppId (Utf8StringCR url);
         WSCLIENT_EXPORT static Utf8StringCR GetDeviceId ();
         WSCLIENT_EXPORT static void SetDeviceId (Utf8StringCR url);
-        WSCLIENT_EXPORT static void Initialize (std::shared_ptr<MobileDgn::Utils::IHttpHandler> customHttpHandler = nullptr);
+        WSCLIENT_EXPORT static void Initialize (std::shared_ptr<IHttpHandler> customHttpHandler = nullptr);
         WSCLIENT_EXPORT static void Uninintialize ();
     };
 

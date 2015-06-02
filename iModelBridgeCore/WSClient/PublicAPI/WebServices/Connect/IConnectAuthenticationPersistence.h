@@ -13,6 +13,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -24,9 +26,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IConnectAuthenticationPersistence
             };
 
         //! Persist credentials
-        virtual void SetCredentials (MobileDgn::Utils::CredentialsCR credentials) = 0;
+        virtual void SetCredentials (CredentialsCR credentials) = 0;
         //! Returns existing credentials or empty if none found
-        virtual MobileDgn::Utils::Credentials GetCredentials () const = 0;
+        virtual Credentials GetCredentials () const = 0;
 
         //! Persist token
         virtual void SetToken (SamlTokenPtr token) = 0;

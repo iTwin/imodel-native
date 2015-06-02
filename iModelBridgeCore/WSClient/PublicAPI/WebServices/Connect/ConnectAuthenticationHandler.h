@@ -13,15 +13,17 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ConnectAuthenticationHandler : public MobileDgn::Utils::AuthenticationHandler
+struct ConnectAuthenticationHandler : public AuthenticationHandler
     {
     private:
         Utf8String m_urlBaseToAuth;
         std::shared_ptr<IConnectTokenProvider> m_tokenProvider;
-        MobileDgn::Utils::WorkerThreadPtr m_thread;
+        WorkerThreadPtr m_thread;
 
     private:
         bool ShouldStopSendingToken (AttemptCR previousAttempt) const;
@@ -32,13 +34,13 @@ struct ConnectAuthenticationHandler : public MobileDgn::Utils::AuthenticationHan
             (
             Utf8String urlBaseToAuth,
             std::shared_ptr<IConnectTokenProvider> customTokenProvider = nullptr,
-            MobileDgn::Utils::IHttpHandlerPtr customHttpHandler = nullptr
+            IHttpHandlerPtr customHttpHandler = nullptr
             );
 
         WSCLIENT_EXPORT virtual ~ConnectAuthenticationHandler ();
 
-        WSCLIENT_EXPORT virtual bool _ShouldRetryAuthentication (MobileDgn::Utils::HttpResponseCR response) override;
-        WSCLIENT_EXPORT virtual MobileDgn::Utils::AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization (AttemptCR previousAttempt) override;
+        WSCLIENT_EXPORT virtual bool _ShouldRetryAuthentication (HttpResponseCR response) override;
+        WSCLIENT_EXPORT virtual AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization (AttemptCR previousAttempt) override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -14,6 +14,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -43,7 +45,7 @@ struct UsageTracking
         WSCLIENT_EXPORT static StatusInt RegisterUserUsages(MobileTracking usage);
 
         WSCLIENT_EXPORT static Utf8String GetUsageTrackingUrl();
-        WSCLIENT_EXPORT static void Initialize(std::shared_ptr<MobileDgn::Utils::IHttpHandler> customHttpHandler = nullptr);
+        WSCLIENT_EXPORT static void Initialize(std::shared_ptr<IHttpHandler> customHttpHandler = nullptr);
         WSCLIENT_EXPORT static void Uninintialize();
     };
 

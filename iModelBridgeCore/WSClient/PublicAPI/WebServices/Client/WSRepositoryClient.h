@@ -32,12 +32,12 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 typedef std::shared_ptr<struct IWSRepositoryClient>     IWSRepositoryClientPtr;
 
-typedef MobileDgn::Utils::AsyncResult<WSObjectsResponse, WSError>         WSObjectsResult;
-typedef MobileDgn::Utils::AsyncResult<WSFileResponse, WSError>            WSFileResult;
-typedef MobileDgn::Utils::AsyncResult<WSCreateObjectResponse, WSError>    WSCreateObjectResult;
-typedef MobileDgn::Utils::AsyncResult<void, WSError>                      WSUpdateObjectResult;
-typedef MobileDgn::Utils::AsyncResult<void, WSError>                      WSDeleteObjectResult;
-typedef MobileDgn::Utils::AsyncResult<void, WSError>                      WSUpdateFileResult;
+typedef AsyncResult<WSObjectsResponse, WSError>         WSObjectsResult;
+typedef AsyncResult<WSFileResponse, WSError>            WSFileResult;
+typedef AsyncResult<WSCreateObjectResponse, WSError>    WSCreateObjectResult;
+typedef AsyncResult<void, WSError>                      WSUpdateObjectResult;
+typedef AsyncResult<void, WSError>                      WSDeleteObjectResult;
+typedef AsyncResult<void, WSError>                      WSUpdateFileResult;
 
 #define WSQuery_CustomParameter_NavigationParentId      "navigationParentId"
 
@@ -52,63 +52,63 @@ struct IWSRepositoryClient
         virtual IWSClientPtr GetWSClient () const = 0;
         virtual Utf8StringCR GetRepositoryId () const = 0;
 
-        virtual void SetCredentials (MobileDgn::Utils::Credentials credentials) = 0;
+        virtual void SetCredentials (Credentials credentials) = 0;
 
         //! Checks if supplied credentials are valid for this repository.
         //! @param[in] cancellationToken
         //! @return success if credentials are valid for given repository, else error that occurred
-        virtual std::shared_ptr<MobileDgn::Utils::PackagedAsyncTask<MobileDgn::Utils::AsyncResult<void, WSError>>> VerifyAccess
+        virtual std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> VerifyAccess
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
         //! Send Navigation request. SendQueryRequest has backward support for WSG 1.x Navigation queries
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSFileResult> SendGetFileRequest
+        virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
         //! Send query request to retrieve ECInstances.
         //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters. 
         //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query. 
         //!         Select will be used as property list to select
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendQueryRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
         //! Create object with any relationships or related objects. Optionally attach file.
@@ -117,35 +117,35 @@ struct IWSRepositoryClient
         //!     WSG 2.0: changeset format is fully supported. When root instanceId is specified, POST will be done to that instance.
         //!     WSG 1.x: objectCreationJson can have only one relationship to existing object. This related object will be treated as "parent".
         //!     Server version can be checked by using GetWSClient()->GetServerInfo()
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName (),
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
+        virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
+        virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
+        virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
     };
 
@@ -170,7 +170,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
     private:
         std::shared_ptr<struct ClientConnection> m_connection;
         IWSClientPtr m_serverClient;
-        mutable MobileDgn::Utils::LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
+        mutable LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
 
     private:
         WSRepositoryClient (std::shared_ptr<struct ClientConnection> connection);
@@ -203,7 +203,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             Utf8StringCR repositoryId,
             ClientInfoPtr clientInfo,
             IWSSchemaProviderPtr schemaProvider = nullptr,
-            MobileDgn::Utils::IHttpHandlerPtr customHandler = nullptr
+            IHttpHandlerPtr customHandler = nullptr
             );
 
         //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple 
@@ -213,87 +213,87 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT IWSClientPtr GetWSClient () const override;
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId () const override;
 
-        WSCLIENT_EXPORT void SetCredentials (MobileDgn::Utils::Credentials credentials);
+        WSCLIENT_EXPORT void SetCredentials (Credentials credentials);
 
         //! Check if user can access repository
-        WSCLIENT_EXPORT std::shared_ptr<MobileDgn::Utils::PackagedAsyncTask<MobileDgn::Utils::AsyncResult<void, WSError>>> VerifyAccess
+        WSCLIENT_EXPORT std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> VerifyAccess
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSFileResult> SendGetFileRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendQueryRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName (),
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
     };
 

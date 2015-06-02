@@ -14,6 +14,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -38,9 +40,9 @@ struct WSInfo
         BeVersion m_webApiVersion;
 
     private:
-        static void ParseHeaders (MobileDgn::Utils::HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static void ParseInfoPage (MobileDgn::Utils::HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static void ParseAboutPage (MobileDgn::Utils::HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseHeaders (HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseInfoPage (HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseAboutPage (HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
         static BeVersion DeduceWebApiVersion (BeVersionCR serverVersion);
 
     public:
@@ -51,7 +53,7 @@ struct WSInfo
         //! Construct info with values
         WSCLIENT_EXPORT WSInfo (BeVersion serverVersion, BeVersion webApiVersion, Type serverType);
         //! Create info from server response
-        WSCLIENT_EXPORT WSInfo (MobileDgn::Utils::HttpResponseCR response);
+        WSCLIENT_EXPORT WSInfo (HttpResponseCR response);
         //! Deserialize string info
         WSCLIENT_EXPORT WSInfo (Utf8StringCR serialized);
 
