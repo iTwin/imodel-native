@@ -89,7 +89,7 @@ ClientInfo::~ClientInfo ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClientInfo::SetLanguage (Utf8StringCR languageTag)
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     m_headers = nullptr;
     if (languageTag.EqualsI (m_fallbackLanguageTag))
         {
@@ -106,7 +106,7 @@ void ClientInfo::SetLanguage (Utf8StringCR languageTag)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetLanguage () const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     return m_languageTag;
     }
 
@@ -115,7 +115,7 @@ Utf8String ClientInfo::GetLanguage () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClientInfo::SetFallbackLanguage (Utf8StringCR languageTag)
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     m_headers = nullptr;
     m_fallbackLanguageTag = languageTag;
     }
@@ -125,7 +125,7 @@ void ClientInfo::SetFallbackLanguage (Utf8StringCR languageTag)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetFallbackLanguage () const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     return m_fallbackLanguageTag;
     }
 
@@ -134,7 +134,7 @@ Utf8String ClientInfo::GetFallbackLanguage () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetApplicationName () const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     return m_applicationName;
     }
 
@@ -143,7 +143,7 @@ Utf8String ClientInfo::GetApplicationName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeVersion ClientInfo::GetApplicationVersion () const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     return m_applicationVersion;
     }
 
@@ -152,7 +152,7 @@ BeVersion ClientInfo::GetApplicationVersion () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetApplicationId () const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     return m_applicationId;
     }
 
@@ -161,7 +161,7 @@ Utf8String ClientInfo::GetApplicationId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetDeviceId () const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     return m_deviceId;
     }
 
@@ -170,7 +170,7 @@ Utf8String ClientInfo::GetDeviceId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetSystemDescription () const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     return m_systemDescription;
     }
 
@@ -179,7 +179,7 @@ Utf8String ClientInfo::GetSystemDescription () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  ClientInfo::FillHttpRequestHeaders (HttpRequestHeaders& headers) const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
     if (nullptr == m_headers)
         {
         m_headers = std::make_shared<HttpRequestHeaders> ();

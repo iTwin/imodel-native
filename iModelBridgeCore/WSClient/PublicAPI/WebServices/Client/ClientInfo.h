@@ -23,7 +23,7 @@ typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
 struct ClientInfo : public IHttpHeaderProvider
     {
     private:
-        mutable BeCriticalSection m_headersCS;
+        mutable BeMutex m_headersCS;
         mutable std::shared_ptr<HttpRequestHeaders> m_headers;
 
         Utf8String m_applicationName;
