@@ -27,8 +27,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 typedef std::shared_ptr<struct IWSClient>           IWSClientPtr;
 
-typedef MobileDgn::Utils::AsyncResult<struct WSInfo, WSError>         WSInfoResult;
-typedef MobileDgn::Utils::AsyncResult<bvector<WSRepository>, WSError> WSRepositoriesResult;
+typedef AsyncResult<struct WSInfo, WSError>         WSInfoResult;
+typedef AsyncResult<bvector<WSRepository>, WSError> WSRepositoriesResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
@@ -56,27 +56,27 @@ struct IWSClient
         virtual void UnregisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) = 0;
 
         //! Returns server information or queries server if needs updating
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> GetServerInfo
+        virtual AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
         //! Queries server information
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
+        virtual AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
     };
 
@@ -101,7 +101,7 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
             (
             Utf8StringCR serverUrl,
             ClientInfoPtr clientInfo,
-            MobileDgn::Utils::IHttpHandlerPtr customHandler = nullptr
+            IHttpHandlerPtr customHandler = nullptr
             );
 
         WSCLIENT_EXPORT Utf8String GetServerUrl () const override;
@@ -109,26 +109,26 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
         WSCLIENT_EXPORT void RegisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) override;
         WSCLIENT_EXPORT void UnregisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> GetServerInfo
+        WSCLIENT_EXPORT AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
     };
 

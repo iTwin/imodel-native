@@ -14,13 +14,15 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSObjectsResponse
     {
     private:
-        MobileDgn::Utils::HttpBodyPtr m_httpBody;
+        HttpBodyPtr m_httpBody;
         bool        m_isModified;
         Utf8String  m_eTag;
 
@@ -36,7 +38,7 @@ struct WSObjectsResponse
 
     public:
         WSCLIENT_EXPORT WSObjectsResponse ();
-        WSCLIENT_EXPORT WSObjectsResponse (std::shared_ptr<WSObjectsReader> reader, MobileDgn::Utils::HttpBodyPtr httpBody, MobileDgn::Utils::HttpStatus status, Utf8String eTag);
+        WSCLIENT_EXPORT WSObjectsResponse (std::shared_ptr<WSObjectsReader> reader, HttpBodyPtr httpBody, HttpStatus status, Utf8String eTag);
 
         WSCLIENT_EXPORT Utf8StringCR GetETag () const;
         WSCLIENT_EXPORT bool IsModified () const;

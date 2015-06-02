@@ -58,6 +58,7 @@
 #define CS_MESSAGE_FIELD_objectClass "objectClass"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 namespace Bentley
     {
@@ -126,12 +127,12 @@ private:
     void DownloadFile(JsonValueCR messageObj, bool getNewToken);
     void Cancel();
     BentleyStatus GetNewTokenIfNeeded (bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
-    MobileDgn::Utils::HttpRequest CreateGetRequest (Utf8StringCR url, bool acceptJson = true, bool includeToken = true);
+    HttpRequest CreateGetRequest (Utf8StringCR url, bool acceptJson = true, bool includeToken = true);
     void SetJsonDocData(JsonValueR data, Utf8StringCR datasourceId, Utf8StringCR docId, Utf8StringCR filename);
     void SendStatusToUIThread(StatusAction action, StatusCode statusCode, JsonValueCR data = Json::Value());
     void SendJsonMessageToUiThread(Utf8CP messageType, JsonValueCR response = Json::Value());
 
-    void SetCredentials(MobileDgn::Utils::Credentials credentials, Utf8StringCR token);
+    void SetCredentials(Credentials credentials, Utf8StringCR token);
     void SetEulaToken(Utf8StringCR token);
     void FetchDatasourceListAsync();
     void ResetEulaAsync();
@@ -148,12 +149,12 @@ private:
     void DecreaseDates();
 #endif
 
-    MobileDgn::Utils::Credentials m_credentials;
+    Credentials m_credentials;
     SamlToken m_token;
     SamlToken m_eulaToken;
 
-    MobileDgn::Utils::SimpleCancellationTokenPtr m_cancelToken;
-    MobileDgn::Utils::HttpClient m_client;
+    SimpleCancellationTokenPtr m_cancelToken;
+    HttpClient m_client;
 
     BeCriticalSection m_credentialsCriticalSection;
     static std::map<Utf8String, StatusAction> sm_actionMap;

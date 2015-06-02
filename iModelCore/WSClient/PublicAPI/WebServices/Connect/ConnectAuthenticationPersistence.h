@@ -13,6 +13,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -27,8 +29,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
         WSCLIENT_EXPORT ConnectAuthenticationPersistence (MobileDgn::ILocalState* customLocalState = nullptr);
         virtual ~ConnectAuthenticationPersistence () {}
 
-        WSCLIENT_EXPORT void SetCredentials (MobileDgn::Utils::CredentialsCR credentials) override;
-        WSCLIENT_EXPORT MobileDgn::Utils::Credentials GetCredentials () const override;
+        WSCLIENT_EXPORT void SetCredentials (CredentialsCR credentials) override;
+        WSCLIENT_EXPORT Credentials GetCredentials () const override;
 
         WSCLIENT_EXPORT void SetToken (SamlTokenPtr token) override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken () const override;
