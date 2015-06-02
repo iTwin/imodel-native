@@ -12,7 +12,8 @@ ClientMkiSourceDir = $(ClientSourceDirectory)Client/
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies for precompiled header and Client.mki
 #--------------------------------------------------------------------------------------
-ClientMkiHeaders =  $(ClientMkiPublicApiDir)ObjectId.h                           \
+ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                         \
+                    $(ClientMkiPublicApiDir)ObjectId.h                           \
                     $(ClientMkiPublicApiDir)Response/WSCreateObjectResponse.h    \
                     $(ClientMkiPublicApiDir)Response/WSFileResponse.h            \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReader.h           \
@@ -70,6 +71,8 @@ $(o)ChunkedUploadRequest$(oext)             : $(ClientMkiSourceDir)ChunkedUpload
 $(o)ClientConfiguration$(oext)              : $(ClientMkiSourceDir)ClientConfiguration.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ClientConnection$(oext)                 : $(ClientMkiSourceDir)ClientConnection.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ClientInfo$(oext)                       : $(ClientMkiSourceDir)ClientInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ObjectId$(oext)                         : $(ClientMkiSourceDir)ObjectId.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

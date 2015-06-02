@@ -30,7 +30,7 @@ struct ClientConfiguration
             (
             Utf8StringCR serverUrl,
             Utf8StringCR repositoryId,
-            MobileDgn::Utils::HttpRequestHeadersCR defaultHeaders,
+            IHttpHeaderProviderPtr defaultHeadersProvider,
             IWSSchemaProviderPtr schemaProvider,
             MobileDgn::Utils::IHttpHandlerPtr customHandler
             );

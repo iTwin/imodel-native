@@ -11,12 +11,15 @@
 #include <MobileDgn/Utils/Threading/AsyncResult.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
 
+#include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/WSRepository.h>
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSInfo.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 //--------------------------------------------------------------------------------------+
 // WebServices Client API for connecting to BWSG server. 
@@ -92,13 +95,12 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
         static IWSClientPtr Create (std::shared_ptr<struct ClientConnection> connection);
 
         //! @param[in] serverUrl - address to supported server/site
-        //! @param[in] defaultHeaders - headers used for each request. User-Agent is recomended for being able to identify client in server.
-        //!                             Mas-Uuid and Mas-App-Guid are posible for licensing purposes.
+        //! @param[in] clientInfo - client infomation for licensing and other information
         //! @param[in] customHandler - custom http handler for testing purposes
         WSCLIENT_EXPORT static IWSClientPtr Create
             (
             Utf8StringCR serverUrl,
-            MobileDgn::Utils::HttpRequestHeadersCR defaultHeaders,
+            ClientInfoPtr clientInfo,
             MobileDgn::Utils::IHttpHandlerPtr customHandler = nullptr
             );
 
