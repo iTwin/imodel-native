@@ -40,12 +40,13 @@ std::shared_ptr<WSRepositoryClient> WSRepositoryClient::Create
 (
 Utf8StringCR serverUrl,
 Utf8StringCR repositoryId,
-HttpRequestHeadersCR defaultHeaders,
+ClientInfoPtr clientInfo,
 IWSSchemaProviderPtr schemaProvider,
 IHttpHandlerPtr customHandler
 )
     {
-    auto configuration = std::make_shared<ClientConfiguration> (serverUrl, repositoryId, defaultHeaders, schemaProvider, customHandler);
+    BeAssert (nullptr != clientInfo);
+    auto configuration = std::make_shared<ClientConfiguration> (serverUrl, repositoryId, clientInfo, schemaProvider, customHandler);
     return std::shared_ptr<WSRepositoryClient> (new WSRepositoryClient (std::make_shared<ClientConnection> (configuration)));
     }
 

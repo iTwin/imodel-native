@@ -14,16 +14,15 @@ ClientConfiguration::ClientConfiguration
 (
 Utf8StringCR serverUrl,
 Utf8StringCR repositoryId,
-HttpRequestHeadersCR defaultHeaders,
+IHttpHeaderProviderPtr defaultHeadersProvider,
 IWSSchemaProviderPtr schemaProvider,
 IHttpHandlerPtr customHandler
 ) :
 m_serverUrl (serverUrl),
 m_repositoryId (repositoryId),
 m_schemaProvider (schemaProvider),
-m_httpClient (std::make_shared<HttpClient> (customHandler))
+m_httpClient (std::make_shared<HttpClient> (defaultHeadersProvider, customHandler))
     {
-    m_httpClient->DefaultRequestHeaders () = defaultHeaders;
     }
 
 /*--------------------------------------------------------------------------------------+

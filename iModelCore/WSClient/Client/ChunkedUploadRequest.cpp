@@ -6,6 +6,7 @@
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
+#include "ChunkedUploadRequest.h"
 
 const uint64_t ChunkedUploadRequest::DefaultChunkSize = 4 * 1024 * 1024;
 
