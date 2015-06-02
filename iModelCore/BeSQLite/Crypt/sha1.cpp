@@ -49,8 +49,8 @@ void SHA1::Reset()
 }
 
 
-namespace
-{
+BEGIN_BENTLEY_SQLITE_NAMESPACE 
+
   // mix functions for processBlock()
   inline uint32_t f1(uint32_t b, uint32_t c, uint32_t d)
   {
@@ -86,7 +86,8 @@ namespace
           ((x <<  8) & 0x00FF0000) |
            (x << 24);
   }
-}
+
+END_BENTLEY_SQLITE_NAMESPACE 
 
 
 /// process 64 bytes
