@@ -390,7 +390,7 @@ TEST_F(PerformanceElementItem, CRUD)
             EXPECT_TRUE(key1.GetElementId().IsValid());
             GeometricElementCPtr el = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
             EXPECT_TRUE(el != nullptr);
-            (&el->GetElementHandler(), &PTestElementHandler::GetHandler());
+            EXPECT_EQ(&el->GetElementHandler(), &PTestElementHandler::GetHandler());
 
             // ECSQL to add ElementItem
             elementTimer.Start();

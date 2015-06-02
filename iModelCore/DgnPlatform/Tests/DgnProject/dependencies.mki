@@ -15,6 +15,7 @@
 BEGTEST_ASSETS + $(BuildContext)SubParts/ECSchemas/
 BEGTEST_ASSETS + $(BuildContext)SubParts/UnitTests/assets/DgnProject/ECSchemas;ECSchemas
 BEGTEST_ASSETS + $(BuildContext)SubParts/DgnPlatformLastResortFonts/lastresortfonts
+BEGTEST_ASSETS + $(BuildContext)SubParts/GeoCoordData;DgnGeoCoord
 BEGTEST_ASSETS + $(BuildContext)SubParts/BeIcu4cData/icudt55l.dat
 BEGTEST_ASSETS + $(ProductRoot)BeTestDocuments/
 

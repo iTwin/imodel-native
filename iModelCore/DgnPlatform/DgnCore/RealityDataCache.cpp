@@ -657,7 +657,7 @@ RealityDataSourceResult FileRealityDataSource::Request(Data& data, Utf8CP id, Re
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     {
-    int maxage = 0, smaxage = 0;
+    int maxage = 0, smaxage = 0;    // in seconds.
     int start = 0;
     int i = 0;
     while (true)
@@ -694,8 +694,9 @@ static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     int64_t currentTime;
     DateTime::GetCurrentTime().ToUnixMilliseconds(currentTime);
 
+    int64_t maxage64 = (0 != smaxage ? smaxage : maxage);   // use int64_t to avoid overflow when converting to milliseconds.
     DateTime expirationDate;
-    DateTime::FromUnixMilliseconds(expirationDate, currentTime + 1000 * (0 != smaxage ? smaxage : maxage));
+    DateTime::FromUnixMilliseconds(expirationDate, currentTime + (1000 * maxage64));
     return expirationDate;
     }
 
@@ -833,9 +834,20 @@ static size_t HttpHeaderParser(char* buffer, size_t size, size_t nItems, void* u
             BeAssert(false);
             return totalSize;
             }
-        Utf8String key(line.begin(), line.begin() + delimiterPos);
-        Utf8String value(line.begin() + delimiterPos + 2, line.end());
-        header[key] = value;
+
+        Utf8String key = line.substr(0, delimiterPos);
+        
+        // Not sure if we should keep or filter out fields with empty value. Maybe they mean something even if empty?
+        // Anyway do not try to read beyond the input string when it happens.
+        if(delimiterPos + 1 == line.size())
+            {
+            header[key] = "";
+            }
+        else
+            {
+            Utf8String value = line.substr(delimiterPos+2/* skip ':' and leading space*/);
+            header[key] = value;
+            }
         }
     
     return totalSize;
