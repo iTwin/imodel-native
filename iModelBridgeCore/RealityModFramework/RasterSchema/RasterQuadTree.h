@@ -83,7 +83,7 @@ private:
     //! Allocate children according to the resolution description.
     void AllocateChildren();
 
-    static BentleyStatus ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree);
+    static ReprojectStatus ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree);
 
     DisplayTilePtr m_pDisplayTile;      // Can be NULL, will be loaded when needed. 
 
@@ -123,6 +123,9 @@ public:
     void QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context);
 
     DgnDbR GetDgnDb() {return m_dgnDb;}
+
+    void Draw (ViewContextR context);
+
 private:
     
     RasterQuadTree(RasterSourceR source, DgnDbR dgnDb);

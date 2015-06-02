@@ -23,6 +23,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterModel : BentleyApi::DgnPlatform::RasterBase
 {
     DEFINE_T_SUPER(RasterBaseModel)
 
+    RasterQuadTreePtr m_rasterTree;
+
 protected:
     friend struct RasterModelHandler;
     
