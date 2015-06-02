@@ -9,25 +9,132 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-/** @page PAGE_ElementOverview Element and Element Apsect
+/** @page PAGE_ElementOverview Working with Elements
 
-WIP
-
-@see DgnElements
-@see DgnElement
-@see DgnElementId
+@tableofcontents
 
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_ElementSection1 WIP Element Section 1
+@section SECTION_ElementLifecyle Element Lifecycle
 
-WIP
+An element first exists only in memory.
 
-@li List item 1
-@li List item 2
-@li List item 3
+@note It is not valid to construct a DgnElement on the stack.  Use the static @c Create method on the appropriate DgnElement subclass instead.
+@see DgnElement::Create
+@see PhysicalElement::Create
 
+To persist an element, it must be inserted into the DgnDb. The in-memory DgnElements cache is also updated.  
+An element is assigned a DgnElementId as part of the insert process.
+
+@see DgnElement::Insert
+@see DgnElements::Insert
+
+An element can then be retrieved by DgnElementId from the DgnElements cache (and, if necessary, loaded into memory from the DgnDb).  
+You can get a const (read-only) reference-counted pointer to the current state on an element
+
+@see DgnElements::Get
+
+If your intention is to edit the element, you can get a writeable reference-counted pointer to the element.
+You must call @c Update for the changes to be persisted.
+
+@see DgnElements::GetForEdit
+@see DgnElements::Update
+@see DgnElement::Update
+
+An element can also be deleted.
+
+@see DgnElements::Delete
+@see DgnElement::Delete
+
+<hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_ElementSection2 WIP Element Section 2
+@section SECTION_ElementClasses Element Classes
+
+It is expected that domain developers will subclass from the appropriate DgnElement class.
+Application developers will use the domain classes or base classes.
+Some of the most common element classes are described below:
+
+@htmlonly
+
+<p>
+<table border="1">
+    <tr>
+        <td><a href="structBentleyApi_1_1DgnPlatform_1_1DgnElement.html">DgnElement</a></td>
+        <td>The base class for all elements.</td>
+    </tr>
+    <tr>
+        <td><a href="structBentleyApi_1_1DgnPlatform_1_1GeometricElement.html">GeometricElement</a></td>
+        <td>The base class for all elements that potentially have geometry.</td>
+    </tr>
+    <tr>
+        <td><a href="structBentleyApi_1_1DgnPlatform_1_1PhysicalElement.html">PhysicalElement</a></td>
+        <td>The base class for all 3D physical elements (modeled real-world objects contained in a PhysicalModel).</td>
+    </tr>
+    <tr>
+        <td><a href="structBentleyApi_1_1DgnPlatform_1_1DrawingElement.html">DrawingElement</a></td>
+        <td>The base class for all 2D drawing elements.</td>
+    </tr>
+    <tr>
+        <td><a href="structBentleyApi_1_1DgnPlatform_1_1ElementGroup.html">ElementGroup</a></td>
+        <td>The base class for logical groups that reference, but do not own, their member elements.</td>
+    </tr>
+</table>
+<p>
+
+@endhtmlonly
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ElementGrouping Element Grouping
+
+Elements can have a parent/child relationship with each other.
+This is an @b owning relationship, so if a parent element is deleted, its children are also deleted.
+An element can only have one parent.
+
+@see DgnElement::GetParentId
+@see DgnElement::SetParentId
+@see DgnElement::QueryChildren
+
+Elements can also be members of multiple ElementGroups through a @b referencing relationship.
+Delete is not propagated in this case.
+
+@see ElementGroup
+@see ElementGroup::QueryMembers
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ElementCodeAndLabel Element Code and Label
+
+An element must have a valid (not null) code or <i>business key</i>.
+This is often used to link to a record in an external system.
+
+@see DgnElement::GetCode
+@see DgnElement::SetCode
+
+Optionally, an element can have a <i>friendly</i> name.
+
+@see DgnElement::GetLabel
+@see DgnElement::SetLabel
+
+An element's display label is for use in the GUI.  
+By default, an element's display label is the label if set or the code if not set.
+
+@see DgnElement::GetDisplayLabel
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ElementCategory Element Category
+
+An element is one and only one category.
+Categories are used to organize elements for reporting or filtering purposes.
+
+@see DgnElement::GetCategoryId
+@see DgnElement::SetCategoryId
+
+For more details on categories, see @ref PAGE_CategoryOverview
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_LinkToElementModules Element Modules and Links
 
 @see DgnElementGroup
 */

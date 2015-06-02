@@ -71,7 +71,6 @@
 #include <Regions/regionsAPI.h>
 #include <Regions/rimsbsAPI.h>
 #include <DgnPlatform/DgnHandlers/IEditActionSource.h>
-#include <DgnPlatform/DgnHandlers/RasterResolutionSolver.h>
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/Tools/ostime.fdf>
 #include <DgnPlatform/Tools/stringop.h>

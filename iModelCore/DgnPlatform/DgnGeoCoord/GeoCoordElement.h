@@ -179,7 +179,7 @@ typedef struct Proj_alber
     double         lat_2; // Latitude of the second standard parallel, usually the most northerly of the two, although this is not required.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad; // x/y increases- 1-ri/up 2-le/up 3-le/dw 4-ri/dw
+    int32_t            quad; // x/y increases- 1-ri/up 2-le/up 3-le/dw 4-ri/dw
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -197,7 +197,7 @@ typedef struct Proj_azmea
     double            az; // The azimuth of the Y axis relative to true north.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -215,7 +215,7 @@ typedef struct Proj_azmed
     double            az; // The azimuth of the Y axis relative to true north.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -234,7 +234,7 @@ typedef struct Proj_azede
     double            az; // The azimuth of the Y axis relative to true north.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -250,7 +250,7 @@ typedef struct Proj_bonne
     double     paper_scl;
 
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -271,7 +271,7 @@ typedef struct Proj_bpcnc
     double         y_off;
     GCDomain       gcDom;
     double     paper_scl;
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -287,7 +287,7 @@ typedef struct Proj_csini
     double     paper_scl;
 
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -306,7 +306,7 @@ typedef struct Proj_edcnc
     double         lat_2; // Latitude of the second standard parallel, usually the most northerly of the two, although this is not required.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -324,7 +324,7 @@ typedef struct Proj_edcyl
     double       std_lat; // Standard latitude, i.e. latitude of true scale.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -339,7 +339,7 @@ typedef struct Proj_ekrt4
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -354,7 +354,7 @@ typedef struct Proj_ekrt6
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -370,7 +370,7 @@ typedef struct Proj_gnomc
     double     paper_scl;
 
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -387,9 +387,9 @@ typedef struct Proj_hmlsn
 
     ZONE zone [NUM_ZONE]; // The specifications of each of up to eight different zones.
     ZONE    reserved [4]; // Reserve space if we expand number of zones
-    long          nZones; // Number of zones specified.
+    int32_t          nZones; // Number of zones specified.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -407,7 +407,7 @@ typedef struct Proj_hueov
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -430,8 +430,8 @@ typedef struct Proj_krvak
     double         x_off; // False Easting in specified units
     double         y_off; // False Northing in specified units
 
-    long         apply95; // if <> 0, Apply S-JTSK/95 x, y offset adjustment
-    long            quad;
+    int32_t         apply95; // if <> 0, Apply S-JTSK/95 x, y offset adjustment
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -451,7 +451,7 @@ typedef struct Proj_lmbrt
     double         lat_2; // Latitude of the second standard parallel, usually the most northerly of the two although this is not really necessary.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
+    int32_t            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
                           // value indicates the quadrant in which both X and Y are positive.  Zero and one refer to the normal right handed quadrant.
                           // Quadrants are numbered counterclockwise thereafter.
     char unit_nm [UNTSZ]; // Name of the linear unit for the cartesian system.
@@ -473,7 +473,7 @@ typedef struct Proj_lmtan
 
     double       org_lat; // Origin latitude where Y is zero before x_off
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -495,7 +495,7 @@ typedef struct Proj_lmmin
     double         lat_2; // Latitude of the second standard parallel, usually the most northerly of the two although this is not really necessary.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
+    int32_t            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
                           // value indicates the quadrant in which both X and Y are positive.  Zero and one refer to the normal right handed quadrant.
                           // Quadrants are numbered counterclockwise thereafter.
     char unit_nm [UNTSZ]; // Name of the linear unit for the cartesian system.
@@ -523,7 +523,7 @@ typedef struct Proj_lmwis
     double         lat_2; // Latitude of the second standard parallel, usually the most northerly of the two although this is not really necessary.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
+    int32_t            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
                           // value indicates the quadrant in which both X and Y are positive.  Zero and one refer to the normal right handed quadrant.
                           // Quadrants are numbered counterclockwise thereafter.
     char unit_nm [UNTSZ]; // Name of the linear unit for the cartesian system.
@@ -544,7 +544,7 @@ typedef struct Proj_mrcat
 
     double       std_lat; // Latiude of the standard parallel of the system.  This is usually zero for most uses of the Mercator.  Non-zero values have the
                           // same affect as scale reduction in the Transverse Mercator and other Cylindricals. The sign has no meaning, since use the cosine of this angle.
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -561,7 +561,7 @@ typedef struct Proj_mrcsr
 
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -576,7 +576,7 @@ typedef struct Proj_millr
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -595,7 +595,7 @@ typedef struct Proj_modpc
     double         lat_2; // Latitude of the southern standard parallel. This value also serves as origin latitude.
     double         lat_1; // Latitude of the northern standard parallel.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -613,9 +613,9 @@ typedef struct Proj_molwd
 
     ZONE zone [NUM_ZONE]; // The specifications of each of up to eight different zones.
     ZONE    reserved [4]; // Reserve space if we expand number of zones
-    long          nZones; // Number of zones specified.
+    int32_t          nZones; // Number of zones specified.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -635,7 +635,7 @@ typedef struct Proj_mstro
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -653,7 +653,7 @@ typedef struct Proj_nacyl
     double       std_lat; // Latitude of the standard parallel of the system.  This is usually zero for most uses of the Mercator.  Non-zero values have the
                           // same affect as scale reduction in the Transverse Mercator and other Cylindricals. The sign has no meaning, sicne only the cosine is used.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -667,7 +667,7 @@ typedef struct Proj_nerth
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ]; // Expected to be null.  Use Ellipsoid
     char ell_knm [ELLSZ];
@@ -685,7 +685,7 @@ typedef struct Proj_nesrt
     double      x_origin;  // X Origin about which scale, rotate then translation will take place
     double      y_origin;  // Y Origin about which scale, rotate then translation will take place
 
-    long            quad;  // Unused
+    int32_t            quad;  // Unused
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];  // Expected to be null.  Use Ellipsoid
     char ell_knm [ELLSZ];
@@ -702,7 +702,7 @@ typedef struct Proj_nzlnd
     double     paper_scl;
 
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -722,9 +722,9 @@ typedef struct Proj_oblq1
     double         lat_c; // Latitude  of the center of the map.
     double            az; // The azimuth of the projection.
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
-    long       rectified; // TRUE says rectify cartesian coordinates.
+    int32_t       rectified; // TRUE says rectify cartesian coordinates.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -744,9 +744,9 @@ typedef struct Proj_oblq2
     double         lat_2; // Latitude of the second point.
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
-    long       rectified; // TRUE says rectify cartesian coordinates.
+    int32_t       rectified; // TRUE says rectify cartesian coordinates.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -766,9 +766,9 @@ typedef struct Proj_mndotobl
     double            az; // The azimuth of the projection.
     double       ellElev; // (prm4) elevation above ellipsoid in system units
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
-    long       rectified; // TRUE says rectify cartesian coordinates.
+    int32_t       rectified; // TRUE says rectify cartesian coordinates.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -785,7 +785,7 @@ typedef struct Proj_ortho
 
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -801,7 +801,7 @@ typedef struct Proj_plycn
     double     paper_scl;
 
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -819,9 +819,9 @@ typedef struct Proj_sinus
 
     ZONE zone [NUM_ZONE]; // The specifications of each of up to eight different zones.
     ZONE    reserved [4]; // Reserve space if we expand number of zones
-    long          nZones; // Number of zones specified.
+    int32_t          nZones; // Number of zones specified.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -840,7 +840,7 @@ typedef struct Proj_stero
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -852,7 +852,7 @@ typedef struct Proj_ost97
     {
     GCDomain       gcDom;
     double     paper_scl;
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -870,7 +870,7 @@ typedef struct Proj_pstsl
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
     double       std_lat; // Standard latitude, i.e. latitude of true scale.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -885,7 +885,7 @@ typedef struct Proj_robin
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -906,7 +906,7 @@ typedef struct Proj_swiss
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -918,17 +918,17 @@ typedef struct Proj_sys34
     // COORDSYS_S3499  Danish 1934/1945 with KMS 1999 Polynomials
     // COORDSYS_SYS34  Danish 1934/1945 non-KMS
 
-    long          zoneNo;
+    int32_t          zoneNo;
     double         x_off;
     double         y_off;
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
-    long        variation;   // cs_PRJCOD_SYS34_99 or 0
+    int32_t        variation;   // cs_PRJCOD_SYS34_99 or 0
     } Proj_Sys34;
 
 #if defined (DONTNEED)
@@ -938,7 +938,7 @@ typedef struct Proj_sys34
 
 typedef struct Proj_statePlane
     {
-    long        projType; // which member of union proj to use
+    int32_t        projType; // which member of union proj to use
     double     paper_scl;
     char zone_knm[NAMSZ];
     char unit_nm [UNTSZ];
@@ -959,7 +959,7 @@ typedef struct Proj_tacyl
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -979,7 +979,7 @@ typedef struct Proj_tmmin
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -999,7 +999,7 @@ typedef struct Proj_tmwis
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -1024,7 +1024,7 @@ typedef struct Proj_trmaf
     double     affineB1;  // Coefficient for affine transformation
     double     affineB2;  // Coefficient for affine transformation
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -1042,7 +1042,7 @@ typedef struct Proj_trmer
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
     double       scl_red; // The scale reduction applied to the central meridian, also known as the Scale of the Central Meridian.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -1063,7 +1063,7 @@ typedef struct Proj_unity
     DomainLL       domLL;
     double      user_min; // prm1 Must be in units of degrees.  Range user
     double      user_max; // prm2  range user wants (0-360 or -270 - 270.)
-    long            quad;
+    int32_t            quad;
     } Proj_Unity;
 
 // COORDSYS_UTMZN  Universal Transverse Mercator
@@ -1072,9 +1072,9 @@ typedef struct Proj_utmzn
     GCDomain       gcDom;
     double     paper_scl;
 
-    long          zoneNo; // 1-60
-    long            quad;
-    long      hemisphere; // 0=Northern, 1=Southern (Note: csmap -1=S, 1=N)
+    int32_t          zoneNo; // 1-60
+    int32_t            quad;
+    int32_t      hemisphere; // 0=Northern, 1=Southern (Note: csmap -1=S, 1=N)
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -1089,7 +1089,7 @@ typedef struct Proj_vdgrn
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -1106,7 +1106,7 @@ typedef struct Proj_winkt
 
     double       std_lat;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -1134,7 +1134,7 @@ typedef struct Proj_lmbrtaf
     double     affineB1;  // Coefficient for affine transformation
     double     affineB2;  // Coefficient for affine transformation
 
-    long            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
+    int32_t            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
                           // value indicates the quadrant in which both X and Y are positive.  Zero and one refer to the normal right handed quadrant.
                           // Quadrants are numbered counterclockwise thereafter.
     char unit_nm [UNTSZ]; // Name of the linear unit for the cartesian system.
@@ -1155,7 +1155,7 @@ typedef struct Proj_pcarree
 
     double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];
@@ -1170,7 +1170,7 @@ typedef struct Proj_mrcatpv
     GCDomain       gcDom;
     double     paper_scl;
 
-    long            quad;
+    int32_t            quad;
     char unit_nm [UNTSZ];
     char dat_knm [DATSZ];
     char ell_knm [ELLSZ];

@@ -11,20 +11,13 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /** @page PAGE_ModelOverview Model
 
-WIP
+@tableofcontents
 
-@see DgnModels
-@see DgnModel
-@see DgnModelId
-
+<hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_ModelSection1 WIP Model Section 1
+@section SECTION_LinkToModelModules Model Modules and Links
 
-WIP
-
-@li List item 1
-@li List item 2
-@li List item 3
+@see DgnModelGroup
 
 */
 
