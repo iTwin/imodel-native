@@ -249,12 +249,15 @@ bool BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
         if (BeSQLite::BE_SQLITE_OK != (result = m_database.OpenBeSQLiteDb(m_filename, Db::OpenParams(Db::OpenMode::OPEN_ReadWrite))))
             {
             RDCLOG(LOG_INFO, "%s: %s", Utf8String(m_filename).c_str(), BeSQLite::Db::InterpretDbResult(result));
-            BeFileNameStatus deleteStatus = m_filename.BeDeleteFile();
-            if (deleteStatus != BeFileNameStatus::Success)
+            if (m_filename.DoesPathExist())
                 {
-                RDCLOG(LOG_ERROR, "%s: %s", Utf8String(m_filename).c_str(), deleteStatus);
-                BeAssert(false);
-                return false;
+                BeFileNameStatus deleteStatus = m_filename.BeDeleteFile();
+                if (deleteStatus != BeFileNameStatus::Success)
+                    {
+                    RDCLOG(LOG_ERROR, "%s: %s", Utf8String(m_filename).c_str(), deleteStatus);
+                    BeAssert(false);
+                    return false;
+                    }
                 }
 
             if (BeSQLite::BE_SQLITE_OK != (result = m_database.CreateNewDb(m_filename)))
