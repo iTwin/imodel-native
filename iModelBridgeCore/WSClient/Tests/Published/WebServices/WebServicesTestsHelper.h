@@ -53,3 +53,5 @@ HttpResponse StubWSInfoHttpResponse (BeVersion serverVersion);
 
 WSError StubWSConnectionError ();
 WSError StubWSCanceledError ();
+
+ClientInfoPtr StubClientInfo ();

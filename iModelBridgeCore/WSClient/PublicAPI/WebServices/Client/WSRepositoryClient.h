@@ -24,6 +24,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 //--------------------------------------------------------------------------------------+
 // WebServices Client API for connecting to BWSG server data source. 
 //--------------------------------------------------------------------------------------+
@@ -191,8 +193,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
 
         //! @param[in] serverUrl - address to supported server/site
         //! @param[in] repositoryId - repository identifier
-        //! @param[in] defaultHeaders - headers used for each request. User-Agent is recomended for being able to identify client in server.
-        //!                             Mas-Uuid and Mas-App-Guid are posible for licensing purposes.
+        //! @param[in] clientInfo - client infomation for licensing and other information
         //! @param[in] customHandler - custom http handler for testing purposes.
         //! @param[in] schemaProvider - schema provider for WSG 1.x servers in order to override their schemas
         //! Note: schema is required for server with WebApi v1.1 as it does not provide one
@@ -200,7 +201,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             (
             Utf8StringCR serverUrl,
             Utf8StringCR repositoryId,
-            MobileDgn::Utils::HttpRequestHeadersCR defaultHeaders,
+            ClientInfoPtr clientInfo,
             IWSSchemaProviderPtr schemaProvider = nullptr,
             MobileDgn::Utils::IHttpHandlerPtr customHandler = nullptr
             );

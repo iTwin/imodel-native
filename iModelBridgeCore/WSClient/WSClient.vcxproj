@@ -39,7 +39,7 @@
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p  WebServicesClient b</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesClient b</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include\;$(IncludePath)</IncludePath>
     <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
@@ -57,6 +57,7 @@
     <ClCompile Include="Client\ChunkedUploadRequest.cpp" />
     <ClCompile Include="Client\ClientConfiguration.cpp" />
     <ClCompile Include="Client\ClientConnection.cpp" />
+    <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
     <ClCompile Include="Connect\Authentication.cpp" />
     <ClCompile Include="Connect\AuthenticationData.cpp" />
@@ -94,6 +95,7 @@
   <ItemGroup>
     <ClInclude Include="Client\ClientConfiguration.h" />
     <ClInclude Include="Client\ClientConnection.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\ClientInfo.h" />
     <ClInclude Include="Client\ClientInternal.h" />
     <ClInclude Include="Connect\AuthenticationData.h" />
     <ClInclude Include="Connect\Connect.xliff.h" />

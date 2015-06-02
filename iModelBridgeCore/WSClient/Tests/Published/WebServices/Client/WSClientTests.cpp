@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 TEST_F (WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectOneRequest ().ForAnyRequest ([=] (HttpRequestCR request)
         {
@@ -28,7 +28,7 @@ TEST_F (WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
 
 TEST_F (WSClientTests, GetServerInfo_CalledFirstTime_SendsGetPluginsUrl)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectOneRequest ().ForAnyRequest ([=] (HttpRequestCR request)
         {
@@ -42,7 +42,7 @@ TEST_F (WSClientTests, GetServerInfo_CalledFirstTime_SendsGetPluginsUrl)
 
 TEST_F (WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::NotFound));
@@ -57,7 +57,7 @@ TEST_F (WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUr
 
 TEST_F (WSClientTests, GetServerInfo_FirstAndSecondResponsesReturnNotFound_SendsGetAboutPageUrl)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (3);
     GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::NotFound));
@@ -73,7 +73,7 @@ TEST_F (WSClientTests, GetServerInfo_FirstAndSecondResponsesReturnNotFound_Sends
 
 TEST_F (WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageToIdentifyWSGR1)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     auto aboutPageStub = R"(<span id="productNameLabel">Bentley Web Services Gateway 01.00</span>)";
 
@@ -88,7 +88,7 @@ TEST_F (WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPage
 
 TEST_F (WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageToIdentifyBentleyConnectWSGR1)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     auto aboutPageStub = R"(Web Service Gateway for BentleyCONNECT ... any text here ... <span id="versionLabel">1.1.0.0</span>)";
 
@@ -104,7 +104,7 @@ TEST_F (WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPage
 
 TEST_F (WSClientTests, GetServerInfo_FirstResponseDoesNotHaveServerHeader_RetriesOtherAndReturnsNotSupported)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (3);
     GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::OK, "some other html", {{"Content-Type", "text/html"}}));
@@ -117,7 +117,7 @@ TEST_F (WSClientTests, GetServerInfo_FirstResponseDoesNotHaveServerHeader_Retrie
 
 TEST_F (WSClientTests, GetServerInfo_FirstResponseHasProperServerHeader_IdentifyingWSG2)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (1);
     GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.0,Bentley-WSG/2.0"}}));
@@ -128,7 +128,7 @@ TEST_F (WSClientTests, GetServerInfo_FirstResponseHasProperServerHeader_Identify
 
 TEST_F (WSClientTests, GetServerInfo_CalledTwiceWithSuccessfullConnection_QueriesServerOnce)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectOneRequest ().ForAnyRequest (StubHttpResponse (HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.0,Bentley-WSG/2.0"}}));
 
@@ -142,7 +142,7 @@ TEST_F (WSClientTests, GetServerInfo_CalledTwiceWithSuccessfullConnection_Querie
 
 TEST_F (WSClientTests, GetServerInfo_SendInfoRequestCalledFirst_UsesCachedInfo)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectOneRequest ().ForAnyRequest (StubHttpResponse (HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.0,Bentley-WSG/2.0"}}));
 
@@ -156,7 +156,7 @@ TEST_F (WSClientTests, GetServerInfo_SendInfoRequestCalledFirst_UsesCachedInfo)
 
 TEST_F (WSClientTests, GetServerInfo_PrevioulslyReceivedServerNotSupported_PreviouslyCachedInfoIsInvalidatedAndNewRequested)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (3);
     GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/1.2,Bentley-WSG/1.3"}}));
@@ -173,7 +173,7 @@ TEST_F (WSClientTests, GetServerInfo_PrevioulslyReceivedServerNotSupported_Previ
 #ifdef USE_GTEST
 TEST_F (WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotifiedWithReceivedInfo)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
     auto listener = std::make_shared<MockServerInfoListener> ();
 
     GetHandler ().ForAnyRequest ([=] (HttpRequestCR request)
@@ -194,7 +194,7 @@ TEST_F (WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotified
 
 TEST_F (WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerNotLeakedAndNotNotified)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     int listenerCallCount = 0;
     struct StubServerInfoListener : public IWSClient::IServerInfoListener
@@ -228,7 +228,7 @@ TEST_F (WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerN
 #ifdef USE_GTEST
 TEST_F (WSClientTests, RegisterServerInfoListener_InfoNotReceivedDueToNetworkError_ListenerNotNotified)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
     auto listener = std::make_shared<MockServerInfoListener> ();
 
     EXPECT_CALL (*listener, OnServerInfoReceived (_)).Times (0);
@@ -243,7 +243,7 @@ TEST_F (WSClientTests, RegisterServerInfoListener_InfoNotReceivedDueToNetworkErr
 
 TEST_F (WSClientTests, RegisterServerInfoListener_NotSupportedServer_ListenerNotNotified)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
     auto listener = std::make_shared<MockServerInfoListener> ();
 
     EXPECT_CALL (*listener, OnServerInfoReceived (_)).Times (0);
@@ -258,7 +258,7 @@ TEST_F (WSClientTests, RegisterServerInfoListener_NotSupportedServer_ListenerNot
 
 TEST_F (WSClientTests, UnregisterServerInfoListener_ExistingListener_ListenerNotNotified)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
     auto listener = std::make_shared<MockServerInfoListener> ();
 
     EXPECT_CALL (*listener, OnServerInfoReceived (_)).Times (0);
@@ -285,7 +285,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1Format_ParsesDefaultFi
             "providerId" : "D" 
          }])";
 
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
@@ -311,7 +311,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithType_ParsesL
             "providerId" : "testProvider" 
          }])";
 
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
@@ -334,7 +334,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithNoType_Parse
             "providerId" : "testProvider" 
          }])";
 
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
@@ -357,7 +357,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdEC
             "providerId" : "ec" 
          }])";
 
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
@@ -380,7 +380,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1AndIdIsNotKnownFormat_
             "providerId" : "D" 
          }])";
 
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
@@ -411,7 +411,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdEC
             "providerId" : "ec" 
          }])";
 
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, StubJsonHttpResponse (HttpStatus::OK, dataSourcesResponse));
@@ -425,7 +425,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdEC
 
 TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1_CorrectUrl)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
@@ -440,7 +440,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1_CorrectUrl)
 
 TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV11_UrlWithoutWebApiVersion)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
@@ -455,7 +455,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV11_UrlWithoutWebApiVers
 
 TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV2_CorrectUrl)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
@@ -470,7 +470,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV2_CorrectUrl)
 
 TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV21_CorrectUrl)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi21 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
@@ -485,7 +485,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV21_CorrectUrl)
 
 TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV22_CorrectUrl)
     {
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi22 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
@@ -517,7 +517,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV2Format_ReturnsParsedDa
             }]
         })";
 
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
@@ -556,7 +556,7 @@ TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV2FormatWithWrongSchema_
             }]
         })";
 
-    auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
+    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());

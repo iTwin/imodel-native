@@ -105,6 +105,7 @@
     <ClInclude Include="Published\WebServices\Client\WSRepositoryClientTests.h" />
     <ClInclude Include="Published\WebServices\Licensing\MobileTrackingTests.h" />
     <ClInclude Include="Published\WebServices\WebServicesTestsHelper.h" />
+    <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -241,6 +242,7 @@
     <ClCompile Include="Published\WebServices\Client\WSRepositoryClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Licensing\MobileTrackingTests.cpp" />
     <ClCompile Include="Published\WebServices\WebServicesTestsHelper.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />
