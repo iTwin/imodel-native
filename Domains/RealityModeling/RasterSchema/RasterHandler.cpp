@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/RasterHandler.h>
+#include "RasterSource.h"
+#include "RasterQuadTree.h"
+#include "WmsSource.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_RASTERSCHEMA
@@ -46,6 +49,35 @@ DgnModelId RasterModelHandler::CreateRasterModel(DgnDbR db, BeFileName fileName)
 //----------------------------------------------------------------------------------------
 RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
     {
+    // Make sure GCS is initialized
+    T_HOST.GetGeoCoordinationAdmin()._GetServices();
+
+    //http://basemap.nationalmap.gov/arcgis/services/USGSImageryTopo/MapServer/WMSServer?request=GetCapabilities&service=WMS
+
+    //&&MM everything is hardcoded for now.
+    Utf8String serverUrl = "http://basemap.nationalmap.gov/arcgis/services/USGSImageryTopo/MapServer/WmsServer";
+    Utf8String version = "1.1.1";
+    Utf8String layers = "0";
+    Utf8String styles = "";
+    Utf8String csType = "SRS";
+    Utf8String csLabel = "EPSG:4269";
+    Utf8String format = "image/png";
+    Utf8String transparent = "TRUE";
+           
+    DRange2d bbox;
+    bbox.low.x = -128.1;
+    bbox.low.y = 24.7;
+    bbox.high.x = -58.1;
+    bbox.high.y = 49.8;   
+
+    // Keep the same cartesian to pixel ratio
+    double xLength = bbox.high.x - bbox.low.x;
+    double yLength = bbox.high.y - bbox.low.y;
+                        
+    uint32_t metaWidth = 2048*256;  // arbitrary size. &&MM let the user decide? compute something automatically using bbox? server res? or a default?
+    uint32_t metaHeight = (uint32_t)((yLength/xLength) * metaWidth);
+                        
+    m_rasterTree = RasterQuadTree::Create(*WmsSource::Create(serverUrl.c_str(), version.c_str(), layers.c_str(), styles.c_str(), csType.c_str(), csLabel.c_str(), format.c_str(), bbox, metaWidth, metaHeight), GetDgnDb());
     }
 
 //----------------------------------------------------------------------------------------
@@ -60,6 +92,7 @@ RasterModel::~RasterModel()
 //----------------------------------------------------------------------------------------
 void RasterModel::_AddGraphicsToScene (ViewContextR context)
     {
+    m_rasterTree->Draw(context);
     }
 
 //----------------------------------------------------------------------------------------

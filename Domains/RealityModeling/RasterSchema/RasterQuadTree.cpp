@@ -21,6 +21,55 @@ static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2015
+//----------------------------------------------------------------------------------------
+struct RasterProgressiveDisplay : IProgressiveDisplay, NonCopyableClass
+{
+    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
+
+protected:
+    RasterQuadTreeR m_raster;
+
+    bvector<RasterTilePtr>  m_pMissingTiles;
+    bvector<RasterTilePtr>  m_pVisiblesTiles;
+
+    struct SortByResolution
+        {
+        bool operator ()(const RasterTilePtr& lhs, const RasterTilePtr& rhs) const
+            {
+            if(lhs->GetId().resolution != rhs->GetId().resolution)
+                return lhs->GetId().resolution < rhs->GetId().resolution;
+
+            if(lhs->GetId().tileX != rhs->GetId().tileX)
+                return lhs->GetId().tileX < rhs->GetId().tileX;
+
+            return lhs->GetId().tileY < rhs->GetId().tileY;
+            }
+        };
+    typedef bset<RasterTilePtr, SortByResolution> SortedTiles;
+
+    RasterProgressiveDisplay (RasterQuadTreeR raster, ViewContextR context);
+    virtual ~RasterProgressiveDisplay(){};
+
+    //! Displays tiled rasters and schedules downloads. 
+    virtual Completion _Process(ViewContextR) override;
+
+    // set limit and returns true to cause caller to call EnableStopAfterTimout
+    virtual bool _WantTimeoutSet(uint32_t& limit) override {return false;}
+
+    bool ShouldDrawInConvext (ViewContextR context) const;
+
+    void FindBackgroudTiles(SortedTiles& backgroundTiles, bvector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta);
+    
+    void DrawLoadedChildren(RasterTileR tile, ViewContextR context, uint32_t resolutionDelta);
+
+public:
+    void Draw (ViewContextR context);
+
+    static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, ViewContextR context);
+};
+
+//----------------------------------------------------------------------------------------
 //-------------------------------  RasterTile --------------------------------------------
 //----------------------------------------------------------------------------------------
 
@@ -66,7 +115,7 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree)
+ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree)
     {
     GeoCoordinates::BaseGCSP pSourceGcs = tree.GetSource().GetGcsP();
 
@@ -76,7 +125,7 @@ BentleyStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCart
         {
         // Assume raster to be coincident.
         memcpy(outUors, srcCartesian, sizeof(DPoint3d)*4);
-        return BSISUCCESS;
+        return REPROJECT_Success;
         }
 
     ReprojectStatus status = REPROJECT_Success;
@@ -86,9 +135,8 @@ BentleyStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCart
         {
         if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromCartesian(srcGeoCorners[i], srcCartesian[i]))))
             {
-            if(REPROJECT_CSMAPERR_OutOfUsefulRange)
             BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
-            return BSIERROR;
+            return status;
             }
         }
     
@@ -97,17 +145,17 @@ BentleyStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCart
     for(size_t i=0; i < 4; ++i)
         {
         if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromLatLong(dgnGeoCorners[i], srcGeoCorners[i], *pDgnGcs))))
-            return BSIERROR;
+            return status;
         }
 
     //Finally to UOR
     for(uint32_t i=0; i < 4; ++i)
         {
-        if(BSISUCCESS != tree.GetDgnDb().Units().UorsFromLatLong(outUors[i], dgnGeoCorners[i]))
-            return BSIERROR;
+        if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(outUors[i], dgnGeoCorners[i]))))
+            return status;
         }
 
-    return REPROJECT_Success == status ? BSISUCCESS : BSISUCCESS;    
+    return status;    
     }
 
 //----------------------------------------------------------------------------------------
@@ -115,7 +163,7 @@ BentleyStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCart
 //----------------------------------------------------------------------------------------
 bool RasterTile::Draw(ViewContextR context)
     {
-    static bool s_DrawTileShape = false;
+    static bool s_DrawTileShape = true;
     if(s_DrawTileShape)
         {
         ElemMatSymb elemMatSymb;
@@ -132,6 +180,24 @@ bool RasterTile::Draw(ViewContextR context)
         box[3] = m_corners[2];
         box[4] = box[0];
         context.GetIDrawGeom().DrawLineString3d (_countof(box), box, NULL);
+
+        DPoint3d centerPt = DPoint3d::FromInterpolate(m_corners[0], 0.5, m_corners[3]);
+        double pixelSize = context.GetPixelSizeAtPoint(&centerPt);
+
+        Utf8String tileText;
+        tileText.Sprintf("%d:%d,%d", m_tileId.resolution, m_tileId.tileX, m_tileId.tileY);
+         
+        TextStringPtr textStr = TextString::Create();
+        textStr->SetText(tileText.c_str());
+        textStr->GetStyleR().SetFont(DgnFontManager::GetDecoratorFont());
+        textStr->GetStyleR().SetSize(pixelSize*10);
+        textStr->SetOriginFromJustificationOrigin(centerPt, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
+
+        elemMatSymb.SetWidth (0);
+        colorIdx = ColorDef(222, 0, 222, 128);
+        elemMatSymb.SetLineColor (colorIdx);
+        context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
+        context.GetIViewDraw().DrawTextString (*textStr);
         }
 
     if(!m_pDisplayTile.IsValid())
@@ -289,16 +355,26 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
 
     // compute scale factor of this tile
     DPoint3d viewCorners[4];
-    viewContext.GetFrustumToView().M0.MultiplyAndRenormalize(viewCorners, frustCorners, 4);
+    viewContext.FrustumToView(viewCorners, frustCorners, 4);
 
     uint64_t physWidth = m_tree.GetSource().GetTileSizeX(m_tileId);
     uint64_t physHeight = m_tree.GetSource().GetTileSizeY(m_tileId);
 
+    //&&MM need to change the factor interpretation. if we want to use the squared version
+    //   -- when reprojecting we need all tiles to have the same connection points to avoid gaps. that means use the highest resolution?
+#if 0   
     double physicalDiagSquared = (double)(physWidth*physWidth + physHeight*physHeight);
-    double viewDiag1Squared = viewCorners[3].distanceSquared(&viewCorners[0]);
-    double viewDiag2Squared = viewCorners[2].distanceSquared(&viewCorners[1]);
+    double viewDiag1Squared = viewCorners[3].DistanceSquaredXY(&viewCorners[0]);
+    double viewDiag2Squared = viewCorners[2].DistanceSquaredXY(&viewCorners[1]);
     double averageViewDiagSquared = (viewDiag1Squared + viewDiag2Squared) / 2.0;
-    factor = averageViewDiagSquared / physicalDiagSquared;
+    factorSquared = averageViewDiagSquared / physicalDiagSquared;
+#else
+    double physicalDiag = sqrt(physWidth*physWidth + physHeight*physHeight);
+    double viewDiag1 = viewCorners[3].DistanceXY(viewCorners[0]);
+    double viewDiag2 = viewCorners[2].DistanceXY(viewCorners[1]);
+    double averageViewDiag = (viewDiag1 + viewDiag2) / 2.0;
+    factor = averageViewDiag / physicalDiag;
+#endif
 
     return true;
     }
@@ -337,57 +413,18 @@ void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     4/2015
+//----------------------------------------------------------------------------------------
+void RasterQuadTree::Draw (ViewContextR context)
+    {
+    RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
+    display->Draw(context);
+    }
+
+//----------------------------------------------------------------------------------------
 //-------------------------------  RasterProgressiveDisplay -----------------------------------------
 //----------------------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
-struct RasterProgressiveDisplay : IProgressiveDisplay, NonCopyableClass
-{
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-
-protected:
-    RasterQuadTreeR m_raster;
-
-    bvector<RasterTilePtr>  m_pMissingTiles;
-    bvector<RasterTilePtr>  m_pVisiblesTiles;
-
-    struct SortByResolution
-        {
-        bool operator ()(const RasterTilePtr& lhs, const RasterTilePtr& rhs) const
-            {
-            if(lhs->GetId().resolution != rhs->GetId().resolution)
-                return lhs->GetId().resolution < rhs->GetId().resolution;
-
-            if(lhs->GetId().tileX != rhs->GetId().tileX)
-                return lhs->GetId().tileX < rhs->GetId().tileX;
-
-            return lhs->GetId().tileY < rhs->GetId().tileY;
-            }
-        };
-    typedef bset<RasterTilePtr, SortByResolution> SortedTiles;
-
-    RasterProgressiveDisplay (RasterQuadTreeR raster, ViewContextR context);
-    virtual ~RasterProgressiveDisplay(){};
-
-    //! Displays tiled rasters and schedules downloads. 
-    virtual Completion _Process(ViewContextR) override;
-
-    // set limit and returns true to cause caller to call EnableStopAfterTimout
-    virtual bool _WantTimeoutSet(uint32_t& limit) override {return false;}
-
-    bool ShouldDrawInConvext (ViewContextR context) const;
-
-    void FindBackgroudTiles(SortedTiles& backgroundTiles, bvector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta);
-    
-    void DrawLoadedChildren(RasterTileR tile, ViewContextR context, uint32_t resolutionDelta);
-
-public:
-    void Draw (ViewContextR context);
-
-    static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, ViewContextR context);
-};
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -730,7 +767,7 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
             s_rasterLOD = RasterLOD::Create(*WmsSource::Create(serverUrl.c_str(), version.c_str(), layers.c_str(), styles.c_str(), csType.c_str(), csLabel.c_str(), format.c_str(), bbox, metaWidth, metaHeight), context.GetDgnDb());
             }
 
-        RefCountedPtr<RasterDisplay> display = RasterDisplay::Create(*s_rasterLOD, context);
+        RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*s_rasterLOD, context);
         display->Draw(context);
         }
     }

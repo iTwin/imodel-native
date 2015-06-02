@@ -21,9 +21,6 @@
 #include <RasterSchema/RasterHandler.h>
 #include <RasterSchema/RasterDomain.h>
 
-RASTERSCHEMA_TYPEDEFS(RasterQuadTree)
-RASTERSCHEMA_REF_COUNTED_PTR(RasterQuadTree)
-
 RASTERSCHEMA_TYPEDEFS(RasterTile)
 RASTERSCHEMA_REF_COUNTED_PTR(RasterTile)
 

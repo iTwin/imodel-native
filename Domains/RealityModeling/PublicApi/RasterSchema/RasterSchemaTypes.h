@@ -12,11 +12,8 @@
 #include <RasterSchema/RasterSchemaCommon.h>
 #include <RasterSchema/ExportMacros.h>
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+RASTERSCHEMA_REF_COUNTED_PTR(RasterModel)
 
-struct  RasterModel;
-
-typedef RefCountedPtr<RasterModel>                          RasterModelPtr;
-
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+RASTERSCHEMA_TYPEDEFS(RasterQuadTree)
+RASTERSCHEMA_REF_COUNTED_PTR(RasterQuadTree)
 
