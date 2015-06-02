@@ -44,7 +44,7 @@ always:
     !~@mkdir $(o)
 
 # Generate build version header (so we can embed as a property for diagnostic purposes).
-%include CreateBuildVersionHeader.mki
+%include $(SharedMki)CreateBuildVersionHeader.mki
 
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
