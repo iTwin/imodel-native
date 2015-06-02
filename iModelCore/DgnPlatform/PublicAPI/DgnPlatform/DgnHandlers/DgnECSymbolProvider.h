@@ -78,20 +78,20 @@ public:
 struct DgnDbExpressionContext : ECN::SymbolExpressionContext
     {
     private:
-        DgnDbCR m_db;
+        DgnDbR m_db;
 
         Utf8CP  GetPath() const;
         ECN::ECValue GetName() const;
 
     protected:
         // Create an ECExpression context that allows access to DgnDb.
-        DGNPLATFORM_EXPORT DgnDbExpressionContext(DgnDbCR db);
+        DGNPLATFORM_EXPORT DgnDbExpressionContext(DgnDbR db);
         // Get the DgnDb associated with the Context.
-        DGNPLATFORM_EXPORT DgnDbCR GetDgnDb();
+        DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
 
     public:
         // Create an ECExpression context that allows access to DgnDb.
-        DGNPLATFORM_EXPORT static DgnDbExpressionContextPtr Create(DgnDbCR db);
+        DGNPLATFORM_EXPORT static DgnDbExpressionContextPtr Create(DgnDbR db);
     };
 
 //=======================================================================================
@@ -110,7 +110,7 @@ struct DgnElementExpressionContext : DgnDbExpressionContext
         // Create an ECExpression context that allows access to DgnDb.
         DGNPLATFORM_EXPORT DgnElementExpressionContext(DgnElementCR element);
         // Get the DgnDb associated with the Context.
-        DGNPLATFORM_EXPORT DgnElementCR GetElement();
+        DGNPLATFORM_EXPORT DgnElementCR GetElement() const;
 
     public:
         // Create an ECExpression context that allows access to DgnDb.
