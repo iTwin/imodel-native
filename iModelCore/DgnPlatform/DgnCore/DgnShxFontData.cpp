@@ -424,6 +424,10 @@ BentleyStatus DgnShxFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData)
     if (!session.IsValid())
         return ERROR;
 
+    // Allow this to be used in the middle of other read operations.
+    AutoRestoreFPos restoreFPos(*this);
+    _Seek(0, BeFileSeekOrigin::Begin);
+    
     bvector<Byte> fontData;
     if (BeFileStatus::Success != m_file.ReadEntireFile(fontData))
         {
