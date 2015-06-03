@@ -210,7 +210,7 @@ ProjectionParams    &projectionParams
             extracted.coordsys = extracted.projType = COORDSYS_UTMZN;
 
             // the old code would have always ended up with hemisphere OBE_HEMISPHERE_NORTH, but this looks like what it was trying to do.
-            utmzn.hemisphere = (0 == BeStringUtilities::Stricmp (extracted.grp_knm, "UTMS")) ? utmzn.hemisphere = OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH;
+            utmzn.hemisphere = (0 == BeStringUtilities::Stricmp (extracted.grp_knm, "UTMS")) ? OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH;
             utmzn.gcDom     = projectionParams.trmer.gcDom;
             utmzn.paper_scl = projectionParams.trmer.paper_scl;
             utmzn.quad      = projectionParams.trmer.quad;
