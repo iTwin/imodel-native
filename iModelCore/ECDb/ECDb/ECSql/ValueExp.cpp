@@ -18,116 +18,133 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus BetweenRangeValueExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus BetweenRangeValueExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
-
-    auto const& lowerBoundTypeInfo = GetLowerBoundOperand ()->GetTypeInfo ();
-
-    if (!lowerBoundTypeInfo.IsPrimitive () || !GetUpperBoundOperand ()->GetTypeInfo ().IsPrimitive ())
         {
-        ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid BETWEEN expression '%s'. Operands cannot be structs or arrays.", ToECSql().c_str()); 
-        return FinalizeParseStatus::Error;
+        //indicate that the exp per se doesn't have a single type info as it can vary across its children
+        SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies));
+        return FinalizeParseStatus::NotCompleted;
         }
 
-    //indicate that the exp per se doesn't have a single type info as it can vary across its children
-    SetTypeInfo (ECSqlTypeInfo (ECSqlTypeInfo::Kind::Varies));
-    return FinalizeParseStatus::Completed;
+    if (mode == FinalizeParseMode::AfterFinalizingChildren)
+        {
+        vector<ValueExp const*> operands {GetLowerBoundOperand(), GetUpperBoundOperand()};
+        for (ValueExp const* operand : operands)
+            {
+            //parameter exp type is determined later, so do not check type for it here
+            if (operand->IsParameterExp())
+                continue;
+
+            ECSqlTypeInfo const& typeInfo = operand->GetTypeInfo();
+            if (!typeInfo.IsPrimitive() || typeInfo.IsGeometry() || typeInfo.IsPoint())
+                {
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid BETWEEN expression '%s'. Operands must be of numeric, date/timestamp, or string type.", ToECSql().c_str());
+                return FinalizeParseStatus::Error;
+                }
+            }
+
+        return FinalizeParseStatus::Completed;
+        }
+
+    BeAssert(false);
+    return FinalizeParseStatus::Error;
     }
 
 //*************************** BinaryValueExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    auto lhs = GetLeftOperand ();
-    auto rhs = GetRightOperand ();
-
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+    switch (mode)
         {
-        //if operands are parameters set the target exp in those expressions
-        if (DetermineOperandsTargetTypes (ctx, lhs, rhs) != ECSqlStatus::Success)
-            return FinalizeParseStatus::Error;
-
-        return FinalizeParseStatus::NotCompleted;
-        }
-
-    auto const& lhsTypeInfo = lhs->GetTypeInfo ();
-    auto const& rhsTypeInfo = rhs->GetTypeInfo ();
-
-    if (!lhsTypeInfo.IsPrimitive () || !rhsTypeInfo.IsPrimitive ())
-        {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Expecting a primitive value expression as operand. '%s'", ToECSql().c_str()); 
-        return FinalizeParseStatus::Error;
-        }
-
-    auto lhsType = lhsTypeInfo.GetPrimitiveType ();
-    auto rhsType = rhsTypeInfo.GetPrimitiveType ();
-
-    auto resolvedType = ECN::PRIMITIVETYPE_Integer;
-    switch (m_op)
-        {
-        case BinarySqlOperator::Plus:
-        case BinarySqlOperator::Minus:
-        case BinarySqlOperator::Modulo:
-        case BinarySqlOperator::Divide:
-        case BinarySqlOperator::Multiply:
-            {
-            if (!lhsTypeInfo.IsNumeric () || !rhsTypeInfo.IsNumeric ())
+            case Exp::FinalizeParseMode::BeforeFinalizingChildren:
                 {
-                ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting a numeric value expression as operand. '%s'", ToECSql().c_str()); 
-                return FinalizeParseStatus::Error;
+                switch (m_op)
+                    {
+                        case BinarySqlOperator::Plus:
+                        case BinarySqlOperator::Minus:
+                        case BinarySqlOperator::Modulo:
+                        case BinarySqlOperator::Divide:
+                        case BinarySqlOperator::Multiply:
+                            SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
+                            break;
+                        case BinarySqlOperator::ShiftLeft:
+                        case BinarySqlOperator::ShiftRight:
+                        case BinarySqlOperator::BitwiseOr:
+                        case BinarySqlOperator::BitwiseAnd:
+                        case BinarySqlOperator::BitwiseXOr:
+                            SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+                            break;
+
+                        case BinarySqlOperator::Concat:
+                            SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_String));
+                            break;
+
+                        default:
+                            BeAssert(false && "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
+                            ctx.SetError(ECSqlStatus::ProgrammerError, "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
+                            return FinalizeParseStatus::Error;
+                    }
+
+                return FinalizeParseStatus::NotCompleted;
                 }
 
-            resolvedType = lhsType;
-            if (lhsType == ECN::PRIMITIVETYPE_Double || rhsType == ECN::PRIMITIVETYPE_Double )
-                resolvedType = ECN::PRIMITIVETYPE_Double;
-            if (lhsType == ECN::PRIMITIVETYPE_Long || rhsType == ECN::PRIMITIVETYPE_Long )
-                resolvedType = ECN::PRIMITIVETYPE_Long;
-
-            break;
-            }
-        case BinarySqlOperator::ShiftLeft:
-        case BinarySqlOperator::ShiftRight:
-        case BinarySqlOperator::BitwiseOr:
-        case BinarySqlOperator::BitwiseAnd:
-        case BinarySqlOperator::BitwiseXOr:
-            {
-            if (!lhsTypeInfo.IsExactNumeric () || !rhsTypeInfo.IsExactNumeric ())
+            case Exp::FinalizeParseMode::AfterFinalizingChildren:
                 {
-                ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting value expression of type Int or int64_t as operand to bitwise operation. '%s'", ToECSql().c_str()); 
-                return FinalizeParseStatus::Error;
+                std::vector<ValueExp const*> operands {GetLeftOperand(), GetRightOperand()};
+                for (ValueExp const* operand : operands)
+                    {
+                    ECSqlTypeInfo const& typeInfo = operand->GetTypeInfo();
+                    //ignore parameter exp whose type will be resolved later
+                    if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset)
+                        {
+                        BeAssert(operand->IsParameterExp());
+                        continue;
+                        }
+
+                    if (!typeInfo.IsPrimitive())
+                        {
+                        ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting a primitive value expression as operand. '%s'", ToECSql().c_str());
+                        return FinalizeParseStatus::Error;
+                        }
+
+                    ECSqlTypeInfo const& expectedType = GetTypeInfo();
+                    if (expectedType.IsExactNumeric() && !typeInfo.IsExactNumeric())
+                        {
+                        ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting an integral value expression as operand. '%s'", ToECSql().c_str());
+                        return FinalizeParseStatus::Error;
+                        }
+                    else if (expectedType.IsNumeric() && !typeInfo.IsNumeric())
+                        {
+                        ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting a numeric value expression as operand. '%s'", ToECSql().c_str());
+                        return FinalizeParseStatus::Error;
+                        }
+                    else if (expectedType.GetPrimitiveType() == PRIMITIVETYPE_String && typeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)
+                        {
+                        ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting value expression of type String as operand. '%s'", ToECSql().c_str());
+                        return FinalizeParseStatus::Error;
+                        }
+                    }
+
+                return FinalizeParseStatus::Completed;
                 }
 
-            resolvedType = lhsType;
-            if (lhsType == ECN::PRIMITIVETYPE_Long || rhsType == ECN::PRIMITIVETYPE_Long )
-                resolvedType = ECN::PRIMITIVETYPE_Long;
-            break;
-            }
 
-        case BinarySqlOperator::Concat:
-            {
-            if (lhsType == ECN::PRIMITIVETYPE_String  && lhsType == ECN::PRIMITIVETYPE_String)
-                resolvedType = ECN::PRIMITIVETYPE_String;
-            else
-                {
-                ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting value expression of type String as operand. '%s'", ToECSql().c_str());                 
+            default:
+                BeAssert(false);
                 return FinalizeParseStatus::Error;
-                }
-
-            break;
-            }
-
-        default:
-            BeAssert (false && "Unhandled Binary operator when parsing BinaryExp.");
-            ctx.SetError (ECSqlStatus::ProgrammerError, "Unhandled Binary operator when parsing BinaryExp.");
-            return FinalizeParseStatus::Error;
         }
+    }
 
-    SetTypeInfo (ECSqlTypeInfo (resolvedType));
-    return FinalizeParseStatus::Completed;
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool BinaryValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    parameterExp.SetTargetExpInfo(GetTypeInfo());
+    return true;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -153,109 +170,55 @@ Utf8String BinaryValueExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus CastExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    auto castOperand = GetCastOperand ();
+    auto castOperand = GetCastOperand();
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         //if operands are parameters set the target exp in those expressions
-        if (castOperand->GetType () == Exp::Type::Parameter)
+        if (castOperand->GetType() == Exp::Type::Parameter)
             {
-            ctx.SetError (ECSqlStatus::InvalidECSql, "Parameters are not supported in a CAST expression ('%s').", ToECSql ().c_str ());
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Parameters are not supported in a CAST expression ('%s').", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
 
+        ECN::PrimitiveType targetType;
+        if (ExpHelper::ToPrimitiveType(targetType, m_castTargetType) != ECSqlStatus::Success)
+            {
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid CAST target type '%s'.", m_castTargetType.c_str());
+            return FinalizeParseStatus::Error;
+            }
+
+        SetTypeInfo(ECSqlTypeInfo(targetType));
         return FinalizeParseStatus::NotCompleted;
         }
 
-    ECN::PrimitiveType targetType;
-    if (ExpHelper::ToPrimitiveType (targetType, m_castTargetType) != ECSqlStatus::Success)
-        {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid CAST target type '%s'.", m_castTargetType.c_str());
-        return FinalizeParseStatus::Error;
-        }         
 
-    auto const& castOperandTypeInfo = GetCastOperand ()->GetTypeInfo ();
-    const auto castOperandTypeKind = castOperandTypeInfo.GetKind ();
-    if (!castOperandTypeInfo.IsPrimitive () && castOperandTypeKind != ECSqlTypeInfo::Kind::Null)
+    ECSqlTypeInfo const& castOperandTypeInfo = GetCastOperand()->GetTypeInfo();
+    if (castOperandTypeInfo.GetKind() == ECSqlTypeInfo::Kind::Null) //NULL can always be cast
+        return FinalizeParseStatus::Completed;
+
+    if (!castOperandTypeInfo.IsPrimitive())
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "CAST expects operand to be a primitive value expression or the null constant.");
+        ctx.SetError(ECSqlStatus::InvalidECSql, "CAST expects operand to be a primitive value expression or the null constant.");
         return FinalizeParseStatus::Error;
         }
 
-    //if operand is not null, now check that operand type and target type are compatible.
-    if (castOperandTypeKind != ECSqlTypeInfo::Kind::Null)
+    ECSqlTypeInfo const& expectedTypeInfo = GetTypeInfo();
+
+    if (castOperandTypeInfo.GetPrimitiveType() != expectedTypeInfo.GetPrimitiveType())
         {
-        bool canCast = true;
-        const auto operandType = castOperandTypeInfo.GetPrimitiveType ();
-        if (operandType != targetType)
+        vector<ECSqlTypeInfo const*> typeInfos {&expectedTypeInfo, &castOperandTypeInfo};
+        for (ECSqlTypeInfo const* typeInfo : typeInfos)
             {
-            switch (targetType)
+            if (!typeInfo->IsNumeric() && !typeInfo->IsBoolean() && !typeInfo->IsBinary() && !typeInfo->IsString())
                 {
-                case ECN::PRIMITIVETYPE_Double:
-                case ECN::PRIMITIVETYPE_Long:
-                case ECN::PRIMITIVETYPE_Integer:
-                    switch (operandType)
-                        {
-                        case ECN::PRIMITIVETYPE_Integer:
-                        case ECN::PRIMITIVETYPE_Double:
-                        case ECN::PRIMITIVETYPE_String:
-                        case ECN::PRIMITIVETYPE_Long:
-                        case ECN::PRIMITIVETYPE_Boolean:
-                            canCast = true;
-                            break;
-                        default:
-                            canCast = false;
-                            break;
-                        }
-                    break;
-
-                case ECN::PRIMITIVETYPE_String:
-                    switch (operandType)
-                        {
-                        case ECN::PRIMITIVETYPE_Integer:
-                        case ECN::PRIMITIVETYPE_Double:
-                        case ECN::PRIMITIVETYPE_String:
-                        case ECN::PRIMITIVETYPE_Long:
-                        case ECN::PRIMITIVETYPE_Boolean:
-                        case ECN::PRIMITIVETYPE_Binary:
-                            canCast = true;
-                            break;
-                        default:
-                            canCast = false;
-                            break;
-                        }
-                    break;
-
-                case ECN::PRIMITIVETYPE_Boolean:
-                    switch (operandType)
-                        {
-                        case ECN::PRIMITIVETYPE_Integer:
-                        case ECN::PRIMITIVETYPE_Double:
-                        case ECN::PRIMITIVETYPE_Long:
-                        case ECN::PRIMITIVETYPE_Boolean:
-                            canCast = true;
-                            break;
-                        default:
-                            canCast = false;
-                            break;
-                        }
-                    break;
-
-                default:
-                    canCast = false;
-                    break;
-                }      
-            }
-
-        if (!canCast)
-            {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Casting from '%s' to '%s' is not supported", ExpHelper::ToString(operandType), ExpHelper::ToString(targetType));
-            return FinalizeParseStatus::Error;
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Casting from '%s' to '%s' is not supported", ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()), ExpHelper::ToString(expectedTypeInfo.GetPrimitiveType()));
+                return FinalizeParseStatus::Error;
+                }
             }
         }
 
-    SetTypeInfo (ECSqlTypeInfo (targetType));
     return FinalizeParseStatus::Completed;
     }
 
@@ -447,7 +410,7 @@ Utf8CP const ECClassIdFunctionExp::NAME = "GetECClassId";
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -546,39 +509,53 @@ bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> FunctionCallExp::s_builtinFunctio
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
-
-    const size_t argCount = GetChildrenCount();
-    //now verify that args are all primitive and handle parameter args
-    for (size_t i = 0; i < argCount; i++)
+    switch (mode)
         {
-        ValueExp* argExp = GetChildP<ValueExp>(i);
-        ParameterExp* parameterExp = argExp->TryGetAsParameterExpP();
-        if (parameterExp != nullptr)
-            {
-            //We don't know the data type for function args. We choose Double
-            //as default type as it can take any numeric value and SQLite supports implicit conversions
-            //between the primitive types anyways
-            parameterExp->SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
-            }
-        else
-            {
-            ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
-            if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
+            case Exp::FinalizeParseMode::BeforeFinalizingChildren:
                 {
-                ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
-                             m_functionName.c_str(), i + 1);
-                return FinalizeParseStatus::Error;
+                const ECN::PrimitiveType returnType = DetermineReturnType(ctx, GetFunctionName(), (int) GetChildrenCount());
+                SetTypeInfo(ECSqlTypeInfo(returnType));
+                return FinalizeParseStatus::NotCompleted;
                 }
-            }
-        }
 
-    const ECN::PrimitiveType returnType = DetermineReturnType(ctx, GetFunctionName(), (int) argCount);
-    SetTypeInfo(ECSqlTypeInfo (returnType));
-    return FinalizeParseStatus::Completed;
+            case Exp::FinalizeParseMode::AfterFinalizingChildren:
+                {
+                //verify that args are all primitive and handle parameter args
+                size_t argCount = GetChildrenCount();
+                for (size_t i = 0; i < argCount; i++)
+                    {
+                    ValueExp* argExp = GetChildP<ValueExp>(i);
+                    if (argExp->IsParameterExp())
+                        continue;
+
+                    ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
+                    if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
+                        {
+                        ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
+                                     m_functionName.c_str(), i + 1);
+                        return FinalizeParseStatus::Error;
+                        }
+                    }
+
+                return FinalizeParseStatus::Completed;
+                }
+
+            default:
+                BeAssert(false);
+                return FinalizeParseStatus::Error;
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool FunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    //we don't have metadata about function args, so use a default type if the arg is a parameter
+    parameterExp.SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+    return true;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -689,18 +666,21 @@ void FunctionCallExp::_DoToECSql(Utf8StringR ecsql) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus LikeRhsValueExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus LikeRhsValueExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        {
-        ParameterExp* parameterExp = GetRhsExp ()->TryGetAsParameterExpP();
-        if (parameterExp != nullptr)
-            parameterExp->SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
-
         SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
-        }
 
     return FinalizeParseStatus::Completed;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool LikeRhsValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    parameterExp.SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
+    return true;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -728,44 +708,12 @@ void LikeRhsValueExp::_DoToECSql(Utf8StringR ecsql) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
+        m_parameterIndex = ctx.TrackECSqlParameter(*this);
 
-    auto targetExp = GetTargetExp ();
-    if (targetExp != nullptr)
-        {
-        //if target exp is another parameter, use a default type
-        if (targetExp->GetType () == Type::Parameter)
-            {
-            auto const& targetTypeInfo = targetExp->GetTypeInfo ();
-            if (targetTypeInfo.GetKind () == ECSqlTypeInfo::Kind::Unset)
-                SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_Long));
-            else
-                SetTypeInfo (targetTypeInfo);
-            }
-        else
-            {
-            //Target expr is not a child of parameter expr, but a cross reference. If it hasn't been finalized yet, we do so now.
-            auto stat = const_cast<ComputedExp*> (targetExp)->FinalizeParsing (ctx);
-            if (stat != ECSqlStatus::Success)
-                return FinalizeParseStatus::Error;
-
-            SetTypeInfo (targetExp->GetTypeInfo ());
-            }
-        }
-    //For some expressions there is no target exp, but a target type. If that has been set, we don't need to do anything anymore.
-    else if (GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Unset)
-        {
-        //In some cases the parameter exp has no target type (e.g. in limit/offset clauses. In
-        //that case just assume a numeric type.
-        //TODO: assumption to choose numeric type in that case is error-prone. 
-        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
-        }
-
-    m_parameterIndex = ctx.TrackECSqlParameter (*this);
-    return FinalizeParseStatus::Completed;
+    return FinalizeParseStatus::NotCompleted;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -774,6 +722,8 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing (ECSqlParseContext& ctx,
 void ParameterExp::SetTargetExpInfo(ComputedExp const& targetExp)
     {
     m_targetExp = &targetExp;
+    SetTypeInfo(targetExp.GetTypeInfo());
+    SetIsComplete();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -783,6 +733,7 @@ void ParameterExp::SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo)
     {
     SetTypeInfo(targetTypeInfo);
     m_targetExp = nullptr;
+    SetIsComplete();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -814,7 +765,7 @@ Utf8String ParameterExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing( ECSqlParseContext& ctx, FinalizeParseMode mode )
+Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
@@ -922,7 +873,7 @@ Utf8CP SetFunctionCallExp::ToString(Function function)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus FoldFunctionCallExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus FoldFunctionCallExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -976,35 +927,55 @@ Utf8CP FoldFunctionCallExp::ToString(FoldFunction foldFunction)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
-
-    auto const& operandTypeInfo = GetOperand ()->GetTypeInfo ();
-    if (!operandTypeInfo.IsNumeric ())
         {
-        ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid type in expression %s: Unary operator expects a numeric type expression", ToECSql().c_str());
-        return FinalizeParseStatus::Error;
+        switch (m_op)
+            {
+                case UnarySqlOperator::Minus:
+                case UnarySqlOperator::Plus:
+                    SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+                    break;
+                case UnarySqlOperator::BitwiseNot:
+                    SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Long));
+                    break;
+
+                default:
+                    ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid unary operator in expression %s.", ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+            }
+
+        return FinalizeParseStatus::NotCompleted;
         }
 
+    ValueExp const* operand = GetOperand();
+    //parameter exp get their types later, so ignore them in this check
+    if (operand->IsParameterExp())
+        return FinalizeParseStatus::Completed;
+
+    auto const& operandTypeInfo = operand->GetTypeInfo();
     switch (m_op)
         {
         case UnarySqlOperator::Minus:
         case UnarySqlOperator::Plus:
             {
-            SetTypeInfo (operandTypeInfo);
+            if (!operandTypeInfo.IsNumeric())
+                {
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid type in expression %s: Unary operator expects a numeric type expression", ToECSql().c_str());
+                return FinalizeParseStatus::Error;
+                }
+
             break;
             }
         case UnarySqlOperator::BitwiseNot:
             {
             if (!operandTypeInfo.IsExactNumeric ())
                 {
-                ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid type in expression %s: Bitwise not operator expects a scalar exact numeric type expression", ToECSql().c_str());
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid type in expression %s: Unary operator expects an integral type expression", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
-            SetTypeInfo (operandTypeInfo);
             break;
             }
 
@@ -1018,6 +989,15 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing (ECSqlParseContext& ctx
     return FinalizeParseStatus::Completed;
     }
 
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool UnaryValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    parameterExp.SetTargetExpInfo(GetTypeInfo());
+    return true;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013

@@ -52,7 +52,7 @@ private:
     RangeClassRefExp const* m_classRefExp;
 
     ECSqlStatus ResolveColumnRef (ECSqlParseContext& ctx);
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     void SetClassRefExp (RangeClassRefExp const& classRefExp);
     void SetPropertyRef (DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp)
         {

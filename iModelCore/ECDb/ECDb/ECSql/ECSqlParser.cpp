@@ -85,7 +85,7 @@ unique_ptr<Exp> ECSqlParser::Parse (Utf8CP ecsql, ECSqlParseContext& parseContex
         return nullptr;
 
     //resolve types and references now that first pass parsing is done and all nodes are available
-    const ECSqlStatus stat = rootExp->FinalizeParsing(parseContext);
+    const ECSqlStatus stat = parseContext.FinalizeParsing(*rootExp);
     if (stat == ECSqlStatus::Success)
         return rootExp;
 

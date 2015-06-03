@@ -72,7 +72,7 @@ DEFINE_EXPR_TYPE(FromClause)
 private:
     void FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const* classRef) const;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "FromClause"; }
@@ -144,8 +144,9 @@ private:
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "LimitOffset"; }
 
-    virtual Exp::FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    static bool IsValidChildExp (ValueExp const& exp);
+    virtual Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const override;
+    static bool IsValidChildExp(ValueExp const& exp);
 public:
     explicit LimitOffsetExp (std::unique_ptr<ValueExp> limit, std::unique_ptr<ValueExp> offset = nullptr);
     ~LimitOffsetExp () {}
@@ -172,7 +173,7 @@ public:
 private:
     SortDirection m_direction;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override;
 
@@ -227,7 +228,7 @@ private:
     ECSqlStatus ReplaceAsteriskExpression (ECSqlParseContext& ctx, DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs);
     ECSqlStatus ReplaceAsteriskExpressions (ECSqlParseContext& ctx, RangeClassRefList const& rangeClassRefs);
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "Selection (aka SelectClause)"; }
@@ -276,7 +277,7 @@ private:
     int m_limitOffsetClauseIndex;
 
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override;
@@ -342,7 +343,6 @@ struct SubqueryExp : QueryExp
     {
     DEFINE_EXPR_TYPE(Subquery)
 private:
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "Subquery"; }
 
@@ -550,7 +550,7 @@ struct SubqueryValueExp : ValueExp
     DEFINE_EXPR_TYPE(SubqueryValue)
 
 private:
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override { ecsql.append(GetQuery()->ToECSql()); }
     virtual Utf8String _ToString() const override { return "SubqueryValue"; }
 

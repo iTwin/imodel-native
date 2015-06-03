@@ -133,13 +133,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     {
     ECSqlTestDataset dataset;
     Utf8CP ecsql = "SELECT CAST (S AS BINARY) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (Bi AS BINARY) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (S AS BINARY) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (PStructProp AS BINARY) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
@@ -152,7 +152,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (Bi AS BOOLEAN) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (1 AS BOOLEAN) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -167,10 +167,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (S AS BOOLEAN) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST ('1' AS BOOLEAN) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (P2D AS BOOLEAN) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
@@ -189,7 +189,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     ecsql = "SELECT CAST (B AS BOOL) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid, "Only keyword BOOLEAN supported.");
-
 
     ecsql = "SELECT CAST (Bi AS TIMESTAMP) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
@@ -253,7 +252,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     
     ecsql = "SELECT CAST (Bi AS DOUBLE) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (L AS DOUBLE) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -275,7 +274,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     
     ecsql = "SELECT CAST (Bi AS INT) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (S AS INT) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -300,7 +299,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     
     ecsql = "SELECT CAST (Bi AS LONG) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (L AS LONG) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);

@@ -20,14 +20,6 @@ Utf8CP const Exp::ASTERISK_TOKEN = "*";
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ExpCP Exp::GetParent () const
-    {
-    return m_parent;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
 Exp::Collection const& Exp::GetChildren () const
     {
     return m_children;
@@ -84,8 +76,8 @@ ECSqlStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
 
     if (!IsComplete ())
         {
-        auto stat = _FinalizeParsing (ctx, FinalizeParseMode::AfterFinalizingChildren);
-        BeAssert (stat != FinalizeParseStatus::NotCompleted && "Every expression is expected to be either completed or return an error from finalize parsing.");
+        auto stat = _FinalizeParsing(ctx, FinalizeParseMode::AfterFinalizingChildren);
+        BeAssert (GetType() == Type::Parameter || stat != FinalizeParseStatus::NotCompleted && "Every expression except for parameter exps is expected to be either completed or return an error from finalize parsing.");
         if (stat == FinalizeParseStatus::Completed)
             SetIsComplete ();
 
@@ -100,11 +92,18 @@ ECSqlStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
+// @bsimethod                                    Krischan.Eberle                    06/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus Exp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+bool Exp::TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
     {
-    return FinalizeParseStatus::Completed;
+    if (_TryDetermineParameterExpType(ctx, parameterExp))
+        return true;
+
+    Exp const* parentExp = GetParent();
+    if (parentExp != nullptr)
+        return parentExp->TryDetermineParameterExpType(ctx, parameterExp);
+
+    return false;
     }
 
 //-----------------------------------------------------------------------------------------

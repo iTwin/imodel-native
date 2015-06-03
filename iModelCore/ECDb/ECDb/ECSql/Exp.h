@@ -323,6 +323,7 @@ public:
 
 //forward declarations
 struct ECSqlParseContext;
+struct ParameterExp;
 
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
@@ -355,7 +356,6 @@ public:
         ECClassIdFunction,
         GroupBy,
         Having,
-        In,
         Insert,
         Join,
         JoinCondition,
@@ -513,29 +513,22 @@ protected:
     static const int UNSET_CHILDINDEX = -1;
 
 private:
-    Exp const* m_parent;
+    Exp* m_parent;
     mutable Exp::Collection m_children;
     bool m_isComplete;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode);
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) { return FinalizeParseStatus::Completed; }
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const { return false; }
     virtual Utf8String _ToECSql() const = 0;
     virtual Utf8String _ToString () const = 0;
 
 protected:
-    Exp ()
-        : m_parent (nullptr), m_isComplete (false)
-        {}
+    Exp () : m_parent (nullptr), m_isComplete (false) {}
 
-    void SetIsComplete ()
-        {
-        m_isComplete = true;
-        }
+    void SetIsComplete () { m_isComplete = true; }
 
     template <class TExp>
-    TExp const* GetChild (size_t index) const
-        {
-        return GetChildren ().Get<TExp> (index);
-        }
+    TExp const* GetChild (size_t index) const { return GetChildren ().Get<TExp> (index); }
 
     template <class TExp>
     TExp* GetChildP (size_t index) const
@@ -551,11 +544,13 @@ protected:
 public:
     virtual ~Exp () {}
 
-    ECSqlStatus FinalizeParsing (ECSqlParseContext& ctx);
+    ECSqlStatus FinalizeParsing (ECSqlParseContext&);
+    bool TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const;
+
     bool IsComplete () const {return m_isComplete;}
 
     virtual Type GetType() const = 0;
-    Exp const* GetParent () const;
+    Exp const* GetParent() const { return m_parent; }
     Collection const& GetChildren () const;
     size_t GetChildrenCount() const { return m_children.size();}
 
