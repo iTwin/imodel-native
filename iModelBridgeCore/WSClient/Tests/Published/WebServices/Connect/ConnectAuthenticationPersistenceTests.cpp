@@ -11,6 +11,7 @@
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include "ConnectTestsHelper.h"
 #include "StubLocalState.h"
+#include "StubSecureStore.h"
 #include "MockLocalState.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -19,8 +20,9 @@ using namespace ::testing;
 TEST_F (ConnectAuthenticationPersistenceTests, GetCredentials_SetCredentialsCalledOnOtherPersistenceWithSameLocalState_ReturnsSameCredentials)
     {
     StubLocalState localState;
-    ConnectAuthenticationPersistence p1 (&localState);
-    ConnectAuthenticationPersistence p2 (&localState);
+    auto secureStore = std::make_shared<StubSecureStore> ();
+    ConnectAuthenticationPersistence p1 (&localState, secureStore);
+    ConnectAuthenticationPersistence p2 (&localState, secureStore);
 
     p1.SetCredentials ({"A", "B"});
     EXPECT_EQ (Credentials ("A", "B"), p2.GetCredentials ());
@@ -29,8 +31,9 @@ TEST_F (ConnectAuthenticationPersistenceTests, GetCredentials_SetCredentialsCall
 TEST_F (ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalledOnOtherPersistenceOnOtherPersistenceWithSameLocalState_ReturnsSameToken)
     {
     StubLocalState localState;
-    ConnectAuthenticationPersistence p1 (&localState);
-    ConnectAuthenticationPersistence p2 (&localState);
+    auto secureStore = std::make_shared<StubSecureStore> ();
+    ConnectAuthenticationPersistence p1 (&localState, secureStore);
+    ConnectAuthenticationPersistence p2 (&localState, secureStore);
 
     auto token = StubSamlToken ();
     EXPECT_FALSE (token->AsString ().empty ());
