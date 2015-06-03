@@ -9,34 +9,6 @@
 
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
-/* POINTCLOUD_WIP_CoordSys
-using namespace Bentley::GeoCoordinates;
-*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Mathieu.Marchand  10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-/* POINTCLOUD_WIP_GR06 - This is probably useless in graphite06
-IPointCloudFileQueryPtr   IPointCloudFileQuery::CreateFileQuery(ElementHandleCR eh)
-    {
-    RefCountedPtr<PointCloudScene> pScene = PointCloudManager::GetInstance().GetScene (eh);
-
-    return pScene.get();
-    }
-*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Mathieu.Marchand  10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-/* POINTCLOUD_WIP_GR06 - This is probably useless in graphite06
-IPointCloudFileEditPtr   IPointCloudFileEdit::CreateFileEdit(EditElementHandleR eh)
-    {
-    RefCountedPtr<PointCloudScene> pScene = PointCloudManager::GetInstance().GetScene (eh);
-
-    return pScene.get();
-    }
-*/
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     1/2015
 //----------------------------------------------------------------------------------------
@@ -235,26 +207,10 @@ PointCloudQueryHandleP PointCloudScene::GetVisiblePointsQueryHandle() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin  12/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-/* POINTCLOUD_WIP_GR06 - SceneHandleDescr
-RefCountedPtr<SceneHandleDescr> PointCloudScene::GetSceneHandleDescr() const 
-    {
-    return m_pSceneDscr; 
-    }
-*/
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  09/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP PointCloudScene::_GetFileName() const
     {
-/* POINTCLOUD_WIP_GR06_SceneHandleDescr
-    if (m_pSceneDscr.IsNull ())
-        return PtVortex::SceneFile(GetSceneHandle());
-
-    return m_pSceneDscr->GetResolvedPath ().GetWCharCP ();
-*/
     return ptSceneFile(GetSceneHandle());
     }
 

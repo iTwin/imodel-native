@@ -105,5 +105,6 @@ enum class PointCloudStatus
     FileNotFound = 3,
     };
 
+//@}
 
 END_BENTLEY_BEPOINTCLOUD_NAMESPACE
