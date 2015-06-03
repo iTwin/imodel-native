@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/AllRelatedInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -99,9 +99,19 @@ void AllRelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
 bool AllRelatedInstanceNodesSpecification::GetGroupByClass (void) const { return m_groupByClass; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::SetGroupByClass (bool value) { m_groupByClass = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AllRelatedInstanceNodesSpecification::GetGroupByRelationship (void) const { return m_groupByRelationship; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::SetGroupByRelationship (bool value) { m_groupByRelationship = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -109,15 +119,29 @@ bool AllRelatedInstanceNodesSpecification::GetGroupByRelationship (void) const {
 bool AllRelatedInstanceNodesSpecification::GetGroupByLabel (void) const { return m_groupByLabel; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::SetGroupByLabel (bool value) { m_groupByLabel = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 int AllRelatedInstanceNodesSpecification::GetSkipRelatedLevel (void) const { return m_skipRelatedLevel; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::SetSkipRelatedLevel (int value) { m_skipRelatedLevel = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR AllRelatedInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::SetSupportedSchemas (WString value) { m_supportedSchemas = value; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
