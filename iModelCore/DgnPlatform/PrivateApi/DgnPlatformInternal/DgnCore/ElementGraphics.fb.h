@@ -19,6 +19,7 @@ struct DPoint2d;
 struct DVec3d;
 struct Transform;
 struct FaceSymbology;
+struct FaceSymbologyIndex;
 struct PointPrimitive;
 struct PointPrimitive2d;
 struct ArcPrimitive;
@@ -167,21 +168,49 @@ STRUCT_END(Transform, 96);
 
 MANUALLY_ALIGNED_STRUCT(8) FaceSymbology {
  private:
-  uint32_t index_;
+  uint8_t useColor_;
+  uint8_t useMaterial_;
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
+  int16_t __padding0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
   uint32_t color_;
-  double transparency_;
+  int64_t subCategoryId_;
   int64_t materialId_;
+  double transparency_;
+  DPoint2d uv_;
 
  public:
-  FaceSymbology(uint32_t index, uint32_t color, double transparency, int64_t materialId)
-    : index_(flatbuffers::EndianScalar(index)), color_(flatbuffers::EndianScalar(color)), transparency_(flatbuffers::EndianScalar(transparency)), materialId_(flatbuffers::EndianScalar(materialId)) { }
+  FaceSymbology(uint8_t useColor, uint8_t useMaterial, uint32_t color, int64_t subCategoryId, int64_t materialId, double transparency, const DPoint2d &uv)
+    : useColor_(flatbuffers::EndianScalar(useColor)), useMaterial_(flatbuffers::EndianScalar(useMaterial)), __padding0(0), color_(flatbuffers::EndianScalar(color)), subCategoryId_(flatbuffers::EndianScalar(subCategoryId)), materialId_(flatbuffers::EndianScalar(materialId)), transparency_(flatbuffers::EndianScalar(transparency)), uv_(uv) { (void)__padding0; }
 
-  uint32_t index() const { return flatbuffers::EndianScalar(index_); }
+  uint8_t useColor() const { return flatbuffers::EndianScalar(useColor_); }
+  uint8_t useMaterial() const { return flatbuffers::EndianScalar(useMaterial_); }
   uint32_t color() const { return flatbuffers::EndianScalar(color_); }
-  double transparency() const { return flatbuffers::EndianScalar(transparency_); }
+  int64_t subCategoryId() const { return flatbuffers::EndianScalar(subCategoryId_); }
   int64_t materialId() const { return flatbuffers::EndianScalar(materialId_); }
+  double transparency() const { return flatbuffers::EndianScalar(transparency_); }
+  const DPoint2d &uv() const { return uv_; }
 };
-STRUCT_END(FaceSymbology, 24);
+STRUCT_END(FaceSymbology, 48);
+
+MANUALLY_ALIGNED_STRUCT(4) FaceSymbologyIndex {
+ private:
+  uint32_t faceIndex_;
+  uint32_t symbIndex_;
+
+ public:
+  FaceSymbologyIndex(uint32_t faceIndex, uint32_t symbIndex)
+    : faceIndex_(flatbuffers::EndianScalar(faceIndex)), symbIndex_(flatbuffers::EndianScalar(symbIndex)) { }
+
+  uint32_t faceIndex() const { return flatbuffers::EndianScalar(faceIndex_); }
+  uint32_t symbIndex() const { return flatbuffers::EndianScalar(symbIndex_); }
+};
+STRUCT_END(FaceSymbologyIndex, 8);
 
 struct PointPrimitive : private flatbuffers::Table {
   const flatbuffers::Vector<const DPoint3d *> *coords() const { return GetPointer<const flatbuffers::Vector<const DPoint3d *> *>(4); }
@@ -317,19 +346,23 @@ inline flatbuffers::Offset<ArcPrimitive> CreateArcPrimitive(flatbuffers::FlatBuf
 struct BRepData : private flatbuffers::Table {
   const Transform *entityTransform() const { return GetStruct<const Transform *>(4); }
   const flatbuffers::Vector<uint8_t> *entityData() const { return GetPointer<const flatbuffers::Vector<uint8_t> *>(6); }
-  const flatbuffers::Vector<const FaceSymbology *> *faceAttachments() const { return GetPointer<const flatbuffers::Vector<const FaceSymbology *> *>(8); }
+  const flatbuffers::Vector<const FaceSymbology *> *symbology() const { return GetPointer<const flatbuffers::Vector<const FaceSymbology *> *>(8); }
+  const flatbuffers::Vector<const FaceSymbologyIndex *> *symbologyIndex() const { return GetPointer<const flatbuffers::Vector<const FaceSymbologyIndex *> *>(10); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<Transform>(verifier, 4 /* entityTransform */) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* entityData */) &&
            verifier.Verify(entityData()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* faceAttachments */) &&
-           verifier.Verify(faceAttachments()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* symbology */) &&
+           verifier.Verify(symbology()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* symbologyIndex */) &&
+           verifier.Verify(symbologyIndex()) &&
            verifier.EndTable();
   }
   bool has_entityTransform() const { return CheckField(4); }
   bool has_entityData() const { return CheckField(6); }
-  bool has_faceAttachments() const { return CheckField(8); }
+  bool has_symbology() const { return CheckField(8); }
+  bool has_symbologyIndex() const { return CheckField(10); }
 };
 
 struct BRepDataBuilder {
@@ -337,11 +370,12 @@ struct BRepDataBuilder {
   flatbuffers::uoffset_t start_;
   void add_entityTransform(const Transform *entityTransform) { fbb_.AddStruct(4, entityTransform); }
   void add_entityData(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> entityData) { fbb_.AddOffset(6, entityData); }
-  void add_faceAttachments(flatbuffers::Offset<flatbuffers::Vector<const FaceSymbology *>> faceAttachments) { fbb_.AddOffset(8, faceAttachments); }
+  void add_symbology(flatbuffers::Offset<flatbuffers::Vector<const FaceSymbology *>> symbology) { fbb_.AddOffset(8, symbology); }
+  void add_symbologyIndex(flatbuffers::Offset<flatbuffers::Vector<const FaceSymbologyIndex *>> symbologyIndex) { fbb_.AddOffset(10, symbologyIndex); }
   BRepDataBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   BRepDataBuilder &operator=(const BRepDataBuilder &);
   flatbuffers::Offset<BRepData> Finish() {
-    auto o = flatbuffers::Offset<BRepData>(fbb_.EndTable(start_, 3));
+    auto o = flatbuffers::Offset<BRepData>(fbb_.EndTable(start_, 4));
     return o;
   }
 };
@@ -349,9 +383,11 @@ struct BRepDataBuilder {
 inline flatbuffers::Offset<BRepData> CreateBRepData(flatbuffers::FlatBufferBuilder &_fbb,
    const Transform *entityTransform = 0,
    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> entityData = 0,
-   flatbuffers::Offset<flatbuffers::Vector<const FaceSymbology *>> faceAttachments = 0) {
+   flatbuffers::Offset<flatbuffers::Vector<const FaceSymbology *>> symbology = 0,
+   flatbuffers::Offset<flatbuffers::Vector<const FaceSymbologyIndex *>> symbologyIndex = 0) {
   BRepDataBuilder builder_(_fbb);
-  builder_.add_faceAttachments(faceAttachments);
+  builder_.add_symbologyIndex(symbologyIndex);
+  builder_.add_symbology(symbology);
   builder_.add_entityData(entityData);
   builder_.add_entityTransform(entityTransform);
   return builder_.Finish();

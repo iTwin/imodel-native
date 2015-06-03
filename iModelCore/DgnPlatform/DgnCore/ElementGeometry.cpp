@@ -888,6 +888,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
                 if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     saveFaceIso = true;
                     
+                // NOTE: Never want OpCode::BRepPolyfaceExact when split by face symbology...
                 if (attachments || saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge))
                     saveEdges = true;
                 break;
@@ -907,16 +908,16 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
             return;
             }
 
+        // NEEDSWORK: Add separate face attachments opcode to minimize hornswoggle!!!
+
         FlatBufferBuilder fbb;
 
-    //    auto faceAttachments = fbb.CreateVectorOfStructs ((FB::FaceSymbology*) ?, n?); // NEEDSWORK
         auto entityData = fbb.CreateVector (buffer, bufferSize);
 
         FB::BRepDataBuilder builder (fbb);
 
         builder.add_entityTransform ((FB::Transform*) &entity.GetEntityTransform());
         builder.add_entityData (entityData);
-    //    builder.add_faceAttachments (faceAttachments);
 
         auto mloc = builder.Finish();
 
@@ -927,73 +928,43 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
     // Store mesh representation for quick display or when parasolid isn't available...
     if (saveFacets)
         {
-        IFacetOptionsPtr       facetOpt = IFacetOptions::CreateForCurves();
-        IFacetTopologyTablePtr facetsPtr;
+        IFacetOptionsPtr  facetOpt = IFacetOptions::CreateForCurves();
 
-        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt))
+        if (nullptr != attachments)
             {
-            if (nullptr != attachments)
+            bvector<PolyfaceHeaderPtr> polyfaces;
+            bvector<ElemDisplayParams> params;
+
+            WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
+
+            for (size_t i=0; i < polyfaces.size(); i++)
                 {
-                T_FaceAttachmentsMap const& faceAttachmentsMap = attachments->_GetFaceAttachmentsMap();
+                if (0 == polyfaces[i]->GetPointCount())
+                    continue;
 
-                bvector<PolyfaceHeaderPtr>             polyfaces;
-                bvector<FaceAttachment const*>         attachments;
-                bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
-                bmap<int, PolyfaceHeaderCP>            faceToPolyfaces;
+                bvector<Byte> buffer;
 
-                for (T_FaceAttachmentsMap::const_iterator curr = faceAttachmentsMap.begin(); curr != faceAttachmentsMap.end(); ++curr)
-                    {
-                    bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(curr->second);
+                BentleyGeometryFlatBuffer::GeometryToBytes(*polyfaces[i], buffer);
 
-                    if (found == uniqueFaceAttachments.end())
-                        {
-                        PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+                if (0 == buffer.size())
+                    continue;
 
-                        attachments.push_back(&curr->second);
-                        polyfaces.push_back(polyface);
-                        faceToPolyfaces[curr->first] = uniqueFaceAttachments[curr->second] = polyface.get();
-                        }
-                    else
-                        {
-                        faceToPolyfaces[curr->first] = found->second;
-                        }
-                    }
-
-                if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *facetOpt))
-                    {
-                    for (size_t i=0; i<polyfaces.size(); i++)
-                        {
-                        bvector<Byte> buffer;
-
-                        polyfaces[i]->Transform (entity.GetEntityTransform());
-                        BentleyGeometryFlatBuffer::GeometryToBytes(*polyfaces[i], buffer);
-
-                        if (0 == buffer.size())
-                            continue;
-
-                        ElemDisplayParams params;
-
-                        attachments[i]->ToElemDisplayParams(params);
-                        Append(params);
-                        Append(Operation (OpCode::BRepPolyface, (uint32_t) buffer.size(), &buffer.front()));
-                        }
-                    }
+                Append(params[i]);
+                Append(Operation (OpCode::BRepPolyface, (uint32_t) buffer.size(), &buffer.front()));
                 }
-            else
+            }
+        else
+            {
+            PolyfaceHeaderPtr polyface = WireframeGeomUtil::CollectPolyface (entity, m_db, *facetOpt);
+
+            if (polyface.IsValid())
                 {
-                PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+                bvector<Byte> buffer;
 
-                if (SUCCESS == IFacetTopologyTable::ConvertToPolyface (*polyface, *facetsPtr, *facetOpt))
-                    {
-                    bvector<Byte> buffer;
+                BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer);
 
-                    polyface->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
-                    polyface->Transform (entity.GetEntityTransform());
-                    BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer);
-
-                    if (0 != buffer.size())
-                        Append (Operation (saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact, (uint32_t) buffer.size(), &buffer.front()));
-                    }
+                if (0 != buffer.size())
+                    Append (Operation (saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact, (uint32_t) buffer.size(), &buffer.front()));
                 }
             }
         }

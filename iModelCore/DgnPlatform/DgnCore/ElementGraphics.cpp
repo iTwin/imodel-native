@@ -1312,8 +1312,7 @@ virtual void _AnnounceElemDisplayParams (ElemDisplayParams const& params) overri
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) override
     {
-    FaceAttachment attachment(m_currentDisplayParams);
-    bmap<FaceAttachment, CurveVectorP>::iterator found = m_uniqueAttachments.find(attachment);
+    bmap<FaceAttachment, CurveVectorP>::iterator found = m_uniqueAttachments.find(m_currentDisplayParams);
 
     if (found == m_uniqueAttachments.end())
         return SUCCESS;
@@ -1333,27 +1332,17 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics (ViewContextR context) override
     {
-    IFaceMaterialAttachmentsCP attachments = m_entity.GetFaceMaterialAttachments();
+    T_FaceAttachmentsVec const& faceAttachmentsVec = m_entity.GetFaceMaterialAttachments()->_GetFaceAttachmentsVec();
 
-    if (nullptr == attachments)
-        return; // No reason to call this method when there aren't attachments...
-
-    T_FaceAttachmentsMap const& faceAttachmentsMap = attachments->_GetFaceAttachmentsMap();
-
-    for (T_FaceAttachmentsMap::const_iterator curr = faceAttachmentsMap.begin(); curr != faceAttachmentsMap.end(); ++curr)
+    for (FaceAttachment attachment : faceAttachmentsVec)
         {
-        bmap<FaceAttachment, CurveVectorP>::iterator found = m_uniqueAttachments.find(curr->second);
-
-        if (found != m_uniqueAttachments.end())
-            continue;
-
         CurveVectorPtr    curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-        ElemDisplayParams params;
+        ElemDisplayParams faceParams;
 
-        curr->second.ToElemDisplayParams(params);
-        m_params.push_back(params);
+        attachment.ToElemDisplayParams(faceParams);
+        m_params.push_back(faceParams);
         m_curves.push_back(curve);
-        m_uniqueAttachments[curr->second] = curve.get();
+        m_uniqueAttachments[attachment] = curve.get();
         }
 
     WireframeGeomUtil::Draw (m_entity, context, m_includeEdges, m_includeFaceIso);
@@ -1362,13 +1351,86 @@ virtual void _OutputGraphics (ViewContextR context) override
 }; // FaceAttachmentRuleCollector
 
 /*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  03/14
+* @bsimethod                                                    Brien.Bastings  06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::CollectCurves (ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<CurveVectorPtr>& curves, bvector<ElemDisplayParams>& params, bool includeEdges, bool includeFaceIso)
     {
-    FaceAttachmentRuleCollector rules (entity, curves, params, includeEdges, includeFaceIso);
+    if (nullptr == entity.GetFaceMaterialAttachments())
+        return; // No reason to call this method when there aren't attachments...
 
-    ElementGraphicsOutput::Process (rules, dgnDb);
+    FaceAttachmentRuleCollector rules(entity, curves, params, includeEdges, includeFaceIso);
+
+    ElementGraphicsOutput::Process(rules, dgnDb);
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr WireframeGeomUtil::CollectPolyface (ISolidKernelEntityCR entity, DgnDbR dgnDb, IFacetOptionsR options)
+    {
+    IFacetTopologyTablePtr facetsPtr;
+
+    if (SUCCESS != DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody(facetsPtr, entity, options))
+        return nullptr;
+
+    PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+
+    if (SUCCESS != IFacetTopologyTable::ConvertToPolyface(*polyface, *facetsPtr, options))
+        return nullptr;
+
+    polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
+    polyface->Transform(entity.GetEntityTransform());
+
+    return polyface;
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void WireframeGeomUtil::CollectPolyfaces (ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<ElemDisplayParams>& params, IFacetOptionsR options)
+    {
+    if (nullptr == entity.GetFaceMaterialAttachments())
+        return; // No reason to call this method when there aren't attachments...
+
+    IFacetTopologyTablePtr facetsPtr;
+
+    if (SUCCESS != DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody(facetsPtr, entity, options))
+        return;
+
+    T_FaceToSubElemIdMap const& faceToSubElemIdMap = entity.GetFaceMaterialAttachments()->_GetFaceToSubElemIdMap();
+    T_FaceAttachmentsVec const& faceAttachmentsVec = entity.GetFaceMaterialAttachments()->_GetFaceAttachmentsVec();
+    bmap<int, PolyfaceHeaderCP> faceToPolyfaces;
+    bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
+
+    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+        {
+        FaceAttachment faceAttachment = faceAttachmentsVec.at(curr->second.second);
+        bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(faceAttachment);
+
+        if (found == uniqueFaceAttachments.end())
+            {
+            PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+            ElemDisplayParams faceParams;
+
+            faceAttachment.ToElemDisplayParams(faceParams);
+            params.push_back(faceParams);
+            polyfaces.push_back(polyface);
+            faceToPolyfaces[curr->first] = uniqueFaceAttachments[faceAttachment] = polyface.get();
+            }
+        else
+            {
+            faceToPolyfaces[curr->first] = found->second;
+            }
+        }
+
+    if (SUCCESS != IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, options))
+        return;
+
+    for (size_t i=0; i<polyfaces.size(); i++)
+        {
+        polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
+        polyfaces[i]->Transform(entity.GetEntityTransform());
+        }
     }
 
 /*----------------------------------------------------------------------------------*//**

@@ -17,11 +17,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //__PUBLISH_SECTION_END__
 struct EXPORT_VTABLE_ATTRIBUTE WireframeGeomUtil
 {
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidPrimitiveCR, DgnDbR dgnDb, bool includeEdges = true, bool includeFaceIso = false);
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (MSBsplineSurfaceCR, DgnDbR dgnDb, bool includeEdges = true, bool includeFaceIso = false);
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidKernelEntityCR, DgnDbR dgnDb, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidPrimitiveCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (MSBsplineSurfaceCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves (ISolidKernelEntityCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
 
-DGNPLATFORM_EXPORT static void CollectCurves (ISolidKernelEntityCR, DgnDbR dgnDb, bvector<CurveVectorPtr>& curves, bvector<ElemDisplayParams>& params, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr CollectPolyface (ISolidKernelEntityCR, DgnDbR, IFacetOptionsR);
+
+DGNPLATFORM_EXPORT static void CollectCurves (ISolidKernelEntityCR, DgnDbR, bvector<CurveVectorPtr>& curves, bvector<ElemDisplayParams>& params, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static void CollectPolyfaces (ISolidKernelEntityCR, DgnDbR, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<ElemDisplayParams>& params, IFacetOptionsR);
 
 DGNPLATFORM_EXPORT static void Draw (ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 DGNPLATFORM_EXPORT static void Draw (MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
