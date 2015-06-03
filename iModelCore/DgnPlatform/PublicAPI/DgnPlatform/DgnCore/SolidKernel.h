@@ -15,6 +15,54 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!< Reference counted type to manage the life-cycle of the IFaceMaterialAttachments.
+
+//=======================================================================================
+//! @private
+//! Facet table per-face material and color inforation.
+//=======================================================================================
+struct FaceAttachment
+{
+private:
+
+DgnCategoryId       m_categoryId;
+DgnSubCategoryId    m_subCategoryId;
+ColorDef            m_color;
+double              m_transparency;
+MaterialCP          m_material;
+DPoint2d            m_uv;
+
+public:
+
+DGNPLATFORM_EXPORT FaceAttachment ();
+DGNPLATFORM_EXPORT FaceAttachment (ElemDisplayParamsCR);
+
+DGNPLATFORM_EXPORT void ToElemDisplayParams (ElemDisplayParamsR) const; // NOTE: ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams if you need anything more than color/transparency/category.
+DGNPLATFORM_EXPORT void ToElemMatSymb (ElemMatSymbR) const; // NOTE: For QvOutput use only, other callers should use ToElemDisplayParams and FromElemDisplayParams/CookDisplayParams.
+
+DGNPLATFORM_EXPORT bool operator== (struct FaceAttachment const&) const;
+DGNPLATFORM_EXPORT bool operator< (struct FaceAttachment const&) const;
+
+}; // FaceAttachment
+
+//! @private
+typedef bmap <uint32_t, FaceAttachment> T_FaceAttachmentsMap;
+//! @private
+typedef bmap <uint32_t, int32_t> T_FaceToSubElemIdMap;
+
+//=======================================================================================
+//! @private
+//! Per-face material and color override
+//=======================================================================================
+struct IFaceMaterialAttachments : public IRefCounted
+{
+virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap () const = 0;
+virtual T_FaceAttachmentsMap const& _GetFaceAttachmentsMap () const = 0;
+
+virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR () = 0;
+virtual T_FaceAttachmentsMap& _GetFaceAttachmentsMapR () = 0;
+};
+
 typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference counted type to manage the life-cycle of the ISolidKernelEntity.
 
 //=======================================================================================
@@ -25,7 +73,6 @@ typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference 
 //! blending, and hollowing. Typically only solids and non-planar sheet bodies are persisted
 //! as BRep elements. A wire body or planar sheet body can be efficiently represented as
 //! a CurveVector.
-//! @bsiclass 
 //=======================================================================================
 struct ISolidKernelEntity : Bentley::IRefCounted
 {
@@ -39,49 +86,32 @@ enum KernelEntityType
     EntityType_Minimal = 3, //!< Body consisting of a single vertex.
     };
 
-//__PUBLISH_SECTION_END__
-//__PUBLISH_SCOPE_1_START__
-//! For use with SolidsKernelAdmin::_SaveEntityToMemory/_RestoreEntityFromMemory for persistent storage.
-enum SolidKernelType
-    {
-    SolidKernel_PSolid = 0, //!< Parasolid kernel BRep.
-    SolidKernel_ACIS   = 1, //!< ACIS kernel BRep.
-    };
-
-//! For use with SolidsKernelAdmin::_SaveEntityToMemory/_RestoreEntityFromMemory for persistent storage.
-enum SolidDataVersion
-    {
-    DataVersion_PSolid = 120, //!< Transmit schema version used to persist Parasolid data in a dgn file.
-    DataVersion_ACIS   = 600, //!< Value to derive version used to persist ACIS data in a dgn file.
-    };
-
-//! For use with SolidsKernelAdmin::_QueryEntityData to answer simple yes/no queries.
-enum KernelEntityQuery
-    {
-    EntityQuery_HasCurvedFaceOrEdge = 0, //!< Check if body has only planar faces and linear edges.
-    EntityQuery_HasHiddenEdge       = 1, //!< Check if body has at least one edge with hidden attribute.
-    EntityQuery_HasHiddenFace       = 2, //!< Check if body has at least one face with hidden attribute.
-    EntityQuery_HasOnlyPlanarFaces  = 3, //!< Check if body has only planar faces.
-    };
-
 protected:
 
-virtual bool                    _IsEqual (ISolidKernelEntityCR) const = 0;
-virtual KernelEntityType        _GetEntityType () const = 0;
-virtual TransformCR             _GetEntityTransform () const = 0;
-virtual void                    _SetEntityTransform (TransformCR) = 0;
+//! @private
+virtual bool _IsEqual (ISolidKernelEntityCR) const = 0;
+//! @private
+virtual KernelEntityType _GetEntityType () const = 0;
+//! @private
+virtual TransformCR _GetEntityTransform () const = 0;
+//! @private
+virtual void _SetEntityTransform (TransformCR) = 0;
+//! @private
+virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
+//! @private
+virtual bool _InitFaceMaterialAttachments(ElemDisplayParamsCP) = 0;
+//! @private
+virtual ISolidKernelEntityPtr _Clone() const = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
 
 //! Compare entities to see if they refer to the same body.
 //! @return true if entities are equal.
-DGNPLATFORM_EXPORT bool IsEqual (ISolidKernelEntityCR) const;
+bool IsEqual (ISolidKernelEntityCR entity) const {return _IsEqual(entity);}
 
 //! Get the body type for this entity.
 //! @return The solid kernel entity type.
-DGNPLATFORM_EXPORT KernelEntityType GetEntityType () const;
+KernelEntityType GetEntityType() const {return _GetEntityType();}
 
 //! Get the body to uor transform for this entity. This transform can have
 //! translation, rotation, and scale. A distance of 1.0 in solid kernel coordinates
@@ -94,22 +124,28 @@ DGNPLATFORM_EXPORT KernelEntityType GetEntityType () const;
 //! allows for a solid that will typically have a basis point of 0,0,0 to be displayed at 
 //! any uor location in a dgn model.
 //! @return The solid kernel to uor transform for the entity.
-DGNPLATFORM_EXPORT TransformCR GetEntityTransform () const;
+TransformCR GetEntityTransform() const {return _GetEntityTransform();}
 
 //! Changes the solid to uor transform for the entity.
 //! @param[in] transform The new solid to uor transform.
-DGNPLATFORM_EXPORT void SetEntityTransform (TransformCR transform);
+void SetEntityTransform (TransformCR transform) {return _SetEntityTransform(transform);}
 
 //! PreMultiply the entity transform by the supplied (solid) transform
 //! @param[in] uorTransform The transform to pre-multiply.
-DGNPLATFORM_EXPORT void PreMultiplyEntityTransformInPlace (TransformCR uorTransform);
+void PreMultiplyEntityTransformInPlace (TransformCR uorTransform) {_SetEntityTransform(Transform::FromProduct(uorTransform, _GetEntityTransform()));}
 
 //! PostMultiply the entity transform by the supplied (solid) transform
 //! @param[in] solidTransform The transform to post-multiply.
-DGNPLATFORM_EXPORT void PostMultiplyEntityTransformInPlace (TransformCR solidTransform);
+void PostMultiplyEntityTransformInPlace (TransformCR solidTransform) {_SetEntityTransform(Transform::FromProduct(_GetEntityTransform(), solidTransform));}
+
+//! Optional per-face color/material overrides.
+IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMaterialAttachments();}
+
+//! Initialize per-face color/material using the supplied ElemDisplayParams or clear if nullptr.
+bool InitFaceMaterialAttachments(ElemDisplayParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
 
 //! Create deep copy of this ISolidKernelEntity.
-DGNPLATFORM_EXPORT ISolidKernelEntityPtr Clone () const;
+ISolidKernelEntityPtr Clone() const {return _Clone();}
 
 }; // ISolidKernelEntity
 
@@ -120,7 +156,6 @@ typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to 
 //! single face, edge, or vertex of a solid, sheet, or wire body. A sub-entity only
 //! remains valid for as long as the ISolidKernelEntity exists. Modifications to the
 //! ISolidKernelEntity may also invalidate a sub-entity, ex. edge is blended away.
-//! @bsiclass 
 //=======================================================================================
 struct ISubEntity : Bentley::IRefCounted
 {
@@ -133,107 +168,28 @@ enum SubEntityType
     SubEntityType_Vertex  = (1 << 2), //!< A single point.
     };
 
-//__PUBLISH_SECTION_END__
-//__PUBLISH_SCOPE_1_START__
-//! For use with SolidsKernelAdmin::_QuerySubEntityData to answer simple yes/no queries.
-enum SubEntityQuery
-    {
-    SubEntityQuery_IsPlanarFace = 1, //!< Check if face sub-entity has as planar surface.
-    SubEntityQuery_IsSmoothEdge = 2, //!< Check if edge sub-entity is smooth by comparing the face normals along the edge.
-    };
-
 protected:
 
-virtual BentleyStatus   _ToString (WStringR subEntityStr) const = 0;
-virtual bool            _IsEqual (ISubEntityCR) const = 0;
-virtual SubEntityType   _GetSubEntityType () const = 0;
+//! @private
+virtual bool _IsEqual (ISubEntityCR) const = 0;
+//! @private
+virtual SubEntityType _GetSubEntityType() const = 0;
 
-public:
-
-//! Represent the sub-entity as a persistent topological id string.
-DGNPLATFORM_EXPORT BentleyStatus ToString (WStringR subEntityStr) const;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
 
 //! Compare sub-entities to see if they refer to the same topology.
 //! @return true if entities are equal.
-DGNPLATFORM_EXPORT bool IsEqual (ISubEntityCR) const;
+bool IsEqual (ISubEntityCR subEntity) const {return _IsEqual(subEntity);}
 
 //! Get the topology type for this sub-entity.
 //! @return The sub-entity type.
-DGNPLATFORM_EXPORT SubEntityType GetSubEntityType () const;
+SubEntityType GetSubEntityType() const {return _GetSubEntityType();}
 
 }; // ISubEntity
 
-//__PUBLISH_SECTION_END__
 //=======================================================================================
-// @bsiclass 
-//=======================================================================================
-struct BRepSubEntityTopo : IElemTopology
-{
-uint32_t m_entityTag;
-
-BRepSubEntityTopo () {m_entityTag = 0;}
-explicit BRepSubEntityTopo (BRepSubEntityTopo const& from) {m_entityTag = from.m_entityTag;}
-virtual BRepSubEntityTopo* _Clone () const override {return new BRepSubEntityTopo (*this);}
-}; // BRepSubEntityTopo
-//__PUBLISH_SECTION_START__
-
-//__PUBLISH_SECTION_END__
-//__PUBLISH_SCOPE_1_START__
-//=======================================================================================
-// @bsiclass Facet table per-face material and color inforation.
-//=======================================================================================
-struct FaceAttachment
-{
-private:
-
-DgnCategoryId   m_category;
-ColorDef        m_color;
-double          m_transparency;
-MaterialCP      m_material;
-
-public:
-
-DGNPLATFORM_EXPORT FaceAttachment ();
-DGNPLATFORM_EXPORT FaceAttachment (ElemDisplayParamsCR, ViewContextR);
-
-DGNPLATFORM_EXPORT void ToElemDisplayParams (ElemDisplayParamsR) const; // NOTE: ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams if you need anything more than color/transparency/level.
-DGNPLATFORM_EXPORT void ToElemMatSymb (ElemMatSymbR) const; // NOTE: For QvOutput use only, other callers should use ToElemDisplayParams and FromElemDisplayParams/CookDisplayParams.
-
-DGNPLATFORM_EXPORT bool operator== (struct FaceAttachment const&) const;
-DGNPLATFORM_EXPORT bool operator< (struct FaceAttachment const&) const;
-
-}; // FaceAttachment
-
-typedef bmap <int, FaceAttachment> T_FaceAttachmentsMap;
-typedef bmap <int, int> T_FaceToSubElemIdMap;
-
-//__PUBLISH_SECTION_START__
-//=======================================================================================
-// Per-face material and color override
-//=======================================================================================
-struct IFaceMaterialAttachments : public IRefCounted
-{
-//__PUBLISH_SECTION_END__
-//__PUBLISH_SCOPE_1_START__
-virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap () const = 0;
-virtual T_FaceAttachmentsMap const& _GetFaceAttachmentsMap () const = 0;
-
-virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR () = 0;
-virtual T_FaceAttachmentsMap& _GetFaceAttachmentsMapR () = 0;
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-};
-
-typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr;
-
-//__PUBLISH_SECTION_END__
-//__PUBLISH_SCOPE_1_START__
-//=======================================================================================
-// @bsiclass Wrapper class around facets that at least act like Parasold fin tables.
+//! @private
+//! Wrapper class around facets that at least act like Parasold fin tables.
 //=======================================================================================
 struct IFacetTopologyTable : Bentley::IRefCounted
 {
@@ -320,5 +276,4 @@ IFacetOptionsCR                 facetOptions
 
 typedef RefCountedPtr<IFacetTopologyTable> IFacetTopologyTablePtr;
 
-//__PUBLISH_SECTION_START__
 END_BENTLEY_DGNPLATFORM_NAMESPACE

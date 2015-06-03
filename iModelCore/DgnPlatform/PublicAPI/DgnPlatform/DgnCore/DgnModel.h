@@ -28,11 +28,12 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct SheetModelHandler;
 
 //=======================================================================================
+//! A map whose key is DgnElementId and whose data is DgnElementCPtr
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
     {
-    void Add(DgnElementCR el) 
+    void Add(DgnElementCR el)
         {
         DgnElementId  id = el.GetElementId();
         if (!id.IsValid())
@@ -44,13 +45,16 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
         }
     };
 
+/** @addtogroup DgnModelGroup DgnModels
+@ref PAGE_ModelOverview 
+*/
 
 //========================================================================================
 //! Application-defined object that is stored with a DgnModel. This object is notified as significant events occur
-//! for its "host" DgnModel. By creating a subclass of this class, applications can maintain relevant information about
+//! for its "host" DgnModel. Create a subclass of this class to maintain relevant information about
 //! a DgnModel with the DgnModel for efficient lookup and lifecycle management.
+//! @ingroup DgnModelGroup
 //! @see DgnModel::AddAppData
-//! @bsiclass
 //=======================================================================================
 struct DgnModelAppData
     {
@@ -59,7 +63,7 @@ struct DgnModelAppData
     //! A unique Key to identify each subclass of DgnModelAppData.
     struct Key : BeSQLite::AppDataKey {};
 
-    //! Override this method to be notified when host DgnModel is about to be deleted from memory or when this appdata is being dropped from the host model.
+    //! Override this method to be notified when host DgnModel is about to be deleted from memory or when this DgnModelAppData is being dropped from the host model.
     //! @note The persistent DgnModel is not being deleted, just this in-memory copy of it.
     virtual void _OnCleanup (DgnModelR host) = 0;
 
@@ -73,17 +77,17 @@ struct DgnModelAppData
     //! Override this method to be notified after host DgnModel has been emptied. Won't be called unless #_OnEmpty returns false.
     virtual bool _OnEmptied (DgnModelR host) {return false;}
 
-    //! Override this method to be notified before the persistent MicroStationModel is marked for delete. The actual delete happens when the DgnFile
-    //! holding the DgnModel is closed.
+    //! Override this method to be notified before the DgnModel is marked for delete.
     virtual void _OnModelDelete (DgnModelR host) {}
 
-    //! Override this method to be notified after the persistent MicroStationModel is undeleted.
+    //! Override this method to be notified after the DgnModel is undeleted.
     virtual void _OnModelUnDelete (DgnModelR host) {}
     };
 
 //=======================================================================================
 //! A DgnModel represents a model in memory and may hold references to elements that belong to it.
-//! @bsiclass                                                     KeithBentley    10/00
+//! @ingroup DgnModelGroup
+// @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     {
@@ -94,7 +98,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
     //=======================================================================================
     //! The properties for a DgnModel.
-    //! @bsiclass
+    //! @ingroup DgnModelGroup
     //=======================================================================================
     struct Properties
     {
@@ -168,17 +172,20 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     };
 
     //=======================================================================================
-    // @bsiclass
+    //! Parameters to create new instances of DgnModel.
+    //! @ingroup DgnModelGroup
     //=======================================================================================
     struct CreateParams
     {
-    DgnDbR      m_dgndb;
-    DgnModelId  m_id;
-    DgnClassId  m_classId;
-    Utf8String  m_name;
-    CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DgnModelId id=DgnModelId()) : m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name) {}
+        DgnDbR      m_dgndb;
+        DgnModelId  m_id;
+        DgnClassId  m_classId;
+        Utf8String  m_name;
+        Properties  m_props;
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), DgnModelId id=DgnModelId()) :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props) {}
     };
-    
+
 protected:
     typedef BeSQLite::AppDataList<DgnModelAppData, DgnModelAppData::Key, DgnModelR> T_AppDataList;
 
@@ -196,8 +203,8 @@ protected:
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
 
-    DGNPLATFORM_EXPORT virtual DgnModelPtr Duplicate(Utf8CP newName) const;
-    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);
+    DGNPLATFORM_EXPORT virtual DgnModelPtr Duplicate(Utf8CP newName) const; //!< @private
+    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
     virtual DgnModelType _GetModelType() const = 0;
     virtual DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const = 0;
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;
@@ -214,6 +221,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnModelFillComplete();
+    DGNPLATFORM_EXPORT virtual DgnFileStatus _FillModel();
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
@@ -240,9 +248,9 @@ public:
     //! Graphics in the scene must be defined in the DgnDb's coordinate system.
     //! The implementation must transform external data into the coordinate system of the DgnDb as necessary before adding graphics to the scene.
     //! <h2>Displaying external data using progressive display</h2>
-    //! An implementation of _AddGraphicsToScene is required to be very fast. If some external data is not immediately available, then the implementation should 
+    //! An implementation of _AddGraphicsToScene is required to be very fast. If some external data is not immediately available, then the implementation should
     //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
-    //! See DgnViewport::ScheduleProgressiveDisplay for how to register for progressive display. 
+    //! See DgnViewport::ScheduleProgressiveDisplay for how to register for progressive display.
     virtual void _AddGraphicsToScene(ViewContextR) {}
 
     bool NotifyOnEmpty();
@@ -260,45 +268,40 @@ public:
     DGNPLATFORM_EXPORT double GetSubPerMaster() const;
     DGNPLATFORM_EXPORT DPoint3d GetGlobalOrigin() const;
 
-    /** @name Filling */
-    /** @{ */
-    //! Empty the contents of this model.
+    //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel.
     DGNPLATFORM_EXPORT void Empty();
 
-    //! Make sure this model is filled.
-    DGNPLATFORM_EXPORT DgnFileStatus FillModel();
+    //! Load all elements of this DgnModel.
+    //! @note if this DgnModel is already filled, this method does nothing and returns DGNFILE_STATUS_Success.
+    DgnFileStatus FillModel() {return _FillModel();}
 
-    //! Determine whether this model has been "filled" from disk or not.
-    //! @return true if the model is filled.
+    //! Determine whether this DgnModel has been "filled" from disk or not.
+    //! @return true if the DgnModel is filled.
     bool IsFilled() const {return m_wasFilled;}
 
-    //! Get the number of elements in this model.
-    //! @return the number of elements in this model.
-    //! @note The model must be filled before calling this method.
+    //! Get the number of elements in this DgnModel.
+    //! @return the number of elements in this DgnModel.
+    //! @note The DgnModel must be filled before calling this method.
     //! @see FillSections
     uint32_t CountElements() const {return (uint32_t) m_elements.size();}
-    /** @} */
 
-    /** @name Finding Elements */
-    /** @{ */
-    //! Find a DgnElementP in this model by DgnElementId.
+    //! Find a DgnElementP in this DgnModel by DgnElementId.
     //! @return DgnElementP of element with \a id, or NULL.
     DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id);
-    /** @} */
 
-    //! Query if this is a 3D model
+    //! Determine whether this is a 3D DgnModel
     bool Is3d() const {return _Is3d();}
 
-    //! Get the range of all visible elements in the model.
+    //! Get the range of all visible elements in the DgnModel.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
 
-    //! Get the Properties for this model.
+    //! Get the Properties for this DgnModel.
     Properties& GetPropertiesR() {return m_properties;}
 
-    //! Get the Properties for this model.
+    //! Get the Properties for this DgnModel.
     Properties const& GetProperties() const {return m_properties;}
 
-    //! Get the name of this model
+    //! Get the name of this DgnModel
     Utf8CP GetModelName() const {return m_name.c_str();}
     DgnModelType GetModelType() const {return _GetModelType();}
     DgnClassId GetClassId() const {return m_classId;}
@@ -347,6 +350,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : DgnModel
@@ -363,6 +367,7 @@ public:
 
 //=======================================================================================
 //! A DgnModel2d is a infinite planar model. Coordinates values are X,Y.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : DgnModel
@@ -387,6 +392,7 @@ public:
     };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
@@ -402,6 +408,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 //! @private
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
@@ -418,7 +425,8 @@ public:
 };
 
 //=======================================================================================
-//! A GraphicsModel2d is a 2D model that is used for general purpose graphics. It does not a position in phsyical space.
+//! A GraphicsModel2d is a DgnModel2d that does not have any relationship to phsyical space.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Sam.Wilson  05/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2d : DgnModel2d
@@ -435,90 +443,82 @@ public:
     };
 
 //=======================================================================================
-//! A PlanarPhysicalModel is a infinite planar model that is positioned in physical space.
+//! A PlanarPhysicalModel is an infinite planar model that subdivides physical space into two halves. The plane of a
+//! PhysicalPlanar model may be mapped into physical space in non-linear way, but every finite point in physical space is
+//! either "in front" or "in back" of the plane. 
+//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional. 
+//! Also note that any (2d) point on a PlanarPhysicalModel corresponds to a single point in physical space.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
 {
     DEFINE_T_SUPER(DgnModel2d)
 
-    Transform m_worldTrans;  // positions XY model coordinates into XYZ physical coordinates
-
 protected:
-    void _FromPropertiesJson(Json::Value const&) override;
-    void _ToPropertiesJson(Json::Value&) const override;
     DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::World;}
     DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
     PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
-
 public:
-    PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {m_worldTrans.InitIdentity();}
-
-    Transform GetTransformToWorld() const {return m_worldTrans;} //!< Returns the transform FROM a local coordinate system TO world coordinates.
-    void SetTransformToWorld(TransformCR trans) {m_worldTrans=trans;}
+    PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
-//! A SectionDrawingModel represents a plane in physical space. The SectionDrawingModel contains
-//! graphics that were computed in some way by intersecting physical models with the drawing model plane.
-//! SectionDrawingModel can have one or more convex clip plane sets that can be used to clip a
-//! physical view in order to display the drawing.
-//! SectionDrawingModels can also contain 2-D annotation elements.
+//! A SectionDrawingModel is a PlanarPhysicalModel that is mapped into physical space such that the vertical direction (Y
+//! vector) of the SectionDrawingModel is constant in physical space. That is, physical space is divided in half (cut) by a
+//! series of line segments, continuous and monotonically increasing along the X axis, in the XZ plane of the drawing. This
+//! is called the "section plane", and the line segments are called the "section lines". In AEC section drawings, a further
+//! restriction is that the section lines always parallel but may be disjoint (some mechanical section drawings allow
+//! continuous but non-parallel section lines). Physical space in the positive Z direction of the section plane is called
+//! "in front" of the section plane, and space in negative Z is called "behind" the section plane.
+//! <p> All of the graphics in a SectionDrawingModel are 2d elements. Some elements are
+//! computed by intersecting the section plane with elements in some physical models according to some rules. These
+//! elements are called "section graphics". Some elements in the SectionDrawingModel are computed by projecting element in
+//! front the section plane onto the section plane according to some rules. These elements are called "forward graphics".
+//! Other elements in the SectionDrawingModel are computed by projecting element behind the section plane onto the section
+//! plane according to some rules. These elements are called "reverse graphics". Lastly, the SectionDrawingModel may contain
+//! elements that are pure annotation placed by the user or created by other rules.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
     {
     DEFINE_T_SUPER(PlanarPhysicalModel)
 
-protected:
-    DRange1d m_zrange; // range of Z values of non-planar proxy graphics such as "forward" visible edges in drawing's LCS.
-    double m_annotationScale; // the intended viewing scale of annotations in this drawing
-
-    void _FromPropertiesJson(Json::Value const&) override;
-    void _ToPropertiesJson(Json::Value&) const override;
-    DRange1d GetZRange() const {return m_zrange;}
-
 public:
-    SectionDrawingModel(CreateParams const& params) : T_Super(params)
-        {
-        m_zrange.InitNull();
-        m_annotationScale = 1.0;
-        }
-
-    //! Query and load the sectioning view that was used to generate this drawing.
-    //! @return an invalid pointer if this drawing was not generated or if the section view cannot be found or loaded.
-    DGNPLATFORM_EXPORT SectioningViewControllerPtr GetSourceView();
-
-public:
-
-    Transform GetFlatteningMatrix (double zdelta = 0.0) const; //!< Get the matrix to use when viewing this model. It ensures that all elements lie in the LCS plane.
-    void AddToZRange (double z) {m_zrange.Extend(z);} //!< Report the Z value of non-planar proxy graphics such as "forward" visible edges in drawing's LCS.
-
-    //! Set the scale of annotations in this drawing
-    void SetAnnotationScale (double s) {m_annotationScale = s;}
-
-    //! Get the scale of annotations in this drawing
-    double GetAnnotationScale() const {return m_annotationScale;}
+    SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
     };
 
 //=======================================================================================
-//! A sheet model is a 2-D model that has the following characteristics:
-//! -- Has fixed extents (is not infinite).
-//! -- Does not correspond to any location in physical space.
-//! -- Likewise, locations and distances in the SheetModel have no physical meaning, except measurements of the sheet itself.
-//! -- Its units are generally "paper" units, e.g., inches or mm. Its units bear no relation to the units of the physical models that may be portrayed on the sheet.
-//! -- Like any 2-D model, a sheet model can contain only planar geometry and annotations.
-//! -- Can embed \em views of other models. Embedded views are pictures only.
+//! A sheet model is a GraphicsModel2d that has the following characteristics:
+//! -- Has fixed extents (is not infinite), specified in meters.
+//! -- Can contain @b views of other models, like pictures pasted on a photo album.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
+struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
     {
-    DEFINE_T_SUPER(DgnModel2d)
+    DEFINE_T_SUPER(GraphicsModel2d)
 
     friend struct SheetModelHandler;
 
-public:
-    enum class Units {Millimeters, Inches, Custom};
+    struct CreateParams : GraphicsModel2d::CreateParams
+    {
+        DEFINE_T_SUPER(GraphicsModel2d::CreateParams);
+        DPoint2d m_size;
+
+        //! Parameters for creating a new SheetModel.
+        //! @param[in] dgndb the DgnDb into which the SheetModel will be created
+        //! @param[in] classId the DgnClassId of thew new SheetModel (must be or derive from SheetModel)
+        //! @param[in] name the name of the new SheetModel
+        //! @param[in] size the size of the SheetModel, in meters.
+        //! @param[in] props the Properties of the new SheetModel
+        //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DPoint2d size, Properties props=Properties(), DgnModelId id=DgnModelId()) :
+            T_Super(dgndb, classId, name, props, id), m_size(size) {}
+
+        explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
+    };
 
 protected:
     DPoint2d        m_size;
@@ -530,36 +530,24 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
 
-    //! construct a SheetModel object, prior to loading it from a Db
+    //! construct a new SheetModel
     DGNPLATFORM_EXPORT SheetModel(CreateParams const& params);
 
-    //! construct a SheetModel object, as part of creating a new SheetModel in the Db.
-    //! @param db       The DgnDb that will hold the new model
-    //! @param name     The name of the new model
-    //! @param size     The fixed extents of the sheet (expressed in the specified units)
-    //! @param units    The sheet's units.
-    //! @note if \a units is Units::Custom, then you must follow up with a call to set the "WorkingUnits" on the model's properties.
-    DGNPLATFORM_EXPORT SheetModel(DgnDbR db, Utf8CP name, DPoint2dCR size, Units units);
-
 public:
-    //! construct a SheetModel object, as part of creating a new SheetModel in the Db.
-    //! @param db       The DgnDb that will hold the new model
-    //! @param name     The name of the new model
-    //! @param size     The fixed extents of the sheet (expressed in the specified units)
-    //! @param units    The sheet's units.
-    //! @note if \a units is Units::Custom, then you must follow up with a call to set the "WorkingUnits" on the model's properties.
-    DGNPLATFORM_EXPORT static SheetModelPtr Create(DgnDbR db, Utf8CP name, DPoint2dCR size, Units units) {return new SheetModel(db,name,size,units);}
+    //! Construct a SheetModel
+    //! @param[in] params The CreateParams for the new SheetModel
+    DGNPLATFORM_EXPORT static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
 
-    //! get the sheet size
+    //! Get the sheet size, in meters
     DPoint2d GetSize() const {return m_size;}
     };
 
-
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
-        private: virtual DgnModel* _CreateInstance(DgnModel::CreateParams const& params) override {return new __classname__(params);}\
+        private: virtual DgnModel* _CreateInstance(DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : DgnDomain::Handler
@@ -575,12 +563,14 @@ public:
     //! of "dgn.Model".
     DGNPLATFORM_EXPORT static ModelHandlerP FindHandler(DgnDb const&, DgnClassId handlerId);
 
-    //! Create an instance of a DgnModel for a Model.
+    //! Create an instance of a (subclass of) DgnModel from CreateParams.
     //! @param[in] params the parameters for the model
     DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
+//! @private
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalModelHandler : ModelHandler
@@ -589,36 +579,43 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModelHandler : ModelHandler
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
+//! @private
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2dHandler : ModelHandler 
+struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2dHandler : ModelHandler
 {
     MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GraphicsModel2d, GraphicsModel2d, GraphicsModel2dHandler, ModelHandler, DGNPLATFORM_EXPORT)
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
+//! @private
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModelHandler : ModelHandler 
+struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModelHandler : ModelHandler
 {
     MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PlanarPhysicalModel, PlanarPhysicalModel, PlanarPhysicalModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
+//! @private
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModelHandler : PlanarPhysicalModelHandler 
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModelHandler : PlanarPhysicalModelHandler
 {
     MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawingModelHandler, PlanarPhysicalModelHandler, DGNPLATFORM_EXPORT)
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
+//! @private
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetModelHandler : ModelHandler 
+struct EXPORT_VTABLE_ATTRIBUTE SheetModelHandler : ModelHandler
 {
-    MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SheetModel, SheetModel, SheetModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, SheetModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-

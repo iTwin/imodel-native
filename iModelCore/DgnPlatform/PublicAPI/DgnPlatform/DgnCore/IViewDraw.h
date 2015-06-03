@@ -953,7 +953,7 @@ public:
 explicit StrokeElementForCache (GeometricElementCR element) : m_element (element) {}
 
 virtual DgnDbR _GetDgnDb () const override {return m_element.GetDgnDb();}
-virtual DRange3d _GetRange() const override {return m_element._CalculateRange3d();}
+virtual DRange3d _GetRange() const override {return m_element.CalculateRange3d();}
 virtual QvCacheP _GetQVCache() const override {return m_element.GetMyQvCache();}
 
 DGNPLATFORM_EXPORT virtual QvElemP _GetQvElem (double pixelSize) const;
@@ -1031,7 +1031,7 @@ virtual void                _DrawCurveVector2d (CurveVectorCR curves, bool isFil
 virtual void                _DrawSolidPrimitive (ISolidPrimitiveCR primitive) = 0;
 virtual void                _DrawBSplineSurface (MSBsplineSurfaceCR surface) = 0;
 virtual void                _DrawPolyface (PolyfaceQueryCR meshData, bool filled = false) = 0;
-virtual StatusInt           _DrawBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0) = 0;
+virtual StatusInt           _DrawBody (ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
 virtual void                _DrawTextString (TextStringCR text, double* zDepth = NULL) = 0;
 virtual void                _DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
 virtual void                _PushTransClip (TransformCP trans, ClipPlaneSetCP clip = NULL) = 0;
@@ -1164,7 +1164,7 @@ public:
 
     //! Draw a BRep surface/solid entity from the solids kernel.
     //! @note Only implemented for ICachedDraw due to potentially expensive/time consuming solids kernel calls.
-    DGNPLATFORM_EXPORT StatusInt DrawBody (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = NULL, double pixelSize = 0.0);
+    DGNPLATFORM_EXPORT StatusInt DrawBody (ISolidKernelEntityCR, double pixelSize = 0.0);
 
     //! Draw a series of Glyphs
     //! @param[in]          text        Text drawing parameters

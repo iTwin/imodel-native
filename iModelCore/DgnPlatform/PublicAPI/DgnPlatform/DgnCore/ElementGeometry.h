@@ -149,10 +149,10 @@ struct Operation
 //=======================================================================================
 struct Writer
     {
-    DgnDbP m_db;
+    DgnDbR m_db;
     bvector<uint8_t> m_buffer;
 
-    Writer (DgnDbR db) : m_db(&db) {AppendHeader ();}
+    Writer (DgnDbR db) : m_db(db) {AppendHeader ();}
 
     void AppendHeader () {Header hdr; Append (Operation (OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
     void Reset () {m_buffer.clear (); AppendHeader ();};
@@ -170,7 +170,7 @@ struct Writer
     void Append (PolyfaceQueryCR);
     void Append (ISolidPrimitiveCR);
     void Append (MSBsplineSurfaceCR);
-    void Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
+    void Append (ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
     void Append (ElementGeometryCR);
     void Append (DgnSubCategoryId, TransformCR geomToWorld);
     void Append (DgnGeomPartId);
@@ -184,9 +184,9 @@ struct Writer
 //=======================================================================================
 struct Reader
     {
-    DgnDbP m_db;
+    DgnDbR m_db;
     
-    Reader(DgnDbR db) : m_db(&db) {}
+    Reader(DgnDbR db) : m_db(db) {}
 
     static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 
@@ -372,8 +372,8 @@ ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement2dCR
 ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId);
 
 bool ConvertToLocal (ElementGeometryR);
-bool AppendWorld (ElementGeometryR, bool deferWrite = false);
-bool AppendLocal (ElementGeometryCR, TransformCP geomToElement, bool deferWrite = false);
+bool AppendWorld (ElementGeometryR);
+bool AppendLocal (ElementGeometryCR, TransformCP geomToElement);
 void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
 
 public:
@@ -389,7 +389,7 @@ DGNPLATFORM_EXPORT bool Append (CurveVectorCR);
 DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR); //! 3d only
-DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, IFaceMaterialAttachmentsCP attachments = nullptr); //! 3d only
+DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (TextStringCR);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());

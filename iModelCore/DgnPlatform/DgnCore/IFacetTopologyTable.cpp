@@ -372,21 +372,26 @@ IFacetOptionsCR                                 facetOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
 FaceAttachment::FaceAttachment ()
     {
-    m_color         = ColorDef::Black();
-    m_transparency  = 0.0;
-    m_material      = NULL;
+    m_color = ColorDef::Black();
+    m_transparency = 0.0;
+    m_material = nullptr;
+    m_uv.Init(0.0, 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams, ViewContextR context)
+FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
     {
-    // WIP_FACEATTACHMENTS - Make sure that "Resolve" has been called...should save SubCategory/color is from SubCategory appearance...
-    m_category      = sourceParams.GetCategoryId ();
-    m_color         = sourceParams.GetLineColor();
-    m_transparency  = sourceParams.GetTransparency ();
-    m_material      = sourceParams.GetMaterial ();
+    m_categoryId = sourceParams.GetCategoryId();
+    m_subCategoryId = sourceParams.GetSubCategoryId();
+    m_transparency = sourceParams.GetTransparency ();
+
+    if (!sourceParams.IsLineColorFromSubCategoryAppearance())
+        m_color = sourceParams.GetLineColor();
+
+    if (!sourceParams.IsMaterialFromSubCategoryAppearance())
+        m_material = sourceParams.GetMaterial ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -394,10 +399,11 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams, ViewContextR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
     {
-    elParams.SetCategoryId (m_category);
-    elParams.SetLineColor (m_color);
-    elParams.SetTransparency (m_transparency);
-    elParams.SetMaterial (m_material);
+    elParams.SetCategoryId(m_categoryId);
+    elParams.SetSubCategoryId(m_subCategoryId);
+    elParams.SetTransparency(m_transparency);
+    elParams.SetLineColor(m_color);
+    elParams.SetMaterial(m_material);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -405,10 +411,13 @@ void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb) const
     {
-    elMatSymb.Init ();
-    elMatSymb.SetLineColor (m_color);
-    elMatSymb.SetFillColor (m_color);
-    elMatSymb.SetMaterial (m_material); // NOTE: Geometry map should have already been created if needed by CookDisplayParams...
+    ColorDef color = m_color;
+
+    color.SetAlpha((Byte) (m_transparency * 255.0));
+    elMatSymb.Init();
+    elMatSymb.SetLineColor(color);
+    elMatSymb.SetFillColor(color);
+    elMatSymb.SetMaterial(m_material); // NOTE: Geometry map should have already been created if needed by CookDisplayParams...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -416,9 +425,10 @@ void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
     {
-    if (m_category      != rhs.m_category ||
-        m_color         != rhs.m_color ||
+    if (m_color         != rhs.m_color ||
         m_transparency  != rhs.m_transparency ||
+        m_categoryId    != rhs.m_categoryId ||
+        m_subCategoryId != rhs.m_subCategoryId ||
         m_material      != rhs.m_material)
         return false;
 
@@ -440,8 +450,7 @@ bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
     {
-    return (m_category         < rhs.m_category ||
-            m_color.GetValue() < rhs.m_color.GetValue() ||
+    return (m_color.GetValue() < rhs.m_color.GetValue() ||
             m_transparency     < rhs.m_transparency ||
             m_material         < rhs.m_material);
-}
+    }

@@ -12,21 +12,6 @@
 
 #include <DgnPlatform/DgnHandlers/UnitTests/ScopedDgnHost.h>
 
-//=======================================================================================
-// @bsiclass                                                    MattGooding     02/13
-//=======================================================================================
-struct UnitTestGeoCoordAdmin : DgnPlatformLib::Host::GeoCoordinationAdmin
-{
-public:
-    virtual WString _GetDataDirectory () override
-        {
-        BeFileName path;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory (path);
-        path.AppendToPath (L"GeoCoordData");
-        return path.GetName();
-        }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -102,7 +87,6 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     ScopedDgnHostImpl();
     ~ScopedDgnHostImpl();
     virtual LineStyleAdmin& _SupplyLineStyleAdmin() override;
-    virtual GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
     virtual NotificationAdmin& _SupplyNotificationAdmin () override;
     virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     virtual void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
@@ -151,7 +135,6 @@ ScopedDgnHostImpl::~ScopedDgnHostImpl()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     02/13
 //---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::GeoCoordinationAdmin& ScopedDgnHostImpl::_SupplyGeoCoordinationAdmin() {return *new UnitTestGeoCoordAdmin();}
 DgnPlatformLib::Host::LineStyleAdmin&       ScopedDgnHostImpl::_SupplyLineStyleAdmin() {return *new UnitTestLineStyleAdmin();}
 DgnPlatformLib::Host::NotificationAdmin&    ScopedDgnHostImpl::_SupplyNotificationAdmin () {return *new LoggingNotificationAdmin();}
 DgnPlatformLib::Host::IKnownLocationsAdmin& ScopedDgnHostImpl::_SupplyIKnownLocationsAdmin() {return *new TestingConfigurationAdmin();}

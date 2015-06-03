@@ -44,7 +44,9 @@
         <SubPart PartName="png"                 PartFile="png"          Repository="Libsrc-png"/>
         <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
-        <SubPart PartName="BoostHeaders"        PartFile="BoostHeaders" Repository="BoostHeaders" />
+        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
+        <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
+        <SubPart PartName="GeoCoordDataMinimal" PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
             <Assemblies ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>

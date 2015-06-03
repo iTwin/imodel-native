@@ -7,35 +7,41 @@
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 
-/** @page PAGE_CategoryOverview Category and SubCategory
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/** @page PAGE_CategoryOverview Category and SubCategory Overview
+
+@tableofcontents
 
 @b Categories are used to organize elements for reporting or filtering purposes. 
 Each element is in one and only one category.
 There is one set of categories per %DgnDb file.
 Categories do not nest, but a Category can have SubCategories.
 
-@see @ref BentleyApi::DgnPlatform::DgnCategories                "DgnCategories"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::Category      "DgnCategories::Category"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::Rank          "DgnCategories::Rank"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::Scope         "DgnCategories::Scope"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::Iterator      "DgnCategories::Iterator"
-@see @ref BentleyApi::DgnPlatform::DgnCategoryId                "DgnCategoryId"
+@see DgnCategories
+@see DgnCategories::Category
+@see DgnCategories::Rank
+@see DgnCategories::Scope
+@see DgnCategories::Iterator
+@see DgnCategoryId
 
 @b SubCategories are used to further organize and subdivide an element's geometry.  
 Each piece of geometry is in one and only one SubCategory.
 For display purposes, the symbology/appearance for and visibility of the geometry is determined by its SubCategory.
 Every Category has a default (unnamed) SubCategory associated with it.
 
-@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategory               "DgnCategories::SubCategory"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategory::Appearance   "DgnCategories::SubCategory::Appearance"
-@see @ref BentleyApi::DgnPlatform::DgnCategories::SubCategoryIterator       "DgnCategories::SubCategoryIterator"
-@see @ref BentleyApi::DgnPlatform::DgnSubCategoryId                         "DgnSubCategoryId"
+@see DgnCategories::SubCategory
+@see DgnCategories::SubCategory::Appearance
+@see DgnCategories::SubCategoryIterator
+@see DgnSubCategoryId
 
+<hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_Category_Includes Required include files
 
 __PUBLISH_INSERT_FILE__ Category_Includes.sampleCode
 
+<hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_Category_CreateAndInsert Creating and inserting a new category
 
@@ -44,6 +50,7 @@ In the case that custom categories are required, here is how to create and inser
 
 __PUBLISH_INSERT_FILE__ Category_CreateAndInsert.sampleCode
 
+<hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_Category_DgnV8Level Category vs. DgnV8 Level
 
@@ -54,5 +61,13 @@ While both have the same primary role (filtering) there are some important diffe
 @li All DgnDb elements are in one and only one category. Complex elements in DgnV8 could be on multiple levels.
 @li There is one set of categories per DgnDb file.  Each model could have its own set of levels in DgnV8.
 
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_LinkToCategoryModules Category Modules and Links
+
+@see DgnCategoryGroup
+
 <!-- ---------------------------------------------------------------------------------- -->
 */
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

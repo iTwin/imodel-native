@@ -847,38 +847,57 @@ void ElementGeomIO::Writer::Append (MSBsplineSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments, bool saveBRepOnly)
+void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOnly)
     {
-    bool        saveBRep = saveBRepOnly, saveFacets = false, saveEdges = false, saveFaceIso = false;
+    bool saveBRep = saveBRepOnly, saveFacets = false, saveEdges = false, saveFaceIso = false;
+    IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     if (!saveBRepOnly)
         {
         switch (entity.GetEntityType())
             {
-            case ISolidKernelEntity::EntityType_Sheet: // NEEDWORK: Save single planar face as CurveVector? See PSolidUtil::CreateElement in Vancouver...
+            case ISolidKernelEntity::EntityType_Wire:
+                {
+                // Save wire body as CurveVector...very in-efficent and un-necessary to persist these as BReps...
+                CurveVectorPtr wireGeom = DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._WireBodyToCurveVector(entity);
+
+                if (wireGeom.IsValid())
+                    Append(*wireGeom);
+                
+                return;
+                }
+
+            case ISolidKernelEntity::EntityType_Sheet:
+                {
+                // Save sheet body that is a single planar face as CurveVector...very in-efficent and un-necessary to persist these as BReps...
+                CurveVectorPtr faceGeom = DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._PlanarSheetBodyToCurveVector(entity);
+
+                if (faceGeom.IsValid())
+                    {
+                    Append(*faceGeom);
+                    return;
+                    }
+
+                // Fall through...
+                }
+
             case ISolidKernelEntity::EntityType_Solid:
                 {
                 saveBRep = saveFacets = true;
                                             
-                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasOnlyPlanarFaces))
+                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     saveFaceIso = true;
                     
-                if (saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge))
+                if (attachments || saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge))
                     saveEdges = true;
-                break;
-                }
-                    
-            case ISolidKernelEntity::EntityType_Wire:
-                {
-                saveEdges = true; // Just save wire body as CurveVector...very in-efficent and un-necessary to persist these as BReps...
                 break;
                 }
             }
         }
 
+    // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
     if (saveBRep)
         {
-        // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
         size_t      bufferSize = 0;
         uint8_t*    buffer = nullptr;
 
@@ -905,62 +924,161 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, IFaceMaterialAt
         Append (Operation (OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
+    // Store mesh representation for quick display or when parasolid isn't available...
     if (saveFacets)
         {
-        // Store mesh representation for quick display or when parasolid isn't available...
         IFacetOptionsPtr       facetOpt = IFacetOptions::CreateForCurves();
         IFacetTopologyTablePtr facetsPtr;
 
-        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt, nullptr))
+        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt))
             {
-            PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
-
-            if (SUCCESS == IFacetTopologyTable::ConvertToPolyface (*polyface, *facetsPtr, *facetOpt))
+            if (nullptr != attachments)
                 {
-                polyface->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
-                polyface->Transform (entity.GetEntityTransform());
+                T_FaceAttachmentsMap const& faceAttachmentsMap = attachments->_GetFaceAttachmentsMap();
 
-                bvector<Byte> buffer;
+                bvector<PolyfaceHeaderPtr>             polyfaces;
+                bvector<FaceAttachment const*>         attachments;
+                bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
+                bmap<int, PolyfaceHeaderCP>            faceToPolyfaces;
 
-                BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer);
+                for (T_FaceAttachmentsMap::const_iterator curr = faceAttachmentsMap.begin(); curr != faceAttachmentsMap.end(); ++curr)
+                    {
+                    bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(curr->second);
 
-                if (0 != buffer.size())
-                    Append (Operation (saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact, (uint32_t) buffer.size(), &buffer.front()));
+                    if (found == uniqueFaceAttachments.end())
+                        {
+                        PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+
+                        attachments.push_back(&curr->second);
+                        polyfaces.push_back(polyface);
+                        faceToPolyfaces[curr->first] = uniqueFaceAttachments[curr->second] = polyface.get();
+                        }
+                    else
+                        {
+                        faceToPolyfaces[curr->first] = found->second;
+                        }
+                    }
+
+                if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *facetOpt))
+                    {
+                    for (size_t i=0; i<polyfaces.size(); i++)
+                        {
+                        bvector<Byte> buffer;
+
+                        polyfaces[i]->Transform (entity.GetEntityTransform());
+                        BentleyGeometryFlatBuffer::GeometryToBytes(*polyfaces[i], buffer);
+
+                        if (0 == buffer.size())
+                            continue;
+
+                        ElemDisplayParams params;
+
+                        attachments[i]->ToElemDisplayParams(params);
+                        Append(params);
+                        Append(Operation (OpCode::BRepPolyface, (uint32_t) buffer.size(), &buffer.front()));
+                        }
+                    }
+                }
+            else
+                {
+                PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+
+                if (SUCCESS == IFacetTopologyTable::ConvertToPolyface (*polyface, *facetsPtr, *facetOpt))
+                    {
+                    bvector<Byte> buffer;
+
+                    polyface->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
+                    polyface->Transform (entity.GetEntityTransform());
+                    BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer);
+
+                    if (0 != buffer.size())
+                        Append (Operation (saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact, (uint32_t) buffer.size(), &buffer.front()));
+                    }
                 }
             }
         }
 
+    // When facetted representation is an approximation, we need to store the edge curves for snapping...
     if (saveEdges)
         {
-        // When facetted representation is an approximation, we need to store the edge curves for snapping...
-        // NEEDSWORK: Face attachments affect color...
-        CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, true, false);
-
-        if (edgeCurves.IsValid ())
+        if (nullptr != attachments)
             {
-            bvector<Byte> buffer;
+            bvector<CurveVectorPtr> curves;
+            bvector<ElemDisplayParams> params;
 
-            BentleyGeometryFlatBuffer::GeometryToBytes (*edgeCurves, buffer);
+            WireframeGeomUtil::CollectCurves(entity, m_db, curves, params, true, false);
 
-            if (0 != buffer.size())
-                Append (Operation (OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+            for (size_t i=0; i < curves.size(); i++)
+                {
+                if (0 == curves[i]->size())
+                    continue;
+
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes(*curves[i], buffer);
+
+                if (0 == buffer.size())
+                    continue;
+
+                Append(params[i]);
+                Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+                }
+            }
+        else
+            {
+            CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, m_db, true, false);
+
+            if (edgeCurves.IsValid())
+                {
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes (*edgeCurves, buffer);
+
+                if (0 != buffer.size())
+                    Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+                }
             }
         }
 
+    // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
     if (saveFaceIso)
         {
-        // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
-        // NEEDSWORK: Face attachments affect color...
-        CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves (entity, false, true);
-
-        if (faceCurves.IsValid ())
+        if (nullptr != attachments)
             {
-            bvector<Byte> buffer;
+            bvector<CurveVectorPtr> curves;
+            bvector<ElemDisplayParams> params;
 
-            BentleyGeometryFlatBuffer::GeometryToBytes (*faceCurves, buffer);
+            WireframeGeomUtil::CollectCurves(entity, m_db, curves, params, false, true);
 
-            if (0 != buffer.size())
-                Append (Operation (OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+            for (size_t i=0; i < curves.size(); i++)
+                {
+                if (0 == curves[i]->size())
+                    continue;
+
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes(*curves[i], buffer);
+
+                if (0 == buffer.size())
+                    continue;
+
+                Append(params[i]);
+                Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+                }
+            }
+        else
+            {
+            CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves(entity, m_db, false, true);
+
+            if (faceCurves.IsValid())
+                {
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes(*faceCurves, buffer);
+
+                if (0 != buffer.size())
+                    Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+                }
             }
         }
     }
@@ -1118,7 +1236,7 @@ void ElementGeomIO::Writer::Append (ElementGeometryCR elemGeom)
 void ElementGeomIO::Writer::Append(TextStringCR text)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, *m_db))
+    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db))
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
@@ -1247,7 +1365,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ISolidKernelEntityPtr& e
 
     auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
 
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), ISolidKernelEntity::SolidKernel_PSolid, *((TransformCP) ppfb->entityTransform())))
+    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return false;
 
     return entity.IsValid();
@@ -1421,7 +1539,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, TextStringR text) const
     if (OpCode::TextString != egOp.m_opCode)
         return false;
 
-    return (SUCCESS == TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, *m_db));
+    return (SUCCESS == TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, m_db));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1608,7 +1726,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
         case ElementGeomIO::OpCode::TextString:
             {
             TextStringPtr text = TextString::Create();
-            if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, *m_db))
+            if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, m_db))
                 break;
             
             elemGeom = ElementGeometry::Create(text);
@@ -2086,7 +2204,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                     PolyfaceHeaderPtr clone = BentleyApi::PolyfaceHeader::New();
 
                     clone->CopyFrom(meshData);
-                    clone->MarkInvisibleEdges(10.0); // This is "clever" and hopefully temporary...
+                    clone->MarkInvisibleEdges(10.0); // This is "clever" and unfortunate...NEEDSWORK_QVIS: Fix mesh silhouette display!!!
 
                     context.GetIDrawGeom().DrawPolyface(*clone);
                     }
@@ -2810,7 +2928,7 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP geomToElement, bool deferWrite)
+bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP geomToElement)
     {
     DRange3d localRange;
 
@@ -2819,11 +2937,8 @@ bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP ge
 
     OnNewGeom(localRange, geomToElement);
 
-    if (!deferWrite)
-        {
-        if (!m_writer.AppendSimplified(geom, m_model.Is3d()))
-            m_writer.Append(geom);
-        }
+    if (!m_writer.AppendSimplified(geom, m_model.Is3d()))
+        m_writer.Append(geom);
 
     return true;
     }
@@ -2831,12 +2946,12 @@ bool ElementGeometryBuilder::AppendLocal (ElementGeometryCR geom, TransformCP ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom, bool deferWrite)
+bool ElementGeometryBuilder::AppendWorld (ElementGeometryR geom)
     {
     if (!ConvertToLocal(geom))
         return false;
 
-    return AppendLocal(geom, nullptr, deferWrite);
+    return AppendLocal(geom, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3022,7 +3137,7 @@ bool ElementGeometryBuilder::Append (PolyfaceQueryCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAttachmentsCP attachments)
+bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom)
     {
     if (!m_model.Is3d())
         {
@@ -3038,7 +3153,7 @@ bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAtt
             return false;
 
         OnNewGeom (localRange, nullptr);
-        m_writer.Append(geom, attachments);
+        m_writer.Append(geom);
 
         return true;
         }
@@ -3051,12 +3166,7 @@ bool ElementGeometryBuilder::Append (ISolidKernelEntityCR geom, IFaceMaterialAtt
 
     ElementGeometryPtr geomPtr = ElementGeometry::Create(clone);
 
-    if (!AppendWorld (*geomPtr, true)) // Don't Append as ElementGeomentry for faceAttachments...
-        return false;
-
-    m_writer.Append(*geomPtr->GetAsISolidKernelEntity (), attachments);
-
-    return true;
+    return AppendWorld (*geomPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**

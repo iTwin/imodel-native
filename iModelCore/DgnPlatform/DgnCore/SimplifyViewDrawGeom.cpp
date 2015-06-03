@@ -581,11 +581,11 @@ void SimplifyViewDrawGeom::ClipAndProcessFacetSet (PolyfaceQueryCR facets, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments)
+void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets (ISolidKernelEntityCR entity)
     {
     IFacetTopologyTablePtr  facetsPtr;
 
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *_GetFacetOptions (), attachments))
+    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *_GetFacetOptions ()))
         return;
 
     T_FaceAttachmentsMap const* faceAttachmentsMap = (_GetFacetOptions ()->GetIgnoreFaceMaterialAttachments () ? NULL : facetsPtr->_GetFaceAttachmentsMap ());
@@ -650,13 +650,13 @@ void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets (ISolidKernelEntityCR enti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessBody (ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor* unclippedOutputProcessor, IFaceMaterialAttachmentsCP attachments)
+void SimplifyViewDrawGeom::ClipAndProcessBody (ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor* unclippedOutputProcessor)
     {
-    if (_ProcessAsBody (T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge)))
+    if (_ProcessAsBody (T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge)))
         {
         if (!PerformClip ())
             {
-            _ProcessBody (entity, attachments);
+            _ProcessBody (entity);
             }
         else
             {
@@ -668,17 +668,17 @@ void SimplifyViewDrawGeom::ClipAndProcessBody (ISolidKernelEntityCR entity, Simp
             if (clipped || NULL == unclippedOutputProcessor || SUCCESS != unclippedOutputProcessor->_ProcessUnClipped ())
                 {
                 for (ISolidKernelEntityPtr entityOut: clippedBodies)
-                    _ProcessBody (*entityOut, attachments);
+                    _ProcessBody (*entityOut);
                 }
             }
         }
     else if (_ProcessAsFacets (false))
         {
-        ClipAndProcessBodyAsFacets (entity, attachments);
+        ClipAndProcessBodyAsFacets (entity);
         }
     else if (_ProcessAsWireframe ())
         {
-        WireframeGeomUtil::Draw (entity, *m_context, attachments);
+        WireframeGeomUtil::Draw (entity, *m_context);
         }    
     }
 
@@ -714,7 +714,7 @@ void SimplifyViewDrawGeom::ClipAndProcessSurface (MSBsplineSurfaceCR surface)
         {
         UnClippedSurfaceProcessor proc (this, surface);
 
-        ClipAndProcessBody (*entityPtr.get (), &proc, NULL);
+        ClipAndProcessBody (*entityPtr.get (), &proc);
         }
     else if (processAsFacets)
         {
@@ -758,7 +758,7 @@ void SimplifyViewDrawGeom::ClipAndProcessSolidPrimitive (ISolidPrimitiveCR primi
         {
         UnClippedSolidPrimitiveProcessor  proc (*this, primitive);
 
-        ClipAndProcessBody (*entityPtr.get (), &proc, NULL);
+        ClipAndProcessBody (*entityPtr.get (), &proc);
         }
     else if (_ProcessAsFacets (false))
         {
@@ -1356,11 +1356,11 @@ void SimplifyViewDrawGeom::_DrawPolyface (PolyfaceQueryCR meshData, bool filled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::_DrawBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP attachments, double pixelSize)
+StatusInt SimplifyViewDrawGeom::_DrawBody (ISolidKernelEntityCR entity, double pixelSize)
     {
     MethodMark  mark (*this);
 
-    ClipAndProcessBody (entity, NULL, attachments);
+    ClipAndProcessBody (entity, NULL);
 
     return SUCCESS;
     }

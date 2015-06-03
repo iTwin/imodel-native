@@ -18,9 +18,6 @@ enum class ComponentMode
     {
     None            = 0, //! Set cursor index to head of path (0).
     Innermost       = 1, //! Set cursor index to last entry in path (-1).
-//__PUBLISH_SECTION_END__
-    InnermostHeader = 2, //! Set cursor index to innermost complex header (legacy mode of extremely limited usefulness)...
-//__PUBLISH_SECTION_START__
     NormalChild     = 3, //! Set cursor index to innermost public component of a complex element (same as None if no normal cells in path)...
     SharedChild     = 4, //! Set cursor index to innermost public shared component (same as NormalChild if no shared cells in path)...
     };

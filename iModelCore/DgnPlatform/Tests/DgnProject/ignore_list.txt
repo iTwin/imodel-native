@@ -26,8 +26,6 @@ DgnGraphicsTest3d.AddWithSymbology                      # John -- no longer work
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-SqlFunctionsTest.spatialQueryECSql
-
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 
 DgnECNavigator.ElementInfoWithSecondaryInstances # Raman claims this is a mismatch between tip CVS data and unmerged code from 05, but repeated merges haven't fixed... someone needs to spend more time on this.
@@ -42,7 +40,6 @@ ECDbInstances.FieldEngineerStructArray
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-BeSQLiteRealityDataStorageTests.*
 DgnColorsTest.GetElementColor
 DgnColorsTest.ImportElement
 DgnDb.LoadModelThroughProject
@@ -86,4 +83,4 @@ ECDbInstances.SelectDgnLinksForDgnElement
 NamedVolume.CrudTest
 NotificationManagerTest.GetPriority
 
-DgnDb.GetCoordinateSystemProperties # Sam - make this work with GCS
+Compatibility_Test.* # Umar something is wrong with the sizeof WString in X86 build

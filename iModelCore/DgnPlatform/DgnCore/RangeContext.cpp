@@ -717,7 +717,7 @@ void RangeOutput::_DrawPointString2d (int numPoints, DPoint2dCP points, double z
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RangeOutput::_DrawBody (ISolidKernelEntityCR entity, IFaceMaterialAttachmentsCP, double)
+StatusInt RangeOutput::_DrawBody (ISolidKernelEntityCR entity, double)
     {
     DRange3d    range;
 
@@ -959,7 +959,7 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement (GeometricElementCR element) override
     {
-    if (IsRangeContainedInCurrentRange(element._CalculateRange3d(), element.Is3d()))
+    if (IsRangeContainedInCurrentRange(element.CalculateRange3d(), element.Is3d()))
         return SUCCESS;
 
     // NOTE: Can just draw bounding box instead of drawing element geometry...

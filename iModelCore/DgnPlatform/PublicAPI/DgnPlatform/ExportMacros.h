@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ExportMacros.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,10 +15,6 @@
 #if defined (__DGNPLATFORM_BUILD__)
     #define DGNPLATFORM_EXPORT EXPORT_ATTRIBUTE
 #endif
-#endif
-
-#if defined (__DGNGEOCOORD_BUILD__)
-#define DGNGEOCOORD_EXPORTED    EXPORT_ATTRIBUTE
 #endif
 
 #if defined (__DGNVIEW_BUILD__)
@@ -90,10 +86,6 @@
 #define RASTERCORE_EXPORT EXPORT_ATTRIBUTE
 #endif
 
-#if defined (__POINTCLOUD_BUILD__)
-#define POINTCLOUD_EXPORT EXPORT_ATTRIBUTE
-#endif
-
 #if defined (__RASTEREXT_BUILD__)
 #define RASTEREXT_EXPORT EXPORT_ATTRIBUTE
 #endif
@@ -151,9 +143,6 @@
 #if !defined (DGNVIEW_EXPORT)
 #define DGNVIEW_EXPORT  IMPORT_ATTRIBUTE
 #endif
-#if !defined (DGNGEOCOORD_EXPORTED)
-#define DGNGEOCOORD_EXPORTED  IMPORT_ATTRIBUTE
-#endif
 #if !defined (DGNTOOLS_EXPORT)
 #define DGNTOOLS_EXPORT IMPORT_ATTRIBUTE
 #endif
@@ -186,9 +175,6 @@
 #endif
 #if !defined (RASTERCORE_EXPORT)
 #define RASTERCORE_EXPORT IMPORT_ATTRIBUTE
-#endif
-#if !defined (POINTCLOUD_EXPORT)
-#define POINTCLOUD_EXPORT IMPORT_ATTRIBUTE
 #endif
 #if !defined (RASTEREXT_EXPORT)
 #define RASTEREXT_EXPORT IMPORT_ATTRIBUTE
