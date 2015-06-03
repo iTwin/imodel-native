@@ -85,6 +85,7 @@
     <ClInclude Include="Published\Utils\Web\WebTestsHelper.h" />
     <ClInclude Include="Published\ValuePrinter.h" />
     <ClInclude Include="Published\WebServices\Client\ChunkedUploadRequestTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
     <ClInclude Include="Published\WebServices\Licensing\MobileTrackingTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockServerInfoListener.h" />
     <ClInclude Include="Published\WebServices\Client\MockWSClient.h" />

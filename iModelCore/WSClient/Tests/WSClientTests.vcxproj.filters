@@ -106,6 +106,7 @@
     <ClInclude Include="Published\WebServices\Licensing\MobileTrackingTests.h" />
     <ClInclude Include="Published\WebServices\WebServicesTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
