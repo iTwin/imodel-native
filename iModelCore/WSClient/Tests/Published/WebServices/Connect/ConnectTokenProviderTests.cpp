@@ -17,7 +17,7 @@ using namespace ::testing;
 #ifdef USE_GTEST
 void ConnectTokenProviderTests::SetUp ()
     {
-    Connect::Initialize (GetHandlerPtr ());
+    Connect::Initialize (StubClientInfo (), GetHandlerPtr ());
     }
 
 void ConnectTokenProviderTests::TearDown ()
