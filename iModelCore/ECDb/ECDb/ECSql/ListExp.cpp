@@ -169,7 +169,7 @@ ValueExp const* ValueExpListExp::GetValueExp(size_t index) const
 ParameterExp* ValueExpListExp::TryGetAsParameterExpP(size_t index) const
     {
     ExpP exp = GetChildP<Exp>(index);
-    if (exp->GetType() != Exp::Type::Parameter)
+    if (!exp->IsParameterExp())
         return nullptr;
 
     return static_cast<ParameterExp*> (exp);

@@ -1061,6 +1061,73 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
     testFunction ("UPDATE ONLY ecsql.SA SET SAStructProp = ? WHERE ECInstanceId = ?", 1, newStructValueJson, 2, saECInstanceKey, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
+    {
+    const auto perClassRowCount = 10;
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), perClassRowCount);
+
+
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ?, S FROM ecsql.PSA LIMIT 1")) << statement.GetLastStatusMessage().c_str();
+
+        ECInstanceId expectedId(BeRepositoryId(3), 444);
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId)) << statement.GetLastStatusMessage().c_str();
+
+        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ(expectedId.GetValue(), statement.GetValueId<ECInstanceId>(0).GetValueUnchecked());
+        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+
+        statement.Reset();
+        statement.ClearBindings();
+        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_TRUE(statement.IsValueNull(0));
+        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        }
+
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -?, S FROM ecsql.PSA LIMIT 1")) << statement.GetLastStatusMessage().c_str();
+
+        ECInstanceId expectedId(BeRepositoryId(3), 444);
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId)) << statement.GetLastStatusMessage().c_str();
+
+        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ((-1)*expectedId.GetValue(), statement.GetValueId<ECInstanceId>(0).GetValueUnchecked());
+        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+
+        statement.Reset();
+        statement.ClearBindings();
+        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_TRUE(statement.IsValueNull(0));
+        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        }
+
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -? AS MyId, S FROM ecsql.PSA LIMIT 1")) << statement.GetLastStatusMessage().c_str();
+
+        int64_t expectedId = -123456LL;
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, expectedId)) << statement.GetLastStatusMessage().c_str();
+
+        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ((-1)*expectedId, statement.GetValueInt64(0));
+        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+
+        statement.Reset();
+        statement.ClearBindings();
+        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_TRUE(statement.IsValueNull(0));
+        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        }
+
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------

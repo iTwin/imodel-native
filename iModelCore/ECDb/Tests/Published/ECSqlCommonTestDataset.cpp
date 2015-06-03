@@ -79,6 +79,29 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
 
     return dataset;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlTestDataset ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+    {
+    ECSqlTestDataset dataset;
+
+    ECClassCP testClass = testProject.GetTestSchemaManager().GetClass("ECSqlTest", "TH3");
+    Utf8String testClassECSqlStub;
+    if (ToECSql(testClassECSqlStub, ecsqlType, *testClass, false))
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("%s WHERE S1 IS NOT NULL OR S2 IS NOT NULL", testClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE (S1 IS NOT NULL OR S2 IS NOT NULL)", testClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+        }
+
+    return dataset;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -352,6 +375,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereMatchTests(ECSqlType ecsqlType, EC
 
     return dataset;
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14

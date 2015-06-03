@@ -2005,6 +2005,77 @@ ECSqlTestDataset ECSqlSelectTestDataset::ParameterAdvancedTests (int rowCountPer
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (-123)));
         }
 
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = -?";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(-123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = -?";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        //and don't bind anything to it
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = ?";
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0); //NULL = NULL is false
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        //and don't bind anything to it
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = -?"; //NULL = -NULL is not true
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        //and only bind to one parameter
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = -?";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE :p1 > -:p1";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue("p1", ECValue(123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        //and don't bind anything to it
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE :p1 > -:p1";
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE :p1 = -:p1";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue("p1", ECValue(123)));
+        }
+
+        {
+        Utf8CP ecsql = "SELECT ?, S FROM ecsql.PSA";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        }
+
+        {
+        Utf8CP ecsql = "SELECT ? AS NewProp, S FROM ecsql.PSA";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        }
+
     return dataset;
     }
 

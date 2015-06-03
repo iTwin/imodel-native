@@ -145,8 +145,8 @@ bool BinaryBooleanExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Par
 Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const
     {
     //parameter types are determined later, so exclude them from type checking
-    const bool lhsIsParameter = lhs.GetType() == Exp::Type::Parameter;
-    const bool rhsIsParameter = rhs.GetType() == Exp::Type::Parameter;
+    const bool lhsIsParameter = lhs.IsParameterExp ();
+    const bool rhsIsParameter = rhs.IsParameterExp ();
     ECSqlTypeInfo const& lhsTypeInfo = lhs.GetTypeInfo();
     ECSqlTypeInfo const& rhsTypeInfo = rhs.GetTypeInfo();
 
@@ -322,7 +322,7 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
 
     ValueExp const* valueExp = GetValueExp();
     ECSqlTypeInfo const& valueExpTypeInfo = valueExp->GetTypeInfo();
-    if (valueExp->GetType () == Exp::Type::Parameter || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
+    if (valueExp->IsParameterExp () || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
         {
         ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in expression '%s'. Unary predicates can only have expressions of boolean or integral type and cannot be parametrized.", ToECSql().c_str());
         return FinalizeParseStatus::Error;

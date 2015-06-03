@@ -77,7 +77,7 @@ ECSqlStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
     if (!IsComplete ())
         {
         auto stat = _FinalizeParsing(ctx, FinalizeParseMode::AfterFinalizingChildren);
-        BeAssert (GetType() == Type::Parameter || stat != FinalizeParseStatus::NotCompleted && "Every expression except for parameter exps is expected to be either completed or return an error from finalize parsing.");
+        BeAssert (IsParameterExp() || stat != FinalizeParseStatus::NotCompleted && "Every expression except for parameter exps is expected to be either completed or return an error from finalize parsing.");
         if (stat == FinalizeParseStatus::Completed)
             SetIsComplete ();
 

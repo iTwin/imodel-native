@@ -25,9 +25,6 @@ protected:
 
 public:
     virtual ~ValueExp () {}
-
-    bool IsParameterExp() const;
-    ParameterExp* TryGetAsParameterExpP() const;
     };
 
 //=======================================================================================
@@ -261,7 +258,7 @@ public:
     explicit ParameterExp (Utf8CP parameterName)
         : ValueExp (), m_parameterName (parameterName), m_parameterIndex (-1), m_targetExp (nullptr) {}
 
-    void SetDefaultTargetExpInfo() { SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double)); }
+    void SetDefaultTargetExpInfo();
     void SetTargetExpInfo(ComputedExp const& exp);
     void SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo);
     ComputedExp const* GetTargetExp() const { return m_targetExp; }

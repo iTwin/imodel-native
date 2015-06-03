@@ -251,6 +251,15 @@ TEST_F (ECSqlSelectTestFixture, WhereAbstractClassTests)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectTestFixture, WhereAndOrPrecedenceTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Select, GetTestProject(), PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereBasicsTests)
     {
     auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
@@ -599,6 +608,15 @@ TEST_F (ECSqlUpdateTestFixture, WhereAbstractClassTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlUpdateTestFixture, WhereAndOrPrecedenceTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Update, GetTestProject(), PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereBasicsTests)
@@ -726,6 +744,15 @@ TEST_F (ECSqlDeleteTestFixture, WhereAbstractClassTests)
     {
     auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
     RunTest (dataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlDeleteTestFixture, WhereAndOrPrecedenceTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Delete, GetTestProject(), PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------

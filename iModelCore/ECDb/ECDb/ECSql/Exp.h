@@ -550,6 +550,7 @@ public:
     bool IsComplete () const {return m_isComplete;}
 
     virtual Type GetType() const = 0;
+    bool IsParameterExp() const { return GetType() == Type::Parameter; }
     Exp const* GetParent() const { return m_parent; }
     Collection const& GetChildren () const;
     size_t GetChildrenCount() const { return m_children.size();}

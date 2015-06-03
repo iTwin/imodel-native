@@ -276,7 +276,7 @@ bool ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (int& index, E
         if (exp == whereExp)
             return true;
 
-        else if (exp->GetType () == Exp::Type::Parameter)
+        else if (exp->IsParameterExp ())
             index++;
 
         else if (FindLastParameterIndexBeforeWhereClause (index, *exp, whereExp))

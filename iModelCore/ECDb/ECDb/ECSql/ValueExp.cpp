@@ -176,7 +176,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         //if operands are parameters set the target exp in those expressions
-        if (castOperand->GetType() == Exp::Type::Parameter)
+        if (castOperand->IsParameterExp())
             {
             ctx.SetError(ECSqlStatus::InvalidECSql, "Parameters are not supported in a CAST expression ('%s').", ToECSql().c_str());
             return FinalizeParseStatus::Error;
@@ -717,10 +717,34 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing(ECSqlParseContext& ctx, 
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ParameterExp::SetDefaultTargetExpInfo()
+    {
+    SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+
+#ifndef NDEBUG
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        {
+        Exp const* parentExp = GetParent();
+        BeAssert(parentExp != nullptr && "ParameterExp is expected to always have a parent exp");
+        if (parentExp != nullptr)
+            LOG.debugv("Using default parameter data type for parameter in exp %s", parentExp->ToECSql().c_str());
+        }
+#endif
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 void ParameterExp::SetTargetExpInfo(ComputedExp const& targetExp)
     {
+    if (targetExp.IsParameterExp())
+        {
+        SetDefaultTargetExpInfo();
+        return;
+        }
+
     m_targetExp = &targetExp;
     SetTypeInfo(targetExp.GetTypeInfo());
     SetIsComplete();
@@ -1015,26 +1039,6 @@ Utf8String UnaryValueExp::_ToString() const
     Utf8String str ("UnaryValue [Operator: ");
     str.append (ExpHelper::ToString (m_op)).append ("]");
     return str;
-    }
-
-//****************************** ValueExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    05/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ValueExp::IsParameterExp () const
-    {
-    return GetType() == Exp::Type::Parameter;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    05/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ParameterExp* ValueExp::TryGetAsParameterExpP() const
-    {
-    if (!IsParameterExp ())
-        return nullptr;
-
-    return const_cast<ParameterExp*> (static_cast<ParameterExp const*> (this));
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

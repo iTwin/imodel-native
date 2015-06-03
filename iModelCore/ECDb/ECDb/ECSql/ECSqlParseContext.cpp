@@ -25,19 +25,7 @@ ECSqlStatus ECSqlParseContext::FinalizeParsing(Exp& rootExp)
     for (ParameterExp* parameterExp : m_parameterExpList)
         {
         if (!parameterExp->TryDetermineParameterExpType(*this, *parameterExp))
-            {
             parameterExp->SetDefaultTargetExpInfo();
-
-#ifndef NDEBUG
-            if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-                {
-                Exp const* parentExp = parameterExp->GetParent();
-                BeAssert(parentExp != nullptr && "ParameterExp is expected to always have a parent exp");
-                if (parentExp != nullptr)
-                    LOG.debugv("Using default parameter data type for parameter in exp %s", parentExp->ToECSql().c_str());
-                }
-#endif
-            }
         }
 
     return ECSqlStatus::Success;
