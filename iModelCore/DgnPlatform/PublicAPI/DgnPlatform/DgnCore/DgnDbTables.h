@@ -104,12 +104,18 @@ public:
     DGNPLATFORM_EXPORT static void ReplaceInvalidCharacters(Utf8StringR name, Utf8CP invalidChars, Utf8Char replacement);
 };
 
+/** @addtogroup DgnCategoryGroup Categories and SubCategories
+@ref PAGE_CategoryOverview 
+*/
+
 //=======================================================================================
 //! Each Category has an entry in the Category table.
+//! @ingroup DgnCategoryGroup
 //=======================================================================================
 struct DgnCategories : DgnDbTable
     {
     //! The Rank of a category indicates how it was created and where it can be used.
+    //! @ingroup DgnCategoryGroup
     enum class Rank
     {
         System      = 0,    //!< This category is predefined by the system
@@ -119,6 +125,7 @@ struct DgnCategories : DgnDbTable
     };
 
     //! The Scope of a category determines what types of models may use it.
+    //! @ingroup DgnCategoryGroup
     enum class Scope
     {
         Any         = 0,    //!< This category may be used in any type of model. Generally, this means it came from some external source (e.g. a dgn or dwg file)
@@ -128,6 +135,7 @@ struct DgnCategories : DgnDbTable
     };
 
     //! A sub-category of a category.
+    //! @ingroup DgnCategoryGroup
     struct SubCategory
     {
         //! The parameters that can determine how graphics on a SubCategory appear when drawn.
@@ -178,6 +186,7 @@ struct DgnCategories : DgnDbTable
         };// Appearance
 
         //! View-specific overrides of the appearance of a SubCategory
+        //! @ingroup DgnCategoryGroup
         struct Override
         {
         private:
@@ -243,6 +252,7 @@ struct DgnCategories : DgnDbTable
     }; // SubCategory
 
     //! A Category in the category table
+    //! @ingroup DgnCategoryGroup
     struct Category
         {
     private:
@@ -286,6 +296,7 @@ struct DgnCategories : DgnDbTable
         };
 
     //! An iterator over the categories in the DgnDb.
+    //! @ingroup DgnCategoryGroup
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
@@ -316,6 +327,7 @@ struct DgnCategories : DgnDbTable
     }; // Iterator
 
     //! An iterator over the SubCategories of a category
+    //! @ingroup DgnCategoryGroup
     struct SubCategoryIterator : BeSQLite::DbTableIterator
     {
     private:
@@ -475,6 +487,7 @@ public:
 
 //=======================================================================================
 //! The types of views that can exist in a DgnDb.
+//! @ingroup DgnViewGroup
 //=======================================================================================
 enum class DgnViewType
 {
@@ -489,6 +502,7 @@ enum class DgnViewType
 
 //=======================================================================================
 //! The source for the creation a DgnView.
+//! @ingroup DgnViewGroup
 //=======================================================================================
 enum class DgnViewSource
 {
@@ -499,6 +513,7 @@ enum class DgnViewSource
 
 //=======================================================================================
 //! Each View has an entry in the View table.
+//! @ingroup DgnViewGroup
 //=======================================================================================
 struct DgnViews : DgnDbTable
 {

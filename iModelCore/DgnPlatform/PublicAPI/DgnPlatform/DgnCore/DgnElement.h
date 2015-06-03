@@ -777,6 +777,9 @@ protected:
     //! Override if additional processing is required after a member was deleted.
     virtual void _OnMemberDeleted(DgnElementCR member) const {}
 
+    //! Called when members of the group are queried
+    DGNPLATFORM_EXPORT virtual DgnElementIdSet _QueryMembers() const;
+
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -793,7 +796,7 @@ public:
 
     //! Query for the set of members of this ElementGroup
     //! @see QueryFromMember
-    DGNPLATFORM_EXPORT DgnElementIdSet QueryMembers() const;
+    DgnElementIdSet QueryMembers() const { return _QueryMembers(); }
 
     //! Query an ElementGroup from a member element.
     //! @param[in] db the DgnDb to query

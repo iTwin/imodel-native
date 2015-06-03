@@ -21,7 +21,7 @@ DgnHandlersDir  = $(baseDir)DgnHandlers/
 PrivateAPIDir   = $(baseDir)PrivateApi/
 DgnGeoCoordDir  = $(baseDir)DgnGeoCoord/
 
-BaseGeoCoordAPISrc = $(BuildContext)PublicApi/GeoCoord/
+BaseGeoCoordAPISrc = $(BuildContext)PublicAPI/GeoCoord/
 
 lineStyleDir     = $(DgnCoreDir)linestyle/
 
@@ -280,13 +280,13 @@ $(coreObjs)DgnSchemaDomain$(oext): $(DgnCoreDir)DgnSchemaDomain.cpp ${MultiCompi
 #   DgnGeoCoord
 #----------------------------------------------------------------------
 
-$(o)DgnGeoCoord$(oext)          :     $(DgnGeoCoordDir)DgnGeoCoord.cpp          $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)basegeocoord.h       ${MultiCompileDepends}
+$(o)DgnGeoCoord$(oext)          :     $(DgnGeoCoordDir)DgnGeoCoord.cpp          $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h       ${MultiCompileDepends}
 
-#$(o)ReprojectCache$(oext)       :     $(DgnGeoCoordDir)ReprojectCache.cpp       $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)basegeocoord.h      ${MultiCompileDepends}
+#$(o)ReprojectCache$(oext)       :     $(DgnGeoCoordDir)ReprojectCache.cpp       $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h      ${MultiCompileDepends}
 
-$(o)GeoCoordServices$(oext)     :     $(DgnGeoCoordDir)GeoCoordServices.cpp     $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)basegeocoord.h       ${MultiCompileDepends}
+$(o)GeoCoordServices$(oext)     :     $(DgnGeoCoordDir)GeoCoordServices.cpp     $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h       ${MultiCompileDepends}
 
-#$(o)AuxCoordSysProcessor$(oext) :     $(DgnGeoCoordDir)AuxCoordSysProcessor.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)basegeocoord.h      ${MultiCompileDepends}
+#$(o)AuxCoordSysProcessor$(oext) :     $(DgnGeoCoordDir)AuxCoordSysProcessor.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h      ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   Annotations

@@ -210,7 +210,7 @@ ProjectionParams    &projectionParams
             extracted.coordsys = extracted.projType = COORDSYS_UTMZN;
 
             // the old code would have always ended up with hemisphere OBE_HEMISPHERE_NORTH, but this looks like what it was trying to do.
-            utmzn.hemisphere = (0 == BeStringUtilities::Stricmp (extracted.grp_knm, "UTMS")) ? utmzn.hemisphere = OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH;
+            utmzn.hemisphere = (0 == BeStringUtilities::Stricmp (extracted.grp_knm, "UTMS")) ? OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH;
             utmzn.gcDom     = projectionParams.trmer.gcDom;
             utmzn.paper_scl = projectionParams.trmer.paper_scl;
             utmzn.quad      = projectionParams.trmer.quad;
@@ -2638,8 +2638,8 @@ const CSDefinition  &csDef
     CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
     DomainFromCsDef (params.gcDom, csDef);
 
-    params.zoneNo       =  (long) csDef.prj_prm1;
-    params.hemisphere   =  (long) (0 > csDef.prj_prm2 ?  OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH);
+    params.zoneNo       =  (int32_t) csDef.prj_prm1;
+    params.hemisphere   =  (int32_t) (0 > csDef.prj_prm2 ?  OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH);
 
 
     params.paper_scl    =  csDef.map_scl;
@@ -2675,7 +2675,7 @@ const CSDefinition  &csDef
 void            ZonesFromCsDef
 (
 ZONE                *zone,
-long                *numZones,
+int32_t             *numZones,
 const double        *src
 )
     {
@@ -3423,7 +3423,7 @@ const CSDefinition  &csDef
     CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
     DomainFromCsDef (params.gcDom, csDef);
 
-    params.zoneNo       = (long) csDef.prj_prm1;
+    params.zoneNo       = (int32_t) csDef.prj_prm1;
     params.paper_scl    = csDef.map_scl;
     params.x_off        = csDef.x_off;
     params.y_off        = csDef.y_off;

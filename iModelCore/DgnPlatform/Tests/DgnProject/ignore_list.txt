@@ -40,7 +40,6 @@ ECDbInstances.FieldEngineerStructArray
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-BeSQLiteRealityDataStorageTests.*
 DgnColorsTest.GetElementColor
 DgnColorsTest.ImportElement
 DgnDb.LoadModelThroughProject

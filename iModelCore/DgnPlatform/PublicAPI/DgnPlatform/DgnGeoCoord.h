@@ -9,11 +9,11 @@
 
 /*__PUBLISH_SECTION_START__*/
 
-#include    <GeoCoord/basegeocoord.h>
+#include    <GeoCoord/BaseGeoCoord.h>
 #include    <DgnPlatform/DgnPlatform.h>
 #include    <DgnPlatform/DgnCore/DgnDb.h>
 #include    <DgnPlatform/DgnCore/UnitDefinition.h>
-#include    <DgnPlatform/DgnCore/scancriteria.h>
+#include    <DgnPlatform/DgnCore/ScanCriteria.h>
 #include    <Bentley/bvector.h>
 #include    <DgnPlatform/DgnPlatformLib.h>
 

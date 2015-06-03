@@ -472,7 +472,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
         ASSERT_EQ(RealityDataStorageResult::Success, m_storage->Persist(*data));
         }
     haltPersist = false;
-    cv.WaitOnCondition(nullptr, 1000);
+    cv.WaitOnCondition(nullptr, 10000);
     ASSERT_TRUE(didPersist);
     }
 
@@ -511,7 +511,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, DoesCleanupDatabase)
 
     RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create(handler.get());
     m_storage->Persist(*data);
-    cv.WaitOnCondition(nullptr, 1000);
+    cv.WaitOnCondition(nullptr, 10000);
     ASSERT_TRUE(didCleanup);
     }
 
@@ -620,7 +620,7 @@ TEST_F (FileRealityDataSourceTests, Request)
         });
     ASSERT_EQ(RealityDataSourceResult::Success, m_source->Request(*data, m_filePath.c_str(), *options, *responseReceiver));
 
-    cv.WaitOnCondition(nullptr, 1000);
+    cv.WaitOnCondition(nullptr, 10000);
     ASSERT_TRUE(didInitialize);
     ASSERT_TRUE(didReceiveResponse);
     }
@@ -659,7 +659,7 @@ TEST_F (FileRealityDataSourceTests, Request_WithDataOutOfScope)
         }
 
     block = false;
-    cv.WaitOnCondition(nullptr, 1000);
+    cv.WaitOnCondition(nullptr, 10000);
     ASSERT_TRUE(didInitialize);
     ASSERT_TRUE(didReceiveResponse);
     }
