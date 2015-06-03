@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -668,6 +668,9 @@ protected:
     virtual ECObjectsStatus     _UpdateCalculatedPropertyDependents (ECValueCR calculatedValue, PropertyLayoutCR propLayout) = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const;
 
+    virtual bool                _IsPersistentlyReadOnly() const { return false; }
+    virtual ECObjectsStatus     _SetIsPersistentlyReadOnly (bool readOnly) { return ECOBJECTS_STATUS_OperationNotSupported; }
+
     // Helper for implementations of calculated property methods above
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP LookupCalculatedPropertySpecification (IECInstanceCR thisAsIECInstance, PropertyLayoutCR propLayout) const;
 
@@ -737,6 +740,9 @@ public:
     // Evaluates all calculated property values in the buffer. Recurses into struct array members. Does not re-evaluate default value specifications if value has been overridden
     ECOBJECTS_EXPORT bool                   EvaluateAllCalculatedProperties ();
     ECOBJECTS_EXPORT bool                   EvaluateAllCalculatedProperties (bool includeDefaultValueSpecifications);
+
+    ECOBJECTS_EXPORT bool                   IsPersistentlyReadOnly() const;
+    ECOBJECTS_EXPORT ECObjectsStatus        SetIsPersistentlyReadOnly (bool readOnly);
 /*__PUBLISH_SECTION_START__*/  
 public:
     //! Returns true if the buffer is empty (all values are null and all arrays are empty)
