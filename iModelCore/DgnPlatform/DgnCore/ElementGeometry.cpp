@@ -262,6 +262,9 @@ static bool getRange (TextStringCR text, DRange3dR range, TransformCP transform)
     range.low.Init(textRange.low);
     range.high.Init(textRange.high);
     
+    Transform textTransform = text.ComputeTransform();
+    textTransform.Multiply(&range.low, 2);
+
     if (nullptr != transform)
         transform->Multiply(range, range);
 
@@ -2230,13 +2233,13 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                     break;
 
                 TextString text;
-
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, context.GetDgnDb()))
                     break;
                 
                 state.CookElemDisplayParams();
 
                 context.DrawTextString(text);                
+                
                 break;
                 }
             

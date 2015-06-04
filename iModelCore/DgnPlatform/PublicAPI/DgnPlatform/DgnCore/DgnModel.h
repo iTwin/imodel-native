@@ -491,8 +491,8 @@ public:
 
 //=======================================================================================
 //! A sheet model is a GraphicsModel2d that has the following characteristics:
-//! -- Has fixed extents (is not infinite), specified in meters.
-//! -- Can contain @b views of other models, like pictures pasted on a photo album.
+//!     - Has fixed extents (is not infinite), specified in meters.
+//!     - Can contain @b views of other models, like pictures pasted on a photo album.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
