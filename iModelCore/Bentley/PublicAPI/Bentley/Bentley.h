@@ -157,9 +157,10 @@
 
 // Define standard pointer types (P, CP, R, CR) in the current namespace for the specified struct
 #define DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) \
-    typedef struct _structname_* _structname_##P, &_structname_##R; \
-    typedef struct _structname_ const* _structname_##CP; \
-    typedef struct _structname_ const& _structname_##CR; 
+    struct _structname_; \
+    typedef _structname_* _structname_##P, &_structname_##R; \
+    typedef _structname_ const* _structname_##CP; \
+    typedef _structname_ const& _structname_##CR; 
 
 // These macros should only be used for classes in the Bentley namespace (consider using DEFINE_POINTER_SUFFIX_TYPEDEFS instead)
 #define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
