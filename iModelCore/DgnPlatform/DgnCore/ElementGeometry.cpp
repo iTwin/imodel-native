@@ -2236,8 +2236,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                 
                 state.CookElemDisplayParams();
 
-                double zDepth = context.GetCurrentDisplayParams()->GetNetDisplayPriority();
-                context.GetIDrawGeom().DrawTextString(text, context.Is3dView() ? nullptr : &zDepth);                
+                context.DrawTextString(text);                
                 break;
                 }
             
