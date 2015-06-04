@@ -155,7 +155,13 @@
 #define BEGIN_UNNAMED_NAMESPACE namespace {
 #define END_UNNAMED_NAMESPACE   }
 
-// These macros should only be used for classes in the Bentley namespace
+// Define standard pointer types (P, CP, R, CR) in the current namespace for the specified struct
+#define DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) \
+    typedef struct _structname_* _structname_##P, &_structname_##R; \
+    typedef struct _structname_ const* _structname_##CP; \
+    typedef struct _structname_ const& _structname_##CR; 
+
+// These macros should only be used for classes in the Bentley namespace (consider using DEFINE_POINTER_SUFFIX_TYPEDEFS instead)
 #define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
     namespace BENTLEY_NAMESPACE_NAME {\
     typedef structclass _namespace_ :: _sourceName_*          _name_##P, &_name_##R;  \

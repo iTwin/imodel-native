@@ -95,11 +95,10 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
     };
 
-/*=================================================================================**//**
-* A shared pointer template for reference-counted objects.
-* Type \b T must have functions named AddRef and Release with signatures that conform to the reference-counting pattern.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A shared pointer template for reference-counted objects.
+//! Type @b T must have functions named AddRef and Release with signatures that conform to the reference-counting pattern.
+//=======================================================================================
 template<class T> class RefCountedPtr
 {
 private:
@@ -135,11 +134,10 @@ public:
     void swap(RefCountedPtr& rhs) {T* tmp = m_p; m_p = rhs.m_p; rhs.m_p = tmp;} //!< Swap the internal objects pointed to by two smart pointers.
 };
 
-/*=================================================================================**//**
-* A shared pointer template for a reference-counted pointer to a const object.
-* Type \b T must have functions named AddRef and Release with signatures that conform to the reference-counting pattern.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A shared pointer template for a reference-counted pointer to a const object.
+//! Type @b T must have functions named AddRef and Release with signatures that conform to the reference-counting pattern.
+//=======================================================================================
 template<class T> class RefCountedCPtr
 {
 private:
