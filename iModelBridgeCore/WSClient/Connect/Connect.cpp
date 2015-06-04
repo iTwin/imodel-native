@@ -53,7 +53,6 @@ static Utf8String s_stsUrl;
 void Connect::Initialize (ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler)
     {
     BeAssert (nullptr != clientInfo);
-    BeAssert (!s_connectInitialized);
 
     if (!s_connectInitialized)
         {
