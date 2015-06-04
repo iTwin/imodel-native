@@ -107,7 +107,7 @@ private:
     bool IsKeyPropertyMappable(const ECN::ECRelationshipConstraintClassList & constraintclasses);
     MapStatus CreateConstraintColumns(ECDbSqlColumn*& otherEndECInstanceIdColumn, RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipEnd thisEnd, const ECN::ECRelationshipConstraintClassList &);
     MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
-    ECDbSqlColumn* Configure_ForeignECClassIdKey (RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount);
+    ECDbSqlColumn* ConfigureForeignECClassIdKey (RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount);
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
@@ -161,6 +161,7 @@ private:
     //virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph) override;
     //virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
+    ECDbSqlColumn*      ConfigureForeignECClassIdKey (RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipEnd relationshipEnd);
 public:
     ~RelationshipClassLinkTableMap () {}
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
