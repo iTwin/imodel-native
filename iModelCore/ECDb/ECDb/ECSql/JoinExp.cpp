@@ -86,7 +86,7 @@ Utf8String QualifiedJoinExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus RelationshipJoinExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus RelationshipJoinExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::AfterFinalizingChildren)
         {

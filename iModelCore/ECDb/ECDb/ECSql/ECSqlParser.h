@@ -125,7 +125,7 @@ private:
     static std::unique_ptr<ValueExp>                   parse_trueth_value              (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static Utf8CP                                      parse_schema_name               (Utf8CP& className, ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<BooleanExp>                 parse_search_conditon           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<BooleanExp>                 parse_search_condition          (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static bool                                        parse_sql_not                   (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<UnaryPredicateExp>          parse_unary_predicate           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);

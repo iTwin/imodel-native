@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: ECDb/ECSql/ListExp.cpp $
@@ -17,7 +18,7 @@ using namespace std;
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus AssignmentListExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus AssignmentListExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
@@ -78,7 +79,7 @@ Utf8String AssignmentListExp::_ToECSql () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus PropertyNameListExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus PropertyNameListExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
@@ -144,7 +145,7 @@ void ValueExpListExp::AddValueExp (unique_ptr<ValueExp>& valueExp)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus ValueExpListExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus ValueExpListExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         //Indicate that the exp per se doesn't have a single type info, because it can vary across it children
@@ -168,7 +169,7 @@ ValueExp const* ValueExpListExp::GetValueExp(size_t index) const
 ParameterExp* ValueExpListExp::TryGetAsParameterExpP(size_t index) const
     {
     ExpP exp = GetChildP<Exp>(index);
-    if (exp->GetType() != Exp::Type::Parameter)
+    if (!exp->IsParameterExp())
         return nullptr;
 
     return static_cast<ParameterExp*> (exp);

@@ -172,9 +172,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp (NativeSqlBuilder::List& nat
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryBooleanExp const* exp)
     {
-    const auto op = exp->GetOperator ();
-    auto lhsOperand = exp->GetLeftOperand ();
-    auto rhsOperand = exp->GetRightOperand ();
+    const BooleanSqlOperator op = exp->GetOperator ();
+    ComputedExp const* lhsOperand = exp->GetLeftOperand ();
+    ComputedExp const* rhsOperand = exp->GetRightOperand();
 
     const bool lhsIsNullExp = IsNullExp (*lhsOperand);
     const bool rhsIsNullExp = IsNullExp (*rhsOperand);
@@ -1435,7 +1435,24 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
     if (stat != ECSqlStatus::Success)
         return stat;
 
+    //If the top level search condition has an OR we wrap the entire exp in parentheses to ensure
+    //precedence for the case where a system expression is added to the where clause.
+    bool wrapInParens = false;
+    if (searchConditionExp.GetType() == Exp::Type::BinaryBoolean)
+        {
+        BinaryBooleanExp const* binaryBoolExp = static_cast<BinaryBooleanExp const*> (&searchConditionExp);
+        if (binaryBoolExp->GetOperator() == BooleanSqlOperator::Or)
+            wrapInParens = true;
+        }
+
+    if (wrapInParens)
+        nativeSqlBuilder.AppendParenLeft();
+
     nativeSqlBuilder.Append(sqlSnippets, " AND ");
+
+    if (wrapInParens)
+        nativeSqlBuilder.AppendParenRight();
+
     return ECSqlStatus::Success;
     }
 
@@ -1644,7 +1661,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
         //In that case the respective value exp does not need to be prepared either.
 
-        if (valueExp->GetType() == Exp::Type::Parameter)
+        if (valueExp->IsParameterExp())
             {
             //Parameter exp needs to be prepared even if target exp is virtual, i.e. doesn't have a column in the SQLite SQL
             //because we need a (noop) binder for it so that the binding API corresponds to the parameters in the incoming

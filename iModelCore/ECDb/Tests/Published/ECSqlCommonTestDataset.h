@@ -36,7 +36,8 @@ private:
 public:
     //Generates test datasets common to all ECSQL types
     static ECSqlTestDataset WhereAbstractClassTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereBasicsTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
+    static ECSqlTestDataset WhereAndOrPrecedenceTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
+    static ECSqlTestDataset WhereBasicsTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset WhereCommonGeometryTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset WhereFunctionTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset WhereMatchTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);

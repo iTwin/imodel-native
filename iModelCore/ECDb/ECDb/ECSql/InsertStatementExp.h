@@ -26,10 +26,10 @@ private:
 
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const override;
 
     FinalizeParseStatus Validate (ECSqlParseContext& ctx) const;
-    void ResolveParameters () const;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "Insert"; }

@@ -67,8 +67,10 @@ public:
     bool IsExactNumeric () const;
     bool IsApproximateNumeric () const;
     bool IsBoolean() const;
+    bool IsString() const;
     bool IsDateTime () const;
-    bool IsPoint () const;
+    bool IsBinary() const;
+    bool IsPoint() const;
     bool IsGeometry () const;
     bool IsStruct () const;
     bool IsArray () const;

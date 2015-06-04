@@ -45,7 +45,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare (ECSqlPrepareContext& ctx, InsertStatem
 int ECSqlInsertPreparer::GetParamterCount(Exp const& exp, std::set<ParameterExp const*>& namedParameterList)
     {
     int nFoundParameters = 0;
-    if (exp.GetType() == Exp::Type::Parameter)
+    if (exp.IsParameterExp())
         {
         auto param = static_cast<ParameterExp const*>(&exp);
         if (param->IsNamedParameter())
@@ -61,7 +61,7 @@ int ECSqlInsertPreparer::GetParamterCount(Exp const& exp, std::set<ParameterExp 
 
     for (auto const child : exp.GetChildren())
         {
-        if (child->GetType() == Exp::Type::Parameter)
+        if (child->IsParameterExp())
             {
             auto param = static_cast<ParameterExp const*>(child);
             if (param->IsNamedParameter())

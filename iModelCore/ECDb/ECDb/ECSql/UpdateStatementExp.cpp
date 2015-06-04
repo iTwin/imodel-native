@@ -31,7 +31,7 @@ UpdateStatementExp::UpdateStatementExp (unique_ptr<ClassRefExp> classNameExp, un
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -112,29 +112,40 @@ AssignmentExp::AssignmentExp (std::unique_ptr<PropertyNameExp> propNameExp, std:
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus AssignmentExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus AssignmentExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+    switch (mode)
         {
-        //Assign the prop name exp to the parameter exp
-        auto parameterExp = TryGetValueExpAsParameterExp ();
-        if (parameterExp != nullptr)
-            {
-            BeAssert (GetPropertyNameExp () != nullptr);
-            parameterExp->SetTargetExpInfo (*GetPropertyNameExp ());
-            }
+            case FinalizeParseMode::BeforeFinalizingChildren:
+                return FinalizeParseStatus::NotCompleted;
 
-        return FinalizeParseStatus::NotCompleted;
+            case FinalizeParseMode::AfterFinalizingChildren:
+                {
+                Utf8String errorMessage;
+                ValueExp const* valueExp = GetValueExp();
+                if (!valueExp->IsParameterExp() && !GetPropertyNameExp()->GetTypeInfo().Matches(valueExp->GetTypeInfo(), &errorMessage))
+                    {
+                    ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str());
+                    return FinalizeParseStatus::Error;
+                    }
+
+                return FinalizeParseStatus::Completed;
+                }
+
+            default:
+                BeAssert(false);
+                return FinalizeParseStatus::Error;
         }
+    }
 
-    Utf8String errorMessage;
-    if (!GetPropertyNameExp ()->GetTypeInfo ().Matches (GetValueExp ()->GetTypeInfo (), &errorMessage))
-        {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str ());
-        return FinalizeParseStatus::Error;
-        }
-
-    return FinalizeParseStatus::Completed;
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool AssignmentExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    //Assign the prop name exp to the parameter exp
+    parameterExp.SetTargetExpInfo(*GetPropertyNameExp());
+    return true;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -151,18 +162,6 @@ PropertyNameExp const* AssignmentExp::GetPropertyNameExp () const
 ValueExp const* AssignmentExp::GetValueExp () const
     {
     return GetChild<ValueExp> (m_valueExpIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-ParameterExp* AssignmentExp::TryGetValueExpAsParameterExp () const
-    {
-    auto valueExp = GetChildP<Exp> (m_valueExpIndex);
-    if (valueExp->GetType () == Exp::Type::Parameter)
-        return static_cast<ParameterExp*> (valueExp);
-    else
-        return nullptr;
     }
 
 //-----------------------------------------------------------------------------------------

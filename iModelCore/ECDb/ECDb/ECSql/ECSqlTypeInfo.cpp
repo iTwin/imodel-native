@@ -218,8 +218,7 @@ bool ECSqlTypeInfo::Matches (ECSqlTypeInfo const& rhs, Utf8String* errorMessage)
             lhsType != PRIMITIVETYPE_IGeometry && rhsType != PRIMITIVETYPE_IGeometry) || lhsType == rhsType;
 
     if (!canCompare && errorMessage != nullptr)
-        //not mentioning IGeometry here as it is not supported by ECDb in the first place
-        *errorMessage = "Left and right side of expression must both have Point2D / Point3D type.";
+        *errorMessage = "Left and right side of expression must both have Point2D / Point3D / IGeometry type.";
 
     return canCompare;
     }
@@ -284,11 +283,27 @@ bool ECSqlTypeInfo::IsBoolean() const
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     06/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool ECSqlTypeInfo::IsString() const
+    {
+    return IsPrimitive() && (GetPrimitiveType() == ECN::PRIMITIVETYPE_String);
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool ECSqlTypeInfo::IsDateTime () const
     {
     return IsPrimitive () && (GetPrimitiveType () == ECN::PRIMITIVETYPE_DateTime);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     06/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool ECSqlTypeInfo::IsBinary() const
+    {
+    return IsPrimitive() && (GetPrimitiveType() == ECN::PRIMITIVETYPE_Binary);
     }
 
 //-----------------------------------------------------------------------------------------
