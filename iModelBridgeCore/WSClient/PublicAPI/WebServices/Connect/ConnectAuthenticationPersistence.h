@@ -27,8 +27,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
 
         ILocalState& m_localState;
         std::shared_ptr<ISecureStore> m_secureStore;
-
         mutable SamlTokenPtr m_token;
+
+    private:
+        void UpgradeIfNeeded () const;
 
     public:
         WSCLIENT_EXPORT ConnectAuthenticationPersistence 
@@ -38,7 +40,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
             );
         virtual ~ConnectAuthenticationPersistence () {}
 
+        //! Connect credentials are shared between apps if SecureStore implementation allows it
         WSCLIENT_EXPORT void SetCredentials (CredentialsCR credentials) override;
+        //! Connect credentials are shared between apps if SecureStore implementation allows it
         WSCLIENT_EXPORT Credentials GetCredentials () const override;
 
         WSCLIENT_EXPORT void SetToken (SamlTokenPtr token) override;
