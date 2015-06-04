@@ -28,8 +28,7 @@ const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
 
 const Utf8String UrlProvider::s_connectWsgUrl[3] = {
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://dev-wsg20-eus.cloudapp.net",
-    //"https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com"
     };
 
