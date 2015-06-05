@@ -2,7 +2,7 @@
 |
 |     $Source: DgnGeoCoord/PublicAPI/DgnGeoCoord.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -695,6 +695,7 @@ DgnModelP               model
 /*__PUBLISH_SECTION_START__*/
 };
 
+/*__PUBLISH_SECTION_END__*/
 /*=================================================================================**//**
 The DgnGeoCoordinationAdmin class implements DgnPlatform::GeoCoordinateAdmin.
 It can be used from any DgnPlatform Host program that wants to provide GeoCoordination services.
@@ -702,7 +703,6 @@ It can be used from any DgnPlatform Host program that wants to provide GeoCoordi
 +===============+===============+===============+===============+===============+======*/
 struct  DgnGeoCoordinationAdmin : public DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     mutable IGeoCoordinateServicesP     m_gcrp;
     mutable bool                        m_initializationComplete;
@@ -718,14 +718,15 @@ private:
     virtual bool _CanShareDgnFile (DgnFileR, DgnAttachmentR) const override;
     virtual void _OnPostModelFill (DgnModelR, DgnModelFillContextP) const override;
 
-/*__PUBLISH_SECTION_START__*/
 public:
     DGNGEOCOORD_EXPORTED static DgnGeoCoordinationAdmin* Create (WCharCP dataDirectory, IACSManagerR mgr);
 };
 
+/*__PUBLISH_SECTION_START__*/
+
 } // ends GeoCoordinate namespace
 
 END_BENTLEY_NAMESPACE
-
 /*__PUBLISH_SECTION_END__*/
+
 #pragma make_public (Bentley::GeoCoordinates::DgnGCS)

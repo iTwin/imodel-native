@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoCoord.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1837,13 +1837,12 @@ DPoint3dCR       points,
 int             numPoints
 ) const;
 
+/*__PUBLISH_SECTION_END__*/
 
 BASEGEOCOORD_EXPORTED static DgnProjectionTypes     DgnProjectionTypeFromCSDefName (CharCP projectionKeyName);
 
 BASEGEOCOORD_EXPORTED static DgnProjectionTypes     DgnProjectionTypeFromCSMapProjectionCode (BaseGCS::ProjectionCodeValue projectionCode);
 
-
-/*__PUBLISH_SECTION_END__*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
