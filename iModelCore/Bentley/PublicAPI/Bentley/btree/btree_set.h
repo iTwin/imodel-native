@@ -66,7 +66,7 @@ To understand the @c bset class, consult the documentation for @c std::set.
 @see http://www.cplusplus.com/reference/set/set/
 @ingroup BeCollectionsGroup
 */
-template <typename Key, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 16,
+template <typename Key, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 32,
           typename Alloc = Bentley::BentleyAllocator<Key> >
 class bset : public btree_unique_container<
   btree<btree_set_params<Key, Compare, Alloc, EntriesPerNode*sizeof(Key)> > > {

@@ -307,7 +307,7 @@ struct bmap_params
   typedef const value_type& const_reference;
 
   enum {
-    kValueSize = sizeof(value_type),
+    kValueSize = sizeof(Key) + sizeof(data_type),
   };
 
   static const Key& key(const value_type &x) { return x.first; }
