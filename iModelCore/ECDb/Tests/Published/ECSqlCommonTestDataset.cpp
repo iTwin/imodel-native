@@ -97,6 +97,15 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType ecs
 
         ecsql.Sprintf("%s WHERE (S1 IS NOT NULL OR S2 IS NOT NULL)", testClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE S1 IS NULL AND S2 IS NOT NULL", testClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE S1 IS NULL AND S2 IS NOT NULL OR 1=1", testClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE S1 IS NULL AND (S2 IS NOT NULL OR 1=1)", testClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
         }
 
     return dataset;
