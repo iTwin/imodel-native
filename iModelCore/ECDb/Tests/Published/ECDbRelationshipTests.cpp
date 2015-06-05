@@ -161,6 +161,12 @@ void ValidateReadingRelationship (ECDbTestProject& testProject, WCharCP relation
     statement.BindId(1, InstanceToId(importedRelInstance));
 
     ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
+    int64_t ecInstanceId = statement.GetValueInt64 (0);
+    int64_t sourceECInstanceId = statement.GetValueInt64 (1);
+    int64_t sourceECClassId = statement.GetValueInt64 (2);
+    int64_t targetECInstanceId = statement.GetValueInt64 (3);
+    int64_t targetECClassId = statement.GetValueInt64 (4);
+    ASSERT_TRUE (ecInstanceId != 0 && sourceECInstanceId != 0 && sourceECClassId != 0 && targetECInstanceId != 0 && targetECClassId != 0);
 
     // Get and check result
     ECInstanceECSqlSelectAdapter adapter (statement);
@@ -325,6 +331,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
 
+    db.SaveChanges ();
     ValidateReadingRelationship (test, L"Foo_has_SomethingInOneOfManyTables", *relInstance);
     ValidateReadingRelated (test, L"Foo_has_SomethingInOneOfManyTables", relInstance->GetSource(), relInstance->GetTarget());
 
