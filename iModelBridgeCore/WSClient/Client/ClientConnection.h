@@ -14,7 +14,9 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-typedef MobileDgn::Utils::AsyncResult<WebApiPtr, WSError> WebApiResult;
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
+typedef AsyncResult<WebApiPtr, WSError> WebApiResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2014
@@ -29,7 +31,7 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
         mutable std::shared_ptr<WebApi> m_webApi;
 
     private:
-        MobileDgn::Utils::AsyncTaskPtr<void> InvalidateInfo () const;
+        AsyncTaskPtr<void> InvalidateInfo () const;
         std::shared_ptr<WebApi> GetWebApi (WSInfoCR info) const;
 
     public:
@@ -41,22 +43,22 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
         void RegisterServerInfoListener (std::weak_ptr<IWSClient::IServerInfoListener> listener);
         void UnregisterServerInfoListener (std::weak_ptr<IWSClient::IServerInfoListener> listener);
 
-        MobileDgn::Utils::AsyncTaskPtr<WebApiResult> GetWebApi
+        AsyncTaskPtr<WebApiResult> GetWebApi
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken
             ) const;
 
-        MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> GetServerInfo
+        AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
             bool forceQuery,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken
             ) const;
 
         template<typename R>
-        MobileDgn::Utils::AsyncTaskPtr<R> GetWebApiAndReturnResponse
+        AsyncTaskPtr<R> GetWebApiAndReturnResponse
             (
-            std::function<MobileDgn::Utils::AsyncTaskPtr<R> (WebApiPtr)> requestCallback,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken
+            std::function<AsyncTaskPtr<R> (WebApiPtr)> requestCallback,
+            ICancellationTokenPtr cancellationToken
             ) const
             {
             auto thisPtr = shared_from_this ();

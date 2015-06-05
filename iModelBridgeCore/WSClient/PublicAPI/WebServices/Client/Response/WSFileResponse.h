@@ -13,6 +13,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -25,7 +27,7 @@ struct WSFileResponse
 
     public:
         WSCLIENT_EXPORT WSFileResponse ();
-        WSCLIENT_EXPORT WSFileResponse (BeFileName filePath, MobileDgn::Utils::HttpStatus status, Utf8String eTag);
+        WSCLIENT_EXPORT WSFileResponse (BeFileName filePath, HttpStatus status, Utf8String eTag);
 
         WSCLIENT_EXPORT bool IsModified () const;
         WSCLIENT_EXPORT BeFileNameCR GetFilePath () const;

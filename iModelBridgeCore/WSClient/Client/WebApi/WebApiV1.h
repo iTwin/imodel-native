@@ -13,6 +13,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -34,8 +36,8 @@ struct WebApiV1 : public WebApi
             bool isModified;
             };
 
-        typedef MobileDgn::Utils::AsyncResult<SchemaResponse, WSError> SchemaResult;
-        typedef MobileDgn::Utils::AsyncResult<SchemaInfo, WSError> SchemaInfoResult;
+        typedef AsyncResult<SchemaResponse, WSError> SchemaResult;
+        typedef AsyncResult<SchemaInfo, WSError> SchemaInfoResult;
 
     public:
         static Utf8CP const SERVICE_Navigation;
@@ -56,17 +58,17 @@ struct WebApiV1 : public WebApi
         Utf8String CreateParentQuery (ObjectIdCR objectId) const;
         Utf8String CreateWebApiVersionPart (Utf8StringCR webApiVersion) const;
 
-        MobileDgn::Utils::HttpRequest CreateGetRepositoriesRequest (const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
+        HttpRequest CreateGetRepositoriesRequest (const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
 
         static BentleyStatus ParseRepository (JsonValueCR dataSourceJson, WSRepository& repositoryOut);
-        static WSRepositoriesResult ResolveGetRepositoriesResponse (MobileDgn::Utils::HttpResponse& response);
-        static WSCreateObjectResult ResolveCreateObjectResponse (MobileDgn::Utils::HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR className);
-        static WSUpdateObjectResult ResolveUpdateObjectResponse (MobileDgn::Utils::HttpResponse& response);
-        static WSObjectsResult ResolveObjectsResponse (MobileDgn::Utils::HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
-        static WSFileResult ResolveFileResponse (MobileDgn::Utils::HttpResponse& response, BeFileName filePath);
+        static WSRepositoriesResult ResolveGetRepositoriesResponse (HttpResponse& response);
+        static WSCreateObjectResult ResolveCreateObjectResponse (HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR className);
+        static WSUpdateObjectResult ResolveUpdateObjectResponse (HttpResponse& response);
+        static WSObjectsResult ResolveObjectsResponse (HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
+        static WSFileResult ResolveFileResponse (HttpResponse& response, BeFileName filePath);
 
-        static bool IsValidObjectsResponse (MobileDgn::Utils::HttpResponseCR response);
-        static bool IsJsonResponse (MobileDgn::Utils::HttpResponseCR response);
+        static bool IsValidObjectsResponse (HttpResponseCR response);
+        static bool IsJsonResponse (HttpResponseCR response);
 
         static bool IsObjectCreationJsonSupported (JsonValueCR objectCreationJson);
         static void GetParametersFromObjectCreationJson
@@ -78,7 +80,7 @@ struct WebApiV1 : public WebApi
             ObjectIdR parentObjectIdOut
             );
 
-        MobileDgn::Utils::AsyncTaskPtr<SchemaInfoResult> GetSchemaInfo (MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<SchemaInfoResult> GetSchemaInfo (ICancellationTokenPtr cancellationToken) const;
 
         SchemaInfo GetCachedSchemaInfo () const;
         void SetCachedSchemaInfo (SchemaInfo schemaInfo) const;
@@ -86,22 +88,22 @@ struct WebApiV1 : public WebApi
         static BentleyStatus ReadSchemaInfoFromFile (BeFileNameCR filePath, SchemaInfo& schemaInfoOut);
         static BentleyStatus ReadSchemaInfoFromXmlString (Utf8StringCR xmlString, SchemaInfo& schemaInfoOut);
         static BentleyStatus ReadSchemaInfoFromXmlDom (BeXmlStatus xmlDomReadStatus, BeXmlDomPtr schemaXmlDom, SchemaInfo& schemaInfoOut);
-        static BentleyStatus WriteFileToHttpBody (BeFileNameCR filePath, MobileDgn::Utils::HttpBodyPtr body);
+        static BentleyStatus WriteFileToHttpBody (BeFileNameCR filePath, HttpBodyPtr body);
 
-        MobileDgn::Utils::AsyncTaskPtr<SchemaResult> GetSchema
+        AsyncTaskPtr<SchemaResult> GetSchema
             (
-            MobileDgn::Utils::HttpBodyPtr body,
+            HttpBodyPtr body,
             Utf8StringCR eTag,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR downloadProgressCallback,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken 
+            HttpRequest::ProgressCallbackCR downloadProgressCallback,
+            ICancellationTokenPtr cancellationToken 
             ) const;
 
-        MobileDgn::Utils::AsyncTaskPtr<WSFileResult> GetSchema
+        AsyncTaskPtr<WSFileResult> GetSchema
             (
             BeFileNameCR filePath,
             Utf8StringCR eTag,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR downloadProgressCallback,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken
+            HttpRequest::ProgressCallbackCR downloadProgressCallback,
+            ICancellationTokenPtr cancellationToken
             ) const;
 
         virtual Utf8String GetSchemaUrl () const;
@@ -120,79 +122,79 @@ struct WebApiV1 : public WebApi
 
         static bool IsSupported (WSInfoCR info);
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSFileResult> SendGetFileRequest
+        virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSObjectsResult> SendQueryRequest
+        virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName (),
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
+        virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
+        virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
+        virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
     };
 

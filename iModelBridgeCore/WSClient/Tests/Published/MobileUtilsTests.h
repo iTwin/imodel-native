@@ -36,24 +36,42 @@ ECN::ECSchemaPtr ParseSchema (Utf8StringCR schemaXml, ECN::ECSchemaReadContextPt
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct TestAppPathProvider : MobileDgn::IApplicationPathsProvider
-{
-private:
-    BeFileName m_documentsDirectory;
-    BeFileName m_temporaryDirectory;
-    BeFileName m_platformAssetsDirectory;
-    BeFileName m_localStateDirectory;
-    
-protected:
-    virtual BeFileNameCR _GetDocumentsDirectory () const { return m_documentsDirectory; }
-    virtual BeFileNameCR _GetTemporaryDirectory () const { return m_temporaryDirectory; }
-    virtual BeFileNameCR _GetCachesDirectory () const { return m_temporaryDirectory; }
-    virtual BeFileNameCR _GetLocalStateDirectory () const { return m_localStateDirectory; }
-    virtual BeFileNameCR _GetAssetsRootDirectory () const { return m_platformAssetsDirectory; }
-    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory () const { return m_platformAssetsDirectory; }
-    virtual BeFileNameCR _GetMarkupSeedFilePath () const { static BeFileName s_blank; return s_blank; }
+    {
+    private:
+        BeFileName m_documentsDirectory;
+        BeFileName m_temporaryDirectory;
+        BeFileName m_platformAssetsDirectory;
+        BeFileName m_localStateDirectory;
 
-public:
-    TestAppPathProvider ();
+    protected:
+        virtual BeFileNameCR _GetDocumentsDirectory () const  override
+            {
+            return m_documentsDirectory;
+            }
+        virtual BeFileNameCR _GetTemporaryDirectory () const override
+            {
+            return m_temporaryDirectory;
+            }
+        virtual BeFileNameCR _GetCachesDirectory () const override
+            {
+            return m_temporaryDirectory;
+            }
+        virtual BeFileNameCR _GetLocalStateDirectory () const override
+            {
+            return m_localStateDirectory;
+            }
+        virtual BeFileNameCR _GetAssetsRootDirectory () const override
+            {
+            return m_platformAssetsDirectory;
+            }
+        virtual BeFileNameCR _GetMarkupSeedFilePath () const override
+            {
+            static BeFileName s_blank;
+            return s_blank; 
+            }
+
+    public:
+        TestAppPathProvider ();
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -71,35 +89,35 @@ struct MobileUtilsTest : ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MockHttpHandler : public IHttpHandler
     {
-public:
-    typedef std::function<HttpResponse (HttpRequestCR)> OnResponseCallback;
+    public:
+        typedef std::function<HttpResponse (HttpRequestCR)> OnResponseCallback;
 
-private:
-    int64_t m_expectedRequests;
-    
-    std::map<uint32_t, OnResponseCallback> m_onSpecificRequestMap;
-    OnResponseCallback m_onAnyRequestCallback;
+    private:
+        int64_t m_expectedRequests;
 
-    uint32_t m_perfomedRequests;
+        std::map<uint32_t, OnResponseCallback> m_onSpecificRequestMap;
+        OnResponseCallback m_onAnyRequestCallback;
 
-public:
-    MockHttpHandler ();
-    virtual ~MockHttpHandler () override;
-    virtual AsyncTaskPtr<HttpResponse> PerformRequest (HttpRequestCR request) override;
+        uint32_t m_perfomedRequests;
 
-    uint32_t GetRequestsPerformed () const;
+    public:
+        MockHttpHandler ();
+        virtual ~MockHttpHandler () override;
+        virtual AsyncTaskPtr<HttpResponse> PerformRequest (HttpRequestCR request) override;
 
-    MockHttpHandler& ExpectOneRequest ();
-    MockHttpHandler& ExpectRequests (uint32_t count);
+        uint32_t GetRequestsPerformed () const;
 
-    MockHttpHandler& ForRequest (uint32_t requestNumber, OnResponseCallback callback);
-    MockHttpHandler& ForRequest (uint32_t requestNumber, HttpResponseCR response);
+        MockHttpHandler& ExpectOneRequest ();
+        MockHttpHandler& ExpectRequests (uint32_t count);
 
-    MockHttpHandler& ForFirstRequest (OnResponseCallback callback);
-    MockHttpHandler& ForFirstRequest (HttpResponseCR response);
+        MockHttpHandler& ForRequest (uint32_t requestNumber, OnResponseCallback callback);
+        MockHttpHandler& ForRequest (uint32_t requestNumber, HttpResponseCR response);
 
-    MockHttpHandler& ForAnyRequest (OnResponseCallback callback);
-    MockHttpHandler& ForAnyRequest (HttpResponseCR response);
+        MockHttpHandler& ForFirstRequest (OnResponseCallback callback);
+        MockHttpHandler& ForFirstRequest (HttpResponseCR response);
+
+        MockHttpHandler& ForAnyRequest (OnResponseCallback callback);
+        MockHttpHandler& ForAnyRequest (HttpResponseCR response);
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -107,15 +125,15 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 class BaseMockHttpHandlerTest : public MobileUtilsTest
     {
-private:
-    std::shared_ptr<MockHttpHandler>    m_handler;
-    HttpClient                          m_client;
-    
-public:
-    BaseMockHttpHandlerTest ();
-    HttpClientCR GetClient () const;
-    MockHttpHandler& GetHandler () const;
-    std::shared_ptr<MockHttpHandler> GetHandlerPtr () const;
+    private:
+        std::shared_ptr<MockHttpHandler>    m_handler;
+        HttpClient                          m_client;
+
+    public:
+        BaseMockHttpHandlerTest ();
+        HttpClientCR GetClient () const;
+        MockHttpHandler& GetHandler () const;
+        std::shared_ptr<MockHttpHandler> GetHandlerPtr () const;
     };
 
 //--------------------------------------------------------------------------------------+

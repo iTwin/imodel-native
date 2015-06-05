@@ -12,6 +12,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -26,13 +28,13 @@ struct WebApiV1BentleyConect : public WebApiV1
 
         static bool IsSupported (WSInfoCR info);
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSFileResult> SendGetFileRequest
+        virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            MobileDgn::Utils::HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
     };
 
