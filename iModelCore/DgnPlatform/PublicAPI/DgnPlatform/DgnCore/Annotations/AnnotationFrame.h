@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationFrame.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -27,8 +27,7 @@ enum struct SetAnnotationFrameStyleOptions
     
     Default = 0,
     Direct = PreserveOverrides
-
-}; // SetAnnotationFrameStyleOptions
+};
 
 //=======================================================================================
 //! An AnnotationFrame is an enclosing piece of geometry around an AnnotationTextBlock, used in a TextAnnotation. A frame also enables the TextAnnotation to have leaders, as the frame defines attachment points based on its type. AnnotationFrame is merely a data object; see AnnotationFrameLayout for size/position/geometry, and AnnotationFrameDraw for drawing.
@@ -37,7 +36,6 @@ enum struct SetAnnotationFrameStyleOptions
 //=======================================================================================
 struct AnnotationFrame : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationFramePersistence;
@@ -47,31 +45,25 @@ private:
     DgnStyleId m_styleID;
     AnnotationFrameStylePropertyBag m_styleOverrides;
 
-    void CopyFrom(AnnotationFrameCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationFrameCR);
     void Reset();
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationFrame(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationFrame(AnnotationFrameCR);
-    DGNPLATFORM_EXPORT AnnotationFrameR operator=(AnnotationFrameCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnDbR);
+    AnnotationFrame(AnnotationFrameCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationFrameR operator=(AnnotationFrameCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationFramePtr Create(DgnDbR project) { return new AnnotationFrame(project); }
     DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnDbR, DgnStyleId);
-    DGNPLATFORM_EXPORT AnnotationFramePtr Clone() const;
+    AnnotationFramePtr Clone() const { return new AnnotationFrame(*this); }
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    DgnStyleId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationFrameStyleOptions);
-    DGNPLATFORM_EXPORT AnnotationFrameStylePtr CreateEffectiveStyle() const;
-    DGNPLATFORM_EXPORT AnnotationFrameStylePropertyBagCR GetStyleOverrides() const;
-    DGNPLATFORM_EXPORT AnnotationFrameStylePropertyBagR GetStyleOverridesR();
-
-}; // AnnotationFrame
+    AnnotationFrameStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationFrameStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationFrameStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
+    AnnotationFrameStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

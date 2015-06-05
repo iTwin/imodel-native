@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationFrameDraw.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -23,7 +23,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct AnnotationFrameDraw : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -35,17 +34,13 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationFrameDraw(AnnotationFrameLayoutCR);
     DGNPLATFORM_EXPORT AnnotationFrameDraw(AnnotationFrameDrawCR);
     DGNPLATFORM_EXPORT AnnotationFrameDrawR operator=(AnnotationFrameDrawCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationFrameDrawPtr Create(AnnotationFrameLayoutCR);
     DGNPLATFORM_EXPORT AnnotationFrameDrawPtr Clone() const;
 
     DGNPLATFORM_EXPORT AnnotationFrameLayoutCR GetFrameLayout() const;
 
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
-
-}; // AnnotationFrameDraw
+};
 
 //! @endGroup
 

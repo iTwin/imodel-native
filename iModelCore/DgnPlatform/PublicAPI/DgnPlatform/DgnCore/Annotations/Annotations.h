@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/Annotations.h $ 
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $ 
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -47,7 +47,6 @@ public:
     ~CallbackOnDestruct() { Call(); }
     void CallThenCancel() { Call(); Cancel(); }
     void Cancel() { m_callback = NULL; }
-
-}; // CallbackOnDestruct
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -49,8 +49,7 @@ enum struct SetAnnotationTextStyleOptions
     
     Default = 0,
     Direct = PreserveOverrides | DontPropogate
-
-}; // SetAnnotationTextStyleOptions
+};
 
 //=======================================================================================
 //! This enumerates all possible annotation run types.
@@ -61,8 +60,7 @@ enum struct AnnotationRunType
     Text = 1,
     Fraction = 2,
     LineBreak = 3
-
-}; // AnnotationRunType
+};
 
 //=======================================================================================
 //! A "run" is typically a sequence of characters that share a single format/style, but other specialized run types exist. In the hierarchy of block/paragraph/run, run is the most granular piece of the block, and contains the actual character data. When laid out on screen, a single run may span multiple lines, but it can never span different formats/styles.
@@ -71,7 +69,6 @@ enum struct AnnotationRunType
 //=======================================================================================
 struct AnnotationRunBase : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
@@ -92,8 +89,6 @@ protected:
     virtual AnnotationRunType _GetType() const = 0;
 
 public:
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT AnnotationRunBasePtr Clone() const;
     
     DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
@@ -103,10 +98,7 @@ public:
     DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle() const;
     DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagCR GetStyleOverrides() const;
     DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR GetStyleOverridesR();
-    
-}; // AnnotationRunBase
-
-//__PUBLISH_SECTION_END__
+};
 
 //=======================================================================================
 //! Specifies if an AnnotationTextRun is normal, subscript, or superscript.
@@ -118,10 +110,7 @@ enum struct AnnotationTextRunSubSuperScript
     Neither = 0,
     SubScript = 1,
     SuperScript = 2
-
-}; // AnnotationTextRunSubSuperScript
-
-//__PUBLISH_SECTION_START__
+};
 
 //=======================================================================================
 //! A text run is the most common specialization of AnnotationRunBase, and contains a sequence of characters.
@@ -129,7 +118,6 @@ enum struct AnnotationTextRunSubSuperScript
 //=======================================================================================
 struct AnnotationTextRun : public AnnotationRunBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
@@ -146,12 +134,6 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationTextRun(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationTextRun(AnnotationTextRunCR);
     DGNPLATFORM_EXPORT AnnotationTextRunR operator=(AnnotationTextRunCR);
-
-    DGNPLATFORM_EXPORT AnnotationTextRunSubSuperScript GetSubSuperScript() const;
-    DGNPLATFORM_EXPORT void SetSubSuperScript(AnnotationTextRunSubSuperScript);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR);
     DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnStyleId, Utf8CP);
@@ -159,12 +141,13 @@ public:
 
     DGNPLATFORM_EXPORT Utf8StringCR GetContent() const;
     DGNPLATFORM_EXPORT void SetContent(Utf8CP);
+    DGNPLATFORM_EXPORT AnnotationTextRunSubSuperScript GetSubSuperScript() const;
+    DGNPLATFORM_EXPORT void SetSubSuperScript(AnnotationTextRunSubSuperScript);
     DGNPLATFORM_EXPORT bool IsSubScript() const;
     DGNPLATFORM_EXPORT void SetIsSubScript(bool);
     DGNPLATFORM_EXPORT bool IsSuperScript() const;
     DGNPLATFORM_EXPORT void SetIsSuperScript(bool);
-
-}; // AnnotationTextRun
+};
 
 //=======================================================================================
 //! A fraction run is a specialization of AnnotationRunBase that represents a stacked fraction.
@@ -172,7 +155,6 @@ public:
 //=======================================================================================
 struct AnnotationFractionRun: public AnnotationRunBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
@@ -189,9 +171,6 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationFractionRun(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationFractionRun(AnnotationFractionRunCR);
     DGNPLATFORM_EXPORT AnnotationFractionRunR operator=(AnnotationFractionRunCR);
-    
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR);
     DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnStyleId, Utf8CP numerator, Utf8CP denominator);
@@ -201,8 +180,7 @@ public:
     DGNPLATFORM_EXPORT void SetDenominatorContent(Utf8CP);
     DGNPLATFORM_EXPORT Utf8StringCR GetNumeratorContent() const;
     DGNPLATFORM_EXPORT void SetNumeratorContent(Utf8CP);
-
-}; // AnnotationFractionRun
+};
 
 //=======================================================================================
 //! A line break run is a specialization of AnnotationRunBase that manually breaks a line within a paragraph.
@@ -210,7 +188,6 @@ public:
 //=======================================================================================
 struct AnnotationLineBreakRun : public AnnotationRunBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
@@ -222,14 +199,10 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationLineBreakRun(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationLineBreakRun(AnnotationLineBreakRunCR);
     DGNPLATFORM_EXPORT AnnotationLineBreakRunR operator=(AnnotationLineBreakRunCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR);
     DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT AnnotationLineBreakRunPtr CloneAsLineBreakRun() const;
-
-}; // AnnotationLineBreakRun
+};
 
 //=======================================================================================
 //! A paragraph is a collection of runs. In a block, individual paragraphs are started on their own "line", similar to how an AnnotationLineBreakRun operates within a paragraph.
@@ -238,7 +211,6 @@ public:
 //=======================================================================================
 struct AnnotationParagraph : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
@@ -256,9 +228,6 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationParagraph(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationParagraph(AnnotationParagraphCR);
     DGNPLATFORM_EXPORT AnnotationParagraphR operator=(AnnotationParagraphCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR);
     DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnStyleId, AnnotationRunBaseR);
@@ -272,8 +241,7 @@ public:
     DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR GetStyleOverridesR();
     DGNPLATFORM_EXPORT AnnotationRunCollectionCR GetRuns() const;
     DGNPLATFORM_EXPORT AnnotationRunCollectionR GetRunsR();
-
-}; // AnnotationParagraph
+};
 
 //=======================================================================================
 //! A block is a collection of paragraphs, and contains some unique formatting properties that cannot be on paragraphs or runs, such as justification. AnnotationTextBlock is merely a data object; see AnnotationTextBlockLayout for size/position/lines, and AnnotationTextBlockDraw for drawing. By default, no word-wrapping occurs. You can define a physical word wrap distance by calling SetDocumentWidth; runs will then automatically be split according to line break rules when performing layout.
@@ -291,10 +259,8 @@ struct AnnotationTextBlock : public RefCountedBase
         Left = 1,
         Center = 2,
         Right = 3
-    
-    }; // HorizontalJustification
+    };
 
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
@@ -316,9 +282,6 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlock(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationTextBlock(AnnotationTextBlockCR);
     DGNPLATFORM_EXPORT AnnotationTextBlockR operator=(AnnotationTextBlockCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR);
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId, AnnotationParagraphR);
@@ -341,11 +304,8 @@ public:
     DGNPLATFORM_EXPORT void AppendParagraph(AnnotationParagraphR);
     DGNPLATFORM_EXPORT void AppendRun(AnnotationRunBaseR);
     DGNPLATFORM_EXPORT bool IsEmpty() const;
-
-}; // AnnotationTextBlock
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

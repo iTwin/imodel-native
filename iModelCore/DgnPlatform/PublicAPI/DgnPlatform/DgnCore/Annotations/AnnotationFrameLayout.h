@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationFrameLayout.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -23,7 +23,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct AnnotationFrameLayout : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -42,9 +41,6 @@ public:
     DGNPLATFORM_EXPORT AnnotationFrameLayout(AnnotationFrameCR, AnnotationTextBlockLayoutCR);
     DGNPLATFORM_EXPORT AnnotationFrameLayout(AnnotationFrameLayoutCR);
     DGNPLATFORM_EXPORT AnnotationFrameLayoutR operator=(AnnotationFrameLayoutCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationFrameLayoutPtr Create(AnnotationFrameCR, AnnotationTextBlockLayoutCR);
     DGNPLATFORM_EXPORT AnnotationFrameLayoutPtr Clone() const;
 
@@ -57,8 +53,7 @@ public:
     DGNPLATFORM_EXPORT size_t GetAttachmentIdCount() const;
     DGNPLATFORM_EXPORT uint32_t GetAttachmentId(size_t) const;
     DGNPLATFORM_EXPORT void ComputePhysicalPointForAttachmentId(DPoint3dR, DVec3dR, uint32_t) const;
-
-}; // AnnotationFrameLayout
+};
 
 //! @endGroup
 

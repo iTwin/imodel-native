@@ -28,8 +28,7 @@ enum struct AnnotationLeaderLineType
     None = 1,
     Straight = 2,
     Curved = 3
-
-}; // AnnotationLeaderLineType
+};
 
 //=======================================================================================
 //! This enumerates all possible annotation leader terminator types.
@@ -40,8 +39,7 @@ enum struct AnnotationLeaderTerminatorType
     None = 1,
     OpenArrow = 2,
     ClosedArrow = 3
-
-}; // AnnotationLeaderTerminatorType
+};
 
 //=======================================================================================
 //! This enumerates all possible AnnotationLeaderStyle property keys.
@@ -59,8 +57,7 @@ enum struct AnnotationLeaderStyleProperty
     TerminatorStyle = 7, //!< (integer) @note Must be a standard line code
     TerminatorType = 8, //!< (integer) @note Must exist in the AnnotationLeaderTerminatorType enumeration
     TerminatorWeight = 9 //!< (integer) @note Must be a standard line weight
-
-}; // AnnotationLeaderStyleProperty
+};
 
 //=======================================================================================
 //! This specialized collection provides direct access to AnnotationLeaderStyle property keys and values.
@@ -71,7 +68,6 @@ enum struct AnnotationLeaderStyleProperty
 //=======================================================================================
 struct AnnotationLeaderStylePropertyBag : public AnnotationPropertyBag
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
     
@@ -83,9 +79,6 @@ public:
     DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBag();
     DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBag(AnnotationLeaderStylePropertyBagCR);
     DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBagR operator=(AnnotationLeaderStylePropertyBagCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationLeaderStylePropertyBagPtr Create();
     DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBagPtr Clone() const;
     
@@ -95,8 +88,7 @@ public:
     DGNPLATFORM_EXPORT void SetIntegerProperty(AnnotationLeaderStyleProperty, T_Integer);
     DGNPLATFORM_EXPORT T_Real GetRealProperty(AnnotationLeaderStyleProperty) const;
     DGNPLATFORM_EXPORT void SetRealProperty(AnnotationLeaderStyleProperty, T_Real);
-
-}; // AnnotationLeaderStylePropertyBag
+};
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationLeader.
@@ -106,7 +98,6 @@ public:
 //=======================================================================================
 struct AnnotationLeaderStyle : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationLeaderStylePersistence;
@@ -124,17 +115,13 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationLeaderStyle(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationLeaderStyle(AnnotationLeaderStyleCR);
     DGNPLATFORM_EXPORT AnnotationLeaderStyleR operator=(AnnotationLeaderStyleCR);
-    
-    void SetId(DgnStyleId);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationLeaderStylePtr Create(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationLeaderStylePtr Clone() const;
     DGNPLATFORM_EXPORT AnnotationLeaderStylePtr CreateEffectiveStyle(AnnotationLeaderStylePropertyBagCR overrides) const;
 
     DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT DgnStyleId GetId() const;
+    void SetId(DgnStyleId); //!< @private
     DGNPLATFORM_EXPORT Utf8StringCR GetName() const;
     DGNPLATFORM_EXPORT void SetName(Utf8CP);
     DGNPLATFORM_EXPORT Utf8StringCR GetDescription() const;
@@ -158,15 +145,13 @@ public:
     DGNPLATFORM_EXPORT void SetTerminatorType(AnnotationLeaderTerminatorType);
     DGNPLATFORM_EXPORT uint32_t GetTerminatorWeight() const;
     DGNPLATFORM_EXPORT void SetTerminatorWeight(uint32_t);
-
-}; // AnnotationLeaderStyle
+};
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct DgnAnnotationLeaderStyles : public DgnDbTable
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(DgnDbTable);
     friend struct DgnDb;
@@ -174,7 +159,6 @@ private:
     DgnAnnotationLeaderStyles(DgnDbR db) : T_Super(db) {}
 
 public:
-//__PUBLISH_SECTION_START__
     //=======================================================================================
     // @bsiclass
     //=======================================================================================
@@ -202,16 +186,14 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             Entry const& operator* () const { return *this; }
-
-        }; // Entry
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
         DGNPLATFORM_EXPORT const_iterator begin() const;
         const_iterator end() const { return Entry(NULL, false); }
         DGNPLATFORM_EXPORT size_t QueryCount() const;
-
-    }; // Iterator
+    };
     
     //! Queries the project for a leader style by-ID, and returns a deserialized instance.
     DGNPLATFORM_EXPORT AnnotationLeaderStylePtr QueryById(DgnStyleId) const;
@@ -239,11 +221,8 @@ public:
     //! Deletes a leader style from the project. If a style does not exist by-ID, no action is performed.
     //! @note When a style is removed, no attempts are currently made to normalize existing elements. Thus, elements may still attempt to reference a missing style, and must be written to assume such a style doesn't exist.
     DGNPLATFORM_EXPORT BentleyStatus Delete(DgnStyleId);
-
-}; // DgnAnnotationLeaderStyles
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

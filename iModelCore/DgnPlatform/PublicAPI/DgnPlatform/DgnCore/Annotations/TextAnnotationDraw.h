@@ -22,7 +22,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct TextAnnotationDraw : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -35,9 +34,6 @@ public:
     DGNPLATFORM_EXPORT explicit TextAnnotationDraw(TextAnnotationCR);
     DGNPLATFORM_EXPORT TextAnnotationDraw(TextAnnotationDrawCR);
     DGNPLATFORM_EXPORT TextAnnotationDrawR operator=(TextAnnotationDrawCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static TextAnnotationDrawPtr Create(TextAnnotationCR);
     DGNPLATFORM_EXPORT TextAnnotationDrawPtr Clone() const;
 
@@ -47,8 +43,7 @@ public:
 
     DGNVIEW_EXPORT BentleyStatus Draw(DgnViewportR, DgnDrawMode, DrawPurpose, DgnCategoryId) const;
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
-
-}; // TextAnnotationDraw
+};
 
 //! @endGroup
 

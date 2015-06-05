@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationLeaderLayout.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -23,7 +23,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct AnnotationLeaderLayout : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -46,9 +45,6 @@ public:
     DGNPLATFORM_EXPORT AnnotationLeaderLayout(AnnotationLeaderCR, AnnotationFrameLayoutCR);
     DGNPLATFORM_EXPORT AnnotationLeaderLayout(AnnotationLeaderLayoutCR);
     DGNPLATFORM_EXPORT AnnotationLeaderLayoutR operator=(AnnotationLeaderLayoutCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationLeaderLayoutPtr Create(AnnotationLeaderCR, AnnotationFrameLayoutCR);
     DGNPLATFORM_EXPORT AnnotationLeaderLayoutPtr Clone() const;
 
@@ -62,8 +58,7 @@ public:
     DGNPLATFORM_EXPORT CurveVectorCR GetLineGeometry() const;
     DGNPLATFORM_EXPORT CurveVectorCR GetTerminatorGeometry() const;
     DGNPLATFORM_EXPORT TransformCR GetTerminatorTransform() const;
-
-}; // AnnotationLeaderLayout
+};
 
 //! @endGroup
 

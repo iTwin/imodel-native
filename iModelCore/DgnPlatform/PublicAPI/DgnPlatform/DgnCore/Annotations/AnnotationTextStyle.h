@@ -27,8 +27,7 @@ enum struct AnnotationStackedFractionType
 {
     HorizontalBar = 1,
     DiagonalBar = 2
-    
-}; // AnnotationStackedFractionType
+};
 
 //=======================================================================================
 //! This enumerates all possible AnnotationTextStyle property keys.
@@ -59,8 +58,7 @@ enum struct AnnotationTextStyleProperty
     // **** ADDING MEMBERS? Consider updating: AnnotationTextStylePersistence, TextStyleInterop ****
     // *********************************************************************************************
 //__PUBLISH_SECTION_START__
-
-}; // AnnotationTextStyleProperty
+};
 
 //=======================================================================================
 //! This specialized collection provides direct access to AnnotationTextStyle property keys and values.
@@ -71,7 +69,6 @@ enum struct AnnotationTextStyleProperty
 //=======================================================================================
 struct AnnotationTextStylePropertyBag : public AnnotationPropertyBag
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
     
@@ -83,9 +80,6 @@ public:
     DGNPLATFORM_EXPORT AnnotationTextStylePropertyBag();
     DGNPLATFORM_EXPORT AnnotationTextStylePropertyBag(AnnotationTextStylePropertyBagCR);
     DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR operator=(AnnotationTextStylePropertyBagCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationTextStylePropertyBagPtr Create();
     DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagPtr Clone() const;
     
@@ -95,8 +89,7 @@ public:
     DGNPLATFORM_EXPORT void SetIntegerProperty(AnnotationTextStyleProperty, T_Integer);
     DGNPLATFORM_EXPORT T_Real GetRealProperty(AnnotationTextStyleProperty) const;
     DGNPLATFORM_EXPORT void SetRealProperty(AnnotationTextStyleProperty, T_Real);
-
-}; // AnnotationTextStylePropertyBag
+};
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationTextBlock.
@@ -107,7 +100,6 @@ public:
 //=======================================================================================
 struct AnnotationTextStyle : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextStylePersistence;
@@ -126,18 +118,13 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationTextStyle(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationTextStyle(AnnotationTextStyleCR);
     DGNPLATFORM_EXPORT AnnotationTextStyleR operator=(AnnotationTextStyleCR);
-    
-    void SetId(DgnStyleId);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationTextStylePtr Create(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationTextStylePtr Clone() const;
     DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStylePropertyBagCR overrides) const;
-    DGNPLATFORM_EXPORT DgnFontCR ResolveFont() const;
-
+    
     DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT DgnStyleId GetId() const;
+    void SetId(DgnStyleId); //!< @private
     DGNPLATFORM_EXPORT Utf8StringCR GetName() const;
     DGNPLATFORM_EXPORT void SetName(Utf8CP);
     DGNPLATFORM_EXPORT Utf8StringCR GetDescription() const;
@@ -172,14 +159,14 @@ public:
     DGNPLATFORM_EXPORT double GetWidthFactor() const;
     DGNPLATFORM_EXPORT void SetWidthFactor(double);
 
-}; // AnnotationTextStyle
+    DGNPLATFORM_EXPORT DgnFontCR ResolveFont() const;
+};
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct DgnAnnotationTextStyles : public DgnDbTable
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(DgnDbTable);
     friend struct DgnDb;
@@ -187,7 +174,6 @@ private:
     DgnAnnotationTextStyles(DgnDbR db) : T_Super(db) {}
 
 public:
-//__PUBLISH_SECTION_START__
     //=======================================================================================
     // @bsiclass
     //=======================================================================================
@@ -215,16 +201,14 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             Entry const& operator* () const { return *this; }
-
-        }; // Entry
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
         DGNPLATFORM_EXPORT const_iterator begin() const;
         const_iterator end() const { return Entry(NULL, false); }
         DGNPLATFORM_EXPORT size_t QueryCount() const;
-
-    }; // Iterator
+    };
     
     //! Queries the project for a text style by-ID, and returns a deserialized instance.
     DGNPLATFORM_EXPORT AnnotationTextStylePtr QueryById(DgnStyleId) const;
@@ -258,5 +242,3 @@ public:
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

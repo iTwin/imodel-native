@@ -29,8 +29,7 @@ enum struct AnnotationFrameType
     Box = 2,
     Circle = 3,
     Ellipse = 4
-
-}; // AnnotationFrameType
+};
 
 //=======================================================================================
 //! This enumerates all possible AnnotationFrameStyle property keys.
@@ -52,8 +51,7 @@ enum struct AnnotationFrameStyleProperty
     StrokeWeight = 11, //!< (integer) @note Must be a standard line weight
     Type = 12, //!< (integer) @note Must exist in the AnnotationFrameType enumeration
     VerticalPadding = 13 //!< (real) @note Factor of the first character's text height
-
-}; // AnnotationFrameStyleProperty
+};
 
 //=======================================================================================
 //! This specialized collection provides direct access to AnnotationFrameStyle property keys and values.
@@ -64,7 +62,6 @@ enum struct AnnotationFrameStyleProperty
 //=======================================================================================
 struct AnnotationFrameStylePropertyBag : public AnnotationPropertyBag
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
     
@@ -76,9 +73,6 @@ public:
     DGNPLATFORM_EXPORT AnnotationFrameStylePropertyBag();
     DGNPLATFORM_EXPORT AnnotationFrameStylePropertyBag(AnnotationFrameStylePropertyBagCR);
     DGNPLATFORM_EXPORT AnnotationFrameStylePropertyBagR operator=(AnnotationFrameStylePropertyBagCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationFrameStylePropertyBagPtr Create();
     DGNPLATFORM_EXPORT AnnotationFrameStylePropertyBagPtr Clone() const;
     
@@ -88,8 +82,7 @@ public:
     DGNPLATFORM_EXPORT void SetIntegerProperty(AnnotationFrameStyleProperty, T_Integer);
     DGNPLATFORM_EXPORT T_Real GetRealProperty(AnnotationFrameStyleProperty) const;
     DGNPLATFORM_EXPORT void SetRealProperty(AnnotationFrameStyleProperty, T_Real);
-
-}; // AnnotationFrameStylePropertyBag
+};
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationFrame.
@@ -99,7 +92,6 @@ public:
 //=======================================================================================
 struct AnnotationFrameStyle : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationFrameStylePersistence;
@@ -117,17 +109,13 @@ public:
     DGNPLATFORM_EXPORT explicit AnnotationFrameStyle(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationFrameStyle(AnnotationFrameStyleCR);
     DGNPLATFORM_EXPORT AnnotationFrameStyleR operator=(AnnotationFrameStyleCR);
-    
-    void SetId(DgnStyleId);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static AnnotationFrameStylePtr Create(DgnDbR);
     DGNPLATFORM_EXPORT AnnotationFrameStylePtr Clone() const;
     DGNPLATFORM_EXPORT AnnotationFrameStylePtr CreateEffectiveStyle(AnnotationFrameStylePropertyBagCR overrides) const;
 
     DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
     DGNPLATFORM_EXPORT DgnStyleId GetId() const;
+    void SetId(DgnStyleId); //!< @private
     DGNPLATFORM_EXPORT Utf8StringCR GetName() const;
     DGNPLATFORM_EXPORT void SetName(Utf8CP);
     DGNPLATFORM_EXPORT Utf8StringCR GetDescription() const;
@@ -159,17 +147,14 @@ public:
     DGNPLATFORM_EXPORT void SetType(AnnotationFrameType);
     DGNPLATFORM_EXPORT double GetVerticalPadding() const;
     DGNPLATFORM_EXPORT void SetVerticalPadding(double);
-
     DGNPLATFORM_EXPORT void SetPadding(double);
-
-}; // AnnotationFrameStyle
+};
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct DgnAnnotationFrameStyles : public DgnDbTable
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(DgnDbTable);
     friend struct DgnDb;
@@ -177,7 +162,6 @@ private:
     DgnAnnotationFrameStyles(DgnDbR db) : T_Super(db) {}
 
 public:
-//__PUBLISH_SECTION_START__
     //=======================================================================================
     // @bsiclass
     //=======================================================================================
@@ -205,16 +189,14 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             Entry const& operator* () const { return *this; }
-
-        }; // Entry
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
         DGNPLATFORM_EXPORT const_iterator begin() const;
         const_iterator end() const { return Entry(NULL, false); }
         DGNPLATFORM_EXPORT size_t QueryCount() const;
-
-    }; // Iterator
+    };
     
     //! Queries the project for a frame style by-ID, and returns a deserialized instance.
     DGNPLATFORM_EXPORT AnnotationFrameStylePtr QueryById(DgnStyleId) const;
@@ -242,11 +224,8 @@ public:
     //! Deletes a frame style from the project. If a style does not exist by-ID, no action is performed.
     //! @note When a style is removed, no attempts are currently made to normalize existing elements. Thus, elements may still attempt to reference a missing style, and must be written to assume such a style doesn't exist.
     DGNPLATFORM_EXPORT BentleyStatus Delete(DgnStyleId);
-
-}; // DgnAnnotationFrameStyles
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

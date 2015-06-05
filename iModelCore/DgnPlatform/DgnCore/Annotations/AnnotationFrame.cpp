@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationFrame.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
@@ -16,7 +16,6 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFramePtr AnnotationFrame::Create(DgnDbR project) { return new AnnotationFrame(project); }
 AnnotationFrame::AnnotationFrame(DgnDbR project) :
     T_Super()
     {
@@ -38,9 +37,6 @@ AnnotationFramePtr AnnotationFrame::Create(DgnDbR project, DgnStyleId styleID)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFramePtr AnnotationFrame::Clone() const { return new AnnotationFrame(*this); }
-AnnotationFrame::AnnotationFrame(AnnotationFrameCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationFrameR AnnotationFrame::operator=(AnnotationFrameCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationFrame::CopyFrom(AnnotationFrameCR rhs)
     {
     // Making additions or changes? Please check constructor and Reset.
@@ -58,15 +54,6 @@ void AnnotationFrame::Reset()
     m_styleID.Invalidate();
     m_styleOverrides.ClearAllProperties();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-DgnDbR AnnotationFrame::GetDgnProjectR() const { return *m_dgndb; }
-DgnStyleId AnnotationFrame::GetStyleId() const { return m_styleID; }
-AnnotationFrameStylePtr AnnotationFrame::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationFrameStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
-AnnotationFrameStylePropertyBagCR AnnotationFrame::GetStyleOverrides() const { return m_styleOverrides; }
-AnnotationFrameStylePropertyBagR AnnotationFrame::GetStyleOverridesR() { return m_styleOverrides; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014

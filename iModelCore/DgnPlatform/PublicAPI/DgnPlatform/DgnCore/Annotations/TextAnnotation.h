@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/TextAnnotation.h $ 
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $ 
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -31,7 +31,6 @@ typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
 //=======================================================================================
 struct TextAnnotation : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -48,9 +47,6 @@ public:
     DGNPLATFORM_EXPORT explicit TextAnnotation(DgnDbR);
     DGNPLATFORM_EXPORT TextAnnotation(TextAnnotationCR);
     DGNPLATFORM_EXPORT TextAnnotationR operator=(TextAnnotationCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR);
     DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT TextAnnotationPtr Clone() const;
@@ -65,11 +61,8 @@ public:
     DGNPLATFORM_EXPORT void SetFrame(AnnotationFrameCP);
     DGNPLATFORM_EXPORT AnnotationLeaderCollectionCR GetLeaders() const;
     DGNPLATFORM_EXPORT AnnotationLeaderCollectionR GetLeadersR();
-
-}; // TextAnnotation
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

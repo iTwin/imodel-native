@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationPropertyBag.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -26,7 +26,6 @@ struct AnnotationPropertyBag : public RefCountedBase
     typedef int64_t T_Integer;
     typedef double T_Real;
 
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -53,16 +52,11 @@ protected:
     void SetRealProperty(T_Key, T_Real);
 
 public:
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
     DGNPLATFORM_EXPORT void ClearAllProperties();
     DGNPLATFORM_EXPORT size_t ComputePropertyCount() const;
     DGNPLATFORM_EXPORT void MergeWith(AnnotationPropertyBagCR);
-
-}; // AnnotationPropertyBag
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__
