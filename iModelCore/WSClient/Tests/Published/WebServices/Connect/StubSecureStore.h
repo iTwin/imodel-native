@@ -17,22 +17,26 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct StubSecureStore : public ISecureStore
     {
-    private:
-        Json::Value m_map;
+    Json::Value values;
+    Json::Value legacyValues;
 
-    public:
-        JsonValueR GetStubMap ()
-            {
-            return m_map;
-            }
+    void SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value) override
+        {
+        values[nameSpace][key] = value;
+        };
 
-        void SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value) override
-            {
-            m_map[nameSpace][key] = value;
-            };
+    Utf8String LoadValue (Utf8CP nameSpace, Utf8CP key) override
+        {
+        return values[nameSpace][key].asString ();
+        };
 
-        Utf8String LoadValue (Utf8CP nameSpace, Utf8CP key) override
-            {
-            return m_map[nameSpace][key].asString ();
-            };
+    Utf8String LegacyLoadValue (Utf8CP nameSpace, Utf8CP key) override
+        {
+        return legacyValues[nameSpace][key].asString ();
+        };
+
+    void LegacyClearValue (Utf8CP nameSpace, Utf8CP key) override
+        {
+        legacyValues[nameSpace][key] = "";
+        };
     };
