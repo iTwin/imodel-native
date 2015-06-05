@@ -472,8 +472,10 @@ DgnMarkupProjectPtr DgnMarkupProject::OpenDgnDb(DbResult* outResult, BeFileNameC
         return nullptr;
         }
 
+#if defined (NEEDS_WORK_TXN_MANAGER)
     if (openParams.m_startDefaultTxn)
         markupProject->GetTxnManager().Activate();
+#endif
 
     return markupProject;
     }
@@ -726,8 +728,10 @@ DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR
     if (BE_SQLITE_OK != stat)
         return nullptr;
 
+#if defined (NEEDS_WORK_TXN_MANAGER)
     if (params.m_startDefaultTxn)
         markupProject->GetTxnManager().Activate();
+#endif
 
     return  markupProject;
     }
@@ -1198,8 +1202,6 @@ void RedlineModel::SetSheetDef (RDLSheetDef const& sheetDef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineModelP RedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
     {
-    markupProject.GetTxnManager().Deactivate();
-
     DgnModelId modelId = markupProject.CreateModelPhaseI (name, DgnModelType::Sheet);
 
     RedlineModelP rdlModel = Open (markupProject, modelId);
@@ -1243,8 +1245,6 @@ RedlineModelP RedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP
         }
   
     markupProject.SaveChanges();
-    markupProject.GetTxnManager().Activate();
-
     return rdlModel;
     }
 

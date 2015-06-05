@@ -143,7 +143,7 @@ void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (HitPathCP hit, Utf8Str
 
     Utf8String categoryStr, modelStr;
 
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model).c_str()).append (element->GetDgnModel().GetModelName());
+    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append (element->GetDgnModel().GetModelName());
     getCategoryString(categoryStr, *element);
 
     pathDescr.append(delimiter).append(modelStr.c_str());

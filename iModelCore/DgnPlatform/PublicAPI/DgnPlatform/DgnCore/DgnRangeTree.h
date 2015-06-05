@@ -128,7 +128,6 @@ struct DgnRangeTree
         size_t GetNodeCount();
         size_t GetElementCount();
         size_t GetMaxChildDepth();
-        ;
     };
 
 private:
@@ -165,6 +164,5 @@ public:
 
     DGNPLATFORM_EXPORT void ProcessOcclusionSorted(ViewContextR, DgnModelP, ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);
 };
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

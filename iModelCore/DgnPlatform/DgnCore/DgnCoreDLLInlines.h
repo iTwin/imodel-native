@@ -521,7 +521,6 @@ DG_INLINE DRay3d          IPickGeom::GetBoresite() const { return _GetBoresite()
 
 DG_INLINE StatusInt     ViewController::VisitHit(HitPathCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
 DG_INLINE void          ViewController::DrawView(ViewContextR context) {return _DrawView(context);}
-DG_INLINE DgnDbR        ITxnManager::GetDgnDb() {return m_dgndb;}
 
 DG_INLINE SnapPathP     SnapContext::GetSnapPath() {return m_snapPath;}
 DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}

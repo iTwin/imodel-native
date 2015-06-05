@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/DgnViewport.cpp $
 |
@@ -134,7 +134,7 @@ void DgnViewport::_GetViewCorners (DPoint3dR llb, DPoint3dR urf) const
     if (m_invertY)
         {
         // y's are swapped on the screen!
-        llb.y = viewRect.corner.y; 
+        llb.y = viewRect.corner.y;
         urf.y = viewRect.origin.y;
         }
     else
@@ -281,7 +281,7 @@ void DgnViewport::ViewToWorld (DPoint3dP rootPts, DPoint3dCP viewPts, int nPts) 
 * Ensure the rotation matrix for this view is aligns the root z with the view out (i.e. a "2d view").
 * @bsimethod                                    Keith.Bentley                   09/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::AlignWithRootZ() 
+void DgnViewport::AlignWithRootZ()
     {
     DVec3d zUp;
     zUp.Init(0.0, 0.0, 1.0);
@@ -480,7 +480,8 @@ static void validateCamera (CameraViewControllerR controller)
     camera.ValidateLens();
     if (camera.IsFocusValid())
          {
-         controller.CenterEyePoint(NULL);
+         // we used to call controller.CenterEyePoint(NULL) here, but that can cause existing MicroStation
+         // 1-point perspective views to jump, so i removed it. - KAB
          return;
          }
 
@@ -492,7 +493,7 @@ static void validateCamera (CameraViewControllerR controller)
     if (focusDistance < vDelta.z / 2.0)
         focusDistance = vDelta.z / 2.0;
 
-    DPoint3d eyePoint; 
+    DPoint3d eyePoint;
     eyePoint.x = vDelta.x/2.0;
     eyePoint.y = vDelta.y/2.0;
     eyePoint.z = vDelta.z/2.0 + focusDistance;
@@ -691,7 +692,7 @@ StatusInt DgnViewport::ChangeArea (DPoint3dCP pts)
     DPoint3d worldPts[3] = {pts[0], pts[1], viewController->GetOrigin()};
     DPoint3d viewPts[3];
     GetRotMatrix().Multiply (viewPts, worldPts, 3);
-    
+
     DRange3d range = DRange3d::From(viewPts, 2);
     DVec3d delta;
     delta.DifferenceOf(range.high, range.low);
@@ -712,7 +713,7 @@ StatusInt DgnViewport::ChangeArea (DPoint3dCP pts)
 
         npcPts[0].z = npcPts[1].z = high;
         NpcToWorld(worldPts, npcPts, 2);
-        
+
         double lensAngle = cameraView->GetLensAngle();
         double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle / 2.0));
 
@@ -948,7 +949,7 @@ StatusInt DgnViewport::Zoom (DPoint3dCP newCenterRoot, double factor)
     DPoint3d oldOrg = viewController->GetOrigin();
     DPoint3d newOrg = oldOrg;
     RotMatrix rotation = viewController->GetRotation();
-    
+
     rotation.multiply (&newOrg);
     rotation.multiply (&center);
 
@@ -1142,7 +1143,7 @@ ColorDef DgnViewport::AdjustColorForContrast (ColorDef thisColor, ColorDef again
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::MakeTransparentIfOpaque (ColorDef color, int transparency) 
+ColorDef DgnViewport::MakeTransparentIfOpaque (ColorDef color, int transparency)
     {
     // if it already has a transparency, leave it alone.
     if (0 != color.GetAlpha())
@@ -1154,7 +1155,7 @@ ColorDef DgnViewport::MakeTransparentIfOpaque (ColorDef color, int transparency)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::MakeColorTransparency (ColorDef color, int transparency) 
+ColorDef DgnViewport::MakeColorTransparency (ColorDef color, int transparency)
     {
     color.SetAlpha((Byte) transparency);
     return color;
@@ -1273,7 +1274,14 @@ void DgnViewport::OutputFrustumErrorMessage (StatusInt errorStatus)
     if (SUCCESS == errorStatus || ERROR == errorStatus)
         return;
 
-    Utf8String msg = DgnCoreL10N::GetString((DgnCoreL10N::Number)(DgnCoreL10N::VIEWFRUST_MessageBase+errorStatus-VIEWFRUSTUM_ERROR_BASE));
+    L10N::StringId ids[] = {
+        DgnCoreL10N::VIEWFRUST_Message_InvalidWindow(),
+        DgnCoreL10N::VIEWFRUST_Message_MinWindow(),
+        DgnCoreL10N::VIEWFRUST_Message_MaxWindow(),
+        DgnCoreL10N::VIEWFRUST_Message_MaxZoom(),
+        };
+
+    Utf8String msg = DgnCoreL10N::GetString(*(ids+errorStatus-VIEWFRUSTUM_ERROR_BASE));
     if (msg.size() > 0)
         NotificationManager::OutputMessage (NotifyMessageDetails (OutputMessagePriority::Error, msg.c_str()));
     }
@@ -1299,7 +1307,7 @@ ViewFrustumStatus DgnViewport::ValidateWindowSize (DPoint3dR delta, bool message
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 int32_t DgnViewport::GetMaxDisplayPriority() {return MAX_HW_DISPLAYPRIORITY;}
-int32_t DgnViewport::GetDisplayPriorityFrontPlane() {return GetMaxDisplayPriority() - RESERVED_DISPLAYPRIORITY;}                              
+int32_t DgnViewport::GetDisplayPriorityFrontPlane() {return GetMaxDisplayPriority() - RESERVED_DISPLAYPRIORITY;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06

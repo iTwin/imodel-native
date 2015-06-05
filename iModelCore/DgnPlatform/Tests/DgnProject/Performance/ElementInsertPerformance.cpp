@@ -46,10 +46,10 @@ struct PTHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
 
     virtual void _GetLocalizedDescription(Utf8StringR descr, uint32_t desiredLength) override { descr = "The PT rule"; }
 
-    void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR) override
+    void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary) override
     {
         if (s_ptShouldFail)
-            db.GetTxnManager().ReportValidationError(*new ITxnManager::ValidationError(ITxnManager::ValidationError::Severity::Warning, "PT failed"));
+            summary.ReportError(*new TxnSummary::ValidationError(TxnSummary::ValidationError::Severity::Warning, "PT failed"));
         m_relIds.push_back(relationshipId);
     }
 
@@ -180,7 +180,6 @@ public:
     ~PerformanceElementItem()
     {
         FinalizeStatements();
-        m_db->GetTxnManager().Deactivate(); // finalizes TxnManager's prepared statements
     }
 
     void CloseDb()

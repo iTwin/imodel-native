@@ -52,7 +52,7 @@ void DgnDb::Destroy()
     // delete dgnfile, causes all models, etc. to be freed.
     m_models.Empty();
 
-    DELETE_AND_CLEAR(m_txnManager);
+    m_txnManager = nullptr;
 
     m_ecsqlCache.Empty();
     }
@@ -84,18 +84,19 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    m_units.Load();
+    GetTxnManager(); // make sure txnmanager is allocated
 
+    m_units.Load();
     return Domains().OnDbOpened();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ITxnManagerR DgnDb::GetTxnManager()
+TxnManagerR DgnDb::GetTxnManager()
     {
-    if (NULL == m_txnManager)
-        m_txnManager = new ITxnManager(*this);
+    if (!m_txnManager.IsValid())
+        m_txnManager = new TxnManager(*this);
 
     return *m_txnManager;
     }
@@ -226,7 +227,7 @@ DgnFileStatus DgnDb::CompactFile()
 
     Savepoint* savepoint = GetSavepoint(0);
     if (savepoint)
-        savepoint->Commit();
+        savepoint->Commit(nullptr);
 
     if (BE_SQLITE_OK != TryExecuteSql("VACUUM"))
         return  DGNFILE_ERROR_SQLiteError;

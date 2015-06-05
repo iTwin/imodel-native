@@ -14,7 +14,7 @@ Classes for working with DgnElements in memory.
 
 */
 
-BENTLEY_API_TYPEDEFS (HeapZone);
+BENTLEY_API_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
 
@@ -606,7 +606,7 @@ protected:
     GeometricElementCP _ToGeometricElement() const override {return this;}
     DgnModelStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {}
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
 public:
@@ -716,7 +716,7 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
     DgnElement2dCP _ToElement2d() const override {return this;}
     AxisAlignedBox3d _CalculateRange3d() const override {return m_placement.CalculateRange();}
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super));}
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
     explicit DgnElement2d(CreateParams const& params) : T_Super(params) {}
 
 public:
