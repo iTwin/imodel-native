@@ -34,22 +34,22 @@ protected:
     bmap<T_Key, T_Real> m_realProperties;
     
 private:
-    void CopyFrom(AnnotationPropertyBagCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationPropertyBagCR);
 
 protected:
     virtual bool _IsIntegerProperty(T_Key) const = 0;
     virtual bool _IsRealProperty(T_Key) const = 0;
     
-    AnnotationPropertyBag();
-    AnnotationPropertyBag(AnnotationPropertyBagCR);
-    AnnotationPropertyBagR operator=(AnnotationPropertyBagCR);
+    DGNPLATFORM_EXPORT AnnotationPropertyBag();
+    AnnotationPropertyBag(AnnotationPropertyBagCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationPropertyBagR operator=(AnnotationPropertyBagCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 
-    bool HasProperty(T_Key) const;
-    void ClearProperty(T_Key);
-    T_Integer GetIntegerProperty(T_Key) const;
-    void SetIntegerProperty(T_Key, T_Integer);
-    T_Real GetRealProperty(T_Key) const;
-    void SetRealProperty(T_Key, T_Real);
+    DGNPLATFORM_EXPORT bool HasProperty(T_Key) const;
+    DGNPLATFORM_EXPORT void ClearProperty(T_Key);
+    DGNPLATFORM_EXPORT T_Integer GetIntegerProperty(T_Key) const;
+    DGNPLATFORM_EXPORT void SetIntegerProperty(T_Key, T_Integer);
+    DGNPLATFORM_EXPORT T_Real GetRealProperty(T_Key) const;
+    DGNPLATFORM_EXPORT void SetRealProperty(T_Key, T_Real);
 
 public:
     DGNPLATFORM_EXPORT void ClearAllProperties();

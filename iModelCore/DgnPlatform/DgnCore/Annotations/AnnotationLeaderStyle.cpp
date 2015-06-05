@@ -49,39 +49,12 @@ bool AnnotationLeaderStylePropertyBag::_IsRealProperty(T_Key key) const
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-AnnotationLeaderStylePropertyBagPtr AnnotationLeaderStylePropertyBag::Create() { return new AnnotationLeaderStylePropertyBag(); }
-AnnotationLeaderStylePropertyBag::AnnotationLeaderStylePropertyBag() :
-    T_Super()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-AnnotationLeaderStylePropertyBagPtr AnnotationLeaderStylePropertyBag::Clone() const { return new AnnotationLeaderStylePropertyBag(*this); }
-AnnotationLeaderStylePropertyBag::AnnotationLeaderStylePropertyBag(AnnotationLeaderStylePropertyBagCR rhs) : T_Super(rhs) { }
-AnnotationLeaderStylePropertyBagR AnnotationLeaderStylePropertyBag::operator=(AnnotationLeaderStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-bool AnnotationLeaderStylePropertyBag::HasProperty(AnnotationLeaderStyleProperty key) const { return T_Super::HasProperty((T_Key)key); }
-void AnnotationLeaderStylePropertyBag::ClearProperty(AnnotationLeaderStyleProperty key) { T_Super::ClearProperty((T_Key)key); }
-AnnotationLeaderStylePropertyBag::T_Integer AnnotationLeaderStylePropertyBag::GetIntegerProperty(AnnotationLeaderStyleProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
-void AnnotationLeaderStylePropertyBag::SetIntegerProperty(AnnotationLeaderStyleProperty key, T_Integer value) { T_Super::SetIntegerProperty((T_Key)key, value); }
-AnnotationLeaderStylePropertyBag::T_Real AnnotationLeaderStylePropertyBag::GetRealProperty(AnnotationLeaderStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
-void AnnotationLeaderStylePropertyBag::SetRealProperty(AnnotationLeaderStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
-
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderStylePtr AnnotationLeaderStyle::Create(DgnDbR project) { return new AnnotationLeaderStyle(project); }
 AnnotationLeaderStyle::AnnotationLeaderStyle(DgnDbR project) :
     T_Super()
     {
@@ -91,9 +64,6 @@ AnnotationLeaderStyle::AnnotationLeaderStyle(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderStylePtr AnnotationLeaderStyle::Clone() const { return new AnnotationLeaderStyle(*this); }
-AnnotationLeaderStyle::AnnotationLeaderStyle(AnnotationLeaderStyleCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationLeaderStyleR AnnotationLeaderStyle::operator=(AnnotationLeaderStyleCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationLeaderStyle::CopyFrom(AnnotationLeaderStyleCR rhs)
     {
     m_dgndb = rhs.m_dgndb;
@@ -113,17 +83,6 @@ void AnnotationLeaderStyle::Reset()
     m_description.clear();
     m_data.ClearAllProperties();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-DgnDbR AnnotationLeaderStyle::GetDgnProjectR() const { return *m_dgndb; }
-DgnStyleId AnnotationLeaderStyle::GetId() const { return m_id; }
-void AnnotationLeaderStyle::SetId(DgnStyleId value) { m_id = value; }
-Utf8StringCR AnnotationLeaderStyle::GetName() const { return m_name; }
-void AnnotationLeaderStyle::SetName(Utf8CP value) { m_name = value; }
-Utf8StringCR AnnotationLeaderStyle::GetDescription() const { return m_description; }
-void AnnotationLeaderStyle::SetDescription(Utf8CP value) { m_description = value; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -446,13 +405,6 @@ AnnotationLeaderStylePtr DgnAnnotationLeaderStyles::QueryByName(Utf8CP name) con
     return style;
     }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
-//---------------------------------------------------------------------------------------
-DgnStyleId DgnAnnotationLeaderStyles::Iterator::Entry::GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
-Utf8CP DgnAnnotationLeaderStyles::Iterator::Entry::GetName() const { Verify(); return m_sql->GetValueText(1); }
-Utf8CP DgnAnnotationLeaderStyles::Iterator::Entry::GetDescription() const { Verify(); return m_sql->GetValueText(2); }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2014
 //---------------------------------------------------------------------------------------

@@ -59,39 +59,12 @@ bool AnnotationTextStylePropertyBag::_IsRealProperty(T_Key key) const
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-AnnotationTextStylePropertyBagPtr AnnotationTextStylePropertyBag::Create() { return new AnnotationTextStylePropertyBag(); }
-AnnotationTextStylePropertyBag::AnnotationTextStylePropertyBag() :
-    T_Super()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-AnnotationTextStylePropertyBagPtr AnnotationTextStylePropertyBag::Clone() const { return new AnnotationTextStylePropertyBag(*this); }
-AnnotationTextStylePropertyBag::AnnotationTextStylePropertyBag(AnnotationTextStylePropertyBagCR rhs) : T_Super(rhs) { }
-AnnotationTextStylePropertyBagR AnnotationTextStylePropertyBag::operator=(AnnotationTextStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-bool AnnotationTextStylePropertyBag::HasProperty(AnnotationTextStyleProperty key) const { return T_Super::HasProperty((T_Key)key); }
-void AnnotationTextStylePropertyBag::ClearProperty(AnnotationTextStyleProperty key) { T_Super::ClearProperty((T_Key)key); }
-AnnotationTextStylePropertyBag::T_Integer AnnotationTextStylePropertyBag::GetIntegerProperty(AnnotationTextStyleProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
-void AnnotationTextStylePropertyBag::SetIntegerProperty(AnnotationTextStyleProperty key, T_Integer value) { T_Super::SetIntegerProperty((T_Key)key, value); }
-AnnotationTextStylePropertyBag::T_Real AnnotationTextStylePropertyBag::GetRealProperty(AnnotationTextStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
-void AnnotationTextStylePropertyBag::SetRealProperty(AnnotationTextStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
-
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextStylePtr AnnotationTextStyle::Create(DgnDbR project) { return new AnnotationTextStyle(project); }
 AnnotationTextStyle::AnnotationTextStyle(DgnDbR project) :
     T_Super()
     {
@@ -101,9 +74,6 @@ AnnotationTextStyle::AnnotationTextStyle(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextStylePtr AnnotationTextStyle::Clone() const { return new AnnotationTextStyle(*this); }
-AnnotationTextStyle::AnnotationTextStyle(AnnotationTextStyleCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationTextStyleR AnnotationTextStyle::operator=(AnnotationTextStyleCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationTextStyle::CopyFrom(AnnotationTextStyleCR rhs)
     {
     m_dgndb = rhs.m_dgndb;
@@ -123,17 +93,6 @@ void AnnotationTextStyle::Reset()
     m_description.clear();
     m_data.ClearAllProperties();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-DgnDbR AnnotationTextStyle::GetDgnProjectR() const { return *m_dgndb; }
-DgnStyleId AnnotationTextStyle::GetId() const { return m_id; }
-void AnnotationTextStyle::SetId(DgnStyleId value) { m_id = value; }
-Utf8StringCR AnnotationTextStyle::GetName() const { return m_name; }
-void AnnotationTextStyle::SetName(Utf8CP value) { m_name = value; }
-Utf8StringCR AnnotationTextStyle::GetDescription() const { return m_description; }
-void AnnotationTextStyle::SetDescription(Utf8CP value) { m_description = value; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
@@ -229,14 +188,6 @@ void AnnotationTextStyle::SetSuperScriptScale(double value) { setRealValue(m_dat
 static const AnnotationTextStylePropertyBag::T_Real DEFAULT_WIDTHFACTOR_VALUE = 1.0;
 double AnnotationTextStyle::GetWidthFactor() const { return getRealValue(m_data, AnnotationTextStyleProperty::WidthFactor, DEFAULT_WIDTHFACTOR_VALUE); }
 void AnnotationTextStyle::SetWidthFactor(double value) { setRealValue(m_data, AnnotationTextStyleProperty::WidthFactor, DEFAULT_WIDTHFACTOR_VALUE, value); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     01/2015
-//---------------------------------------------------------------------------------------
-DgnFontCR AnnotationTextStyle::ResolveFont() const
-    {
-    return DgnFontManager::ResolveFont(m_dgndb->Fonts().FindFontById(GetFontId()));
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
@@ -494,13 +445,6 @@ AnnotationTextStylePtr DgnAnnotationTextStyles::QueryByName(Utf8CP name) const
     return style;
     }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
-//---------------------------------------------------------------------------------------
-DgnStyleId DgnAnnotationTextStyles::Iterator::Entry::GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
-Utf8CP DgnAnnotationTextStyles::Iterator::Entry::GetName() const { Verify(); return m_sql->GetValueText(1); }
-Utf8CP DgnAnnotationTextStyles::Iterator::Entry::GetDescription() const { Verify(); return m_sql->GetValueText(2); }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2014
 //---------------------------------------------------------------------------------------

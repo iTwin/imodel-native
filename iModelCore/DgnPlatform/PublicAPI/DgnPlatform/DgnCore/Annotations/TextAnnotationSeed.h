@@ -48,18 +48,18 @@ protected:
     virtual bool _IsRealProperty(T_Key) const override;
 
 public:
-    DGNPLATFORM_EXPORT TextAnnotationSeedPropertyBag();
-    DGNPLATFORM_EXPORT TextAnnotationSeedPropertyBag(TextAnnotationSeedPropertyBagCR);
-    DGNPLATFORM_EXPORT TextAnnotationSeedPropertyBagR operator=(TextAnnotationSeedPropertyBagCR);
-    DGNPLATFORM_EXPORT static TextAnnotationSeedPropertyBagPtr Create();
-    DGNPLATFORM_EXPORT TextAnnotationSeedPropertyBagPtr Clone() const;
+    TextAnnotationSeedPropertyBag() : T_Super() {}
+    TextAnnotationSeedPropertyBag(TextAnnotationSeedPropertyBagCR rhs) : T_Super(rhs) {}
+    TextAnnotationSeedPropertyBagR operator=(TextAnnotationSeedPropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
+    static TextAnnotationSeedPropertyBagPtr Create() { return new TextAnnotationSeedPropertyBag(); }
+    TextAnnotationSeedPropertyBagPtr Clone() const { return new TextAnnotationSeedPropertyBag(*this); }
     
-    DGNPLATFORM_EXPORT bool HasProperty(TextAnnotationSeedProperty) const;
-    DGNPLATFORM_EXPORT void ClearProperty(TextAnnotationSeedProperty);
-    DGNPLATFORM_EXPORT T_Integer GetIntegerProperty(TextAnnotationSeedProperty) const;
-    DGNPLATFORM_EXPORT void SetIntegerProperty(TextAnnotationSeedProperty, T_Integer);
-    DGNPLATFORM_EXPORT T_Real GetRealProperty(TextAnnotationSeedProperty) const;
-    DGNPLATFORM_EXPORT void SetRealProperty(TextAnnotationSeedProperty, T_Real);
+    bool HasProperty(TextAnnotationSeedProperty key) const { return T_Super::HasProperty((T_Key)key); }
+    void ClearProperty(TextAnnotationSeedProperty key) { T_Super::ClearProperty((T_Key)key); }
+    T_Integer GetIntegerProperty(TextAnnotationSeedProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
+    void SetIntegerProperty(TextAnnotationSeedProperty key, T_Integer value) { T_Super::SetIntegerProperty((T_Key)key, value); }
+    T_Real GetRealProperty(TextAnnotationSeedProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
+    void SetRealProperty(TextAnnotationSeedProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
 
 //=======================================================================================
@@ -81,24 +81,24 @@ private:
     Utf8String m_description;
     TextAnnotationSeedPropertyBag m_data;
 
-    void CopyFrom(TextAnnotationSeedCR);
+    DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationSeedCR);
     void Reset();
 
 public:
     DGNPLATFORM_EXPORT explicit TextAnnotationSeed(DgnDbR);
-    DGNPLATFORM_EXPORT TextAnnotationSeed(TextAnnotationSeedCR);
-    DGNPLATFORM_EXPORT TextAnnotationSeedR operator=(TextAnnotationSeedCR);
-    DGNPLATFORM_EXPORT static TextAnnotationSeedPtr Create(DgnDbR);
-    DGNPLATFORM_EXPORT TextAnnotationSeedPtr Clone() const;
+    TextAnnotationSeed(TextAnnotationSeedCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    TextAnnotationSeedR operator=(TextAnnotationSeedCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static TextAnnotationSeedPtr Create(DgnDbR project) { return new TextAnnotationSeed(project); }
+    TextAnnotationSeedPtr Clone() const { return new TextAnnotationSeed(*this); }
     DGNPLATFORM_EXPORT TextAnnotationSeedPtr CreateEffectiveStyle(TextAnnotationSeedPropertyBagCR overrides) const;
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetId() const;
-    void SetId(DgnStyleId); //!< @private
-    DGNPLATFORM_EXPORT Utf8StringCR GetName() const;
-    DGNPLATFORM_EXPORT void SetName(Utf8CP);
-    DGNPLATFORM_EXPORT Utf8StringCR GetDescription() const;
-    DGNPLATFORM_EXPORT void SetDescription(Utf8CP);
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    DgnStyleId GetId() const { return m_id; }
+    void SetId(DgnStyleId value) { m_id = value; } //!< @private
+    Utf8StringCR GetName() const { return m_name; }
+    void SetName(Utf8CP value) { m_name = value; }
+    Utf8StringCR GetDescription() const { return m_description; }
+    void SetDescription(Utf8CP value) { m_description = value; }
 
     DGNPLATFORM_EXPORT DgnStyleId GetFrameStyleId() const;
     DGNPLATFORM_EXPORT void SetFrameStyleId(DgnStyleId);
@@ -143,9 +143,9 @@ public:
             Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
-            DGNPLATFORM_EXPORT DgnStyleId GetId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
+            DgnStyleId GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
+            Utf8CP GetName() const { Verify(); return m_sql->GetValueText(1); }
+            Utf8CP GetDescription() const { Verify(); return m_sql->GetValueText(2); }
             Entry const& operator* () const { return *this; }
         };
 

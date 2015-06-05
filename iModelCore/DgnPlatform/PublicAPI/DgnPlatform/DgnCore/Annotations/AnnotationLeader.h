@@ -88,7 +88,7 @@ public:
 
     DgnDbR GetDbR() const { return *m_dgndb; }
     DgnStyleId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationLeaderStyleOptions);
     AnnotationLeaderStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationLeaderStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationLeaderStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationLeaderStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }

@@ -76,18 +76,18 @@ protected:
     virtual bool _IsRealProperty(T_Key) const override;
 
 public:
-    DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBag();
-    DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBag(AnnotationLeaderStylePropertyBagCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBagR operator=(AnnotationLeaderStylePropertyBagCR);
-    DGNPLATFORM_EXPORT static AnnotationLeaderStylePropertyBagPtr Create();
-    DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBagPtr Clone() const;
+    AnnotationLeaderStylePropertyBag() : T_Super() {}
+    AnnotationLeaderStylePropertyBag(AnnotationLeaderStylePropertyBagCR rhs) : T_Super(rhs) {}
+    AnnotationLeaderStylePropertyBagR operator=(AnnotationLeaderStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
+    static AnnotationLeaderStylePropertyBagPtr Create() { return new AnnotationLeaderStylePropertyBag(); }
+    AnnotationLeaderStylePropertyBagPtr Clone() const { return new AnnotationLeaderStylePropertyBag(*this); }
     
-    DGNPLATFORM_EXPORT bool HasProperty(AnnotationLeaderStyleProperty) const;
-    DGNPLATFORM_EXPORT void ClearProperty(AnnotationLeaderStyleProperty);
-    DGNPLATFORM_EXPORT T_Integer GetIntegerProperty(AnnotationLeaderStyleProperty) const;
-    DGNPLATFORM_EXPORT void SetIntegerProperty(AnnotationLeaderStyleProperty, T_Integer);
-    DGNPLATFORM_EXPORT T_Real GetRealProperty(AnnotationLeaderStyleProperty) const;
-    DGNPLATFORM_EXPORT void SetRealProperty(AnnotationLeaderStyleProperty, T_Real);
+    bool HasProperty(AnnotationLeaderStyleProperty key) const { return T_Super::HasProperty((T_Key)key); }
+    void ClearProperty(AnnotationLeaderStyleProperty key) { T_Super::ClearProperty((T_Key)key); }
+    T_Integer GetIntegerProperty(AnnotationLeaderStyleProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
+    void SetIntegerProperty(AnnotationLeaderStyleProperty key, T_Integer value) { T_Super::SetIntegerProperty((T_Key)key, value); }
+    T_Real GetRealProperty(AnnotationLeaderStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
+    void SetRealProperty(AnnotationLeaderStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
 
 //=======================================================================================
@@ -108,24 +108,24 @@ private:
     Utf8String m_description;
     AnnotationLeaderStylePropertyBag m_data;
 
-    void CopyFrom(AnnotationLeaderStyleCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationLeaderStyleCR);
     void Reset();
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationLeaderStyle(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationLeaderStyle(AnnotationLeaderStyleCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderStyleR operator=(AnnotationLeaderStyleCR);
-    DGNPLATFORM_EXPORT static AnnotationLeaderStylePtr Create(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationLeaderStylePtr Clone() const;
+    AnnotationLeaderStyle(AnnotationLeaderStyleCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationLeaderStyleR operator=(AnnotationLeaderStyleCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationLeaderStylePtr Create(DgnDbR project) { return new AnnotationLeaderStyle(project); }
+    AnnotationLeaderStylePtr Clone() const { return new AnnotationLeaderStyle(*this); }
     DGNPLATFORM_EXPORT AnnotationLeaderStylePtr CreateEffectiveStyle(AnnotationLeaderStylePropertyBagCR overrides) const;
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetId() const;
-    void SetId(DgnStyleId); //!< @private
-    DGNPLATFORM_EXPORT Utf8StringCR GetName() const;
-    DGNPLATFORM_EXPORT void SetName(Utf8CP);
-    DGNPLATFORM_EXPORT Utf8StringCR GetDescription() const;
-    DGNPLATFORM_EXPORT void SetDescription(Utf8CP);
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    DgnStyleId GetId() const { return m_id; }
+    void SetId(DgnStyleId value) { m_id = value; } //!< @private
+    Utf8StringCR GetName() const { return m_name; }
+    void SetName(Utf8CP value) { m_name = value; }
+    Utf8StringCR GetDescription() const { return m_description; }
+    void SetDescription(Utf8CP value) { m_description = value; }
 
     DGNPLATFORM_EXPORT ColorDef GetLineColor() const;
     DGNPLATFORM_EXPORT void SetLineColor(ColorDef);
@@ -182,9 +182,9 @@ public:
             Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
-            DGNPLATFORM_EXPORT DgnStyleId GetId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
+            DgnStyleId GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
+            Utf8CP GetName() const { Verify(); return m_sql->GetValueText(1); }
+            Utf8CP GetDescription() const { Verify(); return m_sql->GetValueText(2); }
             Entry const& operator* () const { return *this; }
         };
 

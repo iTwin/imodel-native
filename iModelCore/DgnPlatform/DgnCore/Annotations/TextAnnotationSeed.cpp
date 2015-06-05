@@ -40,39 +40,12 @@ bool TextAnnotationSeedPropertyBag::_IsRealProperty(T_Key key) const
     return false;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
-//---------------------------------------------------------------------------------------
-TextAnnotationSeedPropertyBagPtr TextAnnotationSeedPropertyBag::Create() { return new TextAnnotationSeedPropertyBag(); }
-TextAnnotationSeedPropertyBag::TextAnnotationSeedPropertyBag() :
-    T_Super()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
-//---------------------------------------------------------------------------------------
-TextAnnotationSeedPropertyBagPtr TextAnnotationSeedPropertyBag::Clone() const { return new TextAnnotationSeedPropertyBag(*this); }
-TextAnnotationSeedPropertyBag::TextAnnotationSeedPropertyBag(TextAnnotationSeedPropertyBagCR rhs) : T_Super(rhs) { }
-TextAnnotationSeedPropertyBagR TextAnnotationSeedPropertyBag::operator=(TextAnnotationSeedPropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
-//---------------------------------------------------------------------------------------
-bool TextAnnotationSeedPropertyBag::HasProperty(TextAnnotationSeedProperty key) const { return T_Super::HasProperty((T_Key)key); }
-void TextAnnotationSeedPropertyBag::ClearProperty(TextAnnotationSeedProperty key) { T_Super::ClearProperty((T_Key)key); }
-TextAnnotationSeedPropertyBag::T_Integer TextAnnotationSeedPropertyBag::GetIntegerProperty(TextAnnotationSeedProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
-void TextAnnotationSeedPropertyBag::SetIntegerProperty(TextAnnotationSeedProperty key, T_Integer value) { T_Super::SetIntegerProperty((T_Key)key, value); }
-TextAnnotationSeedPropertyBag::T_Real TextAnnotationSeedPropertyBag::GetRealProperty(TextAnnotationSeedProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
-void TextAnnotationSeedPropertyBag::SetRealProperty(TextAnnotationSeedProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
-
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationSeedPtr TextAnnotationSeed::Create(DgnDbR project) { return new TextAnnotationSeed(project); }
 TextAnnotationSeed::TextAnnotationSeed(DgnDbR project) :
     T_Super()
     {
@@ -82,9 +55,6 @@ TextAnnotationSeed::TextAnnotationSeed(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationSeedPtr TextAnnotationSeed::Clone() const { return new TextAnnotationSeed(*this); }
-TextAnnotationSeed::TextAnnotationSeed(TextAnnotationSeedCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-TextAnnotationSeedR TextAnnotationSeed::operator=(TextAnnotationSeedCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void TextAnnotationSeed::CopyFrom(TextAnnotationSeedCR rhs)
     {
     m_dgndb = rhs.m_dgndb;
@@ -104,17 +74,6 @@ void TextAnnotationSeed::Reset()
     m_description.clear();
     m_data.ClearAllProperties();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
-//---------------------------------------------------------------------------------------
-DgnDbR TextAnnotationSeed::GetDgnProjectR() const { return *m_dgndb; }
-DgnStyleId TextAnnotationSeed::GetId() const { return m_id; }
-void TextAnnotationSeed::SetId(DgnStyleId value) { m_id = value; }
-Utf8StringCR TextAnnotationSeed::GetName() const { return m_name; }
-void TextAnnotationSeed::SetName(Utf8CP value) { m_name = value; }
-Utf8StringCR TextAnnotationSeed::GetDescription() const { return m_description; }
-void TextAnnotationSeed::SetDescription(Utf8CP value) { m_description = value; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
@@ -402,13 +361,6 @@ TextAnnotationSeedPtr DgnTextAnnotationSeeds::QueryByName(Utf8CP name) const
     return style;
     }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
-//---------------------------------------------------------------------------------------
-DgnStyleId DgnTextAnnotationSeeds::Iterator::Entry::GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
-Utf8CP DgnTextAnnotationSeeds::Iterator::Entry::GetName() const { Verify(); return m_sql->GetValueText(1); }
-Utf8CP DgnTextAnnotationSeeds::Iterator::Entry::GetDescription() const { Verify(); return m_sql->GetValueText(2); }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2014
 //---------------------------------------------------------------------------------------
