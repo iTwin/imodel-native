@@ -48,52 +48,71 @@
 #include <Bentley/btree/btree_map.h>
 #include <Bentley/btree/btree_set.h>
 
+#define MakeTypeInfo(typeName) \
+    TypeInfo(sizeof(typeName), __alignof(typeName), WString(#typeName , true))
+
+#define MakeTypeInfoAndAddToList(typeName) \
+    list.push_back(MakeTypeInfo(typeName))
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                        Umar.Hayat                05/15
 //---------------------------------------------------------------------------------------
-void GetBentleyStructList(bvector<TypeNamePair>& list)
+void GetBentleyStructList(bvector<TypeInfo>& list)
 {
-    list.push_back(TypeNamePair(sizeof(Base64Utilities), L"Base64Utilities"));
-    list.push_back(TypeNamePair(sizeof(BeAssertFunctions), L"BeAssertFunctions"));
-    list.push_back(TypeNamePair(sizeof(BeAtomic<uint64_t>), L"BeAtomic<uint64_t>"));
-    list.push_back(TypeNamePair(sizeof(BeAtomic<uint32_t>), L"BeAtomic<uint32_t>"));
-    list.push_back(TypeNamePair(sizeof(BeAtomic<int>), L"BeAtomic<int>"));
-    list.push_back(TypeNamePair(sizeof(BeConsole), L"BeConsole"));
-    list.push_back(TypeNamePair(sizeof(BeDebugLogFunctions), L"BeDebugLogFunctions"));
-    list.push_back(TypeNamePair(sizeof(FileNamePattern), L"FileNamePattern"));
-    list.push_back(TypeNamePair(sizeof(BeDirectoryIterator), L"BeDirectoryIterator"));
-    list.push_back(TypeNamePair(sizeof(BeFile), L"BeFile"));
-    list.push_back(TypeNamePair(sizeof(BeFileListIterator), L"BeFileListIterator"));
-    list.push_back(TypeNamePair(sizeof(BeFileName), L"BeFileName"));
-    list.push_back(TypeNamePair(sizeof(BeIconUtilities), L"BeIconUtilities"));
-    list.push_back(TypeNamePair(sizeof(BeNumerical), L"BeNumerical"));
-    //list.push_back(TypeNamePair(sizeof(BeSharedMutex), L"BeSharedMutex"));
-    list.push_back(TypeNamePair(sizeof(BeSharedMutexHolder), L"BeSharedMutexHolder"));
-    list.push_back(TypeNamePair(sizeof(BeStringUtilities), L"BeStringUtilities"));
-    list.push_back(TypeNamePair(sizeof(BeSystemInfo), L"BeSystemInfo"));
-    list.push_back(TypeNamePair(sizeof(BeTest), L"BeTest"));
-    //list.push_back(TypeNamePair(sizeof(BeMutex), L"BeMutex"));
-    list.push_back(TypeNamePair(sizeof(BeMutexHolder), L"BeMutexHolder"));
-    //list.push_back(TypeNamePair(sizeof(BeConditionVariable), L"BeConditionVariable"));
-    list.push_back(TypeNamePair(sizeof(BeThreadUtilities), L"BeThreadUtilities"));
-    list.push_back(TypeNamePair(sizeof(BeThread), L"BeThread"));
-    list.push_back(TypeNamePair(sizeof(BeSystemMutexHolder), L"BeSystemMutexHolder"));
-    //list.push_back(TypeNamePair(sizeof(BeThreadLocalStorage), L"BeThreadLocalStorage"));
-    list.push_back(TypeNamePair(sizeof(BeTimeUtilities), L"BeTimeUtilities"));
-    list.push_back(TypeNamePair(sizeof(StopWatch), L"StopWatch"));
-    list.push_back(TypeNamePair(sizeof(BeVersion), L"BeVersion"));
-    list.push_back(TypeNamePair(sizeof(bmap<WString,WString>), L"bmap<WString,WString>"));
-    list.push_back(TypeNamePair(sizeof(bmultimap<WString, WString>), L"bmultimap<WString, WString>"));
-    list.push_back(TypeNamePair(sizeof(bset<WString, WString>), L"bset<WString, WString>"));
-    list.push_back(TypeNamePair(sizeof(bvector<WString>), L"bvector<WString>"));
-    list.push_back(TypeNamePair(sizeof(DateTime), L"DateTime"));
-    list.push_back(TypeNamePair(sizeof(GlobalHandleContainer), L"GlobalHandleContainer"));
-    list.push_back(TypeNamePair(sizeof(Iota), L"Iota"));
-    list.push_back(TypeNamePair(sizeof(NonCopyableClass), L"NonCopyableClass"));
-    //list.push_back(TypeNamePair(sizeof(ReleaseMarshaller), L"ReleaseMarshaller"));
-    //list.push_back(TypeNamePair(sizeof(DoubleFormatterBase), L"DoubleFormatterBase"));
-    //list.push_back(TypeNamePair(sizeof(DoubleFormatter), L"DoubleFormatter"));
-    list.push_back(TypeNamePair(sizeof(WString), L"WString"));
+    MakeTypeInfoAndAddToList(Base64Utilities);
+    MakeTypeInfoAndAddToList(Base64Utilities);
+    MakeTypeInfoAndAddToList(Base64Utilities);
+    MakeTypeInfoAndAddToList(BeAssertFunctions);
+
+    // typedef used to properply stringify the MACROs as data type may resolve into BeAtomic or std::atomic , in case of std::atomic it will not stringify in the macro properly , ( more details check for BENTLEY_HAVE_STD_ATOMIC in BeAtomic.h )
+    typedef BeAtomic<uint64_t> BeAtomic_uint64_t;
+    MakeTypeInfoAndAddToList(BeAtomic_uint64_t);
+    typedef BeAtomic<uint32_t> BeAtomic_uint32_t;
+    MakeTypeInfoAndAddToList(BeAtomic_uint32_t);
+    typedef BeAtomic<int> BeAtomic_int;
+    MakeTypeInfoAndAddToList(BeAtomic_int);
+
+    MakeTypeInfoAndAddToList(BeConsole);
+    MakeTypeInfoAndAddToList(BeDebugLogFunctions);
+    MakeTypeInfoAndAddToList(FileNamePattern);
+    MakeTypeInfoAndAddToList(BeDirectoryIterator);
+    MakeTypeInfoAndAddToList(BeFile);
+    MakeTypeInfoAndAddToList(BeFileListIterator);
+    MakeTypeInfoAndAddToList(BeFileName);
+    MakeTypeInfoAndAddToList(BeIconUtilities);
+    MakeTypeInfoAndAddToList(BeNumerical);
+    //MakeTypeInfoAndAddToList(BeSharedMutex);
+    MakeTypeInfoAndAddToList(BeSharedMutexHolder);
+    MakeTypeInfoAndAddToList(BeStringUtilities);
+    MakeTypeInfoAndAddToList(BeSystemInfo);
+    MakeTypeInfoAndAddToList(BeTest);
+    //MakeTypeInfoAndAddToList(BeMutex);
+    MakeTypeInfoAndAddToList(BeMutexHolder);
+    //MakeTypeInfoAndAddToList(BeConditionVariable);
+    MakeTypeInfoAndAddToList(BeThreadUtilities);
+    //MakeTypeInfoAndAddToList(BeThread);
+    MakeTypeInfoAndAddToList(BeSystemMutexHolder);
+    //MakeTypeInfoAndAddToList(BeThreadLocalStorage);
+    MakeTypeInfoAndAddToList(BeTimeUtilities);
+    MakeTypeInfoAndAddToList(StopWatch);
+    MakeTypeInfoAndAddToList(BeVersion);
+    // Typedef are used to remove spaces and commas to resolve/strigify properly
+    typedef bmap<WString, WString> bmap_WString_WString;
+    MakeTypeInfoAndAddToList(bmap_WString_WString);
+    typedef bmultimap<WString, WString> bmultimap_WString_WString;
+    MakeTypeInfoAndAddToList(bmultimap_WString_WString);
+    typedef bset<WString, WString> bset_WString_WString;
+    MakeTypeInfoAndAddToList(bset_WString_WString);
+    typedef bvector<WString> bvector_WString;
+    MakeTypeInfoAndAddToList(bvector_WString);
+    MakeTypeInfoAndAddToList(DateTime);
+    MakeTypeInfoAndAddToList(GlobalHandleContainer);
+    MakeTypeInfoAndAddToList(Iota);
+    MakeTypeInfoAndAddToList(NonCopyableClass);
+    //MakeTypeInfoAndAddToList(ReleaseMarshaller);
+    MakeTypeInfoAndAddToList(DoubleFormatterBase);
+    MakeTypeInfoAndAddToList(DoubleFormatter);
+    MakeTypeInfoAndAddToList(WString);
 
 }
 

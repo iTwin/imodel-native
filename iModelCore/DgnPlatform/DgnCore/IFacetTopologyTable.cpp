@@ -27,8 +27,8 @@ struct EdgeIndices
 struct CompareParams { bool operator() (DPoint2dCR param1, DPoint2dCR param2) { return param1.x == param2.x ? (param1.y < param2.y) : (param1.x < param2.x); } };
 
 typedef     bmap <DPoint2d, int32_t, CompareParams>         T_ParamIndexMap;        // Untoleranced parameter to index map used to reindex parameters within a single face.
-typedef     bmap <int32_t, int32_t>                             T_IndexRemap;
-typedef     bmap <int32_t, int32_t>                             T_FinToEdgeMap;
+typedef     bmap <int32_t, int32_t>                         T_IndexRemap;
+typedef     bmap <int32_t, int32_t>                         T_FinToEdgeMap;
 typedef     std::multimap <CurveTopologyId, EdgeIndices>    T_EdgeIdToIndicesMap;
 
 /*---------------------------------------------------------------------------------**//**
@@ -215,10 +215,10 @@ int32_t remapPointIndex (int32_t pointIndex, T_IndexRemap& pointIndexMap, Blocke
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <int, PolyfaceHeaderCP>& facePolyfaces, IFacetTopologyTable& ftt, T_FinToEdgeMap finToEdgeMap, IFacetOptionsCR facetOptions)
+static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap<int, PolyfaceHeaderCP>& facePolyfaces, IFacetTopologyTable& ftt, T_FinToEdgeMap finToEdgeMap, IFacetOptionsCR facetOptions)
     {
     bool        edgeChainsRequired   = facetOptions.GetEdgeChainsRequired();
-    int numFacetFin                  = ftt._GetFacetFinCount ();
+    int         numFacetFin          = ftt._GetFacetFinCount ();
     int const*  ftt_finToVertex      = ftt._GetFinData ();
     int const*  ftt_vertexToPoint    = ftt._GetPointIndex ();
     int const*  ftt_vertexToNormal   = ftt._GetNormalIndex ();
@@ -231,13 +231,13 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
 
     T_IndexRemap            pointIndexMap, normalIndexMap, paramIndexMap;
     T_EdgeIdToIndicesMap    edgeIdToIndicesMap;
-    bset<int32_t>             edgeSet;
+    bset<int32_t>           edgeSet;
 
     int32_t thisFace, currentFace = -1;
 
     for (int facetIndex = 0, ffIndex0 = 0, ffIndex1; ffIndex0 < numFacetFin; facetIndex++, ffIndex0 = ffIndex1)
         {
-        bmap <int, PolyfaceHeaderCP>::const_iterator        foundPolyface;
+        bmap <int, PolyfaceHeaderCP>::const_iterator foundPolyface;
 
         ffIndex1 = ffIndex0 + 1;
         while (ffIndex1 < numFacetFin && ftt_facetFin[ffIndex1].x == ftt_facetFin[ffIndex0].x)
@@ -257,10 +257,9 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
         for (int ffIndex = ffIndex0; ffIndex < ffIndex1; )
             {
             int     vertexIndex = ftt_finToVertex[ffIndex];
+            int32_t pointIndex = ftt_vertexToPoint[vertexIndex], pointIndexRemapped;
 
             // POINT INDICES
-            int32_t                 pointIndex = ftt_vertexToPoint[vertexIndex], pointIndexRemapped;
-
             pointIndexRemapped = remapPointIndex (pointIndex, pointIndexMap, polyface.Point(), ftt_points);
 
             int     nextFinIndex;
@@ -268,11 +267,11 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
             if ((nextFinIndex = ++ffIndex) == ffIndex1)
                 nextFinIndex = ffIndex0;
 
-            int32_t                 nextPointIndex = ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]], nextPointIndexRemapped;
+            int32_t nextPointIndex = ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]], nextPointIndexRemapped;
 
             nextPointIndexRemapped = remapPointIndex (nextPointIndex, pointIndexMap, polyface.Point(), ftt_points);
 
-            T_FinToEdgeMap::iterator    foundEdge = finToEdgeMap.find (nextFinIndex);
+            T_FinToEdgeMap::iterator foundEdge = finToEdgeMap.find (nextFinIndex);
 
             if (foundEdge == finToEdgeMap.end())
                 {
@@ -281,12 +280,12 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
             else
                 {
                 polyface.PointIndex().push_back (pointIndexRemapped + 1);
+
                 if (edgeChainsRequired)
                     {
-                    CurveTopologyId        curveTopologyId;
+                    CurveTopologyId curveTopologyId;
 
-                    if (edgeSet.find (foundEdge->second) == edgeSet.end() &&
-                            ftt._GetEdgeCurveId (curveTopologyId, foundEdge->second, true))
+                    if (edgeSet.find (foundEdge->second) == edgeSet.end() && ftt._GetEdgeCurveId (curveTopologyId, foundEdge->second, true))
                         {
                         edgeSet.insert (foundEdge->second);
                         edgeIdToIndicesMap.insert (std::pair <CurveTopologyId, EdgeIndices> (curveTopologyId, EdgeIndices (1 + pointIndexRemapped, 1 + nextPointIndexRemapped)));
@@ -310,6 +309,7 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
                     {
                     normalIndexRemapped = found->second;
                     }
+
                 polyface.NormalIndex().push_back (normalIndexRemapped + 1);
                 }
 
@@ -328,12 +328,16 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
                     {
                     paramIndexRemapped = found->second;
                     }
+
                 polyface.ParamIndex().push_back (paramIndexRemapped + 1);
                 }
             }
+
         polyface.TerminateAllActiveIndexVectors ();
         }
+
     polyface.SetNewFaceData (NULL);
+
     if (edgeChainsRequired)
         addEdgeChains (polyface.EdgeChain(), edgeIdToIndicesMap);
 
@@ -345,25 +349,26 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap <in
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IFacetTopologyTable::ConvertToPolyfaces
 (
-bvector <PolyfaceHeaderPtr>&                    polyfaces,
-bmap <int, PolyfaceHeaderCP>&                   facePolyfaces,
-IFacetTopologyTable&                            ftt,
-IFacetOptionsCR                                 facetOptions
+bvector<PolyfaceHeaderPtr>&     polyfaces,
+bmap<int, PolyfaceHeaderCP>&    facePolyfaces,
+IFacetTopologyTable&            ftt,
+IFacetOptionsCR                 facetOptions
 )
     {
-    T_FinToEdgeMap      finToEdgeMap;
-    bset <uint32_t>     idsWithSymbology;
-    StatusInt           status;
+    T_FinToEdgeMap  finToEdgeMap;
+    bset<uint32_t>  idsWithSymbology;
+    StatusInt       status;
 
-    initFinToEdgeMap (finToEdgeMap, ftt, facetOptions.GetEdgeHiding());
+    initFinToEdgeMap(finToEdgeMap, ftt, facetOptions.GetEdgeHiding());
 
     for (PolyfaceHeaderPtr& polyface: polyfaces)
         {
-        initPolyface (*polyface, ftt);
+        initPolyface(*polyface, ftt);
 
-        if (SUCCESS != (status = convertFaceFacetsToPolyface (*polyface, facePolyfaces, ftt, finToEdgeMap, facetOptions)))
+        if (SUCCESS != (status = convertFaceFacetsToPolyface(*polyface, facePolyfaces, ftt, finToEdgeMap, facetOptions)))
             return status;
         }
+
     return SUCCESS;
     }
 
@@ -372,19 +377,29 @@ IFacetOptionsCR                                 facetOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
 FaceAttachment::FaceAttachment ()
     {
-    m_color         = ColorDef::Black();
-    m_transparency  = 0.0;
-    m_material      = NULL;
+    m_useColor = m_useMaterial = false;
+    m_color = ColorDef::Black();
+    m_transparency = 0.0;
+    m_material = nullptr;
+    m_uv.Init(0.0, 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams, ViewContextR context)
+FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
     {
-    m_color         = sourceParams.GetLineColor();
-    m_transparency  = sourceParams.GetTransparency ();
-    m_material      = sourceParams.GetMaterial ();
+    m_categoryId    = sourceParams.GetCategoryId();
+    m_subCategoryId = sourceParams.GetSubCategoryId();
+    m_transparency  = sourceParams.GetTransparency();
+
+    m_useColor = !sourceParams.IsLineColorFromSubCategoryAppearance();
+    m_color = m_useColor ? sourceParams.GetLineColor() : ColorDef::Black();
+
+    m_useMaterial = !sourceParams.IsMaterialFromSubCategoryAppearance();
+    m_material = m_useMaterial ? sourceParams.GetMaterial() : nullptr;
+
+    m_uv.Init(0.0, 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -392,20 +407,52 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams, ViewContextR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
     {
-    elParams.SetLineColor (m_color);
-    elParams.SetTransparency (m_transparency);
-    elParams.SetMaterial (m_material);
+    elParams.SetCategoryId(m_categoryId);
+    elParams.SetSubCategoryId(m_subCategoryId);
+    elParams.SetTransparency(m_transparency);
+
+    if (m_useColor)
+        elParams.SetLineColor(m_color);
+
+    if (m_useMaterial)
+        elParams.SetMaterial(m_material);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb) const
+void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb, DgnViewportR vp) const
     {
-    elMatSymb.Init ();
-    elMatSymb.SetLineColor (m_color);
-    elMatSymb.SetFillColor (m_color);
-    elMatSymb.SetMaterial (m_material); // NOTE: Geometry map should have already been created if needed by CookDisplayParams...
+    if (!m_subCategoryId.IsValid())
+        return;
+
+    DgnCategories::SubCategory::Appearance appearance = vp.GetViewController().GetSubCategoryAppearance(m_subCategoryId);
+
+    ColorDef  color = (m_useColor ? m_color : appearance.GetColor());
+    double    netTransparency = m_transparency;
+
+    // SubCategory transparency is combined with face transparency to compute net transparency. 
+    if (0.0 != appearance.GetTransparency())
+        {
+        // combine transparencies by multiplying the opaqueness.
+        // A 50% transparent element on a 50% transparent category should give a 75% transparent result.
+        // (1 - ((1 - .5) * (1 - .5))
+        double faceOpaque = 1.0 - netTransparency;
+        double categoryOpaque = 1.0 - appearance.GetTransparency();
+        
+        netTransparency = (1.0 - (faceOpaque * categoryOpaque));
+        }
+
+    color.SetAlpha((Byte) (netTransparency * 255.0));
+
+    elMatSymb.Init();
+    elMatSymb.SetLineColor(color);
+    elMatSymb.SetFillColor(color);
+
+#ifdef WIP_MATERIAL
+    // NEEDSWORK: m_uv also affects material placement...
+    elMatSymb.SetMaterial(m_useMaterial ? m_material : MaterialManager::GetManagerR().SomethingSomething(appearance.GetMaterial()));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -413,20 +460,16 @@ void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
     {
-    if (m_color         != rhs.m_color ||
+    if (m_useColor      != rhs.m_useColor ||
+        m_useMaterial   != rhs.m_useMaterial ||
+        m_categoryId    != rhs.m_categoryId ||
+        m_subCategoryId != rhs.m_subCategoryId ||
+        m_color         != rhs.m_color ||
         m_transparency  != rhs.m_transparency ||
-        m_material      != rhs.m_material)
+        m_material      != rhs.m_material ||
+        m_uv.x          != rhs.m_uv.x || 
+        m_uv.y          != rhs.m_uv.y)
         return false;
-
-#if defined (NEEDS_WORK_MATERIAL)
-    if (m_materialDetail.IsValid () && rhs.m_materialDetail.IsValid ())
-        {
-        if (!(m_materialDetail->Equals (*rhs.m_materialDetail)))
-            return false;
-        }
-    else if (m_materialDetail.IsNull () != rhs.m_materialDetail.IsNull ())
-        return false;
-#endif
 
     return true;
     }
@@ -436,7 +479,13 @@ bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
     {
-    return (m_color.GetValue() < rhs.m_color.GetValue() ||
+    return (m_useColor         < rhs.m_useColor ||
+            m_useMaterial      < rhs.m_useMaterial ||
+            m_categoryId       < rhs.m_categoryId ||
+            m_subCategoryId    < rhs.m_subCategoryId ||
+            m_color.GetValue() < rhs.m_color.GetValue() ||
             m_transparency     < rhs.m_transparency ||
-            m_material         < rhs.m_material);
+            m_material         < rhs.m_material ||
+            m_uv.x             < rhs.m_uv.x || 
+            m_uv.y             < rhs.m_uv.y);
     }

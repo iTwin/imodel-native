@@ -45,12 +45,16 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
         }
     };
 
+/** @addtogroup DgnModelGroup DgnModels
+@ref PAGE_ModelOverview 
+*/
+
 //========================================================================================
 //! Application-defined object that is stored with a DgnModel. This object is notified as significant events occur
 //! for its "host" DgnModel. Create a subclass of this class to maintain relevant information about
 //! a DgnModel with the DgnModel for efficient lookup and lifecycle management.
+//! @ingroup DgnModelGroup
 //! @see DgnModel::AddAppData
-//! @bsiclass
 //=======================================================================================
 struct DgnModelAppData
     {
@@ -82,7 +86,8 @@ struct DgnModelAppData
 
 //=======================================================================================
 //! A DgnModel represents a model in memory and may hold references to elements that belong to it.
-//! @bsiclass                                                     KeithBentley    10/00
+//! @ingroup DgnModelGroup
+// @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     {
@@ -93,7 +98,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
     //=======================================================================================
     //! The properties for a DgnModel.
-    //! @bsiclass
+    //! @ingroup DgnModelGroup
     //=======================================================================================
     struct Properties
     {
@@ -168,7 +173,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
     //=======================================================================================
     //! Parameters to create new instances of DgnModel.
-    // @bsiclass
+    //! @ingroup DgnModelGroup
     //=======================================================================================
     struct CreateParams
     {
@@ -345,6 +350,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : DgnModel
@@ -361,6 +367,7 @@ public:
 
 //=======================================================================================
 //! A DgnModel2d is a infinite planar model. Coordinates values are X,Y.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : DgnModel
@@ -385,6 +392,7 @@ public:
     };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
@@ -400,6 +408,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 //! @private
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
@@ -417,6 +426,7 @@ public:
 
 //=======================================================================================
 //! A GraphicsModel2d is a DgnModel2d that does not have any relationship to phsyical space.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Sam.Wilson  05/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2d : DgnModel2d
@@ -438,6 +448,7 @@ public:
 //! either "in front" or "in back" of the plane. 
 //! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional. 
 //! Also note that any (2d) point on a PlanarPhysicalModel corresponds to a single point in physical space.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
@@ -467,6 +478,7 @@ public:
 //! Other elements in the SectionDrawingModel are computed by projecting element behind the section plane onto the section
 //! plane according to some rules. These elements are called "reverse graphics". Lastly, the SectionDrawingModel may contain
 //! elements that are pure annotation placed by the user or created by other rules.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
@@ -479,8 +491,9 @@ public:
 
 //=======================================================================================
 //! A sheet model is a GraphicsModel2d that has the following characteristics:
-//! -- Has fixed extents (is not infinite), specified in meters.
-//! -- Can contain @b views of other models, like pictures pasted on a photo album.
+//!     - Has fixed extents (is not infinite), specified in meters.
+//!     - Can contain @b views of other models, like pictures pasted on a photo album.
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
@@ -534,6 +547,7 @@ public:
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : DgnDomain::Handler
@@ -555,6 +569,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 //! @private
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
@@ -564,6 +579,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModelHandler : ModelHandler
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 //! @private
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
@@ -573,6 +589,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2dHandler : ModelHandler
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 //! @private
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
@@ -582,6 +599,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModelHandler : ModelHandler
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 //! @private
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
@@ -591,6 +609,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModelHandler : PlanarPhysicalModelH
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
 //! @private
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
@@ -600,4 +619,3 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModelHandler : ModelHandler
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-

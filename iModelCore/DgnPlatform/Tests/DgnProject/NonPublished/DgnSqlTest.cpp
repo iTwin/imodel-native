@@ -445,7 +445,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         o2a = obstacle2a->GetElementId();
         }
 
-    RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
+        RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
     ECSqlStatement stmt;
     stmt.Prepare(*m_db, 
@@ -456,8 +456,8 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         );
 
     //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
-    auto sql = stmt.GetNativeSql();
-    auto qplan = m_db->ExplainQuery(sql);
+    Utf8CP sql = stmt.GetNativeSql();
+    Utf8String qplan = m_db->ExplainQuery(sql);
     auto scanRt = qplan.find("SCAN TABLE dgn_RTree3d VIRTUAL TABLE INDEX");
     auto searchItem = qplan.find("SEARCH TABLE dgn_ElementItem USING INTEGER PRIMARY KEY");
     auto searchElement = qplan.find ("SEARCH TABLE dgn_Element USING INTEGER PRIMARY KEY");
@@ -485,8 +485,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-        auto rc = stmt.Step();
-        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done,rc);
+        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step()) << stmt.GetLastStatusMessage().c_str() << "\r\nTranslated SQL: " << sql;
         }
 
     //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2

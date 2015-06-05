@@ -19,6 +19,9 @@ ASSEMBLY_STRONGNAME   = 1
 DgnCoreDir      = $(baseDir)DgnCore/
 DgnHandlersDir  = $(baseDir)DgnHandlers/
 PrivateAPIDir   = $(baseDir)PrivateApi/
+DgnGeoCoordDir  = $(baseDir)DgnGeoCoord/
+
+BaseGeoCoordAPISrc = $(BuildContext)PublicAPI/GeoCoord/
 
 lineStyleDir     = $(DgnCoreDir)linestyle/
 
@@ -274,6 +277,18 @@ $(coreObjs)DgnLink$(oext): $(DgnCoreDir)DgnLink.cpp $(DgnCoreAPISrc)DgnDbTables.
 $(coreObjs)DgnSchemaDomain$(oext): $(DgnCoreDir)DgnSchemaDomain.cpp ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
+#   DgnGeoCoord
+#----------------------------------------------------------------------
+
+$(o)DgnGeoCoord$(oext)          :     $(DgnGeoCoordDir)DgnGeoCoord.cpp          $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h       ${MultiCompileDepends}
+
+#$(o)ReprojectCache$(oext)       :     $(DgnGeoCoordDir)ReprojectCache.cpp       $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h      ${MultiCompileDepends}
+
+$(o)GeoCoordServices$(oext)     :     $(DgnGeoCoordDir)GeoCoordServices.cpp     $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h       ${MultiCompileDepends}
+
+#$(o)AuxCoordSysProcessor$(oext) :     $(DgnGeoCoordDir)AuxCoordSysProcessor.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h      ${MultiCompileDepends}
+
+#----------------------------------------------------------------------
 #   Annotations
 #----------------------------------------------------------------------
 AnnotationsSrc = $(DgnCoreDir)Annotations/
@@ -431,6 +446,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                             $(ContextSubpartsLibs)$(BentleyGeomLib) \
                             $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)\
                             $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext)

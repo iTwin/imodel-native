@@ -10,31 +10,6 @@
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnCore/DgnDbTables.h>
 
-/** @addtogroup DgnDomainGroup
-
-A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
-
-To connect your Domain's ECSChema with your C++ classes, create a subclass of @ref DgnPlatform::DgnDomain. A DgnDomain is a singleton - that is, 
-there is only one instance of a DgnDomain subclass that applies to all DgnDbs for a session. You tell the DgnDbPlatform 
-about your DgnDomain by calling the static method @ref DgnPlatform::DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name", 
-which must match the ECShema file name. That is how a DgnDomain is paired with its ECSchema.
-
-A DgnDomain holds an array of C++ singleton objects, each of which each derive from @ref DgnPlatform::DgnDomain::Handler. A DgnDomain::Handler 
-holds the name of the ECClass it "handles". DgnDomain::Handlers are added to a DgnDomain by calling DgnDomain::RegisterHandler. 
-Note that DgnDomain::Handlers are singletons - they apply to all DgnDbs, and have no instance data. 
-
-You can create a DgnDomain::Handler for any ECClass, and the connection between them is via schema name/class name. 
-A DgnDomain::Handler handles an ECClass, *and all of its subclasses* unless they have their own DgnDomain::Handler
-
-Within a given DgnDb, instances of an ECClass are known by their local DgnClassId. The same ECClass may have two different 
-DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the list of loaded DgnDomains is stored in a map of 
-local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class 
-called DgnDomains, which is accessed through the method DgnDb::Domains().
-
-The DgnDomain for the base "dgn" schema is is called @ref DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers. 
-
-*/
-
 // This macro declares the required members for a DgnDomain
 #define DOMAIN_DECLARE_MEMBERS(__classname__,__exporter__) \
     private:   __exporter__ static __classname__*& z_PeekDomain(); \
@@ -87,8 +62,32 @@ The DgnDomain for the base "dgn" schema is is called @ref DgnSchemaDomain. It is
 #define TABLEHANDLER_DEFINE_MEMBERS(__classname__) \
     __classname__&  __classname__::GetHandler(){static __classname__* s_instance=nullptr; if (nullptr==s_instance) s_instance=new __classname__(); return *s_instance;}
 
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/** @addtogroup DgnDomainGroup
+
+A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
+
+To connect your Domain's ECSChema with your C++ classes, create a subclass of DgnDomain. A DgnDomain is a singleton - that is, 
+there is only one instance of a DgnDomain subclass that applies to all DgnDbs for a session. You tell the system 
+about your DgnDomain by calling the static method DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name", 
+which must match the ECShema file name. That is how a DgnDomain is paired with its ECSchema.
+
+A DgnDomain holds an array of C++ singleton objects, each of which each derive from DgnDomain::Handler. A DgnDomain::Handler 
+holds the name of the ECClass it "handles". DgnDomain::Handlers are added to a DgnDomain by calling DgnDomain::RegisterHandler. 
+Note that DgnDomain::Handlers are singletons - they apply to all DgnDbs, and have no instance data. 
+
+You can create a DgnDomain::Handler for any ECClass, and the connection between them is via schema name/class name. 
+A DgnDomain::Handler handles an ECClass, *and all of its subclasses* unless they have their own DgnDomain::Handler
+
+Within a given DgnDb, instances of an ECClass are known by their local DgnClassId. The same ECClass may have two different 
+DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the list of loaded DgnDomains is stored in a map of 
+local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class 
+called DgnDomains, which is accessed through the method DgnDb::Domains().
+
+The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers. 
+
+*/
 
 //=======================================================================================
 //! A DgnDomain is a singleton C++ object that provides the runtime implementation for an ECSchema.
@@ -99,6 +98,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! remain for an entire session, and apply to all DgnDb's that are opened
 //! or created during that session. If a DgnDomain is registered, its name is recorded in every DgnDb accessed during the session
 //! and becomes required to access that DgnDb in the future.
+//! @see DgnDomainGroup
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass

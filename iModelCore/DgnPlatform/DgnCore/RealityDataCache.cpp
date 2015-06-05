@@ -241,18 +241,30 @@ BeSQLiteRealityDataStorage::~BeSQLiteRealityDataStorage()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler)
+bool BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler)
     {
     BeSQLite::DbResult result;
     if (!m_initialized)
         {
         if (BeSQLite::BE_SQLITE_OK != (result = m_database.OpenBeSQLiteDb(m_filename, Db::OpenParams(Db::OpenMode::OPEN_ReadWrite))))
             {
+            RDCLOG(LOG_INFO, "%s: %s", Utf8String(m_filename).c_str(), BeSQLite::Db::InterpretDbResult(result));
+            if (m_filename.DoesPathExist())
+                {
+                BeFileNameStatus deleteStatus = m_filename.BeDeleteFile();
+                if (deleteStatus != BeFileNameStatus::Success)
+                    {
+                    RDCLOG(LOG_ERROR, "%s: %s", Utf8String(m_filename).c_str(), deleteStatus);
+                    BeAssert(false);
+                    return false;
+                    }
+                }
+
             if (BeSQLite::BE_SQLITE_OK != (result = m_database.CreateNewDb(m_filename)))
                 {
                 RDCLOG(LOG_ERROR, "%s: %s", Utf8String(m_filename).c_str(), BeSQLite::Db::InterpretDbResult(result));
                 BeAssert(false);
-                return;
+                return false;
                 }
             }
 
@@ -283,8 +295,10 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
         {
         RDCLOG(LOG_ERROR, "%s: %s", Utf8String(m_filename).c_str(), BeSQLite::Db::InterpretDbResult(result));
         BeAssert(false);
-        return;
+        return false;
         }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,7 +340,8 @@ void BeSQLiteRealityDataStorage::wt_SaveChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityDataStorageResult BeSQLiteRealityDataStorage::wt_Select(Data& data, Utf8CP id, SelectOptions const& options)
     {
-    wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler());
+    if (!wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler()))
+        return RealityDataStorageResult::Error;
 
     if (SUCCESS != data._InitFrom(m_database, id, options))
         return RealityDataStorageResult::NotFound;
@@ -349,7 +364,8 @@ RealityDataStorageResult BeSQLiteRealityDataStorage::Select(Data& data, Utf8CP i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeSQLiteRealityDataStorage::wt_Persist(Data const& data)
     {
-    wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler());
+    if (!wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler()))
+        return;
 
     BentleyStatus result = data._Persist(m_database);
     BeAssert(SUCCESS == result);
@@ -641,7 +657,7 @@ RealityDataSourceResult FileRealityDataSource::Request(Data& data, Utf8CP id, Re
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     {
-    int maxage = 0, smaxage = 0;
+    int maxage = 0, smaxage = 0;    // in seconds.
     int start = 0;
     int i = 0;
     while (true)
@@ -678,8 +694,9 @@ static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     int64_t currentTime;
     DateTime::GetCurrentTime().ToUnixMilliseconds(currentTime);
 
+    int64_t maxage64 = (0 != smaxage ? smaxage : maxage);   // use int64_t to avoid overflow when converting to milliseconds.
     DateTime expirationDate;
-    DateTime::FromUnixMilliseconds(expirationDate, currentTime + 1000 * (0 != smaxage ? smaxage : maxage));
+    DateTime::FromUnixMilliseconds(expirationDate, currentTime + (1000 * maxage64));
     return expirationDate;
     }
 
@@ -817,9 +834,20 @@ static size_t HttpHeaderParser(char* buffer, size_t size, size_t nItems, void* u
             BeAssert(false);
             return totalSize;
             }
-        Utf8String key(line.begin(), line.begin() + delimiterPos);
-        Utf8String value(line.begin() + delimiterPos + 2, line.end());
-        header[key] = value;
+
+        Utf8String key = line.substr(0, delimiterPos);
+        
+        // Not sure if we should keep or filter out fields with empty value. Maybe they mean something even if empty?
+        // Anyway do not try to read beyond the input string when it happens.
+        if(delimiterPos + 1 == line.size())
+            {
+            header[key] = "";
+            }
+        else
+            {
+            Utf8String value = line.substr(delimiterPos+2/* skip ':' and leading space*/);
+            header[key] = value;
+            }
         }
     
     return totalSize;
@@ -905,6 +933,7 @@ protected:
                     RDCLOG(LOG_TRACE, "[%lld] CURLE_COULDNT_RESOLVE_HOST - waiting 10 seconds to re-try",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
                     return RealityDataSourceResponse(RealityDataSourceResult::Error_CouldNotResolveHost, m_url.c_str());
                 case CURLE_COULDNT_CONNECT:
+                case CURLE_RECV_ERROR:
                     RDCLOG(LOG_TRACE, "[%lld] CURLE_COULDNT_CONNECT - waiting 10 seconds to re-try",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
                     return RealityDataSourceResponse(RealityDataSourceResult::Error_NoConnection, m_url.c_str());
                 default:

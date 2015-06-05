@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
 /** @page PAGE_DgnPlatform DgnPlatform Overview
 
 The DgnPlatform library is a key part of the DgnDb technology stack from <a href="http://www.bentley.com/">Bentley</a>. 
@@ -46,3 +48,6 @@ The DgnPlatform library also adds other key concepts required by infrastructure 
 @li @subpage PAGE_ViewOverview
 
 */
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+

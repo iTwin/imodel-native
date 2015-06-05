@@ -588,26 +588,26 @@ void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets (ISolidKernelEntityCR enti
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *_GetFacetOptions ()))
         return;
 
-    T_FaceAttachmentsMap const* faceAttachmentsMap = (_GetFacetOptions ()->GetIgnoreFaceMaterialAttachments () ? NULL : facetsPtr->_GetFaceAttachmentsMap ());
+    T_FaceAttachmentsVec const* faceAttachmentsVec = (_GetFacetOptions ()->GetIgnoreFaceMaterialAttachments () ? nullptr : facetsPtr->_GetFaceAttachmentsVec());
 
-    if (faceAttachmentsMap)
+    if (faceAttachmentsVec)
         {
-        bvector <PolyfaceHeaderPtr>             polyfaces;
-        bvector <FaceAttachment const*>         attachments;
-        bmap <FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
-        bmap <int, PolyfaceHeaderCP>            faceToPolyfaces;
+        bvector<PolyfaceHeaderPtr>             polyfaces;
+        bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
+        bmap<int, PolyfaceHeaderCP>            faceToPolyfaces;
+        T_FaceToSubElemIdMap const*            faceToSubElemIdMap = facetsPtr->_GetFaceToSubElemIdMap();
 
-        for (T_FaceAttachmentsMap::const_iterator curr = faceAttachmentsMap->begin (); curr != faceAttachmentsMap->end (); ++curr)
+        for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap->begin(); curr != faceToSubElemIdMap->end(); ++curr)
             {
-            bmap <FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find (curr->second);
+            FaceAttachment faceAttachment = faceAttachmentsVec->at(curr->second.second);
+            bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(faceAttachment);
 
-            if (found == uniqueFaceAttachments.end ())
+            if (found == uniqueFaceAttachments.end())
                 {
-                PolyfaceHeaderPtr         polyface = PolyfaceHeader::New ();
+                PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
 
-                attachments.push_back (&curr->second);
-                polyfaces.push_back (polyface);
-                faceToPolyfaces[curr->first] = uniqueFaceAttachments[curr->second] = polyface.get();
+                polyfaces.push_back(polyface);
+                faceToPolyfaces[curr->first] = uniqueFaceAttachments[faceAttachment] = polyface.get();
                 }
             else
                 {
@@ -615,18 +615,17 @@ void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets (ISolidKernelEntityCR enti
                 }
             }
 
-        if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces (polyfaces, faceToPolyfaces, *facetsPtr, *_GetFacetOptions ()))
+        if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *_GetFacetOptions()))
             {
-            m_context->PushTransform (entity.GetEntityTransform ());
+            m_context->PushTransform (entity.GetEntityTransform());
 
             for (size_t i=0; i<polyfaces.size(); i++)
                 {
-                attachments[i]->ToElemDisplayParams (*m_context->GetCurrentDisplayParams ());
+                polyfaces[i]->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType ());
+                faceAttachmentsVec->at(i).ToElemDisplayParams(*m_context->GetCurrentDisplayParams());
+                m_context->CookDisplayParams();
 
-                m_context->CookDisplayParams ();
-                m_context->GetIDrawGeom ().ActivateOverrideMatSymb (m_context->GetOverrideMatSymb ()); // TR#299602 (This doesn't seem right?!? -BB 02/2015)
-
-                FacetClipper (*this, false).ProcessDisposablePolyface (*polyfaces[i]);
+                FacetClipper (*this, false).ProcessDisposablePolyface(*polyfaces[i]);
                 }
 
             m_context->PopTransformClip();

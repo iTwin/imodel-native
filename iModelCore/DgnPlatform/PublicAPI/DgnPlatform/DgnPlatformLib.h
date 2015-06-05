@@ -565,14 +565,6 @@ public:
             //! @note: Required to drop brep geometry to polyface(s).
             virtual BentleyStatus _FacetBody(IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, IFacetOptionsR options) const {return _FacetBody(out, in, 0.0);}
 
-            //! Initialize per-face material and color information for the supplied ISolidKernelEntity using the supplied ElemDisplayParams.
-            //! @param[in] in The solid kernel entity to draw.
-            //! @param[in] context The context to output the body to.
-            //! @param[in] baseParams The "natural" ElemDisplayParams to use for faces that won't have an explicit material/color set.
-            //! @param[in] subElemIdOffset Sub-entity base id (optional: for multi-body face material attachments).
-            //! @return IFaceMaterialAttachmentsPtr with face attachment information.
-            virtual IFaceMaterialAttachmentsPtr _InitFaceMaterialAttachments(ISolidKernelEntityCR in, ViewContextR context, ElemDisplayParamsCR baseParams, int subElemIdOffset = 0) const {return NULL;}
-
             //! Output a ISolidKernelEntity as one or more closed planar shapes (may have holes) and surfaces to the supplied view context.
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] context The context to output the body to.
@@ -587,6 +579,16 @@ public:
             //! @param[in] includeFaceIso Include wire geometry for face isoparametrics.
             //! @return SUCCESS if operation was handled.
             virtual BentleyStatus _OutputBodyAsWireframe(ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true) const {return ERROR;}
+
+            //! Return a CurveVector representation for a sheet body with a single planar face.
+            //! @param[in] in The solid kernel entity.
+            //! @return The CurveVectorPtr for the face geometry, or invalid if input entity was not a sheet body with a single planar face.
+            virtual CurveVectorPtr _PlanarSheetBodyToCurveVector (ISolidKernelEntityCR in) const {return nullptr;}
+
+            //! Return a CurveVector representation for a wire body.
+            //! @param[in] in The solid kernel entity.
+            //! @return The CurveVectorPtr for the edge geometry, or invalid if input entity was not a wire body.
+            virtual CurveVectorPtr _WireBodyToCurveVector (ISolidKernelEntityCR in) const {return nullptr;}
 
             //! Output a cut section through an ISolidKernelEntity to the supplied view context.
             //! @param[in] in The solid kernel entity to display a section cut through.

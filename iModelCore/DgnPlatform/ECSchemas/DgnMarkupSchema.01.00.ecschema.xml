@@ -25,9 +25,6 @@
         <ECProperty propertyName="Template" typeName="string" description="Name of the template applied to the redline" />
         <ECProperty propertyName="DueDate" typeName="dateTime" displayLabel="Due Date" description="The due date for the engineering changes described by this redline"  />
         <ECProperty propertyName="ReviewedBy" description="The name of the person that reviewed the redline" typeName="string"  displayLabel="Reviewed By"  />
-        <ECProperty propertyName="RedlineModelId" typeName="long" description="Identifies the model in the DgnMarkupProject that contains this redline."/>
-        <ECProperty propertyName="DgnProjectViewId" typeName="long" description="Identifies the view in the DgnProject was redlined." displayLable="Project View"/>
-        <ECProperty propertyName="DgnProjectViewSettings" typeName="string" description="The settings of the view in the DgnProject that was redlined. In JSON format." />
         <ECProperty propertyName="User1" typeName="string" displayLabel="User 1" description="General user-defined redline property #1"  />
         <ECProperty propertyName="User2" typeName="string" displayLabel="User 2" description="General user-defined redline property #2"  />
         <ECProperty propertyName="User3" typeName="string" displayLabel="User 3" description="General user-defined redline property #3"  />

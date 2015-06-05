@@ -66,6 +66,9 @@ $(extractionInputDir)DgnSqlTest.cpp : $(baseDir)../Tests/DgnProject/NonPublished
 $(extractionInputDir)Category.sample.cpp : $(_MakeFilePath)samplecode/Category.sample.cpp
     $(LinkFirstDepToFirstTarget)
 
+$(extractionInputDir)View.sample.cpp : $(_MakeFilePath)samplecode/View.sample.cpp
+    $(LinkFirstDepToFirstTarget)
+
 # Extract the samples into extractionOutputDir
 always:
     PublishExtract.py -d${extractionInputDir} $(PUBLISH_VERBOSE) $(cleanopt) -o${extractionOutputDir} -s$(extractionsStampFileName) --noProvenance

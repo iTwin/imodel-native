@@ -6,6 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+struct RedlineModelHandler         :    SheetModelHandler {MODELHANDLER_DECLARE_MEMBERS("RedlineModel",                 RedlineModel,         RedlineModelHandler, SheetModelHandler, )};
+struct PhysicalRedlineModelHandler : PhysicalModelHandler {MODELHANDLER_DECLARE_MEMBERS("PhysicalRedlineModel", PhysicalRedlineModel, PhysicalRedlineModelHandler, PhysicalModelHandler, )};
+END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 struct DgnSchemaTableHandler
 {
@@ -638,9 +644,11 @@ TABLEHANDLER_DEFINE_MEMBERS(DgnSchemaTableHandler::ElementDrivesElement)
 
 HANDLER_DEFINE_MEMBERS(ModelHandler)
 HANDLER_DEFINE_MEMBERS(PhysicalModelHandler)
+HANDLER_DEFINE_MEMBERS(PhysicalRedlineModelHandler)
 HANDLER_DEFINE_MEMBERS(WebMercatorModelHandler)
 HANDLER_DEFINE_MEMBERS(StreetMapModelHandler)
 HANDLER_DEFINE_MEMBERS(SheetModelHandler)
+HANDLER_DEFINE_MEMBERS(RedlineModelHandler)
 HANDLER_DEFINE_MEMBERS(GraphicsModel2dHandler)
 HANDLER_DEFINE_MEMBERS(PlanarPhysicalModelHandler)
 HANDLER_DEFINE_MEMBERS(SectionDrawingModelHandler)
@@ -699,6 +707,8 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Do
     RegisterHandler(GraphicsModel2dHandler::GetHandler());
     RegisterHandler(PlanarPhysicalModelHandler::GetHandler());
     RegisterHandler(SectionDrawingModelHandler::GetHandler());
+    RegisterHandler(RedlineModelHandler::GetHandler());
+    RegisterHandler(PhysicalRedlineModelHandler::GetHandler());
 
     RegisterHandler(ElementHandler::GetHandler());
     RegisterHandler(ViewHandler::GetHandler());

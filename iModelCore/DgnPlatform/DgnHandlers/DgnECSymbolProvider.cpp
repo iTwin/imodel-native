@@ -40,7 +40,7 @@ ECValue DgnDbExpressionContext::GetName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015
 //---------------------------------------------------------------------------------------
-DgnDbExpressionContext::DgnDbExpressionContext(DgnDbCR db) : m_db(db), SymbolExpressionContext(NULL)
+DgnDbExpressionContext::DgnDbExpressionContext(DgnDbR db) : m_db(db), SymbolExpressionContext(NULL)
     {
     SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create(NULL);
 
@@ -53,7 +53,7 @@ DgnDbExpressionContext::DgnDbExpressionContext(DgnDbCR db) : m_db(db), SymbolExp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015
 //---------------------------------------------------------------------------------------
-DgnDbCR DgnDbExpressionContext::GetDgnDb()
+DgnDbR DgnDbExpressionContext::GetDgnDb() const
     {
     return m_db;
     }
@@ -61,7 +61,7 @@ DgnDbCR DgnDbExpressionContext::GetDgnDb()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015
 //---------------------------------------------------------------------------------------
-DgnDbExpressionContextPtr DgnDbExpressionContext::Create(DgnDbCR db) 
+DgnDbExpressionContextPtr DgnDbExpressionContext::Create(DgnDbR db) 
     { 
     return new DgnDbExpressionContext(db); 
     }
@@ -88,11 +88,10 @@ ECValue DgnElementExpressionContext::GetFullClassName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015
 //---------------------------------------------------------------------------------------
-DgnElementCR DgnElementExpressionContext::GetElement()
+DgnElementCR DgnElementExpressionContext::GetElement() const
     {
     return m_element;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015

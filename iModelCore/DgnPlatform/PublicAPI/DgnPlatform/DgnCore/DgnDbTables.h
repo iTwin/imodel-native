@@ -47,8 +47,6 @@
 #define DGN_TABLE_Domain        DGN_TABLE("Domain")
 #define DGN_TABLE_Font          DGN_TABLE("Font")
 #define DGN_TABLE_Handler       DGN_TABLE("Handler")
-#define DGN_TABLE_RasterData    DGN_TABLE("RasterData")
-#define DGN_TABLE_RasterFile    DGN_TABLE("RasterFile")
 #define DGN_VTABLE_RTree3d      DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
@@ -104,12 +102,18 @@ public:
     DGNPLATFORM_EXPORT static void ReplaceInvalidCharacters(Utf8StringR name, Utf8CP invalidChars, Utf8Char replacement);
 };
 
+/** @addtogroup DgnCategoryGroup Categories and SubCategories
+@ref PAGE_CategoryOverview 
+*/
+
 //=======================================================================================
 //! Each Category has an entry in the Category table.
+//! @ingroup DgnCategoryGroup
 //=======================================================================================
 struct DgnCategories : DgnDbTable
     {
     //! The Rank of a category indicates how it was created and where it can be used.
+    //! @ingroup DgnCategoryGroup
     enum class Rank
     {
         System      = 0,    //!< This category is predefined by the system
@@ -119,6 +123,7 @@ struct DgnCategories : DgnDbTable
     };
 
     //! The Scope of a category determines what types of models may use it.
+    //! @ingroup DgnCategoryGroup
     enum class Scope
     {
         Any         = 0,    //!< This category may be used in any type of model. Generally, this means it came from some external source (e.g. a dgn or dwg file)
@@ -128,6 +133,7 @@ struct DgnCategories : DgnDbTable
     };
 
     //! A sub-category of a category.
+    //! @ingroup DgnCategoryGroup
     struct SubCategory
     {
         //! The parameters that can determine how graphics on a SubCategory appear when drawn.
@@ -178,6 +184,7 @@ struct DgnCategories : DgnDbTable
         };// Appearance
 
         //! View-specific overrides of the appearance of a SubCategory
+        //! @ingroup DgnCategoryGroup
         struct Override
         {
         private:
@@ -243,6 +250,7 @@ struct DgnCategories : DgnDbTable
     }; // SubCategory
 
     //! A Category in the category table
+    //! @ingroup DgnCategoryGroup
     struct Category
         {
     private:
@@ -286,6 +294,7 @@ struct DgnCategories : DgnDbTable
         };
 
     //! An iterator over the categories in the DgnDb.
+    //! @ingroup DgnCategoryGroup
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
@@ -316,6 +325,7 @@ struct DgnCategories : DgnDbTable
     }; // Iterator
 
     //! An iterator over the SubCategories of a category
+    //! @ingroup DgnCategoryGroup
     struct SubCategoryIterator : BeSQLite::DbTableIterator
     {
     private:
@@ -475,6 +485,7 @@ public:
 
 //=======================================================================================
 //! The types of views that can exist in a DgnDb.
+//! @ingroup DgnViewGroup
 //=======================================================================================
 enum class DgnViewType
 {
@@ -489,6 +500,7 @@ enum class DgnViewType
 
 //=======================================================================================
 //! The source for the creation a DgnView.
+//! @ingroup DgnViewGroup
 //=======================================================================================
 enum class DgnViewSource
 {
@@ -499,6 +511,7 @@ enum class DgnViewSource
 
 //=======================================================================================
 //! Each View has an entry in the View table.
+//! @ingroup DgnViewGroup
 //=======================================================================================
 struct DgnViews : DgnDbTable
 {
@@ -835,6 +848,7 @@ public:
 //! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
 //! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
 //! their reference count goes to 0 and the cache is subsequently purged.
+//! @ingroup DgnElementGroup
 //=======================================================================================
 struct DgnElements : DgnDbTable
 {
@@ -1354,8 +1368,8 @@ private:
     double          m_azimuth;
     AxisAlignedBox3d m_extent;
     DPoint3d        m_globalOrigin;      //!< in meters
-    mutable bool                    m_hasCheckedForGCS;
-    mutable GeoCoordinates::DgnGCS* m_gcs;
+    mutable bool    m_hasCheckedForGCS;
+    mutable DgnGCS* m_gcs;
     mutable IGeoCoordinateServicesP m_geoServices;
 
     DgnUnits(DgnDbR db);
@@ -1392,7 +1406,7 @@ public:
 
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT GeoCoordinates::DgnGCS* GetDgnGCS() const;
+    DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
 
     //! Gets the azimuth angle (true north offset) of the global coordinate system of this DgnDb <em>if it has one</em>.
     double GetAzimuth() const {return m_azimuth;}

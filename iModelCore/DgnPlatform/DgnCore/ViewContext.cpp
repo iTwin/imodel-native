@@ -2675,8 +2675,8 @@ void ViewContext::_DrawTextString (TextStringCR text)
     text.GetGlyphSymbology (*GetCurrentDisplayParams());
     CookDisplayParams();
 
-    GetIDrawGeom().DrawTextString (text, NULL);
-
+    double zDepth = GetCurrentDisplayParams()->GetNetDisplayPriority();
+    GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
     text.DrawTextAdornments (*this);
     }
 

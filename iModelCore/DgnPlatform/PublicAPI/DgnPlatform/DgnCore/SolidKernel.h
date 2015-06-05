@@ -25,17 +25,25 @@ struct FaceAttachment
 {
 private:
 
-ColorDef    m_color;
-double      m_transparency;
-MaterialCP  m_material;
+bool                m_useColor:1;       //!< true - color does not follow sub-category appearance.
+bool                m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
+DgnCategoryId       m_categoryId;
+DgnSubCategoryId    m_subCategoryId;
+ColorDef            m_color;
+double              m_transparency;
+MaterialCP          m_material;
+DPoint2d            m_uv;
 
 public:
 
 DGNPLATFORM_EXPORT FaceAttachment ();
-DGNPLATFORM_EXPORT FaceAttachment (ElemDisplayParamsCR, ViewContextR);
+DGNPLATFORM_EXPORT FaceAttachment (ElemDisplayParamsCR);
 
-DGNPLATFORM_EXPORT void ToElemDisplayParams (ElemDisplayParamsR) const; // NOTE: ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams if you need anything more than color/transparency/level.
-DGNPLATFORM_EXPORT void ToElemMatSymb (ElemMatSymbR) const; // NOTE: For QvOutput use only, other callers should use ToElemDisplayParams and FromElemDisplayParams/CookDisplayParams.
+//! Input ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams for anything other than sub-category, color, transparency, material.
+DGNPLATFORM_EXPORT void ToElemDisplayParams (ElemDisplayParamsR) const; 
+
+//! @private For QvOutput use only, other callers should use ToElemDisplayParams.
+DGNPLATFORM_EXPORT void ToElemMatSymb (ElemMatSymbR, DgnViewportR) const;
 
 DGNPLATFORM_EXPORT bool operator== (struct FaceAttachment const&) const;
 DGNPLATFORM_EXPORT bool operator< (struct FaceAttachment const&) const;
@@ -43,9 +51,11 @@ DGNPLATFORM_EXPORT bool operator< (struct FaceAttachment const&) const;
 }; // FaceAttachment
 
 //! @private
-typedef bmap <int, FaceAttachment> T_FaceAttachmentsMap;
+typedef bvector<FaceAttachment> T_FaceAttachmentsVec; //!< Unique face attachments - first entry is "base" symbology
 //! @private
-typedef bmap <int, int> T_FaceToSubElemIdMap;
+typedef bpair<int32_t, size_t> T_SubElemIdAttachmentIndexPair; //!< subElemid/attachment index pair
+//! @private
+typedef bmap<uint32_t, T_SubElemIdAttachmentIndexPair> T_FaceToSubElemIdMap; //!< Face identifier to subElemId/attachment index pair
 
 //=======================================================================================
 //! @private
@@ -53,11 +63,11 @@ typedef bmap <int, int> T_FaceToSubElemIdMap;
 //=======================================================================================
 struct IFaceMaterialAttachments : public IRefCounted
 {
-virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap () const = 0;
-virtual T_FaceAttachmentsMap const& _GetFaceAttachmentsMap () const = 0;
+virtual T_FaceAttachmentsVec const& _GetFaceAttachmentsVec() const = 0;
+virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const = 0;
 
-virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR () = 0;
-virtual T_FaceAttachmentsMap& _GetFaceAttachmentsMapR () = 0;
+virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() = 0;
+virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() = 0;
 };
 
 typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference counted type to manage the life-cycle of the ISolidKernelEntity.
@@ -95,6 +105,8 @@ virtual TransformCR _GetEntityTransform () const = 0;
 virtual void _SetEntityTransform (TransformCR) = 0;
 //! @private
 virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
+//! @private
+virtual bool _InitFaceMaterialAttachments(ElemDisplayParamsCP) = 0;
 //! @private
 virtual ISolidKernelEntityPtr _Clone() const = 0;
 
@@ -135,6 +147,9 @@ void PostMultiplyEntityTransformInPlace (TransformCR solidTransform) {_SetEntity
 
 //! Optional per-face color/material overrides.
 IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMaterialAttachments();}
+
+//! Initialize per-face color/material using the supplied ElemDisplayParams or clear if nullptr.
+bool InitFaceMaterialAttachments(ElemDisplayParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
 
 //! Create deep copy of this ISolidKernelEntity.
 ISolidKernelEntityPtr Clone() const {return _Clone();}
@@ -235,8 +250,8 @@ virtual bool        _GetEdgeCurveId (CurveTopologyId& edgeId, int32_t edge, bool
 virtual bool        _IsHiddenFace (int32_t entityTag) = 0;
 virtual bool        _IsHiddenEdge (int32_t entityTag) = 0;
 
+virtual T_FaceAttachmentsVec const* _GetFaceAttachmentsVec () = 0;
 virtual T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap () = 0;
-virtual T_FaceAttachmentsMap const* _GetFaceAttachmentsMap () = 0;
 
 public:
 
@@ -258,8 +273,8 @@ IFacetOptionsCR         facetOptions
 //! @param [in] facetOptions Facet options
 DGNPLATFORM_EXPORT static StatusInt ConvertToPolyfaces
 (
-bvector <PolyfaceHeaderPtr>&    polyfaces,
-bmap <int, PolyfaceHeaderCP>&   facePolyfaces,
+bvector<PolyfaceHeaderPtr>&     polyfaces,
+bmap<int, PolyfaceHeaderCP>&    facePolyfaces,
 IFacetTopologyTable&            ftt,
 IFacetOptionsCR                 facetOptions
 );

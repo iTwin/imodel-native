@@ -115,7 +115,7 @@ TEST (RealityDataWorkerThread, DoWork)
     thread->Start ();
     WorkItemsCountPredicate predicate (1);
     thread->DoWork (*TestWork::Create (cv));
-    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 500));     // no timeout
+    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));    // no timeout
     ASSERT_EQ (1, TestWork::s_nCalls);                      // work item executed
     ASSERT_EQ (1, TestWork::s_threadIds.size ());           // work item executed on one thread
     ASSERT_NE (currentThreadId, TestWork::s_threadIds[0]);  // work item executed on a separate thread
@@ -135,7 +135,7 @@ TEST (RealityDataWorkerThread, IsIdle)
     WorkItemsCountPredicate predicate (1);
    
     thread->DoWork (*TestWork::Create (cv));
-    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 500));     // no timeout
+    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));    // no timeout
     ASSERT_EQ (1, TestWork::s_nCalls);                      // work item executed
     
     // Work is done, thread is created and idling
@@ -163,7 +163,7 @@ TEST (RealityDataWorkerThread, IsBusy)
         }));
     ASSERT_TRUE (thread->IsBusy (&workingTime));        // Thread is busy with task
     stop = true;
-    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 500)); // no timeout
+    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
     ASSERT_EQ   (1, TestWork::s_nCalls);                // work item executed
     thread->Terminate ();
     }
@@ -195,7 +195,7 @@ TEST (RealityDataThreadPool, QueueWork_1_Item)
     auto pool = RealityDataThreadPool::Create (1, 1);
     WorkItemsCountPredicate predicate (1);
     pool->QueueWork (*TestWork::Create (cv));
-    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 500)); // no timeout
+    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
     ASSERT_EQ (1, TestWork::s_nCalls);                  // work item executed
     }
 
@@ -212,7 +212,7 @@ TEST (RealityDataThreadPool, QueueWork_Many_Items)
     for (int i = 0; i < workItemsCount; i++)
         pool->QueueWork (*TestWork::Create (cv));
 
-    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 500)); // no timeout
+    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
     ASSERT_EQ (workItemsCount, TestWork::s_nCalls);     // all work items executed
     }
 
@@ -226,8 +226,8 @@ TEST (RealityDataThreadPool, Queueing)
     BeConditionVariable cv;
     auto pool = RealityDataThreadPool::Create (1, 1);
     WorkItemsCountPredicate predicate (workItemsCount);
-
-    bool block = true;
+    
+    BeAtomic<bool> block(true);
     pool->QueueWork (*TestWork::Create (cv, [&block] ()
         {
         while (block)
@@ -242,7 +242,7 @@ TEST (RealityDataThreadPool, Queueing)
 
     block = false;
 
-    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 500)); // no timeout
+    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
     ASSERT_EQ (workItemsCount, TestWork::s_nCalls);     // all work items executed
     }
 
@@ -301,7 +301,7 @@ TEST (RealityDataThreadPool, SpawnsThreads)
         }
     
     block = false;
-    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 500));     // no timeout
+    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));    // no timeout
     ASSERT_EQ (workItemsCount, TestWork::s_nCalls);         // all work items executed
     ASSERT_EQ (maxIdleThreads, pool->GetThreadsCount ());   // total threads count after the threads finished their work
     
@@ -329,7 +329,7 @@ TEST (RealityDataThreadPool, TerminatesSpawnedThreads)
         pool->QueueWork (*TestWork::Create (cv, [&block](){while (block);}));
     
     block = false;
-    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 500));                 // no timeout
+    ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));                // no timeout
     ASSERT_EQ (workItemsCount, TestWork::s_nCalls);                     // all work items executed
     ASSERT_EQ (workItemsCount, TestWork::s_threadIds.size ());          // 10 thread IDs in the list
     ASSERT_EQ (maxThreads, CountUniqueItems (TestWork::s_threadIds));   // all thread IDs are different

@@ -262,6 +262,9 @@ static bool getRange (TextStringCR text, DRange3dR range, TransformCP transform)
     range.low.Init(textRange.low);
     range.high.Init(textRange.high);
     
+    Transform textTransform = text.ComputeTransform();
+    textTransform.Multiply(&range.low, 2);
+
     if (nullptr != transform)
         transform->Multiply(range, range);
 
@@ -849,38 +852,56 @@ void ElementGeomIO::Writer::Append (MSBsplineSurfaceCR surface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOnly)
     {
-    bool        saveBRep = saveBRepOnly, saveFacets = false, saveEdges = false, saveFaceIso = false;
+    bool saveBRep = saveBRepOnly, saveFacets = false, saveEdges = false, saveFaceIso = false;
+    IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     if (!saveBRepOnly)
         {
         switch (entity.GetEntityType())
             {
-            case ISolidKernelEntity::EntityType_Sheet: // NEEDWORK: Save single planar face as CurveVector? See PSolidUtil::CreateElement in Vancouver...
+            case ISolidKernelEntity::EntityType_Wire:
+                {
+                // Save wire body as CurveVector...very in-efficent and un-necessary to persist these as BReps...
+                CurveVectorPtr wireGeom = DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._WireBodyToCurveVector(entity);
+
+                if (wireGeom.IsValid())
+                    Append(*wireGeom);
+                
+                return;
+                }
+
+            case ISolidKernelEntity::EntityType_Sheet:
+                {
+                // Save sheet body that is a single planar face as CurveVector...very in-efficent and un-necessary to persist these as BReps...
+                CurveVectorPtr faceGeom = DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._PlanarSheetBodyToCurveVector(entity);
+
+                if (faceGeom.IsValid())
+                    {
+                    Append(*faceGeom);
+                    return;
+                    }
+
+                // Fall through...
+                }
+
             case ISolidKernelEntity::EntityType_Solid:
                 {
                 saveBRep = saveFacets = true;
                                             
-                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
+                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     saveFaceIso = true;
                     
-                if (saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge))
+                // NOTE: Never want OpCode::BRepPolyfaceExact when split by face symbology...
+                if (attachments || saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge))
                     saveEdges = true;
-                break;
-                }
-                    
-            case ISolidKernelEntity::EntityType_Wire:
-                {
-                saveEdges = true; // Just save wire body as CurveVector...very in-efficent and un-necessary to persist these as BReps...
                 break;
                 }
             }
         }
 
-    // NEEDSWORK: IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
-
+    // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
     if (saveBRep)
         {
-        // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
         size_t      bufferSize = 0;
         uint8_t*    buffer = nullptr;
 
@@ -890,16 +911,56 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
             return;
             }
 
+        bvector<FB::FaceSymbology> fbSymbVec;
+        bvector<FB::FaceSymbologyIndex> fbSymbIndexVec;
+
+        if (nullptr != attachments)
+            {
+            T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+
+            for (FaceAttachment attachment : faceAttachmentsVec)
+                {
+                // NOTE: First entry is base symbology, it's redundant with GeomStream, storing it makes implementing Get easier/cleaner...
+                FB::DPoint2d       uv(0.0, 0.0); // NEEDSWORK_MATERIAL...
+                ElemDisplayParams  faceParams;
+
+                attachment.ToElemDisplayParams (faceParams);
+
+                FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
+                                          faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
+                                          faceParams.GetSubCategoryId().GetValueUnchecked(),
+                                          faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : 0, // NEEDSWORK_MATERIAL...
+                                          faceParams.GetTransparency(), uv);
+
+                fbSymbVec.push_back(fbSymb);
+                }
+
+            T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
+
+            for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+                {
+                FB::FaceSymbologyIndex fbSymbIndex(curr->second.first, (uint32_t) curr->second.second);
+
+                fbSymbIndexVec.push_back(fbSymbIndex);
+                }
+            }
+
         FlatBufferBuilder fbb;
 
-    //    auto faceAttachments = fbb.CreateVectorOfStructs ((FB::FaceSymbology*) ?, n?); // NEEDSWORK
         auto entityData = fbb.CreateVector (buffer, bufferSize);
+        auto faceSymb = 0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs (&fbSymbVec.front(), fbSymbVec.size()) : 0;
+        auto faceSymbIndex = 0 != fbSymbIndexVec.size() ? fbb.CreateVectorOfStructs (&fbSymbIndexVec.front(), fbSymbIndexVec.size()) : 0;
 
         FB::BRepDataBuilder builder (fbb);
 
         builder.add_entityTransform ((FB::Transform*) &entity.GetEntityTransform());
         builder.add_entityData (entityData);
-    //    builder.add_faceAttachments (faceAttachments);
+
+        if (nullptr != attachments)
+            {
+            builder.add_symbology(faceSymb);
+            builder.add_symbologyIndex(faceSymbIndex);
+            }
 
         auto mloc = builder.Finish();
 
@@ -907,21 +968,40 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
         Append (Operation (OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
+    // Store mesh representation for quick display or when parasolid isn't available...
     if (saveFacets)
         {
-        // Store mesh representation for quick display or when parasolid isn't available...
-        IFacetOptionsPtr       facetOpt = IFacetOptions::CreateForCurves();
-        IFacetTopologyTablePtr facetsPtr;
+        IFacetOptionsPtr  facetOpt = IFacetOptions::CreateForCurves();
 
-        if (SUCCESS == DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *facetOpt))
+        if (nullptr != attachments)
             {
-            PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
+            bvector<PolyfaceHeaderPtr> polyfaces;
+            bvector<ElemDisplayParams> params;
 
-            if (SUCCESS == IFacetTopologyTable::ConvertToPolyface (*polyface, *facetsPtr, *facetOpt))
+            WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
+
+            for (size_t i=0; i < polyfaces.size(); i++)
                 {
-                polyface->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
-                polyface->Transform (entity.GetEntityTransform());
+                if (0 == polyfaces[i]->GetPointCount())
+                    continue;
 
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes(*polyfaces[i], buffer);
+
+                if (0 == buffer.size())
+                    continue;
+
+                Append(params[i]);
+                Append(Operation (OpCode::BRepPolyface, (uint32_t) buffer.size(), &buffer.front()));
+                }
+            }
+        else
+            {
+            PolyfaceHeaderPtr polyface = WireframeGeomUtil::CollectPolyface (entity, m_db, *facetOpt);
+
+            if (polyface.IsValid())
+                {
                 bvector<Byte> buffer;
 
                 BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer);
@@ -932,37 +1012,87 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
             }
         }
 
+    // When facetted representation is an approximation, we need to store the edge curves for snapping...
     if (saveEdges)
         {
-        // When facetted representation is an approximation, we need to store the edge curves for snapping...
-        // NEEDSWORK: Face attachments affect color...
-        CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, true, false);
-
-        if (edgeCurves.IsValid ())
+        if (nullptr != attachments)
             {
-            bvector<Byte> buffer;
+            bvector<CurveVectorPtr> curves;
+            bvector<ElemDisplayParams> params;
 
-            BentleyGeometryFlatBuffer::GeometryToBytes (*edgeCurves, buffer);
+            WireframeGeomUtil::CollectCurves(entity, m_db, curves, params, true, false);
 
-            if (0 != buffer.size())
-                Append (Operation (OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+            for (size_t i=0; i < curves.size(); i++)
+                {
+                if (0 == curves[i]->size())
+                    continue;
+
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes(*curves[i], buffer);
+
+                if (0 == buffer.size())
+                    continue;
+
+                Append(params[i]);
+                Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+                }
+            }
+        else
+            {
+            CurveVectorPtr edgeCurves = WireframeGeomUtil::CollectCurves (entity, m_db, true, false);
+
+            if (edgeCurves.IsValid())
+                {
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes (*edgeCurves, buffer);
+
+                if (0 != buffer.size())
+                    Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+                }
             }
         }
 
+    // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
     if (saveFaceIso)
         {
-        // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
-        // NEEDSWORK: Face attachments affect color...
-        CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves (entity, false, true);
-
-        if (faceCurves.IsValid ())
+        if (nullptr != attachments)
             {
-            bvector<Byte> buffer;
+            bvector<CurveVectorPtr> curves;
+            bvector<ElemDisplayParams> params;
 
-            BentleyGeometryFlatBuffer::GeometryToBytes (*faceCurves, buffer);
+            WireframeGeomUtil::CollectCurves(entity, m_db, curves, params, false, true);
 
-            if (0 != buffer.size())
-                Append (Operation (OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+            for (size_t i=0; i < curves.size(); i++)
+                {
+                if (0 == curves[i]->size())
+                    continue;
+
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes(*curves[i], buffer);
+
+                if (0 == buffer.size())
+                    continue;
+
+                Append(params[i]);
+                Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+                }
+            }
+        else
+            {
+            CurveVectorPtr faceCurves = WireframeGeomUtil::CollectCurves(entity, m_db, false, true);
+
+            if (faceCurves.IsValid())
+                {
+                bvector<Byte> buffer;
+
+                BentleyGeometryFlatBuffer::GeometryToBytes(*faceCurves, buffer);
+
+                if (0 != buffer.size())
+                    Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+                }
             }
         }
     }
@@ -1120,7 +1250,7 @@ void ElementGeomIO::Writer::Append (ElementGeometryCR elemGeom)
 void ElementGeomIO::Writer::Append(TextStringCR text)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, *m_db))
+    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db))
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
@@ -1252,7 +1382,59 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ISolidKernelEntityPtr& e
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return false;
 
-    return entity.IsValid();
+    if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
+        return true;
+
+    DgnCategoryId categoryId;
+
+    for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+        {
+        FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+
+        ElemDisplayParams faceParams;
+        DgnSubCategoryId  subCategoryId = DgnSubCategoryId(fbSymb->subCategoryId());
+
+        if (!categoryId.IsValid())
+            categoryId = m_db.Categories().QueryCategoryId(subCategoryId);
+
+        faceParams.SetCategoryId(categoryId);
+        faceParams.SetSubCategoryId(subCategoryId);
+
+        if (fbSymb->useColor())
+            faceParams.SetLineColor(ColorDef(fbSymb->color()));
+
+        if (fbSymb->useMaterial())
+            faceParams.SetMaterial(nullptr); // NEEDWORK_MATERIAL: Also uv...
+
+        faceParams.SetTransparency(fbSymb->transparency());
+
+        if (nullptr == entity->GetFaceMaterialAttachments())
+            entity->InitFaceMaterialAttachments(&faceParams);
+        else
+            const_cast<T_FaceAttachmentsVec&>(entity->GetFaceMaterialAttachments()->_GetFaceAttachmentsVec()).push_back(faceParams);
+        }
+
+    if (nullptr == entity->GetFaceMaterialAttachments())
+        return true;
+
+    T_FaceToSubElemIdMap const& faceToSubElemIdMap = entity->GetFaceMaterialAttachments()->_GetFaceToSubElemIdMap();
+    bmap<int32_t, uint32_t> subElemIdToFaceMap;
+
+    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+        subElemIdToFaceMap[curr->second.first] = curr->first;
+
+    for (size_t iSymbIndex=0; iSymbIndex < ppfb->symbologyIndex()->Length(); iSymbIndex++)
+        {
+        FB::FaceSymbologyIndex const* fbSymbIndex = ((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data())+iSymbIndex;
+        bmap<int32_t, uint32_t>::const_iterator foundIndex = subElemIdToFaceMap.find(fbSymbIndex->faceIndex());
+
+        if (foundIndex == subElemIdToFaceMap.end())
+            continue;
+        
+        const_cast<T_FaceToSubElemIdMap&>(faceToSubElemIdMap)[foundIndex->second] = make_bpair(fbSymbIndex->faceIndex(), fbSymbIndex->symbIndex());
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1423,7 +1605,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, TextStringR text) const
     if (OpCode::TextString != egOp.m_opCode)
         return false;
 
-    return (SUCCESS == TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, *m_db));
+    return (SUCCESS == TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, m_db));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1610,7 +1792,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElementGeometryPtr& elem
         case ElementGeomIO::OpCode::TextString:
             {
             TextStringPtr text = TextString::Create();
-            if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, *m_db))
+            if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, m_db))
                 break;
             
             elemGeom = ElementGeometry::Create(text);
@@ -2088,7 +2270,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                     PolyfaceHeaderPtr clone = BentleyApi::PolyfaceHeader::New();
 
                     clone->CopyFrom(meshData);
-                    clone->MarkInvisibleEdges(10.0); // This is "clever" and hopefully temporary...
+                    clone->MarkInvisibleEdges(10.0); // This is "clever" and unfortunate...NEEDSWORK_QVIS: Fix mesh silhouette display!!!
 
                     context.GetIDrawGeom().DrawPolyface(*clone);
                     }
@@ -2143,14 +2325,13 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                     break;
 
                 TextString text;
-
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, context.GetDgnDb()))
                     break;
                 
                 state.CookElemDisplayParams();
 
-                double zDepth = context.GetCurrentDisplayParams()->GetNetDisplayPriority();
-                context.GetIDrawGeom().DrawTextString(text, context.Is3dView() ? nullptr : &zDepth);                
+                context.DrawTextString(text);                
+                
                 break;
                 }
             
