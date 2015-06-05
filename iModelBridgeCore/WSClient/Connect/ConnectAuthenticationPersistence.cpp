@@ -111,15 +111,16 @@ void ConnectAuthenticationPersistence::UpgradeIfNeeded () const
     {
     // Upgrade from old data that was initialized with Graphite0503 code
     // TODO: remove when Graphite0503 apps are no longer running
+
+    // Old username storage
     Json::Value username = m_localState.GetValue ("Connect", "Username");
     if (username.isNull ())
         {
         return;
         }
 
-    Utf8String oldPasswordKey = "ConnectLogin:" + username.asString ();
-    Utf8String password = m_secureStore->LoadValue ("WSB", oldPasswordKey.c_str ());
-    Utf8String token = m_secureStore->LoadValue ("WSB", "ConnectToken:Token");
+    Utf8String password = m_secureStore->LegacyLoadValue ("ConnectLogin", username.asCString ());
+    Utf8String token = m_secureStore->LegacyLoadValue ("ConnectToken", "Token");
 
     // Save to new storage, skip empty values to not reset existing values if any
     if (!username.empty ())
@@ -136,7 +137,7 @@ void ConnectAuthenticationPersistence::UpgradeIfNeeded () const
         }
 
     // Remove old data
-    m_secureStore->SaveValue ("WSB", oldPasswordKey.c_str (), nullptr);
-    m_secureStore->SaveValue ("WSB", "ConnectToken:Token", nullptr);
+    m_secureStore->LegacyClearValue ("ConnectLogin", username.asCString ());
+    m_secureStore->LegacyClearValue ("ConnectToken", "Token");
     m_localState.SaveValue ("Connect", "Username", Json::nullValue);
     }

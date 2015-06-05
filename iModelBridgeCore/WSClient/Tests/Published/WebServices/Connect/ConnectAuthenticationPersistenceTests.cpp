@@ -51,20 +51,20 @@ TEST_F (ConnectAuthenticationPersistenceTests, GetCredentials_CredentialsStoredI
     ConnectAuthenticationPersistence p2 (&localState, secureStore);
 
     localState.SaveValue ("Connect", "Username", "TestUsername");
-    secureStore->SaveValue ("WSB", "ConnectLogin:TestUsername", "TestPassword");
-    secureStore->SaveValue ("WSB", "ConnectToken:Token", "TestToken");
+    secureStore->legacyValues["ConnectLogin"]["TestUsername"] = "TestPassword";
+    secureStore->legacyValues["ConnectToken"]["Token"] = "TestToken";
 
     auto credentials = p1.GetCredentials ();
     EXPECT_STREQ ("TestUsername", credentials.GetUsername ().c_str ());
     EXPECT_STREQ ("TestPassword", credentials.GetPassword ().c_str ());
 
     EXPECT_TRUE (localState.GetValue ("Connect", "Username").isNull ());
-    EXPECT_STREQ ("", secureStore->LoadValue ("WSB", "ConnectLogin:TestUsername").c_str ());
-    EXPECT_STREQ ("", secureStore->LoadValue ("WSB", "ConnectToken:Token").c_str ());
+    EXPECT_STREQ ("", secureStore->legacyValues["ConnectLogin"]["TestUsername"].asCString ());
+    EXPECT_STREQ ("", secureStore->legacyValues["ConnectToken"]["Token"].asCString ());
 
-    EXPECT_STREQ ("TestUsername", secureStore->LoadValue ("Connect", "Username").c_str ());
-    EXPECT_STREQ ("TestPassword", secureStore->LoadValue ("Connect", "Password").c_str ());
-    EXPECT_STREQ ("TestToken", secureStore->LoadValue ("Connect", "Token").c_str ());
+    EXPECT_STREQ ("TestUsername", secureStore->values["Connect"]["Username"].asString ().c_str ());
+    EXPECT_STREQ ("TestPassword", secureStore->values["Connect"]["Password"].asString ().c_str ());
+    EXPECT_STREQ ("TestToken", secureStore->values["Connect"]["Token"].asString ().c_str ());
 
     // Load from new storage
     credentials = p2.GetCredentials ();
