@@ -102,7 +102,7 @@ int checkNoActiveStatements(sqlite3* db)
             }
         }
 
-    sqlite3_log(SQLITE_BUSY, "nVdbeActive = %d but no active statements detected?!)", db->nVdbeActive);
+    sqlite3_log(SQLITE_BUSY, "nVdbeActive=%d but no active statements detected?!)", db->nVdbeActive);
     return SQLITE_ERROR;
     }
 #endif

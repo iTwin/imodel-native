@@ -43,7 +43,7 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
     SHA1 sha1;
     while (more data available)
       sha1.Add(pointer to fresh data, number of new bytes);
-    Utf8String myHash3 = sha1.getHash();
+    Utf8String myHash3 = sha1.GetHashString();
   */
 class SHA1 //: public Hash
 {

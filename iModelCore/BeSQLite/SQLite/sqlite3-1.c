@@ -296,7 +296,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.11"
 #define SQLITE_VERSION_NUMBER 3008011
-#define SQLITE_SOURCE_ID      "2015-05-22 23:51:30 519054bb72e8f8977b11161c81b0e96ba7bca589"
+#define SQLITE_SOURCE_ID      "2015-06-02 09:20:46 fb3914070791c84b5f323b7359ac845246d8a844"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -3583,7 +3583,9 @@ SQLITE_API int SQLITE_STDCALL sqlite3_stmt_busy(sqlite3_stmt*);
 ** Some interfaces require a protected sqlite3_value.  Other interfaces
 ** will accept either a protected or an unprotected sqlite3_value.
 ** Every interface that accepts sqlite3_value arguments specifies
-** whether or not it requires a protected sqlite3_value.
+** whether or not it requires a protected sqlite3_value.  The
+** [sqlite3_value_dup()] interface can be used to construct a new 
+** protected sqlite3_value from an unprotected sqlite3_value.
 **
 ** The terms "protected" and "unprotected" refer to whether or not
 ** a mutex is held.  An internal mutex is held for a protected
@@ -4546,7 +4548,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_value_numeric_type(sqlite3_value*);
 ** memory allocation fails.
 **
 ** ^The sqlite3_value_free(V) interface frees an [sqlite3_value] object
-** previously obtained from [sqlite_value_dup()].  ^If V is a NULL pointer
+** previously obtained from [sqlite3_value_dup()].  ^If V is a NULL pointer
 ** then sqlite3_value_free(V) is a harmless no-op.
 */
 SQLITE_API SQLITE_EXPERIMENTAL sqlite3_value *SQLITE_STDCALL sqlite3_value_dup(const sqlite3_value*);
@@ -4799,7 +4801,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** from [sqlite3_malloc()] before it returns.
 **
 ** ^The sqlite3_result_value() interface sets the result of
-** the application-defined function to be a copy the
+** the application-defined function to be a copy of the
 ** [unprotected sqlite3_value] object specified by the 2nd parameter.  ^The
 ** sqlite3_result_value() interface makes a copy of the [sqlite3_value]
 ** so that the [sqlite3_value] specified in the parameter may change or
@@ -12426,6 +12428,7 @@ struct sqlite3 {
 #define SQLITE_QueryOnly      0x02000000  /* Disable database changes */
 #define SQLITE_VdbeEQP        0x04000000  /* Debug EXPLAIN QUERY PLAN */
 #define SQLITE_Vacuum         0x08000000  /* Currently in a VACUUM */
+#define SQLITE_CellSizeCk     0x10000000  /* Check btree cell sizes on load */
 
 
 /*
@@ -12807,8 +12810,9 @@ struct Table {
 #define TF_HasPrimaryKey   0x04    /* Table has a primary key */
 #define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
 #define TF_Virtual         0x10    /* Is a virtual table */
-#define TF_WithoutRowid    0x20    /* No rowid used. PRIMARY KEY is the key */
-#define TF_OOOHidden       0x40    /* Out-of-Order hidden columns */
+#define TF_WithoutRowid    0x20    /* No rowid.  PRIMARY KEY is the key */
+#define TF_NoVisibleRowid  0x40    /* No user-visible "rowid" column */
+#define TF_OOOHidden       0x80    /* Out-of-Order hidden columns */
 
 
 /*
@@ -12826,6 +12830,7 @@ struct Table {
 
 /* Does the table have a rowid */
 #define HasRowid(X)     (((X)->tabFlags & TF_WithoutRowid)==0)
+#define VisibleRowid(X) (((X)->tabFlags & TF_NoVisibleRowid)==0)
 
 /*
 ** Each foreign key constraint is an instance of the following structure.
@@ -12984,6 +12989,14 @@ struct UnpackedRecord {
 ** and the value of Index.onError indicate the which conflict resolution 
 ** algorithm to employ whenever an attempt is made to insert a non-unique
 ** element.
+**
+** While parsing a CREATE TABLE or CREATE INDEX statement in order to
+** generate VDBE code (as opposed to parsing one read from an sqlite_master
+** table as part of parsing an existing database schema), transient instances
+** of this structure may be created. In this case the Index.tnum variable is
+** used to store the address of a VDBE instruction, not a database page
+** number (it cannot - the database page is not allocated until the VDBE
+** program is executed). See convertToWithoutRowidTable() for details.
 */
 struct Index {
   char *zName;             /* Name of this index */
@@ -13558,19 +13571,20 @@ struct Select {
 ** "Select Flag".
 */
 #define SF_Distinct        0x0001  /* Output should be DISTINCT */
-#define SF_Resolved        0x0002  /* Identifiers have been resolved */
-#define SF_Aggregate       0x0004  /* Contains aggregate functions */
-#define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
-#define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
-#define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
-#define SF_Compound        0x0040  /* Part of a compound query */
-#define SF_Values          0x0080  /* Synthesized from VALUES clause */
-#define SF_MultiValue      0x0100  /* Single VALUES term with multiple rows */
-#define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
-#define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
-#define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
+#define SF_All             0x0002  /* Includes the ALL keyword */
+#define SF_Resolved        0x0004  /* Identifiers have been resolved */
+#define SF_Aggregate       0x0008  /* Contains aggregate functions */
+#define SF_UsesEphemeral   0x0010  /* Uses the OpenEphemeral opcode */
+#define SF_Expanded        0x0020  /* sqlite3SelectExpand() called on this */
+#define SF_HasTypeInfo     0x0040  /* FROM subqueries have Table metadata */
+#define SF_Compound        0x0080  /* Part of a compound query */
+#define SF_Values          0x0100  /* Synthesized from VALUES clause */
+#define SF_MultiValue      0x0200  /* Single VALUES term with multiple rows */
+#define SF_NestedFrom      0x0400  /* Part of a parenthesized FROM clause */
+#define SF_MaybeConvert    0x0800  /* Need convertCompoundSelectToSubquery() */
 #define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
-#define SF_Converted       0x2000  /* By convertCompoundSelectToSubquery() */
+#define SF_Recursive       0x2000  /* The recursive part of a recursive CTE */
+#define SF_Converted       0x4000  /* By convertCompoundSelectToSubquery() */
 
 
 /*
@@ -13812,7 +13826,6 @@ struct Parse {
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
   int addrCrTab;       /* Address of OP_CreateTable opcode on CREATE TABLE */
-  int addrSkipPK;      /* Address of instruction to skip PRIMARY KEY index */
   u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */

@@ -32,7 +32,7 @@
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
-#define RUNONCE_CHECK(var,stat) {if(var) return stat; var=true;}
+#define RUNONCE_CHECK(var,stat) {if (var) return stat; var=true;}
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -202,9 +202,9 @@ void        Statement::Finalize() {if (m_stmt){sqlite3_finalize(m_stmt);m_stmt=n
 DbResult    Statement::Step() {return m_stmt ? (DbResult) sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
 DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
 DbResult    Statement::ClearBindings() {return m_stmt ? (DbResult)sqlite3_clear_bindings(m_stmt): BE_SQLITE_ERROR;}
-DbResult    Statement::BindInt (int col, int val)        {return (DbResult)sqlite3_bind_int(m_stmt, col, val);}
-DbResult    Statement::BindInt64 (int col, int64_t val)  {return (DbResult)sqlite3_bind_int64(m_stmt, col, val);}
-DbResult    Statement::BindDouble (int col, double val)  {return (DbResult)sqlite3_bind_double(m_stmt, col, val);}
+DbResult    Statement::BindInt(int col, int val)        {return (DbResult)sqlite3_bind_int(m_stmt, col, val);}
+DbResult    Statement::BindInt64(int col, int64_t val)  {return (DbResult)sqlite3_bind_int64(m_stmt, col, val);}
+DbResult    Statement::BindDouble(int col, double val)  {return (DbResult)sqlite3_bind_double(m_stmt, col, val);}
 DbResult    Statement::BindText(int col, Utf8CP val, MakeCopy makeCopy, int nBytes) { return (DbResult)sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindZeroBlob(int col, int size) {return (DbResult)sqlite3_bind_zeroblob(m_stmt, col, size);}
 DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) { return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
@@ -222,7 +222,7 @@ Utf8CP      Statement::GetValueText(int col)    {return (Utf8CP) sqlite3_column_
 int         Statement::GetValueInt(int col)     {return sqlite3_column_int(m_stmt, col);}
 int64_t     Statement::GetValueInt64(int col)   {return sqlite3_column_int64(m_stmt, col);}
 double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_stmt, col);}
-void        Statement::GetValueGuid(int col, BeGuidR guid) {memcpy(&guid, GetValueBlob(col), sizeof(guid));}
+BeGuid      Statement::GetValueGuid(int col)    {BeGuid guid; memcpy(&guid, GetValueBlob(col), sizeof(guid)); return guid;}
 int         Statement::GetParameterIndex(Utf8CP name) { return sqlite3_bind_parameter_index(m_stmt, name);}
 Utf8CP      Statement::GetSql() const           {return sqlite3_sql(m_stmt); }
 DbResult    Statement::Prepare(BeSQLiteDbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, sql);}
@@ -235,7 +235,7 @@ int         DbValue::GetValueInt() const              {return sqlite3_value_int(
 int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int64(m_val);}
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
 BeLuid      DbValue::GetValueLuid() const             {return BeLuid((uint64_t) GetValueInt64());}
-void        DbValue::GetValueGuid(BeGuidR guid) const {memcpy(&guid, GetValueBlob(), sizeof(guid));}
+BeGuid      DbValue::GetValueGuid() const {BeGuid guid; memcpy(&guid, GetValueBlob(), sizeof(guid)); return guid;}
 
 SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
 bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
@@ -352,7 +352,7 @@ SqlPrintfString::SqlPrintfString(Utf8CP fmt, ...)
 SqlPrintfString::~SqlPrintfString() {sqlite3_free(m_str);}
 
 #ifdef _MSC_VER
-    #pragma warning (disable:4355)
+    #pragma warning(disable:4355)
 #endif // _MSC_VER
 
 //-------------------------------------------------------------------------------------
@@ -457,7 +457,7 @@ DbResult DbFile::StartSavepoint(Savepoint& txn, BeSQLiteTxnMode txnMode)
         Statement stmt;
         stmt.TryPrepare(*txn.m_db, "PRAGMA data_version");
         rc = stmt.Step();
-        BeAssert (BE_SQLITE_ROW == rc);
+        BeAssert(BE_SQLITE_ROW == rc);
 
         uint64_t newDataVersion = stmt.GetValueInt64(0);
         if (0 != m_dataVersion && newDataVersion != m_dataVersion) // don't call this on the first Savepoint
@@ -475,7 +475,7 @@ DbResult DbFile::StartSavepoint(Savepoint& txn, BeSQLiteTxnMode txnMode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
+DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
     {
     if (!txn.IsActive())     // not active? forget it.
         return BE_SQLITE_ERROR;
@@ -497,14 +497,12 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
     for (auto const& tracker : m_trackers)
         {
         // Give trackers a chance to save the changes.
-        if (tracker.second->HasChanges() && ChangeTracker::OnCommitStatus::Abort == tracker.second->_OnCommit(isCommit))
+        if (tracker.second->HasChanges() && ChangeTracker::OnCommitStatus::Abort == tracker.second->_OnCommit(isCommit, operation))
             {
             BeAssert(false);
             return  BE_SQLITE_ERROR_ChangeTrackError;
             }
         }
-
-    BeAssert((BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
 
     // attempt the commit/release or rollback
     DbResult rc;
@@ -525,7 +523,10 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
     m_inCommit = false;
 
     if (rc != BE_SQLITE_OK)
+        {
+        BeAssert((BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
         return rc;
+        }
 
     // deactivate this and all nested lower txns.
     for (DbTxnIter it=thisPos; it != m_txns.end(); ++it)
@@ -557,10 +558,10 @@ Savepoint::Savepoint(BeSQLiteDbR db, Utf8CP name, bool beginTxn, BeSQLiteTxnMode
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Savepoint::_Begin(BeSQLiteTxnMode mode)  {return m_dbFile ? m_dbFile->StartSavepoint(*this, mode) : BE_SQLITE_ERROR;}
-DbResult Savepoint::_Cancel() {return m_dbFile ? m_dbFile->StopSavepoint(*this, false) : BE_SQLITE_ERROR;}
-DbResult Savepoint::_Commit() {return m_dbFile ? m_dbFile->StopSavepoint(*this, true) : BE_SQLITE_ERROR;}
+DbResult Savepoint::_Cancel() {return m_dbFile ? m_dbFile->StopSavepoint(*this, false, nullptr) : BE_SQLITE_ERROR;}
+DbResult Savepoint::_Commit(Utf8CP operation) {return m_dbFile ? m_dbFile->StopSavepoint(*this, true, operation) : BE_SQLITE_ERROR;}
 DbResult Savepoint::Begin(BeSQLiteTxnMode mode)  {return _Begin(mode);}
-DbResult Savepoint::Commit() {return _Commit();}
+DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
 DbResult Savepoint::Cancel() {return _Cancel();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -606,13 +607,13 @@ DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),
 Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan)
     {
     Statement queryPlan;
-    if (BE_SQLITE_OK != queryPlan.Prepare (*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql)))
+    if (BE_SQLITE_OK != queryPlan.Prepare(*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql)))
         return GetLastError();
 
     Utf8CP fmt = explainPlan ? "%s %s %s %s\n" : "%-3s %-12s %-4s %-4s\n";
     Utf8String plan;
     while (BE_SQLITE_ROW == queryPlan.Step())
-        plan.append (Utf8PrintfString(fmt, queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3)));
+        plan.append(Utf8PrintfString(fmt, queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3)));
 
     return plan;
     }
@@ -862,7 +863,7 @@ DbResult DbFile::QueryPropertySize(uint32_t& size, PropertySpecCR spec, uint64_t
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DbFile::QueryCachedProperty(Utf8String* strval, void** value, uint32_t size, PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
-    BeAssert (spec.IsCached());
+    BeAssert(spec.IsCached());
     CachedPropertyValue* cachedProp = FindCachedProperty(spec, id, subId);
     if (nullptr == cachedProp)
         {
@@ -977,7 +978,7 @@ DbResult DbFile::QueryProperty(void* value, uint32_t size, PropertySpecCR spec, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::QueryProperty (Utf8StringR value, PropertySpecCR spec, uint64_t id, uint64_t subId) const
+DbResult DbFile::QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     if (spec.IsCached())
         return QueryCachedProperty(&value, nullptr, 0, spec, id, subId);
@@ -1088,6 +1089,12 @@ void DbFile::SaveSettings()
     if (!m_settingsDirty)
         return;
 
+    if (m_txns.size() <= 0)
+        return;
+
+    Savepoint* txn = m_txns[0];
+    txn->Save(nullptr); // all persistent changes must be saved before we can save settings (they must be in their own transaction so it can be marked to skip for undo).
+
     // we don't want changes to settings in the persistent properties table to be undoable.
     for (auto tracker : m_trackers)
         tracker.second->_OnSettingsSave();
@@ -1095,10 +1102,12 @@ void DbFile::SaveSettings()
     m_settingsDirty = false;
     DbResult rc = (DbResult) sqlite3_exec(m_sqlDb,"INSERT OR REPLACE INTO " BEDB_TABLE_Property " (Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData) "
                   "SELECT Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData FROM " TEMP_TABLE_Prefix BEDB_TABLE_Property, nullptr, nullptr, nullptr);
-    BeAssert (BE_SQLITE_OK == rc);
+    BeAssert(BE_SQLITE_OK == rc);
 
     rc = (DbResult) sqlite3_exec(m_sqlDb,"DELETE FROM " TEMP_TABLE_Prefix BEDB_TABLE_Property, nullptr, nullptr, nullptr);
     BeAssert(BE_SQLITE_OK == rc);
+
+    txn->Save("Settings"); // save the settings changes.
 
     for (auto tracker : m_trackers)
         tracker.second->_OnSettingsSaved();
@@ -1386,7 +1395,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
         return  rc;
 
     if (DefaultTxn_No == params.m_startDefaultTxn)
-        m_dbFile->m_defaultTxn.Commit();
+        m_dbFile->m_defaultTxn.Commit(nullptr);
 
     LOG.infov("Created file '%s'.", GetDbFileName());
     return BE_SQLITE_OK;
@@ -1398,7 +1407,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
 DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
     {
     Savepoint* txn = GetSavepoint(0);
-    bool wasActive = (txn!= nullptr) && (BE_SQLITE_OK == txn->Commit());
+    bool wasActive = (txn!= nullptr) && (BE_SQLITE_OK == txn->Commit(nullptr));
 
     DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), SqlPrintfString("ATTACH \"%s\" AS %s", filename, alias), nullptr, nullptr, nullptr);
 
@@ -1421,7 +1430,7 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
 DbResult Db::DetachDb(Utf8CP alias)
     {
     Savepoint* txn = GetSavepoint(0);
-    bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit()); 
+    bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit(nullptr)); 
 
     DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), SqlPrintfString("DETACH %s", alias), nullptr, nullptr, nullptr);
     if (rc != BE_SQLITE_OK)
@@ -1578,7 +1587,7 @@ DbResult Db::SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value)
 DbResult Db::QueryRepositoryLocalValue(Utf8CP name, Utf8StringR value) const
     {
     Statement stmt;
-    stmt.Prepare (*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
+    stmt.Prepare(*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
     stmt.BindText(1, name, Statement::MakeCopy::No);
 
     DbResult rc = stmt.Step();
@@ -1654,7 +1663,7 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
         return false;
 
     columns.clear();
-    for(int nColumn = 0; nColumn < statement.GetColumnCount(); nColumn++)
+    for (int nColumn = 0; nColumn < statement.GetColumnCount(); nColumn++)
         {
         columns.push_back(statement.GetColumnName(nColumn));
         }
@@ -1694,7 +1703,7 @@ DbFile::~DbFile()
 
     if (0 != m_txns.size())
         {
-        m_txns[0]->Commit();        // Commit writes out cached RLVs, etc.  Note: Commit creates new cached statements.
+        m_txns[0]->Commit(nullptr);        // Commit writes out cached RLVs, etc.  Note: Commit creates new cached statements.
         m_txns.clear();
         }
 
@@ -1828,24 +1837,24 @@ static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
 
     uint32_t bytesRead;
     uint8_t header[100] = "";
-    tester.Read (header, &bytesRead, sizeof(header));
+    tester.Read(header, &bytesRead, sizeof(header));
     tester.Close();
 
     DbResult result = BE_SQLITE_NOTADB;
     Utf8CP ident = (Utf8CP)header;
-    if (0 == strcmp (ident, SQLITE_FORMAT_SIGNATURE))
+    if (0 == strcmp(ident, SQLITE_FORMAT_SIGNATURE))
         result = BE_SQLITE_OK;
-    else if (nullptr != BeSQLiteLib::GetDownloadAdmin() && (0 == strcmp (ident, DOWNLOAD_FORMAT_SIGNATURE)))
+    else if (nullptr != BeSQLiteLib::GetDownloadAdmin() && (0 == strcmp(ident, DOWNLOAD_FORMAT_SIGNATURE)))
         {
         vfs = BeSQLiteLib::GetDownloadAdmin()->GetVfs();
         result = BE_SQLITE_OK;
         }
-    else if (0 == strcmp (ident, SQLZLIB_FORMAT_SIGNATURE))
+    else if (0 == strcmp(ident, SQLZLIB_FORMAT_SIGNATURE))
         {
         vfs = loadZlibVfs();
         result = BE_SQLITE_OK;
         }
-    else if (0 == strcmp (ident, SQLSNAPPY_FORMAT_SIGNATURE))
+    else if (0 == strcmp(ident, SQLSNAPPY_FORMAT_SIGNATURE))
         {
         vfs = loadSnappyVfs();
         result = BE_SQLITE_OK;
@@ -1913,7 +1922,7 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
         }
 
     if (!params.m_startDefaultTxn)
-        m_dbFile->m_defaultTxn.Commit();
+        m_dbFile->m_defaultTxn.Commit(nullptr);
 
     return  rc;
     }
@@ -1954,7 +1963,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::QueryExpirationDate (DateTime& expirationDate) const
+DbResult Db::QueryExpirationDate(DateTime& expirationDate) const
     {
     Utf8String dateStr;
     DbResult rc = QueryProperty(dateStr, Properties::ExpirationDate());
@@ -1996,10 +2005,10 @@ bool Db::IsExpired() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SaveChanges()
+DbResult Db::SaveChanges(Utf8CP operation)
     {
     Savepoint* txn = GetSavepoint(0);
-    return txn ? txn->Save() : BE_SQLITE_ERROR;
+    return txn ? txn->Save(operation) : BE_SQLITE_ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2220,7 +2229,7 @@ DbResult ChangeTracker::CreateSession()
         }
 
     DbResult result = (DbResult) sqlite3session_create(m_dbFile->GetSqlDb(), "main", &m_session);
-    BeAssert (BE_SQLITE_OK == result);
+    BeAssert(BE_SQLITE_OK == result);
 
     if (BE_SQLITE_OK == result)
         sqlite3session_table_filter(m_session, filterCaller, this); // set up auto-attach for all tables
@@ -2245,14 +2254,15 @@ void ChangeTracker::EndTracking()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeTracker::EnableTracking(bool yesNo)
+bool ChangeTracker::EnableTracking(bool yesNo)
     {
     CreateSession();
     if (m_isTracking == yesNo)
-        return;
+        return m_isTracking;
 
     sqlite3session_enable(m_session, yesNo);
     m_isTracking = yesNo;
+    return !yesNo;
     }
 
 void ChangeTracker::SetIndirectChanges(bool yesNo) {sqlite3session_indirect(m_session, yesNo);}
@@ -2408,6 +2418,24 @@ DbResult ChangeSet::ApplyChanges(BeSQLiteDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
+    {
+    int outSize=0;
+    void* outData=nullptr;
+
+    DbResult rc = (DbResult) sqlite3changeset_concat(GetSize(), (void*) GetData(), second.GetSize(), (void*) second.GetData(), &outSize, &outData);
+    if (BE_SQLITE_OK != rc)
+        return rc;
+
+    sqlite3_free(m_changeset);
+    m_changeset = outData;
+    m_size = outSize;
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Finalize() const
@@ -2450,7 +2478,7 @@ DbValue  Changes::Change::GetOldValue(int colNum) const
     {
     SqlValueP val=nullptr;
     int rc=sqlite3changeset_old(m_iter, colNum, &val);
-    BeAssert (rc==BE_SQLITE_OK);
+    BeAssert(rc==BE_SQLITE_OK);
     UNUSED_VARIABLE(rc);
     return DbValue(val);
     }
@@ -2462,7 +2490,7 @@ DbValue  Changes::Change::GetNewValue(int colNum) const
     {
     SqlValueP val=nullptr;
     int rc=sqlite3changeset_new(m_iter, colNum, &val);
-    BeAssert (rc==BE_SQLITE_OK);
+    BeAssert(rc==BE_SQLITE_OK);
     UNUSED_VARIABLE(rc);
     return DbValue(val);
     }
@@ -2558,10 +2586,10 @@ static Utf8String toAsc(Byte* buf, size_t nb, size_t w)
     Utf8String ad;
     size_t i, n = std::min(nb, w);
     for (i=0; i<n; ++i)
-        if (isprint ((int)buf[i]))
+        if (isprint((int)buf[i]))
             ad.append(1, (Utf8Char)buf[i]);
         else
-            ad.append (".");
+            ad.append(".");
 
     ad.append((w-i), ' ');
     return ad;
@@ -2713,7 +2741,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
         printf("\nTable: %s", tableName);
         if (detailLevel > 0)
             printf("\n");
-        tablesSeen.insert (tableName);
+        tablesSeen.insert(tableName);
         }
 
     printf("\n[%s] ", FormatPrimarykeyColumns((DbOpcode::Insert==opcode), detailLevel).c_str());
@@ -2999,7 +3027,7 @@ DbResult BlobIO::Close()
     return blob ? (DbResult) sqlite3_blob_close(blob) : BE_SQLITE_OK;
     }
 
-DbResult BlobIO::ReOpen(uint64_t row) {return(DbResult) sqlite3_blob_reopen(m_blob, row);}
+DbResult BlobIO::ReOpen(uint64_t row) {return (DbResult) sqlite3_blob_reopen(m_blob, row);}
 DbResult BlobIO::Read(void* data, int numBytes, int offset) {return (DbResult) sqlite3_blob_read(m_blob, data, numBytes, offset);}
 DbResult BlobIO::Write(const void* data, int numBytes, int offset) {return (DbResult) sqlite3_blob_write(m_blob, data, numBytes, offset);}
 int BlobIO::GetNumBytes() const {return sqlite3_blob_bytes(m_blob);}
@@ -3946,7 +3974,7 @@ static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunk
     if (bytesWritten != sizeof (header))
         return BE_SQLITE_IOERR;
 
-    ZipErrors compressResult = encoder.Compress (outStream, inStream, nullptr, supportRandomAccess);
+    ZipErrors compressResult = encoder.Compress(outStream, inStream, nullptr, supportRandomAccess);
     if (compressResult != ZIP_SUCCESS)
         {
         LOG.errorv("LzmaEncoder::Compress returned %d", compressResult);
@@ -4017,7 +4045,7 @@ static DbResult embedFileWithoutCompressing(Db& db, uint64_t&filesize, uint32_t 
     bvector<Byte>    buffer;
     buffer.resize(chunkSize);
     uint64_t    totalBytesRead = 0;
-    while(true)
+    while (true)
         {
         uint32_t bytesRead;
         inputFile.Read(&buffer[0], &bytesRead, chunkSize);
@@ -4120,7 +4148,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing(DbResult* stat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2015
 //---------------------------------------------------------------------------------------
-BeRepositoryBasedId DbEmbeddedFileTable::ImportDbFile (DbResult& stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize, bool supportRandomAccess)
+BeRepositoryBasedId DbEmbeddedFileTable::ImportDbFile(DbResult& stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize, bool supportRandomAccess)
     {
     Utf8CP vfs = 0;
     stat = isValidDbFile(filespec, vfs);
@@ -4244,7 +4272,7 @@ DbResult DbEmbeddedFileTable::Replace(Utf8CP name, Utf8CP filespec, uint32_t chu
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DbEmbeddedFileTable::Save(void const* data, uint64_t size, Utf8CP name, bool compress, uint32_t chunkSize)
     {
-    BeAssert (m_db.IsTransactionActive());
+    BeAssert(m_db.IsTransactionActive());
     BeRepositoryBasedId id = QueryFile(name);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
@@ -4319,7 +4347,7 @@ DbResult DbEmbeddedFileTable::Export(Utf8CP filespec, Utf8CP name, ICompressProg
     bvector<Byte>   buffer;
     buffer.resize(20000);
     uint64_t totalRead = 0;
-    while(true)
+    while (true)
         {
         inStream._Read(&buffer[0], (uint32_t)buffer.size(), actuallyRead);
         if (0 == actuallyRead)
@@ -4346,7 +4374,7 @@ DbResult DbEmbeddedFileTable::Export(Utf8CP filespec, Utf8CP name, ICompressProg
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2015
 //---------------------------------------------------------------------------------------
-DbResult DbEmbeddedFileTable::ExportDbFile (Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress)
+DbResult DbEmbeddedFileTable::ExportDbFile(Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress)
     {
     DbResult status = Export(localFileName, name, progress);
     if (BE_SQLITE_OK != status)
@@ -4394,7 +4422,7 @@ DbResult DbEmbeddedFileTable::Read(bvector<Byte>& callerBuffer, Utf8CP name)
         }
 
     char    tempBuffer[2000];
-    while(true)
+    while (true)
         {
         inStream._Read(tempBuffer, (uint32_t)sizeof(tempBuffer), actuallyRead);
         if (0 == actuallyRead)
@@ -4640,7 +4668,7 @@ static int zfsZlibCompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int
     uLongf n = *pnDest;
     int rc = compress((Bytef*)aDest, &n,(Bytef*)aSrc, nSrc);
     *pnDest = n;
-    return(rc==Z_OK ? SQLITE_OK : SQLITE_ERROR);
+    return (rc==Z_OK ? SQLITE_OK : SQLITE_ERROR);
     }
 static int zfsZlibUncompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
     {
@@ -5362,7 +5390,7 @@ static SRes progressFor7z(void *p, UInt64 inSize, UInt64 outSize)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-static ZipErrors translate7ZipError (SRes code, bool readingFromFile)
+static ZipErrors translate7ZipError(SRes code, bool readingFromFile)
     {
     switch (code)
         {
@@ -5419,7 +5447,7 @@ public:
 
     LzmaDgnDbHeader(CharCP idString, CompressionType compressionType, uint64_t sourceSize)
         {
-        BeAssert((strlen (idString)+ 1) <= sizeof(m_idString));
+        BeAssert((strlen(idString)+ 1) <= sizeof(m_idString));
         memset(this, 0, sizeof (*this));
         m_sizeOfHeader = (uint16_t)sizeof (LzmaDgnDbHeader);
         strcpy(m_idString, idString);
@@ -5655,7 +5683,7 @@ public:
         for (unsigned i = 0; i < 8; i++)
             header[headerSize++] = (Byte)(sourceSize >> (8 * i));
 
-        if (m_outStream.WriteData (header, headerSize) != headerSize)
+        if (m_outStream.WriteData(header, headerSize) != headerSize)
             return ZIP_ERROR_WRITE_ERROR;
 
         //  Compress progress may be NULL.

@@ -930,7 +930,7 @@ public:
     //! Get a BeGuid value from a column returned from Step
     //! @param[in] col The column of interest
     //! @see sqlite3_column_blob
-    BE_SQLITE_EXPORT void GetValueGuid(int col, BeGuidR);
+    BE_SQLITE_EXPORT BeGuid GetValueGuid(int col);
 
     //! Get the index of a bound parameter by name.
     //! @param[in] name the name of the bound parameter
@@ -1031,27 +1031,29 @@ protected:
 
     friend struct Db;
     friend struct DbFile;
+    enum class OnCommitStatus {Continue=0, Abort=1};
+    enum class TrackChangesForTable : bool {No=0, Yes=1};
 
     BE_SQLITE_EXPORT DbResult CreateSession();
+    virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) = 0;
+    virtual void _OnSettingsSave() {}
+    virtual void _OnSettingsSaved() {}
+    void SetDbFile(BeSQLiteDbFileP dbFile) {m_dbFile = dbFile;}
+    BeSQLiteDbFileP GetDbFile() {return m_dbFile;}
+    Utf8CP GetName() const {return m_name.c_str();}
 
 public:
     ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_dbFile=0; m_isTracking=false;}
     virtual ~ChangeTracker() {EndTracking();}
-
-    enum class OnCommitStatus {Continue=0, Abort=1};
-    virtual OnCommitStatus _OnCommit(bool isCommit) = 0;
-    virtual void _OnSettingsSave() {}
-    virtual void _OnSettingsSaved() {}
-
-    enum class TrackChangesForTable : bool {No=0, Yes=1};
     virtual TrackChangesForTable _FilterTable(Utf8CP tableName) {return TrackChangesForTable::Yes;}
+    SqlSessionP GetSqlSession() {return m_session;}
 
     //! Turn off change tracking for a database.
     BE_SQLITE_EXPORT void EndTracking();
 
     //! Temporarily suspend or resume change tracking
     //! @param[in] val if true, enable tracking.
-    BE_SQLITE_EXPORT void EnableTracking(bool val);
+    BE_SQLITE_EXPORT bool EnableTracking(bool val);
 
     //! turn on or off the "indirect changes" flag. All changes are marked as either direct or indirect according to the state of this flag.
     //! @param[in] val if true, changes are marked as indirect.
@@ -1064,10 +1066,6 @@ public:
     void Restart() {EndTracking(); EnableTracking(true);}
     bool IsTracking() const {return m_isTracking;}
 
-    void SetDbFile(BeSQLiteDbFileP dbFile) {m_dbFile = dbFile;}
-    BeSQLiteDbFileP GetDbFile() {return m_dbFile;}
-    SqlSessionP GetSqlSession() {return m_session;}
-    Utf8CP GetName() const {return m_name.c_str();}
 };
 
 //=======================================================================================
@@ -1090,7 +1088,7 @@ struct DbValue
     BE_SQLITE_EXPORT int64_t     GetValueInt64() const;     //!< see sqlite3_value_int64
     BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
     BE_SQLITE_EXPORT BeLuid      GetValueLuid() const;      //!< get the value as a Locally unique id
-    BE_SQLITE_EXPORT void        GetValueGuid(BeGuidR) const; //!< get the value as a GUID
+    BE_SQLITE_EXPORT BeGuid      GetValueGuid() const;      //!< get the value as a GUID
     template <class T_Id> T_Id   GetValueId() const {return T_Id (GetValueInt64());}
 
     BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const; //!< for debugging purposes.
@@ -1424,11 +1422,13 @@ public:
     //! @param[in] db the database to which the changes are applied.
     BE_SQLITE_EXPORT DbResult ApplyChanges(BeSQLiteDbR db);
 
+    BE_SQLITE_EXPORT DbResult ConcatenateWith(ChangeSet const& second);
+
     //! Get the number of bytes in this ChangeSet.
     int GetSize() const {return  m_size;}
 
     //! Get a pointer to the data for this ChangeSet.
-    void const* GetData() {return  m_changeset;}
+    void const* GetData() const {return  m_changeset;}
 
     //! Determine whether this ChangeSet holds valid data or not.
     bool IsValid() {return 0 != m_changeset;}
@@ -1931,7 +1931,7 @@ protected:
 
     virtual void _OnDeactivate(bool isCommit) {m_depth=-1;}
     BE_SQLITE_EXPORT virtual DbResult _Begin(BeSQLiteTxnMode);
-    BE_SQLITE_EXPORT virtual DbResult _Commit();
+    BE_SQLITE_EXPORT virtual DbResult _Commit(Utf8CP operation);
     BE_SQLITE_EXPORT virtual DbResult _Cancel();
 
     Savepoint(DbFile& db, Utf8CP name, BeSQLiteTxnMode txnMode) : m_dbFile(&db), m_name(name), m_txnMode(txnMode) {m_db=nullptr; m_depth = -1;}
@@ -1946,7 +1946,7 @@ public:
     BE_SQLITE_EXPORT Savepoint(Db& db, Utf8CP name, bool beginTxn=true, BeSQLiteTxnMode txnMode=BeSQLiteTxnMode::Deferred);
 
     //! dtor for Savepoint. If the Savepoint is still active, it is committed.
-    virtual ~Savepoint() {Commit();}
+    virtual ~Savepoint() {Commit(nullptr);}
 
     //! Determine whether this Savepoint is active or not.
     bool IsActive() const {return GetDepth() >= 0;}
@@ -1973,13 +1973,15 @@ public:
 
     //! Commit this Savepoint, if active. Executes the SQLite "RELEASE" command. If this is the outermost transaction, this will save changes
     //! to the disk.
+    //! @param[in] operation The name of the operation being committed. If change trackers are active, they may save this string along with the 
+    //! changeset to identify it.
     //! @note After Commit, the Savepoint is not active. If you mean to save your changes but leave this Savepoint open, call Save.
     //! @note If a Savepoint is active when it is destroyed, it is automatically committed.
-    BE_SQLITE_EXPORT DbResult Commit();
+    BE_SQLITE_EXPORT DbResult Commit(Utf8CP operation=nullptr);
 
     //! Commit this transaction and then restart it. If this is the outermost Savepoint, this will save changes to disk but leave
     //! a new transaction active.
-    DbResult Save() {Commit(); return Begin();}
+    DbResult Save(Utf8CP operation) {Commit(operation); return Begin();}
 
     //! Cancel this transaction. Executes the SQLite "ROLLBACK" command if the Savepoint is active.
     BE_SQLITE_EXPORT DbResult Cancel();
@@ -2235,7 +2237,7 @@ protected:
     void InitRTreeMatch() const;
     void SetRTreeMatch(RTreeAcceptFunction::Tester* tester) const;
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
-    DbResult StopSavepoint(Savepoint&, bool isCommit);
+    DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
     DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl, bool temp);
     DbResult SaveCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId, Utf8CP stringData, void const* value, uint32_t size) const;
     struct CachedProperyMap& GetCachedPropMap() const;
@@ -2537,6 +2539,8 @@ public:
     //! where the SQL string has not yet been prepared).
     BE_SQLITE_EXPORT DbResult GetCachedStatement(CachedStatementPtr& statement, Utf8CP sql) const;
 
+    CachedStatementPtr GetCachedStatement(Utf8CP sql) const {CachedStatementPtr stmt; GetCachedStatement(stmt, sql); return stmt;}
+
     //! Get an entry in the Db's Savepoint stack.
     //! @param[in] depth The depth of the Savepoint of interest. Must be 0 <= depth < GetCurrentSavepointDepth()
     //! @return A pointer to the Savepoint if depth is valid. NULL otherwise.
@@ -2818,8 +2822,10 @@ public:
     BE_SQLITE_EXPORT DbResult SaveSettings() const;
 
     //! Commit the outermost transaction, writing changes to the file. Then, restart the transaction.
+    //! @param[in] changesetName The name of the operation that generated these changes. If transaction tracking is enabled, 
+    //! this will be saved with the changeset and reported as the operation that is "undone/redone" if this changeset is reversed or reinstated.
     //! @note, this will commit any nested transactions.
-    BE_SQLITE_EXPORT DbResult SaveChanges();
+    BE_SQLITE_EXPORT DbResult SaveChanges(Utf8CP changesetName=nullptr);
 
     //! Abandon (cancel) the outermost transaction, discarding all changes since last save. Then, restart the transaction.
     //! @note, this will cancel any nested transactions.

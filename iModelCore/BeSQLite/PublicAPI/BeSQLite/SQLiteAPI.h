@@ -137,7 +137,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.11"
 #define SQLITE_VERSION_NUMBER 3008011
-#define SQLITE_SOURCE_ID      "2015-05-22 23:51:30 519054bb72e8f8977b11161c81b0e96ba7bca589"
+#define SQLITE_SOURCE_ID      "2015-06-02 09:20:46 fb3914070791c84b5f323b7359ac845246d8a844"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -3424,7 +3424,9 @@ SQLITE_API int SQLITE_STDCALL sqlite3_stmt_busy(sqlite3_stmt*);
 ** Some interfaces require a protected sqlite3_value.  Other interfaces
 ** will accept either a protected or an unprotected sqlite3_value.
 ** Every interface that accepts sqlite3_value arguments specifies
-** whether or not it requires a protected sqlite3_value.
+** whether or not it requires a protected sqlite3_value.  The
+** [sqlite3_value_dup()] interface can be used to construct a new 
+** protected sqlite3_value from an unprotected sqlite3_value.
 **
 ** The terms "protected" and "unprotected" refer to whether or not
 ** a mutex is held.  An internal mutex is held for a protected
@@ -4387,7 +4389,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_value_numeric_type(sqlite3_value*);
 ** memory allocation fails.
 **
 ** ^The sqlite3_value_free(V) interface frees an [sqlite3_value] object
-** previously obtained from [sqlite_value_dup()].  ^If V is a NULL pointer
+** previously obtained from [sqlite3_value_dup()].  ^If V is a NULL pointer
 ** then sqlite3_value_free(V) is a harmless no-op.
 */
 SQLITE_API SQLITE_EXPERIMENTAL sqlite3_value *SQLITE_STDCALL sqlite3_value_dup(const sqlite3_value*);
@@ -4640,7 +4642,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** from [sqlite3_malloc()] before it returns.
 **
 ** ^The sqlite3_result_value() interface sets the result of
-** the application-defined function to be a copy the
+** the application-defined function to be a copy of the
 ** [unprotected sqlite3_value] object specified by the 2nd parameter.  ^The
 ** sqlite3_result_value() interface makes a copy of the [sqlite3_value]
 ** so that the [sqlite3_value] specified in the parameter may change or

@@ -18,7 +18,6 @@
 
 // Under the "ZLIB license". See http://create.stephan-brumme.com/disclaimer.html
 
-
 // define fixed size integer types
 #ifdef _MSC_VER
 // Windows
@@ -35,15 +34,15 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 /// compute MD5 hash
 /** Usage:
     MD5 md5;
-    std::string myHash  = md5("Hello World");     // std::string
-    std::string myHash2 = md5("How are you", 11); // arbitrary data, 11 bytes
+    Utf8String myHash  = md5("Hello World");     // Utf8String
+    Utf8String myHash2 = md5("How are you", 11); // arbitrary data, 11 bytes
 
     // or in a streaming fashion:
 
     MD5 md5;
     while (more data available)
-      md5.add(pointer to fresh data, number of new bytes);
-    std::string myHash3 = md5.getHash();
+      md5.Add(pointer to fresh data, number of new bytes);
+    Uff8String myHash3 = md5.GetHashString();
   */
 class MD5 //: public Hash
 {
@@ -85,7 +84,7 @@ public:
 
   /// return latest hash as 32 hex characters
   Utf8String GetHashString();
-  /// return latest hash as bytes
+  /// return latest hash as 16 bytes
   HashVal GetHashVal();
 
   /// restart

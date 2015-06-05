@@ -3289,6 +3289,36 @@ static LogEst estLog(LogEst N){
 }
 
 /*
+** Convert OP_Column opcodes to OP_Copy in previously generated code.
+**
+** This routine runs over generated VDBE code and translates OP_Column
+** opcodes into OP_Copy, and OP_Rowid into OP_Null, when the table is being
+** accessed via co-routine instead of via table lookup.
+*/
+static void translateColumnToCopy(
+  Vdbe *v,            /* The VDBE containing code to translate */
+  int iStart,         /* Translate from this opcode to the end */
+  int iTabCur,        /* OP_Column/OP_Rowid references to this table */
+  int iRegister       /* The first column is in this register */
+){
+  VdbeOp *pOp = sqlite3VdbeGetOp(v, iStart);
+  int iEnd = sqlite3VdbeCurrentAddr(v);
+  for(; iStart<iEnd; iStart++, pOp++){
+    if( pOp->p1!=iTabCur ) continue;
+    if( pOp->opcode==OP_Column ){
+      pOp->opcode = OP_Copy;
+      pOp->p1 = pOp->p2 + iRegister;
+      pOp->p2 = pOp->p3;
+      pOp->p3 = 0;
+    }else if( pOp->opcode==OP_Rowid ){
+      pOp->opcode = OP_Null;
+      pOp->p1 = 0;
+      pOp->p3 = 0;
+    }
+  }
+}
+
+/*
 ** Two routines for printing the content of an sqlite3_index_info
 ** structure.  Used for testing and debugging only.  If neither
 ** SQLITE_TEST or SQLITE_DEBUG are defined, then these routines
@@ -3390,6 +3420,7 @@ static void constructAutomaticIndex(
   u8 sentWarning = 0;         /* True if a warnning has been issued */
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
+  struct SrcList_item *pTabItem;  /* FROM clause term being indexed */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -3515,7 +3546,16 @@ static void constructAutomaticIndex(
 
   /* Fill the automatic index with content */
   sqlite3ExprCachePush(pParse);
-  addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+  pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
+  if( pTabItem->viaCoroutine ){
+    int regYield = pTabItem->regReturn;
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
+    addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
+    VdbeCoverage(v);
+    VdbeComment((v, "next row of \"%s\"", pTabItem->pTab->zName));
+  }else{
+    addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+  }
   if( pPartial ){
     iContinue = sqlite3VdbeMakeLabel(v);
     sqlite3ExprIfFalse(pParse, pPartial, iContinue, SQLITE_JUMPIFNULL);
@@ -3526,7 +3566,13 @@ static void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
-  sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
+  if( pTabItem->viaCoroutine ){
+    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
+    pTabItem->viaCoroutine = 0;
+  }else{
+    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
+  }
   sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
@@ -6802,15 +6848,14 @@ static int whereLoopAddBtree(
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
-  if( !pBuilder->pOrSet
+  if( !pBuilder->pOrSet   /* Not part of an OR optimization */
    && (pWInfo->wctrlFlags & WHERE_NO_AUTOINDEX)==0
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
-   && pSrc->pIndex==0
-   && !pSrc->viaCoroutine
-   && !pSrc->notIndexed
-   && HasRowid(pTab)
-   && !pSrc->isCorrelated
-   && !pSrc->isRecursive
+   && pSrc->pIndex==0     /* Has no INDEXED BY clause */
+   && !pSrc->notIndexed   /* Has no NOT INDEXED clause */
+   && HasRowid(pTab)      /* Is not a WITHOUT ROWID table. (FIXME: Why not?) */
+   && !pSrc->isCorrelated /* Not a correlated subquery */
+   && !pSrc->isRecursive  /* Not a recursive common table expression. */
   ){
     /* Generate auto-index WhereLoops */
     WhereTerm *pTerm;
@@ -8645,26 +8690,12 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
     pLoop = pLevel->pWLoop;
 
     /* For a co-routine, change all OP_Column references to the table of
-    ** the co-routine into OP_SCopy of result contained in a register.
+    ** the co-routine into OP_Copy of result contained in a register.
     ** OP_Rowid becomes OP_Null.
     */
     if( pTabItem->viaCoroutine && !db->mallocFailed ){
-      last = sqlite3VdbeCurrentAddr(v);
-      k = pLevel->addrBody;
-      pOp = sqlite3VdbeGetOp(v, k);
-      for(; k<last; k++, pOp++){
-        if( pOp->p1!=pLevel->iTabCur ) continue;
-        if( pOp->opcode==OP_Column ){
-          pOp->opcode = OP_Copy;
-          pOp->p1 = pOp->p2 + pTabItem->regResult;
-          pOp->p2 = pOp->p3;
-          pOp->p3 = 0;
-        }else if( pOp->opcode==OP_Rowid ){
-          pOp->opcode = OP_Null;
-          pOp->p1 = 0;
-          pOp->p3 = 0;
-        }
-      }
+      translateColumnToCopy(v, pLevel->addrBody, pLevel->iTabCur,
+                            pTabItem->regResult);
       continue;
     }
 
@@ -10932,7 +10963,7 @@ static void yy_reduce(
       case 35: /* table_options ::= WITHOUT nm */
 {
   if( yymsp[0].minor.yy0.n==5 && sqlite3_strnicmp(yymsp[0].minor.yy0.z,"rowid",5)==0 ){
-    yygotominor.yy186 = TF_WithoutRowid;
+    yygotominor.yy186 = TF_WithoutRowid | TF_NoVisibleRowid;
   }else{
     yygotominor.yy186 = 0;
     sqlite3ErrorMsg(pParse, "unknown table option: %.*s", yymsp[0].minor.yy0.n, yymsp[0].minor.yy0.z);
@@ -11233,7 +11264,9 @@ static void yy_reduce(
 {yygotominor.yy381 = SF_Distinct;}
         break;
       case 123: /* distinct ::= ALL */
-      case 124: /* distinct ::= */ yytestcase(yyruleno==124);
+{yygotominor.yy381 = SF_All;}
+        break;
+      case 124: /* distinct ::= */
 {yygotominor.yy381 = 0;}
         break;
       case 125: /* sclp ::= selcollist COMMA */
@@ -11528,7 +11561,7 @@ static void yy_reduce(
   }
   yygotominor.yy346.pExpr = sqlite3ExprFunction(pParse, yymsp[-1].minor.yy14, &yymsp[-4].minor.yy0);
   spanSet(&yygotominor.yy346,&yymsp[-4].minor.yy0,&yymsp[0].minor.yy0);
-  if( yymsp[-2].minor.yy381 && yygotominor.yy346.pExpr ){
+  if( yymsp[-2].minor.yy381==SF_Distinct && yygotominor.yy346.pExpr ){
     yygotominor.yy346.pExpr->flags |= EP_Distinct;
   }
 }
@@ -13049,7 +13082,8 @@ SQLITE_PRIVATE int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzEr
   }
 abort_parse:
   assert( nErr==0 );
-  if( zSql[i]==0 && pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
+  if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
+    assert( zSql[i]==0 );
     if( lastTokenParsed!=TK_SEMI ){
       sqlite3Parser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
       pParse->zTail = &zSql[i];
@@ -16284,6 +16318,9 @@ static int openDatabase(
 #if defined(SQLITE_REVERSE_UNORDERED_SELECTS)
                  | SQLITE_ReverseOrder
 #endif
+#if defined(SQLITE_ENABLE_OVERSIZE_CELL_CHECK)
+                 | SQLITE_CellSizeCk
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -18761,6 +18798,7 @@ SQLITE_PRIVATE void sqlite3Fts3DoclistPrev(int,char*,int,char**,sqlite3_int64*,i
 SQLITE_PRIVATE int sqlite3Fts3EvalPhraseStats(Fts3Cursor *, Fts3Expr *, u32 *);
 SQLITE_PRIVATE int sqlite3Fts3FirstFilter(sqlite3_int64, char *, int, char *);
 SQLITE_PRIVATE void sqlite3Fts3CreateStatTable(int*, Fts3Table*);
+SQLITE_PRIVATE int sqlite3Fts3EvalTestDeferred(Fts3Cursor *pCsr, int *pRc);
 
 /* fts3_tokenizer.c */
 SQLITE_PRIVATE const char *sqlite3Fts3NextToken(const char *, int *);
@@ -23603,7 +23641,7 @@ static int fts3EvalNearTrim(
 **   2. NEAR is treated as AND. If the expression is "x NEAR y", it is 
 **      advanced to point to the next row that matches "x AND y".
 ** 
-** See fts3EvalTestDeferredAndNear() for details on testing if a row is
+** See sqlite3Fts3EvalTestDeferred() for details on testing if a row is
 ** really a match, taking into account deferred tokens and NEAR operators.
 */
 static void fts3EvalNextRow(
@@ -23823,7 +23861,7 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
 }
 
 /*
-** This function is a helper function for fts3EvalTestDeferredAndNear().
+** This function is a helper function for sqlite3Fts3EvalTestDeferred().
 ** Assuming no error occurs or has occurred, It returns non-zero if the
 ** expression passed as the second argument matches the row that pCsr 
 ** currently points to, or zero if it does not.
@@ -23944,7 +23982,7 @@ static int fts3EvalTestExpr(
 ** Or, if no error occurs and it seems the current row does match the FTS
 ** query, return 0.
 */
-static int fts3EvalTestDeferredAndNear(Fts3Cursor *pCsr, int *pRc){
+SQLITE_PRIVATE int sqlite3Fts3EvalTestDeferred(Fts3Cursor *pCsr, int *pRc){
   int rc = *pRc;
   int bMiss = 0;
   if( rc==SQLITE_OK ){
@@ -23991,7 +24029,7 @@ static int fts3EvalNext(Fts3Cursor *pCsr){
       pCsr->isRequireSeek = 1;
       pCsr->isMatchinfoNeeded = 1;
       pCsr->iPrevId = pExpr->iDocid;
-    }while( pCsr->isEof==0 && fts3EvalTestDeferredAndNear(pCsr, &rc) );
+    }while( pCsr->isEof==0 && sqlite3Fts3EvalTestDeferred(pCsr, &rc) );
   }
 
   /* Check if the cursor is past the end of the docid range specified
@@ -24152,7 +24190,7 @@ static int fts3EvalGatherStats(
         pCsr->iPrevId = pRoot->iDocid;
       }while( pCsr->isEof==0 
            && pRoot->eType==FTSQUERY_NEAR 
-           && fts3EvalTestDeferredAndNear(pCsr, &rc) 
+           && sqlite3Fts3EvalTestDeferred(pCsr, &rc) 
       );
 
       if( rc==SQLITE_OK && pCsr->isEof==0 ){
@@ -24177,7 +24215,6 @@ static int fts3EvalGatherStats(
         fts3EvalNextRow(pCsr, pRoot, &rc);
         assert( pRoot->bEof==0 );
       }while( pRoot->iDocid!=iDocid && rc==SQLITE_OK );
-      fts3EvalTestDeferredAndNear(pCsr, &rc);
     }
   }
   return rc;

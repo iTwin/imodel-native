@@ -10977,6 +10977,12 @@ static int winLock(sqlite3_file *id, int locktype){
     return SQLITE_OK;
   }
 
+  /* Do not allow any kind of write-lock on a read-only database
+  */
+  if( (pFile->ctrlFlags & WINFILE_RDONLY)!=0 && locktype>=RESERVED_LOCK ){
+    return SQLITE_IOERR_LOCK;
+  }
+
   /* Make sure the locking sequence is correct
   */
   assert( pFile->locktype!=NO_LOCK || locktype==SHARED_LOCK );
@@ -19533,11 +19539,10 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
   assert( pPager->eLock>=SHARED_LOCK );
   nPage = sqlite3WalDbsize(pPager->pWal);
 
-  /* If the database size was not available from the WAL sub-system,
-  ** determine it based on the size of the database file. If the size
-  ** of the database file is not an integer multiple of the page-size,
-  ** round down to the nearest page. Except, any file larger than 0
-  ** bytes in size is considered to contain at least one page.
+  /* If the number of pages in the database is not available from the
+  ** WAL sub-system, determine the page counte based on the size of
+  ** the database file.  If the size of the database file is not an
+  ** integer multiple of the page-size, round up the result.
   */
   if( nPage==0 ){
     i64 n = 0;                    /* Size of db file in bytes */
