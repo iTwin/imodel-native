@@ -19,11 +19,11 @@
 
 // big endian architectures need #define __BYTE_ORDER __BIG_ENDIAN
 #include <BeSQLite/BeSQLite.h>
-#include <BeSQLite/MD5.h>
+#include <BeSQLite/md5.h>
 
-#ifndef _MSC_VER
-#include <endian.h>
-#endif
+//#ifndef _MSC_VER
+//#include <endian.h>
+//#endif
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
