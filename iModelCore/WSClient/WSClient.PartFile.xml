@@ -53,12 +53,171 @@
         </Bindings>
     </Part>
 
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N                                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
+    <Part Name="L10N-WSClientXliffs-en" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="${SrcBsiCommon}sqlang/mki/PushXliffsFromBuild.mke"
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/WSClient/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-WSClient/en/">
+        <SubPart PartName="WebServicesClient-Xliffs" />
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-cs" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/WSError_cs.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/Connect_cs.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-de" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/WSError_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/Connect_de.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-es" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/WSError_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/Connect_es.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-fi" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/WSError_fi.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/Connect_fi.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-fr" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/WSError_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/Connect_fr.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-it" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/WSError_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/Connect_it.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-ja" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/WSError_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/Connect_ja.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-ko" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/WSError_ko.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/Connect_ko.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-nl" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/WSError_nl.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/Connect_nl.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-pl" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/WSError_pl.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/Connect_pl.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-pt" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/WSError_pt.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/Connect_pt.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-ru" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/WSError_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/Connect_ru.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-sv" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/WSError_sv.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/Connect_sv.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-tr" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/WSError_tr.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/Connect_tr.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-zh-cn" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/WSError_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/Connect_zh-cn.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-zh-tw" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/Connect_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/WSError_zh-tw.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Unit Tests                                                             // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    
     <Part Name="WSClientUnitTests" ExcludePlatforms="Linux*" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" 
      BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
         <!-- Get the tested API -->
-        <SubPart    PartName="WebServicesClient" />
+        <SubPart PartName="WebServicesClient" />
         <!-- Needed for published unit tests -->
-        <SubPart    PartName="WebServicesClient-PublishedAPI" />
+        <SubPart PartName="WebServicesClient-PublishedAPI" />
     </Part>
 
 </BuildContext>

@@ -1,0 +1,22 @@
+
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: l10n-WSClient.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+PolicyFile = $(InternalSystemPolicy)
+%include mdl.mki
+
+%if !defined (L10N_LANGUAGE_TAG)
+    %error Expected L10N_LANGUAGE_TAG to be set to es, fr, etc...
+%endif
+
+xliffDir = $(SrcRoot)l10n/l10n-WSClient/$(L10N_LANGUAGE_TAG)/
+
+$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/Connect_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)Connect_$(L10N_LANGUAGE_TAG).xliff
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/WSError_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)WSError_$(L10N_LANGUAGE_TAG).xliff
+    $(LinkFirstDepToFirstTarget)
