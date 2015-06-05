@@ -28,7 +28,6 @@ struct ECSqlConsoleSession : NonCopyableClass
     {
 private:
     BeSQLite::EC::ECDb m_ecdb;
-    BeFileName m_ecdbPath;
     OutputFormat m_outputFormat;
     std::vector<Utf8String> m_commandHistory;
 

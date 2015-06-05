@@ -172,9 +172,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp (NativeSqlBuilder::List& nat
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryBooleanExp const* exp)
     {
-    const auto op = exp->GetOperator ();
-    auto lhsOperand = exp->GetLeftOperand ();
-    auto rhsOperand = exp->GetRightOperand ();
+    const BooleanSqlOperator op = exp->GetOperator ();
+    ComputedExp const* lhsOperand = exp->GetLeftOperand ();
+    ComputedExp const* rhsOperand = exp->GetRightOperand();
 
     const bool lhsIsNullExp = IsNullExp (*lhsOperand);
     const bool rhsIsNullExp = IsNullExp (*rhsOperand);
@@ -523,7 +523,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareComputedExp (NativeSqlBuilder::List& native
         return PrepareValueExp (nativeSqlSnippets, ctx, valueExp);
 
     if (exp->GetType () == Exp::Type::ValueExpList)
-        return PrepareValueExpListExp (nativeSqlSnippets, ctx, static_cast<ValueExpListExp const*> (exp));
+        return PrepareValueExpListExp (nativeSqlSnippets, ctx, static_cast<ValueExpListExp const*> (exp), /* encloseInParentheses = */ true);
 
     BeAssert (false && "ECSqlPreparer::PrepareComputedExp: Unhandled ComputedExp subclass.");
     return ctx.SetError (ECSqlStatus::ProgrammerError, "ECSqlPreparer::PrepareComputedExp: Unhandled ComputedExp subclass.");
@@ -778,7 +778,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp (ECSqlPrepareContext& ctx, Group
     ctx.GetSqlBuilderR().Append(" GROUP BY ");
 
     NativeSqlBuilder::List groupingValuesSnippetList;
-    const ECSqlStatus stat = PrepareValueExpListExp(groupingValuesSnippetList, ctx, exp->GetGroupingValueListExp());
+    const ECSqlStatus stat = PrepareValueExpListExp (groupingValuesSnippetList, ctx, exp->GetGroupingValueListExp (), /* encloseInParentheses = */ false);
     if (ECSqlStatus::Success != stat)
         return stat;
 
@@ -1435,7 +1435,24 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
     if (stat != ECSqlStatus::Success)
         return stat;
 
+    //If the top level search condition has an OR we wrap the entire exp in parentheses to ensure
+    //precedence for the case where a system expression is added to the where clause.
+    bool wrapInParens = false;
+    if (searchConditionExp.GetType() == Exp::Type::BinaryBoolean)
+        {
+        BinaryBooleanExp const* binaryBoolExp = static_cast<BinaryBooleanExp const*> (&searchConditionExp);
+        if (binaryBoolExp->GetOperator() == BooleanSqlOperator::Or)
+            wrapInParens = true;
+        }
+
+    if (wrapInParens)
+        nativeSqlBuilder.AppendParenLeft();
+
     nativeSqlBuilder.Append(sqlSnippets, " AND ");
+
+    if (wrapInParens)
+        nativeSqlBuilder.AppendParenRight();
+
     return ECSqlStatus::Success;
     }
 
@@ -1573,7 +1590,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSql
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExpListExp const* exp, bool encloseInParentheses)
     {
     BeAssert (nativeSqlSnippets.empty ());
     auto isFirstExp = true;
@@ -1589,7 +1606,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& na
             if (isFirstExp)
                 {
                 NativeSqlBuilder builder;
-                builder.AppendParenLeft ().Append (listItemExpBuilders[i], false);
+                if (encloseInParentheses)
+                    builder.AppendParenLeft ();
+
+                builder.Append (listItemExpBuilders[i], false);
                 nativeSqlSnippets.push_back (move (builder));
                 }
             else
@@ -1603,7 +1623,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp (NativeSqlBuilder::List& na
         }
 
     //finally add closing parenthesis to all list snippets we created
-    for_each (nativeSqlSnippets.begin (), nativeSqlSnippets.end (), [] (NativeSqlBuilder& builder) {builder.AppendParenRight ();});
+    if (encloseInParentheses)
+        for_each (nativeSqlSnippets.begin (), nativeSqlSnippets.end (), [] (NativeSqlBuilder& builder) {builder.AppendParenRight ();});
+
     return ECSqlStatus::Success;
     }
 
@@ -1639,7 +1661,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
         //In that case the respective value exp does not need to be prepared either.
 
-        if (valueExp->GetType() == Exp::Type::Parameter)
+        if (valueExp->IsParameterExp())
             {
             //Parameter exp needs to be prepared even if target exp is virtual, i.e. doesn't have a column in the SQLite SQL
             //because we need a (noop) binder for it so that the binding API corresponds to the parameters in the incoming

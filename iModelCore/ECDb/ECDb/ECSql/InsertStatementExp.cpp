@@ -33,43 +33,72 @@ InsertStatementExp::InsertStatementExp (unique_ptr<ClassNameExp> classNameExp, u
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+    switch (mode)
         {
-        auto classNameExp = GetClassNameExp();
-        auto classList = unique_ptr<RangeClassRefList> (new RangeClassRefList ());
-        classList->push_back (classNameExp);
-        m_finalizeParsingArgCache = move (classList);
-        ctx.PushFinalizeParseArg (m_finalizeParsingArgCache.get ());
-
-        auto propNameListExp = GetPropertyNameListExpP ();
-        if (IsOriginalPropertyNameListUnset())
-            {
-            auto addDelegate = [&propNameListExp] (unique_ptr<PropertyNameExp>& propNameExp)
+            case FinalizeParseMode::BeforeFinalizingChildren:
                 {
-                //ECInstanceId is treated separately
-                if (!propNameExp->GetPropertyMap ().IsECInstanceIdPropertyMap ())
-                    propNameListExp->AddPropertyNameExp (propNameExp);
-                };
+                auto classNameExp = GetClassNameExp();
+                auto classList = unique_ptr<RangeClassRefList>(new RangeClassRefList());
+                classList->push_back(classNameExp);
+                m_finalizeParsingArgCache = move(classList);
+                ctx.PushFinalizeParseArg(m_finalizeParsingArgCache.get());
 
-            if (ECSqlStatus::Success != classNameExp->CreatePropertyNameExpList (ctx, addDelegate))
+                auto propNameListExp = GetPropertyNameListExpP();
+                if (IsOriginalPropertyNameListUnset())
+                    {
+                    auto addDelegate = [&propNameListExp] (unique_ptr<PropertyNameExp>& propNameExp)
+                        {
+                        //ECInstanceId is treated separately
+                        if (!propNameExp->GetPropertyMap().IsECInstanceIdPropertyMap())
+                            propNameListExp->AddPropertyNameExp(propNameExp);
+                        };
+
+                    if (ECSqlStatus::Success != classNameExp->CreatePropertyNameExpList(ctx, addDelegate))
+                        return FinalizeParseStatus::Error;
+
+                    }
+
+                return FinalizeParseStatus::NotCompleted;
+                }
+
+            case Exp::FinalizeParseMode::AfterFinalizingChildren:
+                {
+                ctx.PopFinalizeParseArg();
+                m_finalizeParsingArgCache = nullptr;
+
+                return Validate(ctx);
+                }
+
+            default:
+                BeAssert(false);
                 return FinalizeParseStatus::Error;
-
-            }
-
-        //Assign the respective prop name exp to each parameter exp in the values clause
-        ResolveParameters();
-
-        return FinalizeParseStatus::NotCompleted;
         }
-    else
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   06/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool InsertStatementExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    const size_t valueExpCount = GetValuesExp()->GetChildrenCount();
+    ValueExpListExp const* valuesExp = GetValuesExp();
+    PropertyNameListExp const* propNameListExp = GetPropertyNameListExp();
+    for (size_t i = 0; i < valueExpCount; i++)
         {
-        ctx.PopFinalizeParseArg ();
-        m_finalizeParsingArgCache = nullptr;
-
-        return Validate (ctx);
+        ValueExp const* valueExp = valuesExp->GetValueExp(i);
+        if (&parameterExp == valueExp)
+            {
+            BeAssert(valueExp->IsParameterExp());
+            auto propNameExp = propNameListExp->GetPropertyNameExp(i);
+            BeAssert(propNameExp != nullptr);
+            parameterExp.SetTargetExpInfo(*propNameExp);
+            return true;
+            }
         }
+
+    return false;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -77,65 +106,44 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing (ECSqlParseContext
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) const
     {
-    size_t expectedValueCount = 0;
+    PropertyNameListExp const* propertyNameListExp = GetPropertyNameListExp ();
+    const size_t expectedValueCount = propertyNameListExp->GetChildrenCount();
 
-    auto propertyNameListExp = GetPropertyNameListExp ();
-    expectedValueCount = propertyNameListExp->GetChildrenCount();
-
-    auto valuesExp = GetValuesExp();
+    ValueExpListExp const* valuesExp = GetValuesExp();
     if (valuesExp->GetChildrenCount() != expectedValueCount)
         {
         ctx.SetError(ECSqlStatus::InvalidECSql, "Mismatching number of items in VALUES clause.");
         return FinalizeParseStatus::Error;
         }
 
-    size_t index = 0;
-    for (auto childExp : valuesExp->GetChildren ())
+    for (size_t i = 0; i < expectedValueCount; i++)
         {
-        switch (childExp->GetType ())
+        ValueExp const* valueExp = valuesExp->GetValueExp(i);
+        switch (valueExp->GetType())
             {
-            case Exp::Type::PropertyName:
-            case Exp::Type::SetFunctionCall:
-                ctx.SetError (ECSqlStatus::InvalidECSql, "Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", childExp->ToECSql ().c_str ());
-                return FinalizeParseStatus::Error;
-            default:
-                break;
+                case Exp::Type::PropertyName:
+                case Exp::Type::SetFunctionCall:
+                    ctx.SetError(ECSqlStatus::InvalidECSql, "Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+
+                case Exp::Type::Parameter:
+                    continue; //parameters are handled in the last step
+                default:
+                    break;
             }
 
-        auto valueExp = static_cast<ValueExp const*> (childExp);
-        auto propertyNameExp = propertyNameListExp->GetPropertyNameExp (index);
+        PropertyNameExp const* propertyNameExp = propertyNameListExp->GetPropertyNameExp(i);
 
         Utf8String errorMessage;
-        if (!propertyNameExp->GetTypeInfo ().Matches (valueExp->GetTypeInfo(), &errorMessage))
+        if (!propertyNameExp->GetTypeInfo().Matches(valueExp->GetTypeInfo(), &errorMessage))
             {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in INSERT statement: %s", errorMessage.c_str ());
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in INSERT statement: %s", errorMessage.c_str());
             return FinalizeParseStatus::Error;
             }
 
-        index++;
         }
 
     return FinalizeParseStatus::Completed;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-void InsertStatementExp::ResolveParameters () const
-    {
-    const size_t valueExpCount = GetValuesExp()->GetChildrenCount();
-    auto valuesExp = GetValuesExp();
-    auto propNameListExp = GetPropertyNameListExp();
-    for (size_t i = 0; i < valueExpCount; i++)
-        {
-        auto parameterExp = valuesExp->TryGetAsParameterExpP (i);
-        if (parameterExp != nullptr)
-            {
-            auto propNameExp = propNameListExp->GetPropertyNameExp (i);
-            BeAssert (propNameExp != nullptr);
-            parameterExp->SetTargetExp(*propNameExp);
-            }
-        }
     }
 
 //-----------------------------------------------------------------------------------------

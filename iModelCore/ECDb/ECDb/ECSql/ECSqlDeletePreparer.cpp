@@ -234,11 +234,11 @@ NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets
     if (!deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet.IsEmpty ())
         {
         if (whereAlreadyAppended)
-            updateBuilder.Append (" AND (");
+            updateBuilder.Append (" AND ");
         else
-            updateBuilder.Append (" WHERE (");
+            updateBuilder.Append (" WHERE ");
 
-        updateBuilder.Append (deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet).AppendParenRight ();
+        updateBuilder.Append (deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
         }
     }
 

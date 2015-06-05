@@ -144,7 +144,7 @@ Utf8String DerivedPropertyExp::_ToECSql () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus FromExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
@@ -400,26 +400,46 @@ Utf8String LimitOffsetExp::_ToECSql () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     BeAssert (GetLimitExp () != nullptr);
 
-    if (mode == FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
-    
-    if (!IsValidChildExp (*GetLimitExp ()))
+    switch (mode)
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql ().c_str ());
-        return FinalizeParseStatus::Error;
-        }
+            case Exp::FinalizeParseMode::BeforeFinalizingChildren:
+                return FinalizeParseStatus::NotCompleted;
 
-    if (HasOffset () && !IsValidChildExp (*GetOffsetExp ()))
-        {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql ().c_str ());
-        return FinalizeParseStatus::Error;
-        }
+            case Exp::FinalizeParseMode::AfterFinalizingChildren:
+                {
+                if (!IsValidChildExp(*GetLimitExp()))
+                    {
+                    ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+                    }
 
-    return FinalizeParseStatus::Completed;
+                if (HasOffset() && !IsValidChildExp(*GetOffsetExp()))
+                    {
+                    ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+                    }
+
+                return FinalizeParseStatus::Completed;
+                }
+
+            default:
+                BeAssert(false);
+                return FinalizeParseStatus::Error;
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool LimitOffsetExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    //limit offset operands are always integral
+    parameterExp.SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Long));
+    return true;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -428,21 +448,12 @@ LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing (ECSqlParse
 //static
 bool LimitOffsetExp::IsValidChildExp (ValueExp const& exp)
     {
-    auto const& typeInfo = exp.GetTypeInfo ();
-    if (!typeInfo.IsNumeric ())
-        return false;
+    //parameter exp get their type later, so ignore them here
+    if (exp.IsParameterExp())
+        return true;
 
-    switch (exp.GetType ())
-        {
-            case Exp::Type::ConstantValue:
-            case Exp::Type::Parameter:
-            case Exp::Type::BinaryValue:
-            case Exp::Type::UnaryValue:
-                return true;
-
-            default:
-                return false;
-        }
+    // we allow non-integral numeric expressions as well, assuming that the underlying db will handle casting
+    return exp.GetTypeInfo().IsNumeric(); 
     }
 
 //-----------------------------------------------------------------------------------------
@@ -489,7 +500,7 @@ OrderBySpecExp::OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
@@ -629,7 +640,7 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpression (ECSqlParseContext& ctx, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -723,7 +734,7 @@ DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8StringCR p
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -796,18 +807,6 @@ Utf8String SingleSelectStatementExp::_ToECSql() const
 
 //****************************** SubqueryExp *****************************************
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    09/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus SubqueryExp::_FinalizeParsing( ECSqlParseContext& ctx, FinalizeParseMode mode )
-    {
-    //ctx.SetError (ECSqlStatus::InvalidECSql, "Nested SELECT statements are not yet supported.");i
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
-
-    return FinalizeParseStatus::Completed;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String SubqueryExp::_ToECSql() const
@@ -878,7 +877,7 @@ SubqueryValueExp::SubqueryValueExp(std::unique_ptr<SubqueryExp> subquery)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;

@@ -31,11 +31,8 @@ private:
     virtual Utf8String _ToECSql() const override;
     virtual void _DoToECSql(Utf8StringR ecsql) const = 0;
 
-    static void FindHasTargetExpExpressions (std::vector<ParameterExp const*>& parameterExpList, ComputedExp const* expr);
 protected:
     explicit ComputedExp() : Exp(), m_hasParentheses(false) {}
-
-    ECSqlStatus DetermineOperandsTargetTypes (ECSqlParseContext& ctx, ComputedExp const* lhs, ComputedExp const* rhs) const;
 
     void SetTypeInfo (ECSqlTypeInfo const& typeInfo) {m_typeInfo = typeInfo;}
     void SetHasParentheses() { m_hasParentheses = true; }
@@ -78,6 +75,7 @@ private:
     FinalizeParseStatus CanCompareTypes (ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const;
 
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
 
@@ -87,7 +85,6 @@ public:
     ComputedExp const* GetLeftOperand() const {return GetChild<ComputedExp> (m_leftOperandExpIndex);}
     ComputedExp const* GetRightOperand() const {return GetChild<ComputedExp> (m_rightOperandExpIndex);}
     BooleanSqlOperator GetOperator() const {return m_op;}
-
     };
 
 

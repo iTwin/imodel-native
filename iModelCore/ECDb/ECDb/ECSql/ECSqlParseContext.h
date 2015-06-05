@@ -26,6 +26,7 @@ private:
     std::vector<void const*> m_finalizeParseArgs;
     bmap<WString, std::shared_ptr<ClassNameExp::Info>> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex;
+    bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareUtf8> m_ecsqlParameterNameToIndexMapping;
     IClassMap::View m_classMapViewMode;
     ECSqlStatusContext& m_status;
@@ -37,8 +38,7 @@ public:
         : m_ecdb (ecdb), m_currentECSqlParameterIndex (0), m_classMapViewMode (classMapViewMode), m_status (status), m_aliasCount (0)
         {}
 
-    ECDbCR GetECDb() const;
-    ECDbSchemaManagerCR Schemas() const;
+    ECSqlStatus FinalizeParsing(Exp& rootExp);
 
     void PushFinalizeParseArg (void const* const arg);
     void const* const GetFinalizeParseArg () const;
@@ -46,7 +46,7 @@ public:
 
     ECSqlStatus TryResolveClass (std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrPrefix, Utf8StringCR className); 
 
-    int TrackECSqlParameter (ParameterExp const& parameterExp);
+    int TrackECSqlParameter (ParameterExp& parameterExp);
 
     bool IsSuccess () const { return m_status.IsSuccess ();} 
     ECSqlStatus GetStatus () const { return m_status.GetStatus ();}
@@ -55,12 +55,11 @@ public:
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses (ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd, bool* containAnyClass);
     bool IsEndClassOfRelationship (ECN::ECClassCR searchClass, ECN::ECRelationshipEnd searchEnd, ECN::ECRelationshipClassCR relationshipClass);
-    Utf8String GenerateAlias ()
-        {
-        Utf8String alias;
-        alias.Sprintf ("K%d" , m_aliasCount++);
-        return alias;
-        }
+
+    ECDbCR GetECDb() const;
+    ECDbSchemaManagerCR Schemas() const;
+
+    Utf8String GenerateAlias();
     };
 
 

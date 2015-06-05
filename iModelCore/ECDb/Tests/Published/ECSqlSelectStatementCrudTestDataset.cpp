@@ -133,13 +133,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     {
     ECSqlTestDataset dataset;
     Utf8CP ecsql = "SELECT CAST (S AS BINARY) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (Bi AS BINARY) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (S AS BINARY) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (PStructProp AS BINARY) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
@@ -152,7 +152,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (Bi AS BOOLEAN) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (1 AS BOOLEAN) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -167,10 +167,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (S AS BOOLEAN) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST ('1' AS BOOLEAN) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (P2D AS BOOLEAN) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
@@ -189,7 +189,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     ecsql = "SELECT CAST (B AS BOOL) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid, "Only keyword BOOLEAN supported.");
-
 
     ecsql = "SELECT CAST (Bi AS TIMESTAMP) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
@@ -253,7 +252,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     
     ecsql = "SELECT CAST (Bi AS DOUBLE) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (L AS DOUBLE) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -275,7 +274,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     
     ecsql = "SELECT CAST (Bi AS INT) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (S AS INT) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -300,7 +299,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     
     ecsql = "SELECT CAST (Bi AS LONG) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (L AS LONG) FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -1533,7 +1532,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::LikeOperatorTests( int rowCountPerClass
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 10";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE NULL";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
@@ -2004,6 +2003,77 @@ ECSqlTestDataset ECSqlSelectTestDataset::ParameterAdvancedTests (int rowCountPer
         Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE I = -?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (-123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = -?";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(-123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = -?";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        //and don't bind anything to it
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = ?";
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0); //NULL = NULL is false
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        //and don't bind anything to it
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = -?"; //NULL = -NULL is not true
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        //and only bind to one parameter
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE ? = -?";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE :p1 > -:p1";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue("p1", ECValue(123)));
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        //and don't bind anything to it
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE :p1 > -:p1";
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        }
+
+        {
+        //use parameters on both sides of an expression (should result in default parameter type)
+        Utf8CP ecsql = "SELECT I, S FROM ecsql.PSA WHERE :p1 = -:p1";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue("p1", ECValue(123)));
+        }
+
+        {
+        Utf8CP ecsql = "SELECT ?, S FROM ecsql.PSA";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        }
+
+        {
+        Utf8CP ecsql = "SELECT ? AS NewProp, S FROM ecsql.PSA";
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
         }
 
     return dataset;
@@ -2689,6 +2759,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
 
     ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT PStruct_Array FROM ecsql.SAStruct";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1,  20);
+
+    ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SAStruct) GROUP BY ECClassId";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 2);
+
+    ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId, 'SAStruct' Name FROM ecsql.SAStruct) GROUP BY ECClassId, Name";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 2);
+
 
     ecsql = "SELECT S FROM ecsql.P UNION SELECT Dt FROM ecsql.PSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);

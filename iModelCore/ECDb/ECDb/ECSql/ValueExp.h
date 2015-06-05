@@ -25,8 +25,6 @@ protected:
 
 public:
     virtual ~ValueExp () {}
-
-    ParameterExp* TryGetAsParameterExpP() const;
     };
 
 //=======================================================================================
@@ -40,12 +38,9 @@ private:
     size_t m_lowerBoundOperandExpIndex;
     size_t m_upperBoundOperandExpIndex;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
-    virtual void _DoToECSql(Utf8StringR ecsql) const override
-        {
-        ecsql.append(GetLowerBoundOperand()->ToECSql()).append(" AND ").append(GetUpperBoundOperand()->ToECSql());
-        }
+    virtual void _DoToECSql(Utf8StringR ecsql) const override { ecsql.append(GetLowerBoundOperand()->ToECSql()).append(" AND ").append(GetUpperBoundOperand()->ToECSql()); }
     virtual Utf8String _ToString() const override { return "BetweenRangeValue"; }
 
 public:
@@ -73,7 +68,8 @@ private:
     size_t m_rightOperandExpIndex;
     BinarySqlOperator m_op;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
@@ -101,7 +97,7 @@ private:
     Utf8String m_castTargetType;
     size_t m_castOperandIndex;
   
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
@@ -168,7 +164,7 @@ private:
     Utf8String m_classAlias;
     RangeClassRefExp const* m_classRefExp;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
 
@@ -196,7 +192,8 @@ private:
 
     static bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> s_builtinFunctionNonDefaultReturnTypes;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
 
@@ -222,7 +219,8 @@ private:
     size_t m_rhsExpIndex;
     int m_escapeExpIndex;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override { return "LikeRhsValue"; }
@@ -252,23 +250,18 @@ private:
     Utf8String m_parameterName;
     ComputedExp const* m_targetExp;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
 
 public:
     explicit ParameterExp (Utf8CP parameterName)
-        : ValueExp (), m_parameterName (parameterName), m_parameterIndex (-1), m_targetExp (nullptr)
-        {}
+        : ValueExp (), m_parameterName (parameterName), m_parameterIndex (-1), m_targetExp (nullptr) {}
 
-    void SetTargetExp (ComputedExp const& exp);
-    void SetTypeInfoFromTarget (ECSqlTypeInfo const& targetTypeInfo);
-
-    ComputedExp const* GetTargetExp () const
-        {
-        return m_targetExp;
-        }
-
+    void SetDefaultTargetExpInfo();
+    void SetTargetExpInfo(ComputedExp const& exp);
+    void SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo);
+    ComputedExp const* GetTargetExp() const { return m_targetExp; }
     bool IsNamedParameter () const { return !m_parameterName.empty (); }
     Utf8CP GetParameterName () const { return m_parameterName.c_str (); }
     int GetParameterIndex () const { return m_parameterIndex; }
@@ -297,7 +290,7 @@ struct SetFunctionCallExp : FunctionCallExp
 private:
     Function m_function;
     SqlSetQuantifier m_setQuantifier;
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
@@ -325,7 +318,7 @@ public:
         };
 
 private:
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToString () const override;
 
@@ -346,7 +339,8 @@ private:
     size_t m_operandExpIndex;
     UnarySqlOperator m_op;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString () const override;
 

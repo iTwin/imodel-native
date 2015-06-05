@@ -15,8 +15,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECSqlTypeInfo::Kind kind) 
- : m_kind (kind), m_structType (nullptr), m_minOccurs (0), m_maxOccurs (0), m_propertyMap (nullptr)
+ECSqlTypeInfo::ECSqlTypeInfo (ECSqlTypeInfo::Kind kind)
+: m_kind (kind), m_structType (nullptr), m_minOccurs (0), m_maxOccurs (0), m_propertyMap (nullptr), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
     {
     }
 
@@ -41,7 +41,7 @@ ECSqlTypeInfo::ECSqlTypeInfo (ECN::PrimitiveType primitiveType, uint32_t minOccu
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType) 
-    : m_structType (nullptr), m_propertyMap (nullptr)
+: m_structType (nullptr), m_propertyMap (nullptr), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
     {
     Populate (false, nullptr, &structType, 0, 0, nullptr);
     }
@@ -50,7 +50,7 @@ ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType)
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType, uint32_t minOccurs, uint32_t maxOccurs)
-: m_structType (nullptr), m_propertyMap (nullptr)
+: m_structType (nullptr), m_propertyMap (nullptr), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
     {
     Populate (true, nullptr, &structType, minOccurs, maxOccurs, nullptr);
     }
@@ -59,7 +59,7 @@ ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType, uint32_t minOccurs, uin
 // @bsimethod                                   Krischan.Eberle                     04/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECPropertyCR ecProperty)
-: m_structType (nullptr)
+: m_structType (nullptr), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
     {
     DetermineTypeInfo (ecProperty);
     }
@@ -68,7 +68,7 @@ ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECPropertyCR ecProperty)
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo::ECSqlTypeInfo (PropertyMapCR propertyMap)
-    : m_structType (nullptr), m_propertyMap (&propertyMap)
+: m_structType (nullptr), m_propertyMap (&propertyMap), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
     {
     DetermineTypeInfo (propertyMap.GetProperty ());
     }
@@ -138,17 +138,21 @@ void ECSqlTypeInfo::Populate (bool isArray, ECN::PrimitiveType const* primitiveT
     if (primitiveType != nullptr)
         {
         m_primitiveType = *primitiveType;
-        m_kind = isArray? Kind::PrimitiveArray : Kind::Primitive;
+        m_kind = isArray ? Kind::PrimitiveArray : Kind::Primitive;
 
         if (dateTimeInfo != nullptr)
             m_dateTimeInfo = *dateTimeInfo;
         }
+    else
+        m_primitiveType = static_cast<ECN::PrimitiveType>(0);
 
     if (structType != nullptr)
         {
         m_structType = structType;
-        m_kind = isArray? Kind::StructArray : Kind::Struct;
+        m_kind = isArray ? Kind::StructArray : Kind::Struct;
         }
+    else
+        m_structType = nullptr;
 
     m_minOccurs = minOccurs;
     m_maxOccurs = maxOccurs;
@@ -214,8 +218,7 @@ bool ECSqlTypeInfo::Matches (ECSqlTypeInfo const& rhs, Utf8String* errorMessage)
             lhsType != PRIMITIVETYPE_IGeometry && rhsType != PRIMITIVETYPE_IGeometry) || lhsType == rhsType;
 
     if (!canCompare && errorMessage != nullptr)
-        //not mentioning IGeometry here as it is not supported by ECDb in the first place
-        *errorMessage = "Left and right side of expression must both have Point2D / Point3D type.";
+        *errorMessage = "Left and right side of expression must both have Point2D / Point3D / IGeometry type.";
 
     return canCompare;
     }
@@ -280,11 +283,27 @@ bool ECSqlTypeInfo::IsBoolean() const
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     06/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool ECSqlTypeInfo::IsString() const
+    {
+    return IsPrimitive() && (GetPrimitiveType() == ECN::PRIMITIVETYPE_String);
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool ECSqlTypeInfo::IsDateTime () const
     {
     return IsPrimitive () && (GetPrimitiveType () == ECN::PRIMITIVETYPE_DateTime);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     06/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool ECSqlTypeInfo::IsBinary() const
+    {
+    return IsPrimitive() && (GetPrimitiveType() == ECN::PRIMITIVETYPE_Binary);
     }
 
 //-----------------------------------------------------------------------------------------

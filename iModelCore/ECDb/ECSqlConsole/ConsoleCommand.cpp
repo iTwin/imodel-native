@@ -246,6 +246,7 @@ void OpenCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     auto stat = session.GetECDbR ().OpenBeSQLiteDb(ecdbFile, ECDb::OpenParams(openMode, DefaultTxn_Yes));
     if (stat != BE_SQLITE_OK)
         {
+        session.GetECDbR().CloseDb();//seems that open errors do not automatically close the handle again
         Console::WriteErrorLine("Could not open ECDb file '%s'.", ecdbPath);
         return;
         }

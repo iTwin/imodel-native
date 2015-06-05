@@ -12,6 +12,26 @@
 using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     06/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+ECSqlStatus ECSqlParseContext::FinalizeParsing(Exp& rootExp)
+    {
+    ECSqlStatus stat = rootExp.FinalizeParsing(*this);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+        
+    for (ParameterExp* parameterExp : m_parameterExpList)
+        {
+        if (!parameterExp->TryDetermineParameterExpType(*this, *parameterExp))
+            parameterExp->SetDefaultTargetExpInfo();
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -80,8 +100,10 @@ ECSqlStatus ECSqlParseContext::TryResolveClass (shared_ptr<ClassNameExp::Info>& 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECSqlParseContext::TrackECSqlParameter (ParameterExp const& parameterExp)
+int ECSqlParseContext::TrackECSqlParameter (ParameterExp& parameterExp)
     {
+    m_parameterExpList.push_back(&parameterExp);
+
     const bool isNamedParameter = parameterExp.IsNamedParameter ();
     Utf8CP paramName = isNamedParameter ? parameterExp.GetParameterName () : nullptr;
 
@@ -149,6 +171,16 @@ bool ECSqlParseContext::IsEndClassOfRelationship (ECClassCR searchClass, ECRelat
         return true;
 
     return classes.find(searchClass.GetId()) != classes.end() ;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       08/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECSqlParseContext::GenerateAlias()
+    {
+    Utf8String alias;
+    alias.Sprintf("K%d", m_aliasCount++);
+    return alias;
     }
 
 //-----------------------------------------------------------------------------------------

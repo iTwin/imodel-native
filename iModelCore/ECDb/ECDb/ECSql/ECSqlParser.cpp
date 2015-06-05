@@ -85,7 +85,7 @@ unique_ptr<Exp> ECSqlParser::Parse (Utf8CP ecsql, ECSqlParseContext& parseContex
         return nullptr;
 
     //resolve types and references now that first pass parsing is done and all nodes are available
-    const ECSqlStatus stat = rootExp->FinalizeParsing(parseContext);
+    const ECSqlStatus stat = parseContext.FinalizeParsing(*rootExp);
     if (stat == ECSqlStatus::Success)
         return rootExp;
 
@@ -1317,7 +1317,7 @@ unique_ptr<JoinConditionExp> ECSqlParser::parse_join_condition (ECSqlParseContex
         return nullptr;
         }
 
-    auto search_condition = parse_search_conditon(ctx, parseNode->getChild(1/*search_condition*/));    
+    auto search_condition = parse_search_condition(ctx, parseNode->getChild(1/*search_condition*/));    
     if (ctx.IsSuccess())
         return unique_ptr<JoinConditionExp>(new JoinConditionExp(move (search_condition)));
 
@@ -1461,7 +1461,7 @@ unique_ptr<WhereExp> ECSqlParser::parse_opt_where_clause (ECSqlParseContext& ctx
         return nullptr;
         }
 
-    unique_ptr<BooleanExp> search_condition = parse_search_conditon(ctx, parseNode->getChild(1/*search_condition*/));
+    unique_ptr<BooleanExp> search_condition = parse_search_condition(ctx, parseNode->getChild(1/*search_condition*/));
     if (ctx.IsSuccess())
         return unique_ptr<WhereExp>(new WhereExp(move (search_condition)));
 
@@ -1472,16 +1472,16 @@ unique_ptr<WhereExp> ECSqlParser::parse_opt_where_clause (ECSqlParseContext& ctx
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+unique_ptr<BooleanExp> ECSqlParser::parse_search_condition (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
     const auto rule = parseNode->getKnownRuleID();
     switch(rule)
         {
         case OSQLParseNode::search_condition:
             {
-            auto op1 = parse_search_conditon(ctx, parseNode->getChild(0/*search_condition*/));
+            auto op1 = parse_search_condition(ctx, parseNode->getChild(0/*search_condition*/));
             //auto op = parseNode->getChild(1/*SQL_TOKEN_OR*/);
-            auto op2 = parse_search_conditon(ctx, parseNode->getChild(2/*boolean_tern*/));
+            auto op2 = parse_search_condition(ctx, parseNode->getChild(2/*boolean_tern*/));
             if (ctx.IsSuccess())
                 return unique_ptr<BooleanExp>(new BinaryBooleanExp(move (op1), BooleanSqlOperator::Or, move (op2)));
 
@@ -1489,9 +1489,9 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             }
         case OSQLParseNode::boolean_term:
             {
-            auto op1 = parse_search_conditon(ctx, parseNode->getChild(0/*boolean_term*/));
+            auto op1 = parse_search_condition(ctx, parseNode->getChild(0/*boolean_term*/));
             //auto op = parseNode->getChild(1/*SQL_TOKEN_AND*/);
-            auto op2 = parse_search_conditon(ctx, parseNode->getChild(2/*boolean_factor*/));
+            auto op2 = parse_search_condition(ctx, parseNode->getChild(2/*boolean_factor*/));
 
             if (ctx.IsSuccess())
                 return unique_ptr<BooleanExp>(new BinaryBooleanExp(move (op1), BooleanSqlOperator::And, move (op2)));
@@ -1500,7 +1500,7 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             }
         case OSQLParseNode::boolean_factor:
             {
-            auto operandValueExp = parse_search_conditon(ctx, parseNode->getChild(1/*boolean_test*/));
+            auto operandValueExp = parse_search_condition(ctx, parseNode->getChild(1/*boolean_test*/));
             if (ctx.IsSuccess())
                 return unique_ptr<BooleanExp>(new BooleanFactorExp(move(operandValueExp), true));
             
@@ -1508,7 +1508,7 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
             }
         case OSQLParseNode::boolean_test:
             {
-            auto op1 = parse_search_conditon(ctx, parseNode->getChild(0/*boolean_primary*/));
+            auto op1 = parse_search_condition(ctx, parseNode->getChild(0/*boolean_primary*/));
             //auto is = parseNode->getChild(1/*SQL_TOKEN_IS*/);
             auto sql_not = parse_sql_not(ctx, parseNode->getChild(2/*sql_not*/));
             auto truth_value_expr = parse_trueth_value(ctx, parseNode->getChild(3/*truth_value*/));
@@ -1527,7 +1527,7 @@ unique_ptr<BooleanExp> ECSqlParser::parse_search_conditon (ECSqlParseContext& ct
         case OSQLParseNode::boolean_primary:
             {
             BeAssert(parseNode->count() == 3);
-            unique_ptr<BooleanExp> exp = parse_search_conditon(ctx, parseNode->getChild(1/*search_condition*/));
+            unique_ptr<BooleanExp> exp = parse_search_condition(ctx, parseNode->getChild(1/*search_condition*/));
             exp->SetHasParentheses();
             return exp;
             }
@@ -1995,7 +1995,7 @@ unique_ptr<HavingExp> ECSqlParser::parse_having_clause (ECSqlParseContext& ctx, 
     if (parseNode->count () == 0) 
         return nullptr; //User never provided a HAVING clause 
 
-    unique_ptr<BooleanExp> searchConditionExp = parse_search_conditon(ctx, parseNode->getChild(1));
+    unique_ptr<BooleanExp> searchConditionExp = parse_search_condition(ctx, parseNode->getChild(1));
     if (!ctx.IsSuccess())
         return nullptr;
 
@@ -2046,7 +2046,7 @@ unique_ptr<OrderByExp> ECSqlParser::parse_order_by_clause (ECSqlParseContext& ct
         auto row_value_constructor_elem = ordering_spec->getChild (0/*row_value_constructor_elem*/);
         std::unique_ptr<ComputedExp> sortValue;
         if (isPredicate(row_value_constructor_elem))
-            sortValue = parse_search_conditon(ctx, row_value_constructor_elem);
+            sortValue = parse_search_condition(ctx, row_value_constructor_elem);
         else
             sortValue = parse_row_value_constructor(ctx, row_value_constructor_elem);
         

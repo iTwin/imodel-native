@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <BeSQLite/RTreeMatch.h>
+
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -137,17 +139,10 @@ private:
             return BE_SQLITE_ERROR;
 
         info.m_within = Within::Outside;
-        DRange2d bbox2d = DRange2d::From(info.m_args[0].GetValueDouble (), info.m_args[1].GetValueDouble (), info.m_args[2].GetValueDouble (), info.m_args[3].GetValueDouble ());
+        RTree2dVal bbox2d (DRange2d::From(info.m_args[0].GetValueDouble(), info.m_args[1].GetValueDouble(), info.m_args[2].GetValueDouble(), info.m_args[3].GetValueDouble()));
+        RTree2dValCP pt = (RTree2dValCP) info.m_coords;
 
-        if (info.m_nCoord != 2)
-            {
-            BeAssert(false);
-            return BE_SQLITE_ERROR;
-            }
-
-        DPoint2d pt = DPoint2d::From(info.m_coords[0], info.m_coords[1]);
-
-        bool passedTest = (info.m_parentWithin == Within::Inside) ? true : bbox2d.Contains(pt);
+        bool passedTest = (info.m_parentWithin == Within::Inside) ? true : bbox2d.Contains(*pt);
         if (!passedTest)
             return BE_SQLITE_OK;
 
@@ -155,7 +150,7 @@ private:
             {
             // For nodes, return 'level-score'.
             info.m_score = info.m_level;
-            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : bbox2d.Contains(pt) ? Within::Inside : Within::Partly;
+            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : bbox2d.Contains(*pt) ? Within::Inside : Within::Partly;
             }
         else
             {
@@ -197,6 +192,7 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
     int rowCount = 0;
     while (stmt.Step() == ECSqlStepStatus::HasRow)
         {
+        rowCount++;
         ASSERT_STREQ("SQLite headquarters", stmt.GetValueText(0));
         }
 
@@ -233,6 +229,7 @@ TEST(ECSqlRangeTreeTests, MatchQueryWithParameters)
     int rowCount = 0;
     while (stmt.Step() == ECSqlStepStatus::HasRow)
         {
+        rowCount++;
         ASSERT_STREQ("SQLite headquarters", stmt.GetValueText(0));
         }
 

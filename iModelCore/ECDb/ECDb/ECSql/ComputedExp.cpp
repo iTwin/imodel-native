@@ -33,59 +33,6 @@ Utf8String ComputedExp::_ToECSql() const
     return std::move(ecsql);
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-void ComputedExp::FindHasTargetExpExpressions (vector<ParameterExp const*>& parameterExpList, ComputedExp const* expr)
-    {
-    const auto type = expr->GetType ();
-    if (type == Exp::Type::Parameter)
-        {
-        parameterExpList.push_back (static_cast<ParameterExp const*>(expr));
-        }
-
-    vector<ComputedExp const*> computedChildren;
-    for(auto child : expr->GetChildren())
-        {
-        auto computedChild = dynamic_cast<ComputedExp const*>(child);
-        if (computedChild != nullptr)
-            {
-            FindHasTargetExpExpressions (parameterExpList, computedChild);
-            }
-        }
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       09/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlStatus ComputedExp::DetermineOperandsTargetTypes (ECSqlParseContext& ctx, ComputedExp const* lhs, ComputedExp const* rhs) const
-    {
-    if (lhs == nullptr || rhs == nullptr)
-        {
-        BeAssert (false);
-        return ctx.SetError (ECSqlStatus::ProgrammerError, nullptr);
-        }
-
-    vector<ParameterExp const*> lhsParameterExpList;
-    FindHasTargetExpExpressions (lhsParameterExpList, lhs);
-
-    vector<ParameterExp const*> rhsParameterExpList;
-    FindHasTargetExpExpressions (rhsParameterExpList, rhs);
-
-    for (auto parameterExp : lhsParameterExpList)
-        {
-        const_cast<ParameterExp*> (parameterExp)->SetTargetExp (*rhs);
-        }
-
-    for (auto parameterExp : rhsParameterExpList)
-        {
-        const_cast<ParameterExp*> (parameterExp)->SetTargetExp (*lhs);
-        }
-
-    return ECSqlStatus::Success;
-    }
-
 //*************************** BooleanBinaryExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -100,60 +47,96 @@ BinaryBooleanExp::BinaryBooleanExp (std::unique_ptr<ComputedExp> left, BooleanSq
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    auto lhs = GetLeftOperand ();
-    auto rhs = GetRightOperand ();
-
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+        return FinalizeParseStatus::NotCompleted;
+
+    if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren)
         {
-        //if operands are parameters set the target exp in those expressions
-        if (m_op != BooleanSqlOperator::And && m_op != BooleanSqlOperator::Or)
+        auto lhs = GetLeftOperand();
+        auto rhs = GetRightOperand();
+
+        ComputedExp const* expWithVaryingTypeInfo = nullptr;
+        ComputedExp const* expWithRegularTypeInfo = nullptr;
+        if (lhs->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Varies)
             {
-            if (DetermineOperandsTargetTypes (ctx, lhs, rhs) != ECSqlStatus::Success)
-                return FinalizeParseStatus::Error;
+            expWithVaryingTypeInfo = lhs;
+            expWithRegularTypeInfo = rhs;
             }
 
-        return FinalizeParseStatus::NotCompleted;
-        }
+        if (rhs->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Varies)
+            {
+            //only one side can be of Kind::Varies. If lhs is Varies, expWithVaryingTypeInfo was already set and no longer is null
+            if (expWithVaryingTypeInfo != nullptr)
+                {
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Only one operand of the expression '%s' can be an expression list.", ToECSql().c_str());
+                return FinalizeParseStatus::Error;
+                }
 
-    ComputedExp const* expWithVaryingTypeInfo = nullptr;
-    ComputedExp const* expWithRegularTypeInfo = nullptr;
-    if (lhs->GetTypeInfo ().GetKind () == ECSqlTypeInfo::Kind::Varies)
-        {
-        expWithVaryingTypeInfo = lhs;
-        expWithRegularTypeInfo = rhs;
-        }
+            expWithVaryingTypeInfo = rhs;
+            expWithRegularTypeInfo = lhs;
+            }
 
-    if (rhs->GetTypeInfo ().GetKind () == ECSqlTypeInfo::Kind::Varies)
-        {
-        //only one side can be of Kind::Varies. If lhs is Varies, expWithVaryingTypeInfo was already set and no longer is null
         if (expWithVaryingTypeInfo != nullptr)
             {
-            ctx.SetError (ECSqlStatus::InvalidECSql, "Only one operand of the expression '%s' can be an expression list.", ToECSql ().c_str ());
-            return FinalizeParseStatus::Error;
-            }
+            for (auto child : expWithVaryingTypeInfo->GetChildren())
+                {
+                BeAssert(dynamic_cast<ComputedExp const*> (child) != nullptr);
+                auto childComputedExp = static_cast<ComputedExp const*> (child);
 
-        expWithVaryingTypeInfo = rhs;
-        expWithRegularTypeInfo = lhs;
+                auto stat = CanCompareTypes(ctx, *expWithRegularTypeInfo, *childComputedExp);
+                if (stat != Exp::FinalizeParseStatus::Completed)
+                    return stat;
+                }
+
+            return Exp::FinalizeParseStatus::Completed;
+            }
+        else
+            return CanCompareTypes(ctx, *lhs, *rhs);
         }
 
-    if (expWithVaryingTypeInfo != nullptr)
+    BeAssert(false);
+    return FinalizeParseStatus::Error;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool IsInHierarchy(Exp const& rootExp, Exp const& candidateExp)
+    {
+    if (&rootExp == &candidateExp)
+        return true;
+
+    for (Exp const* childExp : rootExp.GetChildren())
         {
-        for (auto child : expWithVaryingTypeInfo->GetChildren ())
-            {
-            BeAssert (dynamic_cast<ComputedExp const*> (child) != nullptr);
-            auto childComputedExp = static_cast<ComputedExp const*> (child);
-
-            auto stat = CanCompareTypes (ctx, *expWithRegularTypeInfo, *childComputedExp);
-            if (stat != Exp::FinalizeParseStatus::Completed)
-                return stat;
-            }
-
-        return Exp::FinalizeParseStatus::Completed;
+        if (IsInHierarchy(*childExp, candidateExp))
+            return true;
         }
+
+    return false;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool BinaryBooleanExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    ComputedExp const* lhs = GetLeftOperand();
+    ComputedExp const* rhs = GetRightOperand();
+    ComputedExp const* targetExp = nullptr;
+    if (IsInHierarchy(*lhs,parameterExp))
+        targetExp = rhs;
+    else if (IsInHierarchy(*rhs,parameterExp))
+        targetExp = lhs;
     else
-        return CanCompareTypes (ctx, *lhs, *rhs);
+        {
+        BeAssert(false && "Expected to find parameter exp in either LHS or RHS exp hierarchy of BinaryBooleanExp");
+        return false;
+        }
+
+    parameterExp.SetTargetExpInfo(*targetExp);
+    return true;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -161,12 +144,15 @@ Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing (ECSqlParseContext& 
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const
     {
-    auto const& lhsTypeInfo = lhs.GetTypeInfo ();
-    auto const& rhsTypeInfo = rhs.GetTypeInfo ();
+    //parameter types are determined later, so exclude them from type checking
+    const bool lhsIsParameter = lhs.IsParameterExp ();
+    const bool rhsIsParameter = rhs.IsParameterExp ();
+    ECSqlTypeInfo const& lhsTypeInfo = lhs.GetTypeInfo();
+    ECSqlTypeInfo const& rhsTypeInfo = rhs.GetTypeInfo();
 
     //first check whether types on both sides match generally for comparisons
     Utf8String canCompareErrorMessage;
-    if (!lhsTypeInfo.Matches (rhsTypeInfo, &canCompareErrorMessage))
+    if (!lhsIsParameter && !rhsIsParameter && !lhsTypeInfo.Matches(rhsTypeInfo, &canCompareErrorMessage))
         {
         if (canCompareErrorMessage.empty ())
             ctx.SetError (ECSqlStatus::InvalidECSql, "Type mismatch in expression '%s'.", ToECSql ().c_str ());
@@ -176,16 +162,18 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes (ECSqlParseContext& c
         return FinalizeParseStatus::Error;
         }
 
-    if ((m_op == BooleanSqlOperator::Like || m_op == BooleanSqlOperator::NotLike) &&
-        (!lhsTypeInfo.IsPrimitive () || !rhsTypeInfo.IsPrimitive () ||
-        lhsTypeInfo.GetPrimitiveType () != PRIMITIVETYPE_String || rhsTypeInfo.GetPrimitiveType () != PRIMITIVETYPE_String))
+    if (m_op == BooleanSqlOperator::Like || m_op == BooleanSqlOperator::NotLike)
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Type mismatch in expression '%s'. LIKE operator only supported with string operands.", ToECSql ().c_str ());
-        return FinalizeParseStatus::Error;
+        if ((!lhsIsParameter && (!lhsTypeInfo.IsPrimitive() || lhsTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)) ||
+            (!rhsIsParameter && (!rhsTypeInfo.IsPrimitive() || rhsTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)))
+            {
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in expression '%s'. LIKE operator only supported with string operands.", ToECSql().c_str());
+            return FinalizeParseStatus::Error;
+            }
         }
 
     //Limit operators for point expressions
-    //cannot assume both sides have same types as one can still represent the SQL NULL
+    //cannot assume both sides have same types as one can still represent the SQL NULL or a parameter
     if (lhsTypeInfo.IsPoint () || rhsTypeInfo.IsPoint ())
         {
         switch (m_op)
@@ -278,7 +266,6 @@ Utf8String BinaryBooleanExp::_ToString() const
     return str;
     }
 
-
 //*************************** BooleanFactorExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
@@ -335,7 +322,7 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
 
     ValueExp const* valueExp = GetValueExp();
     ECSqlTypeInfo const& valueExpTypeInfo = valueExp->GetTypeInfo();
-    if (valueExp->GetType () == Exp::Type::Parameter || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
+    if (valueExp->IsParameterExp () || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
         {
         ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in expression '%s'. Unary predicates can only have expressions of boolean or integral type and cannot be parametrized.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
