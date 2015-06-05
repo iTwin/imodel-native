@@ -83,12 +83,9 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         if (!hasWhereClause)
             nativeSqlBuilder.Append (" WHERE ");
         else
-            nativeSqlBuilder.Append (" AND (");
+            nativeSqlBuilder.Append (" AND ");
 
         nativeSqlBuilder.Append (systemWhereClause);
-
-        if (hasWhereClause)
-            nativeSqlBuilder.AppendParenRight ();
         }
 
     status = PrepareStepTask (ctx, exp);
