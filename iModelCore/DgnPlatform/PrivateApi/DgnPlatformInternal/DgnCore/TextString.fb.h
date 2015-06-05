@@ -55,35 +55,32 @@ STRUCT_END(TextStringTransform, 96);
 struct TextStringStyle : private flatbuffers::Table {
   uint8_t majorVersion() const { return GetField<uint8_t>(4, 0); }
   uint8_t minorVersion() const { return GetField<uint8_t>(6, 0); }
-  uint32_t color() const { return GetField<uint32_t>(8, 0); }
-  uint32_t fontId() const { return GetField<uint32_t>(10, 0); }
-  uint8_t isBold() const { return GetField<uint8_t>(12, 0); }
-  uint8_t isItalic() const { return GetField<uint8_t>(14, 0); }
-  uint8_t isUnderlined() const { return GetField<uint8_t>(16, 0); }
-  double height() const { return GetField<double>(18, 0); }
-  double widthFactor() const { return GetField<double>(20, 0); }
+  uint32_t fontId() const { return GetField<uint32_t>(8, 0); }
+  uint8_t isBold() const { return GetField<uint8_t>(10, 0); }
+  uint8_t isItalic() const { return GetField<uint8_t>(12, 0); }
+  uint8_t isUnderlined() const { return GetField<uint8_t>(14, 0); }
+  double height() const { return GetField<double>(16, 0); }
+  double widthFactor() const { return GetField<double>(18, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, 4 /* majorVersion */) &&
            VerifyField<uint8_t>(verifier, 6 /* minorVersion */) &&
-           VerifyField<uint32_t>(verifier, 8 /* color */) &&
-           VerifyField<uint32_t>(verifier, 10 /* fontId */) &&
-           VerifyField<uint8_t>(verifier, 12 /* isBold */) &&
-           VerifyField<uint8_t>(verifier, 14 /* isItalic */) &&
-           VerifyField<uint8_t>(verifier, 16 /* isUnderlined */) &&
-           VerifyField<double>(verifier, 18 /* height */) &&
-           VerifyField<double>(verifier, 20 /* widthFactor */) &&
+           VerifyField<uint32_t>(verifier, 8 /* fontId */) &&
+           VerifyField<uint8_t>(verifier, 10 /* isBold */) &&
+           VerifyField<uint8_t>(verifier, 12 /* isItalic */) &&
+           VerifyField<uint8_t>(verifier, 14 /* isUnderlined */) &&
+           VerifyField<double>(verifier, 16 /* height */) &&
+           VerifyField<double>(verifier, 18 /* widthFactor */) &&
            verifier.EndTable();
   }
   bool has_majorVersion() const { return CheckField(4); }
   bool has_minorVersion() const { return CheckField(6); }
-  bool has_color() const { return CheckField(8); }
-  bool has_fontId() const { return CheckField(10); }
-  bool has_isBold() const { return CheckField(12); }
-  bool has_isItalic() const { return CheckField(14); }
-  bool has_isUnderlined() const { return CheckField(16); }
-  bool has_height() const { return CheckField(18); }
-  bool has_widthFactor() const { return CheckField(20); }
+  bool has_fontId() const { return CheckField(8); }
+  bool has_isBold() const { return CheckField(10); }
+  bool has_isItalic() const { return CheckField(12); }
+  bool has_isUnderlined() const { return CheckField(14); }
+  bool has_height() const { return CheckField(16); }
+  bool has_widthFactor() const { return CheckField(18); }
 };
 
 struct TextStringStyleBuilder {
@@ -91,17 +88,16 @@ struct TextStringStyleBuilder {
   flatbuffers::uoffset_t start_;
   void add_majorVersion(uint8_t majorVersion) { fbb_.AddElement<uint8_t>(4, majorVersion, 0); }
   void add_minorVersion(uint8_t minorVersion) { fbb_.AddElement<uint8_t>(6, minorVersion, 0); }
-  void add_color(uint32_t color) { fbb_.AddElement<uint32_t>(8, color, 0); }
-  void add_fontId(uint32_t fontId) { fbb_.AddElement<uint32_t>(10, fontId, 0); }
-  void add_isBold(uint8_t isBold) { fbb_.AddElement<uint8_t>(12, isBold, 0); }
-  void add_isItalic(uint8_t isItalic) { fbb_.AddElement<uint8_t>(14, isItalic, 0); }
-  void add_isUnderlined(uint8_t isUnderlined) { fbb_.AddElement<uint8_t>(16, isUnderlined, 0); }
-  void add_height(double height) { fbb_.AddElement<double>(18, height, 0); }
-  void add_widthFactor(double widthFactor) { fbb_.AddElement<double>(20, widthFactor, 0); }
+  void add_fontId(uint32_t fontId) { fbb_.AddElement<uint32_t>(8, fontId, 0); }
+  void add_isBold(uint8_t isBold) { fbb_.AddElement<uint8_t>(10, isBold, 0); }
+  void add_isItalic(uint8_t isItalic) { fbb_.AddElement<uint8_t>(12, isItalic, 0); }
+  void add_isUnderlined(uint8_t isUnderlined) { fbb_.AddElement<uint8_t>(14, isUnderlined, 0); }
+  void add_height(double height) { fbb_.AddElement<double>(16, height, 0); }
+  void add_widthFactor(double widthFactor) { fbb_.AddElement<double>(18, widthFactor, 0); }
   TextStringStyleBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   TextStringStyleBuilder &operator=(const TextStringStyleBuilder &);
   flatbuffers::Offset<TextStringStyle> Finish() {
-    auto o = flatbuffers::Offset<TextStringStyle>(fbb_.EndTable(start_, 9));
+    auto o = flatbuffers::Offset<TextStringStyle>(fbb_.EndTable(start_, 8));
     return o;
   }
 };
@@ -109,7 +105,6 @@ struct TextStringStyleBuilder {
 inline flatbuffers::Offset<TextStringStyle> CreateTextStringStyle(flatbuffers::FlatBufferBuilder &_fbb,
    uint8_t majorVersion = 0,
    uint8_t minorVersion = 0,
-   uint32_t color = 0,
    uint32_t fontId = 0,
    uint8_t isBold = 0,
    uint8_t isItalic = 0,
@@ -120,7 +115,6 @@ inline flatbuffers::Offset<TextStringStyle> CreateTextStringStyle(flatbuffers::F
   builder_.add_widthFactor(widthFactor);
   builder_.add_height(height);
   builder_.add_fontId(fontId);
-  builder_.add_color(color);
   builder_.add_isUnderlined(isUnderlined);
   builder_.add_isItalic(isItalic);
   builder_.add_isBold(isBold);

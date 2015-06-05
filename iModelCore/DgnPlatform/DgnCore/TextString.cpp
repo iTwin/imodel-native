@@ -30,7 +30,6 @@ TextStringStyle::TextStringStyle() :
 void TextStringStyle::CopyFrom(TextStringStyleCR rhs)
     {
     // Making additions or changes? Please check constructor and Reset.
-    m_color = rhs.m_color;
     m_font = rhs.m_font;
     m_isBold = rhs.m_isBold;
     m_isItalic = rhs.m_isItalic;
@@ -44,7 +43,6 @@ void TextStringStyle::CopyFrom(TextStringStyleCR rhs)
 void TextStringStyle::Reset()
     {
     // Making additions or changes? Please check constructor and CopyFrom.
-    m_color.SetAllColors(0);
     m_font = &DgnFontManager::GetLastResortTrueTypeFont();
     m_isBold = false;
     m_isItalic = false;
@@ -334,9 +332,13 @@ void TextString::TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotM
 //---------------------------------------------------------------------------------------
 void TextString::GetGlyphSymbology(ElemDisplayParamsR params) const
     {
-    params.SetLineColor(m_style.GetColor());
+    // Generally speaking, use the ElemDisplayParams that the user already set up...
+    
+    // Though we may actually care about weight...
     params.SetWeight((m_style.IsBold() && m_style.GetFont().CanDrawWithLineWeight()) ? DEFAULT_BOLD_WEIGHT : 0);
     
+    // And we should force these values, lest they interfere under various scenarios.
+    params.SetLineStyle(0);
     params.SetFillDisplay(FillDisplay::Never);
     }
 
@@ -400,7 +402,6 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
     FB::TextStringStyleBuilder fbStyle(encoder);
     fbStyle.add_majorVersion(CURRENT_STYLE_MAJOR_VERSION);
     fbStyle.add_minorVersion(CURRENT_STYLE_MINOR_VERSION);
-    fbStyle.add_color(text.m_style.m_color.GetValue());
     fbStyle.add_fontId(fontId.GetValue());
     fbStyle.add_isBold(text.m_style.m_isBold);
     fbStyle.add_isItalic(text.m_style.m_isItalic);
@@ -480,7 +481,6 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
     FB::TextStringStyle const& fbStyle = *fbText.style();
     TextStringStyle& style = text.m_style;
 
-    if (fbStyle.has_color()) style.SetColor(ColorDef(fbStyle.color()));
     style.SetFont(T_HOST.GetFontAdmin().ResolveFont(db.Fonts().FindFontById(DgnFontId(fbStyle.fontId()))));
     if (fbStyle.has_isBold()) style.SetIsBold(0 != fbStyle.isBold());
     if (fbStyle.has_isItalic()) style.SetIsItalic(0 != fbStyle.isItalic());

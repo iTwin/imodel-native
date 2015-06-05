@@ -26,7 +26,6 @@ private:
     friend struct TextStyleInterop;
     friend struct TextStringPersistence;
 
-    ColorDef m_color;
     DgnFontCP m_font;
     bool m_isBold;
     bool m_isItalic;
@@ -47,8 +46,6 @@ public:
     static TextStringStylePtr Create() { return new TextStringStyle(); }
     TextStringStylePtr Clone() const { return new TextStringStyle(*this); }
 
-    ColorDefCR GetColor() const { return m_color; }
-    void SetColor(ColorDefCR value) { m_color = value; }
     DgnFontCR GetFont() const { return *m_font; }
     void SetFont(DgnFontCR value) { m_font = &DgnFontManager::ResolveFont(&value); }
     bool IsBold() const { return m_isBold; }
@@ -127,21 +124,21 @@ public:
 
     //! Causes the next call to get glyph-based results (e.g. glyphs, glyph origins, range) to perform a new glyph layout pass. Glyph layout can be slow, so it is best to minimize the number of times this is called.
     void Invalidate() { m_isValid = false; }
-    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is foreced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     DRange2dCR GetRange() const { Update(); return m_range; }
-    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is foreced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     size_t GetNumGlyphs() const { Update(); return m_glyphIds.size(); }
-    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is foreced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     DgnGlyphCP const* GetGlyphs() const { Update(); return &m_glyphs[0]; }
-    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is foreced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     DgnGlyph::T_Id const* GetGlyphIds() const { Update(); return &m_glyphIds[0]; }
-    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is foreced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     DPoint3dCP GetGlyphOrigins() const { Update(); return &m_glyphOrigins[0]; }
-    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is foreced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     void ComputeBoundingShape(DPoint3dP boxPts) const { ComputeBoundingShape(boxPts, 0.0, 0.0); }
-    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is foreced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     void ComputeBoundingShape(DPoint3dP boxPts, double uniformPadding) const { ComputeBoundingShape(boxPts, uniformPadding, uniformPadding); }
-    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is foreced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     DGNPLATFORM_EXPORT void ComputeBoundingShape(DPoint3dP, double horizontalPadding, double verticalPadding) const;
     Transform ComputeTransform() const { return Transform::From(m_orientation, m_origin); }
     DGNPLATFORM_EXPORT DPoint3d ComputeJustificationOrigin(HorizontalJustification, VerticalJustification) const;

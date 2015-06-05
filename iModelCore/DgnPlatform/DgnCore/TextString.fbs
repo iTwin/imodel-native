@@ -31,7 +31,6 @@ table TextStringStyle
 {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    color:uint;
     fontId:uint;
     isBold:bool;
     isItalic:bool;
