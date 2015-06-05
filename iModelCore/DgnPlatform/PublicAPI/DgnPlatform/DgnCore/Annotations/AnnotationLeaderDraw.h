@@ -27,16 +27,16 @@ private:
 
     AnnotationLeaderLayoutCP m_leaderLayout;
 
-    void CopyFrom(AnnotationLeaderDrawCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationLeaderDrawCR);
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationLeaderDraw(AnnotationLeaderLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderDraw(AnnotationLeaderDrawCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderDrawR operator=(AnnotationLeaderDrawCR);
-    DGNPLATFORM_EXPORT static AnnotationLeaderDrawPtr Create(AnnotationLeaderLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderDrawPtr Clone() const;
+    AnnotationLeaderDraw(AnnotationLeaderDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationLeaderDrawR operator=(AnnotationLeaderDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationLeaderDrawPtr Create(AnnotationLeaderLayoutCR leaderLayout) { return new AnnotationLeaderDraw(leaderLayout); }
+    AnnotationLeaderDrawPtr Clone() const { return new AnnotationLeaderDraw(*this); }
 
-    DGNPLATFORM_EXPORT AnnotationLeaderLayoutCR GetLeaderLayout() const;
+    AnnotationLeaderLayoutCR GetLeaderLayout() const { return *m_leaderLayout; }
 
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
 };

@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationFrameLayout.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -26,7 +26,6 @@ static DPoint2d computeCenterOfRange(DRange2dCR range)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFrameLayoutPtr AnnotationFrameLayout::Create(AnnotationFrameCR frame, AnnotationTextBlockLayoutCR docLayout) { return new AnnotationFrameLayout(frame, docLayout); }
 AnnotationFrameLayout::AnnotationFrameLayout(AnnotationFrameCR frame, AnnotationTextBlockLayoutCR docLayout) :
     T_Super()
     {
@@ -40,9 +39,6 @@ AnnotationFrameLayout::AnnotationFrameLayout(AnnotationFrameCR frame, Annotation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFrameLayoutPtr AnnotationFrameLayout::Clone() const { return new AnnotationFrameLayout(*this); }
-AnnotationFrameLayout::AnnotationFrameLayout(AnnotationFrameLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationFrameLayoutR AnnotationFrameLayout::operator=(AnnotationFrameLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationFrameLayout::CopyFrom(AnnotationFrameLayoutCR rhs)
     {
     m_isValid = rhs.m_isValid;
@@ -56,16 +52,6 @@ void AnnotationFrameLayout::CopyFrom(AnnotationFrameLayoutCR rhs)
     else
         m_frameGeometry = rhs.m_frameGeometry->Clone();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-AnnotationFrameCR AnnotationFrameLayout::GetFrame() const { return *m_frame; }
-AnnotationTextBlockLayoutCR AnnotationFrameLayout::GetDocumentLayout() const { return *m_docLayout; }
-double AnnotationFrameLayout::GetEffectiveFontHeight() const { const_cast<AnnotationFrameLayoutP>(this)->Update(); return m_effectiveFontHeight; }
-DRange2d AnnotationFrameLayout::GetContentRange() const { const_cast<AnnotationFrameLayoutP>(this)->Update(); return m_contentRange; }
-CurveVectorCR AnnotationFrameLayout::GetFrameGeometry() const { const_cast<AnnotationFrameLayoutP>(this)->Update(); return *m_frameGeometry; }
-void AnnotationFrameLayout::Invalidate() { m_isValid = false; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014

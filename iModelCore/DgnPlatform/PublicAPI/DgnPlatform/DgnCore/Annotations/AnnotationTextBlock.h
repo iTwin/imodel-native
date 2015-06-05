@@ -73,7 +73,7 @@ private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
     
-    void CopyFrom(AnnotationRunBaseCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationRunBaseCR);
 
 protected:
     DgnDbP m_dgndb;
@@ -82,22 +82,22 @@ protected:
     AnnotationTextStylePropertyBag m_styleOverrides;
     
     DGNPLATFORM_EXPORT explicit AnnotationRunBase(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationRunBase(AnnotationRunBaseCR);
-    DGNPLATFORM_EXPORT AnnotationRunBaseR operator=(AnnotationRunBaseCR);
+    AnnotationRunBase(AnnotationRunBaseCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationRunBaseR operator=(AnnotationRunBaseCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 
     virtual AnnotationRunBasePtr _Clone() const = 0;
     virtual AnnotationRunType _GetType() const = 0;
 
 public:
-    DGNPLATFORM_EXPORT AnnotationRunBasePtr Clone() const;
+    AnnotationRunBasePtr Clone() const { return _Clone(); }
     
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT AnnotationRunType GetType() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    AnnotationRunType GetType() const { return _GetType(); }
+    DgnStyleId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationTextStyleOptions);
-    DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagCR GetStyleOverrides() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR GetStyleOverridesR();
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
+    AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
 };
 
 //=======================================================================================
@@ -127,26 +127,26 @@ private:
     void CopyFrom(AnnotationTextRunCR);
 
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override;
-    virtual AnnotationRunType _GetType() const override;
+    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsTextRun(); }
+    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::Text; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextRun(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationTextRun(AnnotationTextRunCR);
-    DGNPLATFORM_EXPORT AnnotationTextRunR operator=(AnnotationTextRunCR);
-    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR);
+    AnnotationTextRun(AnnotationTextRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationTextRunR operator=(AnnotationTextRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationTextRunPtr Create(DgnDbR project) { return new AnnotationTextRun(project); }
     DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnStyleId, Utf8CP);
-    DGNPLATFORM_EXPORT AnnotationTextRunPtr CloneAsTextRun() const;
+    AnnotationTextRunPtr CloneAsTextRun() const { return new AnnotationTextRun(*this); }
 
-    DGNPLATFORM_EXPORT Utf8StringCR GetContent() const;
-    DGNPLATFORM_EXPORT void SetContent(Utf8CP);
-    DGNPLATFORM_EXPORT AnnotationTextRunSubSuperScript GetSubSuperScript() const;
-    DGNPLATFORM_EXPORT void SetSubSuperScript(AnnotationTextRunSubSuperScript);
-    DGNPLATFORM_EXPORT bool IsSubScript() const;
-    DGNPLATFORM_EXPORT void SetIsSubScript(bool);
-    DGNPLATFORM_EXPORT bool IsSuperScript() const;
-    DGNPLATFORM_EXPORT void SetIsSuperScript(bool);
+    Utf8StringCR GetContent() const { return m_content; }
+    void SetContent(Utf8CP value) { m_content = value; }
+    AnnotationTextRunSubSuperScript GetSubSuperScript() const { return m_subsuperscript; }
+    void SetSubSuperScript(AnnotationTextRunSubSuperScript value) { m_subsuperscript = value; }
+    bool IsSubScript() const { return AnnotationTextRunSubSuperScript::SubScript == m_subsuperscript; }
+    void SetIsSubScript(bool value) { m_subsuperscript = AnnotationTextRunSubSuperScript::SubScript; }
+    bool IsSuperScript() const { return AnnotationTextRunSubSuperScript::SuperScript == m_subsuperscript; }
+    void SetIsSuperScript(bool value) { m_subsuperscript = AnnotationTextRunSubSuperScript::SuperScript; }
 };
 
 //=======================================================================================
@@ -164,22 +164,22 @@ private:
     void CopyFrom(AnnotationFractionRunCR);
 
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override;
-    virtual AnnotationRunType _GetType() const override;
+    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsFractionRun(); }
+    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::Fraction; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationFractionRun(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationFractionRun(AnnotationFractionRunCR);
-    DGNPLATFORM_EXPORT AnnotationFractionRunR operator=(AnnotationFractionRunCR);
-    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR);
+    AnnotationFractionRun(AnnotationFractionRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationFractionRunR operator=(AnnotationFractionRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationFractionRunPtr Create(DgnDbR project) { return new AnnotationFractionRun(project); }
     DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnStyleId, Utf8CP numerator, Utf8CP denominator);
-    DGNPLATFORM_EXPORT AnnotationFractionRunPtr CloneAsFractionRun() const;
+    AnnotationFractionRunPtr CloneAsFractionRun() const { return new AnnotationFractionRun(*this); }
 
-    DGNPLATFORM_EXPORT Utf8StringCR GetDenominatorContent() const;
-    DGNPLATFORM_EXPORT void SetDenominatorContent(Utf8CP);
-    DGNPLATFORM_EXPORT Utf8StringCR GetNumeratorContent() const;
-    DGNPLATFORM_EXPORT void SetNumeratorContent(Utf8CP);
+    Utf8StringCR GetDenominatorContent() const { return m_denominatorContent; }
+    void SetDenominatorContent(Utf8CP value) { m_denominatorContent = value; }
+    Utf8StringCR GetNumeratorContent() const { return m_numeratorContent; }
+    void SetNumeratorContent(Utf8CP value) { m_numeratorContent = value; }
 };
 
 //=======================================================================================
@@ -192,16 +192,16 @@ private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override;
-    virtual AnnotationRunType _GetType() const override;
+    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsLineBreakRun(); }
+    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::LineBreak; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationLineBreakRun(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationLineBreakRun(AnnotationLineBreakRunCR);
-    DGNPLATFORM_EXPORT AnnotationLineBreakRunR operator=(AnnotationLineBreakRunCR);
-    DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR);
+    AnnotationLineBreakRun(AnnotationLineBreakRunCR rhs) : T_Super(rhs) { }
+    AnnotationLineBreakRunR operator=(AnnotationLineBreakRunCR rhs) { T_Super::operator=(rhs); return *this;}
+    static AnnotationLineBreakRunPtr Create(DgnDbR project) { return new AnnotationLineBreakRun(project); }
     DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR, DgnStyleId);
-    DGNPLATFORM_EXPORT AnnotationLineBreakRunPtr CloneAsLineBreakRun() const;
+    AnnotationLineBreakRunPtr CloneAsLineBreakRun() const { return new AnnotationLineBreakRun(*this); }
 };
 
 //=======================================================================================
@@ -222,25 +222,25 @@ private:
 
     AnnotationRunCollection m_runs;
 
-    void CopyFrom(AnnotationParagraphCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationParagraphCR);
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationParagraph(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationParagraph(AnnotationParagraphCR);
-    DGNPLATFORM_EXPORT AnnotationParagraphR operator=(AnnotationParagraphCR);
-    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR);
+    AnnotationParagraph(AnnotationParagraphCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationParagraphR operator=(AnnotationParagraphCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationParagraphPtr Create(DgnDbR project) { return new AnnotationParagraph(project); }
     DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnStyleId, AnnotationRunBaseR);
-    DGNPLATFORM_EXPORT AnnotationParagraphPtr Clone() const;
+    AnnotationParagraphPtr Clone() const { return new AnnotationParagraph(*this); }
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    DgnStyleId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationTextStyleOptions);
-    DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagCR GetStyleOverrides() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR GetStyleOverridesR();
-    DGNPLATFORM_EXPORT AnnotationRunCollectionCR GetRuns() const;
-    DGNPLATFORM_EXPORT AnnotationRunCollectionR GetRunsR();
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
+    AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
+    AnnotationRunCollectionCR GetRuns() const { return m_runs; }
+    AnnotationRunCollectionR GetRunsR() { return m_runs; }
 };
 
 //=======================================================================================
@@ -275,35 +275,35 @@ private:
     
     AnnotationParagraphCollection m_paragraphs;
 
-    void CopyFrom(AnnotationTextBlockCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockCR);
     void Reset();
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlock(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationTextBlock(AnnotationTextBlockCR);
-    DGNPLATFORM_EXPORT AnnotationTextBlockR operator=(AnnotationTextBlockCR);
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR);
+    AnnotationTextBlock(AnnotationTextBlockCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationTextBlockR operator=(AnnotationTextBlockCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationTextBlockPtr Create(DgnDbR project) { return new AnnotationTextBlock(project); }
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId, AnnotationParagraphR);
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId, Utf8CP);
-    DGNPLATFORM_EXPORT AnnotationTextBlockPtr Clone() const;
+    AnnotationTextBlockPtr Clone() const { return new AnnotationTextBlock(*this); }
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT double GetDocumentWidth() const;
-    DGNPLATFORM_EXPORT void SetDocumentWidth(double);
-    DGNPLATFORM_EXPORT HorizontalJustification GetJustification() const;
-    DGNPLATFORM_EXPORT void SetJustification(HorizontalJustification);
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    double GetDocumentWidth() const { return m_documentWidth; }
+    void SetDocumentWidth(double value) { m_documentWidth = value; }
+    HorizontalJustification GetJustification() const { return m_justification; }
+    void SetJustification(HorizontalJustification value) { m_justification = value; }
+    DgnStyleId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationTextStyleOptions);
-    DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagCR GetStyleOverrides() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR GetStyleOverridesR();
-    DGNPLATFORM_EXPORT AnnotationParagraphCollectionCR GetParagraphs() const;
-    DGNPLATFORM_EXPORT AnnotationParagraphCollectionR GetParagraphsR();
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
+    AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
+    AnnotationParagraphCollectionCR GetParagraphs() const { return m_paragraphs; }
+    AnnotationParagraphCollectionR GetParagraphsR() { return m_paragraphs; }
+    void AppendParagraph(AnnotationParagraphR par) { m_paragraphs.push_back(&par); }
     DGNPLATFORM_EXPORT void AppendParagraph();
-    DGNPLATFORM_EXPORT void AppendParagraph(AnnotationParagraphR);
     DGNPLATFORM_EXPORT void AppendRun(AnnotationRunBaseR);
-    DGNPLATFORM_EXPORT bool IsEmpty() const;
+    bool IsEmpty() const { return ((0 == m_paragraphs.size()) || (0 == m_paragraphs[0]->GetRuns().size())); }
 };
 
 //! @endGroup

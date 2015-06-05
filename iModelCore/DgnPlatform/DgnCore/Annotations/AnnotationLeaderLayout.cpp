@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationLeaderLayout.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -11,7 +11,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderLayoutPtr AnnotationLeaderLayout::Create(AnnotationLeaderCR leader, AnnotationFrameLayoutCR frameLayout) { return new AnnotationLeaderLayout(leader, frameLayout); }
 AnnotationLeaderLayout::AnnotationLeaderLayout(AnnotationLeaderCR leader, AnnotationFrameLayoutCR frameLayout) :
     T_Super()
     {
@@ -28,9 +27,6 @@ AnnotationLeaderLayout::AnnotationLeaderLayout(AnnotationLeaderCR leader, Annota
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderLayoutPtr AnnotationLeaderLayout::Clone() const { return new AnnotationLeaderLayout(*this); }
-AnnotationLeaderLayout::AnnotationLeaderLayout(AnnotationLeaderLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationLeaderLayoutR AnnotationLeaderLayout::operator=(AnnotationLeaderLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationLeaderLayout::CopyFrom(AnnotationLeaderLayoutCR rhs)
     {
     m_isValid = rhs.m_isValid;
@@ -44,21 +40,6 @@ void AnnotationLeaderLayout::CopyFrom(AnnotationLeaderLayoutCR rhs)
     m_terminatorGeometry = rhs.m_terminatorGeometry->Clone();
     m_terminatorTransform = rhs.m_terminatorTransform;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-AnnotationLeaderCR AnnotationLeaderLayout::GetLeader() const { return *m_leader; }
-AnnotationFrameLayoutCR AnnotationLeaderLayout::GetFrameLayout() const { return *m_frameLayout; }
-TransformCR AnnotationLeaderLayout::GetFrameTransform() const { return m_frameTransform; }
-void AnnotationLeaderLayout::SetFrameTransform(TransformCR value) { m_frameTransform = value; }
-DPoint3dCR AnnotationLeaderLayout::GetSourcePhysicalPoint() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_sourcePhysicalPoint; }
-DVec3dCR AnnotationLeaderLayout::GetSourceTangent() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_sourceTangent; }
-DPoint3dCR AnnotationLeaderLayout::GetTargetPhysicalPoint() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_targetPhysicalPoint; }
-CurveVectorCR AnnotationLeaderLayout::GetLineGeometry() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return *m_lineGeometry; }
-TransformCR AnnotationLeaderLayout::GetTerminatorTransform() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_terminatorTransform; }
-CurveVectorCR AnnotationLeaderLayout::GetTerminatorGeometry() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return *m_terminatorGeometry; }
-void AnnotationLeaderLayout::Invalidate() { m_isValid = false; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014

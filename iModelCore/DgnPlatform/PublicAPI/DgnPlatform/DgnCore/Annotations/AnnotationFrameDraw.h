@@ -28,16 +28,16 @@ private:
 
     AnnotationFrameLayoutCP m_frameLayout;
 
-    void CopyFrom(AnnotationFrameDrawCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationFrameDrawCR);
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationFrameDraw(AnnotationFrameLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationFrameDraw(AnnotationFrameDrawCR);
-    DGNPLATFORM_EXPORT AnnotationFrameDrawR operator=(AnnotationFrameDrawCR);
-    DGNPLATFORM_EXPORT static AnnotationFrameDrawPtr Create(AnnotationFrameLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationFrameDrawPtr Clone() const;
+    AnnotationFrameDraw(AnnotationFrameDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationFrameDrawR operator=(AnnotationFrameDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationFrameDrawPtr Create(AnnotationFrameLayoutCR frameLayout) { return new AnnotationFrameDraw(frameLayout); }
+    AnnotationFrameDrawPtr Clone() const { return new AnnotationFrameDraw(*this); }
 
-    DGNPLATFORM_EXPORT AnnotationFrameLayoutCR GetFrameLayout() const;
+    AnnotationFrameLayoutCR GetFrameLayout() const { return *m_frameLayout; }
 
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
 };
