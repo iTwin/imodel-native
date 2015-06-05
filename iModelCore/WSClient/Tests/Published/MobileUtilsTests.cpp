@@ -77,7 +77,7 @@ void MobileUtilsTest::TearDown ()
 BaseMockHttpHandlerTest::BaseMockHttpHandlerTest ()
 :
 m_handler (std::make_shared<MockHttpHandler> ()),
-m_client (m_handler)
+m_client (nullptr, m_handler)
     {
     }
 

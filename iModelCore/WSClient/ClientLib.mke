@@ -1,0 +1,74 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ClientLib.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(SrcRoot)WSClient/ClientLibPolicy.mki
+%include mdl.mki
+
+ClientSourceDirectory       = $(_MakeFilePath)
+ClientPublicApiDirectory    = $(_MakeFilePath)PublicAPI/WebServices/
+BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
+
+o = $(OutputRootDir)build/WSClient/Client/
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+
+%include Client/Client.mki
+%include Configuration/Configuration.mki
+%include Connect/Connect.mki
+%include Licensing/Licensing.mki
+
+%include MultiCppCompileGo.mki
+WSClientObjectList = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = WebServicesClient
+DLM_OBJECT_FILES            = $(WSClientObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)ClientInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_NOMSBUILTINS            = 1
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+# MobileDgn library name
+%if $(TARGET_PLATFORM)=="WinRT"
+    _mobiledgnLibraryName = Bentley$(BENTLEY_API_NAME).MobileDgn.Win8$(stlibext)
+%elif $(TARGET_PLATFORM)=="Android"
+    _mobiledgnLibraryName = $(libprefix)MobileDgn$(shlibext)
+%else
+    _mobiledgnLibraryName = $(libprefix)MobileDgn$(stlibext)
+%endif
+
+%if $(TARGET_PLATFORM)=="Android"
+    LINKER_LIBRARIES    = $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
+    %include dlmlink.mki
+
+%else
+    LINKER_LIBRARIES    = $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)  \
+                          $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)   \
+                          $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)      \
+                          $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)  \
+                          $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
+
+    %if $(TARGET_PLATFORM) != "WinRT"
+        LINKER_LIBRARIES        + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
+    %endif
+
+    %include $(sharedMki)LinkLibrary.mki
+
+%endif

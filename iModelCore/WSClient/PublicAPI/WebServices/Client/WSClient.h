@@ -11,6 +11,7 @@
 #include <MobileDgn/Utils/Threading/AsyncResult.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
 
+#include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/WSRepository.h>
 #include <WebServices/Client/WSError.h>
@@ -18,14 +19,16 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
 //--------------------------------------------------------------------------------------+
 // WebServices Client API for connecting to BWSG server. 
 //--------------------------------------------------------------------------------------+
 
 typedef std::shared_ptr<struct IWSClient>           IWSClientPtr;
 
-typedef MobileDgn::Utils::AsyncResult<struct WSInfo, WSError>         WSInfoResult;
-typedef MobileDgn::Utils::AsyncResult<bvector<WSRepository>, WSError> WSRepositoriesResult;
+typedef AsyncResult<struct WSInfo, WSError>         WSInfoResult;
+typedef AsyncResult<bvector<WSRepository>, WSError> WSRepositoriesResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
@@ -53,27 +56,27 @@ struct IWSClient
         virtual void UnregisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) = 0;
 
         //! Returns server information or queries server if needs updating
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> GetServerInfo
+        virtual AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
         //! Queries server information
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
+        virtual AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
-        virtual MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
     };
 
@@ -92,14 +95,13 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
         static IWSClientPtr Create (std::shared_ptr<struct ClientConnection> connection);
 
         //! @param[in] serverUrl - address to supported server/site
-        //! @param[in] defaultHeaders - headers used for each request. User-Agent is recomended for being able to identify client in server.
-        //!                             Mas-Uuid and Mas-App-Guid are posible for licensing purposes.
+        //! @param[in] clientInfo - client infomation for licensing and other information
         //! @param[in] customHandler - custom http handler for testing purposes
         WSCLIENT_EXPORT static IWSClientPtr Create
             (
             Utf8StringCR serverUrl,
-            MobileDgn::Utils::HttpRequestHeadersCR defaultHeaders,
-            MobileDgn::Utils::IHttpHandlerPtr customHandler = nullptr
+            ClientInfoPtr clientInfo,
+            IHttpHandlerPtr customHandler = nullptr
             );
 
         WSCLIENT_EXPORT Utf8String GetServerUrl () const override;
@@ -107,26 +109,26 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
         WSCLIENT_EXPORT void RegisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) override;
         WSCLIENT_EXPORT void UnregisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> GetServerInfo
+        WSCLIENT_EXPORT AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
-        WSCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+        WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
     };
 

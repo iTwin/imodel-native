@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
 
 #include <WebServices/Client/WSClient.h>
@@ -17,7 +16,9 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-typedef MobileDgn::Utils::AsyncResult<WSInfo, MobileDgn::Utils::HttpResponse> WSInfoHttpResult;
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+
+typedef AsyncResult<WSInfo, HttpResponse> WSInfoHttpResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2014
@@ -26,7 +27,7 @@ struct ServerInfoProvider
     {
     private:
         std::shared_ptr<const ClientConfiguration> m_configuration;
-        MobileDgn::Utils::WorkerThreadPtr m_thread;
+        WorkerThreadPtr m_thread;
         std::vector<std::weak_ptr<IWSClient::IServerInfoListener>> m_listeners;
 
         mutable WSInfo m_serverInfo;
@@ -37,8 +38,8 @@ struct ServerInfoProvider
         void UpdateInfo (WSInfoCR info) const;
         void NotifyServerInfoUpdated (WSInfoCR info) const;
 
-        MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> GetInfo (MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
-        MobileDgn::Utils::AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage (Utf8StringCR page, MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<WSInfoResult> GetInfo (ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage (Utf8StringCR page, ICancellationTokenPtr cancellationToken) const;
 
     public:
         ServerInfoProvider (std::shared_ptr<const ClientConfiguration> configuration);
@@ -47,8 +48,8 @@ struct ServerInfoProvider
         void RegisterServerInfoListener (std::weak_ptr<IWSClient::IServerInfoListener> listener);
         void UnregisterServerInfoListener (std::weak_ptr<IWSClient::IServerInfoListener> listener);
 
-        MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> GetServerInfo (bool forceQuery, MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
-        MobileDgn::Utils::AsyncTaskPtr<void> InvalidateInfo () const;
+        AsyncTaskPtr<WSInfoResult> GetServerInfo (bool forceQuery, ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<void> InvalidateInfo () const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -23,21 +23,21 @@ struct ClientConfiguration
         const Utf8String m_serverUrl;
         const Utf8String m_repositoryId;
         const IWSSchemaProviderPtr m_schemaProvider;
-        std::shared_ptr<MobileDgn::Utils::HttpClient> m_httpClient;
+        std::shared_ptr<HttpClient> m_httpClient;
 
     public:
         ClientConfiguration
             (
             Utf8StringCR serverUrl,
             Utf8StringCR repositoryId,
-            MobileDgn::Utils::HttpRequestHeadersCR defaultHeaders,
+            IHttpHeaderProviderPtr defaultHeadersProvider,
             IWSSchemaProviderPtr schemaProvider,
-            MobileDgn::Utils::IHttpHandlerPtr customHandler
+            IHttpHandlerPtr customHandler
             );
 
         Utf8StringCR GetServerUrl () const;
         Utf8StringCR GetRepositoryId () const;
-        MobileDgn::Utils::HttpClientR GetHttpClient () const;
+        HttpClientR GetHttpClient () const;
         BeFileName GetDefaultSchemaPath (WSInfoCR info) const;
     };
 

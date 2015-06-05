@@ -8,14 +8,13 @@
 #ifndef __CLIENTINTERNAL_H__
 #define __CLIENTINTERNAL_H__
 
-#include <Bentley/Bentley.h>
 #include <Bentley/BeDebugLog.h>
+#include <Bentley/Bentley.h>
 #include <MobileDgn/MobileDgnCommon.h>
 #include <MobileDgn/Utils/Utils.h>
 
-#include <WebServices/Client/WebServicesClient.h>
-#include <WebServices/Client/ChunkedUploadRequest.h>
 #include <WebServices/Client/ObjectId.h>
+#include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/WSClient.h>
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSInfo.h>
@@ -23,10 +22,11 @@
 #include <WebServices/Client/WSRepository.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
+#include "ChunkedUploadRequest.h"
 #include "ClientConfiguration.h"
 #include "ClientConnection.h"
-#include "ServerInfoProvider.h"
 #include "Logging.h"
+#include "ServerInfoProvider.h"
 #include "Utils.h"
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN

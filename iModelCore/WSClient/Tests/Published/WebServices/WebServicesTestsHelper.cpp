@@ -187,3 +187,8 @@ WSError StubWSConflictError ()
     {
     return WSError (StubHttpResponse (ConnectionStatus::Canceled));
     }
+
+ClientInfoPtr StubClientInfo ()
+    {
+    return ClientInfo::Create ("Bentley-Test", BeVersion (1, 0), "Test");
+    }
