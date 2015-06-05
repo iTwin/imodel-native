@@ -37,6 +37,7 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START (ConnectL10N, Connect)
     FIELDAPPS_EulaAgree,                     // =="To continue you must accept the terms in the Licence Agreement"==
     FIELDAPPS_EulaHeader,                    // =="End-user license agreement"==
     FIELDAPPS_EulaChecking,                  // =="Checking EULA..."==
+    FIELDAPPS_EulaAccepting,                 // =="Accepting EULA..."==
     };
 MOBILEDGN_TRANSLATABLE_STRINGS_END
 
