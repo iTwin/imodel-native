@@ -155,12 +155,14 @@
 #define BEGIN_UNNAMED_NAMESPACE namespace {
 #define END_UNNAMED_NAMESPACE   }
 
-// These macros should only be used for classes in the Bentley namespace
-#define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
-    namespace BENTLEY_NAMESPACE_NAME {\
+#define DEFINE_POINTER_SUFFIX_TYPEDEFS(_namespace_,_sourceName_,_name_,structclass) \
     typedef structclass _namespace_ :: _sourceName_*          _name_##P, &_name_##R;  \
     typedef structclass _namespace_ :: _sourceName_ const*    _name_##CP; \
-    typedef structclass _namespace_ :: _sourceName_ const&    _name_##CR; }
+    typedef structclass _namespace_ :: _sourceName_ const&    _name_##CR; 
+
+// These macros should only be used for classes in the Bentley namespace
+#define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
+    namespace BENTLEY_NAMESPACE_NAME {DEFINE_POINTER_SUFFIX_TYPEDEFS(_namespace_,_sourceName_,_name_,structclass)}
 
 #define ADD_BENTLEY_NAMESPACE_TYPEDEFS(_namespace_,_name_) ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_name_,_name_,struct)
 #define ADD_BENTLEY_ENUM_TYPEDEF(_namespace_,_name_,_tEnum_) namespace BENTLEY_NAMESPACE_NAME {typedef enum _namespace_ :: _name_ _tEnum_;}
