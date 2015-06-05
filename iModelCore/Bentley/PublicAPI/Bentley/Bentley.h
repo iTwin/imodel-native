@@ -155,14 +155,19 @@
 #define BEGIN_UNNAMED_NAMESPACE namespace {
 #define END_UNNAMED_NAMESPACE   }
 
-#define DEFINE_POINTER_SUFFIX_TYPEDEFS(_namespace_,_sourceName_,_name_,structclass) \
+// Define standard pointer types (P, CP, R, CR) in the current namespace for the specified struct
+#define DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) \
+    struct _structname_; \
+    typedef _structname_* _structname_##P, &_structname_##R; \
+    typedef _structname_ const* _structname_##CP; \
+    typedef _structname_ const& _structname_##CR; 
+
+// These macros should only be used for classes in the Bentley namespace (consider using DEFINE_POINTER_SUFFIX_TYPEDEFS instead)
+#define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
+    namespace BENTLEY_NAMESPACE_NAME {\
     typedef structclass _namespace_ :: _sourceName_*          _name_##P, &_name_##R;  \
     typedef structclass _namespace_ :: _sourceName_ const*    _name_##CP; \
-    typedef structclass _namespace_ :: _sourceName_ const&    _name_##CR; 
-
-// These macros should only be used for classes in the Bentley namespace
-#define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
-    namespace BENTLEY_NAMESPACE_NAME {DEFINE_POINTER_SUFFIX_TYPEDEFS(_namespace_,_sourceName_,_name_,structclass)}
+    typedef structclass _namespace_ :: _sourceName_ const&    _name_##CR; }
 
 #define ADD_BENTLEY_NAMESPACE_TYPEDEFS(_namespace_,_name_) ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_name_,_name_,struct)
 #define ADD_BENTLEY_ENUM_TYPEDEF(_namespace_,_name_,_tEnum_) namespace BENTLEY_NAMESPACE_NAME {typedef enum _namespace_ :: _name_ _tEnum_;}

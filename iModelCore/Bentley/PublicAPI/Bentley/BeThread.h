@@ -99,6 +99,7 @@ public:
     enum class Lock : bool {No=false, Yes=true};
 
     //! Associate this BeMutexHolder with a BeMutex, optionally locking it.
+    //! @param[in] mutex the BeMutex to hold for the scope of this BeMutexHolder
     //! @param[in] lock if Yes, the lock on mutex is acquired via mutex.lock() 
     BENTLEYDLL_EXPORT BeMutexHolder(BeMutex& mutex, Lock lock=Lock::Yes);
 
@@ -134,7 +135,7 @@ struct IConditionVariablePredicate
 //! std::condition_variable_any requires an external mutex.
 //  @bsiclass 
 //=======================================================================================
-struct  BeConditionVariable
+struct  BeConditionVariable : NonCopyableClass
     {
 private:
     void* m_osCV[BECONDITIONVARIABLE_DATA_ARRAY_LENGTH];
