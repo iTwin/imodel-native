@@ -65,9 +65,9 @@
         <SubPart PartName="PublishedApi"/>
     </Part>
 
-    <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source)  Windows only. -->
+    <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source). -->
 
-    <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+    <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke">
         <Bindings>
             <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*xml</Files>
             <Files SubPartDirectory="SeedData/ur-PK" ProductDirectoryName="ECObjectsTestSeedDataPK">Delivery/SeedData/ur-PK/*xml</Files>
