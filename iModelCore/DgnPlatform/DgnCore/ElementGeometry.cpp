@@ -911,16 +911,56 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
             return;
             }
 
-        // NEEDSWORK: Add separate face attachments opcode to minimize hornswoggle!!!
+        bvector<FB::FaceSymbology> fbSymbVec;
+        bvector<FB::FaceSymbologyIndex> fbSymbIndexVec;
+
+        if (nullptr != attachments)
+            {
+            T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+
+            for (FaceAttachment attachment : faceAttachmentsVec)
+                {
+                // NOTE: First entry is base symbology, it's redundant with GeomStream, storing it makes implementing Get easier/cleaner...
+                FB::DPoint2d       uv(0.0, 0.0); // NEEDSWORK_MATERIAL...
+                ElemDisplayParams  faceParams;
+
+                attachment.ToElemDisplayParams (faceParams);
+
+                FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
+                                          faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
+                                          faceParams.GetSubCategoryId().GetValueUnchecked(),
+                                          faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : 0, // NEEDSWORK_MATERIAL...
+                                          faceParams.GetTransparency(), uv);
+
+                fbSymbVec.push_back(fbSymb);
+                }
+
+            T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
+
+            for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+                {
+                FB::FaceSymbologyIndex fbSymbIndex(curr->second.first, (uint32_t) curr->second.second);
+
+                fbSymbIndexVec.push_back(fbSymbIndex);
+                }
+            }
 
         FlatBufferBuilder fbb;
 
         auto entityData = fbb.CreateVector (buffer, bufferSize);
+        auto faceSymb = 0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs (&fbSymbVec.front(), fbSymbVec.size()) : 0;
+        auto faceSymbIndex = 0 != fbSymbIndexVec.size() ? fbb.CreateVectorOfStructs (&fbSymbIndexVec.front(), fbSymbIndexVec.size()) : 0;
 
         FB::BRepDataBuilder builder (fbb);
 
         builder.add_entityTransform ((FB::Transform*) &entity.GetEntityTransform());
         builder.add_entityData (entityData);
+
+        if (nullptr != attachments)
+            {
+            builder.add_symbology(faceSymb);
+            builder.add_symbologyIndex(faceSymbIndex);
+            }
 
         auto mloc = builder.Finish();
 
@@ -1342,7 +1382,59 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ISolidKernelEntityPtr& e
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return false;
 
-    return entity.IsValid();
+    if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
+        return true;
+
+    DgnCategoryId categoryId;
+
+    for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+        {
+        FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+
+        ElemDisplayParams faceParams;
+        DgnSubCategoryId  subCategoryId = DgnSubCategoryId(fbSymb->subCategoryId());
+
+        if (!categoryId.IsValid())
+            categoryId = m_db.Categories().QueryCategoryId(subCategoryId);
+
+        faceParams.SetCategoryId(categoryId);
+        faceParams.SetSubCategoryId(subCategoryId);
+
+        if (fbSymb->useColor())
+            faceParams.SetLineColor(ColorDef(fbSymb->color()));
+
+        if (fbSymb->useMaterial())
+            faceParams.SetMaterial(nullptr); // NEEDWORK_MATERIAL: Also uv...
+
+        faceParams.SetTransparency(fbSymb->transparency());
+
+        if (nullptr == entity->GetFaceMaterialAttachments())
+            entity->InitFaceMaterialAttachments(&faceParams);
+        else
+            const_cast<T_FaceAttachmentsVec&>(entity->GetFaceMaterialAttachments()->_GetFaceAttachmentsVec()).push_back(faceParams);
+        }
+
+    if (nullptr == entity->GetFaceMaterialAttachments())
+        return true;
+
+    T_FaceToSubElemIdMap const& faceToSubElemIdMap = entity->GetFaceMaterialAttachments()->_GetFaceToSubElemIdMap();
+    bmap<int32_t, uint32_t> subElemIdToFaceMap;
+
+    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+        subElemIdToFaceMap[curr->second.first] = curr->first;
+
+    for (size_t iSymbIndex=0; iSymbIndex < ppfb->symbologyIndex()->Length(); iSymbIndex++)
+        {
+        FB::FaceSymbologyIndex const* fbSymbIndex = ((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data())+iSymbIndex;
+        bmap<int32_t, uint32_t>::const_iterator foundIndex = subElemIdToFaceMap.find(fbSymbIndex->faceIndex());
+
+        if (foundIndex == subElemIdToFaceMap.end())
+            continue;
+        
+        const_cast<T_FaceToSubElemIdMap&>(faceToSubElemIdMap)[foundIndex->second] = make_bpair(fbSymbIndex->faceIndex(), fbSymbIndex->symbIndex());
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
