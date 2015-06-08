@@ -48,9 +48,10 @@ struct IntegerToBlobSqlFunction : ScalarFunction
             {
             const void* blob = nullptr;
             int blobSize = 0;
+            int64_t i = 0LL;
             if (!args[0].IsNull())
                 {
-                int64_t i = args[0].GetValueInt64();
+                i = args[0].GetValueInt64();
                 blob = &i;
                 blobSize = (int) sizeof(i);
                 }
