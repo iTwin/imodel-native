@@ -1268,11 +1268,11 @@ DbResult Db::SaveRepositoryId()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2015
 //---------------------------------------------------------------------------------------
-DbResult Db::SaveCreationBeSqliteBuildVersion()
+DbResult Db::SaveBeSQLiteBuild()
     {
     static Utf8CP BUILD_VERSION = REL_V "." MAJ_V "." MIN_V "." SUBMIN_V;
     
-    return SavePropertyString(Properties::CreationBeSqliteBuildVersion(), BUILD_VERSION);
+    return SavePropertyString(Properties::BeSQLiteBuild(), BUILD_VERSION);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2467,9 +2467,9 @@ public:
     //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.
     BE_SQLITE_EXPORT DbResult SaveCreationDate();
 
-    //! Saves the build number of BeSqlite as the CreationBeSqliteBuildVersion property of this database.
+    //! Saves the build number of BeSqlite as the BeSQLiteBuild property of this database.
     //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.
-    BE_SQLITE_EXPORT DbResult SaveCreationBeSqliteBuildVersion();
+    BE_SQLITE_EXPORT DbResult SaveBeSQLiteBuild();
 
     //! Query the CreationDate property of this database.
     //! @param[out] creationDate The date that the database was created.
@@ -3310,7 +3310,7 @@ struct Properties
     //! @note This property is optional.
     static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
     //! Build version of BeSqlite (e.g. 00.00.00.00) used to create this database; useful for forensic diagnostics.
-    static PropSpec CreationBeSqliteBuildVersion() {return PropSpec("CreationBeSqliteBuildVersion");}
+    static PropSpec BeSQLiteBuild() {return PropSpec("BeSQLiteBuild");}
     };
 
 END_BENTLEY_SQLITE_NAMESPACE
