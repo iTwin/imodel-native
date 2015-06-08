@@ -274,7 +274,7 @@ public:
     ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions (), IImportIssueListener const* issueListener = nullptr) const;
     
     //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
-    //! @param schemaName Name of the ECSchema to check for
+    //! @param[in] schemaName Name of the ECSchema to check for
     //! @return true if the ECDb file contains the ECSchema. false otherwise.
     ECDB_EXPORT bool ContainsECSchema(Utf8CP schemaName) const;
 
