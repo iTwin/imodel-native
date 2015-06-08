@@ -382,7 +382,7 @@ protected:
     EdgeMaskState           m_edgeMaskState;
     DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
-    IElemTopologyP          m_currElemTopo;
+    IElemTopologyPtr        m_currElemTopo;
     DgnGeomPartId           m_currGeomPart;
 
     bool                    m_scanRangeValid;
@@ -905,12 +905,12 @@ DGNPLATFORM_EXPORT IPickGeomP GetIPickGeom ();
 
 /// @name Identifying element "topology".
 //@{
-//! Query the current IElementTopology. @note do not delete this pointer.
+//! Query the current IElementTopology.
 //! @return An object that holds additional information about the graphics that are currently being drawn.
-DGNPLATFORM_EXPORT IElemTopologyP GetElemTopology ();
+DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology () const;
 
-//! Set the current IElementTopology. @note ViewContext stores this pointer. Do not delete this pointer while the ViewContext is holding it. Call SetElemTopology(nullptr) to clear the pointer held by ViewContext.
-//! @param topo  An object that holds additional information about the graphics that are currently being drawn or nullptr to clear the current topology pointer.
+//! Set the current IElementTopology.
+//! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
 DGNPLATFORM_EXPORT void SetElemTopology (IElemTopologyP topo);
 
 //! Query the current DgnGeomPartId. Only valid when drawing instanced geometry.

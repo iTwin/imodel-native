@@ -135,7 +135,8 @@ DG_INLINE DPoint3dCR      HitPath::GetTestPoint() const {return m_testPoint;}
 DG_INLINE GeomDetailCR    HitPath::GetGeomDetail() const {return m_geomDetail;}
 DG_INLINE GeomDetailR     HitPath::GetGeomDetailW() {return m_geomDetail;}
 DG_INLINE ViewFlagsCR     HitPath::GetViewFlags() const {return m_viewFlags; }
-DG_INLINE IElemTopologyCP HitPath::GetElemTopology() const {return m_elemTopo;}
+DG_INLINE IElemTopologyCP HitPath::GetElemTopology() const {return(m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr);}
+DG_INLINE void            HitPath::SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
 DG_INLINE DgnViewportR    HitPath::GetViewport() const {return m_viewport;}
 DG_INLINE DgnElementId    HitPath::GetElementId() const {return m_elementId;}
 
@@ -277,10 +278,10 @@ DG_INLINE double                  ViewContext::GetCurrentLevelOfDetail() const  
 DG_INLINE void                    ViewContext::SetCurrentLevelOfDetail(double levelOfDetail)                       { m_levelOfDetail = levelOfDetail; }
 DG_INLINE ViewContext::ContextMark::~ContextMark() {Pop();}
 
-DG_INLINE IElemTopologyP ViewContext::GetElemTopology()  {return m_currElemTopo;} // graphite moved these out of line
-DG_INLINE void           ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;} // graphite moved these out of line
-DG_INLINE DgnGeomPartId  ViewContext::GetDgnGeomPartId()  {return m_currGeomPart;}
-DG_INLINE void           ViewContext::SetDgnGeomPartId(DgnGeomPartId partId) {m_currGeomPart = partId;}
+DG_INLINE IElemTopologyCP ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
+DG_INLINE void            ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
+DG_INLINE DgnGeomPartId   ViewContext::GetDgnGeomPartId() {return m_currGeomPart;}
+DG_INLINE void            ViewContext::SetDgnGeomPartId(DgnGeomPartId partId) {m_currGeomPart = partId;}
 
 DG_INLINE             IDrawGeom::IDrawGeom()  { }
 

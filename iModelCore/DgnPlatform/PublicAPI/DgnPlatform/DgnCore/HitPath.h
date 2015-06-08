@@ -156,16 +156,14 @@ struct HitPath : RefCountedBase
 {
 protected:
 
-    DgnViewportR    m_viewport;
-    DgnElementId    m_elementId;
-    HitSource       m_locateSource;         // Operation that generated the hit.
-    DPoint3d        m_testPoint;            // the point that was used to search (world coordinates).
-    ViewFlags       m_viewFlags;            // view flags in effect when hit was generated.
-    GeomDetail      m_geomDetail;           // element specific hit details.
-    IElemTopologyCP m_elemTopo;             // details about the topology of the element.
-    bool            m_componentMode;        // component hilite/flash mode.
-
-    void ClearElemTopology ();
+    DgnViewportR        m_viewport;
+    DgnElementId        m_elementId;
+    HitSource           m_locateSource;         // Operation that generated the hit.
+    DPoint3d            m_testPoint;            // the point that was used to search (world coordinates).
+    ViewFlags           m_viewFlags;            // view flags in effect when hit was generated.
+    GeomDetail          m_geomDetail;           // element specific hit details.
+    IElemTopologyPtr    m_elemTopo;             // details about the topology of the element.
+    bool                m_componentMode;        // component hilite/flash mode.
 
     virtual DisplayPathType _GetPathType () const {return DisplayPathType::Hit;}
     virtual void _GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const;
@@ -180,7 +178,7 @@ protected:
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
-    DGNPLATFORM_EXPORT HitPath (DgnViewportR, GeometricElementCR, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR, IElemTopologyCP = NULL);
+    DGNPLATFORM_EXPORT HitPath (DgnViewportR, GeometricElementCR, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR);
     DGNPLATFORM_EXPORT StatusInt GetHitLocalToContextLocal (TransformR, ViewContextR) const;
     DGNPLATFORM_EXPORT StatusInt GetContextLocalToHitLocal (TransformR, ViewContextR) const;
     DGNPLATFORM_EXPORT explicit HitPath (HitPathCR from);

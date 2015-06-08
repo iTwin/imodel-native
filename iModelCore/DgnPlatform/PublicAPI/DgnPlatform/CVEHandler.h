@@ -438,8 +438,8 @@ struct ProxyGraphicsElemTopology : IElemTopology // added in graphite
     int             m_clipPlaneIndex;
 
     protected:
-    DGNPLATFORM_EXPORT virtual IElemTopology* _Clone () const override;
-    DGNPLATFORM_EXPORT virtual int _Compare (IElemTopologyCR otherTopo) const override;
+    DGNPLATFORM_EXPORT virtual IElemTopology* _Clone() const override;
+    DGNPLATFORM_EXPORT virtual bool _IsEqual (IElemTopologyCR) const override;
     
     public:
     //! Get the 3-D element from which the selected proxy graphics were computed.

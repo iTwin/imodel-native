@@ -223,8 +223,10 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     m_currGeomDetail.SetScreenDist (sqrt (distSquaredXY (hitPtScreen, m_pickPointView)));
     m_currGeomDetail.SetZValue (getAdjustedViewZ (*m_context, hitPtScreen) + m_context->GetCurrentDisplayParams()->GetNetDisplayPriority());
 
-    IElemTopologyP newElemTopo = (NULL != m_context->GetElemTopology() ? m_context->GetElemTopology()->_Clone() : NULL);
-    RefCountedPtr<HitPath> thisHit = new HitPath (*m_context->GetViewport(), *element, pickPtWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail, newElemTopo);
+    RefCountedPtr<HitPath> thisHit = new HitPath (*m_context->GetViewport(), *element, pickPtWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail);
+
+    if (nullptr != m_context->GetElemTopology())
+        thisHit->SetElemTopology(m_context->GetElemTopology()->_Clone());
 
     m_hitList->AddHit (thisHit.get(), true, true, m_options.GetHitsSortedByClass ());
 

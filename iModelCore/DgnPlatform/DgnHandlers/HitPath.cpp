@@ -436,8 +436,7 @@ GeometricElementCR  element,
 DPoint3dCR          testPoint,
 HitSource           source,
 ViewFlagsCR         viewFlags,
-GeomDetailCR        geomDetail,
-IElemTopologyCP     elemTopo
+GeomDetailCR        geomDetail
 ) : m_viewport(viewport)
     {
     m_elementId     = element.GetElementId();
@@ -445,7 +444,6 @@ IElemTopologyCP     elemTopo
     m_testPoint     = testPoint;
     m_viewFlags     = viewFlags;
     m_geomDetail    = geomDetail;
-    m_elemTopo      = elemTopo;
     m_componentMode = false;
     }
 
@@ -459,17 +457,14 @@ HitPath::HitPath (HitPath const& from) : m_viewport(from.m_viewport)
     m_testPoint     = from.m_testPoint;
     m_viewFlags     = from.m_viewFlags;
     m_geomDetail    = from.m_geomDetail;
-    m_elemTopo      = (NULL == from.m_elemTopo) ? NULL : from.m_elemTopo->_Clone ();
+    m_elemTopo      = from.m_elemTopo.IsValid() ? from.m_elemTopo->_Clone() : nullptr;
     m_componentMode = from.m_componentMode;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPath::~HitPath ()
-    {
-    ClearElemTopology ();
-    }
+HitPath::~HitPath () {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/09
@@ -556,32 +551,20 @@ void HitPath::_SetHilited (DgnElement::Hilited newState) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HitPath::ClearElemTopology()
-    {
-    DELETE_AND_CLEAR (m_elemTopo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HitPath::_IsSameHit (HitPathCP otherHit) const
     {
-    // check element...
     if (nullptr == otherHit || m_elementId != otherHit->GetElementId())
         return false;
 
-    // if other path is also hit path allow for elem topo compare...otherwise paths are the same
-    if (DisplayPathType::Hit != otherHit->GetPathType())
+    if (!m_elemTopo.IsValid() && !otherHit->m_elemTopo.IsValid())
         return true;
 
-    IElemTopology const *thisTopo, *otherTopo;
+    if (m_elemTopo.IsValid() != otherHit->m_elemTopo.IsValid())
+        return false;
 
-    if (nullptr == (thisTopo = GetElemTopology()) || nullptr == (otherTopo = otherHit->GetElemTopology()))
-        return true;
-
-    if (0 != thisTopo->_Compare (*otherTopo))
+    if (!m_elemTopo->_IsEqual(*otherHit->m_elemTopo))
         return false;
 
     return true;
