@@ -9,8 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <DgnPlatform/DgnCore/RasterBaseModel.h>
-
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#include <RasterSchema/RasterSchemaTypes.h>
 
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
@@ -19,29 +18,31 @@ struct RasterModelHandler;
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModel : BentleyApi::DgnPlatform::RasterBaseModel
+struct EXPORT_VTABLE_ATTRIBUTE RasterModel : DgnPlatform::RasterBaseModel
 {
     DEFINE_T_SUPER(RasterBaseModel)
-
-    RasterQuadTreePtr m_rasterTree;
-
+    
 protected:
     friend struct RasterModelHandler;
+
+    RasterQuadTreePtr m_rasterTreeP;
     
     //! Destruct a RasterModel object.
     ~RasterModel();
+        
+    virtual void _AddGraphicsToScene(ViewContextR) override;
+    virtual void _ToPropertiesJson(Json::Value&) const override;
+    virtual void _FromPropertiesJson(Json::Value const&) override;
+    virtual DgnPlatform::AxisAlignedBox3d _QueryModelRange() const override;
 
+    virtual BentleyStatus _LoadQuadTree() {return BSIERROR;}
+
+    RasterQuadTreeP GetTree();
+
+    //&&MM todo AsWmsModel() AsRasterFileModel()
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
     RasterModel(CreateParams const& params);
-
-    RASTERSCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
-    RASTERSCHEMA_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
-    RASTERSCHEMA_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
-    RASTERSCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
-
-    //! Call this after creating a new model, in order to set up subclass-specific properties.
-    BentleyStatus SetProperties (BeFileName fileName);
 };
 
 //=======================================================================================
@@ -51,10 +52,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : DgnPlatform::RasterBaseModelHandler
 {
-    MODELHANDLER_DECLARE_MEMBERS ("RasterModel", RasterModel, RasterModelHandler, RasterBaseModelHandler, RASTERSCHEMA_EXPORT)
-
-public:
-    RASTERSCHEMA_EXPORT static DgnPlatform::DgnModelId CreateRasterModel(DgnDbR db, BeFileName fileName);
+    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, DgnPlatform::RasterBaseModelHandler, RASTERSCHEMA_EXPORT)
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

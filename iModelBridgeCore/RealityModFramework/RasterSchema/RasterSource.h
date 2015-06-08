@@ -168,8 +168,8 @@ struct RasterSource : RefCountedBase
 protected:
     static void GenerateResolution(bvector<Resolution>& resolution, uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY);
 
-    //! Must be called by child class after construction.
-    BentleyStatus Initialize(WCharCP pUrl, DPoint3dCP corners, bvector<Resolution>const& resolution);
+    //! Must be called by child class after construction. BaseGCSP might be NULL
+    BentleyStatus Initialize(DPoint3dCP corners, bvector<Resolution>const& resolution, GeoCoordinates::BaseGCSP pGcs);
 
     void SetGcsP(GeoCoordinates::BaseGCSP pNewGcs) {m_pGcs = pNewGcs/*Hold a ref*/;} 
 
@@ -179,8 +179,7 @@ protected:
     RasterSource(); 
     virtual ~RasterSource();
 
-private:
-    WString m_url;                      
+private:                    
     bvector<Resolution> m_resolution;   // 0 being the finest resolution.
     DPoint3d m_corners[4];              // in units(Cartesian) of our GCS or assumed coincident if we no GCS
     DMatrix4d m_physicalToCartesian;

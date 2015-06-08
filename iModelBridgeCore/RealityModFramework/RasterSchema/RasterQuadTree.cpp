@@ -303,15 +303,24 @@ void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR con
     double factor;
     if (IsVisible(context, factor))
         {
-        if (!IsLeaf() && factor > 1.25)
+        static double s_qualityFactor = 1.25; //&&MM make that an option to adjust speed vs quality?
+        if (!IsLeaf() && factor > s_qualityFactor)
             {
             AllocateChildren(); 
 
+            size_t visiblesIn = visibles.size();
             for(size_t i=0; i < 4; ++i)
                 {
                 RasterTileP pChild = GetChildP(i);
                 if(pChild != NULL)
                     pChild->QueryVisible(visibles, context);
+                }
+                
+            //&&MM investigate how to handle reprojection where parent is visible and the 4 children are not.
+            // reason: parent and children do not encompass the same region.                
+            if(visiblesIn == visibles.size())
+                {
+                visibles.size();
                 }
             }
         else
@@ -361,7 +370,8 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     uint64_t physHeight = m_tree.GetSource().GetTileSizeY(m_tileId);
 
     //&&MM need to change the factor interpretation. if we want to use the squared version
-    //   -- when reprojecting we need all tiles to have the same connection points to avoid gaps. that means use the highest resolution?
+    //   -- visibles tiles are not always on the same resolution usually on border tiles.
+    //          when reprojecting we need all tiles to have the same connection points to avoid gaps. that means use the highest resolution?
 #if 0   
     double physicalDiagSquared = (double)(physWidth*physWidth + physHeight*physHeight);
     double viewDiag1Squared = viewCorners[3].DistanceSquaredXY(&viewCorners[0]);
@@ -374,6 +384,16 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     double viewDiag2 = viewCorners[2].DistanceXY(viewCorners[1]);
     double averageViewDiag = (viewDiag1 + viewDiag2) / 2.0;
     factor = averageViewDiag / physicalDiag;
+
+    DPoint3d centerPt = DPoint3d::FromInterpolate(m_corners[0], 0.5, m_corners[3]);centerPt;
+    double pixelSize = viewContext.GetPixelSizeAtPoint(&centerPt);pixelSize;
+
+    double widthView = viewCorners[1].DistanceXY(viewCorners[0]);widthView;
+    double heightView = viewCorners[3].DistanceXY(viewCorners[2]);heightView;
+
+    double uorDiag1 = m_corners[3].DistanceXY(m_corners[0]);uorDiag1;
+    double uorDiag2 = m_corners[2].DistanceXY(m_corners[1]);uorDiag2;
+    
 #endif
 
     return true;
@@ -547,13 +567,14 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
 
     // Draw background tiles if any, that gives feedback when zooming in.
     // Background tiles need to be draw from coarser resolution to finer resolution to make sure coarser tiles are not hiding finer tiles.
-    SortedTiles backgroundTiles;
-    FindBackgroudTiles(backgroundTiles, m_pVisiblesTiles, 4/*maxResDelta*/);
-    for(RasterTilePtr& pTile : backgroundTiles)
-        {
-        BeAssert(pTile->IsLoaded());
-        pTile->Draw(context);
-        }
+//&&MM not now. we have a Z fighting issue between coarser and real tiles. 
+//     SortedTiles backgroundTiles;
+//     FindBackgroudTiles(backgroundTiles, m_pVisiblesTiles, 4/*maxResDelta*/);
+//     for(RasterTilePtr& pTile : backgroundTiles)
+//         {
+//         BeAssert(pTile->IsLoaded());
+//         pTile->Draw(context);
+//         }
 
     // Draw what we have.
     for(RasterTilePtr& pTile : m_pVisiblesTiles)
@@ -564,8 +585,9 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
             }
         else
             {
+//&&MM not now. we have a Z fighting issue between coarser and real tiles. 
             // Draw finer resolution.
-            DrawLoadedChildren(*pTile, context, 2/*resolutionDelta*/);
+            //DrawLoadedChildren(*pTile, context, 2/*resolutionDelta*/);
 
             m_pMissingTiles.push_back(pTile);
             }

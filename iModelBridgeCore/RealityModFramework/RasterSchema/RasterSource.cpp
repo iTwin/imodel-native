@@ -224,10 +224,9 @@ RasterSource::~RasterSource(){}
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterSource::Initialize(WCharCP pUrl, DPoint3dCP corners, bvector<Resolution>const& resolution)
+BentleyStatus RasterSource::Initialize(DPoint3dCP corners, bvector<Resolution>const& resolution, GeoCoordinates::BaseGCSP pGcs)
     {
     BentleyStatus status = SUCCESS;
-    m_url = pUrl;
     m_resolution = resolution;
     
     memcpy(m_corners, corners, sizeof(m_corners));
@@ -249,6 +248,8 @@ BentleyStatus RasterSource::Initialize(WCharCP pUrl, DPoint3dCP corners, bvector
         m_physicalToCartesian.initIdentity();
         status = ERROR;
         }    
+
+    m_pGcs = pGcs;  // add a ref
 
     return status;
     }
