@@ -619,7 +619,7 @@ public:
     T_QvElemSet* GetQvElems(bool createIfNotPresent) const;
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
-    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitPathCR, ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
     bool HasGeometry() const {return m_geom.HasGeometry();}  //!< return false if this GeometricElement currently has no geometry (is empty).
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
 

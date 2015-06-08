@@ -128,33 +128,33 @@ DG_INLINE void               CameraViewController::ClearClipVector() {m_clipVect
 DG_INLINE ClipVectorPtr      CameraViewController::_GetClipVector() const {return m_clipVector;}
 DG_INLINE IAuxCoordSysP      PhysicalViewController::GetAuxCoordinateSystem() const {return _GetAuxCoordinateSystem();}
 
-DG_INLINE void            HitPath::GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const {_GetInfoString(pathDescr, delimiter);}
-DG_INLINE void            HitPath::DrawInVp(DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
-DG_INLINE HitSource       HitPath::GetLocateSource() const {return m_locateSource;}
-DG_INLINE DPoint3dCR      HitPath::GetTestPoint() const {return m_testPoint;}
-DG_INLINE GeomDetailCR    HitPath::GetGeomDetail() const {return m_geomDetail;}
-DG_INLINE GeomDetailR     HitPath::GetGeomDetailW() {return m_geomDetail;}
-DG_INLINE ViewFlagsCR     HitPath::GetViewFlags() const {return m_viewFlags; }
-DG_INLINE IElemTopologyCP HitPath::GetElemTopology() const {return(m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr);}
-DG_INLINE void            HitPath::SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
-DG_INLINE DgnViewportR    HitPath::GetViewport() const {return m_viewport;}
-DG_INLINE DgnElementId    HitPath::GetElementId() const {return m_elementId;}
+DG_INLINE void            HitDetail::GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const {_GetInfoString(pathDescr, delimiter);}
+DG_INLINE void            HitDetail::DrawInVp(DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
+DG_INLINE HitSource       HitDetail::GetLocateSource() const {return m_locateSource;}
+DG_INLINE DPoint3dCR      HitDetail::GetTestPoint() const {return m_testPoint;}
+DG_INLINE GeomDetailCR    HitDetail::GetGeomDetail() const {return m_geomDetail;}
+DG_INLINE GeomDetailR     HitDetail::GetGeomDetailW() {return m_geomDetail;}
+DG_INLINE ViewFlagsCR     HitDetail::GetViewFlags() const {return m_viewFlags; }
+DG_INLINE IElemTopologyCP HitDetail::GetElemTopology() const {return(m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr);}
+DG_INLINE void            HitDetail::SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
+DG_INLINE DgnViewportR    HitDetail::GetViewport() const {return m_viewport;}
+DG_INLINE DgnElementId    HitDetail::GetElementId() const {return m_elementId;}
 
-DG_INLINE SnapMode        SnapPath::GetSnapMode() const {return m_snapMode;}
-DG_INLINE SnapMode        SnapPath::GetOriginalSnapMode() const {return m_originalSnapMode;}
-DG_INLINE void            SnapPath::SetSnapMode(SnapMode s, bool isOriginal) {m_snapMode=s; if(isOriginal) m_originalSnapMode=s;}
-DG_INLINE void            SnapPath::SetSnapDivisor(int divisor) {m_divisor = divisor ? divisor : 2;}
-DG_INLINE void            SnapPath::SetAdjustedPoint(DPoint3dCR adjustedPt) {m_adjustedPt = adjustedPt;}
-DG_INLINE void            SnapPath::SetHeat(SnapHeat isHot) {m_heat = isHot;}
-DG_INLINE bool            SnapPath::IsHot() const {return m_heat != SNAP_HEAT_None;}
-DG_INLINE bool            SnapPath::IsPointOnCurve() const {return m_heat == SNAP_HEAT_InRange;}
-DG_INLINE SnapHeat        SnapPath::GetHeat() const {return m_heat;}
-DG_INLINE DPoint3dCR      SnapPath::GetAdjustedPoint() const {return m_adjustedPt;}
-DG_INLINE DPoint3dCR      SnapPath::GetSnapPoint() const {return m_snapPoint;}
-DG_INLINE int             SnapPath::GetSnapDivisor() const {return m_divisor;}
-DG_INLINE double          SnapPath::GetMinScreenDist() const {return m_minScreenDist;}
-DG_INLINE Point2d const&  SnapPath::GetScreenPoint() const {return m_screenPt;}
-DG_INLINE HitPath*        IntersectPath::GetSecondHit() const {return m_secondHit;}
+DG_INLINE SnapMode        SnapDetail::GetSnapMode() const {return m_snapMode;}
+DG_INLINE SnapMode        SnapDetail::GetOriginalSnapMode() const {return m_originalSnapMode;}
+DG_INLINE void            SnapDetail::SetSnapMode(SnapMode s, bool isOriginal) {m_snapMode=s; if(isOriginal) m_originalSnapMode=s;}
+DG_INLINE void            SnapDetail::SetSnapDivisor(int divisor) {m_divisor = divisor ? divisor : 2;}
+DG_INLINE void            SnapDetail::SetAdjustedPoint(DPoint3dCR adjustedPt) {m_adjustedPt = adjustedPt;}
+DG_INLINE void            SnapDetail::SetHeat(SnapHeat isHot) {m_heat = isHot;}
+DG_INLINE bool            SnapDetail::IsHot() const {return m_heat != SNAP_HEAT_None;}
+DG_INLINE bool            SnapDetail::IsPointOnCurve() const {return m_heat == SNAP_HEAT_InRange;}
+DG_INLINE SnapHeat        SnapDetail::GetHeat() const {return m_heat;}
+DG_INLINE DPoint3dCR      SnapDetail::GetAdjustedPoint() const {return m_adjustedPt;}
+DG_INLINE DPoint3dCR      SnapDetail::GetSnapPoint() const {return m_snapPoint;}
+DG_INLINE int             SnapDetail::GetSnapDivisor() const {return m_divisor;}
+DG_INLINE double          SnapDetail::GetMinScreenDist() const {return m_minScreenDist;}
+DG_INLINE Point2d const&  SnapDetail::GetScreenPoint() const {return m_screenPt;}
+DG_INLINE HitDetail*        IntersectDetail::GetSecondHit() const {return m_secondHit;}
 
 DG_INLINE IACSManagerR  IACSManager::GetManager() {return T_HOST.GetAcsManager();}
 
@@ -520,11 +520,11 @@ DG_INLINE void            IPickGeom::AddHit(DPoint4dCR hitPtScreen, DPoint3dCP h
 DG_INLINE bool            IPickGeom::IsSnap() const {return _IsSnap();}
 DG_INLINE DRay3d          IPickGeom::GetBoresite() const { return _GetBoresite();}
 
-DG_INLINE StatusInt     ViewController::VisitHit(HitPathCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
+DG_INLINE StatusInt     ViewController::VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
 DG_INLINE void          ViewController::DrawView(ViewContextR context) {return _DrawView(context);}
 DG_INLINE DgnDbR        ITxnManager::GetDgnDb() {return m_dgndb;}
 
-DG_INLINE SnapPathP     SnapContext::GetSnapPath() {return m_snapPath;}
+DG_INLINE SnapDetailP     SnapContext::GetSnapDetail() {return m_snapPath;}
 DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}
 DG_INLINE int           SnapContext::GetSnapDivisor() {return m_snapDivisor;}
 

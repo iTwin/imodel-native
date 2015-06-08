@@ -113,7 +113,7 @@ void PickOutput::_PopTransClip ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool edgesVisible (HitPathCP hit)
+static bool edgesVisible (HitDetailCP hit)
     {
     ViewFlagsCR viewFlags = hit->GetViewFlags();
 
@@ -201,9 +201,9 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
         case TEST_LSTYLE_None:
             {
             // NOTE: Clear lstyle component detail info setup in GetCurrLineStyle.
-            if (HIT_DETAIL_LineStyle & m_currGeomDetail.GetDetailType ())
+            if (HitDetailSource::None != (HitDetailSource::LineStyle & m_currGeomDetail.GetDetailSource()))
                 {
-                m_currGeomDetail.SetDetailType (HIT_DETAIL_LineStyle & ~m_currGeomDetail.GetDetailType ());
+                m_currGeomDetail.SetDetailSource (HitDetailSource::LineStyle & ~m_currGeomDetail.GetDetailSource ());
                 m_currGeomDetail.SetNonSnappable (false);
                 }
             break;
@@ -223,7 +223,7 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     m_currGeomDetail.SetScreenDist (sqrt (distSquaredXY (hitPtScreen, m_pickPointView)));
     m_currGeomDetail.SetZValue (getAdjustedViewZ (*m_context, hitPtScreen) + m_context->GetCurrentDisplayParams()->GetNetDisplayPriority());
 
-    RefCountedPtr<HitPath> thisHit = new HitPath (*m_context->GetViewport(), *element, pickPtWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail);
+    RefCountedPtr<HitDetail> thisHit = new HitDetail (*m_context->GetViewport(), *element, pickPtWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail);
 
     if (nullptr != m_context->GetElemTopology())
         thisHit->SetElemTopology(m_context->GetElemTopology()->_Clone());
@@ -238,7 +238,7 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     // then there's really no point in continuing (can't do much better than that).
     // The exception to this is in a shaded view when hidden edges aren't displayed, then
     // we want to find the best hits by comparing Z not XY so we have to keep looking...
-    HitPathP lastHit = (HitPathP) m_hitList->GetHit(-1);
+    HitDetailP lastHit = (HitDetailP) m_hitList->GetHit(-1);
     if ((NULL != lastHit) && edgesVisible(lastHit) && (1.4 >= lastHit->GetGeomDetail().GetScreenDist()))
         m_doneSearching = true;
 
@@ -901,11 +901,11 @@ bool PickOutput::_DrawSprite (ISpriteP sprite, DPoint3dCP location, DPoint3dCP x
         return false;
 
     m_currGeomDetail.SetGeomType (HitGeomType::Point);
-    m_currGeomDetail.SetDetailType (HIT_DETAIL_Sprite | m_currGeomDetail.GetDetailType ());
+    m_currGeomDetail.SetDetailSource (HitDetailSource::Sprite | m_currGeomDetail.GetDetailSource ());
 
     _AddHit (viewPt, NULL, HitPriority::Vertex); // Note. Use HIT_PRIOITY_VERTEX so that sprites will always have always supercede segment hits in wireframe.
 
-    m_currGeomDetail.SetDetailType (HIT_DETAIL_Sprite & ~m_currGeomDetail.GetDetailType ());
+    m_currGeomDetail.SetDetailSource (HitDetailSource::Sprite & ~m_currGeomDetail.GetDetailSource ());
 
     return true;
     }
@@ -953,7 +953,7 @@ void PickOutput::_DrawTextString (TextStringCR text, double* zDepth)
 void            PickOutput::_DrawPointCloud (IPointCloudDrawParams* drawParams)
     {
     m_currGeomDetail.SetGeomType (HitGeomType::Point);
-    m_currGeomDetail.SetDetailType (HIT_DETAIL_PointCloud | m_currGeomDetail.GetDetailType ());
+    m_currGeomDetail.SetDetailSource (HitDetailSource::PointCloud | m_currGeomDetail.GetDetailSource ());
 
     uint32_t    nPoints = drawParams->GetNumPoints ();
     DPoint3dCP  dPoints = drawParams->GetDPoints ();
@@ -984,7 +984,7 @@ void            PickOutput::_DrawPointCloud (IPointCloudDrawParams* drawParams)
             break;
         }
 
-    m_currGeomDetail.SetDetailType (HIT_DETAIL_PointCloud & ~m_currGeomDetail.GetDetailType ());
+    m_currGeomDetail.SetDetailSource (HitDetailSource::PointCloud & ~m_currGeomDetail.GetDetailSource ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1025,9 +1025,9 @@ uint32_t        PickContext::_GetDisplayInfo (bool isRenderable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            PickContext::_DrawAreaPattern (ClipStencil& boundary)
     {
-    m_output.GetGeomDetail().SetDetailType (HIT_DETAIL_Pattern | m_output.GetGeomDetail().GetDetailType ());
+    m_output.GetGeomDetail().SetDetailSource (HitDetailSource::Pattern | m_output.GetGeomDetail().GetDetailSource ());
     T_Super::_DrawAreaPattern (boundary);
-    m_output.GetGeomDetail().SetDetailType (HIT_DETAIL_Pattern & ~m_output.GetGeomDetail().GetDetailType ());
+    m_output.GetGeomDetail().SetDetailSource (HitDetailSource::Pattern & ~m_output.GetGeomDetail().GetDetailSource ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1049,7 +1049,7 @@ ILineStyleCP    PickContext::_GetCurrLineStyle (LineStyleSymbP* symb)
 
     if (style->_GetComponent()->_HasWidth() || tSymb->HasOrgWidth() || tSymb->HasEndWidth())
         {
-        m_output.GetGeomDetail().SetDetailType (HIT_DETAIL_LineStyle | m_output.GetGeomDetail().GetDetailType ());
+        m_output.GetGeomDetail().SetDetailSource (HitDetailSource::LineStyle | m_output.GetGeomDetail().GetDetailSource ());
         m_output.GetGeomDetail().SetNonSnappable (!style->_IsSnappable());
 
         return style;
@@ -1390,7 +1390,7 @@ bool PickContext::PickElements (DgnViewportR vp, DPoint3dCR pickPointWorld, doub
 
     for (int iHit = 0; iHit < hitList->GetCount (); ++iHit)
         {
-        HitPathP    thisPath = (HitPathP) hitList->Get (iHit);
+        HitDetailP    thisPath = (HitDetailP) hitList->Get (iHit);
         
         printf ("(%d) Elem: %I64d, GeomType: %d Z: %lf\n", iHit, thisPath->GetHeadElem ()->GetElementId (), thisPath->GetGeomDetail ().GetGeomType (), thisPath->GetGeomDetail ().GetZValue ());
         }
@@ -1405,7 +1405,7 @@ bool PickContext::PickElements (DgnViewportR vp, DPoint3dCR pickPointWorld, doub
 
         for (int iHit = 0; iHit < hitList->GetCount (); ++iHit)
             {
-            if (truncateHits || ((HitPathP) hitList->Get (iHit))->GetGeomDetail ().IsValidSurfaceHit ())
+            if (truncateHits || ((HitDetailP) hitList->Get (iHit))->GetGeomDetail ().IsValidSurfaceHit ())
                 {
                 hitList->Set (iHit, NULL);
                 truncateHits = true;
@@ -1423,24 +1423,24 @@ bool PickContext::PickElements (DgnViewportR vp, DPoint3dCR pickPointWorld, doub
 * @return   true if the point is on the path
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestPathStatus PickContext::TestHit (HitPathCR hit, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
+TestHitStatus PickContext::TestHit (HitDetailCR hit, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
     {
     GeometricElementCPtr element = hit.GetElement();
 
     if (!element.IsValid())
-        return TESTPATH_NotOnPath;
+        return TESTHIT_NotOnPath;
 
     InitNpcSubRect(pickPointWorld, pickApertureScreen, vp); // Initialize prior to attach so frustum planes are set correctly.
 
     if (SUCCESS != Attach(&vp, DrawPurpose::Pick))
-        return TESTPATH_TestAborted;
+        return TESTHIT_TestAborted;
 
     // Re-test using same hit source as input path (See _AddHit locate behavior for linestyle components)...
-    m_options.SetHitSource (DisplayPathType::Hit <= hit.GetPathType() ? hit.GetLocateSource() : HitSource::None);
+    m_options.SetHitSource (HitDetailType::Hit <= hit.GetHitType() ? hit.GetLocateSource() : HitSource::None);
 
     InitSearch(pickPointWorld, pickApertureScreen, hitList);
     VisitElement(*element);
     _Detach();
 
-    return WasAborted() ? TESTPATH_TestAborted : ((m_output.GetHitList()->GetCount() > 0) ? TESTPATH_IsOnPath : TESTPATH_NotOnPath);
+    return WasAborted() ? TESTHIT_TestAborted : ((m_output.GetHitList()->GetCount() > 0) ? TESTHIT_IsOnPath : TESTHIT_NotOnPath);
     }

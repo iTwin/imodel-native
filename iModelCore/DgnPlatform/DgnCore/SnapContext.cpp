@@ -81,7 +81,7 @@ static bool getCentroid (DPoint3dR centroid, ICurvePrimitiveCR primitive)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus      SnapContext::DoSnapUsingCurve (SnapMode snapMode)
     {
-    SnapPathCP         snap = GetSnapPath ();
+    SnapDetailCP         snap = GetSnapDetail ();
     GeomDetailCR       detail = snap->GetGeomDetail ();
     ICurvePrimitiveCP  curve;
 
@@ -258,7 +258,7 @@ SnapStatus      SnapContext::DoSnapUsingCurve (SnapMode snapMode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            SnapContext::GetParameterKeypoint (DPoint3dR hitPoint, double& keyParam, int divisor)
     {
-    SnapPathCP         snap = GetSnapPath ();
+    SnapDetailCP         snap = GetSnapDetail ();
     GeomDetailCR       detail = snap->GetGeomDetail ();
     ICurvePrimitiveCP  curve;
 
@@ -304,7 +304,7 @@ void            SnapContext::GetSegmentKeypoint (DPoint3dR hitPoint, double& key
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SnapContext::HitLocalToWorld (DPoint3dR point)
     {
-    GetSnapPath ()->GetGeomDetail ().GetLocalToWorld ().MultiplyAndRenormalize (&point, &point, 1);
+    GetSnapDetail ()->GetGeomDetail ().GetLocalToWorld ().MultiplyAndRenormalize (&point, &point, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -333,7 +333,7 @@ int             nBytes,
 Byte*           customKeypointData
 )
     {
-    SnapPathP   snap = GetSnapPath ();
+    SnapDetailP   snap = GetSnapDetail ();
 
     snap->SetSnapMode (snapMode);
     snap->SetSprite (sprite);
@@ -364,7 +364,7 @@ static double   distSquaredXY (DPoint4dCR pVec1, DPoint4dCR pVec2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SamWilson       06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double   getDistanceFromSnap (SnapPathCR hit, ViewContextP context)
+static double   getDistanceFromSnap (SnapDetailCR hit, ViewContextP context)
     {
     DPoint3d    pts[2];
     DPoint4d    scrPts[2];
@@ -453,14 +453,14 @@ void GetSpacePointAndCurveTransform (DPoint3dR spacePoint, TransformR curveToHit
     Transform   contextLocalToHitLocal;
 
     // NOTE: GeomDetail::LocalToWorld includes pushed transforms...account for difference between hit and context local coords...
-    if (SUCCESS == m_snapContext.GetSnapPath ()->GetContextLocalToHitLocal (contextLocalToHitLocal, m_snapContext) && !contextLocalToHitLocal.IsIdentity ())
+    if (SUCCESS == m_snapContext.GetSnapDetail ()->GetContextLocalToHitLocal (contextLocalToHitLocal, m_snapContext) && !contextLocalToHitLocal.IsIdentity ())
         curveToHitLocalTrans.InitProduct (contextLocalToHitLocal, m_currentTransform); // current is curveToContextLocalTrans, it's only transforms pushed by _Draw...
     else
         curveToHitLocalTrans = m_currentTransform; // curveToHitLocalTrans == curveToContextLocalTrans...
 
     Transform   hitLocalToCurveTrans;
 
-    spacePoint = m_snapContext.GetSnapPath ()->GetGeomDetail ().GetClosestPointLocal ();
+    spacePoint = m_snapContext.GetSnapDetail ()->GetGeomDetail ().GetClosestPointLocal ();
     hitLocalToCurveTrans.InverseOf (curveToHitLocalTrans);
     hitLocalToCurveTrans.Multiply (&spacePoint, &spacePoint, 1);
     }
@@ -468,7 +468,7 @@ void GetSpacePointAndCurveTransform (DPoint3dR spacePoint, TransformR curveToHit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsEdgePointVisible (DPoint3dCR edgePoint, SnapPathCR snap)
+bool IsEdgePointVisible (DPoint3dCR edgePoint, SnapDetailCR snap)
     {
     // See HitList::Compare doZCompareOfSurfaceAndEdge...
     DgnViewportR vp = snap.GetViewport ();
@@ -514,7 +514,7 @@ bool TestCurveLocation (CurveVectorCR curves, DPoint3dCR spacePoint, TransformCR
 
     // NOTE: Point visible check is problematic for curved surfaces as edge point is far away from surface normal location...
     curveToHitLocal.Multiply (&edgePoint, &location.point, 1);
-    isVisible = IsEdgePointVisible (edgePoint, *m_snapContext.GetSnapPath ());
+    isVisible = IsEdgePointVisible (edgePoint, *m_snapContext.GetSnapDetail ());
 
     // NOTE: m_location.curve becomes invalid when curves goes away...we only care about "a" and whether it's NULL, so that's fine...
     if (NULL == m_location.curve || (isVisible && !m_isVisible))
@@ -526,7 +526,7 @@ bool TestCurveLocation (CurveVectorCR curves, DPoint3dCR spacePoint, TransformCR
 
     if (curveToHitLocal.IsIdentity ())
         {
-        m_snapContext.GetSnapPath ()->GetGeomDetailW ().SetCurvePrimitive (m_location.curve, HitGeomType::Surface);
+        m_snapContext.GetSnapDetail ()->GetGeomDetailW ().SetCurvePrimitive (m_location.curve, HitGeomType::Surface);
 
         return true;
         }
@@ -534,7 +534,7 @@ bool TestCurveLocation (CurveVectorCR curves, DPoint3dCR spacePoint, TransformCR
     ICurvePrimitivePtr tmpCurve = m_location.curve->Clone ();
 
     tmpCurve->TransformInPlace (curveToHitLocal);
-    m_snapContext.GetSnapPath ()->GetGeomDetailW ().SetCurvePrimitive (tmpCurve.get (), HitGeomType::Surface);
+    m_snapContext.GetSnapDetail ()->GetGeomDetailW ().SetCurvePrimitive (tmpCurve.get (), HitGeomType::Surface);
 
     return true;
     }
@@ -597,7 +597,7 @@ static bool DoSnapUsingClosestCurve (GeometricElementCR element, SnapContextR sn
 
     ElementGraphicsOutput::Process (processor, element);
 
-    if (NULL == snapContext.GetSnapPath ()->GetGeomDetail ().GetCurvePrimitive ())
+    if (NULL == snapContext.GetSnapDetail ()->GetGeomDetail ().GetCurvePrimitive ())
         return false; // No edge found...
 
     return (SnapStatus::Success == snapContext.DoSnapUsingCurve (snapContext.GetSnapMode ()) ? true : false);
@@ -610,7 +610,7 @@ static bool DoSnapUsingClosestCurve (GeometricElementCR element, SnapContextR sn
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
     {
-    SnapPathP       snap = GetSnapPath ();
+    SnapDetailP       snap = GetSnapDetail ();
     SnapMode        snapMode = GetSnapMode ();
     GeomDetailCR    detail = snap->GetGeomDetail ();
 
@@ -724,7 +724,7 @@ KeypointType    SnapContext::GetSnapKeypointType (SnapMode snapMode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus      SnapContext::DoTextSnap ()
     {
-    SnapPathP       snap = GetSnapPath ();
+    SnapDetailP       snap = GetSnapDetail ();
     SnapMode        snapMode = GetSnapMode ();
     GeomDetailCR    detail = snap->GetGeomDetail ();
 
@@ -796,7 +796,7 @@ SnapStatus      SnapContext::DoTextSnap ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            SnapPath::SetCustomKeypoint (int nBytes, Byte* dataP)
+void            SnapDetail::SetCustomKeypoint (int nBytes, Byte* dataP)
     {
     if (nBytes && NULL != (m_customKeypointData = (Byte *) bentleyAllocator_malloc(nBytes)))
         {

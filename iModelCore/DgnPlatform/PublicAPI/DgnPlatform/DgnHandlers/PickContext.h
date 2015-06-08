@@ -143,7 +143,7 @@ public:
     DGNPLATFORM_EXPORT PickContext (LocateOptions const& options, StopLocateTest* stopTester=NULL);
 
     DGNPLATFORM_EXPORT bool PickElements (DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
-    DGNPLATFORM_EXPORT TestPathStatus TestHit (HitPathCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
+    DGNPLATFORM_EXPORT TestHitStatus TestHit (HitDetailCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
 
     DGNPLATFORM_EXPORT static void InitBoresite (DRay3dR boresite, DPoint3dCR spacePoint, DMatrix4dCR worldToLocal);
 };

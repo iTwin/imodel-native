@@ -12,7 +12,6 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include "HitPath.h"
 
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================

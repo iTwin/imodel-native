@@ -485,7 +485,7 @@ public:
     DGNPLATFORM_EXPORT void Detach ();
     DGNPLATFORM_EXPORT bool VisitAllModelElements (bool includeTransients); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
     DGNPLATFORM_EXPORT bool VisitAllViewElements (bool includeTransients, BSIRectCP updateRect); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
-    DGNPLATFORM_EXPORT StatusInt VisitHit (HitPathCR hit);
+    DGNPLATFORM_EXPORT StatusInt VisitHit (HitDetailCR hit);
     DGNPLATFORM_EXPORT void VisitTransientGraphics (bool isPreUpdate);
     DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToWorldTrans (DMatrix4dR localToWorld) const;
     DGNPLATFORM_EXPORT void DrawBox (DPoint3dP box, bool is3d);

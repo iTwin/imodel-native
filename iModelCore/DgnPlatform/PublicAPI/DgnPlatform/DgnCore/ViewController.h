@@ -277,7 +277,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size);
 
 #if !defined (DOCUMENTATION_GENERATOR)
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitPathCR hit, ViewContextR context) const;
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const;
 
     //! Used to notify derived classes when an update completes.
     //! <p>See QueryViewController::_OnUpdateComplete
@@ -354,7 +354,7 @@ public:
         double Bottom() const {return m_bottom;}
     };
 
-    DGNPLATFORM_EXPORT StatusInt VisitHit (HitPathCR, ViewContextR) const;
+    DGNPLATFORM_EXPORT StatusInt VisitHit (HitDetailCR, ViewContextR) const;
     DGNPLATFORM_EXPORT void DrawView (ViewContextR);
     DGNPLATFORM_EXPORT void ChangeModelDisplay (DgnModelId, bool onOff);
     DGNPLATFORM_EXPORT StatusInt GetRangeForFit (DRange3dR range);
@@ -982,7 +982,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewControl
 protected:
     DGNPLATFORM_EXPORT virtual void _DrawView (ViewContextR) override;
     DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitPathCR hit, ViewContextR context) const override;
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
 
     mutable SectioningViewControllerPtr m_sectionView;  // transient
 
@@ -1058,7 +1058,7 @@ private:
 
     virtual void _DrawView (ViewContextR) override;
     virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
-    virtual StatusInt _VisitHit(HitPathCR hit, ViewContextR context) const override;
+    virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
     virtual DPoint3d _GetOrigin () const override;
     virtual DVec3d _GetDelta () const override;
     virtual RotMatrix _GetRotation() const override;

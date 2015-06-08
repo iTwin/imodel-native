@@ -426,7 +426,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE // added in graphite
 struct  ProxyElementDisplayHandler; // added in graphite
 
 //=======================================================================================
-//! Added to a HitPath when a section cut or other proxy graphics element is picked.
+//! Added to a HitDetail when a section cut or other proxy graphics element is picked.
 // @bsiclass                                                     Bentley Systems
 //=======================================================================================
 struct ProxyGraphicsElemTopology : IElemTopology // added in graphite

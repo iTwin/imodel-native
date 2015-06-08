@@ -168,7 +168,7 @@ DGNPLATFORM_TYPEDEFS (GeomDetail)
 //DGNPLATFORM_TYPEDEFS (GradientSettings)
 DGNPLATFORM_TYPEDEFS (HatchLinkage)
 DGNPLATFORM_TYPEDEFS (HitList)
-DGNPLATFORM_TYPEDEFS (HitPath)
+DGNPLATFORM_TYPEDEFS (HitDetail)
 DGNPLATFORM_TYPEDEFS (IACSManager)
 DGNPLATFORM_TYPEDEFS (IAuxCoordSys)
 DGNPLATFORM_TYPEDEFS (ICachedDraw)
@@ -220,7 +220,7 @@ DGNPLATFORM_TYPEDEFS (ParagraphProperties)
 DGNPLATFORM_TYPEDEFS (PatternParams)
 DGNPLATFORM_TYPEDEFS (PermanentTopologicalId)
 DGNPLATFORM_TYPEDEFS (PersistentElementPath)
-DGNPLATFORM_TYPEDEFS (PersistentSnapPath)
+DGNPLATFORM_TYPEDEFS (PersistentSnapDetail)
 DGNPLATFORM_TYPEDEFS (PhysicalModel)
 DGNPLATFORM_TYPEDEFS (PhysicalRedlineViewController)
 DGNPLATFORM_TYPEDEFS (PhysicalViewController)
@@ -238,7 +238,7 @@ DGNPLATFORM_TYPEDEFS (ScanCriteria)
 DGNPLATFORM_TYPEDEFS (SelectionSetManager)
 DGNPLATFORM_TYPEDEFS (SheetViewController)
 DGNPLATFORM_TYPEDEFS (SnapContext)
-DGNPLATFORM_TYPEDEFS (SnapPath)
+DGNPLATFORM_TYPEDEFS (SnapDetail)
 DGNPLATFORM_TYPEDEFS (StampQvElemMap)
 DGNPLATFORM_TYPEDEFS (TextString)
 DGNPLATFORM_TYPEDEFS (TextStringStyle)
@@ -776,11 +776,11 @@ enum AngleModeVals
     ANGLE_MODE_Bearing       = 2,
 };
 
-enum class DisplayPathType
+enum class HitDetailType
 {
-    Hit          = 2,
-    Snap         = 3,
-    Intersection = 4,
+    Hit          = 1,
+    Snap         = 2,
+    Intersection = 3,
 };
 
 enum DitherModes
