@@ -428,8 +428,13 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
     {
-    PRECONDITION(schemaName != nullptr && "Schema name should not be null", false);
-    return 0 != ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName);
+    if (Utf8String::IsNullOrEmpty(schemaName))
+        {
+        BeAssert(false && "schemaName argument to ContainsECSchema must not be null or empty string.");
+        return false;
+        }
+
+    return ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName) > 0ULL;
     }
 
 /*---------------------------------------------------------------------------------------
