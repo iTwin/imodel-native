@@ -1650,9 +1650,7 @@ public:
         bool  m_isValid;
         BeSQLiteStatementP m_sql;
         Entry(BeSQLiteStatementP sql, bool isValid) {m_sql=sql; m_isValid=isValid;}
-//__PUBLISH_SECTION_END__
         void Verify() const {BeAssert(NULL != m_sql->GetSqlStatementP());}
-//__PUBLISH_SECTION_START__
 
     public:
         bool IsValid() const {return m_isValid && (NULL!=m_sql->GetSqlStatementP());}
