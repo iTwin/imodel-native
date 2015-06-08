@@ -288,8 +288,6 @@ virtual bool    /*AuxCoordSys::*/_Equals (IAuxCoordSysCP other) const override
     return m_acsData.IsEqual (otherACS->m_acsData);
     }
 
-#if defined (NEEDS_WORK_TXN_MANAGER)
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/

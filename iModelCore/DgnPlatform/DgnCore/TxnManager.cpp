@@ -403,6 +403,8 @@ void TxnSummary::AddAffectedDependency(BeSQLite::EC::ECInstanceId const& relid, 
     m_modelsInTxn.insert(mid);
     }
 
+TxnSummary::TxnSummary(DgnDbR db) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false) {BeAssert(!db.IsReadonly());}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/

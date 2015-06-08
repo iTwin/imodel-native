@@ -39,7 +39,7 @@ static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewport::DgnViewport ()
+DgnViewport::DgnViewport()
     {
     m_viewNumber        = -1;
     m_minLOD            = DEFAULT_MINUMUM_LOD;
@@ -62,7 +62,7 @@ DgnViewport::DgnViewport ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::DestroyViewport ()
+void DgnViewport::DestroyViewport()
     {
     RELEASE_AND_CLEAR (m_output);
 
@@ -76,7 +76,7 @@ void DgnViewport::DestroyViewport ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetViewNoClipZMargin ()
+double DgnViewport::GetViewNoClipZMargin()
     {
     return VIEW_NOCLIP_ZMargin;
     }
@@ -84,7 +84,7 @@ double DgnViewport::GetViewNoClipZMargin ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetMinViewDelta ()
+double DgnViewport::GetMinViewDelta()
     {
     return MIN_VIEWDELTA;
     }
@@ -92,18 +92,18 @@ double DgnViewport::GetMinViewDelta ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::InitViewSettings (bool useBgTexture)
+void DgnViewport::InitViewSettings(bool useBgTexture)
     {
-    BeAssert (m_output);
+    BeAssert(m_output);
 
-    m_output->SetViewAttributes (*GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
+    m_output->SetViewAttributes(*GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
     m_qvParamsSet = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::SetDisplayFlagFill (bool newValue)
+void DgnViewport::SetDisplayFlagFill(bool newValue)
     {
     m_rootViewFlags.fill = newValue;
     }
@@ -111,7 +111,7 @@ void DgnViewport::SetDisplayFlagFill (bool newValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::SetDisplayFlagPatterns (bool newValue)
+void DgnViewport::SetDisplayFlagPatterns(bool newValue)
     {
     m_rootViewFlags.patterns = newValue;
     }
@@ -121,7 +121,7 @@ void DgnViewport::SetDisplayFlagPatterns (bool newValue)
 * NOTE: the y values are "swapped" (llb.y is greater than urf.y) on the screen and and "unswapped" when we plot.
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_GetViewCorners (DPoint3dR llb, DPoint3dR urf) const
+void DgnViewport::_GetViewCorners(DPoint3dR llb, DPoint3dR urf) const
     {
     BSIRect viewRect = GetViewRect();
 
@@ -147,7 +147,7 @@ void DgnViewport::_GetViewCorners (DPoint3dR llb, DPoint3dR urf) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-BSIRect DgnViewport::GetViewRect () const
+BSIRect DgnViewport::GetViewRect() const
     {
     return _GetClientRect();
     }
@@ -155,113 +155,113 @@ BSIRect DgnViewport::GetViewRect () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ViewToNpc (DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
+void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
     {
     DPoint3d        llb, urf;
-    _GetViewCorners (llb, urf);
+    _GetViewCorners(llb, urf);
 
     Transform    scrToNpcTran;
-    bsiTransform_initFromRange (NULL, &scrToNpcTran, &llb, &urf);
-    scrToNpcTran.multiply (npcVec, screenVec, nPts);
+    bsiTransform_initFromRange(NULL, &scrToNpcTran, &llb, &urf);
+    scrToNpcTran.multiply(npcVec, screenVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::NpcToView (DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) const
+void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) const
     {
     DPoint3d        llb, urf;
-    _GetViewCorners (llb, urf);
+    _GetViewCorners(llb, urf);
 
     Transform    npcToScrTran;
-    bsiTransform_initFromRange (&npcToScrTran, NULL, &llb, &urf);
-    npcToScrTran.multiply (screenVec, npcVec, nPts);
+    bsiTransform_initFromRange(&npcToScrTran, NULL, &llb, &urf);
+    npcToScrTran.multiply(screenVec, npcVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::NpcToWorld (DPoint3dP rootPts, DPoint3dCP npcPts, int nPts) const
+void DgnViewport::NpcToWorld(DPoint3dP rootPts, DPoint3dCP npcPts, int nPts) const
     {
-    m_rootToNpc.M1.multiplyAndRenormalize (rootPts, npcPts, nPts);
+    m_rootToNpc.M1.multiplyAndRenormalize(rootPts, npcPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::WorldToNpc (DPoint3dP npcPts, DPoint3dCP rootPts, int nPts) const
+void DgnViewport::WorldToNpc(DPoint3dP npcPts, DPoint3dCP rootPts, int nPts) const
     {
-    m_rootToNpc.M0.multiplyAndRenormalize (npcPts, rootPts, nPts);
+    m_rootToNpc.M0.multiplyAndRenormalize(npcPts, rootPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ViewToWorld (DPoint3dP rootPts, DPoint4dCP screenPts, int nPts) const
+void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint4dCP screenPts, int nPts) const
     {
     DPoint4d  tPt;
     for (int i=0; i<nPts; i++)
         {
-        bsiDMatrix4d_multiplyMatrixPoint (&m_rootToView.M1, &tPt, screenPts+i);
-        bsiDPoint4d_normalize (&tPt, rootPts+i);
+        bsiDMatrix4d_multiplyMatrixPoint(&m_rootToView.M1, &tPt, screenPts+i);
+        bsiDPoint4d_normalize(&tPt, rootPts+i);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ViewToScreen (DPoint3dP screenPts, DPoint3dCP viewPts, int nPts) const
+void DgnViewport::ViewToScreen(DPoint3dP screenPts, DPoint3dCP viewPts, int nPts) const
     {
-    memcpy (screenPts, viewPts, nPts * sizeof(DPoint3d));
+    memcpy(screenPts, viewPts, nPts * sizeof(DPoint3d));
 
     Point2d screenOrg = GetScreenOrigin();
     DPoint3d org;
-    org.init (screenOrg.x, screenOrg.y, 0.0);
-    bsiDPoint3d_addDPoint3dArray (screenPts, &org, nPts);
+    org.init(screenOrg.x, screenOrg.y, 0.0);
+    bsiDPoint3d_addDPoint3dArray(screenPts, &org, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScreenToView (DPoint3dP viewPts, DPoint3dCP screenPts, int nPts) const
+void DgnViewport::ScreenToView(DPoint3dP viewPts, DPoint3dCP screenPts, int nPts) const
     {
-    memcpy (viewPts, screenPts, nPts * sizeof(DPoint3d));
+    memcpy(viewPts, screenPts, nPts * sizeof(DPoint3d));
     Point2d screenOrg = GetScreenOrigin();
 
     DPoint3d org;
-    org.init (screenOrg.x, screenOrg.y, 0.0);
+    org.init(screenOrg.x, screenOrg.y, 0.0);
 
-    bsiDPoint3d_subtractDPoint3dArray (viewPts, &org, nPts);
+    bsiDPoint3d_subtractDPoint3dArray(viewPts, &org, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::WorldToView (DPoint4dP screenPts, DPoint3dCP rootPts, int nPts) const
+void DgnViewport::WorldToView(DPoint4dP screenPts, DPoint3dCP rootPts, int nPts) const
     {
-    bsiDMatrix4d_multiplyWeightedDPoint3dArray (&m_rootToView.M0, screenPts, rootPts, NULL, nPts);
+    bsiDMatrix4d_multiplyWeightedDPoint3dArray(&m_rootToView.M0, screenPts, rootPts, NULL, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * convert an array of points in Root coordinates into View coordinates
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::WorldToView (DPoint3dP viewPts, DPoint3dCP rootPts, int nPts) const
+void DgnViewport::WorldToView(DPoint3dP viewPts, DPoint3dCP rootPts, int nPts) const
     {
-    bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray (&m_rootToView.M0, viewPts, rootPts, nPts);
+    bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray(&m_rootToView.M0, viewPts, rootPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * convert an array of points in Root coordinates into View (2d) coordinates
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::WorldToView2d (DPoint2dP viewPts, DPoint3dCP rootPts, int nPts) const
+void DgnViewport::WorldToView2d(DPoint2dP viewPts, DPoint3dCP rootPts, int nPts) const
     {
     DPoint3d    dPt;
 
     for (int i=0; i<nPts; i++)
         {
-        WorldToView (&dPt, rootPts+i, 1);
+        WorldToView(&dPt, rootPts+i, 1);
 
         viewPts[i].x = dPt.x;
         viewPts[i].y = dPt.y;
@@ -272,9 +272,9 @@ void DgnViewport::WorldToView2d (DPoint2dP viewPts, DPoint3dCP rootPts, int nPts
 * convert an array of points in View coordinates into Root coordinates
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ViewToWorld (DPoint3dP rootPts, DPoint3dCP viewPts, int nPts) const
+void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint3dCP viewPts, int nPts) const
     {
-    bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray (&m_rootToView.M1, rootPts, viewPts, nPts);
+    bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray(&m_rootToView.M1, rootPts, viewPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -292,8 +292,8 @@ void DgnViewport::AlignWithRootZ()
         return;
 
     RotMatrix r;
-    r.TransposeOf (m_rotMatrix);
-    r.SetColumn (zUp, 2);
+    r.TransposeOf(m_rotMatrix);
+    r.SetColumn(zUp, 2);
     r.SquareAndNormalizeColumns(r, 2, 0);
     m_rotMatrix.TransposeOf(r);
     }
@@ -301,10 +301,10 @@ void DgnViewport::AlignWithRootZ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_AdjustAspectRatio (ViewControllerR viewController, bool expandView)
+void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expandView)
     {
     BSIRect viewRect = GetClientRect();
-    viewController.AdjustAspectRatio (viewRect.Aspect(), expandView);
+    viewController.AdjustAspectRatio(viewRect.Aspect(), expandView);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -312,7 +312,7 @@ void DgnViewport::_AdjustAspectRatio (ViewControllerR viewController, bool expan
 * definition specified by camera, origin, delta, and rMatrix.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::RootToNpcFromViewDef (DMap4dR rootToNpc, double* compressionFraction, CameraInfo const* camera,
+StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressionFraction, CameraInfo const* camera,
                                           DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot, DgnModelP dgnModel)
     {
     DVec3d    xVector, yVector, zVector;
@@ -337,7 +337,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef (DMap4dR rootToNpc, double* compress
         double zDelta = (delta.z > zDeltaLimit) ? zDeltaLimit : delta.z;                 // Limited zDelta.
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
-        double minimumFrontToBackClipRatio = T_HOST.GetGraphicsAdmin()._GetCameraFrustumNearScaleLimit ();
+        double minimumFrontToBackClipRatio = T_HOST.GetGraphicsAdmin()._GetCameraFrustumNearScaleLimit();
 
         if (zFront / zBack < minimumFrontToBackClipRatio)
             {
@@ -376,7 +376,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef (DMap4dR rootToNpc, double* compress
         origin.x = eyeToOrigin.x * backFraction;                                         // Calculate origin in eye coordinates.
         origin.y = eyeToOrigin.y * backFraction;
         origin.z = eyeToOrigin.z;
-        viewRot.MultiplyTranspose (origin);                                             // Rotate back to root coordinates
+        viewRot.MultiplyTranspose(origin);                                             // Rotate back to root coordinates
         origin.Add(camera->GetEyePoint());                                              // Add the eye point.
         frustFraction = frontFraction / backFraction;
         }
@@ -384,17 +384,17 @@ StatusInt DgnViewport::RootToNpcFromViewDef (DMap4dR rootToNpc, double* compress
         {
         frustFraction = 1.0;
         origin = inOrigin;
-        xExtent.scale (&xVector, delta.x);
-        yExtent.scale (&yVector, delta.y);
-        zExtent.scale (&zVector, delta.z);
+        xExtent.scale(&xVector, delta.x);
+        yExtent.scale(&yVector, delta.y);
+        zExtent.scale(&zVector, delta.z);
         }
 
     // calculate the root-to-npc mapping (using expanded frustum)
     DMap4d  newRootToNpc;
-    if (!bsiDMap4d_initFromVectorFrustum (&newRootToNpc, &origin, &xExtent, &yExtent, &zExtent, frustFraction))
+    if (!bsiDMap4d_initFromVectorFrustum(&newRootToNpc, &origin, &xExtent, &yExtent, &zExtent, frustFraction))
         {
 #if defined (NO_TEST_VIEW_FRUSTUM)
-        BeAssert (0);
+        BeAssert(0);
 #endif
         return  ERROR;
         }
@@ -409,7 +409,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef (DMap4dR rootToNpc, double* compress
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::_ConnectToOutput ()
+StatusInt DgnViewport::_ConnectToOutput()
     {
     if (m_qvDCAssigned)
         return SUCCESS;
@@ -429,17 +429,17 @@ StatusInt DgnViewport::_ConnectToOutput ()
 * calculate the NPC-to-view transformation matrix.
 * @bsimethod                                                    Andrew.Edge     08/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::CalcNpcToView (DMap4dR npcToView)
+void DgnViewport::CalcNpcToView(DMap4dR npcToView)
     {
     DPoint3d    viewLow, viewHigh;
-    _GetViewCorners (viewLow, viewHigh);
-    npcToView.initFromRanges (&s_NpcCorners[NPC_000], &s_NpcCorners[NPC_111], &viewLow, &viewHigh);
+    _GetViewCorners(viewLow, viewHigh);
+    npcToView.initFromRanges(&s_NpcCorners[NPC_000], &s_NpcCorners[NPC_111], &viewLow, &viewHigh);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Andrew.Edge     08/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_SetFrustumFromRootCorners (DPoint3dCP rootBox, double compressionFraction)
+void DgnViewport::_SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction)
     {
     DPoint3d frustum[4];
     frustum[0] = rootBox[NPC_000];
@@ -474,7 +474,7 @@ void DgnViewport::_SetFrustumFromRootCorners (DPoint3dCP rootBox, double compres
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    RBB                             10/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateCamera (CameraViewControllerR controller)
+static void validateCamera(CameraViewControllerR controller)
     {
     CameraInfoR camera = controller.GetCameraR();
     camera.ValidateLens();
@@ -509,7 +509,7 @@ static void validateCamera (CameraViewControllerR controller)
 * set up this viewport from the given viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::_SetupFromViewController ()
+StatusInt DgnViewport::_SetupFromViewController()
     {
     ViewControllerP   viewController = m_viewController.get();
     if (NULL == viewController)
@@ -545,7 +545,7 @@ StatusInt DgnViewport::_SetupFromViewController ()
                 range.high.z = 100;
                 }
 
-            double zMax = std::max (fabs(range.low.z), fabs(range.high.z));
+            double zMax = std::max(fabs(range.low.z), fabs(range.high.z));
             zMax = std::max(zMax, 100.); // make sure we have at least +-100. Data may be purely planar
             delta.z  = 2.0 * zMax;
             origin.z = -zMax;
@@ -557,11 +557,11 @@ StatusInt DgnViewport::_SetupFromViewController ()
 
             if (m_isCameraOn)
                 {
-                validateCamera (*cameraView);
+                validateCamera(*cameraView);
                 m_camera = cameraView->GetCameraR();
                 }
 
-            _AdjustZPlanesToModel (origin, delta, *viewController);
+            _AdjustZPlanesToModel(origin, delta, *viewController);
 
             // if we moved the z planes, set the "zClipAdjusted" flag.
             if (!origin.IsEqual(m_viewOrgUnexpanded) || !delta.IsEqual(m_viewDeltaUnexpanded))
@@ -597,34 +597,34 @@ StatusInt DgnViewport::_SetupFromViewController ()
     m_viewDelta = delta;
 
     DPoint3d    llb, urf;
-    _GetViewCorners (llb, urf);
+    _GetViewCorners(llb, urf);
 
-    double zRangeView = fabs (urf.z - llb.z);
+    double zRangeView = fabs(urf.z - llb.z);
 
-    m_scale.x = (fabs (urf.x - llb.x) / delta.x);
-    m_scale.y = (fabs (urf.y - llb.y) / delta.y);
+    m_scale.x = (fabs(urf.x - llb.x) / delta.x);
+    m_scale.y = (fabs(urf.y - llb.y) / delta.y);
     m_scale.z =  zRangeView / delta.z;
 
     m_viewDelta = delta;
     m_viewOrg   = origin;
 
-    if (SUCCESS != _ConnectToOutput ())
+    if (SUCCESS != _ConnectToOutput())
         return ERROR;
 
-    BeAssert (NULL == m_output || !m_output->IsDrawActive());
+    BeAssert(NULL == m_output || !m_output->IsDrawActive());
 
     double compressionFraction;
-    if (SUCCESS != RootToNpcFromViewDef (m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : NULL, origin, delta, m_rotMatrix, viewController->GetTargetModel()))
+    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : NULL, origin, delta, m_rotMatrix, viewController->GetTargetModel()))
         return  ERROR;
 
     DPoint3d  rootBox[NPC_CORNER_COUNT];
     NpcToWorld(rootBox, s_NpcCorners, NPC_CORNER_COUNT);
 
     DMap4d      npcToView;
-    CalcNpcToView (npcToView);
+    CalcNpcToView(npcToView);
     m_rootToView.InitProduct(npcToView, m_rootToNpc);
 
-    _SetFrustumFromRootCorners (rootBox, compressionFraction);
+    _SetFrustumFromRootCorners(rootBox, compressionFraction);
 
     m_frustumValid = true;
 
@@ -635,16 +635,16 @@ StatusInt DgnViewport::_SetupFromViewController ()
 * determine whether the points in the given polyhedron are in the correct order or are inside out. If not, reverse sense
 * @bsimethod                                    Keith.Bentley                   04/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::FixFrustumOrder (Frustum& frustum)
+void DgnViewport::FixFrustumOrder(Frustum& frustum)
     {
     DPoint3dP polyhedron=frustum.GetPtsP();
 
     DVec3d u, v, w;
-    u.differenceOf (polyhedron+NPC_001, polyhedron+NPC_000);
-    v.differenceOf (polyhedron+NPC_010, polyhedron+NPC_000);
-    w.differenceOf (polyhedron+NPC_100, polyhedron+NPC_000);
+    u.differenceOf(polyhedron+NPC_001, polyhedron+NPC_000);
+    v.differenceOf(polyhedron+NPC_010, polyhedron+NPC_000);
+    w.differenceOf(polyhedron+NPC_100, polyhedron+NPC_000);
 
-    if (u.TripleProduct (v, w) <= 0)
+    if (u.TripleProduct(v, w) <= 0)
         return;
 
     // frustum has mirroring, reverse points
@@ -660,7 +660,7 @@ void DgnViewport::FixFrustumOrder (Frustum& frustum)
 * Set up the ViewController structure associated with this view with the supplied Frustum.
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::SetupFromFrustum (Frustum const& inFrustum)
+StatusInt DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
     {
     ViewControllerP   viewController = m_viewController.get();
     if (NULL == viewController || !m_frustumValid)
@@ -668,19 +668,19 @@ StatusInt DgnViewport::SetupFromFrustum (Frustum const& inFrustum)
 
     ViewFrustumStatus validSize = viewController->SetupFromFrustum(inFrustum);
 
-    StatusInt status = _SetupFromViewController ();
+    StatusInt status = _SetupFromViewController();
     if (SUCCESS != status)
         return  status;
 
     // may have been corrected by SetupFromViewController for sheet/2d views
-    viewController->SetRotation (m_rotMatrix);
+    viewController->SetRotation(m_rotMatrix);
     return  validSize;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::ChangeArea (DPoint3dCP pts)
+StatusInt DgnViewport::ChangeArea(DPoint3dCP pts)
     {
     ViewControllerP viewController = m_viewController.get();
     if (NULL == viewController)
@@ -691,7 +691,7 @@ StatusInt DgnViewport::ChangeArea (DPoint3dCP pts)
 
     DPoint3d worldPts[3] = {pts[0], pts[1], viewController->GetOrigin()};
     DPoint3d viewPts[3];
-    GetRotMatrix().Multiply (viewPts, worldPts, 3);
+    GetRotMatrix().Multiply(viewPts, worldPts, 3);
 
     DRange3d range = DRange3d::From(viewPts, 2);
     DVec3d delta;
@@ -701,7 +701,7 @@ StatusInt DgnViewport::ChangeArea (DPoint3dCP pts)
     if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d npcPts[2];
-        WorldToNpc (npcPts, worldPts, 2);
+        WorldToNpc(npcPts, worldPts, 2);
 
         /// NEEDS_WORK_RANGE_OF_PIXELS - this should be replace by a QV call that will find the range of the pixels in the rectangle.
         double low, high;
@@ -717,7 +717,7 @@ StatusInt DgnViewport::ChangeArea (DPoint3dCP pts)
         double lensAngle = cameraView->GetLensAngle();
         double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle / 2.0));
 
-        DPoint3d newTarget = DPoint3d::FromInterpolate (worldPts[0], .5, worldPts[1]);
+        DPoint3d newTarget = DPoint3d::FromInterpolate(worldPts[0], .5, worldPts[1]);
         DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraView->GetZVector(), focusDist);
 
         auto stat = cameraView->LookAtUsingLensAngle(newEye, newTarget, cameraView->GetYVector(), lensAngle);
@@ -730,7 +730,7 @@ StatusInt DgnViewport::ChangeArea (DPoint3dCP pts)
         delta.z = viewController->GetDelta().z;
 
         /* make sure its not too big or too small */
-        StatusInt returnCode = (StatusInt)ValidateWindowSize (delta, true);
+        StatusInt returnCode = (StatusInt)ValidateWindowSize(delta, true);
         if (returnCode != SUCCESS)
             return returnCode;
 
@@ -738,11 +738,11 @@ StatusInt DgnViewport::ChangeArea (DPoint3dCP pts)
 
         range.low.z = viewPts[2].z;     // don't change z origin
         DPoint3d origin;
-        GetRotMatrix().MultiplyTranspose (&origin, &range.low, 1);
-        viewController->SetOrigin (origin);
+        GetRotMatrix().MultiplyTranspose(&origin, &range.low, 1);
+        viewController->SetOrigin(origin);
         }
 
-    _SynchWithViewController (true);
+    _SynchWithViewController(true);
     return SUCCESS;
     }
 
@@ -765,35 +765,35 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
         {
         // to get unexpanded box, we have to go recompute rootToNpc from original viewController.
         DMap4d  ueRootToNpc;
-        RootToNpcFromViewDef (ueRootToNpc, NULL, IsCameraOn() ? &m_camera : NULL, m_viewOrgUnexpanded, m_viewDeltaUnexpanded, m_rotMatrix, m_viewController->GetTargetModel());
+        RootToNpcFromViewDef(ueRootToNpc, NULL, IsCameraOn() ? &m_camera : NULL, m_viewOrgUnexpanded, m_viewDeltaUnexpanded, m_rotMatrix, m_viewController->GetTargetModel());
 
         // get the root corners of the unexpanded box
         DPoint3d  ueRootBox[NPC_CORNER_COUNT];
-        ueRootToNpc.M1.multiplyAndRenormalize (ueRootBox, s_NpcCorners, NPC_CORNER_COUNT);
+        ueRootToNpc.M1.multiplyAndRenormalize(ueRootBox, s_NpcCorners, NPC_CORNER_COUNT);
 
         // and convert them to npc coordinates of the expanded view
-        WorldToNpc (box.GetPtsP(), ueRootBox, NPC_CORNER_COUNT);
+        WorldToNpc(box.GetPtsP(), ueRootBox, NPC_CORNER_COUNT);
         }
     else
         {
         // otherwise, just start from a unit cube.
-        memcpy (box.GetPtsP(), s_NpcCorners, sizeof (DPoint3d) * NPC_CORNER_COUNT);
+        memcpy(box.GetPtsP(), s_NpcCorners, sizeof (DPoint3d) * NPC_CORNER_COUNT);
         }
 
     // now convert from NPC space to the specified coordinate system.
     switch (sys)
         {
         case    DgnCoordSystem::View:
-            NpcToView (box.GetPtsP(), box.GetPts(), NPC_CORNER_COUNT);
+            NpcToView(box.GetPtsP(), box.GetPts(), NPC_CORNER_COUNT);
             break;
 
         case    DgnCoordSystem::World:
-            NpcToWorld (box.GetPtsP(), box.GetPts(), NPC_CORNER_COUNT);
+            NpcToWorld(box.GetPtsP(), box.GetPts(), NPC_CORNER_COUNT);
             break;
 
         case DgnCoordSystem::Screen:
-            NpcToView (box.GetPtsP(), box.GetPts(), NPC_CORNER_COUNT);
-            ViewToScreen (box.GetPtsP(), box.GetPtsP(), NPC_CORNER_COUNT);
+            NpcToView(box.GetPtsP(), box.GetPts(), NPC_CORNER_COUNT);
+            ViewToScreen(box.GetPtsP(), box.GetPtsP(), NPC_CORNER_COUNT);
             break;
         }
 
@@ -812,7 +812,7 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
         return GetCameraTarget();
         }
 
-    DPoint3d center = DPoint3d::From (.5, .5, (high + low) * .5);
+    DPoint3d center = DPoint3d::From(.5, .5, (high + low) * .5);
     return NpcToWorld(center);
     }
 
@@ -821,14 +821,14 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
 * Camera position is unchanged.
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::Scroll (Point2dCP screenDist) // => distance to scroll in pixels
+StatusInt DgnViewport::Scroll(Point2dCP screenDist) // => distance to scroll in pixels
     {
     ViewControllerP   viewController = m_viewController.get();
     if (NULL == viewController)
         return ERROR;
 
     DVec3d offset;
-    offset.Init (screenDist->x, screenDist->y, 0.0);
+    offset.Init(screenDist->x, screenDist->y, 0.0);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
     if (cameraView && cameraView->IsCameraOn())
@@ -836,7 +836,7 @@ StatusInt DgnViewport::Scroll (Point2dCP screenDist) // => distance to scroll in
         // get current box in view coordinates
         Frustum frust = GetFrustum(DgnCoordSystem::View, false);
         frust.Translate(offset);
-        ViewToWorld (frust.GetPtsP(), frust.GetPtsP(), NPC_CORNER_COUNT);
+        ViewToWorld(frust.GetPtsP(), frust.GetPtsP(), NPC_CORNER_COUNT);
 
         cameraView->SetupFromFrustum(frust);
         cameraView->CenterEyePoint();
@@ -848,29 +848,29 @@ StatusInt DgnViewport::Scroll (Point2dCP screenDist) // => distance to scroll in
     pts[0].zero();
     pts[1] = offset;
 
-    ViewToWorld (pts, pts, 2);
+    ViewToWorld(pts, pts, 2);
     DVec3d dist;
-    dist.differenceOf (pts+1, pts);
+    dist.differenceOf(pts+1, pts);
 
     if (!m_is3dView)
         dist.z = 0.0;
 
     DPoint3d oldOrg = viewController->GetOrigin();
     DPoint3d newOrg;
-    newOrg.SumOf (oldOrg, dist);
+    newOrg.SumOf(oldOrg, dist);
     viewController->SetOrigin(newOrg);
 
-    _AdjustFencePts (viewController->GetRotation(), oldOrg, newOrg);
-    return _SetupFromViewController ();
+    _AdjustFencePts(viewController->GetRotation(), oldOrg, newOrg);
+    return _SetupFromViewController();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d DgnViewport::GetCameraTarget () const
+DPoint3d DgnViewport::GetCameraTarget() const
     {
     DVec3d viewZ;
-    m_rotMatrix.GetRow (viewZ, 2);
+    m_rotMatrix.GetRow(viewZ, 2);
 
     DPoint3d target;
     target.SumOf(m_camera.GetEyePoint(), viewZ, -1.0 * m_camera.GetFocusDistance());
@@ -880,7 +880,7 @@ DPoint3d DgnViewport::GetCameraTarget () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetFocusPlaneNpc ()
+double DgnViewport::GetFocusPlaneNpc()
     {
     return WorldToNpc(GetCameraTarget()).z;
     }
@@ -891,7 +891,7 @@ double DgnViewport::GetFocusPlaneNpc ()
 * Updates ViewController and re-synchs viewport.
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::Zoom (DPoint3dCP newCenterRoot, double factor)
+StatusInt DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     {
     ViewControllerP   viewController = m_viewController.get();
     if (NULL == viewController)
@@ -901,33 +901,33 @@ StatusInt DgnViewport::Zoom (DPoint3dCP newCenterRoot, double factor)
     if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d centerNpc;          // center of view in npc coords
-        centerNpc.Init (.5, .5, .5);
+        centerNpc.Init(.5, .5, .5);
 
         DPoint3d    newCenterNpc;       // get new center of view in npc coords
         if (NULL != newCenterRoot)
-            WorldToNpc (&newCenterNpc, newCenterRoot, 1);
+            WorldToNpc(&newCenterNpc, newCenterRoot, 1);
         else
             newCenterNpc = centerNpc;   // leave it alone.
 
         Transform scaleTransform;
-        scaleTransform.InitFromMatrixAndFixedPoint (RotMatrix::FromScaleFactors (factor, factor, 1.0), centerNpc);
+        scaleTransform.InitFromMatrixAndFixedPoint(RotMatrix::FromScaleFactors(factor, factor, 1.0), centerNpc);
 
         DPoint3d    offset;             // offset by difference of old/new center
-        offset.DifferenceOf (newCenterNpc, centerNpc);
+        offset.DifferenceOf(newCenterNpc, centerNpc);
         offset.z = 0.0;     // z center stays the same.
 
-        Transform  offsetTransform = Transform::From (offset);
+        Transform  offsetTransform = Transform::From(offset);
         Transform product;
-        product.InitProduct (offsetTransform, scaleTransform);
+        product.InitProduct(offsetTransform, scaleTransform);
 
         Frustum frust = GetFrustum(DgnCoordSystem::Npc, false);
-        product.multiply (frust.GetPtsP(), NPC_CORNER_COUNT);
+        product.multiply(frust.GetPtsP(), NPC_CORNER_COUNT);
 
-        NpcToWorld (frust.GetPtsP(), frust.GetPtsP(), NPC_CORNER_COUNT);
+        NpcToWorld(frust.GetPtsP(), frust.GetPtsP(), NPC_CORNER_COUNT);
 
         cameraView->SetupFromFrustum(frust);
         cameraView->CenterEyePoint();
-        return SetupFromViewController ();
+        return SetupFromViewController();
         }
 
     // for non-camera views, do the zooming by adjusting the origin and delta directly so there can be no
@@ -937,7 +937,7 @@ StatusInt DgnViewport::Zoom (DPoint3dCP newCenterRoot, double factor)
     delta.y *= factor;
 
     // first check to see whether the zoom operation results in an invalid view. If so, make sure we don't change anything
-    StatusInt validSize = ValidateWindowSize (delta, false);
+    StatusInt validSize = ValidateWindowSize(delta, false);
     if (SUCCESS != validSize)
         return  validSize;
 
@@ -950,31 +950,31 @@ StatusInt DgnViewport::Zoom (DPoint3dCP newCenterRoot, double factor)
     DPoint3d newOrg = oldOrg;
     RotMatrix rotation = viewController->GetRotation();
 
-    rotation.multiply (&newOrg);
-    rotation.multiply (&center);
+    rotation.multiply(&newOrg);
+    rotation.multiply(&center);
 
     viewController->SetDelta(delta);
 
     newOrg.x = center.x - delta.x/2.0;
     newOrg.y = center.y - delta.y/2.0;
-    rotation.multiplyTranspose (&newOrg);
+    rotation.multiplyTranspose(&newOrg);
     viewController->SetOrigin(newOrg);
 
-    _AdjustFencePts (rotation, oldOrg, newOrg);
-    return  _SetupFromViewController ();
+    _AdjustFencePts(rotation, oldOrg, newOrg);
+    return  _SetupFromViewController();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus DgnViewport::_Activate (QvPaintOptions const& opts)
+ViewportStatus DgnViewport::_Activate(QvPaintOptions const& opts)
     {
     if (NULL == m_output || !m_qvParamsSet)
         return  ViewportStatus::ViewNotInitialized;
 
     m_output->AccumulateDirtyRegion(opts.WantAccumulateDirty());
 
-    if (SUCCESS != m_output->BeginDraw (opts.WantEraseBefore()))
+    if (SUCCESS != m_output->BeginDraw(opts.WantEraseBefore()))
         return  ViewportStatus::DrawFailure;
 
     return  ViewportStatus::Success;
@@ -983,7 +983,7 @@ ViewportStatus DgnViewport::_Activate (QvPaintOptions const& opts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DgnViewport::GetDefaultIndexedLineWidth (int index)
+int DgnViewport::GetDefaultIndexedLineWidth(int index)
     {
     LIMIT_RANGE (0, 31, index);
 
@@ -993,15 +993,15 @@ int DgnViewport::GetDefaultIndexedLineWidth (int index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DgnViewport::_GetIndexedLineWidth (int index) const
+int DgnViewport::_GetIndexedLineWidth(int index) const
     {
-    return DgnViewport::GetDefaultIndexedLineWidth (index);
+    return DgnViewport::GetDefaultIndexedLineWidth(index);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnViewport::GetDefaultIndexedLinePattern (int index)
+uint32_t DgnViewport::GetDefaultIndexedLinePattern(int index)
     {
     if (index < 0 || index > 7)
         index = 0;
@@ -1012,17 +1012,17 @@ uint32_t DgnViewport::GetDefaultIndexedLinePattern (int index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnViewport::_GetIndexedLinePattern (int index) const
+uint32_t DgnViewport::_GetIndexedLinePattern(int index) const
     {
-    return DgnViewport::GetDefaultIndexedLinePattern (index);
+    return DgnViewport::GetDefaultIndexedLinePattern(index);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::SetSymbologyRgb (ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex)
+void DgnViewport::SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex)
     {
-    m_output->SetSymbology (lineColor, fillColor, lineWidth, _GetIndexedLinePattern (lineCodeIndex));
+    m_output->SetSymbology(lineColor, fillColor, lineWidth, _GetIndexedLinePattern(lineCodeIndex));
     }
 
 const double    VISIBILITY_GOAL           = 40.0;
@@ -1032,12 +1032,12 @@ const int       HSV_VALUE_WEIGHT          = 2;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double colorVisibilityCheck (ColorDef fg, ColorDef bg)
+static double colorVisibilityCheck(ColorDef fg, ColorDef bg)
     {
     // Compute luminosity...
-    double      red   = abs (fg.GetRed()   - bg.GetRed());
-    double      green = abs (fg.GetGreen() - bg.GetGreen());
-    double      blue  = abs (fg.GetBlue()  - bg.GetBlue());
+    double      red   = abs(fg.GetRed()   - bg.GetRed());
+    double      green = abs(fg.GetGreen() - bg.GetGreen());
+    double      blue  = abs(fg.GetBlue()  - bg.GetBlue());
 
     return (0.30 * red) + (0.59 * green) + (0.11 * blue);
     }
@@ -1045,7 +1045,7 @@ static double colorVisibilityCheck (ColorDef fg, ColorDef bg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void adjustHSVColor (HsvColorDef& fgHsv, bool darkenColor, int delta)
+static void adjustHSVColor(HsvColorDef& fgHsv, bool darkenColor, int delta)
     {
     if (darkenColor)
         {
@@ -1084,9 +1084,9 @@ static void adjustHSVColor (HsvColorDef& fgHsv, bool darkenColor, int delta)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void adjustColorForContrast (ColorDef& fg, ColorDef bg, ColorDef vw)
+static void adjustColorForContrast(ColorDef& fg, ColorDef bg, ColorDef vw)
     {
-    double visibility = colorVisibilityCheck (fg, bg);
+    double visibility = colorVisibilityCheck(fg, bg);
 
     if (VISIBILITY_GOAL <= visibility)
         return;
@@ -1094,7 +1094,7 @@ static void adjustColorForContrast (ColorDef& fg, ColorDef bg, ColorDef vw)
     int         adjPercent = (int) (((VISIBILITY_GOAL - visibility) / 255.0) * 100.0);
     HsvColorDef brightHSV, darkerHSV, fgHSV;
 
-    ColorUtil::ConvertRgbToHsv (&fgHSV, &fg);
+    ColorUtil::ConvertRgbToHsv(&fgHSV, &fg);
 
     darkerHSV = fgHSV;
     brightHSV = fgHSV;
@@ -1105,8 +1105,8 @@ static void adjustColorForContrast (ColorDef& fg, ColorDef bg, ColorDef vw)
     ColorDef bright, darker;
 
     bright = darker = fg; // NOTE: Initialize to original color to preserve transparency
-    ColorUtil::ConvertHsvToRgb (&darker, &darkerHSV);
-    ColorUtil::ConvertHsvToRgb (&bright, &brightHSV);
+    ColorUtil::ConvertHsvToRgb(&darker, &darkerHSV);
+    ColorUtil::ConvertHsvToRgb(&bright, &brightHSV);
 
     if (bright == bg) // Couldn't adjust brighter...
         {
@@ -1121,21 +1121,21 @@ static void adjustColorForContrast (ColorDef& fg, ColorDef bg, ColorDef vw)
         }
 
     // NOTE: Best choice is the one most visible against the background color...
-    fg = (colorVisibilityCheck (bright, vw) >= colorVisibilityCheck (darker, vw)) ? bright : darker;
+    fg = (colorVisibilityCheck(bright, vw) >= colorVisibilityCheck(darker, vw)) ? bright : darker;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::AdjustColorForContrast (ColorDef thisColor, ColorDef againstColor) const
+ColorDef DgnViewport::AdjustColorForContrast(ColorDef thisColor, ColorDef againstColor) const
     {
     ColorDef fg, bg, vw;
 
     fg = thisColor;
     bg = againstColor;
-    vw = GetBackgroundColor ();
+    vw = GetBackgroundColor();
 
-    adjustColorForContrast (fg, bg, vw);
+    adjustColorForContrast(fg, bg, vw);
 
     return fg;
     }
@@ -1143,19 +1143,19 @@ ColorDef DgnViewport::AdjustColorForContrast (ColorDef thisColor, ColorDef again
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::MakeTransparentIfOpaque (ColorDef color, int transparency)
+ColorDef DgnViewport::MakeTransparentIfOpaque(ColorDef color, int transparency)
     {
     // if it already has a transparency, leave it alone.
     if (0 != color.GetAlpha())
         return color;
 
-    return  MakeColorTransparency (color, transparency);
+    return  MakeColorTransparency(color, transparency);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::MakeColorTransparency (ColorDef color, int transparency)
+ColorDef DgnViewport::MakeColorTransparency(ColorDef color, int transparency)
     {
     color.SetAlpha((Byte) transparency);
     return color;
@@ -1164,12 +1164,12 @@ ColorDef DgnViewport::MakeColorTransparency (ColorDef color, int transparency)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::GetSolidFillEdgeColor (ColorDef inColor)
+ColorDef DgnViewport::GetSolidFillEdgeColor(ColorDef inColor)
     {
     // Logic derived from QVCamera::calcContrast...
     ColorDef     backgroundColorDef, inColorDef, outColorDef;
 
-    backgroundColorDef = GetBackgroundColor ();
+    backgroundColorDef = GetBackgroundColor();
     inColorDef = inColor;
 
     double  elemColor[3], bgRGBA[3];
@@ -1200,7 +1200,7 @@ ColorDef DgnViewport::GetSolidFillEdgeColor (ColorDef inColor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetPixelSizeAtPoint (DPoint3dCP rootPtP, DgnCoordSystem coordSys) const // can be NULL - if so, use center of view
+double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const // can be NULL - if so, use center of view
     {
     DPoint3d    rootTestPt;
 
@@ -1209,7 +1209,7 @@ double DgnViewport::GetPixelSizeAtPoint (DPoint3dCP rootPtP, DgnCoordSystem coor
         DPoint3d    npcCenter;
 
         npcCenter.x = npcCenter.y = npcCenter.z = 0.5;
-        NpcToWorld (&rootTestPt, &npcCenter, 1);
+        NpcToWorld(&rootTestPt, &npcCenter, 1);
         }
     else
         {
@@ -1218,26 +1218,26 @@ double DgnViewport::GetPixelSizeAtPoint (DPoint3dCP rootPtP, DgnCoordSystem coor
 
     DPoint4d    viewPts[2];
 
-    WorldToView (&viewPts[0], &rootTestPt, 1);
+    WorldToView(&viewPts[0], &rootTestPt, 1);
     viewPts[1] = viewPts[0];
     viewPts[1].x += viewPts[1].w;
 
     DPoint3d    rootPts[2];
 
-    ViewToWorld (rootPts, viewPts, 2);
+    ViewToWorld(rootPts, viewPts, 2);
 
     switch (coordSys)
         {
         case DgnCoordSystem::Screen:
         case DgnCoordSystem::View:
             {
-            WorldToView (rootPts, rootPts, 2);
+            WorldToView(rootPts, rootPts, 2);
             break;
             }
 
         case DgnCoordSystem::Npc:
             {
-            WorldToNpc (rootPts, rootPts, 2);
+            WorldToNpc(rootPts, rootPts, 2);
             break;
             }
 
@@ -1246,13 +1246,13 @@ double DgnViewport::GetPixelSizeAtPoint (DPoint3dCP rootPtP, DgnCoordSystem coor
             break;
         }
 
-    return rootPts[0].distance (rootPts+1);
+    return rootPts[0].distance(rootPts+1);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void limitWindowSize (ViewFrustumStatus& error, double& value, ViewFrustumStatus lowErr, ViewFrustumStatus highErr)
+static void limitWindowSize(ViewFrustumStatus& error, double& value, ViewFrustumStatus lowErr, ViewFrustumStatus highErr)
     {
     if (value < MIN_VIEWDELTA)
         {
@@ -1269,7 +1269,7 @@ static void limitWindowSize (ViewFrustumStatus& error, double& value, ViewFrustu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::OutputFrustumErrorMessage (StatusInt errorStatus)
+void DgnViewport::OutputFrustumErrorMessage(StatusInt errorStatus)
     {
     if (SUCCESS == errorStatus || ERROR == errorStatus)
         return;
@@ -1283,22 +1283,22 @@ void DgnViewport::OutputFrustumErrorMessage (StatusInt errorStatus)
 
     Utf8String msg = DgnCoreL10N::GetString(*(ids+errorStatus-VIEWFRUSTUM_ERROR_BASE));
     if (msg.size() > 0)
-        NotificationManager::OutputMessage (NotifyMessageDetails (OutputMessagePriority::Error, msg.c_str()));
+        NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Error, msg.c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/86
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus DgnViewport::ValidateWindowSize (DPoint3dR delta, bool messageNeeded)
+ViewFrustumStatus DgnViewport::ValidateWindowSize(DPoint3dR delta, bool messageNeeded)
     {
     ViewFrustumStatus  error=VIEWFRUST_STATUS_SUCCESS, ignore;
 
-    limitWindowSize (error,  delta.x, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);
-    limitWindowSize (error,  delta.y, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);
-    limitWindowSize (ignore, delta.z, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);    // always check z depth
+    limitWindowSize(error,  delta.x, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);
+    limitWindowSize(error,  delta.y, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);
+    limitWindowSize(ignore, delta.z, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);    // always check z depth
 
     if (messageNeeded)
-        OutputFrustumErrorMessage (error);
+        OutputFrustumErrorMessage(error);
 
     return error;
     }
@@ -1312,7 +1312,7 @@ int32_t DgnViewport::GetDisplayPriorityFrontPlane() {return GetMaxDisplayPriorit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::UseClipVolume (DgnModelCP modelRef) const
+bool DgnViewport::UseClipVolume(DgnModelCP modelRef) const
     {
     if (!IsActive())
         return false;
@@ -1323,7 +1323,7 @@ bool DgnViewport::UseClipVolume (DgnModelCP modelRef) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RichardTrefz    08/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::GetContrastToBackgroundColor () const
+ColorDef DgnViewport::GetContrastToBackgroundColor() const
     {
     // should we use black or white
     bool    invert  = ((m_backgroundColor.GetRed() + m_backgroundColor.GetGreen() + m_backgroundColor.GetBlue()) > (255*3)/2);
@@ -1333,19 +1333,19 @@ ColorDef DgnViewport::GetContrastToBackgroundColor () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_GetViewName (WStringR name) const
+void DgnViewport::_GetViewName(WStringR name) const
     {
     name = L"";
     if (!Is3dView())
         return;
 
-    ViewController::GetStandardViewName(name, ViewController::IsStandardViewRotation (m_rotMatrix, true));
+    ViewController::GetStandardViewName(name, ViewController::IsStandardViewRotation(m_rotMatrix, true));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_SynchWithViewController (bool saveInUndo)
+void DgnViewport::_SynchWithViewController(bool saveInUndo)
     {
     _SetupFromViewController();
 
@@ -1373,7 +1373,7 @@ void DgnViewport::DrawToolGraphics(ViewContextR context, bool isPreupdate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetGridScaleFactor ()
+double DgnViewport::GetGridScaleFactor()
     {
     double  scaleFactor = 1.0;
 
@@ -1393,7 +1393,7 @@ double DgnViewport::GetGridScaleFactor ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::GetGridRoundingDistance (DPoint2dR roundingDistance)
+void DgnViewport::GetGridRoundingDistance(DPoint2dR roundingDistance)
     {
 #ifdef DGNV10FORMAT_CHANGES_WIP
     ModelInfoCR modelInfo = m_rootModel->GetModelInfo();
@@ -1418,41 +1418,41 @@ void DgnViewport::GetGridRoundingDistance (DPoint2dR roundingDistance)
         }
 
     roundingDistance.y = roundingDistance.x * gridRatio;
-    roundingDistance.scale (&roundingDistance, GetGridScaleFactor());
+    roundingDistance.scale(&roundingDistance, GetGridScaleFactor());
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             06/86
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void roundGrid (double& num, double units)
+static void roundGrid(double& num, double units)
     {
     double  sign = ((num * units) < 0.0) ? -1.0 : 1.0;
 
     num = (num * sign) / units + 0.5;
-    num = units * sign * floor (num);
+    num = units * sign * floor(num);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::GridFix (DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid)
+void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid)
     {
     DVec3d planeNormal;
-    rMatrixRoot.getRow (&planeNormal, 2);
+    rMatrixRoot.getRow(&planeNormal, 2);
 
     DVec3d eyeVec;
     if (m_isCameraOn)
-        eyeVec.NormalizedDifference (pointRoot, m_camera.GetEyePoint());
+        eyeVec.NormalizedDifference(pointRoot, m_camera.GetEyePoint());
     else
-        m_rotMatrix.getRow (&eyeVec, 2);
+        m_rotMatrix.getRow(&eyeVec, 2);
 
-    LegacyMath::Vec::LinePlaneIntersect (&pointRoot, &pointRoot, &eyeVec, &originRoot, &planeNormal, false);
+    LegacyMath::Vec::LinePlaneIntersect(&pointRoot, &pointRoot, &eyeVec, &originRoot, &planeNormal, false);
 
     // get origin and point in view coordinate system
     DPoint3d    pointRootView, originRootView;
-    rMatrixRoot.multiply (&pointRootView, &pointRoot);
-    rMatrixRoot.multiply (&originRootView, &originRoot);
+    rMatrixRoot.multiply(&pointRootView, &pointRoot);
+    rMatrixRoot.multiply(&originRootView, &originRoot);
 
     // see whether we need to adjust the origin for iso-grid
     if (isoGrid)
@@ -1468,27 +1468,27 @@ void DgnViewport::GridFix (DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3
     pointRootView.x -= originRootView.x;
 
     // round off the remainder to the grid distances
-    roundGrid (pointRootView.y, roundingDistanceRoot.y);
-    roundGrid (pointRootView.x, roundingDistanceRoot.x);
+    roundGrid(pointRootView.y, roundingDistanceRoot.y);
+    roundGrid(pointRootView.x, roundingDistanceRoot.x);
 
     // add the origin back in
     pointRootView.x += originRootView.x;
     pointRootView.y += originRootView.y;
 
     // go back to root coordinate system
-    rMatrixRoot.multiplyTranspose (&pointRoot, &pointRootView);
+    rMatrixRoot.multiplyTranspose(&pointRoot, &pointRootView);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::PointToStandardGrid (DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix)
+void DgnViewport::PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix)
     {
 #ifdef DGNV10FORMAT_CHANGES_WIP
     DPoint2d roundingDistanceRoot;
-    GetGridRoundingDistance (roundingDistanceRoot);
+    GetGridRoundingDistance(roundingDistanceRoot);
 
-    GridFix (point, rMatrix, gridOrigin, roundingDistanceRoot, TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ISO_GRID)));
+    GridFix(point, rMatrix, gridOrigin, roundingDistanceRoot, TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ISO_GRID)));
 #endif
     }
 
@@ -1523,7 +1523,7 @@ ColorDef DgnViewport::_GetWindowBgColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FitViewParams::SetupFitMode (FitModes modes)
+void FitViewParams::SetupFitMode(FitModes modes)
     {
     m_fitRasterRefs      = false;
     m_rasterElementsOnly = false;
@@ -1549,7 +1549,7 @@ void FitViewParams::SetupFitMode (FitModes modes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportApplyOptions::ViewportApplyOptions (bool initFromActive)
+ViewportApplyOptions::ViewportApplyOptions(bool initFromActive)
     {
     m_resizeMode        = ViewportResizeMode::KeepCurrent;
     m_applyVolume       = false;
@@ -1564,7 +1564,7 @@ ViewportApplyOptions::ViewportApplyOptions (bool initFromActive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewportApplyOptions::SetApplyAll (bool state)
+void            ViewportApplyOptions::SetApplyAll(bool state)
     {
     m_applyVolume       = true;
     m_applyAttributes   = true;
@@ -1583,14 +1583,14 @@ void DgnViewport::ScheduleProgressiveDisplay(IProgressiveDisplay& pd)
     {
     IProgressiveDisplayPtr pdptr(&pd);
 
-    auto iFound = std::find (m_progressiveDisplay.begin(), m_progressiveDisplay.end(), pdptr);
+    auto iFound = std::find(m_progressiveDisplay.begin(), m_progressiveDisplay.end(), pdptr);
     if (iFound != m_progressiveDisplay.end())
         {
         *iFound = pdptr;
         }
     else
         {
-        m_progressiveDisplay.push_back (pdptr);
+        m_progressiveDisplay.push_back(pdptr);
         }
 
     // *** TBD: Sort in priority order

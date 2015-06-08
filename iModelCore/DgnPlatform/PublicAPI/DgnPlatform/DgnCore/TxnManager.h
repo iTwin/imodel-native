@@ -116,7 +116,7 @@ public:
     bset<DgnElementId> m_failedDependencyTargets;
 
     enum class ChangeType : int {Add, Update, Delete};
-    explicit TxnSummary(DgnDbR db) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false) {BeAssert(!db.IsReadonly());}
+    DGNPLATFORM_EXPORT explicit TxnSummary(DgnDbR db);
     TxnSummary(DgnDbR, BeSQLite::ChangeSet&);
     DGNPLATFORM_EXPORT ~TxnSummary();
 
@@ -291,20 +291,6 @@ public:
     //! @return True if the Transaction Manager is currently active.
     //! @see Activate
     bool IsActive() {return m_isActive;}
-
-#if defined (NEEDS_WORK_TXN_MANAGER)
-    //! Turn on the Transaction Manager. After this, all changes to elements in transactable files will be journaled.
-    //! @See DgnFile::SetTransactable
-    //! @see Deactivate
-    DGNPLATFORM_EXPORT void Activate();
-
-    //! Turn off the Transaction Manager. After this, changes to the database will not be journaled for undo.
-    //! Turning off the Transaction Manager also permanently clears any journaled changes. Therefore, turning the Transaction Manager
-    //! off and then back on has the effect of clearing it.
-    //! @see Activate
-    DGNPLATFORM_EXPORT void Deactivate();
-    //@}
-#endif
 
     //! @name Multi-transaction Operations
     //@{

@@ -493,11 +493,6 @@ DgnMarkupProjectPtr DgnMarkupProject::OpenDgnDb(DbResult* outResult, BeFileNameC
         return nullptr;
         }
 
-#if defined (NEEDS_WORK_TXN_MANAGER)
-    if (openParams.m_startDefaultTxn)
-        markupProject->GetTxnManager().Activate();
-#endif
-
     return markupProject;
     }
 
@@ -741,11 +736,6 @@ DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR
     
     if (BE_SQLITE_OK != stat)
         return nullptr;
-
-#if defined (NEEDS_WORK_TXN_MANAGER)
-    if (params.m_startDefaultTxn)
-        markupProject->GetTxnManager().Activate();
-#endif
 
     return  markupProject;
     }
@@ -1125,7 +1115,6 @@ PhysicalRedlineModelPtr PhysicalRedlineModel::Create (DgnMarkupProjectR markupPr
     PhysicalRedlineModelPtr rdlModel = new PhysicalRedlineModel(PhysicalRedlineModel::CreateParams(markupProject, rmodelClassId, name));
     if (!rdlModel.IsValid())
         {
-        markupProject.GetTxnManager().Activate();
         DGNCORELOG->error("PhysicalRedlineModel::CreateModel failed");
         BeAssert(false && "PhysicalRedlineModel::CreateModel failed");
         return nullptr;
