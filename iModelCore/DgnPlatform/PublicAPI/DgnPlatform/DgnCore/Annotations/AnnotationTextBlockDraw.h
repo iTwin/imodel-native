@@ -28,19 +28,19 @@ private:
 
     AnnotationTextBlockLayoutCP m_layout;
 
-    void CopyFrom(AnnotationTextBlockDrawCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockDrawCR);
     BentleyStatus DrawTextRun(AnnotationLayoutRunCR, ViewContextR) const;
     BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, ViewContextR) const;
     BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, ViewContextR) const;
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationTextBlockDraw(AnnotationTextBlockDrawCR);
-    DGNPLATFORM_EXPORT AnnotationTextBlockDrawR operator=(AnnotationTextBlockDrawCR);
-    DGNPLATFORM_EXPORT static AnnotationTextBlockDrawPtr Create(AnnotationTextBlockLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationTextBlockDrawPtr Clone() const;
+    AnnotationTextBlockDraw(AnnotationTextBlockDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationTextBlockDrawR operator=(AnnotationTextBlockDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationTextBlockDrawPtr Create(AnnotationTextBlockLayoutCR layout) { return new AnnotationTextBlockDraw(layout); }
+    AnnotationTextBlockDrawPtr Clone() const { return new AnnotationTextBlockDraw(*this); }
 
-    DGNPLATFORM_EXPORT AnnotationTextBlockLayoutCR GetLayout() const;
+    AnnotationTextBlockLayoutCR GetLayout() const { return *m_layout; }
 
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
 };

@@ -12,7 +12,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockDrawPtr AnnotationTextBlockDraw::Create(AnnotationTextBlockLayoutCR layout) { return new AnnotationTextBlockDraw(layout); }
 AnnotationTextBlockDraw::AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR layout) :
     T_Super()
     {
@@ -22,18 +21,10 @@ AnnotationTextBlockDraw::AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR lay
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockDrawPtr AnnotationTextBlockDraw::Clone() const { return new AnnotationTextBlockDraw(*this); }
-AnnotationTextBlockDraw::AnnotationTextBlockDraw(AnnotationTextBlockDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationTextBlockDrawR AnnotationTextBlockDraw::operator=(AnnotationTextBlockDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationTextBlockDraw::CopyFrom(AnnotationTextBlockDrawCR rhs)
     {
     m_layout = rhs.m_layout;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-AnnotationTextBlockLayoutCR AnnotationTextBlockDraw::GetLayout() const { return *m_layout; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014

@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/TextAnnotation.cpp $ 
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $ 
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
@@ -22,7 +22,6 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationPtr TextAnnotation::Create(DgnDbR project) { return new TextAnnotation(project); }
 TextAnnotation::TextAnnotation(DgnDbR project) :
     T_Super()
     {
@@ -45,9 +44,6 @@ TextAnnotationPtr TextAnnotation::Create(DgnDbR project, DgnStyleId seedID)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationPtr TextAnnotation::Clone() const { return new TextAnnotation(*this); }
-TextAnnotation::TextAnnotation(TextAnnotationCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-TextAnnotationR TextAnnotation::operator=(TextAnnotationCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void TextAnnotation::CopyFrom(TextAnnotationCR rhs)
     {
     m_dgndb = rhs.m_dgndb;
@@ -71,19 +67,6 @@ void TextAnnotation::Reset()
     m_frame = NULL;
     m_leaders.clear();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
-//---------------------------------------------------------------------------------------
-DgnDbR TextAnnotation::GetDgnProjectR() const { return *m_dgndb; }
-AnnotationTextBlockCP TextAnnotation::GetTextCP() const { return m_text.get(); }
-AnnotationTextBlockP TextAnnotation::GetTextP() { return m_text.get(); }
-void TextAnnotation::SetText(AnnotationTextBlockCP value) { m_text = const_cast<AnnotationTextBlockP>(value); }
-AnnotationFrameCP TextAnnotation::GetFrameCP() const { return m_frame.get(); }
-AnnotationFrameP TextAnnotation::GetFrameP() { return m_frame.get(); }
-void TextAnnotation::SetFrame(AnnotationFrameCP value) { m_frame = const_cast<AnnotationFrameP>(value); }
-AnnotationLeaderCollectionCR TextAnnotation::GetLeaders() const { return m_leaders; }
-AnnotationLeaderCollectionR TextAnnotation::GetLeadersR() { return m_leaders; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014

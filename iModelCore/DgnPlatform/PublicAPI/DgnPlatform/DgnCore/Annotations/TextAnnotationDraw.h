@@ -28,18 +28,18 @@ private:
     TextAnnotationCP m_annotation;
     Transform m_documentTransform;
 
-    void CopyFrom(TextAnnotationDrawCR);
+    DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationDrawCR);
 
 public:
     DGNPLATFORM_EXPORT explicit TextAnnotationDraw(TextAnnotationCR);
-    DGNPLATFORM_EXPORT TextAnnotationDraw(TextAnnotationDrawCR);
-    DGNPLATFORM_EXPORT TextAnnotationDrawR operator=(TextAnnotationDrawCR);
-    DGNPLATFORM_EXPORT static TextAnnotationDrawPtr Create(TextAnnotationCR);
-    DGNPLATFORM_EXPORT TextAnnotationDrawPtr Clone() const;
+    TextAnnotationDraw(TextAnnotationDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    TextAnnotationDrawR operator=(TextAnnotationDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static TextAnnotationDrawPtr Create(TextAnnotationCR annotation) { return new TextAnnotationDraw(annotation); }
+    TextAnnotationDrawPtr Clone() const { return new TextAnnotationDraw(*this); }
 
-    DGNPLATFORM_EXPORT TextAnnotationCR GetAnnotation() const;
-    DGNPLATFORM_EXPORT TransformCR GetDocumentTransform() const;
-    DGNPLATFORM_EXPORT void SetDocumentTransform(TransformCR);
+    TextAnnotationCR GetAnnotation() const { return *m_annotation; }
+    TransformCR GetDocumentTransform() const { return m_documentTransform; }
+    void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
     DGNVIEW_EXPORT BentleyStatus Draw(DgnViewportR, DgnDrawMode, DrawPurpose, DgnCategoryId) const;
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
