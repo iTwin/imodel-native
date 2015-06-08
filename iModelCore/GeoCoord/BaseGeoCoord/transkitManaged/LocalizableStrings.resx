@@ -679,7 +679,7 @@
   </data>
 
   <data name="DatumInSystemLibrary" xml:space="preserve">
-    <value>There is already a datum with that name in the Sytem Library.</value>
+    <value>There is already a datum with that name in the System Library.</value>
   </data>
   <data name="DatumInUserLibrary" xml:space="preserve">
     <value>There is already a datum with that name in this libraryfile.</value>
