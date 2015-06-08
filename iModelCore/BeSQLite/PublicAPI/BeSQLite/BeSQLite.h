@@ -123,7 +123,6 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 //__PUBLISH_SECTION_END__
 #endif
 
-#define TEMP_TABLE_Prefix "temp.t_"
 
 //  Copied from sqlite3-1.c
 #define SQLITE_PENDING_BYTE     (0x40000000)
@@ -1385,8 +1384,8 @@ struct ChangeSet : NonCopyableClass
         };
 
 private:
-    int     m_size;
-    void*   m_changeset;
+    int    m_size;
+    void*  m_changeset;
 
 public:
     virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) {return ApplyChangesForTable::Yes;}

@@ -34,6 +34,8 @@
 
 #define RUNONCE_CHECK(var,stat) {if (var) return stat; var=true;}
 
+#define TEMP_TABLE_Prefix "temp.t_"
+
 using namespace std;
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -3795,8 +3797,8 @@ public:
     static const int formatVersionNumber = 0x10;
     enum CompressionType
         {
-        NO_COMPRESSION  =       0,
-        LZMA2           =       2
+        NO_COMPRESSION  = 0,
+        LZMA2           = 2
         };
 
     EmbeddedLzmaHeader(CompressionType compressionType)
