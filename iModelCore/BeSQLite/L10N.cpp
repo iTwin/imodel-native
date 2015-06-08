@@ -22,7 +22,7 @@ Utf8String L10NLookup::SQLangDb::GetString(L10N::NameSpace scope, L10N::StringId
     if (IsDbOpen())
         {
         CachedStatementPtr stmt;
-        DbResult rc = GetCachedStatement(stmt, "SELECT Value FROM l10n_strings WHERE Namespace=? AND StringId=?");
+        DbResult rc = GetCachedStatement(stmt, "SELECT Value FROM l10n_strings WHERE Namespace=? AND ResName=?");
         BeAssert(rc == BE_SQLITE_OK);
 
         stmt->BindText(1, scope.m_namespace, Statement::MakeCopy::No);
