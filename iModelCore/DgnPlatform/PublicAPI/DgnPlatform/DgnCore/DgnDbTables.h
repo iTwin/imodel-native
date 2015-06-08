@@ -857,7 +857,7 @@ struct DgnElements : DgnDbTable
     friend struct DgnModel;
     friend struct DgnModels;
     friend struct ElementHandler;
-    friend struct TxnManager;
+    friend struct Txns;
     friend struct ProgressiveViewFilter;
 
     //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.

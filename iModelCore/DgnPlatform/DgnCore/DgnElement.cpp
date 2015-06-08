@@ -193,6 +193,15 @@ Utf8String DgnElement::_GenerateDefaultCode()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::UpdateLastModTime()
+    {
+    // update the last modified time directly rather than through trigger, so we can tell that we have the lastest version of this element
+    m_lastModTime = DateTime::HnsToRationalDay(DateTime::UnixMillisecondsToJulianDay(BeTimeUtilities::GetCurrentTimeAsUnixMillis()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_InsertInDb()
@@ -200,9 +209,11 @@ DgnModelStatus DgnElement::_InsertInDb()
     if (m_code.empty())
         m_code = _GenerateDefaultCode();
 
+    UpdateLastModTime();
+
     CachedStatementPtr stmt;
-    enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Label=5,Code=6,ParentId=7};
-    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId) VALUES(?,?,?,?,?,?,?)");
+    enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Label=5,Code=6,ParentId=7,LastMod=8};
+    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
 
     stmt->BindId(Column::ElementId, m_elementId);
     stmt->BindId(Column::ECClassId, m_classId);
@@ -211,6 +222,7 @@ DgnModelStatus DgnElement::_InsertInDb()
     stmt->BindText(Column::Label, GetLabel(), Statement::MakeCopy::No);
     stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
     stmt->BindId(Column::ParentId, m_parentId);
+    stmt->BindDouble(Column::LastMod, m_lastModTime);
 
     return stmt->Step() != BE_SQLITE_DONE ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
@@ -221,14 +233,17 @@ DgnModelStatus DgnElement::_InsertInDb()
 DgnModelStatus DgnElement::_UpdateInDb()
     {
     CachedStatementPtr stmt;
-    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,ElementId=5};
-    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,ElementId=6};
+    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=? WHERE Id=?");
+
+    UpdateLastModTime();
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
     stmt->BindText(Column::Label, GetLabel(), Statement::MakeCopy::No);
     stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
     stmt->BindId(Column::ParentId, m_parentId);
+    stmt->BindDouble(Column::LastMod, m_lastModTime);
     stmt->BindId(Column::ElementId, m_elementId);
 
     return (stmt->Step() != BE_SQLITE_DONE) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;

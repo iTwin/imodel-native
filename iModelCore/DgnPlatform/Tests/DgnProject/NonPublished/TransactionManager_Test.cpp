@@ -394,7 +394,7 @@ void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     auto ah = &ABCHandler::GetHandler();
     ASSERT_EQ((void*)dh,(void*)ah );
 
-    m_db->GetTxnManager().EnableTracking(true);
+    m_db->Txns().EnableTracking(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -608,7 +608,7 @@ TEST_F(TransactionManagerTests, CRUD)
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", BeSQLite::Db::OPEN_ReadWrite);
 
     m_db->SaveChanges();
-    m_db->GetTxnManager().EnableTracking(true);
+    m_db->Txns().EnableTracking(true);
     TxnMonitorVerifier monitor;
 
     //  -------------------------------------------------------------

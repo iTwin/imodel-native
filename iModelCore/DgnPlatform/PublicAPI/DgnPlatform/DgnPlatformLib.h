@@ -939,7 +939,7 @@ public:
         virtual int _GetVersion() const {return 1;}
 
     public:
-        T_TableHandlers&  TableHandlers() {return m_tableHandlers;}
+        T_TableHandlers& TableHandlers() {return m_tableHandlers;}
         T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
         
         DGNPLATFORM_EXPORT virtual void _OnAssert(WCharCP _Message, WCharCP _File, unsigned _Line);

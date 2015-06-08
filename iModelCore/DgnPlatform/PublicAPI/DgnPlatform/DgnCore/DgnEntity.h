@@ -26,18 +26,18 @@ protected:
     friend struct DgnElementDependencyGraph;
 
     //! Called by DgnElementDependencyGraph after the source DgnElement's content has changed. 
-    //! This base class implementation of _OnRootChanged calls TxnManager::ReportValidationError to indicate a missing handler.
+    //! This base class implementation of _OnRootChanged calls Txns::ReportValidationError to indicate a missing handler.
     //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
     //! @param[in] relationshipId       The ECRelationship instance ID
     //! @param[in] source               The ECRelationship's Source DgnElement
     //! @param[in] target               The ECRelationship's Target DgnElement
     //! @param[in] summary              Summary of all DgnElements that were *directly* changed
-    //! Call TxnManager::ReportValidationError to reject an invalid change. The reported error can be classified as fatal or just a warning.
+    //! Call Txns::ReportValidationError to reject an invalid change. The reported error can be classified as fatal or just a warning.
     DGNPLATFORM_EXPORT virtual void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary);
 
     //! Called by DgnElementDependencyGraph after all _OnRootChanged have been invoked, in the case where the output of this dependency is also the output of other dependencies.
     //! The dependency handler should check that its requirements is still enforced. 
-    //! Call TxnManager::ReportValidationError to report a validation error. The ElementDependencyGraph::DependencyValidationError error should normally be used. The reported error can be classified as fatal or just a warning.
+    //! Call Txns::ReportValidationError to report a validation error. The ElementDependencyGraph::DependencyValidationError error should normally be used. The reported error can be classified as fatal or just a warning.
     //! @note The dependency handler should *not* modify the target element.
     //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
     //! @param[in] relationshipId       The ECRelationship instance ID
@@ -56,7 +56,7 @@ public:
 
 //=======================================================================================
 //! Element dependency graph calls DgnElementDrivesElementDependencyHandler in the correct order when a transaction is "validated".
-//! Called by TxnManager::CheckTxnBoundary.
+//! Called by Txns::CheckTxnBoundary.
 //! 
 //! <h3>Only ElementDrivesElement ECRelationships can have Dependency Handlers</h3>
 //! Only an ECRelationship derived from dgn.ElementDrivesElement can have a dependency handler.
@@ -90,9 +90,9 @@ public:
 //! A missing dependency handler is treated as a warning.
 //! A dependency handler's _OnRootChanged method may call TxnSummary::ReportError to reject an invalid change. It can classify the error as fatal or just a warning.
 //! 
-//! If it detects any fatal transaction validation error, TxnManager will roll back the transaction as a whole.
+//! If it detects any fatal transaction validation error, Txns will roll back the transaction as a whole.
 //! 
-//! See TxnManager::IValidationError, DgnElementDependencyGraph::CyclesDetectedError, DgnElementDependencyGraph::MissingHandlerError
+//! See Txns::IValidationError, DgnElementDependencyGraph::CyclesDetectedError, DgnElementDependencyGraph::MissingHandlerError
 //=======================================================================================
 struct DgnElementDependencyGraph
 {
@@ -257,10 +257,10 @@ public:
     DgnDbR GetDgnDb() const {return m_db;}
 
 //__PUBLISH_SECTION_END__
-    //! TxnManager calls this when closing a txn
+    //! Txns calls this when closing a txn
     void InvokeAffectedDependencyHandlers(TxnSummaryCR summary);
 
-    //! TxnManager calls this when validating a txn
+    //! Txns calls this when validating a txn
     void UpdateModelDependencyIndex();
 //__PUBLISH_SECTION_START__
 

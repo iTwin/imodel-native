@@ -26,32 +26,34 @@ HANDLER_DEFINE_MEMBERS(DgnElementDrivesElementDependencyHandler)
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 struct EdgeStatusAccessor
+{
+    union 
     {
-    union {
-        struct {
+        struct 
+        {
             uint32_t m_failed:1;           // NB: bit layout must match EdgeStatus
             uint32_t m_unused1:6;          // NB: bit layout must match EdgeStatus
             uint32_t m_deferred:1;         // NB: bit layout must match EdgeStatus
             uint32_t m_unused2:24;
-            };
-        uint32_t    m_flags;
         };
+        uint32_t    m_flags;
+    };
 
     explicit EdgeStatusAccessor(DgnElementDependencyGraph::EdgeStatus s) : m_flags((uint32_t)s) {}
     explicit EdgeStatusAccessor(uint32_t s) : m_flags(s) {}
     DgnElementDependencyGraph::EdgeStatus ToEdgeStatus() const {return (DgnElementDependencyGraph::EdgeStatus)m_flags;}
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson  01/15
 //=======================================================================================
 struct DgnElementDependencyGraph::TableApi
-    {
+{
     DgnElementDependencyGraph& m_graph;
     TableApi(DgnElementDependencyGraph& g) : m_graph(g) {;}
     DgnDbR GetDgnDb() const {return m_graph.m_db;}
     virtual DbResult UpdateEdgeStatusInDb(Edge const& edge, EdgeStatus newStatus) {return BE_SQLITE_OK;}
-    };
+};
 
 //=======================================================================================
 //  Wrapper for the ElementDrivesElement ECRelationship
@@ -1046,7 +1048,7 @@ BentleyStatus DgnElementDependencyGraph::WhatIfChanged(IEdgeProcessor& proc, bve
     {
     TxnSummary fakeSummary(m_db);
     for (DgnElementId const& element : directlyChangedEntities)
-        fakeSummary.AddAffectedElement(element, DgnModelId(), TxnSummary::ChangeType::Update);
+        fakeSummary.AddAffectedElement(element, DgnModelId(), 0.0, TxnSummary::ChangeType::Update);
 
     for (EC::ECInstanceId const& deprel : directlyChangedDepRels)
         fakeSummary.AddAffectedDependency(deprel, TxnSummary::ChangeType::Update);

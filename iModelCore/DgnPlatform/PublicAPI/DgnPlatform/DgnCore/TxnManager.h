@@ -36,7 +36,7 @@ struct DgnElementDependencyGraph;
 
  <h2>Transactions</h2>
 
- TxnManager is the API for managing transactions.
+ Txns is the API for managing transactions.
 
  A transaction is defined as a set of changes that are treated as a unit. All changes are part of a transaction.
 
@@ -107,8 +107,8 @@ private:
     DgnDbR m_dgndb;
     BeSQLite::CachedStatementPtr m_addElementStatement;
     BeSQLite::CachedStatementPtr m_addElementDepStatement;
-    bool   m_modelDepsChanged;
-    bool   m_elementDepsChanged;
+    bool m_modelDepsChanged;
+    bool m_elementDepsChanged;
     bvector<ValidationError> m_validationErrors; //!< Validation errors detected on the last boundary check
 
 public:
@@ -117,11 +117,11 @@ public:
 
     enum class ChangeType : int {Add, Update, Delete};
     DGNPLATFORM_EXPORT explicit TxnSummary(DgnDbR db);
-    TxnSummary(DgnDbR, BeSQLite::ChangeSet&);
     DGNPLATFORM_EXPORT ~TxnSummary();
+    void AddChangeSet(BeSQLite::ChangeSet&);
 
     //! Table handler should call this function to record the fact that the specified Element was changed in the current txn.
-    DGNPLATFORM_EXPORT void AddAffectedElement(DgnElementId const&, DgnModelId, ChangeType);
+    DGNPLATFORM_EXPORT void AddAffectedElement(DgnElementId const&, DgnModelId, double lastMod, ChangeType);
 
     //! Table handler should call this function to record the fact that the specified relationship with a dependency was changed in the current txn.
     DGNPLATFORM_EXPORT void AddAffectedDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
@@ -306,7 +306,7 @@ public:
     DGNPLATFORM_EXPORT void EndMultiTxnOperation();
 
     //! Return the depth of the mulit-transaction stack
-    size_t TxnManager::GetMultiTxnOperationDepth() {return m_multiTxnOp.size();}
+    size_t GetMultiTxnOperationDepth() {return m_multiTxnOp.size();}
 
     //! @return The TxnId of the the innermost multi-Transaction operation. If no multi-Transaction operation is active, the TxnId will be zero.
     DGNPLATFORM_EXPORT TxnId GetMultiTxnOperationStart();
@@ -376,8 +376,8 @@ public:
     //! Set description of current txn. Used to show what will be undone/redone.
     void SetTxnDescription(Utf8CP descr) {m_curr.m_description.assign(descr);}
 
-    //! Get the DgnDb of this TxnManager
-    DgnDbR TxnManager::GetDgnDb() {return m_dgndb;}
+    //! Get the DgnDb of this Txns
+    DgnDbR GetDgnDb() {return m_dgndb;}
     //@}
 };
 

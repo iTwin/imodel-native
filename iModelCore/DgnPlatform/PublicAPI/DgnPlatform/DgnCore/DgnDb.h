@@ -124,7 +124,7 @@ private:
     void Destroy();
 
 protected:
-    friend struct TxnManager;
+    friend struct Txns;
     friend struct DgnElement;
 
     DgnVersion      m_schemaVersion;
@@ -141,7 +141,7 @@ protected:
     DgnMaterials    m_materials;
     DgnLinks        m_links;
     BeFileName      m_fileName;
-    TxnManagerPtr   m_txnManager;
+    TxnManagerPtr   m_txns;
 
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
@@ -162,7 +162,6 @@ public:
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
 
 public:
-    DGNPLATFORM_EXPORT TxnManagerR GetTxnManager();
 
     //! Get the file name for this DgnDb.
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
@@ -209,7 +208,8 @@ public:
     DGNPLATFORM_EXPORT DgnGeomParts& GeomParts() const;             //!< Information about the geometry parts for this DgnDb
     DGNPLATFORM_EXPORT DgnFonts& Fonts() const;                     //!< Information about fonts for this DgnDb
     DGNPLATFORM_EXPORT DgnLinks& Links() const;                     //!< Information about DgnLinks for this DgnDb
-    DGNPLATFORM_EXPORT DgnDomains& Domains() const;           //!< The DgnDomains associated with this DgnDb.
+    DGNPLATFORM_EXPORT DgnDomains& Domains() const;                 //!< The DgnDomains associated with this DgnDb.
+    DGNPLATFORM_EXPORT TxnManagerR Txns();
 
     DGNPLATFORM_EXPORT DgnFileStatus CompactFile();
 

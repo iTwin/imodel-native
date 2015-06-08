@@ -1091,8 +1091,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
     CachedStatementPtr stmt;
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
-    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,LastMod=6,};
+    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1112,7 +1112,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     stmt->GetValueText(Column::Label), 
                     stmt->GetValueText(Column::Code), 
                     elementId, 
-                    stmt->GetValueId<DgnElementId>(Column::ParentId)), makePersistent);
+                    stmt->GetValueId<DgnElementId>(Column::ParentId),
+                    stmt->GetValueDouble(Column::LastMod)), makePersistent);
     }
 
 /*---------------------------------------------------------------------------------**//**

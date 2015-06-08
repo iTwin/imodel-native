@@ -41,7 +41,6 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_col
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
                  m_materials(*this), m_links(*this), m_ecsqlCache(50, "DgnDb")
     {
-    m_txnManager = NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,7 +51,7 @@ void DgnDb::Destroy()
     // delete dgnfile, causes all models, etc. to be freed.
     m_models.Empty();
 
-    m_txnManager = nullptr;
+    m_txns = nullptr; // ref counted
 
     m_ecsqlCache.Empty();
     }
@@ -84,7 +83,7 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    GetTxnManager(); // make sure txnmanager is allocated
+    Txns(); // make sure txnmanager is allocated
 
     m_units.Load();
     return Domains().OnDbOpened();
@@ -93,12 +92,12 @@ DbResult DgnDb::_OnDbOpened()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManagerR DgnDb::GetTxnManager()
+TxnManagerR DgnDb::Txns()
     {
-    if (!m_txnManager.IsValid())
-        m_txnManager = new TxnManager(*this);
+    if (!m_txns.IsValid())
+        m_txns = new TxnManager(*this);
 
-    return *m_txnManager;
+    return *m_txns;
     }
 
 //--------------------------------------------------------------------------------------

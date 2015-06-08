@@ -8,7 +8,7 @@
 #include <DgnPlatformInternal.h>
 
 
-DPILOG_DEFINE(TxnManager)
+DPILOG_DEFINE(Txns)
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -24,7 +24,7 @@ struct ChangeBlobHeader
 };
 
 /*---------------------------------------------------------------------------------**//**
-* we keep a statement cache just for TxnManager statements
+* we keep a statement cache just for Txns statements
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
@@ -238,7 +238,8 @@ BentleyStatus TxnManager::PropagateChanges(BeSQLite::ChangeSet& changeset)
     if (!m_propagateChanges)
         return BSISUCCESS;
 
-    TxnSummary summary(m_dgndb, changeset);
+    TxnSummary summary(m_dgndb);
+    summary.AddChangeSet(changeset);
     if (summary.HasModelDependencyChanges())
         {
         // If there were changes to model dependencies, then we have to recompute model dependency order, 
@@ -359,19 +360,21 @@ bool TxnSummary::HasFatalErrors() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnSummary::AddAffectedElement(DgnElementId const& eid, DgnModelId mid, ChangeType changeType)
+void TxnSummary::AddAffectedElement(DgnElementId const& eid, DgnModelId mid, double lastMod, ChangeType changeType)
     {
     if (!mid.IsValid())
         mid = m_dgndb.Elements().QueryModelId(eid);
 
+    enum Column : int  {ElementId=1,ModelId=2,ChangeType=3,LastMod=4};
     if (!m_addElementStatement.IsValid())
-        m_dgndb.GetCachedStatement(m_addElementStatement, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType) VALUES(?,?,?)");
+        m_dgndb.GetCachedStatement(m_addElementStatement, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType,LastMod) VALUES(?,?,?,?)");
 
     m_addElementStatement->Reset();
     m_addElementStatement->ClearBindings();
-    m_addElementStatement->BindId(1, eid);
-    m_addElementStatement->BindId(2, mid);
-    m_addElementStatement->BindInt(3, (int) changeType);
+    m_addElementStatement->BindId(Column::ElementId, eid);
+    m_addElementStatement->BindId(Column::ModelId, mid);
+    m_addElementStatement->BindInt(Column::ChangeType, (int) changeType);
+    m_addElementStatement->BindDouble(Column::LastMod, lastMod);
     m_addElementStatement->Step();
 
     m_modelsInTxn.insert(mid);
@@ -403,14 +406,17 @@ void TxnSummary::AddAffectedDependency(BeSQLite::EC::ECInstanceId const& relid, 
     m_modelsInTxn.insert(mid);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TxnSummary::TxnSummary(DgnDbR db) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false) {BeAssert(!db.IsReadonly());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnSummary::TxnSummary(DgnDbR db, ChangeSet& changeset) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false)
+void TxnSummary::AddChangeSet(ChangeSet& changeset)
     {
-    BeAssert(!db.IsReadonly());
+    BeAssert(!m_dgndb.IsReadonly());
     Utf8String currTable;
     DgnDomain::TableHandler* tblHandler = 0;
 
@@ -464,8 +470,8 @@ TxnSummary::~TxnSummary()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult TxnManager::ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnDirection isUndo)
     {
-    TxnSummary summary(m_dgndb, changeset);
-
+    TxnSummary summary(m_dgndb);
+    summary.AddChangeSet(changeset);
     // notify monitors that changeset is about to be applied
     T_HOST.GetTxnAdmin()._OnTxnReverse(summary, isUndo);
 
@@ -582,10 +588,7 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool m
     TxnRowId first = FirstRow(txnRange.GetFirst());
 
     for (TxnRowId curr=last; curr.IsValid() && curr >= first; curr.Prev())
-        {
-//        if (!IsSettingTxn(curr))
-            ApplyChanges(curr, TxnDirection::Undo);
-        }
+        ApplyChanges(curr, TxnDirection::Undo);
 
     SetUndoInProgress(false);
 
