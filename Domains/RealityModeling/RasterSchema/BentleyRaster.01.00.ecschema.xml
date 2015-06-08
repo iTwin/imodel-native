@@ -9,4 +9,8 @@
       <BaseClass>dgn:RasterBaseModel</BaseClass>
     </ECClass>
 
+    <ECClass typeName="WmsModel" isDomainClass="True" >
+        <BaseClass>RasterModel</BaseClass>
+    </ECClass>
+
 </ECSchema>

@@ -43,7 +43,8 @@ rasterSchemaDepends             = $(rasterSchemaPublicApiSrc)RasterDomain.h     
                                   $(rasterSchemaPublicApiSrc)RasterSchemaCommon.h           \
                                   $(rasterSchemaPublicApiSrc)RasterSchemaTypes.h            \
                                   $(rasterSchemaPublicApiSrc)RasterHandler.h                \
-                                  $(rasterSchemaPublicApiSrc)RasterDomain.h
+                                  $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
+                                  $(rasterSchemaPublicApiSrc)WmsHandler.h
 
 rasterDisplayDepends =  $(rasterSchemaSrc)RasterSource.h \
                         $(rasterSchemaSrc)RasterQuadTree.h \
@@ -80,6 +81,8 @@ $(o)RasterDomain$(oext)     : $(rasterSchemaSrc)RasterDomain.cpp    $(rasterSche
 $(o)RasterQuadTree$(oext)   : $(rasterSchemaSrc)RasterQuadTree.cpp  $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
 $(o)RasterSource$(oext)     : $(rasterSchemaSrc)RasterSource.cpp    $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+
+$(o)WmsHandler$(oext)       : $(rasterSchemaSrc)WmsHandler.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
 $(o)WmsSource$(oext)        : $(rasterSchemaSrc)WmsSource.cpp       $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
