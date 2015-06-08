@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/transkit/baseGeoCoordMsg.r $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
@@ -160,7 +160,7 @@ MessageList    MSGLISTID_DgnGeoCoordStrings =
     { DGNGEOCOORD_Msg_UnparseableInputAngle,                  "Cannot parse input angle : "                           },
     { DGNGEOCOORD_Msg_UnparseableInputElevation,              "Cannot parse input elevation : "                       },
     { DGNGEOCOORD_Msg_SubstituteLinearTransform,              "%ls:%ls transformed. A Linear Transform was used that gives the same results as reprojection. " },
-    { DGNGEOCOORD_Msg_SubstituteLinearTransformDetails,       "The parent and reference have the same base Geographic Coordinate System. Therefore, it is possible to calculate a Linear Transform that achieves the same result as reprojection, but with much better performanc. " },
+    { DGNGEOCOORD_Msg_SubstituteLinearTransformDetails,       "The parent and reference have the same base Geographic Coordinate System. Therefore, it is possible to calculate a Linear Transform that achieves the same result as reprojection, but with much better performance. " },
     { DGNGEOCOORD_Msg_MiltaryGridOldCoordinatesName,          "Old Military Grid Coordinates"                          },
     { DGNGEOCOORD_Msg_MiltaryGridCoordinatesName,             "Military Grid Coordinates"                              },
     { DGNGEOCOORD_Msg_MiltaryGridCoordinatesWGS84Name,        "Military Grid Coordinates WGS84"                        },
