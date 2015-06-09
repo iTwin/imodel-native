@@ -138,93 +138,61 @@ Utf8String ECSchemaValidationRule::Error::ToString() const
     {
     return _ToString();
     }
+
+
+//**********************************************************************
+// MapStrategyRule
+//**********************************************************************
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Muhammada.zaighum                    04/2015
+// @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
 MapStrategyRule::MapStrategyRule(ECClassCR ecClass)
-: ECSchemaValidationRule(Type::IncorrectMapStrategyClass), m_error(nullptr)
-    {
-    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
-    }
+    : ECSchemaValidationRule(Type::InvalidMapStrategy), m_error(nullptr) {}
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Muhammada.zaighum                    04/2015
+// @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
 std::unique_ptr<ECSchemaValidationRule::Error> MapStrategyRule::_GetError() const
     {
-    if (m_error->GetInvalidStrategies().empty())
+    if (m_error == nullptr)
         return nullptr;
 
     return std::move(m_error);
     }
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Muhammada.zaighum                    04/2015
+// @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
 Utf8String MapStrategyRule::Error::_ToString() const
     {
-    if (GetInvalidStrategies().empty())
-        return "";
-
-    Utf8String violatingStrategiesStr;
-    bool isFirstSet = true;
-    for (auto const& strategy : GetInvalidStrategies())
-        {
-        if (!isFirstSet)
-            {
-            violatingStrategiesStr.append(" - ");
-            isFirstSet = false;
-            }
-        violatingStrategiesStr.append(strategy);
-        }        
-
-    Utf8CP strTemplate = nullptr;
-    strTemplate = "ECSchema '%s' contains Invalid MapStrategies. Conflicting Strategies: %s.";
     Utf8String str;
-    str.Sprintf(strTemplate, Utf8String(m_ecClass.GetSchema().GetName()).c_str(), Utf8String(violatingStrategiesStr).c_str());
+    str.Sprintf("Custom attribute 'ClassMap' on ECClass '%s' contains invalid values for the property MapStrategy or MapStrategyOptions.", Utf8String(m_ecClass.GetFullName()).c_str());
     return std::move(str);
     }
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Muhammada.zaighum                    04/2015
+// @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
-bool MapStrategyRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
+bool MapStrategyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
     ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
-    mapStrategy.Reset();
-    ECValue mapStrategyValue;
-    ECValue mapStrategyOptionValue;
-    auto classHint = ClassHintReader::ReadHint(ecClass);
+    IECInstancePtr classHint = CustomClassMapReader::Read(ecClass);
     if (classHint != nullptr)
         {
-        auto strategyStatus = classHint->GetValue(mapStrategyValue, BSCAP_MapStrategy);
-        auto strategyOptionStatus = classHint->GetValue(mapStrategyOptionValue, BSCAP_MapStrategyOption);
-        if (mapStrategyValue.IsNull() && mapStrategyOptionValue.IsNull())
-            {
+        if (CustomClassMapReader::TryReadMapStrategy(mapStrategy, *classHint))
             return true;
-            }
-        if ((strategyStatus == ECOBJECTS_STATUS_Success || strategyOptionStatus == ECOBJECTS_STATUS_Success))
-            {
-            if (mapStrategy.Parse(mapStrategy, mapStrategyValue.GetUtf8CP(), mapStrategyOptionValue.GetUtf8CP()) == BentleyStatus::SUCCESS)
-                {
-                return true;
-                }
-            }
-        auto& invalidStrategies= m_error->GetInvalidStrategiesR();
-        if (!mapStrategyValue.IsNull())
-            {
-            invalidStrategies.push_back(mapStrategyValue.GetUtf8CP());
-            }
-        if (!mapStrategyOptionValue.IsNull())
-            {
-            invalidStrategies.push_back(mapStrategyOptionValue.GetUtf8CP());
-            }
-        return false;
 
+        m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
+        return false;
         }
+
     return true;
     }
+
+
 //**********************************************************************
 // CaseInsensitiveClassNamesRule
 //**********************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------

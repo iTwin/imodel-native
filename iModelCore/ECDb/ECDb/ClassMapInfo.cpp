@@ -264,7 +264,8 @@ void ClassMapInfo::_InitializeFromSchema ()
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
     {
-    auto classHint = ClassHintReader::ReadClassHasCurrentTimeStampProperty(m_ecClass);
+    auto classHint = CustomAttributeReader::Read(m_ecClass, L"ClassHasCurrentTimeStampProperty");
+
     if (classHint == nullptr)
         return;
    
@@ -295,18 +296,10 @@ void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
 void ClassMapInfo::InitializeFromClassHint ()
     {
     ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
-    auto schemaHint = SchemaHintReader::ReadHint (m_ecClass.GetSchema ());
-    if (schemaHint != nullptr)
-        {
-        if (SchemaHintReader::TryReadDefaultClassMapStrategy (mapStrategy, *schemaHint))
-            GetMapStrategyR() = mapStrategy;
-
-        }
-
-    auto classHint = ClassHintReader::ReadHint (m_ecClass);
+    IECInstancePtr classHint = CustomClassMapReader::Read (m_ecClass);
     if (classHint != nullptr)
         {
-        if (ClassHintReader::TryReadMapStrategy (mapStrategy, *classHint))
+        if (CustomClassMapReader::TryReadMapStrategy (mapStrategy, *classHint))
             {
             GetMapStrategyR() = mapStrategy;
             if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
@@ -317,14 +310,14 @@ void ClassMapInfo::InitializeFromClassHint ()
             }
 
         Utf8String tableName;
-        if (ClassHintReader::TryReadTableName (tableName, *classHint))
+        if (CustomClassMapReader::TryReadTableName (tableName, *classHint))
             m_tableName = tableName;
 
         Utf8String ecInstanceIdColumnName;
-        if (ClassHintReader::TryReadECInstanceIdColumnName (ecInstanceIdColumnName, *classHint))
+        if (CustomClassMapReader::TryReadECInstanceIdColumnName (ecInstanceIdColumnName, *classHint))
             m_ecInstanceIdColumnName = ecInstanceIdColumnName;
 
-        ClassHintReader::TryReadIndices (m_hintIndexes, *classHint, m_ecClass);
+        CustomClassMapReader::TryReadIndices (m_hintIndexes, *classHint, m_ecClass);
         }
     }
 /*---------------------------------------------------------------------------------**//**
@@ -475,11 +468,11 @@ ECClassCR          ecClass
 Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
     {
     ECSchemaCR schema = ecClass.GetSchema ();
-    auto hint = SchemaHintReader::ReadHint (schema);
+    auto hint = CustomSchemaMapReader::Read (schema);
     if (hint != nullptr)
         {
         Utf8String tablePrefix;
-        if (SchemaHintReader::TryReadTablePrefix (tablePrefix, *hint))
+        if (CustomSchemaMapReader::TryReadTablePrefix (tablePrefix, *hint))
             return tablePrefix;
         }
 

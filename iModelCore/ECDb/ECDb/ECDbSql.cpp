@@ -1770,8 +1770,8 @@ Utf8String DDLGenerator::GetColumnDDL (ECDbSqlColumn const& o)
     if (o.GetConstraint ().IsUnique())
         sql.append (" ").append ("UNIQUE");
 
-    if (o.GetConstraint ().GetCollate () != ECDbSqlColumn::Constraint::Collate::Default)
-        sql.append (" ").append("COLLATE ").append (ECDbSqlColumn::Constraint::CollateToString (o.GetConstraint ().GetCollate ()));
+    if (o.GetConstraint ().GetCollation () != ECDbSqlColumn::Constraint::Collation::Default)
+        sql.append (" ").append("COLLATE ").append (ECDbSqlColumn::Constraint::CollationToString (o.GetConstraint ().GetCollation ()));
 
     if (!o.GetConstraint ().GetDefaultExpression ().empty ())
         sql.append (" ").append ("DEFAULT (").append (o.GetConstraint ().GetDefaultExpression ()).append (")");
@@ -1839,36 +1839,16 @@ Utf8CP ECDbSqlColumn::TypeToString (ECDbSqlColumn::Type type)
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static 
-ECDbSqlColumn::Constraint::Collate ECDbSqlColumn::Constraint::StringToCollate (Utf8CP typeName)
+Utf8CP ECDbSqlColumn::Constraint::CollationToString (ECDbSqlColumn::Constraint::Collation collation)
     {
-    static std::map<Utf8CP, Collate, CompareIUtf8> s_type
+    static std::map<Collation ,Utf8CP> s_type
         {
-            { "Default", Collate::Default },
-            { "Binary", Collate::Binary },
-            { "NoCase", Collate::NoCase },
-            { "RTrim", Collate::RTrim }
+            { Collation::Default, "Default" },
+            { Collation::Binary, "Binary", },
+            { Collation::NoCase, "NoCase" },
+            {Collation::RTrim, "RTrim" }
     };
-    auto itor = s_type.find (typeName);
-    if (itor == s_type.end ())
-        return Collate::Default;
-
-    return itor->second;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-//static 
-Utf8CP ECDbSqlColumn::Constraint::CollateToString (ECDbSqlColumn::Constraint::Collate collate)
-    {
-    static std::map<Collate ,Utf8CP> s_type
-        {
-            { Collate::Default, "Default" },
-            { Collate::Binary, "Binary", },
-            { Collate::NoCase, "NoCase" },
-            {Collate::RTrim, "RTrim" }
-    };
-    auto itor = s_type.find (collate);
+    auto itor = s_type.find(collation);
     if (itor == s_type.end ())
         return nullptr;
 
@@ -2487,7 +2467,7 @@ DbResult ECDbSqlPersistence::ReadColumn (Statement& stmt, ECDbSqlTable& o , std:
     auto constraintUnique = stmt.GetValueInt (5) == 1;
     auto constraintCheck = !stmt.IsColumnNull (6) ? stmt.GetValueText (6) : nullptr;
     auto constraintDefault = !stmt.IsColumnNull (7) ? stmt.GetValueText (7) : nullptr;
-    auto constraintCollate = static_cast<ECDbSqlColumn::Constraint::Collate>(stmt.GetValueInt (8));
+    auto constraintCollate = static_cast<ECDbSqlColumn::Constraint::Collation>(stmt.GetValueInt (8));
     auto primaryKey_Ordianal = stmt.IsColumnNull (9)? -1 : stmt.GetValueInt (9);
     auto userData = stmt.GetValueInt (10);
 
@@ -2501,7 +2481,7 @@ DbResult ECDbSqlPersistence::ReadColumn (Statement& stmt, ECDbSqlTable& o , std:
     n->SetId (id);
     n->GetConstraintR ().SetIsNotNull (constraintNotNull);
     n->GetConstraintR ().SetIsUnique (constraintUnique);
-    n->GetConstraintR ().SetCollate (constraintCollate);
+    n->GetConstraintR ().SetCollation (constraintCollate);
 
     if (constraintCheck)
         n->GetConstraintR ().SetCheckExpression (constraintCheck);
@@ -2779,7 +2759,7 @@ DbResult ECDbSqlPersistence::InsertColumn (ECDbSqlColumn const& o, int primaryKe
     if (!o.GetConstraint ().GetDefaultExpression ().empty ())
         stmt->BindText (10, o.GetConstraint ().GetDefaultExpression ().c_str (), Statement::MakeCopy::No);
 
-    stmt->BindInt (11, static_cast<int>(o.GetConstraint ().GetCollate ()));
+    stmt->BindInt (11, static_cast<int>(o.GetConstraint ().GetCollation ()));
     if (primaryKeyOrdianal > -1)
         stmt->BindInt (12, primaryKeyOrdianal);
 

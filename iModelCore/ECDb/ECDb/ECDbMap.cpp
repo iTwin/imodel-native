@@ -663,51 +663,6 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      2/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbMap::IsMappedToExistingTable (ECDbSqlTable& table) const
-    {
-    if (table.GetOwnerType() != OwnerType::ECDb)
-        return true;
-
-    auto itor = m_clustersByTable.find (&table);
-    if (itor == m_clustersByTable.end ())
-        {
-        BeAssert (false && "Failed to find DbTable");
-        return false;
-        }
-
-    MappedTableP mappedTable = itor->second.get ();
-    bool isMapToExistingTable = false;
-    for (auto& classMap : mappedTable->GetClassMaps ())
-        {
-        if (auto classHint = classMap->GetClass ().GetCustomAttribute (BSCAC_ECDbClassHint).get ())
-            {
-            ECValue ecValue;
-            if (classHint->GetValue (ecValue, L"MapToExistingTable") == ECObjectsStatus::ECOBJECTS_STATUS_Success)
-                {
-                if (!ecValue.IsNull ())
-                    isMapToExistingTable |= ecValue.GetBoolean ();
-                }
-            }
-
-        if (isMapToExistingTable)
-            break;
-        }
-
-    //is its a system class
-    if (!isMapToExistingTable)
-        {
-        for (auto& classMap : mappedTable->GetClassMaps ())
-            {
-            auto& schema = classMap->GetClass ().GetSchema ();
-            isMapToExistingTable &= (schema.IsSystemSchema () && schema.GetName () == L"dgn");
-            }
-        }
-
-    return isMapToExistingTable;
-    }
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbMap::FinishTableDefinition () const

@@ -176,15 +176,6 @@ enum SqlInsertActions
     SQLINSERT_Ignore,
     };
 
-//It follow SqlLite collate ordering. User can specify this using ECDbPropertyHint.
- enum class Collate
-     {
-     Default, // Default is really Binary in sqlite. But we will not provide collate for property to sqlite in this case and assume sqlite default.
-     Binary, // Compares string data using memcmp(), regardless of text encoding
-     NoCase, // The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that only ASCII characters are case folded. SQLite does not attempt to do full UTF case folding due to the size of the tables required.
-     RTrim,  // The same as binary, except that trailing space characters are ignored.
-     };
-
 enum ECContainerType
     {
     ECONTAINERTYPE_Schema = 1,
@@ -205,39 +196,9 @@ enum ECContainerType
 //    C = ECClass
 //    P = ECProperty
 //    V = ECPropertyValue
-#define BSCAC_ECDbClassHint             L"ECDbClassHint"
-#define BSCAC_ECDbClassHasCurrentTimeStamp     L"ClassHasCurrentTimeStampProperty"
-#define BSCAC_ECDbSchemaHint            L"ECDbSchemaHint"
-#define BSCAP_TablePrefix               L"TablePrefix"
-#define BSCAP_DefaultClassMapStrategy   L"DefaultClassMapStrategy"
 
-#define BSCAP_MapStrategy               L"MapStrategy" 
-#define BSCAP_MapStrategyOption         L"MapStrategyOption" 
-#define BSCAP_TableName                 L"TableName"
-#define BSCAP_ECInstanceIdColumn        L"ECIdColumn"
-#define BSCAP_Indexes                   L"Indexes"
-#define BSCAP_IsUnique                  L"IsUnique"
-#define BSCAP_IsNullable                L"IsNullable"
-#define BSCAP_Collate                   L"Collate"
-#define BSCAP_Collate_Binary            L"Binary"
-#define BSCAP_Collate_NoCase            L"NoCase"
-#define BSCAP_Collate_RTrim             L"RTrim"
-
-#define BSCAP_Name                      L"Name"
-#define BSCAP_Where                     L"Where"
-#define BSCAP_Properties                L"Properties"
-#define BSCAP_ECDBNOTNULL               "ECDB_NOTNULL"
 #define BSCAP_AllowDuplicateRelationships L"AllowDuplicateRelationships"
-#define BSCAV_NoHint                    L"NoHint"
-#define BSCAV_DoNotMap                  L"DoNotMap"
-#define BSCAV_DoNotMapHierarchy         L"DoNotMapHierarchy"
 #define BSCAV_InParentTable             L"InParentTable"
-#define BSCAV_TablePerHierarchy         L"TablePerHierarchy"
-#define BSCAV_TableForThisClass         L"TableForThisClass"
-#define BSCAV_TablePerClass             L"TablePerClass"
-#define BSCAV_RelationshipSourceTable   L"RelationshipSourceTable"
-#define BSCAV_RelationshipTargetTable   L"RelationshipTargetTable"
-#define BSCAV_SharedTableForThisClass   L"SharedTableForThisClass"
 
 #define BSCAP_SourceECInstanceIdColumn  L"SourceECIdColumn"
 #define BSCAP_TargetECInstanceIdColumn  L"TargetECIdColumn"
@@ -249,12 +210,7 @@ enum ECContainerType
 #define BSCAV_SourceToTarget            L"SourceToTarget"
 #define BSCAV_Bidirectional             L"Bidirectional"
 #define BSCAV_TargetToSource            L"TargetToSource"
-#define BSCAP_MapToExistingTable        L"MapToExistingTable"
-#define BSCAP_ReplaceEmptyTableWithEmptyView        L"ReplaceEmptyTableWithEmptyView"
 #define BSCAP_ExcludeFromColumnsReuse L"ExcludeFromColumnsReuse"
-#define BSCAC_ECDbPropertyHint          L"ECDbPropertyHint"
-#define BSCAP_ColumnName                L"ColumnName"
-#define BSCAP_Blob                      L"Blob"
 
 #define ECDB_COL_ECInstanceId           "ECInstanceId"
 #define ECDB_COL_ECClassId              "ECClassId"

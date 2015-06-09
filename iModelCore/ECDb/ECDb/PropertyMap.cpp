@@ -64,7 +64,7 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
         ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema (ecDbMap.GetECDbR (), ecProperty);
         }
 
-    IECInstancePtr hint = ecProperty.GetCustomAttributeLocal (BSCAC_ECDbPropertyHint);
+    IECInstancePtr hint = CustomPropertyMapReader::Read(ecProperty);
     // WIP_ECDB: honor the hint for non-default mappings
 
     ColumnInfo columnInfo (ecProperty, propertyAccessString, hint.get());
@@ -100,13 +100,6 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
         else
             {
             BeAssert (ARRAYKIND_Primitive != arrayProperty->GetKind ());
-            if (hint.IsValid ())
-                {
-                ECValue strategy;
-                if (ECOBJECTS_STATUS_Success == hint->GetValue (strategy, BSCAP_MapStrategy) && !strategy.IsNull () &&
-                    0 == BeStringUtilities::Wcsicmp (strategy.GetString (), BSCAP_Blob))
-                    LOG.warningv (L"MapStrategy '%ls' is not supported. %ls will be mapped to its own table", strategy.GetString (), ecProperty.GetName ().c_str ());
-                }
             return PropertyMapToTable::Create (ecProperty, ecDbMap, propertyAccessString, primaryTable, parentPropertyMap);
             }
         }
@@ -836,8 +829,8 @@ MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap ,
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
     bool          nullable = m_columnInfo.GetNullable ();
     bool          unique = m_columnInfo.GetUnique ();
-    ECDbSqlColumn::Constraint::Collate collate = m_columnInfo.GetCollate ();
-    m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collate, nullptr);
+    ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation ();
+    m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
     BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
     return MapStatus::Success;
     }
@@ -995,21 +988,21 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  Cla
     Utf8CP        columnName    = m_columnInfo.GetName();
     bool          nullable      = m_columnInfo.GetNullable();
     bool          unique        = m_columnInfo.GetUnique();
-    ECDbSqlColumn::Constraint::Collate       collate       = m_columnInfo.GetCollate();
+    ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation();
 
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
-    m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collate, "X");
+    m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collation, "X");
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    m_yColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collate, "Y");
+    m_yColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
     if (!m_is3d)
         return MapStatus::Success;
 
     Utf8String zColumnName(columnName);
     zColumnName.append("_Z");
-    m_zColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collate, "Z");
+    m_zColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
     return MapStatus::Success;
     }
 

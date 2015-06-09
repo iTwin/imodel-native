@@ -539,10 +539,10 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateCustomAttributes
             case DIFFTYPE_Empty:    //Not used
                 {
                 auto ca = sourceContainer.GetCustomAttributeLocal (caClassName.c_str ());
-                if (caClassName.Equals (L"ECDbClassHint") ||
-                    caClassName.Equals (L"ECDbPropertyHint") ||
+                if (caClassName.Equals (L"ClassMap") ||
+                    caClassName.Equals (L"PropertyMap") ||
                     caClassName.Equals (L"ECDbRelationshipClassHint") ||
-                    caClassName.Equals (L"ECDbSchemaHint"))
+                    caClassName.Equals (L"SchemaMap"))
                     {
                     if (DiffExist (*customAttributeDN, L"MapStrategy")
                         || DiffExist (*customAttributeDN, L"Indexes")
@@ -550,8 +550,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateCustomAttributes
                         || DiffExist (*customAttributeDN, L"AllowDuplicateRelationships")
                         || DiffExist (*customAttributeDN, L"IsNullable")
                         || DiffExist (*customAttributeDN, L"IsUnique")
-                        || DiffExist (*customAttributeDN, L"TablePrefix")
-                        || DiffExist (*customAttributeDN, L"NamedGroupIsAssembly"))
+                        || DiffExist (*customAttributeDN, L"TablePrefix"))
                         {
                         LOG.warningv (L"Updating ECDb mapping hints failed. One of the property changed is not allowed to update. Skipping '%ls'", caClassName.c_str ());
                         continue;
@@ -588,7 +587,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateCustomAttributes
                         return r;
                         }
 
-                    if (caClassName.Equals (L"ECDbClassHint") && containerType == ECContainerType::ECONTAINERTYPE_Class)
+                    if (caClassName.Equals (L"ClassMap") && containerType == ECContainerType::ECONTAINERTYPE_Class)
                         {                  
                         if (auto tableName = customAttributeDN->GetChildByAccessString (L"TableName"))
                             {
@@ -605,7 +604,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateCustomAttributes
                                 }
                             }
 
-                        if (auto ecInstanceIdColumn = customAttributeDN->GetChildByAccessString (L"ECIdColumn"))
+                        if (auto ecInstanceIdColumn = customAttributeDN->GetChildByAccessString (L"ECInstanceIdColumn"))
                             {
                             Statement stmt;
                             stmt.Prepare (m_ecdb, "UPDATE ec_ClassMap SET PrimaryKeyColumnName =?  WHERE ECClassId = ?");

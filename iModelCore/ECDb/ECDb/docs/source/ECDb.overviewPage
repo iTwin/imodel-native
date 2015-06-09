@@ -178,10 +178,7 @@
     
     %ECDb applies a default mapping when importing an @ref BentleyApi::ECN::ECSchema "ECSchema" into the @ref ECDbFile "ECDb file". 
     However, %ECDb allows ECSchema designers to modify the default mapping by decorating the ECSchema 
-    with dedicated <b>%ECDb hint custom attributes</b>, e.g. @b ECDbClassHint or @b ECDbPropertyHint. 
-
-    See also <a href="files/ecdb/Bentley_Standard_CustomAttributes.ecschema.xml" target="_blank">Bentley_Standard_CustomAttributes.ecschema.xml</a>
-    for how all available <b>%ECDb hint custom attributes</b> are defined.
+    with dedicated custom attributes defined in the standard ECSchema <a href="files/ecdb/ECDbMap.ecschema.xml" target="_blank">ECDbMap.ecschema.xml</a>. 
 
     @section ECDbDefaultMappingRules ECDb Default Mapping Rules
     - Type of ECClasses that <b>are not mapped</b>.
@@ -203,31 +200,26 @@
         - <em>ECDbRelationshipClassHint.AllowDuplicateRelationships</em> is set to false by default.
         - No referential integrity constraints are added. (See @ref ECDbRelationshipConstraintHintDescription for how to overwrite this)
 
-    @section ECDbSchemaHintDescription Mapping Hints for ECSchemas
+    @section CustomSchemaMapDescription Custom mapping or ECSchemas
     
-    Description of the ECDbSchemaHint properties:
+    Description of the SchemaMap properties:
     - TablePrefix: Specifies a prefix for generated tables. If not specified, the namespace prefix of the ECSchema is used. 
     The prefix should be 2-4 letters long followed by an underbar, e.g. plnt_. This setting will affect all tables that are created 
-    for this ECSchema unless it is overwritten on the ECClass level via the @ref ECDbClassHintDescription "ECDbClassHint" property @b TableName.
-    - DefaultPropertyStrategy (optional): Possible values: DoNotMap. <b>Not supported yet</b>
-    - DefaultClassMapStrategy (optional): Possible values:
-        - DoNotMap
-        - TableForThisClass
+    for this ECSchema unless it is overwritten on the ECClass level via the @ref CustomClassMapDescription "ClassMap" property @b TableName.
 
     ####Example
 
         <ECCustomAttributes>
-            <ECDbSchemaHint xmlns="Bentley_Standard_CustomAttributes.01.11">
+            <SchemaMap xmlns="ECDbMap.01.00">
                 <TablePrefix>sp</TablePrefix>
-                <DefaultClassMapStrategy>DoNotMap</DefaultClassMapStrategy>
-            </ECDbSchemaHint>
+            </SchemaMap>
         </ECCustomAttributes>​
 
-    @section ECDbClassHintDescription Mapping Hints for ECClasses
+    @section CustomClassMapDescription Custom mapping for ECClasses
     
     (ECDb will only look for it in local attributes on the ECClass).
     
-    Description of the ECDbClassHint properties:
+    Description of the ClassMap properties:
 
     - <b>MapStrategy</b> (optional): Specifies how the ECClass is mapped to table(s). Default value is 'TableForThisClass'.    
         - <CODE>DoNotMap</CODE>: The class is not mapped to any database table. This does not affect subclasses of this ECClass.
@@ -257,8 +249,6 @@
         in the ECClass or in the base classes.
         - <b>Where</b> (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which
         creates a partial index ignoring any NULL values.
-    - <b>MapToExistingTable</b> (optional, deprecated): Use MapStrategy <em>MapToExistingTable</em> instead.
-    - <b>ReplaceEmptyTableWithEmptyView</b> (optional, deprecated) Do not use this anymore
 
     ####Examples
 
@@ -266,9 +256,9 @@
 
         <ECClass typeName="AClassThatDoesNotGetMappedToDb" isDomainClass="True">
             <ECCustomAttributes>
-                <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <ClassMap xmlns="ECDbMap.01.00">
                     <MapStrategy>DoNotMap</MapStrategy>
-                </ECDbClassHint>
+                </ClassMap>
             </ECCustomAttributes>
             <ECProperty propertyName="stringFoo" typeName="string" />
         </ECClass>
@@ -277,9 +267,9 @@
 
         <ECClass typeName="Foo" isDomainClass="True">
             <ECCustomAttributes>
-                <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <ClassMap xmlns="ECDbMap.01.00">
                     <MapStrategy>TablePerHierarchy</MapStrategy>
-                </ECDbClassHint>
+                </ClassMap>
             </ECCustomAttributes>
         ...
         </ECClass>
@@ -288,26 +278,26 @@
 
         <ECClass typeName="Person" isDomainClass="True">
             <ECCustomAttributes>
-                <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <ClassMap xmlns="ECDbMap.01.00">
                     <Indexes>
-                        <ECDbIndex>
+                        <DbIndex>
                             <Name>Foo_Name_ix</Name>
                             <IsUnique>False</IsUnique>
                             <Properties>
                                 <string>FirstName</string>
                                 <string>LastName</string>
                             </Properties>
-                        </ECDbIndex>
-                        <ECDbIndex>
+                        </DbIndex>
+                        <DbIndex>
                             <Name>Foo_Birthday_ix</Name>
                             <IsUnique>False</IsUnique>
                             <Properties>
                                 <string>Birthday</string>
                             </Properties>
                             <Where>ECDB_NOTNULL</Where>
-                        </ECDbIndex>
+                        </DbIndex>
                     </Indexes>
-                </ECDbClassHint>
+                </ClassMap>
             </ECCustomAttributes>
             <ECProperty propertyName="FirstName" typeName="string"/>
             <ECProperty propertyName="LastName" typeName="string"/>

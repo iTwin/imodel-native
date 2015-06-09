@@ -8,32 +8,36 @@
 #include "ECDbPch.h"
 #include "MapHintReader.h"
 
+#define ECDBMAP_CLASSNAME_SchemaMap   L"SchemaMap"
+#define ECDBMAP_CLASSNAME_ClassMap    L"ClassMap"
+#define ECDBMAP_CLASSNAME_PropertyMap L"PropertyMap"
+
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*******************************************************************************************
-// SchemaHintReader
+// CustomSchemaMapReader
 //*******************************************************************************************
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-IECInstancePtr SchemaHintReader::ReadHint (ECSchemaCR ecschema)
+IECInstancePtr CustomSchemaMapReader::Read (ECSchemaCR ecschema)
     {
-    return HintReaderHelper::ReadHint (ecschema, BSCAC_ECDbSchemaHint);
+    return CustomAttributeReader::Read(ecschema, ECDBMAP_CLASSNAME_SchemaMap);
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool SchemaHintReader::TryReadTablePrefix (Utf8String& tablePrefix, IECInstanceCR hint)
+bool CustomSchemaMapReader::TryReadTablePrefix(Utf8String& tablePrefix, IECInstanceCR customSchemaMap)
     {
-    BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbSchemaHint));
+    BeAssert(customSchemaMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_SchemaMap));
 
     Utf8String tablePrefixTemp;
-    if (HintReaderHelper::TryGetTrimmedValue (tablePrefixTemp, hint, BSCAP_TablePrefix))
+    if (CustomAttributeReader::TryGetTrimmedValue(tablePrefixTemp, customSchemaMap, L"TablePrefix"))
         {
         if (ECNameValidation::Validate (WString (tablePrefixTemp.c_str (), BentleyCharEncoding::Utf8).c_str ()) == ECNameValidation::RESULT_Valid)
             {
@@ -48,149 +52,84 @@ bool SchemaHintReader::TryReadTablePrefix (Utf8String& tablePrefix, IECInstanceC
     return false;
     }
 
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaHintReader::TryReadDefaultClassMapStrategy (ECDbMapStrategy& mapStrategy, ECN::IECInstanceCR hint)
-    {
-    BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbSchemaHint));
-    mapStrategy = ECDbMapStrategy(Strategy::DoNotMap);
-    WString hintMapStrategyName;
-    ECValue v;
-    if (hint.GetValue (v, BSCAP_DefaultClassMapStrategy) == ECOBJECTS_STATUS_Success && !v.IsNull ())
-        {
-        hintMapStrategyName = v.GetString ();
-        if (ClassHintReader::TryConvertToMapStrategy (mapStrategy, hintMapStrategyName.c_str ()))
-            {
-            if (mapStrategy.IsDoNotMap() || mapStrategy.IsTableForThisClass())
-                return true;
 
-            mapStrategy = ECDbMapStrategy(Strategy::DoNotMap);
-            }
-
-        }
-    return false;
-    }
 //*******************************************************************************************
-// ClassMapHintReader
+// CustomClassMapReader
 //*******************************************************************************************
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-IECInstancePtr ClassHintReader::ReadHint (ECClassCR ecClass)
+IECInstancePtr CustomClassMapReader::Read (ECClassCR ecClass)
     {
-    return HintReaderHelper::ReadHint (ecClass, BSCAC_ECDbClassHint);
+    return CustomAttributeReader::Read(ecClass, ECDBMAP_CLASSNAME_ClassMap);
     }
 
 //*******************************************************************************************
 // ClassMapHintReader
 //*******************************************************************************************
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-IECInstancePtr ClassHintReader::ReadClassHasCurrentTimeStampProperty(ECClassCR ecClass)
-    {
-    return HintReaderHelper::ReadHint(ecClass, BSCAC_ECDbClassHasCurrentTimeStamp);
-    }
+
 //---------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ClassHintReader::TryReadMapStrategy (ECDbMapStrategy& mapStrategy, IECInstanceCR classHint)
+bool CustomClassMapReader::TryReadMapStrategy(ECDbMapStrategy& mapStrategy, IECInstanceCR customClassMap)
     {
-    BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
+    BeAssert(customClassMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_ClassMap));
     mapStrategy.Reset ();
-    ECValue mapStrategyValue;
-    ECValue mapStrategyOptionValue;
-    auto strategyStatus = classHint.GetValue(mapStrategyValue, BSCAP_MapStrategy);
-    auto strategyOptionStatus = classHint.GetValue(mapStrategyOptionValue, BSCAP_MapStrategyOption);
-    if (strategyStatus == ECOBJECTS_STATUS_Success || strategyOptionStatus == ECOBJECTS_STATUS_Success)
-        {
-        if(mapStrategy.Parse(mapStrategy, mapStrategyValue.GetUtf8CP(), mapStrategyOptionValue.GetUtf8CP()) == BentleyStatus::SUCCESS)
-            {
-            return true;
-            }
-        }
-    return false;
+
+    Utf8String mapStrategyStr;
+    CustomAttributeReader::TryGetTrimmedValue(mapStrategyStr, customClassMap, L"MapStrategy");
+
+    Utf8String mapStrategyOptionsStr;
+    CustomAttributeReader::TryGetTrimmedValue(mapStrategyOptionsStr, customClassMap, L"MapStrategyOptions");
+
+    if (mapStrategyStr.empty() && mapStrategyOptionsStr.empty())
+        return false;
+
+    return mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) == SUCCESS;
     }
 
 //---------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ClassHintReader::TryReadTableName (Utf8String& tableName, IECInstanceCR classHint)
+bool CustomClassMapReader::TryReadTableName(Utf8String& tableName, IECInstanceCR customClassMap)
     {
-    BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
-
-    return HintReaderHelper::TryGetTrimmedValue (tableName, classHint, BSCAP_TableName);
+    BeAssert(customClassMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_ClassMap));
+    return CustomAttributeReader::TryGetTrimmedValue(tableName, customClassMap, L"TableName");
     }
 
 //---------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ClassHintReader::TryReadECInstanceIdColumnName (Utf8String& ecInstanceIdColumnName, IECInstanceCR classHint)
+bool CustomClassMapReader::TryReadECInstanceIdColumnName(Utf8String& ecInstanceIdColumnName, IECInstanceCR customClassMap)
     {
-    BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
-
-    return HintReaderHelper::TryGetTrimmedValue (ecInstanceIdColumnName, classHint, BSCAP_ECInstanceIdColumn);
+    BeAssert(customClassMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_ClassMap));
+    return CustomAttributeReader::TryGetTrimmedValue(ecInstanceIdColumnName, customClassMap, L"ECInstanceIdColumn");
     }
+
+#define ECDBMAP_PROPNAME_Indexes L"Indexes"
+#define ECDBMAP_PROPNAME_Properties L"Properties"
 
 //---------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ClassHintReader::TryReadMapToExistingTable (bool& mapToExistingTable, IECInstanceCR classHint)
+bool CustomClassMapReader::TryReadIndices(bvector<ClassIndexInfoPtr>& indices, IECInstanceCR customClassMap, ECClassCR ecClass)
     {
-    BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
-
-    ECValue v;
-    if (classHint.GetValue (v, BSCAP_MapToExistingTable) == ECOBJECTS_STATUS_Success && !v.IsNull ())
-        {
-        mapToExistingTable = v.GetBoolean ();
-        return true;
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------
-//@bsimethod                                                    casey.mullen      11 / 2012
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ClassHintReader::TryReadReplaceEmptyTableWithEmptyView (bool& replaceEmptyTableWithEmptyView, IECInstanceCR classHint)
-    {
-    BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
-
-    ECValue v;
-    if (classHint.GetValue (v, BSCAP_ReplaceEmptyTableWithEmptyView) == ECOBJECTS_STATUS_Success && !v.IsNull ())
-        {
-        replaceEmptyTableWithEmptyView = v.GetBoolean ();
-        return true;
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------
-//@bsimethod                                                    casey.mullen      11 / 2012
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECInstanceCR classHint, ECClassCR ecClass)
-    {
-    BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
+    BeAssert(customClassMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_ClassMap));
 
     indices.clear ();
     ECValue v;
-    if (classHint.GetValue (v, BSCAP_Indexes) != ECOBJECTS_STATUS_Success || v.IsNull ())
+    if (customClassMap.GetValue(v, ECDBMAP_PROPNAME_Indexes) != ECOBJECTS_STATUS_Success || v.IsNull())
         return false;
 
     uint32_t indexesPropIdx;
-    if (classHint.GetEnablerR ().GetPropertyIndex (indexesPropIdx, BSCAP_Indexes) != ECOBJECTS_STATUS_Success)
+    if (customClassMap.GetEnablerR().GetPropertyIndex(indexesPropIdx, ECDBMAP_PROPNAME_Indexes) != ECOBJECTS_STATUS_Success)
         {
-        LOG.errorv ("Failed to get property index for 'ECDbClassHint.Indexes'.");
+        LOG.errorv ("Failed to get property index for 'ClassMap.Indexes'.");
         return false;
         }
 
@@ -199,9 +138,9 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
         {
         bool errorEncountered = false;
         ClassIndexInfoPtr info = ClassIndexInfo::Create ();
-        if (classHint.GetValue (v, indexesPropIdx, i) != ECOBJECTS_STATUS_Success)
+        if (customClassMap.GetValue(v, indexesPropIdx, i) != ECOBJECTS_STATUS_Success)
             {
-            LOG.errorv ("Failed to get %dth array element for ECDbClassHint.Indexes.", i);
+            LOG.errorv ("Failed to get %dth array element for ClassMap.Indexes.", i);
             return false;
             }
 
@@ -210,42 +149,42 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
             continue;
 
         //optional
-        if (ecDbIndex->GetValue (v, BSCAP_Name) == ECOBJECTS_STATUS_Success && !v.IsNull ())
+        if (ecDbIndex->GetValue (v, L"Name") == ECOBJECTS_STATUS_Success && !v.IsNull ())
             info->SetName (Utf8String (v.GetString ()).c_str ());
         //optional
-        if (ecDbIndex->GetValue(v, BSCAP_Where) == ECOBJECTS_STATUS_Success && !v.IsNull())
+        if (ecDbIndex->GetValue(v, L"Where") == ECOBJECTS_STATUS_Success && !v.IsNull())
             {
             Utf8String whereFlag =  Utf8String(v.GetString());
             whereFlag.Trim();
-            if (whereFlag.EqualsI(BSCAP_ECDBNOTNULL))
+            if (whereFlag.EqualsI("ECDB_NOTNULL"))
                 {
                 info->SetWhere(EC::ClassIndexInfo::WhereConstraint::NotNull);
                 }
             else
                 {
-                LOG.errorv("Invalid where flag in ECDbClassHint.Indexes.");
+                LOG.errorv("Invalid where flag in ClassMap.Indexes.");
                 return false;
                 }
             }
         //optional
-        if (ecDbIndex->GetValue (v, BSCAP_IsUnique) == ECOBJECTS_STATUS_Success && !v.IsNull ())
+        if (ecDbIndex->GetValue(v, L"IsUnique") == ECOBJECTS_STATUS_Success && !v.IsNull())
             info->SetIsUnique (v.GetBoolean ());
 
         //mandatory. Reject Index if it doesn't have any property
-        if (ecDbIndex->GetValue (v, BSCAP_Properties) == ECOBJECTS_STATUS_Success && !v.IsNull ())
+        if (ecDbIndex->GetValue(v, ECDBMAP_PROPNAME_Properties) == ECOBJECTS_STATUS_Success && !v.IsNull())
             {
             uint32_t propertiesPropIdx;
-            if (ecDbIndex->GetEnablerR ().GetPropertyIndex (propertiesPropIdx, BSCAP_Properties) != ECOBJECTS_STATUS_Success)
+            if (ecDbIndex->GetEnablerR().GetPropertyIndex(propertiesPropIdx, ECDBMAP_PROPNAME_Properties) != ECOBJECTS_STATUS_Success)
                 {
                 //error
-                LOG.errorv ("Fail to get property index for 'ECDbClassHint.Indexes.Properties'");
+                LOG.errorv ("Fail to get property index for 'ClassMap.Indexes.Properties'");
                 return false; //Do not enumerate anymore
                 }
 
             uint32_t propertyCount = v.GetArrayInfo ().GetCount ();
             if (propertyCount == 0)
                 {
-                LOG.errorv (L"Rejecting user specified index[%d] specified in ECDbClassHint on class %ls because it has no properties.", i, ecClass.GetFullName ());
+                LOG.errorv (L"Rejecting user specified index[%d] specified in custom attribute ClassMap on class %ls because it has no properties.", i, ecClass.GetFullName ());
                 errorEncountered = true; // skip this index and continue with rest.
                 }
 
@@ -258,7 +197,7 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
                     propertyName.Trim ();
                     if (Utf8String::IsNullOrEmpty (propertyName.c_str ()))
                         {
-                        LOG.errorv (L"Rejecting index[%d] specified in ECDbClassHint on class %ls because on of its property is empty string.", i, ecClass.GetFullName ());
+                        LOG.errorv (L"Rejecting index[%d] specified in custom attribute ClassMap on class %ls because on of its property is empty string.", i, ecClass.GetFullName ());
                         errorEncountered = true; // skip this index and continue with rest
                         break;
                         }
@@ -268,7 +207,7 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
                     }
                 else
                     {
-                    LOG.errorv (L"Rejecting user specified index[%d] specified in ECDbClassHint on class %ls because array element didnt returned a value", i, ecClass.GetFullName ());
+                    LOG.errorv (L"Rejecting user specified index[%d] specified in custom attribute ClassMap on class %ls because array element didn't returned a value", i, ecClass.GetFullName ());
                     errorEncountered = true; // skip this index and continue with rest
                     break;
                     }
@@ -282,36 +221,98 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
     return true;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-bool ClassHintReader::TryConvertToMapStrategy (ECDbMapStrategy& mapStrategy, WCharCP mapStrategyName)
-    {
-    bool success = true;
-    if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TablePerHierarchy))
-        mapStrategy = ECDbMapStrategy(Strategy::TablePerHierarchy);
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_DoNotMapHierarchy))
-        mapStrategy = ECDbMapStrategy(Strategy::DoNotMapHierarchy);
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_DoNotMap))
-        mapStrategy = ECDbMapStrategy(Strategy::DoNotMap);
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TablePerClass))
-        mapStrategy = ECDbMapStrategy(Strategy::TablePerClass);
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TableForThisClass))
-        mapStrategy = ECDbMapStrategy(Strategy::TableForThisClass);
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_NoHint))
-        mapStrategy = ECDbMapStrategy(Strategy::NoHint);
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_RelationshipSourceTable))
-        mapStrategy = ECDbMapStrategy(Strategy::RelationshipSourceTable);
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_RelationshipTargetTable))
-        mapStrategy = ECDbMapStrategy(Strategy::RelationshipTargetTable);
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_SharedTableForThisClass))
-        mapStrategy = ECDbMapStrategy(Strategy::SharedTableForThisClass);
-    else
-        success = false;
 
-    return success;
+//************************************************************************************
+// CustomPropertyMapReader 
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   02 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+IECInstancePtr CustomPropertyMapReader::Read(ECN::ECPropertyCR ecProperty)
+    {
+    return CustomAttributeReader::Read(ecProperty, ECDBMAP_CLASSNAME_PropertyMap);
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   02 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool CustomPropertyMapReader::TryReadColumnName(Utf8String& columnName, ECN::IECInstanceCR customPropMap)
+    {
+    BeAssert(customPropMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_PropertyMap));
+
+    return CustomAttributeReader::TryGetTrimmedValue(columnName, customPropMap, L"ColumnName");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   02 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool CustomPropertyMapReader::TryReadIsNullable(bool& isNullable, ECN::IECInstanceCR customPropMap)
+    {
+    BeAssert(customPropMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_PropertyMap));
+
+    ECValue v;
+    if (customPropMap.GetValue(v, L"IsNullable") == ECOBJECTS_STATUS_Success && !v.IsNull())
+        {
+        isNullable = v.GetBoolean();
+        return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   02 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool CustomPropertyMapReader::TryReadIsUnique(bool& isUnique, ECN::IECInstanceCR customPropMap)
+    {
+    BeAssert(customPropMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_PropertyMap));
+
+    ECValue v;
+    if (customPropMap.GetValue(v, L"IsUnique") == ECOBJECTS_STATUS_Success && !v.IsNull())
+        {
+        isUnique = v.GetBoolean();
+        return true;
+        }
+
+    return false;
+
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   02 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool CustomPropertyMapReader::TryReadCollation(ECDbSqlColumn::Constraint::Collation& collation, ECN::IECInstanceCR customPropMap)
+    {
+    BeAssert(customPropMap.GetClass().GetName().Equals(ECDBMAP_CLASSNAME_PropertyMap));
+
+    bool found = false;
+    ECValue v;
+    if (customPropMap.GetValue(v, L"Collation") == ECOBJECTS_STATUS_Success && !v.IsNull())
+        {
+        found = true;
+        Utf8CP collationValStr = v.GetUtf8CP();
+        if (BeStringUtilities::Stricmp(collationValStr, "Binary") == 0)
+            collation = ECDbSqlColumn::Constraint::Collation::Binary;
+        else if (BeStringUtilities::Stricmp(collationValStr, "NoCase") == 0)
+            collation = ECDbSqlColumn::Constraint::Collation::NoCase;
+        else if (BeStringUtilities::Stricmp(collationValStr, "RTrim") == 0)
+            collation = ECDbSqlColumn::Constraint::Collation::RTrim;
+        else
+            {
+            LOG.warningv(L"Custom attribute " ECDBMAP_CLASSNAME_PropertyMap L" has an invalid value for the property 'Collation': %ls",
+                         WString(collationValStr, BentleyCharEncoding::Utf8).c_str());
+            found = false;
+            }
+        }
+
+    return found;
+    }
+
 
 //************************************************************************************
 // RelationshipClassHintReader 
@@ -322,7 +323,7 @@ bool ClassHintReader::TryConvertToMapStrategy (ECDbMapStrategy& mapStrategy, WCh
 //static
 IECInstancePtr RelationshipClassHintReader::ReadHint (ECClassCR relClass)
     {
-    return HintReaderHelper::ReadHint (relClass, BSCAC_ECDbRelationshipClassHint);
+    return CustomAttributeReader::Read (relClass, BSCAC_ECDbRelationshipClassHint);
     }
 
 //---------------------------------------------------------------------------------
@@ -385,7 +386,7 @@ bool RelationshipClassHintReader::TryReadSourceECInstanceIdColumnName (Utf8Strin
     {
     BeAssert (relClassHint.GetClass ().GetName ().Equals (BSCAC_ECDbRelationshipClassHint));
 
-    return HintReaderHelper::TryGetTrimmedValue (sourceECInstanceIdColumnName, relClassHint, BSCAP_SourceECInstanceIdColumn);
+    return CustomAttributeReader::TryGetTrimmedValue (sourceECInstanceIdColumnName, relClassHint, BSCAP_SourceECInstanceIdColumn);
     }
 
 //---------------------------------------------------------------------------------
@@ -396,7 +397,7 @@ bool RelationshipClassHintReader::TryReadSourceECClassIdColumnName (Utf8String& 
     {
     BeAssert (relClassHint.GetClass ().GetName ().Equals (BSCAC_ECDbRelationshipClassHint));
 
-    return HintReaderHelper::TryGetTrimmedValue (sourceECClassIdColumnName, relClassHint, BSCAP_SourceECClassIdColumn);
+    return CustomAttributeReader::TryGetTrimmedValue (sourceECClassIdColumnName, relClassHint, BSCAP_SourceECClassIdColumn);
     }
 
 //---------------------------------------------------------------------------------
@@ -407,7 +408,7 @@ bool RelationshipClassHintReader::TryReadTargetECInstanceIdColumnName (Utf8Strin
     {
     BeAssert (relClassHint.GetClass ().GetName ().Equals (BSCAC_ECDbRelationshipClassHint));
 
-    return HintReaderHelper::TryGetTrimmedValue (targetECInstanceIdColumnName, relClassHint, BSCAP_TargetECInstanceIdColumn);
+    return CustomAttributeReader::TryGetTrimmedValue (targetECInstanceIdColumnName, relClassHint, BSCAP_TargetECInstanceIdColumn);
     }
 
 //---------------------------------------------------------------------------------
@@ -418,99 +419,7 @@ bool RelationshipClassHintReader::TryReadTargetECClassIdColumnName (Utf8String& 
     {
     BeAssert (relClassHint.GetClass ().GetName ().Equals (BSCAC_ECDbRelationshipClassHint));
 
-    return HintReaderHelper::TryGetTrimmedValue (targetECClassIdColumnName, relClassHint, BSCAP_TargetECClassIdColumn);
-    }
-
-//************************************************************************************
-// PropertyHintReader 
-//************************************************************************************
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   02 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-IECInstancePtr PropertyHintReader::ReadHint (ECN::ECPropertyCR ecProperty)
-    {
-    return HintReaderHelper::ReadHint (ecProperty, BSCAC_ECDbPropertyHint);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   02 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool PropertyHintReader::TryReadColumnName (Utf8String& columnName, ECN::IECInstanceCR hint)
-    {
-    BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbPropertyHint));
-
-    return HintReaderHelper::TryGetTrimmedValue (columnName, hint, BSCAP_ColumnName);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   02 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool PropertyHintReader::TryReadIsNullable (bool& isNullable, ECN::IECInstanceCR hint)
-    {
-    BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbPropertyHint));
-
-    ECValue v;
-    if (hint.GetValue (v, BSCAP_IsNullable) == ECOBJECTS_STATUS_Success && !v.IsNull ())
-        {
-        isNullable = v.GetBoolean ();
-        return true;
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   02 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool PropertyHintReader::TryReadIsUnique (bool& isUnique, ECN::IECInstanceCR hint)
-    {
-    BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbPropertyHint));
-
-    ECValue v;
-    if (hint.GetValue (v, BSCAP_IsUnique) == ECOBJECTS_STATUS_Success && !v.IsNull ())
-        {
-        isUnique = v.GetBoolean ();
-        return true;
-        }
-
-    return false;
-
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   02 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool PropertyHintReader::TryReadCollate (ECDbSqlColumn::Constraint::Collate& collate, ECN::IECInstanceCR hint)
-    {
-    BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbPropertyHint));
-
-    bool found = false;
-    ECValue v;
-    if (hint.GetValue (v, BSCAP_Collate) == ECOBJECTS_STATUS_Success && !v.IsNull ())
-        {
-        found = true;
-        WString collateHintStr (v.GetString ());
-        if (collateHintStr.EqualsI (BSCAP_Collate_Binary))
-            collate = ECDbSqlColumn::Constraint::Collate::Binary;
-        else if (collateHintStr.EqualsI (BSCAP_Collate_NoCase))
-            collate = ECDbSqlColumn::Constraint::Collate::NoCase;
-        else if (collateHintStr.EqualsI (BSCAP_Collate_RTrim))
-            collate = ECDbSqlColumn::Constraint::Collate::RTrim;
-        else
-            {
-            LOG.warningv (L"Unrecognized value '%ls' for 'Collate' property in " BSCAC_ECDbPropertyHint L". The value is ignored.",
-                collateHintStr.c_str ());
-            found = false;
-            }
-        }
-
-    return found;
+    return CustomAttributeReader::TryGetTrimmedValue (targetECClassIdColumnName, relClassHint, BSCAP_TargetECClassIdColumn);
     }
 
 
@@ -518,15 +427,15 @@ bool PropertyHintReader::TryReadCollate (ECDbSqlColumn::Constraint::Collate& col
 
 
 //************************************************************************************
-// HintReaderHelper 
+// CustomAttributeReader 
 //************************************************************************************
 //---------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   02 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-IECInstancePtr HintReaderHelper::ReadHint (IECCustomAttributeContainer const& caContainer, WCharCP hintCustomAttributeName)
+IECInstancePtr CustomAttributeReader::Read (IECCustomAttributeContainer const& caContainer, WCharCP customAttributeName)
     {
-    return caContainer.GetCustomAttributeLocal (hintCustomAttributeName);
+    return caContainer.GetCustomAttributeLocal(customAttributeName);
     }
 
 
@@ -534,7 +443,7 @@ IECInstancePtr HintReaderHelper::ReadHint (IECCustomAttributeContainer const& ca
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool HintReaderHelper::TryGetTrimmedValue (Utf8StringR val, IECInstanceCR ca, WCharCP ecPropertyName)
+bool CustomAttributeReader::TryGetTrimmedValue (Utf8StringR val, IECInstanceCR ca, WCharCP ecPropertyName)
     {
     ECValue v;
 

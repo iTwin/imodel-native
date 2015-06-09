@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, IECInstanceCP hint) 
-: m_nullable (true), m_unique (false), m_columnType (PRIMITIVETYPE_Unknown), m_collate (ECDbSqlColumn::Constraint::Collate::Default), m_virtual (false), m_priority (0)
+: m_nullable (true), m_unique (false), m_columnType (PRIMITIVETYPE_Unknown), m_collation (ECDbSqlColumn::Constraint::Collation::Default), m_virtual (false), m_priority (0)
     {
     // Assumes that if it is mapped to a column and is not primitive, it is mapped as a blob. Needswork if we add a JSON mapping hint
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
@@ -25,7 +25,7 @@ ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessStri
 
     InitializeFromHint(hint, ecProperty);
 
-    // PropertyMappingRule: if ECDbPropertyHint does not supply a column name for an ECProperty, 
+    // PropertyMappingRule: if custom attribute PropertyMap does not supply a column name for an ECProperty, 
     // we use the ECProperty's propertyAccessString (and replace . by _)
     if (Utf8String::IsNullOrEmpty (m_columnName.c_str ()))
         {
@@ -44,20 +44,20 @@ void ColumnInfo::InitializeFromHint(IECInstanceCP hint, ECPropertyCR ecProperty)
         return;
 
     Utf8String columnName;
-    if (PropertyHintReader::TryReadColumnName (columnName, *hint))
+    if (CustomPropertyMapReader::TryReadColumnName (columnName, *hint))
         m_columnName = columnName;
 
     bool isNullable = false;
-    if (PropertyHintReader::TryReadIsNullable (isNullable, *hint))
+    if (CustomPropertyMapReader::TryReadIsNullable (isNullable, *hint))
         m_nullable = isNullable;
 
     bool isUnique = false;
-    if (PropertyHintReader::TryReadIsUnique (isUnique, *hint))
+    if (CustomPropertyMapReader::TryReadIsUnique (isUnique, *hint))
         m_unique = isUnique;
 
-    ECDbSqlColumn::Constraint::Collate collate;
-    if (PropertyHintReader::TryReadCollate (collate, *hint))
-        m_collate = collate;
+    ECDbSqlColumn::Constraint::Collation collation;
+    if (CustomPropertyMapReader::TryReadCollation (collation, *hint))
+        m_collation = collation;
 
     //WIP_ECDB: needswork: handle DoNotMap
     }

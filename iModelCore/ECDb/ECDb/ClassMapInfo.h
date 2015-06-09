@@ -26,7 +26,7 @@ public:
     };
 
 //======================================================================================
-//!This class grabs information from ECDbClassHint ECCustomAttribute and evaluates
+//!This class grabs information from ClassMap ECCustomAttribute and evaluates
 //! it along with other standard metadata on the ECClass... applying default 
 //! rules like checking if isDomainClass=False, building standard table name, etc.
 // @bsiclass                                                     Casey.Mullen      11/2011
@@ -78,7 +78,7 @@ public:
     static ClassMapInfoPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     ECDbMapStrategy const& GetMapStrategy () const{ return m_strategy; }
     ECDbMapStrategy& GetMapStrategyR (){ return m_strategy; }
-    //! Evaluates the MapStrategy for the ECClass represented by this ClassMapInfo based on ECDbClassHint ECCustomAttribute and
+    //! Evaluates the MapStrategy for the ECClass represented by this ClassMapInfo based on ClassMap ECCustomAttribute and
     //! default mapping rules. The results are stored in ClassMapInfo
     //! @remarks Assumes all base classes have been mapped already. 
     MapStatus EvaluateMapStrategy ();

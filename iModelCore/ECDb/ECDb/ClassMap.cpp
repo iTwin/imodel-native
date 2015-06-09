@@ -667,14 +667,14 @@ void ClassMap::CreateIndices ()
             auto propertyMap = resolveClassMap->GetPropertyMap (resolvePropertyName.c_str ());
             if (propertyMap == nullptr)
                 {
-                LOG.errorv (L"Rejecting index[%d] specified in ECDbClassHint on class %ls because property specified in index '%ls' doesn't exist in class or its not mapped", i, GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+                LOG.errorv (L"Rejecting index[%d] specified in ClassMap custom attribute on class %ls because property specified in index '%ls' doesn't exist in class or its not mapped", i, GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
                 error = true;
                 break;
                 }
 
             if (!propertyMap->GetProperty ().GetAsPrimitiveProperty ())
                 {
-                LOG.errorv (L"Rejecting index[%d] specified in ECDbClassHint on class %ls because specified property is not primitive.", i, GetClass ().GetFullName ());
+                LOG.errorv (L"Rejecting index[%d] specified in ClassMap custom attribute on class %ls because specified property is not primitive.", i, GetClass ().GetFullName ());
                 error = true; // skip this index and continue with rest
                 break;
                 }
@@ -694,12 +694,12 @@ void ClassMap::CreateIndices ()
                     break;
                     //not supported for indexing
                 case PRIMITIVETYPE_IGeometry:
-                    LOG.errorv (L"Rejecting user specified index[%d] specified in ECDbClassHint on class %ls because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double, Binary, Point2d and Point3d", i, GetClass ().GetFullName ());
+                    LOG.errorv (L"Rejecting user specified index[%d] specified in ClassMap custom attribute on class %ls because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double, Binary, Point2d and Point3d", i, GetClass ().GetFullName ());
                     error = true; // skip this index and continue with rest
                     break;
 
                 default:
-                    LOG.errorv (L"Rejecting user specified index[%d] specified in ECDbClassHint on class %ls because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double and Binary", i, GetClass ().GetFullName ());
+                    LOG.errorv (L"Rejecting user specified index[%d] specified in ClassMap custom attribute on class %ls because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double and Binary", i, GetClass ().GetFullName ());
                     error = true; // skip this index and continue with rest
                     break;
                 }
@@ -757,7 +757,7 @@ void ClassMap::CreateIndices ()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2011
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,ClassMapInfoCP classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate, Utf8CP accessStringPrefix)
+ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,ClassMapInfoCP classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
@@ -782,7 +782,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,Clas
         accessStringPrefix, 
         !nullable, 
         unique, 
-        collate
+        collation
         );
 
     return GetColumnFactoryR().Configure (spec);
@@ -1040,9 +1040,9 @@ ColumnFactory::Specification::Specification (
     Utf8CP accessStringPrefix,
     bool isNotNull,
     bool isUnique,
-    ECDbSqlColumn::Constraint::Collate collate)
+    ECDbSqlColumn::Constraint::Collation collation)
     : m_propertyMap (propertyMap), m_requestedColumnName (columnName), m_columnType (columnType), m_isNotNull (isNotNull),
-    m_isUnique (isUnique), m_collate (collate), m_generateColumnNameOptions (generateColumnNameOptions),
+    m_isUnique(isUnique), m_collation(collation), m_generateColumnNameOptions(generateColumnNameOptions),
     m_columnUserData (columnUserData), m_persistenceType (persistenceType), m_strategy (strategy)
     {
     m_accessString = Utf8String (propertyMap.GetPropertyAccessString ());
@@ -1179,11 +1179,11 @@ void ColumnFactory::Update ()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool ColumnFactory::FindReusableSharedDataColumns (std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collate collate, ColumnFactory::SortBy sortby) const
+bool ColumnFactory::FindReusableSharedDataColumns (std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation, ColumnFactory::SortBy sortby) const
     {
     for (auto column : table.GetColumns ())
         {
-        if (column->GetUserFlags () == ECDbDataColumn && column->GetType () == ECDbSqlColumn::Type::Any && collate == column->GetConstraint ().GetCollate ())
+        if (column->GetUserFlags() == ECDbDataColumn && column->GetType() == ECDbSqlColumn::Type::Any && collation == column->GetConstraint().GetCollation())
             {
             if (IsColumnInUse (*column) == false)
                 columns.push_back (column);
@@ -1311,7 +1311,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy (ColumnFactory::Specification 
 
     newColumn->GetConstraintR ().SetIsNotNull (specifications.IsNotNull ());
     newColumn->GetConstraintR ().SetIsUnique (specifications.IsUnique ());
-    newColumn->GetConstraintR ().SetCollate (specifications.GetCollate ());
+    newColumn->GetConstraintR ().SetCollation (specifications.GetCollation ());
    // newColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
 
     if (!canEdit)
@@ -1332,7 +1332,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy (Specification const& s
             {
             if (GetTable ().GetOwnerType () == OwnerType::ECDb)
                 {
-                if (existingColumn->GetConstraint ().IsNotNull () != specifications.IsNotNull () || existingColumn->GetConstraint ().IsUnique () != specifications.IsUnique () || existingColumn->GetConstraint ().GetCollate () != specifications.GetCollate ())
+                if (existingColumn->GetConstraint ().IsNotNull () != specifications.IsNotNull () || existingColumn->GetConstraint ().IsUnique () != specifications.IsUnique () || existingColumn->GetConstraint ().GetCollation () != specifications.GetCollation ())
                     {
                     LOG.warningv ("Column %s in table %s is used by multiple property maps where property name and data type matches,"
                         " but where 'Nullable', 'Unique', or 'Collate' differs, and which will therefore be ignored for some of the properties.",
@@ -1366,7 +1366,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy (Specification const& s
 ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
     std::vector<ECDbSqlColumn const*> avaliableSharedColumns;
-    if (FindReusableSharedDataColumns (avaliableSharedColumns, targetTable, specifications.GetCollate (), SortBy::LeastUsedColumn))
+    if (FindReusableSharedDataColumns (avaliableSharedColumns, targetTable, specifications.GetCollation (), SortBy::LeastUsedColumn))
         {
         auto sharedColumn = const_cast<ECDbSqlColumn*>(avaliableSharedColumns.front ());
         //sharedColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
@@ -1381,7 +1381,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy (Specificat
         }
 
     //newColumn->GetConstraintR ().SetIsNotNull (specifications.IsNotNull ()); -- NOT NULL IS NOT SUPPORTED ON SHARED COLUMNS
-    newColumn->GetConstraintR ().SetCollate (specifications.GetCollate ());
+    newColumn->GetConstraintR ().SetCollation (specifications.GetCollation ());
     //auto uniqueIndex = newColumn->GetTableR ().CreateIndex ((newColumn->GetFullName () + "_UNIQUE").c_str ());
     //uniqueIndex->SetIsUnique (true);
     //uniqueIndex->SetWhereExpression (SqlPrintfString ("WHERE ECClass == %lld", persistenceClassId));

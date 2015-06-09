@@ -144,12 +144,11 @@ ECSchemaPtr PerformanceTestsSchemaImport::CreateTestSchema (size_t noOfClasses, 
 
     if (customAttributeOnSchema)
         {
-        auto ca = bscaSchema->GetClassCP (L"ECDbSchemaHint");
+        auto ca = bscaSchema->GetClassCP (L"SchemaMap");
         EXPECT_TRUE (ca != nullptr);
         auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
         EXPECT_TRUE (customAttribute != nullptr);
         EXPECT_TRUE (customAttribute->SetValue (L"TablePrefix", ECValue ("t")) == ECOBJECTS_STATUS_Success);
-        EXPECT_TRUE (customAttribute->SetValue (L"DefaultClassMapStrategy", ECValue ("TableForThisClass")) == ECOBJECTS_STATUS_Success);
         EXPECT_TRUE (testSchema->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
         }
 
@@ -230,7 +229,7 @@ ECSchemaPtr PerformanceTestsSchemaImport::CreateTestSchema (size_t noOfClasses, 
                                 }
                             case 2:
                                 {
-                                auto ca = bscaSchema->GetClassCP (L"ECDbPropertyHint");
+                                auto ca = bscaSchema->GetClassCP (L"PropertyMap");
                                 EXPECT_TRUE (ca != nullptr);
                                 auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
                                 EXPECT_TRUE (customAttribute->SetValue (L"IsNullable", ECValue (true)) == ECOBJECTS_STATUS_Success);
