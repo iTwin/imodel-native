@@ -191,19 +191,19 @@ public:
     //! @param[out] schemaMap Retrieved schema map
     //! @param[in] schema ECSchema to retrieve the custom attribute from.
     //! @return true if @p schema has the custom attribute. false, if @p schema doesn't have the custom attribute
-    ECOBJECTS_EXPORT static bool TryReadSchemaMap(ECDbSchemaMap& schemaMap, ECSchemaCR schema);
+    ECOBJECTS_EXPORT static bool TryGetSchemaMap(ECDbSchemaMap& schemaMap, ECSchemaCR schema);
     
     //! Tries to retrieve the ClassMap custom attribute from the specified ECClass.
     //! @param[out] classMap Retrieved class map
     //! @param[in] ecClass ECClass to retrieve the custom attribute from.
     //! @return true if @p ecClass has the custom attribute. false, if @p ecClass doesn't have the custom attribute
-    ECOBJECTS_EXPORT static bool TryReadClassMap(ECDbClassMap& classMap, ECClassCR ecClass);
+    ECOBJECTS_EXPORT static bool TryGetClassMap(ECDbClassMap& classMap, ECClassCR ecClass);
 
     //! Tries to retrieve the PropertyMap custom attribute from the specified ECProperty.
     //! @param[out] propertyMap Retrieved property map
     //! @param[in] ecProperty ECProperty to retrieve the custom attribute from.
     //! @return true if @p ecProperty has the custom attribute. false, if @p ecProperty doesn't have the custom attribute
-    ECOBJECTS_EXPORT static bool TryReadPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty);
+    ECOBJECTS_EXPORT static bool TryGetPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty);
     };
 
 //=======================================================================================    
@@ -224,7 +224,10 @@ private:
 
 public:
     ECDbSchemaMap() : m_schema(nullptr), m_ca(nullptr) {}
-    ECOBJECTS_EXPORT bool TryReadTablePrefix(Utf8String& tablePrefix) const;
+    //! Tries to get the value of the TablePrefix property in the SchemaMap.
+    //! @param[out] tablePrefix Table prefix.
+    //! @return true if TablePrefix was set in the SchemaMap. false otherwise
+    ECOBJECTS_EXPORT bool TryGetTablePrefix(Utf8String& tablePrefix) const;
     };
 
 //=======================================================================================    
@@ -258,9 +261,17 @@ public:
         void AddProperty(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
 
     public:
+        //! Gets the index name.
+        //! @return Index name or nullptr if not set (This indicates that the name of the index should be auto-generated)
         Utf8CP GetName() const { return m_name.c_str(); }
+        //! Gets a value indicating whether the index is a unique index or not.
+        //! @return true if the index is a unique index. false otherwise
         bool IsUnique() const { return m_isUnique; }
+        //! Gets the where clause if the index a partial index.
+        //! @return Where clause or nullptr if the index is not partial
         Utf8CP GetWhereClause() const { return m_whereClause.c_str(); }
+        //! Gets the list of property names on which the index is to be defined.
+        //! @return Properties on which the index is defined.
         bvector<Utf8String> const& GetProperties() const { return m_properties; }
         };
 
@@ -273,10 +284,24 @@ private:
 public:
     ECDbClassMap() : m_class(nullptr), m_ca(nullptr) {}
 
-    ECOBJECTS_EXPORT bool TryReadMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const;
-    ECOBJECTS_EXPORT bool TryReadTableName(Utf8String& tableName) const;
-    ECOBJECTS_EXPORT bool TryReadECInstanceIdColumnName(Utf8String& ecInstanceIdColumnName) const;
-    ECOBJECTS_EXPORT bool TryReadIndices(bvector<DbIndex>& indices) const;
+    //! Tries to get the values of the MapStrategy and MapStrategyOptions properties from the ClassMap.
+    //! @param[out] mapStrategy MapStrategy
+    //! @param[out] mapStrategyOptions MapStrategy options
+    //! @return true if at least MapStrategy or the MapStrategyOptions were set in the ClassMap. false if
+    //! neither MapStrategy nor MapStrategyOptions were set.
+    ECOBJECTS_EXPORT bool TryGetMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const;
+    //! Tries to get the value of the TableName property in the ClassMap.
+    //! @param[out] tableName Table name
+    //! @return true if TableName was set in the ClassMap, false otherwise
+    ECOBJECTS_EXPORT bool TryGetTableName(Utf8String& tableName) const;
+    //! Tries to get the value of the ECInstanceIdColumn property from the ClassMap.
+    //! @param[out] ecInstanceIdColumnName Name of the ECInstanceId column
+    //! @return true if ECInstanceIdColumn was set in the ClassMap, false otherwise
+    ECOBJECTS_EXPORT bool TryGetECInstanceIdColumn(Utf8String& ecInstanceIdColumnName) const;
+    //! Tries to get the value of the Indexes property from the ClassMap.
+    //! @param[out] indexes List of DbIndexes as defined in the ClassMap
+    //! @return true if any indexes were set in the ClassMap, false otherwise
+    ECOBJECTS_EXPORT bool TryGetIndexes(bvector<DbIndex>& indexes) const;
     };
 
 //=======================================================================================    
@@ -298,11 +323,22 @@ private:
 public:
     ECDbPropertyMap() : m_property(nullptr), m_ca(nullptr) {}
 
-    ECOBJECTS_EXPORT bool TryReadColumnName(Utf8StringR columnName) const;
-    ECOBJECTS_EXPORT bool TryReadIsNullable(bool& isNullable) const;
-    ECOBJECTS_EXPORT bool TryReadIsUnique(bool& isUnique) const;
-    ECOBJECTS_EXPORT bool TryReadCollation(Utf8StringR) const;
+    //! Tries to get the value of the ColumnName property from the PropertyMap.
+    //! @param[out] columnName Column name
+    //! @return true if ColumnName was set in the PropertyMap, false otherwise
+    ECOBJECTS_EXPORT bool TryGetColumnName(Utf8StringR columnName) const;
+    //! Tries to get the value of the IsNullable property from the PropertyMap.
+    //! @param[out] isNullable isNullable flag
+    //! @return true if IsNullable was set in the PropertyMap, false otherwise
+    ECOBJECTS_EXPORT bool TryGetIsNullable(bool& isNullable) const;
+    //! Tries to get the value of the IsUnique property from the PropertyMap.
+    //! @param[out] isNullable isUnique flag
+    //! @return true if IsUnique was set in the PropertyMap, false otherwise
+    ECOBJECTS_EXPORT bool TryGetIsUnique(bool& isUnique) const;
+    //! Tries to get the value of the Collation property from the PropertyMap.
+    //! @param[out] collation Collation
+    //! @return true if Collation was set in the PropertyMap, false otherwise
+    ECOBJECTS_EXPORT bool TryGetCollation(Utf8StringR collation) const;
     };
-
 
 END_BENTLEY_ECOBJECT_NAMESPACE

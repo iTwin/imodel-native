@@ -395,7 +395,7 @@ public:
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryReadSchemaMap(ECDbSchemaMap& schemaMap, ECSchemaCR schema)
+bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(ECDbSchemaMap& schemaMap, ECSchemaCR schema)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(schema, L"ECDbMap", L"SchemaMap");
     if (ca == nullptr)
@@ -409,7 +409,7 @@ bool ECDbMapCustomAttributeHelper::TryReadSchemaMap(ECDbSchemaMap& schemaMap, EC
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryReadClassMap(ECDbClassMap& classMap, ECClassCR ecClass)
+bool ECDbMapCustomAttributeHelper::TryGetClassMap(ECDbClassMap& classMap, ECClassCR ecClass)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecClass, L"ECDbMap", L"ClassMap");
     if (ca == nullptr)
@@ -423,7 +423,7 @@ bool ECDbMapCustomAttributeHelper::TryReadClassMap(ECDbClassMap& classMap, ECCla
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryReadPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty)
+bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecProperty, L"ECDbMap", L"PropertyMap");
     if (ca == nullptr)
@@ -444,7 +444,7 @@ ECDbSchemaMap::ECDbSchemaMap(ECSchemaCR schema, IECInstanceCP ca) : m_schema(&sc
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbSchemaMap::TryReadTablePrefix(Utf8String& tablePrefix) const
+bool ECDbSchemaMap::TryGetTablePrefix(Utf8String& tablePrefix) const
     {
     if (m_ca == nullptr)
         return false;
@@ -477,7 +477,7 @@ ECDbClassMap::ECDbClassMap(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecCla
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbClassMap::TryReadMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const
+bool ECDbClassMap::TryGetMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const
     {
     if (m_ca == nullptr)
         return false;
@@ -490,7 +490,7 @@ bool ECDbClassMap::TryReadMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapSt
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbClassMap::TryReadTableName (Utf8String& tableName) const
+bool ECDbClassMap::TryGetTableName (Utf8String& tableName) const
     {
     if (m_ca == nullptr)
         return false;
@@ -501,7 +501,7 @@ bool ECDbClassMap::TryReadTableName (Utf8String& tableName) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbClassMap::TryReadECInstanceIdColumnName(Utf8String& ecInstanceIdColumnName) const
+bool ECDbClassMap::TryGetECInstanceIdColumn(Utf8String& ecInstanceIdColumnName) const
     {
     if (m_ca == nullptr)
         return false;
@@ -512,7 +512,7 @@ bool ECDbClassMap::TryReadECInstanceIdColumnName(Utf8String& ecInstanceIdColumnN
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbClassMap::TryReadIndices (bvector<DbIndex>& indices) const
+bool ECDbClassMap::TryGetIndexes (bvector<DbIndex>& indices) const
     {
     if (m_ca == nullptr)
         return false;
@@ -531,8 +531,10 @@ bool ECDbClassMap::TryReadIndices (bvector<DbIndex>& indices) const
     if (m_ca->GetValue(indexesVal, propIx) != ECOBJECTS_STATUS_Success || indexesVal.IsNull())
         return false;
 
-
     const uint32_t indexCount = indexesVal.GetArrayInfo().GetCount();
+    if (indexCount == 0)
+        return false;
+
     for (uint32_t i = 0; i < indexCount; i++)
         {
         ECValue indexVal;
@@ -557,7 +559,7 @@ bool ECDbClassMap::TryReadIndices (bvector<DbIndex>& indices) const
         bool isUnique = false;
         CustomAttributeReader::TryGetBooleanValue(isUnique, *dbIndexCA, L"IsUnique");
 
-        //Reject Index if it doesn't have any property
+        //Properties are mandatory for the index to be valid, so fail if there are none
         uint32_t propertiesPropIdx;
         if (dbIndexCA->GetEnablerR().GetPropertyIndex(propertiesPropIdx, L"Properties") != ECOBJECTS_STATUS_Success)
             {
@@ -568,7 +570,7 @@ bool ECDbClassMap::TryReadIndices (bvector<DbIndex>& indices) const
 
         ECValue propertiesVal;
         uint32_t propertiesCount = 0;
-        if (dbIndexCA->GetValue(propertiesVal, propertiesPropIdx) != ECOBJECTS_STATUS_Success || !propertiesVal.IsNull() ||
+        if (dbIndexCA->GetValue(propertiesVal, propertiesPropIdx) != ECOBJECTS_STATUS_Success || propertiesVal.IsNull() ||
             (propertiesCount = propertiesVal.GetArrayInfo().GetCount()) == 0)
             {
             LOG.errorv(L"DbIndex #%d in custom attribute %ls on ECClass %ls is invalid. At least one property must be specified.",
@@ -583,8 +585,11 @@ bool ECDbClassMap::TryReadIndices (bvector<DbIndex>& indices) const
             if (CustomAttributeReader::TryGetTrimmedValue(propName, *dbIndexCA, propertiesPropIdx, j))
                 dbIndex.AddProperty(propName);
             }
+
+        indices.push_back(std::move(dbIndex));
         }
 
+    BeAssert(indices.size() == indexCount);
     return true;
     }
 
@@ -600,7 +605,7 @@ ECDbPropertyMap::ECDbPropertyMap(ECPropertyCR ecProperty, IECInstanceCP ca) : m_
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbPropertyMap::TryReadColumnName(Utf8StringR columnName) const
+bool ECDbPropertyMap::TryGetColumnName(Utf8StringR columnName) const
     {
     if (m_ca == nullptr)
         return false;
@@ -611,7 +616,7 @@ bool ECDbPropertyMap::TryReadColumnName(Utf8StringR columnName) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbPropertyMap::TryReadIsNullable(bool& isNullable) const
+bool ECDbPropertyMap::TryGetIsNullable(bool& isNullable) const
     {
     if (m_ca == nullptr)
         return false;
@@ -622,7 +627,7 @@ bool ECDbPropertyMap::TryReadIsNullable(bool& isNullable) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbPropertyMap::TryReadIsUnique(bool& isUnique) const
+bool ECDbPropertyMap::TryGetIsUnique(bool& isUnique) const
     {
     if (m_ca == nullptr)
         return false;
@@ -633,7 +638,7 @@ bool ECDbPropertyMap::TryReadIsUnique(bool& isUnique) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbPropertyMap::TryReadCollation(Utf8StringR collation) const
+bool ECDbPropertyMap::TryGetCollation(Utf8StringR collation) const
     {
     if (m_ca == nullptr)
         return false;
