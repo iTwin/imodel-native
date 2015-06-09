@@ -52,7 +52,7 @@ struct L10N
     struct NameSpace
     {
         Utf8CP m_namespace;
-        NameSpace() {}
+        NameSpace() : m_namespace(nullptr) {}
         explicit NameSpace(Utf8CP nameSpace) : m_namespace(nameSpace) {}
         bool operator ==(NameSpace const& other) const {return IsValid() && other.IsValid() && (m_namespace==other.m_namespace || 0==::strcmp(m_namespace, other.m_namespace));}
         operator Utf8CP() const {return m_namespace;}
@@ -62,7 +62,7 @@ struct L10N
     struct StringId
     {
         Utf8CP m_str;
-        StringId() {}
+        StringId() : m_str(nullptr) {}
         explicit StringId(Utf8CP str) : m_str(str) {}
         operator Utf8CP() const {return m_str;}
         bool operator ==(StringId const& other) const {return IsValid() && other.IsValid() && (m_str==other.m_str || 0==::strcmp(m_str, other.m_str));}
