@@ -31,14 +31,7 @@ struct DgnElementDependencyGraph;
 /*=================================================================================**//**
  @addtogroup TxnMgr
  <h1>Transaction Manager</h1>
- The Transaction Manager enables you to save changes, journal transactionable changes during a session, and to organize
- changes into units called transactions.
-
- <h2>Transactions</h2>
-
- Txns is the API for managing transactions.
-
- A transaction is defined as a set of changes that are treated as a unit. All changes are part of a transaction.
+ The TxnManager API manages Txns. A Txn is a named, committed, undoable unit of work, stored in the DgnDb as a changeset.
 
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -105,8 +98,8 @@ struct TxnSummary
 
 private:
     DgnDbR m_dgndb;
-    BeSQLite::CachedStatementPtr m_addElementStatement;
-    BeSQLite::CachedStatementPtr m_addElementDepStatement;
+    BeSQLite::CachedStatementPtr m_elementStmt;
+    BeSQLite::CachedStatementPtr m_dependencyStmt;
     bool m_modelDepsChanged;
     bool m_elementDepsChanged;
     bvector<ValidationError> m_validationErrors; //!< Validation errors detected on the last boundary check
@@ -158,7 +151,7 @@ public:
 //=======================================================================================
 struct TxnMonitor
 {
-    virtual void _OnTxnBoundary(TxnSummaryCR) = 0;
+    virtual void _OnTxnCommit(TxnSummaryCR) = 0;
     virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo) = 0;
     virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo) = 0;
     virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo) {}
@@ -268,7 +261,8 @@ protected:
     StatusInt ReinstateActions(RevTxn& revTxn);
     bool PrepareForUndo();
     StatusInt ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg);
-    BentleyStatus PropagateChanges(BeSQLite::ChangeSet&);
+    BentleyStatus PropagateChanges(TxnSummaryR summary);
+    void DeleteReversedTxns();
 
 public:
 
@@ -332,7 +326,7 @@ public:
     DGNPLATFORM_EXPORT void ReverseTxns(int numActions);
 
     //! Reverse (undo) the most recent transaction.
-    DGNPLATFORM_EXPORT void ReverseSingleTxn();
+    void ReverseSingleTxn() {ReverseTxns(1);}
 
     //! Reverse all element changes back to the most recent Mark. Marks are created by calling SaveUndoMark.
     //! @param[out] name of mark undone.
@@ -359,11 +353,6 @@ public:
     //! @return SUCCESS if the transactions were reversed and cleared, ERROR if TxnPos is invalid.
     DGNPLATFORM_EXPORT StatusInt CancelToPos(TxnId pos);
 
-    //! Clear vestiges of any reversed transactions from memory. Reversed transactions can be reinstated. Therefore, they still
-    //! occupy memory in the cache and in the transaction buffer. This method clears them and makes them non-reinstateable.
-    //! @remarks If any transactions are reversed, the Transaction Manager will automatically call this method before any new element
-    //!          changes can be journaled. That is, after a reverse, ClearReversedTxns is implied if anything other than Reinstate happens.
-    DGNPLATFORM_EXPORT void ClearReversedTxns();
 
     //! Reinstate the most recent previously applied and then reversed transaction. Since at any time multiple transactions can be reversed, it
     //! may take multiple calls to this method to reinstate all reversed operations.

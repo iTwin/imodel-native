@@ -2423,12 +2423,12 @@ void GeometricElement::_Draw (ViewContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometricElement::_DrawHit (HitPathCR hit, ViewContextR context) const
+bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
     {
     if (DrawPurpose::Flash != context.GetDrawPurpose())
         return false;
 
-    if (!hit.GetComponentMode())
+    if (ComponentMode::None == hit.GetComponentMode())
         return false;
 
     ICurvePrimitiveCP primitive = hit.GetGeomDetail().GetCurvePrimitive();
@@ -2443,17 +2443,7 @@ bool GeometricElement::_DrawHit (HitPathCR hit, ViewContextR context) const
 
     context.SetCurrentElement(element.get());
 
-    bool        pushedtrans = false;
-    Transform   hitLocalToContextLocal;
-
-    // NOTE: GeomDetail::LocalToWorld includes pushed transforms...
-    if (SUCCESS == hit.GetHitLocalToContextLocal(hitLocalToContextLocal, context) && !hitLocalToContextLocal.IsIdentity())
-        {
-        context.PushTransform(hitLocalToContextLocal);
-        pushedtrans = true;
-        }
-
-    // NEEDSWORK: Store curve symbology in hit detail when cleaning up DisplayPath/HitPath...
+    // NEEDSWORK: Get curve symbology from GeomDetail m_geomId...
     ElemDisplayParamsR  dispParams = *context.GetCurrentDisplayParams();
 
     dispParams.Init();
@@ -2464,11 +2454,11 @@ bool GeometricElement::_DrawHit (HitPathCR hit, ViewContextR context) const
 
     DSegment3d      segment;
     CurveVectorPtr  curve;
-    bool            doSegmentFlash = (hit.GetPathType() < DisplayPathType::Snap);
+    bool            doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
 
     if (!doSegmentFlash)
         {
-        switch (static_cast<SnapPathCR>(hit).GetSnapMode())
+        switch (static_cast<SnapDetailCR>(hit).GetSnapMode())
             {
             case SnapMode::Center:
             case SnapMode::Origin:
@@ -2491,9 +2481,6 @@ bool GeometricElement::_DrawHit (HitPathCR hit, ViewContextR context) const
         context.GetIDrawGeom().DrawCurveVector(*curve, false);
     else
         context.GetIDrawGeom().DrawCurveVector2d(*curve, false, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
-
-    if (pushedtrans)
-        context.PopTransformClip();
 
     context.SetCurrentElement(nullptr);
 

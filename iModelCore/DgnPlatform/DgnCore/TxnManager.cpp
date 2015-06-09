@@ -233,13 +233,11 @@ void TxnManager::SetUndoInProgress(bool yesNo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::PropagateChanges(BeSQLite::ChangeSet& changeset)
+BentleyStatus TxnManager::PropagateChanges(TxnSummaryR summary)
     {
     if (!m_propagateChanges)
         return BSISUCCESS;
 
-    TxnSummary summary(m_dgndb);
-    summary.AddChangeSet(changeset);
     if (summary.HasModelDependencyChanges())
         {
         // If there were changes to model dependencies, then we have to recompute model dependency order, 
@@ -258,8 +256,6 @@ BentleyStatus TxnManager::PropagateChanges(BeSQLite::ChangeSet& changeset)
     DgnElementDependencyGraph graph(m_dgndb, summary);
     graph.InvokeAffectedDependencyHandlers(summary);
     SetIndirectChanges(false);
-
-    T_HOST.GetTxnAdmin()._OnTxnBoundary(summary);
 
     return summary.HasFatalErrors() ? BSIERROR : BSISUCCESS;
     }
@@ -282,17 +278,17 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation) 
     {
-    if (!isCommit)
+    if (!isCommit) // this is a cancel.
         return OnCommitStatus::Continue;
 
     if (!HasChanges())
         return OnCommitStatus::Continue;
 
-    ClearReversedTxns();
+    DeleteReversedTxns(); // these Txns are no longer reachable.
 
     TxnId startPos = GetCurrTxnId(); // in case we have to roll back
 
-    // Grab and hold in memory all of the direct changes. We'll use this changeset to drive indirect changes, 
+    // Create changeset from modified tables. We'll use this changeset to drive indirect changes, 
     // and we'll also save this changeset toward the end of the function.
     UndoChangeSet changeset;
     auto rc = changeset.FromChangeTrack(*this);
@@ -306,7 +302,10 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
     Restart(); // clear current tracker before propagating changes.
 
-    BentleyStatus status = PropagateChanges(changeset);   // Propagate indirect changes
+    TxnSummary summary(m_dgndb);
+    summary.AddChangeSet(changeset);
+
+    BentleyStatus status = PropagateChanges(summary);   // Propagate indirect changes
 
     if (HasChanges())
         {
@@ -314,6 +313,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         indirectChanges.FromChangeTrack(*this);
         Restart();
 
+        summary.AddChangeSet(indirectChanges); // so admins will see entire changeset
         changeset.ConcatenateWith(indirectChanges);
         }
 
@@ -329,6 +329,8 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             m_curr.m_txnId.Next();
         }
 
+    // At this point, all of the changes to all tables have been applied.
+    T_HOST.GetTxnAdmin()._OnTxnCommit(summary);
     return OnCommitStatus::Continue;
     }
 
@@ -366,16 +368,16 @@ void TxnSummary::AddAffectedElement(DgnElementId const& eid, DgnModelId mid, dou
         mid = m_dgndb.Elements().QueryModelId(eid);
 
     enum Column : int  {ElementId=1,ModelId=2,ChangeType=3,LastMod=4};
-    if (!m_addElementStatement.IsValid())
-        m_dgndb.GetCachedStatement(m_addElementStatement, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType,LastMod) VALUES(?,?,?,?)");
+    if (!m_elementStmt.IsValid())
+        m_dgndb.GetCachedStatement(m_elementStmt, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType,LastMod) VALUES(?,?,?,?)");
 
-    m_addElementStatement->Reset();
-    m_addElementStatement->ClearBindings();
-    m_addElementStatement->BindId(Column::ElementId, eid);
-    m_addElementStatement->BindId(Column::ModelId, mid);
-    m_addElementStatement->BindInt(Column::ChangeType, (int) changeType);
-    m_addElementStatement->BindDouble(Column::LastMod, lastMod);
-    m_addElementStatement->Step();
+    m_elementStmt->Reset();
+    m_elementStmt->ClearBindings();
+    m_elementStmt->BindId(Column::ElementId, eid);
+    m_elementStmt->BindId(Column::ModelId, mid);
+    m_elementStmt->BindInt(Column::ChangeType, (int) changeType);
+    m_elementStmt->BindDouble(Column::LastMod, lastMod);
+    m_elementStmt->Step();
 
     m_modelsInTxn.insert(mid);
     }
@@ -385,23 +387,23 @@ void TxnSummary::AddAffectedElement(DgnElementId const& eid, DgnModelId mid, dou
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnSummary::AddAffectedDependency(BeSQLite::EC::ECInstanceId const& relid, ChangeType changeType)
     {
-    CachedECSqlStatementPtr selectSourceElementModelId = GetDgnDb().GetPreparedECSqlStatement(
+    CachedECSqlStatementPtr stmt  = GetDgnDb().GetPreparedECSqlStatement(
         "SELECT element.ModelId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " AS element, " DGN_SCHEMA(DGN_RELNAME_ElementDrivesElement) " AS DEP"
         " WHERE (DEP.ECInstanceId=?) AND (element.ECInstanceId=DEP.SourceECInstanceId)");
-    selectSourceElementModelId->BindId(1, relid);
-    auto stat = selectSourceElementModelId->Step();
+    stmt->BindId(1, relid);
+    auto stat = stmt->Step();
     BeAssert(stat == ECSqlStepStatus::HasRow);
-    DgnModelId mid = selectSourceElementModelId->GetValueId<DgnModelId>(0);
+    DgnModelId mid = stmt->GetValueId<DgnModelId>(0);
 
-    if (!m_addElementDepStatement.IsValid())
-        m_dgndb.GetCachedStatement(m_addElementDepStatement, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Depend) " (ECInstanceId,ModelId,ChangeType) VALUES(?,?,?)");
+    if (!m_dependencyStmt.IsValid())
+        m_dgndb.GetCachedStatement(m_dependencyStmt, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Depend) " (ECInstanceId,ModelId,ChangeType) VALUES(?,?,?)");
 
-    m_addElementDepStatement->Reset();
-    m_addElementDepStatement->ClearBindings();
-    m_addElementDepStatement->BindId(1, relid);
-    m_addElementDepStatement->BindId(2, mid);
-    m_addElementDepStatement->BindInt(3, (int) changeType);
-    m_addElementDepStatement->Step();
+    m_dependencyStmt->Reset();
+    m_dependencyStmt->ClearBindings();
+    m_dependencyStmt->BindId(1, relid);
+    m_dependencyStmt->BindId(2, mid);
+    m_dependencyStmt->BindInt(3, (int) changeType);
+    m_dependencyStmt->Step();
 
     m_modelsInTxn.insert(mid);
     }
@@ -409,7 +411,12 @@ void TxnSummary::AddAffectedDependency(BeSQLite::EC::ECInstanceId const& relid, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnSummary::TxnSummary(DgnDbR db) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false) {BeAssert(!db.IsReadonly());}
+TxnSummary::TxnSummary(DgnDbR db) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false) 
+    {
+    static bool s_aSummaryExists=false;
+
+    BeAssert(!db.IsReadonly());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
@@ -454,6 +461,9 @@ void TxnSummary::AddChangeSet(ChangeSet& changeset)
                 BeAssert(false);
             }
         }
+
+    m_elementStmt = nullptr;
+    m_dependencyStmt = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -633,7 +643,7 @@ StatusInt TxnManager::CancelToPos(TxnId pos)
 
     StatusInt status = ReverseToPos(pos);
     if (SUCCESS == status)
-        ClearReversedTxns();
+        DeleteReversedTxns();
 
     return  status;
     }
@@ -687,14 +697,6 @@ void TxnManager::ReverseTxns(int numActions)
     ReverseActions(range, numActions>1, true);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseSingleTxn()
-    {
-    ReverseTxns(1);
-    }
-
 #if defined (NEEDS_WORK_TXN_MANAGER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
@@ -744,10 +746,7 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
     TxnRowId first = FirstRow(revTxn.GetFirst());
 
     for (TxnRowId curr=first; curr.IsValid() && curr < last; curr.Next())
-        {
-//        if (!IsSettingTxn(curr))
-            ApplyChanges(curr, TxnDirection::Redo);
-        }
+        ApplyChanges(curr, TxnDirection::Redo);
 
     SetUndoInProgress(false);
 
@@ -825,11 +824,10 @@ Utf8String TxnManager::GetRedoString()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Cancel any undone (rolled-back) transactions. Table Handlers use this to free any memory associated with
-* the transactions, since they will no longer be reachable.
+* Cancel any undone (rolled-back) transactions. 
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ClearReversedTxns()
+void TxnManager::DeleteReversedTxns()
     {
     if (m_reversedTxn.empty())
         return; // nothing currently undone, nothing to do
@@ -917,11 +915,11 @@ struct TxnReversedCaller
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/13
 //=======================================================================================
-struct TxnBoundaryCaller
+struct TxnCommityCaller
 {
     TxnSummaryCR m_summary;
-    TxnBoundaryCaller(TxnSummaryCR summary) : m_summary(summary) {}
-    void operator()(TxnMonitorR monitor) const {monitor._OnTxnBoundary(m_summary);}
+    TxnCommityCaller(TxnSummaryCR summary) : m_summary(summary) {}
+    void operator()(TxnMonitorR monitor) const {monitor._OnTxnCommit(m_summary);}
 };
 
 //=======================================================================================
@@ -938,9 +936,9 @@ struct UndoRedoFinishedCaller
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::TxnAdmin::_OnTxnBoundary(TxnSummaryCR summary)
+void DgnPlatformLib::Host::TxnAdmin::_OnTxnCommit(TxnSummaryCR summary)
     {
-    CallMonitors(TxnBoundaryCaller(summary));
+    CallMonitors(TxnCommityCaller(summary));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -173,10 +173,10 @@ public:
             virtual void _OnNothingToUndo() {}
             virtual void _OnPrepareForUndoRedo(){}
             virtual void _OnNothingToRedo(){}
-            DGNPLATFORM_EXPORT virtual void _OnTxnBoundary(TxnSummaryCR);
-            DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo);
-            DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo);
-            DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo);
+            DGNPLATFORM_EXPORT virtual void _OnTxnCommit(TxnSummaryCR);
+            DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection);
+            DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection);
+            DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection);
 
             //! @name Transaction Monitors
             //@{
@@ -506,9 +506,9 @@ public:
             //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
             virtual double _GetCameraFrustumNearScaleLimit() { return 1.0E-6; }
 
-            virtual void _DrawPathInVp(HitPathCP, DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
+            virtual void _DrawInVp (HitDetailCP, DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
 
-            DGNPLATFORM_EXPORT virtual void _GetInfoString(HitPathCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
+            DGNPLATFORM_EXPORT virtual void _GetInfoString (HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
 
             //! Gets the directory that holds the sprite definition files.
             virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace) { return BSIERROR; }

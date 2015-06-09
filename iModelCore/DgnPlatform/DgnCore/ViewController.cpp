@@ -1024,7 +1024,7 @@ bool SectionDrawingViewController::GetSectionHasDogLeg() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SectionDrawingViewController::_VisitHit(HitPathCR hit, ViewContextR context) const
+StatusInt SectionDrawingViewController::_VisitHit(HitDetailCR hit, ViewContextR context) const
     {
 #if defined(NEEDS_WORK_ELEMENTS_API)
     context.PushTransform(GetFlatteningMatrixIf2D(context));
@@ -1842,7 +1842,7 @@ void ViewController2d::_SaveToSettings(JsonValueR settings) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewController::_VisitHit(HitPathCR hit, ViewContextR context) const
+StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) const
     {
     GeometricElementCPtr element = hit.GetElement();
 

@@ -114,7 +114,10 @@ void DgnSchemaTableHandler::Element::AddChange(TxnSummary& summary, Changes::Cha
     else
         modelId = DgnModelId(change.GetValue(2, stage).GetValueInt64());   // assumes DgnModelId is column 2
 
-    double lastMod = change.GetValue(2, stage).GetValueDouble();           // assumes LastMod is column 7
+    if (changeType == TxnSummary::ChangeType::Update)
+        stage = Changes::Change::Stage::New; 
+    double lastMod = change.GetValue(7, stage).GetValueDouble();           // assumes LastMod is column 7
+
     summary.AddAffectedElement(elementId, modelId, lastMod, changeType);
     }
 

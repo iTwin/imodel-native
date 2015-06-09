@@ -1392,7 +1392,7 @@ bool ViewContext::_VisitAllModelElements (bool includeTransients)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::VisitHit (HitPathCR hit)
+StatusInt ViewContext::VisitHit (HitDetailCR hit)
     {
     ClearAborted();
     _InitScanRangeAndPolyhedron();
