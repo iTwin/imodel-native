@@ -38,9 +38,7 @@ private:
 
 public:
     //***** Construction ******
-//__PUBLISH_SECTION_END__
     //Intentionally use the compiler-generated versions of copy constructor, assignment operator, and destructor
-//__PUBLISH_SECTION_START__
 
     //! Initializes a new instance of the DateTimeInfo type.
     ECOBJECTS_EXPORT DateTimeInfo ();
@@ -116,7 +114,6 @@ public:
 //=======================================================================================    
 struct StandardCustomAttributeHelper : NonCopyableClass
     {
-    //__PUBLISH_SECTION_END__
 private:
     static WCharCP const SYSTEMSCHEMA_CA_NAME;
     static WCharCP const DYNAMICSCHEMA_CA_NAME;
@@ -124,7 +121,6 @@ private:
     //static class
     StandardCustomAttributeHelper ();
     ~StandardCustomAttributeHelper ();
-    //__PUBLISH_SECTION_START__
 
 public:
     //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.

@@ -402,7 +402,8 @@ static WCharCP s_standardSchemaNames[] =
     L"SIUnitSystemDefaults",
     L"Unit_Attributes",
     L"Units_Schema",
-    L"USCustomaryUnitSystemDefaults"
+    L"USCustomaryUnitSystemDefaults",
+    L"ECDbMap"
     };
 
 /*---------------------------------------------------------------------------------**//**
