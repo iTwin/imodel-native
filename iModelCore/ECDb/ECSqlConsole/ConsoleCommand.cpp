@@ -25,11 +25,11 @@ static const std::string base64_chars =
 "0123456789+/";
 
 
-static inline bool is_base64 (unsigned char c) {
-    return (isalnum (c) || (c == '+') || (c == '/'));
+static inline bool is_base64(unsigned char c) {
+    return (isalnum(c) || (c == '+') || (c == '/'));
     }
 
-static Utf8String base64_encode (unsigned char const* bytes_to_encode, unsigned int in_len) {
+static Utf8String base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
     Utf8String ret;
     int i = 0;
     int j = 0;
@@ -78,46 +78,46 @@ static Utf8String base64_encode (unsigned char const* bytes_to_encode, unsigned 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ConsoleCommand::GetName () const
+Utf8String ConsoleCommand::GetName() const
     {
-    return _GetName ();
+    return _GetName();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ConsoleCommand::GetUsage () const
+Utf8String ConsoleCommand::GetUsage() const
     {
-    return _GetUsage ();
+    return _GetUsage();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ConsoleCommand::Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void ConsoleCommand::Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    return _Run (session, args);
+    return _Run(session, args);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
 //static
-Utf8String ConsoleCommand::ConcatArgs (size_t startIndex, std::vector<Utf8String> const& args)
+Utf8String ConsoleCommand::ConcatArgs(size_t startIndex, std::vector<Utf8String> const& args)
     {
-    const size_t count = args.size ();
+    const size_t count = args.size();
     if (startIndex > count)
         {
-        BeAssert (false);
+        BeAssert(false);
         return "";
         }
 
     Utf8String argStr;
     for (size_t i = startIndex; i < count; i++)
         {
-        argStr.append (args[i]);
+        argStr.append(args[i]);
 
         if (i != count - 1)
-            argStr.append (" ");
+            argStr.append(" ");
         }
 
     return argStr;
@@ -127,7 +127,7 @@ Utf8String ConsoleCommand::ConcatArgs (size_t startIndex, std::vector<Utf8String
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String HelpCommand::_GetName () const
+Utf8String HelpCommand::_GetName() const
     {
     return ".help";
     }
@@ -135,7 +135,7 @@ Utf8String HelpCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String HelpCommand::_GetUsage () const
+Utf8String HelpCommand::_GetUsage() const
     {
     return " .help, .h                      Displays all available commands";
     }
@@ -143,37 +143,37 @@ Utf8String HelpCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void HelpCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    BeAssert (m_commandMap.size () == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
-    Console::WriteLine (m_commandMap.at (".help")->GetUsage ().c_str ());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".open")->GetUsage ().c_str ());
-    Console::WriteLine (m_commandMap.at (".close")->GetUsage ().c_str ());
-    Console::WriteLine (m_commandMap.at (".create")->GetUsage ().c_str ());
-    Console::WriteLine (m_commandMap.at (".path")->GetUsage ().c_str ());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".ecsql")->GetUsage ().c_str ());
-    Console::WriteLine (m_commandMap.at (".metadata")->GetUsage ().c_str ());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".commit")->GetUsage ().c_str ());
-    Console::WriteLine (m_commandMap.at (".rollback")->GetUsage ().c_str ());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".import")->GetUsage ().c_str ());
-    Console::WriteLine (m_commandMap.at (".export")->GetUsage ().c_str ());
+    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
+    Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".close")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".create")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".path")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".ecsql")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".metadata")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".import")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".export")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".diff")->GetUsage().c_str());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".set")->GetUsage ().c_str ());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".sql")->GetUsage ().c_str ());
-    Console::WriteLine (m_commandMap.at (".parse")->GetUsage ().c_str ());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".populate")->GetUsage ().c_str ());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".history")->GetUsage ().c_str ());
-    Console::WriteLine ();
-    Console::WriteLine (m_commandMap.at (".exit")->GetUsage ().c_str ());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".set")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".sql")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".parse")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".populate")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".history")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".exit")->GetUsage().c_str());
     }
 
 //******************************* OpenCommand ******************
@@ -187,7 +187,7 @@ Utf8CP const OpenCommand::READWRITE_SWITCH = "readwrite";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String OpenCommand::_GetName () const
+Utf8String OpenCommand::_GetName() const
     {
     return ".open";
     }
@@ -195,7 +195,7 @@ Utf8String OpenCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String OpenCommand::_GetUsage () const
+Utf8String OpenCommand::_GetUsage() const
     {
     return " .open [readonly|readwrite] <ecdb file>\r\n"
            "                                Opens an ECDb file. If no open mode is specified,\r\n"
@@ -205,18 +205,18 @@ Utf8String OpenCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void OpenCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void OpenCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const auto argCount = args.size ();
+    const auto argCount = args.size();
     if (argCount != 2 && argCount != 3)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (session.HasECDb (false))
+    if (session.HasECDb(false))
         {
-        Console::WriteErrorLine ("ECDb file '%s' already open. Close it first before opening another ECDb file.", session.GetECDbPath ());
+        Console::WriteErrorLine("ECDb file '%s' already open. Close it first before opening another ECDb file.", session.GetECDbPath());
         return;
         }
 
@@ -233,26 +233,26 @@ void OpenCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& 
         filePathIndex = 2;
         }
 
-    Utf8CP ecdbPath = args[filePathIndex].c_str ();
+    Utf8CP ecdbPath = args[filePathIndex].c_str();
     BeFileName ecdbFile;
-    ecdbFile.SetNameUtf8 (ecdbPath);
+    ecdbFile.SetNameUtf8(ecdbPath);
 
-    if (!ecdbFile.DoesPathExist ())
+    if (!ecdbFile.DoesPathExist())
         {
-        Console::WriteErrorLine ("The path '%s' does not exist.", ecdbPath);
+        Console::WriteErrorLine("The path '%s' does not exist.", ecdbPath);
         return;
         }
 
-    auto stat = session.GetECDbR ().OpenBeSQLiteDb (ecdbFile, ECDb::OpenParams (openMode, DefaultTxn_Yes));
+    auto stat = session.GetECDbR ().OpenBeSQLiteDb(ecdbFile, ECDb::OpenParams(openMode, DefaultTxn_Yes));
     if (stat != BE_SQLITE_OK)
         {
         session.GetECDbR().CloseDb();//seems that open errors do not automatically close the handle again
-        Console::WriteErrorLine ("Could not open ECDb file '%s'.", ecdbPath);
+        Console::WriteErrorLine("Could not open ECDb file '%s'.", ecdbPath);
         return;
         }
 
     Utf8CP openModeStr = openMode == ECDb::OPEN_Readonly? "read-only" : "read-write";
-    Console::WriteLine ("Opened ECDb file '%s' in %s mode.", ecdbPath, openModeStr);
+    Console::WriteLine("Opened ECDb file '%s' in %s mode.", ecdbPath, openModeStr);
     }
 
 
@@ -260,7 +260,7 @@ void OpenCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String CloseCommand::_GetName () const
+Utf8String CloseCommand::_GetName() const
     {
     return ".close";
     }
@@ -268,7 +268,7 @@ Utf8String CloseCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String CloseCommand::_GetUsage () const
+Utf8String CloseCommand::_GetUsage() const
     {
     return " .close                         Closes the currently open ECDb file";
     }
@@ -276,14 +276,14 @@ Utf8String CloseCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void CloseCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void CloseCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    if (session.HasECDb (true))
+    if (session.HasECDb(true))
         {
         //need to get path before closing, because afterwards it is not available on the ECDb object anymore
-        Utf8String path = session.GetECDbPath ();
+        Utf8String path = session.GetECDbPath();
         session.GetECDbR ().CloseDb();
-        Console::WriteLine ("Closed '%s'.", path.c_str ());
+        Console::WriteLine("Closed '%s'.", path.c_str());
         }
     }
 
@@ -291,7 +291,7 @@ void CloseCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String CreateCommand::_GetName () const
+Utf8String CreateCommand::_GetName() const
     {
     return ".create";
     }
@@ -299,7 +299,7 @@ Utf8String CreateCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String CreateCommand::_GetUsage () const
+Utf8String CreateCommand::_GetUsage() const
     {
     return  " .create <ecdb file>            Creates a new ECDb file.";
     }
@@ -307,17 +307,17 @@ Utf8String CreateCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void CreateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void CreateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
     if (args.size() < 2)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (session.HasECDb (false))
+    if (session.HasECDb(false))
         {
-        Console::WriteErrorLine ("ECDb file %s already loaded. Unload it first.", session.GetECDbPath ());
+        Console::WriteErrorLine("ECDb file %s already loaded. Unload it first.", session.GetECDbPath());
         return;
         }
 
@@ -325,7 +325,7 @@ void CreateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const
     BeFileName beECDbFile(ecdbFileName.c_str(), true);
     if (beECDbFile.DoesPathExist())
         {
-        Console::WriteErrorLine ("Cannot create ECDb file %s as it already exists.", beECDbFile.GetNameUtf8().c_str());
+        Console::WriteErrorLine("Cannot create ECDb file %s as it already exists.", beECDbFile.GetNameUtf8().c_str());
         return;
         }
     auto createNewDbStatus = session.GetECDbR ().CreateNewDb(ecdbFileName.c_str());
@@ -335,14 +335,14 @@ void CreateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const
         }
 
     Console::WriteLine("Successfully created ECDb file %s and loaded it in read/write mode", ecdbFileName.c_str());
-    session.GetECDbR ().SaveChanges ();
+    session.GetECDbR ().SaveChanges();
     }
 
 //******************************* PathCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String PathCommand::_GetName () const
+Utf8String PathCommand::_GetName() const
     {
     return ".path";
     }
@@ -350,7 +350,7 @@ Utf8String PathCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String PathCommand::_GetUsage () const
+Utf8String PathCommand::_GetUsage() const
     {
     return " .path                          Displays full path of the open ECDb file";
     }
@@ -358,17 +358,17 @@ Utf8String PathCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void PathCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void PathCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    if (session.HasECDb (true))
-        Console::WriteLine ("Current ECDb file is '%s'", session.GetECDbPath ());
+    if (session.HasECDb(true))
+        Console::WriteLine("Current ECDb file is '%s'", session.GetECDbPath());
     }
 
 //******************************* CommitCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
-Utf8String CommitCommand::_GetName () const
+Utf8String CommitCommand::_GetName() const
     {
     return ".commit";
     }
@@ -376,7 +376,7 @@ Utf8String CommitCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
-Utf8String CommitCommand::_GetUsage () const
+Utf8String CommitCommand::_GetUsage() const
     {
     return " .commit                        Commits the current transaction and restarts it.";
     }
@@ -384,44 +384,44 @@ Utf8String CommitCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
-void CommitCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void CommitCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const auto argCount = args.size ();
+    const auto argCount = args.size();
     if (argCount != 1)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         {
         return;
         }
 
-    if (session.GetECDb ().IsReadonly ())
+    if (session.GetECDb().IsReadonly())
         {
-        Console::WriteErrorLine ("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
+        Console::WriteErrorLine("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
         return;
         }
 
-    if (!session.GetECDb ().IsTransactionActive ())
+    if (!session.GetECDb().IsTransactionActive())
         {
-        Console::WriteErrorLine ("Cannot commit because no transaction is active.");
+        Console::WriteErrorLine("Cannot commit because no transaction is active.");
         return;
         }
 
-    auto stat = session.GetECDbR ().SaveChanges ();
+    auto stat = session.GetECDbR ().SaveChanges();
     if (stat != BE_SQLITE_OK)
-        Console::WriteErrorLine ("Commit failed: %s", session.GetECDb ().GetLastError ());
+        Console::WriteErrorLine("Commit failed: %s", session.GetECDb().GetLastError());
     else
-        Console::WriteLine ("Committed current transaction and restarted it.");
+        Console::WriteLine("Committed current transaction and restarted it.");
     }
 
 //******************************* RollbackCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
-Utf8String RollbackCommand::_GetName () const
+Utf8String RollbackCommand::_GetName() const
     {
     return ".rollback";
     }
@@ -429,7 +429,7 @@ Utf8String RollbackCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
-Utf8String RollbackCommand::_GetUsage () const
+Utf8String RollbackCommand::_GetUsage() const
     {
     return " .rollback                      Rolls back the current transaction and restarts it.";
     }
@@ -437,37 +437,37 @@ Utf8String RollbackCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
-void RollbackCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void RollbackCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const auto argCount = args.size ();
+    const auto argCount = args.size();
     if (argCount != 1)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         {
         return;
         }
 
-    if (session.GetECDb ().IsReadonly ())
+    if (session.GetECDb().IsReadonly())
         {
-        Console::WriteErrorLine ("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
+        Console::WriteErrorLine("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
         return;
         }
 
-    if (!session.GetECDb ().IsTransactionActive ())
+    if (!session.GetECDb().IsTransactionActive())
         {
-        Console::WriteErrorLine ("Cannot roll back because no transaction is active.");
+        Console::WriteErrorLine("Cannot roll back because no transaction is active.");
         return;
         }
 
-    auto stat = session.GetECDbR ().AbandonChanges ();
+    auto stat = session.GetECDbR ().AbandonChanges();
     if (stat != BE_SQLITE_OK)
-        Console::WriteErrorLine ("Rollback failed: %s", session.GetECDb ().GetLastError ());
+        Console::WriteErrorLine("Rollback failed: %s", session.GetECDb().GetLastError());
     else
-        Console::WriteLine ("Rolled current transaction back and restarted it.");
+        Console::WriteLine("Rolled current transaction back and restarted it.");
     }
 
 //******************************* ImportCommand ******************
@@ -480,7 +480,7 @@ Utf8CP const ImportCommand::ECSCHEMA_SWITCH = "ecschema";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ImportCommand::_GetName () const
+Utf8String ImportCommand::_GetName() const
     {
     return ".import";
     }
@@ -488,7 +488,7 @@ Utf8String ImportCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ImportCommand::_GetUsage () const
+Utf8String ImportCommand::_GetUsage() const
     {
     return " .import ecschema <ecschema xml file|folder>\r\n"
            "                                Imports the specified ECSchema XML file into the ECDb file.\r\n"
@@ -499,33 +499,33 @@ Utf8String ImportCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ImportCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void ImportCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
     if (args.size() < 3 || !args[1].EqualsI(ECSCHEMA_SWITCH))
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         {
         return;
         }
 
-    if (session.GetECDb ().IsReadonly ())
+    if (session.GetECDb().IsReadonly())
         {
-        Console::WriteErrorLine ("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
+        Console::WriteErrorLine("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
         return;
         }
 
-    BeFileName ecschemaPath (args[2]);
-    if (!ecschemaPath.DoesPathExist ())
+    BeFileName ecschemaPath(args[2]);
+    if (!ecschemaPath.DoesPathExist())
         {
-        Console::WriteErrorLine ("Import failed. Specified path '%s' does not exist.", ecschemaPath.GetNameUtf8 ().c_str ());
+        Console::WriteErrorLine("Import failed. Specified path '%s' does not exist.", ecschemaPath.GetNameUtf8().c_str());
         return;
         }
 
-    RunImportSchema (session, ecschemaPath);
+    RunImportSchema(session, ecschemaPath);
     }
 
 
@@ -533,66 +533,66 @@ void ImportCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ImportCommand::RunImportSchema (ECSqlConsoleSession& session, BeFileNameCR ecschemaPath) const
+void ImportCommand::RunImportSchema(ECSqlConsoleSession& session, BeFileNameCR ecschemaPath) const
     {
-    auto context = ECN::ECSchemaReadContext::CreateContext ();
+    auto context = ECN::ECSchemaReadContext::CreateContext();
 
     bvector<BeFileName> ecschemaFilePaths;
 
-    const bool isFolder = (const_cast<BeFileNameR> (ecschemaPath)).IsDirectory ();
+    const bool isFolder = (const_cast<BeFileNameR> (ecschemaPath)).IsDirectory();
     if (isFolder)
         {
-        context->AddSchemaPath (ecschemaPath);
-        BeDirectoryIterator::WalkDirsAndMatch (ecschemaFilePaths, ecschemaPath, L"*.ecschema.xml", false);
-        if (ecschemaFilePaths.empty ())
+        context->AddSchemaPath(ecschemaPath);
+        BeDirectoryIterator::WalkDirsAndMatch(ecschemaFilePaths, ecschemaPath, L"*.ecschema.xml", false);
+        if (ecschemaFilePaths.empty())
             {
-            Console::WriteErrorLine ("Import failed. Folder '%s' does not contain ECSchema XML files.", ecschemaPath.GetNameUtf8 ().c_str ());
+            Console::WriteErrorLine("Import failed. Folder '%s' does not contain ECSchema XML files.", ecschemaPath.GetNameUtf8().c_str());
             return;
             }
         }
     else
         {
-        context->AddSchemaPath (ecschemaPath.GetDirectoryName ().GetName ());
-        ecschemaFilePaths.push_back (ecschemaPath);
+        context->AddSchemaPath(ecschemaPath.GetDirectoryName().GetName());
+        ecschemaFilePaths.push_back(ecschemaPath);
         }
 
     for (auto const& ecschemaFilePath : ecschemaFilePaths)
         {
-        Console::WriteLine ("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8 ());
-        if (SUCCESS != DeserializeECSchema (*context, ecschemaFilePath))
+        Console::WriteLine("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8());
+        if (SUCCESS != DeserializeECSchema(*context, ecschemaFilePath))
             {
-            Console::WriteErrorLine ("Import failed. Could not read ECSchema '%s' into memory.", Utf8String (ecschemaFilePath).c_str ());
+            Console::WriteErrorLine("Import failed. Could not read ECSchema '%s' into memory.", Utf8String(ecschemaFilePath).c_str());
             return;
             }
         }
-    Console::WriteLine ("Preparing to import ecschema. Press any key to continue ...");
+    Console::WriteLine("Preparing to import ecschema. Press any key to continue ...");
 
 
-    Savepoint savepoint (session.GetECDbR (), "import ecschema");
-    ECDbSchemaManager::ImportOptions options (true, true);
-    auto status = session.GetECDbR ().Schemas ().ImportECSchemas (context->GetCache (), options);
+    Savepoint savepoint(session.GetECDbR (), "import ecschema");
+    ECDbSchemaManager::ImportOptions options(true, true);
+    auto status = session.GetECDbR ().Schemas().ImportECSchemas(context->GetCache(), options);
 
     Utf8CP schemaStr = isFolder ? "ECSchemas in folder" : "ECSchema";
 
     if (status != SUCCESS)
         {
-        savepoint.Cancel ();
-        Console::WriteErrorLine ("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8 ().c_str ());
+        savepoint.Cancel();
+        Console::WriteErrorLine("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
         return;
         }
 
-    savepoint.Commit ();
-    Console::WriteLine ("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8 ().c_str ());
+    savepoint.Commit(nullptr);
+    Console::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan     03/2014
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ImportCommand::DeserializeECSchema (ECSchemaReadContextR readContext, BeFileNameCR ecschemaXmlFile)
+BentleyStatus ImportCommand::DeserializeECSchema(ECSchemaReadContextR readContext, BeFileNameCR ecschemaXmlFile)
     {
     ECN::ECSchemaPtr ecSchema = nullptr;
-    const auto stat = ECN::ECSchema::ReadFromXmlFile (ecSchema, ecschemaXmlFile.GetName (), readContext);
+    const auto stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, ecschemaXmlFile.GetName(), readContext);
     //duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
     return stat == ECN::SCHEMA_READ_STATUS_Success || stat == ECN::SCHEMA_READ_STATUS_DuplicateSchema ? SUCCESS : ERROR;
     }
@@ -609,7 +609,7 @@ Utf8CP const ExportCommand::TABLES_SWITCH = "tables";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ExportCommand::_GetName () const
+Utf8String ExportCommand::_GetName() const
     {
     return ".export";
     }
@@ -617,7 +617,7 @@ Utf8String ExportCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ExportCommand::_GetUsage () const
+Utf8String ExportCommand::_GetUsage() const
     {
     return " .export ecschema <out folder>  Exports all ECSchemas of the ECDb file to disk\r\n"
            "         tables <JSON file>     Exports the data in all tables of the ECDb file into a JSON file";
@@ -626,138 +626,138 @@ Utf8String ExportCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ExportCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void ExportCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
     if (args.size() < 3)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         {
         return;
         }
     if (args[1].EqualsI (ECSCHEMA_SWITCH))
         {
-        RunExportSchema (session, args[2].c_str ());
+        RunExportSchema(session, args[2].c_str());
         return;
         }
 
     if (args[1].EqualsI (TABLES_SWITCH))
         {
-        RunExportTables (session, args[2].c_str ());
+        RunExportTables(session, args[2].c_str());
         return;
         }
 
-    Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+    Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan        04/2015
 //---------------------------------------------------------------------------------------
-void ExportCommand::RunExportTables (ECSqlConsoleSession& session, Utf8CP jsonFile) const
+void ExportCommand::RunExportTables(ECSqlConsoleSession& session, Utf8CP jsonFile) const
     {
-    ExportTables (session, jsonFile);
+    ExportTables(session, jsonFile);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ExportCommand::RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFolderStr) const
+void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFolderStr) const
     {
     auto const& schemaManager = session.GetECDbR ().Schemas();
     ECSchemaList schemas;
     auto status = schemaManager.GetECSchemas(schemas, true);
     if (status != SUCCESS)
         {
-        Console::WriteErrorLine ("Failed to load schemas from ECdb file.");
+        Console::WriteErrorLine("Failed to load schemas from ECdb file.");
         return;
         }
 
     BeFileName outFolder;
-    outFolder.SetNameUtf8 (outFolderStr);
-    if (BeFileName::IsDirectory (outFolder.GetName ()))
+    outFolder.SetNameUtf8(outFolderStr);
+    if (BeFileName::IsDirectory(outFolder.GetName()))
         {
-        Console::WriteErrorLine ("Folder %s already exists. Please delete it or specify and another folder.", outFolder.GetNameUtf8 ().c_str ());
+        Console::WriteErrorLine("Folder %s already exists. Please delete it or specify and another folder.", outFolder.GetNameUtf8().c_str());
         return;
         }
     else
-        BeFileName::CreateNewDirectory(outFolder.GetName ());
+        BeFileName::CreateNewDirectory(outFolder.GetName());
 
-    for(auto schema : schemas)
+    for (auto schema : schemas)
         {
         WString fileName = schema->GetFullSchemaName();
-        fileName.append (L".ecschema.xml");
+        fileName.append(L".ecschema.xml");
 
-        BeFileName outPath (outFolder);
-        outPath.AppendToPath (fileName.c_str ());
-        schema->WriteToXmlFile(outPath.GetName ());
-        Console::WriteLine ("Saved ECSchema '%s' to disk", outPath.GetNameUtf8 ().c_str ());
+        BeFileName outPath(outFolder);
+        outPath.AppendToPath(fileName.c_str());
+        schema->WriteToXmlFile(outPath.GetName());
+        Console::WriteLine("Saved ECSchema '%s' to disk", outPath.GetNameUtf8().c_str());
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan        04/2015
 //---------------------------------------------------------------------------------------
-void ExportCommand::ExportTables (ECSqlConsoleSession& session, Utf8CP jsonFile) const
+void ExportCommand::ExportTables(ECSqlConsoleSession& session, Utf8CP jsonFile) const
     {
     BeFile file;
-    if (file.Create (jsonFile, true) != BeFileStatus::Success)
+    if (file.Create(jsonFile, true) != BeFileStatus::Success)
         {
-        Console::WriteErrorLine ("Failed to create JSON file %s", jsonFile);
+        Console::WriteErrorLine("Failed to create JSON file %s", jsonFile);
         return;
         }
 
     Statement stmt;
-    stmt.Prepare (session.GetECDb (), "SELECT name FROM sqlite_master WHERE type ='table'");
-    Json::Value tableData (Json::ValueType::arrayValue);  
+    stmt.Prepare(session.GetECDb(), "SELECT name FROM sqlite_master WHERE type ='table'");
+    Json::Value tableData(Json::ValueType::arrayValue);  
 
-    while (stmt.Step () == BE_SQLITE_ROW)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
-        ExportTable (session, tableData, stmt.GetValueText (0));
+        ExportTable(session, tableData, stmt.GetValueText(0));
         }
     
-    auto jsonString = tableData.toStyledString ();
-    if (file.Write (nullptr, jsonString.c_str (), static_cast<uint32_t>(jsonString.size ())) != BeFileStatus::Success)
+    auto jsonString = tableData.toStyledString();
+    if (file.Write(nullptr, jsonString.c_str(), static_cast<uint32_t>(jsonString.size())) != BeFileStatus::Success)
         {
-        Console::WriteErrorLine ("Failed to write to JSON file %s", jsonFile);
+        Console::WriteErrorLine("Failed to write to JSON file %s", jsonFile);
         return;
         }
 
-    file.Flush ();
+    file.Flush();
     Console::WriteLine("Exported tables to '%s'", jsonFile);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan        04/2015
 //---------------------------------------------------------------------------------------
-void ExportCommand::ExportTable (ECSqlConsoleSession& session, Json::Value& out, Utf8CP tableName) const
+void ExportCommand::ExportTable(ECSqlConsoleSession& session, Json::Value& out, Utf8CP tableName) const
     {
     auto& tableObj = out.append(Json::ValueType::objectValue);
     tableObj["Name"] = tableName;
-    tableObj["Rows"] = Json::Value (Json::ValueType::arrayValue);
+    tableObj["Rows"] = Json::Value(Json::ValueType::arrayValue);
     auto& rows = tableObj["Rows"];
-    rows.clear ();
+    rows.clear();
     Statement stmt;
-    stmt.Prepare (session.GetECDb(), SqlPrintfString ("SELECT * FROM %s", tableName));
-    while (stmt.Step () == BE_SQLITE_ROW)
+    stmt.Prepare(session.GetECDb(), SqlPrintfString("SELECT * FROM %s", tableName));
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
-        auto& row = rows.append (Json::ValueType::objectValue);
-        row.clear ();
-        for (auto i = 0; i < stmt.GetColumnCount (); i++)
+        auto& row = rows.append(Json::ValueType::objectValue);
+        row.clear();
+        for (auto i = 0; i < stmt.GetColumnCount(); i++)
             {
-            switch (stmt.GetColumnType (i))
+            switch (stmt.GetColumnType(i))
                 {
                 case DbValueType::BlobVal:
-                    row[stmt.GetColumnName (i)] = Json::Value (base64_encode ((unsigned char const*)stmt.GetValueBlob (i), stmt.GetColumnBytes (i))); break;
+                    row[stmt.GetColumnName(i)] = Json::Value(base64_encode((unsigned char const*)stmt.GetValueBlob(i), stmt.GetColumnBytes(i))); break;
                 case DbValueType::FloatVal:
-                    row[stmt.GetColumnName (i)] = Json::Value (stmt.GetValueDouble (i)); break;
+                    row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueDouble(i)); break;
                 case DbValueType::IntegerVal:
-                    row[stmt.GetColumnName (i)] = Json::Value (stmt.GetValueInt64 (i)); break;
+                    row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueInt64(i)); break;
                 case DbValueType::NullVal:
-                    row[stmt.GetColumnName (i)] = Json::Value (Json::nullValue); break;
+                    row[stmt.GetColumnName(i)] = Json::Value(Json::nullValue); break;
                 case DbValueType::TextVal:
-                    row[stmt.GetColumnName (i)] = Json::Value (stmt.GetValueText (i)); break;
+                    row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueText(i)); break;
                 }
             }
         }
@@ -766,7 +766,7 @@ void ExportCommand::ExportTable (ECSqlConsoleSession& session, Json::Value& out,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String PopulateCommand::_GetName () const
+Utf8String PopulateCommand::_GetName() const
     {
     return ".populate";
     }
@@ -774,7 +774,7 @@ Utf8String PopulateCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String PopulateCommand::_GetUsage () const
+Utf8String PopulateCommand::_GetUsage() const
     {
     return " .populate [<ecschema name>]    Randomly populates the ECDb file with ECInstances.\r\n"
            "                                If an ECSchema is specified (without version), only its classes are populated.";
@@ -783,45 +783,45 @@ Utf8String PopulateCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void PopulateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const auto argCount = args.size ();
+    const auto argCount = args.size();
     if (argCount != 1 && argCount != 2)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         {
         return;
         }
 
-    if (session.GetECDb ().IsReadonly ())
+    if (session.GetECDb().IsReadonly())
         {
-        Console::WriteErrorLine ("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
+        Console::WriteErrorLine("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
         return;
         }
 
     ECSchemaList schemaList;
     if (argCount == 2)
         {
-        auto schemaName = args[1].c_str ();
-        ECSchemaCP schema = session.GetECDbR ().Schemas ().GetECSchema (schemaName, true);
+        auto schemaName = args[1].c_str();
+        ECSchemaCP schema = session.GetECDbR ().Schemas().GetECSchema(schemaName, true);
         if (schema == nullptr)
             {
-            Console::WriteErrorLine ("Could not find ECSchema '%s' in ECDb file.", schemaName);
+            Console::WriteErrorLine("Could not find ECSchema '%s' in ECDb file.", schemaName);
             return;
             }
 
-        schemaList.push_back (schema);
+        schemaList.push_back(schema);
         }
     else
         {
-        auto stat = session.GetECDbR ().Schemas ().GetECSchemas (schemaList,true);
+        auto stat = session.GetECDbR ().Schemas().GetECSchemas(schemaList,true);
         if (stat != SUCCESS)
             {
-            Console::WriteErrorLine ("Could not retrieve the ECSchemas from the ECDb file.");
+            Console::WriteErrorLine("Could not retrieve the ECSchemas from the ECDb file.");
             return;
             }
         }
@@ -830,10 +830,10 @@ void PopulateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> con
     vector<ECClassCP> classList;
     for (auto schema : schemaList)
         {
-        if (ECSchema::IsStandardSchema(schema->GetName().c_str()) || schema->IsSystemSchema ())
+        if (ECSchema::IsStandardSchema(schema->GetName().c_str()) || schema->IsSystemSchema())
             return;
 
-        auto const& classes = schema->GetClasses ();
+        auto const& classes = schema->GetClasses();
         for (auto ecClass : classes)
             {
             if (!ecClass->GetIsCustomAttributeClass())
@@ -841,11 +841,11 @@ void PopulateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> con
             };
         };
 
-    RandomECInstanceGenerator rig (classList);
+    RandomECInstanceGenerator rig(classList);
     auto status = rig.Generate();
     if (status != BentleyStatus::SUCCESS)
         {
-        Console::WriteErrorLine ("Failed to generate random instances.");
+        Console::WriteErrorLine("Failed to generate random instances.");
         return;
         }
 
@@ -854,28 +854,28 @@ void PopulateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> con
         {
         auto ecClass = entry.first;
         auto const& instanceList = entry.second;
-        ECInstanceInserter inserter (ecdb, *ecClass);
+        ECInstanceInserter inserter(ecdb, *ecClass);
         for (auto const& instance : instanceList)
             {
-            Savepoint savepoint (ecdb, "Populate");
+            Savepoint savepoint(ecdb, "Populate");
             ECInstanceKey instanceKey;
-            auto insertStatus = inserter.Insert (instanceKey, *instance);
+            auto insertStatus = inserter.Insert(instanceKey, *instance);
             if (insertStatus != SUCCESS)
                 {
-                Console::WriteErrorLine ("Could not insert ECInstance of ECClass %s into ECDb file.", Utf8String (ecClass->GetFullName ()).c_str ());
-                savepoint.Cancel ();
+                Console::WriteErrorLine("Could not insert ECInstance of ECClass %s into ECDb file.", Utf8String(ecClass->GetFullName()).c_str());
+                savepoint.Cancel();
                 }
             else
-                savepoint.Commit ();
+                savepoint.Commit(nullptr);
             };
         };
 
-    auto const& generatedInstances = rig.GetGeneratedInstances ();
-    for_each (generatedInstances.begin (), generatedInstances.end (), insertECInstanceDelegate);
+    auto const& generatedInstances = rig.GetGeneratedInstances();
+    for_each(generatedInstances.begin(), generatedInstances.end(), insertECInstanceDelegate);
 
     //relationship instances can only be inserted after the regular instances
-    auto const& generatedRelationshipInstances = rig.GetGeneratedRelationshipInstances ();
-    for_each (generatedRelationshipInstances.begin (), generatedRelationshipInstances.end (), insertECInstanceDelegate);
+    auto const& generatedRelationshipInstances = rig.GetGeneratedRelationshipInstances();
+    for_each(generatedRelationshipInstances.begin(), generatedRelationshipInstances.end(), insertECInstanceDelegate);
     }
 
 
@@ -883,7 +883,7 @@ void PopulateCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String MetadataCommand::_GetName () const
+Utf8String MetadataCommand::_GetName() const
     {
     return ".metadata";
     }
@@ -891,7 +891,7 @@ Utf8String MetadataCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String MetadataCommand::_GetUsage () const
+Utf8String MetadataCommand::_GetUsage() const
     {
     return " .metadata <ecsql>              Executes ECSQL and displays result column metadata";
     }
@@ -899,58 +899,58 @@ Utf8String MetadataCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void MetadataCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void MetadataCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const size_t argSize = args.size ();
+    const size_t argSize = args.size();
     if (argSize <= 1)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         return;
 
     Utf8String ecsql;
     for (size_t i = 1; i < argSize; i++)
         {
-        ecsql.append (args[i]);
+        ecsql.append(args[i]);
         
         if (i != argSize - 1)
-            ecsql.append (" ");
+            ecsql.append(" ");
         }
 
     ECSqlStatement stmt;
-    ECSqlStatus status = stmt.Prepare (session.GetECDbR (), ecsql.c_str ());
+    ECSqlStatus status = stmt.Prepare(session.GetECDbR (), ecsql.c_str());
     if (status != ECSqlStatus::Success)
         {
-        Console::WriteErrorLine ("Failed to prepare ECSQL statement. %s", stmt.GetLastStatusMessage ().c_str ());
+        Console::WriteErrorLine("Failed to prepare ECSQL statement. %s", stmt.GetLastStatusMessage().c_str());
         return;
         }
 
-    Console::WriteLine ();
-    Console::WriteLine ("Column metadata");
-    Console::WriteLine ("===============");
-    Console::WriteLine ("Index   Name/PropertyPath                   DisplayLabel                        Type           Root class                     Root class alias");
-    Console::WriteLine ("----------------------------------------------------------------------------------------------------------------------------------------------");
-    auto columnCount = stmt.GetColumnCount ();
-    for(int i = 0; i < columnCount; i++)
+    Console::WriteLine();
+    Console::WriteLine("Column metadata");
+    Console::WriteLine("===============");
+    Console::WriteLine("Index   Name/PropertyPath                   DisplayLabel                        Type           Root class                     Root class alias");
+    Console::WriteLine("----------------------------------------------------------------------------------------------------------------------------------------------");
+    auto columnCount = stmt.GetColumnCount();
+    for (int i = 0; i < columnCount; i++)
         {
-        auto const& columnInfo = stmt.GetColumnInfo (i);
-        bool isGeneratedProp = columnInfo.IsGeneratedProperty ();
-        ECN::ECPropertyCP prop = columnInfo.GetProperty ();
-        ECSqlPropertyPathCR propPath = columnInfo.GetPropertyPath ();
-        Utf8String propPathStr = isGeneratedProp ? Utf8String (prop->GetDisplayLabel ()) : propPath.ToString ();
-        Utf8String displayLabel (prop->GetDisplayLabel ());
+        auto const& columnInfo = stmt.GetColumnInfo(i);
+        bool isGeneratedProp = columnInfo.IsGeneratedProperty();
+        ECN::ECPropertyCP prop = columnInfo.GetProperty();
+        ECSqlPropertyPathCR propPath = columnInfo.GetPropertyPath();
+        Utf8String propPathStr = isGeneratedProp ? Utf8String(prop->GetDisplayLabel()) : propPath.ToString();
+        Utf8String displayLabel(prop->GetDisplayLabel());
 
-        Utf8String typeName (prop->GetTypeName ());
-        if (prop->GetIsArray ())
-            typeName.append ("[]");
+        Utf8String typeName(prop->GetTypeName());
+        if (prop->GetIsArray())
+            typeName.append("[]");
 
-        Utf8String rootClassName = isGeneratedProp? "generated" : Utf8String (columnInfo.GetRootClass ().GetFullName ());
-        Utf8CP rootClassAlias = columnInfo.GetRootClassAlias ();
+        Utf8String rootClassName = isGeneratedProp? "generated" : Utf8String(columnInfo.GetRootClass().GetFullName());
+        Utf8CP rootClassAlias = columnInfo.GetRootClassAlias();
 
-        Console::WriteLine ("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str (), displayLabel.c_str (), typeName.c_str (), rootClassName.c_str (), rootClassAlias);
+        Console::WriteLine("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str(), displayLabel.c_str(), typeName.c_str(), rootClassName.c_str(), rootClassAlias);
         }
 
     Console::WriteLine();
@@ -960,7 +960,7 @@ void MetadataCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String SqlCommand::_GetName () const
+Utf8String SqlCommand::_GetName() const
     {
     return ".sql";
     }
@@ -968,7 +968,7 @@ Utf8String SqlCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String SqlCommand::_GetUsage () const
+Utf8String SqlCommand::_GetUsage() const
     {
     return " .sql <ecsql>                   Parses ECSQL and displays resulting SQLite SQL";
     }
@@ -976,29 +976,29 @@ Utf8String SqlCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void SqlCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void SqlCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const size_t argSize = args.size ();
+    const size_t argSize = args.size();
     if (argSize <= 1)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         return;
 
-    Utf8String ecsql = ConcatArgs (1, args);
+    Utf8String ecsql = ConcatArgs(1, args);
 
     ECSqlStatement stmt;
-    auto stat = stmt.Prepare (session.GetECDbR (), ecsql.c_str ());
+    auto stat = stmt.Prepare(session.GetECDbR (), ecsql.c_str());
     if (stat != ECSqlStatus::Success)
         {
-        Console::WriteErrorLine("Failed to parse ECSQL: %s\r\n", stmt.GetLastStatusMessage ().c_str ());
+        Console::WriteErrorLine("Failed to parse ECSQL: %s\r\n", stmt.GetLastStatusMessage().c_str());
         return;
         }
 
-    Console::WriteLine("SQLite SQL: %s", stmt.GetNativeSql ());
+    Console::WriteLine("SQLite SQL: %s", stmt.GetNativeSql());
     return;
     }
 
@@ -1012,7 +1012,7 @@ Utf8CP const ParseCommand::RAW_SWITCH = "raw";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ParseCommand::_GetName () const
+Utf8String ParseCommand::_GetName() const
     {
     return ".parse";
     }
@@ -1020,7 +1020,7 @@ Utf8String ParseCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ParseCommand::_GetUsage () const
+Utf8String ParseCommand::_GetUsage() const
     {
     return " .parse [raw] <ecsql>           Parses ECSQL and displays parse tree. If 'raw' is specified \r\n"
            "                                the raw parse tree before resolving / validating tokens\r\n"
@@ -1030,47 +1030,47 @@ Utf8String ParseCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ParseCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void ParseCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const size_t argCount = args.size ();
+    const size_t argCount = args.size();
     if (argCount < 2)
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         return;
 
     if (args[1].EqualsI (RAW_SWITCH))
         {
         if (argCount < 3)
             {
-            Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
 
-        auto ecsql = ConcatArgs (2, args);
+        auto ecsql = ConcatArgs(2, args);
 
         Utf8String parseTree, error;
-        ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree (parseTree, error, ecsql.c_str ());
+        ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, error, ecsql.c_str());
         if (!error.empty())
             {
-            Console::WriteErrorLine ("Failed to parse ECSQL: %s\r\n", error);
+            Console::WriteErrorLine("Failed to parse ECSQL: %s\r\n", error);
             return;
             }
 
-        Console::WriteLine ("Raw ECSQL parse tree:");
-        Console::WriteLine ("%s", parseTree.c_str());
+        Console::WriteLine("Raw ECSQL parse tree:");
+        Console::WriteLine("%s", parseTree.c_str());
         }
     else
         {
-        auto ecsql = ConcatArgs (1, args);
+        auto ecsql = ConcatArgs(1, args);
         Utf8String expTree, ecsqlFromExpTree, error;
-        ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree (expTree, ecsqlFromExpTree, error, ecsql.c_str (), session.GetECDbR ());
+        ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, error, ecsql.c_str(), session.GetECDbR ());
         if (!error.empty())
             {
-            Console::WriteErrorLine ("Failed to parse ECSQL: %s\r\n", error);
+            Console::WriteErrorLine("Failed to parse ECSQL: %s\r\n", error);
             return;
             }
 
@@ -1093,7 +1093,7 @@ Utf8CP const SetCommand::OUTPUT_LIST_SWITCH = "list";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String SetCommand::_GetName () const
+Utf8String SetCommand::_GetName() const
     {
     return ".set";
     }
@@ -1101,7 +1101,7 @@ Utf8String SetCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String SetCommand::_GetUsage () const
+Utf8String SetCommand::_GetUsage() const
     {
     return " .set output [table|list]       Sets the output format for ECSQL results";
     }
@@ -1109,12 +1109,12 @@ Utf8String SetCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void SetCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void SetCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const size_t argCount = args.size ();
+    const size_t argCount = args.size();
     if (argCount < 2 || !args[1].EqualsI (OUTPUT_SWITCH))
         {
-        Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
@@ -1123,29 +1123,29 @@ void SetCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& a
         auto const& outputFormatStr = args[2];
         if (outputFormatStr.EqualsI (OUTPUT_TABLE_SWITCH))
             {
-            session.SetOutputFormat (OutputFormat::Table);
+            session.SetOutputFormat(OutputFormat::Table);
             }
         else if (outputFormatStr.EqualsI (OUTPUT_LIST_SWITCH))
             {
-            session.SetOutputFormat (OutputFormat::List);
+            session.SetOutputFormat(OutputFormat::List);
             }
         else
             {
-            Console::WriteErrorLine ("Usage: %s", GetUsage ().c_str ());
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
         }
 
-    switch (session.GetOutputFormat ())
+    switch (session.GetOutputFormat())
         {
         case OutputFormat::List:
-            Console::WriteLine ("ECSQL result output format: List");
+            Console::WriteLine("ECSQL result output format: List");
             break;
         case OutputFormat::Table:
-            Console::WriteLine ("ECSQL result output format: Tabular");
+            Console::WriteLine("ECSQL result output format: Tabular");
             break;
         default:
-            BeAssert (false);
+            BeAssert(false);
             break;
         }
     }
@@ -1154,7 +1154,7 @@ void SetCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& a
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String HistoryCommand::_GetName () const
+Utf8String HistoryCommand::_GetName() const
     {
     return ".history";
     }
@@ -1162,7 +1162,7 @@ Utf8String HistoryCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String HistoryCommand::_GetUsage () const
+Utf8String HistoryCommand::_GetUsage() const
     {
     return " .history                       Displays command history";
     }
@@ -1170,11 +1170,11 @@ Utf8String HistoryCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void HistoryCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void HistoryCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    auto const& commandHistory = session.GetCommandHistory ();
+    auto const& commandHistory = session.GetCommandHistory();
     int i = 0;
-    for_each(commandHistory.rbegin (), commandHistory.rend (), [&i] (Utf8StringCR command)
+    for_each(commandHistory.rbegin(), commandHistory.rend(), [&i] (Utf8StringCR command)
         {
         i++;
         Console::WriteLine("%3d  %s", i, command.c_str());
@@ -1185,7 +1185,7 @@ void HistoryCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ExitCommand::_GetName () const
+Utf8String ExitCommand::_GetName() const
     {
     return ".exit";
     }
@@ -1193,7 +1193,7 @@ Utf8String ExitCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ExitCommand::_GetUsage () const
+Utf8String ExitCommand::_GetUsage() const
     {
     return " .exit, .quit, .q               Exits the ECSQL Console";
     }
@@ -1201,16 +1201,16 @@ Utf8String ExitCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ExitCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void ExitCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    exit (0);
+    exit(0);
     }
 
 //******************************* ECSchemaDiffCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ECSchemaDiffCommand::_GetName () const
+Utf8String ECSchemaDiffCommand::_GetName() const
     {
     return ".diff";
     }
@@ -1218,7 +1218,7 @@ Utf8String ECSchemaDiffCommand::_GetName () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ECSchemaDiffCommand::_GetUsage () const
+Utf8String ECSchemaDiffCommand::_GetUsage() const
     {
     return " .diff <schemafile1> <schemafile2> [<output-file>]\r\n"           
            "                                Find differences between two ecschemas and optionally save\r\n"
@@ -1228,7 +1228,7 @@ Utf8String ECSchemaDiffCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ECSchemaDiffCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void ECSchemaDiffCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
     if (args.size() < 3)
         {
@@ -1256,14 +1256,14 @@ void ECSchemaDiffCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String>
     auto contextL = ECSchemaReadContext::CreateContext();
     auto contextR = ECSchemaReadContext::CreateContext();
 
-    auto status = ECSchema::ReadFromXmlFile (left,  leftECSchemaFilePath.GetName(), *contextL);
+    auto status = ECSchema::ReadFromXmlFile(left,  leftECSchemaFilePath.GetName(), *contextL);
     if (status != ECOBJECTS_STATUS_Success)
         {
         Console::WriteErrorLine("Failed to load ECSchema file '%s'", leftECSchemaFilePath.GetNameUtf8().c_str());
         return;
         }
 
-    status = ECSchema::ReadFromXmlFile (right,  rightECSchemaFilePath.GetName(), *contextR);
+    status = ECSchema::ReadFromXmlFile(right,  rightECSchemaFilePath.GetName(), *contextR);
     if (status != ECOBJECTS_STATUS_Success)
         {
         Console::WriteErrorLine("Failed to load ECSchema file '%s'", rightECSchemaFilePath.GetNameUtf8().c_str());
@@ -1284,20 +1284,20 @@ void ECSchemaDiffCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String>
         return;
         }
     if (out.empty())
-        Console::WriteLine ( Utf8String(diffText.c_str()).c_str());
+        Console::WriteLine( Utf8String(diffText.c_str()).c_str());
     else
         {
         BeFile file;
         Utf8String outData = Utf8String(diffText.c_str());
         if (file.Create(out.c_str()) != BeFileStatus::Success)
             {
-            Console::WriteLine ("Failed to create file '%s'.", out.GetNameUtf8());
+            Console::WriteLine("Failed to create file '%s'.", out.GetNameUtf8());
             return;
             }
 
         file.Write(nullptr, outData.c_str(), static_cast<uint32_t>(outData.size()));
         file.Close();
-        Console::WriteLine ("Written diff to '%s'.", out.GetNameUtf8());
+        Console::WriteLine("Written diff to '%s'.", out.GetNameUtf8());
         }
     }
 
