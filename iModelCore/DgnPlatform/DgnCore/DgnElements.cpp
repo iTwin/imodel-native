@@ -35,7 +35,7 @@ struct ElemIdRange
         }
 
     bool Contains(uint64_t key) const {return (key >= m_low) &&(key <= m_high);}
-    bool Contains(ElemIdRange const& range) const {return (range.m_high <= m_high) &&(range.m_low >= m_low);}
+    bool Contains(ElemIdRange const& range) const {return (range.m_high <= m_high) && (range.m_low >= m_low);}
 };
 
 enum class ElemPurge {Kept=0, Deleted=1};

@@ -133,7 +133,7 @@ struct TxnMonitorVerifier : TxnMonitor
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();
     void Clear();
-    virtual void _OnTxnBoundary(TxnSummaryCR summary) override;
+    virtual void _OnTxnCommit(TxnSummaryCR summary) override;
     virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo) override {m_OnTxnReverseCalled = true;}
     virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo) override {m_OnTxnReversedCalled = true;}
     };
@@ -239,7 +239,7 @@ void TxnMonitorVerifier::Clear()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnMonitorVerifier::_OnTxnBoundary(TxnSummaryCR summary)
+void TxnMonitorVerifier::_OnTxnCommit(TxnSummaryCR summary)
     {
     m_OnTxnClosedCalled = true;
     Statement stmt;
@@ -247,11 +247,11 @@ void TxnMonitorVerifier::_OnTxnBoundary(TxnSummaryCR summary)
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto eid = stmt.GetValueId<DgnElementId>(0);
-        switch (stmt.GetValueInt(1))
+        switch ((TxnSummary::ChangeType) stmt.GetValueInt(1))
             {
-            case (int)TxnSummary::ChangeType::Add:    m_adds.insert(eid); break;
-            case (int)TxnSummary::ChangeType::Delete: m_deletes.insert(eid); break;
-            case (int)TxnSummary::ChangeType::Update: m_mods.insert(eid); break;
+            case TxnSummary::ChangeType::Add:    m_adds.insert(eid); break;
+            case TxnSummary::ChangeType::Delete: m_deletes.insert(eid); break;
+            case TxnSummary::ChangeType::Update: m_mods.insert(eid); break;
             default:
                 FAIL();
             }

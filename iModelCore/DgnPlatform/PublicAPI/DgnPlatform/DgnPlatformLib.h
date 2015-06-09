@@ -173,10 +173,10 @@ public:
             virtual void _OnNothingToUndo() {}
             virtual void _OnPrepareForUndoRedo(){}
             virtual void _OnNothingToRedo(){}
-            DGNPLATFORM_EXPORT virtual void _OnTxnBoundary(TxnSummaryCR);
-            DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo);
-            DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo);
-            DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo);
+            DGNPLATFORM_EXPORT virtual void _OnTxnCommit(TxnSummaryCR);
+            DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection);
+            DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection);
+            DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection);
 
             //! @name Transaction Monitors
             //@{
