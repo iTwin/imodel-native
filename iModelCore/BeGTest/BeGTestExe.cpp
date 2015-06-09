@@ -237,7 +237,6 @@ int main (int argc, char **argv)
     listeners.Append(new BeGTestListener);
 
     initLogging (argv[0]);
-
     
     //  Configure the test runner
     BeTest::SetRunningUnderGtest ();
