@@ -227,7 +227,7 @@ public:
     //! Tries to get the value of the TablePrefix property in the SchemaMap.
     //! @param[out] tablePrefix Table prefix.
     //! @return true if TablePrefix was set in the SchemaMap. false otherwise
-    ECOBJECTS_EXPORT bool TryGetTablePrefix(Utf8String& tablePrefix) const;
+    ECOBJECTS_EXPORT bool TryGetTablePrefix(Utf8StringR tablePrefix) const;
     };
 
 //=======================================================================================    
@@ -328,11 +328,11 @@ public:
     //! @return true if ColumnName was set in the PropertyMap, false otherwise
     ECOBJECTS_EXPORT bool TryGetColumnName(Utf8StringR columnName) const;
     //! Tries to get the value of the IsNullable property from the PropertyMap.
-    //! @param[out] isNullable isNullable flag
+    //! @param[out] isNullable IsNullable flag
     //! @return true if IsNullable was set in the PropertyMap, false otherwise
     ECOBJECTS_EXPORT bool TryGetIsNullable(bool& isNullable) const;
     //! Tries to get the value of the IsUnique property from the PropertyMap.
-    //! @param[out] isNullable isUnique flag
+    //! @param[out] isUnique IsUnique flag
     //! @return true if IsUnique was set in the PropertyMap, false otherwise
     ECOBJECTS_EXPORT bool TryGetIsUnique(bool& isUnique) const;
     //! Tries to get the value of the Collation property from the PropertyMap.
