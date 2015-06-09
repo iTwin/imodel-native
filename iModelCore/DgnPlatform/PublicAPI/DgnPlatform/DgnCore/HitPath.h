@@ -32,10 +32,8 @@ enum class HitPriority
     Highest     = 0,
     Vertex      = 300,
     Origin      = 400,
-    CellOrigin  = 400,
     Edge        = 400,
-    Compound    = 500,
-    TestBox     = 550,
+    TextBox     = 550,
     Interior    = 600,
 };
 
@@ -92,64 +90,59 @@ struct  GeomDetail
 {
 private:
 
-    ICurvePrimitivePtr      m_primitive;                // curve primitve for hit in local coords.
-    DMatrix4d               m_localToWorld;             // local to world transform for hit.
-    DPoint3d                m_localPoint;               // the closest point in geometry's local coordinates.
+    ICurvePrimitivePtr      m_primitive;                // curve primitve for hit (world coordinates).
+    DPoint3d                m_closePoint;               // the closest point on geometry (world coordinates).
+    DVec3d                  m_normal;                   // surface hit normal (world coordinates).
     HitGeomType             m_geomType;                 // category hit geometry falls into.
     HitDetailSource         m_detailSource;             // mask of HitDetailSource values.
     HitPriority             m_hitPriority;              // Relative priority of hit.
     bool                    m_nonSnappable;             // non-snappable detail, ex. pattern or line style.
-    double                  m_viewDist;                 // xy distance to hit in view coordinates.
-    double                  m_viewZ;                    // z distance to hit in view coordinates.
-    DVec3d                  m_localNormal;              // surface hit normal in local coordinates.
+    double                  m_viewDist;                 // xy distance to hit (view coordinates).
+    double                  m_viewZ;                    // z distance to hit (view coordinates).
+    uint32_t                m_geomId;                   // geometric primitive id for this hit.
 
 public:
 
     DGNPLATFORM_EXPORT void Init ();
 
-    DMatrix4dCR             GetLocalToWorld () const        {return m_localToWorld;}
-    DPoint3dCR              GetClosestPointLocal () const   {return m_localPoint;}
-    HitGeomType             GetGeomType () const            {return m_geomType;}
-    HitDetailSource         GetDetailSource () const        {return m_detailSource;}
-    HitPriority             GetLocatePriority () const      {return m_hitPriority;}
-    bool                    IsSnappable () const            {return !m_nonSnappable;}
-    double                  GetScreenDist () const          {return m_viewDist;}
-    double                  GetZValue () const              {return m_viewZ;}
-    DVec3dCR                GetSurfaceNormal () const       {return m_localNormal;}
+    DPoint3dCR              GetClosestPoint() const     {return m_closePoint;}
+    DVec3dCR                GetSurfaceNormal() const    {return m_normal;}
+    HitGeomType             GetGeomType() const         {return m_geomType;}
+    HitDetailSource         GetDetailSource() const     {return m_detailSource;}
+    HitPriority             GetLocatePriority() const   {return m_hitPriority;}
+    bool                    IsSnappable() const         {return !m_nonSnappable;}
+    double                  GetScreenDist() const       {return m_viewDist;}
+    double                  GetZValue() const           {return m_viewZ;}
 
-    void                    SetLocalToWorld (DMatrix4dCR matrix)    {m_localToWorld = matrix;}
-    void                    SetClosestPointLocal (DPoint3dCR pt)    {m_localPoint = pt;}
-    void                    SetGeomType (HitGeomType value)         {m_geomType = value; m_primitive = NULL;} // NOTE: Use SetCurvePrimitive for HitGeomType::Segment/Arc/Curve.
+    void                    SetClosestPoint (DPoint3dCR pt)         {m_closePoint = pt;}
+    void                    SetSurfaceNormal (DVec3dCR value)       {m_normal = value;}
+    void                    SetGeomType (HitGeomType value)         {m_geomType = value; m_primitive = nullptr;} // NOTE: Use SetCurvePrimitive for HitGeomType::Segment/Arc/Curve.
     void                    SetDetailSource (HitDetailSource value) {m_detailSource = value;}
     void                    SetLocatePriority (HitPriority value)   {m_hitPriority = value;}
     void                    SetNonSnappable (bool yesNo)            {m_nonSnappable = yesNo;}
     void                    SetScreenDist (double value)            {m_viewDist = value;}
     void                    SetZValue (double value)                {m_viewZ = value;}
-    void                    SetSurfaceNormal (DVec3dCR value)       {m_localNormal = value;}
 
-    DGNPLATFORM_EXPORT void GetClosestPoint (DPoint3dR pt) const;
-    DGNPLATFORM_EXPORT void SetClosestPoint (DPoint3dCR pt);
-
-    DGNPLATFORM_EXPORT bool     FillGPA (GPArrayR, bool worldCoords = true, bool singleSegment = true) const;
+    DGNPLATFORM_EXPORT bool     FillGPA (GPArrayR, bool singleSegment = true) const;
     DGNPLATFORM_EXPORT bool     GetArc (DEllipse3dR) const;
     DGNPLATFORM_EXPORT bool     GetSegment (DSegment3dR) const;
-    DGNPLATFORM_EXPORT size_t   GetSegmentNumber () const;
-    DGNPLATFORM_EXPORT double   GetSegmentParam () const;
-    DGNPLATFORM_EXPORT double   GetCloseParam () const;
-    DGNPLATFORM_EXPORT size_t   GetCloseVertex () const;
-    DGNPLATFORM_EXPORT size_t   GetPointCount () const;
-    DGNPLATFORM_EXPORT bool     IsValidSurfaceHit () const; // Test for HitGeomType::Surface with valid normal (i.e. not a QVElem wireframe edge hit)...
-    DGNPLATFORM_EXPORT bool     IsValidEdgeHit () const; // Check hit types, HitGeomType::Segment/HitGeomType::Curve/HitGeomType::Arc (is GetCloseParam, etc. meaningful?)...
+    DGNPLATFORM_EXPORT size_t   GetSegmentNumber() const;
+    DGNPLATFORM_EXPORT double   GetSegmentParam() const;
+    DGNPLATFORM_EXPORT double   GetCloseParam() const;
+    DGNPLATFORM_EXPORT size_t   GetCloseVertex() const;
+    DGNPLATFORM_EXPORT size_t   GetPointCount() const;
+    DGNPLATFORM_EXPORT bool     IsValidSurfaceHit() const;  // Test for HitGeomType::Surface with valid normal (i.e. not a QVElem wireframe edge hit)...
+    DGNPLATFORM_EXPORT bool     IsValidEdgeHit() const;     // Check hit types, HitGeomType::Segment/HitGeomType::Curve/HitGeomType::Arc (is GetCloseParam, etc. meaningful?)...
 
-    DGNPLATFORM_EXPORT ICurvePrimitiveCP   GetCurvePrimitive () const;
-    DGNPLATFORM_EXPORT CurvePrimitiveIdCP  GetCurvePrimitiveId () const;
-    DGNPLATFORM_EXPORT HitGeomType         GetCurvePrimitiveType () const;
-    DGNPLATFORM_EXPORT HitGeomType         GetEffectiveHitGeomType () const; // Return GetGeomType or GetCurvePrimitiveType for HitGeomType::Surface. 
+    DGNPLATFORM_EXPORT ICurvePrimitiveCP   GetCurvePrimitive() const;
+    DGNPLATFORM_EXPORT CurvePrimitiveIdCP  GetCurvePrimitiveId() const;
+    DGNPLATFORM_EXPORT HitGeomType         GetCurvePrimitiveType() const;
+    DGNPLATFORM_EXPORT HitGeomType         GetEffectiveHitGeomType() const; // Return GetGeomType or GetCurvePrimitiveType for HitGeomType::Surface. 
 
     //! Sets ICurvePrimitive hit geometry and appropriate HitGeomType for the supplied primitive.
     //! @note Optional geomType can be explicity specified to override the default HitGeomType.
     //!       For example, an arc primitive with HitGeomType::Point denotes a hit on the arc center.
-    DGNPLATFORM_EXPORT void SetCurvePrimitive (ICurvePrimitiveCP curve, HitGeomType geomType = HitGeomType::None);
+    DGNPLATFORM_EXPORT void SetCurvePrimitive (ICurvePrimitiveCP curve, TransformCP localToWorld = nullptr, HitGeomType geomType = HitGeomType::None);
 };
 
 //=======================================================================================
@@ -173,7 +166,7 @@ protected:
     virtual void _GetInfoString (Utf8StringR descr, Utf8CP delimiter) const;
     virtual ComponentMode _GetComponentMode () const {return m_componentMode; }
     virtual void _SetComponentMode (ComponentMode mode) {m_componentMode = mode; }
-    virtual void _GetHitPoint (DPoint3dR pt) const {m_geomDetail.GetClosestPoint (pt);}
+    virtual DPoint3dCR _GetHitPoint () const {return m_geomDetail.GetClosestPoint();}
     virtual void _SetHitPoint (DPoint3dCR pt) {m_geomDetail.SetClosestPoint (pt);}
     virtual void _SetTestPoint (DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit (HitDetailCP otherHit) const;
@@ -183,8 +176,6 @@ protected:
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
     DGNPLATFORM_EXPORT HitDetail (DgnViewportR, GeometricElementCR, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR);
-    DGNPLATFORM_EXPORT StatusInt GetHitLocalToContextLocal (TransformR, ViewContextR) const;
-    DGNPLATFORM_EXPORT StatusInt GetContextLocalToHitLocal (TransformR, ViewContextR) const;
     DGNPLATFORM_EXPORT explicit HitDetail (HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail ();
 
@@ -193,8 +184,6 @@ public:
     void SetTestPoint (DPoint3dCR pt) {_SetTestPoint(pt);}
     void SetHilited (DgnElement::Hilited state) const {_SetHilited(state);}
     void SetComponentMode (ComponentMode mode) {_SetComponentMode(mode);}
-
-    DGNPLATFORM_EXPORT StatusInt OnCreateAssociationToSnap (DgnModelP);
 
     DGNPLATFORM_EXPORT void DrawInVp (DgnViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
     
@@ -209,15 +198,14 @@ public:
 #endif
 
     DGNPLATFORM_EXPORT GeometricElementCPtr GetElement() const;
+    DGNPLATFORM_EXPORT DgnElementId         GetElementId() const;
+    DGNPLATFORM_EXPORT DgnModelR            GetDgnModel() const;
+    DGNPLATFORM_EXPORT DgnDbR               GetDgnDb() const;
+    DGNPLATFORM_EXPORT DgnViewportR         GetViewport() const;
+    DGNPLATFORM_EXPORT HitSource            GetLocateSource() const;
+    DGNPLATFORM_EXPORT DPoint3dCR           GetTestPoint() const;
 
-    DGNPLATFORM_EXPORT DgnElementId    GetElementId() const;
-    DGNPLATFORM_EXPORT DgnModelR       GetDgnModel() const;
-    DGNPLATFORM_EXPORT DgnDbR          GetDgnDb() const;
-    DGNPLATFORM_EXPORT DgnViewportR    GetViewport() const;
-    DGNPLATFORM_EXPORT HitSource       GetLocateSource() const;
-    DGNPLATFORM_EXPORT DPoint3dCR      GetTestPoint() const;
-
-    void GetHitPoint (DPoint3dR pt) const {_GetHitPoint(pt);}
+    DPoint3dCR GetHitPoint() const {return _GetHitPoint();}
     HitDetailType GetHitType() const {return _GetHitType();}
     ComponentMode GetComponentMode() const {return _GetComponentMode(); }
     bool IsSameHit (HitDetailCP otherHit) const {return _IsSameHit(otherHit);}
@@ -325,7 +313,7 @@ protected:
     Byte*               m_customKeypointData;
     bool                m_allowAssociations;
 
-    DGNPLATFORM_EXPORT virtual void _GetHitPoint (DPoint3dR pt) const override;
+    DGNPLATFORM_EXPORT virtual DPoint3dCR _GetHitPoint () const override;
     DGNPLATFORM_EXPORT virtual void _SetHitPoint (DPoint3dCR snapPt) override;
     virtual HitDetailType _GetHitType () const override {return HitDetailType::Snap;}
     virtual SnapDetail* _Clone () const;

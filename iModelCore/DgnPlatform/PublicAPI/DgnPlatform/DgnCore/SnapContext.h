@@ -89,22 +89,16 @@ DGNPLATFORM_EXPORT SnapStatus DoDefaultDisplayableSnap ();
 //! @bsimethod
 DGNPLATFORM_EXPORT SnapStatus DoSnapUsingCurve (SnapMode mode);
 
-//! Convert a point from the GeomDetail's local coordinate system (ex. GeomDetail::GetClosestPointLocal) to world coordinates.
-DGNPLATFORM_EXPORT void HitLocalToWorld (DPoint3dR);
-
-//! Convert a point from the element's local coordinate system (ex. DisplayHandler::GetTransformOrigin) to world coordinates.
-DGNPLATFORM_EXPORT void ElmLocalToWorld (DPoint3dR); // WIP_V10_NO_SHARED_CELLS - Remove with shared cells.
-
 //! Define the current snap information for this hit.
 //! @param[in]    mode                  Snap mode used for this snap.
 //! @param[in]    sprite                Sprite to use to decorate snap.
-//! @param[in]    snapPoint             Location for snap in world model coordinates (use SnapContext::HitLocalToWorld or SnapContext::ElmLocalToWorld to convert "local" point).
+//! @param[in]    snapPoint             Location for snap in world coordinates.
 //! @param[in]    forceHot              true to make snap active even if cursor is not within locate tolerance of snap location.
 //! @param[in]    isAdjusted            true if snap is not suitable for creating assoc points (pass false if customKeypointData is supplied or snap not overriden).
 //! @param[in]    nBytes                Size in bytes of customKeypointData, or 0 if none.
 //! @param[in]    customKeypointData    Pointer to customKeypointData to save for this snap or NULL.
 //! @bsimethod
-DGNPLATFORM_EXPORT void SetSnapInfo (SnapMode mode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = NULL);
+DGNPLATFORM_EXPORT void SetSnapInfo (SnapMode mode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
 
 }; // SnapContext
 
