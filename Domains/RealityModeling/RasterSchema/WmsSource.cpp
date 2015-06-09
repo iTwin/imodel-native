@@ -44,7 +44,7 @@
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-WmsSourcePtr WmsSource::Create(WmsProperties const& properties)
+WmsSourcePtr WmsSource::Create(WmsMap const& properties)
     {
     return new WmsSource(properties);
     }
@@ -52,7 +52,7 @@ WmsSourcePtr WmsSource::Create(WmsProperties const& properties)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-WmsSource::WmsSource(WmsProperties const& properties)
+WmsSource::WmsSource(WmsMap const& properties)
  :m_properties(properties) 
     {
     // WMS BBOX are in CRS units. i.e. cartesian.       //&&MM todo bbox reorder adjustment needed?
@@ -65,7 +65,7 @@ WmsSource::WmsSource(WmsProperties const& properties)
 
     // for WMS we define a 256x256 multi-resolution image.
     bvector<Resolution> resolution;
-    RasterSource::GenerateResolution(resolution, m_properties.m_metaWidth, m_properties.m_metaWidth, 256, 256);
+    RasterSource::GenerateResolution(resolution, m_properties.m_metaWidth, m_properties.m_metaHeight, 512, 512);
 
     GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(properties.m_csLabel);
     BeAssert(pGcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
@@ -89,7 +89,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     expectedImageInfo.isBGR = false;
     expectedImageInfo.isTopDown = true;
 
-#if 0 //&&MM not now. need our own tiledraster
+#if 1 //&&MM not now. need our own tiledraster
     //      We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
     //      Maybe we should create a better Image object than RgbImageInfo and use that.
     RefCountedPtr<TiledRaster::RequestOptions> pOptions;
@@ -136,7 +136,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
         return NULL;
     
     BeAssert (!actualImageInfo.isBGR);    //&&MM todo 
-    DisplayTile::PixelType pixelType = actualImageInfo.hasAlpha ? DisplayTile::PixelType::Rgba : DisplayTile::PixelType::Bgr;
+    DisplayTile::PixelType pixelType = actualImageInfo.hasAlpha ? DisplayTile::PixelType::Rgba : DisplayTile::PixelType::Rgb;
     DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_decompressBuffer.data(), 0/*notPadded*/);
 
     return pDisplayTile;

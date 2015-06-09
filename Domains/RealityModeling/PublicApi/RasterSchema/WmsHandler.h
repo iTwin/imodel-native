@@ -17,9 +17,9 @@ struct WmsModelHandler;
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-struct WmsProperties    //&&MM change name. WmsServer, WmsConnection, WmsMap
+struct WmsMap
     {
-    RASTERSCHEMA_EXPORT WmsProperties();
+    RASTERSCHEMA_EXPORT WmsMap();
 
     //! Return true if mandatory parameters are set. Does not validate with server.
     bool HasValidParameters() const {return true;} //&&MM todo
@@ -56,7 +56,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WmsModel : RasterModel
     DEFINE_T_SUPER(RasterModel)
 
 private:
-    WmsProperties m_map;     //&&MM need a way to avoid duplication of information between RasterModel/WmsModel/WmsSource.
+    WmsMap m_map;     //&&MM need a way to avoid duplication of information between RasterModel/WmsModel/WmsSource.
 
 protected:
     friend struct WmsModelHandler;
@@ -73,7 +73,7 @@ protected:
     WmsModel(CreateParams const& params);
 
     //! Create a new WmsModel object to be stored in the DgnDb.
-    WmsModel(CreateParams const& params, WmsProperties const& prop);
+    WmsModel(CreateParams const& params, WmsMap const& prop);
 public:
     
 };
@@ -88,7 +88,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WmsModelHandler : RasterModelHandler
     RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_WmsModel, WmsModel, WmsModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
 
 public:
-    RASTERSCHEMA_EXPORT static DgnPlatform::DgnModelId CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsProperties const& prop);
+    RASTERSCHEMA_EXPORT static DgnPlatform::DgnModelId CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& prop);
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE
