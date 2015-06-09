@@ -286,11 +286,11 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbFileInfoSchema (ECSchemaReadC
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDbSystem' nameSpacePrefix='ecdbsys' version='3.0'  xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'> "
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.06' prefix='bsca' /> "
+        "<ECSchema schemaName='ECDbSystem' nameSpacePrefix='ecdbsys' version='2.0'  xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'> "
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' /> "
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' /> "
         "    <ECCustomAttributes> "
-        "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.06'/> "
+        "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.12'/> "
         "    </ECCustomAttributes> "
         "    <ECClass typeName='ArrayOfPrimitives' isDomainClass='False' isStruct='True' > "
         "        <ECCustomAttributes> "
