@@ -40,7 +40,7 @@ private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     bvector<StandardKeySpecificationPtr> m_standardKeys;
-    bvector<ClassIndexInfoPtr> m_hintIndexes; 
+    bvector<ClassIndexInfoPtr> m_dbIndexes; 
     IClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
     ECN::ECPropertyP m_ClassHasCurrentTimeStampProperty;
@@ -52,7 +52,7 @@ protected:
 
 private:
 
-    void InitializeFromClassHint ();
+    void InitializeFromClassMapCA ();
     void InitializeFromClassHasCurrentTimeStampProperty();
 
     bool ValidateBaseClasses () const;
@@ -85,7 +85,7 @@ public:
 
     ECDbMapCR GetECDbMap() const {return m_ecDbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
-    bvector<ClassIndexInfoPtr> const& GetIndexInfo() const { return m_hintIndexes;}
+    bvector<ClassIndexInfoPtr> const& GetIndexInfo() const { return m_dbIndexes;}
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
     IClassMap const* GetParentClassMap () const { return m_parentClassMap; }
@@ -213,7 +213,7 @@ struct ClassIndexInfo : RefCountedBase
     public:
         enum class WhereConstraint
             {
-            Null,
+            None,
             NotNull
             };
 private:
@@ -222,21 +222,32 @@ private:
     bvector<Utf8String> m_properties;
     WhereConstraint m_where;
 private:
-    ClassIndexInfo()
-        : m_isUnique(false)
-        {
-        }
+    ClassIndexInfo(Utf8CP name, bool isUnique, bvector<Utf8String> const& properties, WhereConstraint whereConstraint)
+        : m_name(name), m_isUnique(isUnique), m_properties(properties), m_where(whereConstraint)
+        {}
+
 public:
     Utf8CP GetName() const { return m_name.c_str();}
-    void SetName(Utf8CP name) { m_name = name;}
     bool GetIsUnique() const { return m_isUnique;}
-    void SetIsUnique(bool isUnique) {m_isUnique = isUnique;}
     bvector<Utf8String>& GetProperties(){ return m_properties;}
     WhereConstraint GetWhere() const { return m_where; }
-    void SetWhere(WhereConstraint whereCondition) { m_where = whereCondition; }
-    static ClassIndexInfoPtr Create()
+    static ClassIndexInfoPtr Create(ECN::ECDbClassMap::DbIndex const& dbIndex)
         {
-        return new ClassIndexInfo();
+        WhereConstraint whereConstraint = WhereConstraint::None;
+
+        Utf8CP whereClause = dbIndex.GetWhereClause();
+        if (!Utf8String::IsNullOrEmpty(whereClause))
+            {
+            if (BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0)
+                whereConstraint = WhereConstraint::NotNull;
+            else
+                {
+                LOG.errorv("Invalid where clause in ECDbClassMap::DbIndex: %s. Only ECDB_NOTNULL supported by ECDb.", dbIndex.GetWhereClause());
+                return nullptr;
+                }
+            }
+
+        return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), whereConstraint);
         }
     };
 

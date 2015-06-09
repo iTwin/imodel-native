@@ -23,33 +23,27 @@ TEST(ECDbSql, PartialIndex)
     //Verify that one Partial index was created
     BeSQLite::Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ecdbST_IndexClass' AND name=?"));
-    EXPECT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Partial", Statement::MakeCopy::No));
-    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Partial", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8String sqlCmd = stmt.GetValueText(4);
-    if (sqlCmd.find("WHERE") == std::string::npos) // IDX_Partial is a partial index and will have WHERE clause
-        {
-        EXPECT_TRUE(false);
-        }
+    ASSERT_FALSE(sqlCmd.find("WHERE") == std::string::npos) << "IDX_Partial is a partial index and will have WHERE clause";
     //Verify that other index is not Partial as Where was not specified
-    EXPECT_EQ(BE_SQLITE_OK, stmt.Reset());
-    EXPECT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Full", Statement::MakeCopy::No));
-    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Full", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     sqlCmd = stmt.GetValueText(4);
-    if (sqlCmd.find("WHERE") != std::string::npos)
-        {
-        EXPECT_TRUE(false);
-        }
+    ASSERT_TRUE(sqlCmd.find("WHERE") == std::string::npos);
 
-    //Verify that index with empty or incorrect Where clause was not created
-    EXPECT_EQ(BE_SQLITE_OK, stmt.Reset());
-    EXPECT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_PartialMissing", Statement::MakeCopy::No));
+    //Verify that index with empty Where clause is treated as not-partial index
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_PartialMissing", Statement::MakeCopy::No));
     //IDX_PartialMissing will be skipped as it has empty WHERE clause
-    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    EXPECT_EQ(BE_SQLITE_OK, stmt.Reset());
-    EXPECT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_InvalidPartial", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_InvalidPartial", Statement::MakeCopy::No));
     //IDX_InvalidPartial will be skipped as it has incorrect WHERE clause
-    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()); 
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
     db.CloseDb();
@@ -65,22 +59,17 @@ TEST(ECDbSql, UniqueIndex)
     //Verify that one Unique index was created
     BeSQLite::Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ecdbST_IndexClass2' AND name=?"));
-    EXPECT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Unique", Statement::MakeCopy::No));
-    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_Unique", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8String sqlCmd = stmt.GetValueText(4);
-    if (sqlCmd.find("UNIQUE") == std::string::npos) // IDX_Unique will have UNIQUE clause
-        {
-        EXPECT_TRUE(false);
-        }
-    //Verify that other indexes are not Unique
-    EXPECT_EQ(BE_SQLITE_OK, stmt.Reset());
-    EXPECT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_NotUnique", Statement::MakeCopy::No));
-    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_FALSE(sqlCmd.find("UNIQUE") == std::string::npos) << "IDX_Unique will have UNIQUE clause";
+
+        //Verify that other indexes are not Unique
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_NotUnique", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     sqlCmd = stmt.GetValueText(4);
-    if (sqlCmd.find("UNIQUE") != std::string::npos)
-        {
-        EXPECT_TRUE(false);
-        }
+    ASSERT_TRUE(sqlCmd.find("UNIQUE") == std::string::npos);
 
     stmt.Finalize();
     db.CloseDb();
@@ -98,7 +87,7 @@ TEST(ECDbSql, IndexErrors)
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM SQLITE_MASTER WHERE type='index' AND tbl_name='ecdbST_IndexClass3' AND name=?"));
     EXPECT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_NoProperty", Statement::MakeCopy::No));
     // Index with No Property specified will not be created
-    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     EXPECT_EQ(BE_SQLITE_OK, stmt.Reset());
     EXPECT_EQ(BE_SQLITE_OK, stmt.BindText(1, "IDX_WrongProperty", Statement::MakeCopy::No));

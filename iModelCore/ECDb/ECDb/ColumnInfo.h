@@ -27,10 +27,10 @@ private:
     ECDbSqlColumn::Constraint::Collation m_collation;
     bool              m_virtual;
     int               m_priority;
-    void InitializeFromHint(ECN::IECInstanceCP ecdbPropertyHint, ECN::ECPropertyCR ecProperty);
+    void InitializeFromMapCustomAttribute(ECN::ECPropertyCR ecProperty);
 
 public:
-    ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECN::IECInstanceCP ecdbPropertyHint);
+    ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString);
     virtual ~ColumnInfo() {}
     int               GetPriority () const  { return m_priority; }
     void              SetPriority (int priority) { m_priority = priority; }

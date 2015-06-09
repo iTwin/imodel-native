@@ -719,7 +719,7 @@ Db& db
         "Constraint_Unique BOOLEAN,"
         "Constraint_Check TEXT,"
         "Constraint_Default TEXT,"
-        "Constraint_Collate INTEGER,"
+        "Constraint_Collation INTEGER,"
         "PrimaryKey_Ordinal INTEGER,"
         "UserData INTEGER"
         ");");

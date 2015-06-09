@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, IECInstanceCP hint) 
+ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString) 
 : m_nullable (true), m_unique (false), m_columnType (PRIMITIVETYPE_Unknown), m_collation (ECDbSqlColumn::Constraint::Collation::Default), m_virtual (false), m_priority (0)
     {
     // Assumes that if it is mapped to a column and is not primitive, it is mapped as a blob. Needswork if we add a JSON mapping hint
@@ -23,7 +23,7 @@ ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessStri
     else
         m_columnType = PRIMITIVETYPE_Binary; //In this case, it is the type of the column, not of the property
 
-    InitializeFromHint(hint, ecProperty);
+    InitializeFromMapCustomAttribute(ecProperty);
 
     // PropertyMappingRule: if custom attribute PropertyMap does not supply a column name for an ECProperty, 
     // we use the ECProperty's propertyAccessString (and replace . by _)
@@ -38,26 +38,34 @@ ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessStri
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColumnInfo::InitializeFromHint(IECInstanceCP hint, ECPropertyCR ecProperty)
+void ColumnInfo::InitializeFromMapCustomAttribute(ECPropertyCR ecProperty)
     {
-    if (hint == nullptr)
+    ECDbPropertyMap customPropMap;
+    if (!ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProperty))
         return;
 
     Utf8String columnName;
-    if (CustomPropertyMapReader::TryReadColumnName (columnName, *hint))
+    if (customPropMap.TryGetColumnName(columnName))
         m_columnName = columnName;
 
     bool isNullable = false;
-    if (CustomPropertyMapReader::TryReadIsNullable (isNullable, *hint))
+    if (customPropMap.TryGetIsNullable(isNullable))
         m_nullable = isNullable;
 
     bool isUnique = false;
-    if (CustomPropertyMapReader::TryReadIsUnique (isUnique, *hint))
+    if (customPropMap.TryGetIsUnique(isUnique))
         m_unique = isUnique;
 
-    ECDbSqlColumn::Constraint::Collation collation;
-    if (CustomPropertyMapReader::TryReadCollation (collation, *hint))
-        m_collation = collation;
+    Utf8String collationStr;
+    if (customPropMap.TryGetCollation(collationStr))
+        {
+        if (!ECDbSqlColumn::Constraint::TryParseCollationString(m_collation, collationStr.c_str()))
+            {
+            LOG.errorv("Custom attribute PropertyMap on ECProperty %s:%s has an invalid value for the property 'Collation': %s",
+                       Utf8String(ecProperty.GetClass().GetFullName()).c_str(), Utf8String(ecProperty.GetName()).c_str(),
+                       collationStr.c_str());
+            }
+        }
 
     //WIP_ECDB: needswork: handle DoNotMap
     }

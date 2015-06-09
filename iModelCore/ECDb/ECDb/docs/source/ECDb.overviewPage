@@ -315,12 +315,10 @@
     follow EC naming rules.
     - <b>IsNullable</b> (optional): If true, values must not be NULL. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
     - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty.
-    - <b>Collate</b> (optional): Specifies the string comparison mode for this property. Possible values:
-        - <CODE>BINARY</CODE>: (default): bit to bit matching.
-        - <CODE>NOCASE</CODE>: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF.
-        - <CODE>RTRIM</CODE>: The same as binary, except that trailing space characters are ignored.​
-    - <b>MapStrategy</b> (optional, not supported yet)
-    - <b>Precision</b> (optional, not supported yet): Specifies precision for ECProperties of type double. Possible values: 0-16.
+    - <b>Collation</b> (optional): Specifies the string comparison mode for this property. Possible values:
+        - <CODE>Binary</CODE>: (default): bit to bit matching.
+        - <CODE>NoCase</CODE>: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF.
+        - <CODE>RTrim</CODE>: The same as binary, except that trailing space characters are ignored.​
     
     ###Examples
    
@@ -328,9 +326,9 @@
 
         <ECProperty propertyName="Id" typeName="int">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <ColumnName>assetid</ColumnName>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
     
@@ -338,9 +336,9 @@
 
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.11">
-                    <Collate>NoCase</Collate> 
-                </ECDbPropertyHint>
+               <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+               </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
     

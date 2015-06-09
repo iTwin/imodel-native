@@ -1858,6 +1858,24 @@ Utf8CP ECDbSqlColumn::Constraint::CollationToString (ECDbSqlColumn::Constraint::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
+//static 
+bool ECDbSqlColumn::Constraint::TryParseCollationString(Collation& collation, Utf8CP str)
+    {
+    if (BeStringUtilities::Stricmp(str, "Binary") == 0)
+        collation = Collation::Binary;
+    else if (BeStringUtilities::Stricmp(str, "NoCase") == 0)
+        collation = Collation::NoCase;
+    else if (BeStringUtilities::Stricmp(str, "RTrim") == 0)
+        collation = Collation::RTrim;
+    else
+        return false;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus ECDbSqlColumn::SetUserFlags (uint32_t userFlags)
     {
     if (GetTableR ().GetEditHandleR ().AssertNotInEditMode ())

@@ -249,7 +249,7 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassMapInfo::_InitializeFromSchema ()
     {
-    InitializeFromClassHint ();
+    InitializeFromClassMapCA ();
     InitializeFromClassHasCurrentTimeStampProperty();
     // Add indices for important identifiers
     ProcessStandardKeys (m_ecClass, L"BusinessKeySpecification");
@@ -293,13 +293,15 @@ void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassMapInfo::InitializeFromClassHint ()
+void ClassMapInfo::InitializeFromClassMapCA ()
     {
     ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
-    IECInstancePtr classHint = CustomClassMapReader::Read (m_ecClass);
-    if (classHint != nullptr)
+    ECDbClassMap customClassMap;
+    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
         {
-        if (CustomClassMapReader::TryReadMapStrategy (mapStrategy, *classHint))
+        Utf8String mapStrategyStr, mapStrategyOptionsStr;
+        if (customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr) &&
+            mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) == SUCCESS)
             {
             GetMapStrategyR() = mapStrategy;
             if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
@@ -310,16 +312,26 @@ void ClassMapInfo::InitializeFromClassHint ()
             }
 
         Utf8String tableName;
-        if (CustomClassMapReader::TryReadTableName (tableName, *classHint))
+        if (customClassMap.TryGetTableName(tableName))
             m_tableName = tableName;
 
         Utf8String ecInstanceIdColumnName;
-        if (CustomClassMapReader::TryReadECInstanceIdColumnName (ecInstanceIdColumnName, *classHint))
+        if (customClassMap.TryGetECInstanceIdColumn(ecInstanceIdColumnName))
             m_ecInstanceIdColumnName = ecInstanceIdColumnName;
 
-        CustomClassMapReader::TryReadIndices (m_hintIndexes, *classHint, m_ecClass);
+        bvector<ECDbClassMap::DbIndex> indices;
+        if (customClassMap.TryGetIndexes(indices))
+            {
+            for (ECDbClassMap::DbIndex const& index : indices)
+                {
+                ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+                if (indexInfo != nullptr)
+                    m_dbIndexes.push_back(indexInfo);
+                }
+            }
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -468,11 +480,11 @@ ECClassCR          ecClass
 Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
     {
     ECSchemaCR schema = ecClass.GetSchema ();
-    auto hint = CustomSchemaMapReader::Read (schema);
-    if (hint != nullptr)
+    ECDbSchemaMap customSchemaMap;
+    if (ECDbMapCustomAttributeHelper::TryGetSchemaMap (customSchemaMap, schema))
         {
         Utf8String tablePrefix;
-        if (CustomSchemaMapReader::TryReadTablePrefix (tablePrefix, *hint))
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix))
             return tablePrefix;
         }
 

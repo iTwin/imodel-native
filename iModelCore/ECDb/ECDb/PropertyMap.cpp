@@ -64,10 +64,8 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
         ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema (ecDbMap.GetECDbR (), ecProperty);
         }
 
-    IECInstancePtr hint = CustomPropertyMapReader::Read(ecProperty);
     // WIP_ECDB: honor the hint for non-default mappings
-
-    ColumnInfo columnInfo (ecProperty, propertyAccessString, hint.get());
+    ColumnInfo columnInfo (ecProperty, propertyAccessString);
     auto policy = ECDbPolicyManager::GetPropertyPolicy (ecProperty, IsValidInECSqlPolicyAssertion::Get ());
     if (!policy.IsSupported ())
         {

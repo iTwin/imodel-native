@@ -18,7 +18,8 @@ bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::E
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule (supportLegacySchemas))));
-   // validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new StructWithRegularBaseClassRule (supportLegacySchemas))));
+    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new MapStrategyRule())));
+    // validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new StructWithRegularBaseClassRule (supportLegacySchemas))));
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses ())
         {
@@ -51,7 +52,6 @@ bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::EC
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitivePropertyNamesRule (ecClass, supportLegacySchemas))));
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new NoPropertiesOfSameTypeAsClassRule (ecClass))));
-    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new MapStrategyRule(ecClass))));
 
     bool valid = true;
     for (ECPropertyCP prop : ecClass.GetProperties (true))
@@ -146,15 +146,18 @@ Utf8String ECSchemaValidationRule::Error::ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
-MapStrategyRule::MapStrategyRule(ECClassCR ecClass)
-    : ECSchemaValidationRule(Type::InvalidMapStrategy), m_error(nullptr) {}
+MapStrategyRule::MapStrategyRule()
+    : ECSchemaValidationRule(Type::InvalidMapStrategy), m_error(nullptr) 
+    {
+    m_error = std::unique_ptr<Error>(new Error(GetType()));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
 std::unique_ptr<ECSchemaValidationRule::Error> MapStrategyRule::_GetError() const
     {
-    if (m_error == nullptr)
+    if (!m_error->IsError ())
         return nullptr;
 
     return std::move(m_error);
@@ -165,9 +168,24 @@ std::unique_ptr<ECSchemaValidationRule::Error> MapStrategyRule::_GetError() cons
 //---------------------------------------------------------------------------------------
 Utf8String MapStrategyRule::Error::_ToString() const
     {
-    Utf8String str;
-    str.Sprintf("Custom attribute 'ClassMap' on ECClass '%s' contains invalid values for the property MapStrategy or MapStrategyOptions.", Utf8String(m_ecClass.GetFullName()).c_str());
-    return std::move(str);
+    if (!IsError())
+        return "";
+
+    Utf8CP errorMsgTemplate = "ECSchema '%s' contains ECClasses that have a 'ClassMap' custom attribute with invalid values for the properties MapStrategy or MapStrategyOptions: %s.";
+    Utf8String classList;
+    ECClassCP firstClass = nullptr;
+    for (ECClassCP ecClass : m_classesWithInvalidMapStrategy)
+        {
+        if (firstClass != nullptr)
+            classList.append(", ");
+
+        classList.append(Utf8String(ecClass->GetName()));
+        firstClass = ecClass;
+        }
+
+    Utf8String error;
+    error.Sprintf(errorMsgTemplate, Utf8String(firstClass->GetSchema().GetName()).c_str(), classList.c_str());
+    return std::move(error);
     }
 
 //---------------------------------------------------------------------------------------
@@ -176,14 +194,18 @@ Utf8String MapStrategyRule::Error::_ToString() const
 bool MapStrategyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
     ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
-    IECInstancePtr classHint = CustomClassMapReader::Read(ecClass);
-    if (classHint != nullptr)
+    ECDbClassMap customClassMap;
+    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, ecClass))
         {
-        if (CustomClassMapReader::TryReadMapStrategy(mapStrategy, *classHint))
-            return true;
-
-        m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
-        return false;
+        Utf8String mapStrategyStr, mapStrategyOptionStr;
+        if (customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionStr))
+            {
+            if (SUCCESS != mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionStr.c_str()))
+                {
+                m_error->AddClassWithInvalidMapStrategy(ecClass);
+                return false;
+                }
+            }
         }
 
     return true;

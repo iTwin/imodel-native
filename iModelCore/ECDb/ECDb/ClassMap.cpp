@@ -1335,23 +1335,15 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy (Specification const& s
                 if (existingColumn->GetConstraint ().IsNotNull () != specifications.IsNotNull () || existingColumn->GetConstraint ().IsUnique () != specifications.IsUnique () || existingColumn->GetConstraint ().GetCollation () != specifications.GetCollation ())
                     {
                     LOG.warningv ("Column %s in table %s is used by multiple property maps where property name and data type matches,"
-                        " but where 'Nullable', 'Unique', or 'Collate' differs, and which will therefore be ignored for some of the properties.",
+                        " but where 'Nullable', 'Unique', or 'Collation' differs, and which will therefore be ignored for some of the properties.",
                         existingColumn->GetName ().c_str (), GetTable ().GetName ().c_str ());
 
                     BeAssert (false && "A column is used by multiple property maps where property name and data type matches, "
-                        " but where 'Nullable', 'Unique', or 'Collate' differs.");
+                        " but where 'Nullable', 'Unique', or 'Collation' differs.");
 
                     return ApplyCreateStrategy (specifications, targetTable, propertyLocalToClassId);
                     }
                 }
-
-            //auto canEdit = existingColumn->GetTableR ().GetEditHandle ().CanEdit ();
-            //if (!canEdit)
-            //    existingColumn->GetTableR ().GetEditHandleR ().BeginEdit ();
-
-            //existingColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
-            //if (!canEdit)
-            //    existingColumn->GetTableR ().GetEditHandleR ().EndEdit ();
 
             return existingColumn;
             }

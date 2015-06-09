@@ -118,29 +118,30 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct MapStrategyRule : ECSchemaValidationRule
     {
-    public:
-        //=======================================================================================
-        // @bsiclass                  Muhammad.Zaighum                          07/2015
-        //+===============+===============+===============+===============+===============+======
-        struct Error : ECSchemaValidationRule::Error
-            {
-            private:
-                ECN::ECClassCR m_ecClass;
-                virtual Utf8String _ToString() const override;
-            public:
-                Error(Type ruleType, ECN::ECClassCR ecClass)
-                    : ECSchemaValidationRule::Error(ruleType), m_ecClass(ecClass)
-                    {}
-                ~Error() {}
-            };
-
+public:
+    //=======================================================================================
+    // @bsiclass                  Muhammad.Zaighum                          07/2015
+    //+===============+===============+===============+===============+===============+======
+    struct Error : ECSchemaValidationRule::Error
+        {
     private:
-        mutable std::unique_ptr<Error> m_error;
-        virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
-        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+        bvector<ECN::ECClassCP> m_classesWithInvalidMapStrategy;
+        virtual Utf8String _ToString() const override;
     public:
-        explicit MapStrategyRule(ECN::ECClassCR ecClass);
-        ~MapStrategyRule() {}
+        Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
+        ~Error() {}
+
+        void AddClassWithInvalidMapStrategy(ECN::ECClassCR ecClass) { m_classesWithInvalidMapStrategy.push_back(&ecClass); }
+        bool IsError() const { return !m_classesWithInvalidMapStrategy.empty(); }
+        };
+
+private:
+    mutable std::unique_ptr<Error> m_error;
+    virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
+    virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+public:
+    MapStrategyRule();
+    ~MapStrategyRule() {}
     };
 
 //=======================================================================================
@@ -154,26 +155,23 @@ public:
     //+===============+===============+===============+===============+===============+======
     struct Error : ECSchemaValidationRule::Error
         {
-        public:
-            typedef bmap<WCharCP, bset<ECN::ECClassCP>, CompareIWChar> InvalidClasses;
+    public:
+        typedef bmap<WCharCP, bset<ECN::ECClassCP>, CompareIWChar> InvalidClasses;
 
-        private:
-            InvalidClasses m_invalidClasses;
-            bool m_supportLegacySchemas;
+    private:
+        InvalidClasses m_invalidClasses;
+        bool m_supportLegacySchemas;
 
-            virtual Utf8String _ToString () const override;
+        virtual Utf8String _ToString () const override;
 
-        public:
-            explicit Error (Type ruleType, bool supportLegacySchemas)
-                : ECSchemaValidationRule::Error (ruleType), m_supportLegacySchemas (supportLegacySchemas)
-                {}
+    public:
+        explicit Error (Type ruleType, bool supportLegacySchemas) : ECSchemaValidationRule::Error (ruleType), m_supportLegacySchemas (supportLegacySchemas) {}
+        ~Error () {}
 
-            ~Error () {}
+        bset<ECN::ECClassCP> const* TryGetInvalidClasses (ECN::ECClassCR ecClass) const;
 
-            bset<ECN::ECClassCP> const* TryGetInvalidClasses (ECN::ECClassCR ecClass) const;
-
-            InvalidClasses const& GetInvalidClasses () const { return m_invalidClasses; }
-            InvalidClasses& GetInvalidClassesR () { return m_invalidClasses; }
+        InvalidClasses const& GetInvalidClasses () const { return m_invalidClasses; }
+        InvalidClasses& GetInvalidClassesR () { return m_invalidClasses; }
         };
 
 private:

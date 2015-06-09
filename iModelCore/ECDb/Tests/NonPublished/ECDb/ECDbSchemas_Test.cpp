@@ -526,7 +526,8 @@ TEST(ECDbSchemas, LoadECSchemas)
     expectedSchemas.insert (L"Bentley_Standard_CustomAttributes");
     expectedSchemas.insert (L"Bentley_Standard_Classes");
     expectedSchemas.insert (L"EditorCustomAttributes");
-    expectedSchemas.insert (L"ECDbSystem");
+    expectedSchemas.insert(L"ECDbMap");
+    expectedSchemas.insert(L"ECDbSystem");
     expectedSchemas.insert (L"ECDb_FileInfo");
     expectedSchemas.insert (L"StartupCompany");
     expectedSchemas.insert (L"Unit_Attributes");
@@ -2470,9 +2471,9 @@ TEST_F(ECDbSchemaFixture,SchemaMapCustomAttributeTablePrefix)
     {
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey (L"ECDbMap", 1, 0);
-    ECSchemaPtr bscaSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
-    ECClassCP testClass = bscaSchema->GetClassCP (L"SChemaMap");
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"SchemaMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue(L"TablePrefix",ECValue(L"Pre"));
     MappingSchema->SetCustomAttribute(*ecInctance);
@@ -2495,9 +2496,9 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeTableForClass)
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey (L"ECDbMap", 1, 0);
-    ECSchemaPtr bscaSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
-    ECClassCP testClass = bscaSchema->GetClassCP (L"ClassMap");
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue(L"MapStrategy",ECValue(L"TableForThisClass"));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
@@ -2517,9 +2518,9 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeTablePerClass)
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey (L"ECDbMap", 1, 0);
-    ECSchemaPtr bscaSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
-    ECClassCP testClass = bscaSchema->GetClassCP (L"ClassMap");
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue(L"MapStrategy",ECValue(L"TablePerClass"));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
@@ -2539,9 +2540,9 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeDoNotMap)
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey (L"ECDbMap", 1, 0);
-    ECSchemaPtr bscaSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
-    ECClassCP testClass = bscaSchema->GetClassCP (L"ClassMap");
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue(L"MapStrategy",ECValue(L"DoNotMap"));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
@@ -2560,9 +2561,9 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeTablePerHierarchy)
     {
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey(L"ECDbMap", 1, 0);
-    ECSchemaPtr bscaSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
-    ECClassCP testClass = bscaSchema->GetClassCP (L"ClassMap");
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue(L"MapStrategy",ECValue(L"TablePerHierarchy"));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
@@ -2588,9 +2589,9 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeDoNotMapHierarchy)
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey (L"ECDbMap", 1, 0);
-    ECSchemaPtr bscaSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
-    ECClassCP testClass = bscaSchema->GetClassCP (L"ClassMap");
+    ECSchemaPtr ecdbMapSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue(L"MapStrategy",ECValue(L"DoNotMapHierarchy"));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);

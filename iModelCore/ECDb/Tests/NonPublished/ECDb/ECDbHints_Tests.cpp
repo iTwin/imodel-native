@@ -626,7 +626,7 @@ TEST_F (ECDbHintTests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThis
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbHintTests, TestInValidMapStrategyValue)
+TEST_F (ECDbHintTests, TestInvalidMapStrategyValue)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -636,8 +636,7 @@ TEST_F (ECDbHintTests, TestInValidMapStrategyValue)
         "    <ECClass typeName='ClassA' isDomainClass='True'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>"
+        "                <MapStrategy>bla</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
