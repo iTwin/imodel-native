@@ -163,6 +163,27 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 bool RasterTile::Draw(ViewContextR context)
     {
+    // Corners are in this order:
+    //  [0]  [1]
+    //  [2]  [3]
+    DPoint3d uvPts[4];
+    memcpy(uvPts, m_corners, sizeof(uvPts));
+    
+    // Make sure the map displays beneath element graphics. Note that this policy is appropriate for the background map, which is always
+    // "on the ground". It is not appropriate for other kinds of reality data, even some images display. It is up to the individual reality
+    // data handler to use the "surface" that is appprpriate to the reality data.
+    if (!context.GetViewport()->GetViewController().GetTargetModel()->Is3d())
+        {
+        for (auto& pt : uvPts)
+            pt.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
+        }
+    else
+        {
+        auto extents = context.GetViewport()->GetViewController().GetProjectExtents();
+        for (auto& pt : uvPts)
+            pt.z = extents.low.z - 1;
+        }
+
     static bool s_DrawTileShape = true;
     if(s_DrawTileShape)
         {
@@ -174,14 +195,14 @@ bool RasterTile::Draw(ViewContextR context)
         context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
 
         DPoint3d box[5];
-        box[0] = m_corners[0];
-        box[1] = m_corners[1];
-        box[2] = m_corners[3];
-        box[3] = m_corners[2];
+        box[0] = uvPts[0];
+        box[1] = uvPts[1];
+        box[2] = uvPts[3];
+        box[3] = uvPts[2];
         box[4] = box[0];
         context.GetIDrawGeom().DrawLineString3d (_countof(box), box, NULL);
 
-        DPoint3d centerPt = DPoint3d::FromInterpolate(m_corners[0], 0.5, m_corners[3]);
+        DPoint3d centerPt = DPoint3d::FromInterpolate(uvPts[0], 0.5, uvPts[3]);
         double pixelSize = context.GetPixelSizeAtPoint(&centerPt);
 
         Utf8String tileText;
@@ -203,32 +224,11 @@ bool RasterTile::Draw(ViewContextR context)
     if(!m_pDisplayTile.IsValid())
         return false;
 
-    // Corners are in this order:
-    //  [0]  [1]
-    //  [2]  [3]
-    DPoint3d uvPts[4];
-    memcpy(uvPts, m_corners, sizeof(uvPts));
     static bool s_invert = true;
-
     if (s_invert)
         {
         std::swap (uvPts[0], uvPts[2]);
         std::swap (uvPts[1], uvPts[3]);
-        }
-
-    // Make sure the map displays beneath element graphics. Note that this policy is appropriate for the background map, which is always
-    // "on the ground". It is not appropriate for other kinds of reality data, even some images display. It is up to the individual reality
-    // data handler to use the "surface" that is appprpriate to the reality data.
-    if (!context.GetViewport()->GetViewController().GetTargetModel()->Is3d())
-        {
-        for (auto& pt : uvPts)
-            pt.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
-        }
-    else
-        {
-        auto extents = context.GetViewport()->GetViewController().GetProjectExtents();
-        for (auto& pt : uvPts)
-            pt.z = extents.low.z - 1;
         }
 
     uintptr_t textureId = m_pDisplayTile->GetTextureId();
@@ -303,7 +303,7 @@ void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR con
     double factor;
     if (IsVisible(context, factor))
         {
-        static double s_qualityFactor = 1.25; //&&MM make that an option to adjust speed vs quality?
+        static double s_qualityFactor = /*1.25*/1.0001; //&&MM make that an option to adjust speed vs quality? 1.0 is better for wms
         if (!IsLeaf() && factor > s_qualityFactor)
             {
             AllocateChildren(); 

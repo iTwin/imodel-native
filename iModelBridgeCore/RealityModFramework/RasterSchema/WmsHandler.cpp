@@ -56,7 +56,7 @@ static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
- WmsProperties::WmsProperties()
+ WmsMap::WmsMap()
     {
     //m_styles = "";      // default style
     m_format = "image/png";
@@ -88,7 +88,7 @@ static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-void WmsProperties::ToJson(Json::Value& v) const
+void WmsMap::ToJson(Json::Value& v) const
     {
     Json::Value& wmsValue = v["wmsMap"];
 
@@ -112,7 +112,7 @@ void WmsProperties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-void WmsProperties::FromJson(Json::Value const& v)
+void WmsMap::FromJson(Json::Value const& v)
     {
     Json::Value const& wmsValue = v["wmsMap"];
 
@@ -137,7 +137,7 @@ void WmsProperties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-DgnPlatform::DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsProperties const& prop)
+DgnPlatform::DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& prop)
     {
     DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
     BeAssert(classId.IsValid());
@@ -164,7 +164,7 @@ WmsModel::WmsModel(CreateParams const& params)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-WmsModel::WmsModel(CreateParams const& params, WmsProperties const& wmsMap) 
+WmsModel::WmsModel(CreateParams const& params, WmsMap const& wmsMap) 
 :T_Super (params),
  m_map(wmsMap)
     {
