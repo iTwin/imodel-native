@@ -48,22 +48,20 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //=======================================================================================
 struct L10N
 {
-    //! A unique identifier for a group of localized strings
+    //! A globally unique identifier for a group of localized strings
     struct NameSpace
     {
         Utf8CP m_namespace;
-        NameSpace() : m_namespace(nullptr) {}
-        explicit NameSpace(Utf8CP nameSpace) : m_namespace(nameSpace) {}
+        explicit NameSpace(Utf8CP nameSpace=nullptr) : m_namespace(nameSpace) {}
         bool operator ==(NameSpace const& other) const {return IsValid() && other.IsValid() && (m_namespace==other.m_namespace || 0==::strcmp(m_namespace, other.m_namespace));}
         operator Utf8CP() const {return m_namespace;}
         bool IsValid() const {return nullptr != m_namespace;}
     };
-    //! The identifier for a localized string within a NameSpace
+    //! The identifier for a localized string, unique within a NameSpace
     struct StringId
     {
         Utf8CP m_str;
-        StringId() : m_str(nullptr) {}
-        explicit StringId(Utf8CP str) : m_str(str) {}
+        explicit StringId(Utf8CP str=nullptr) : m_str(str) {}
         operator Utf8CP() const {return m_str;}
         bool operator ==(StringId const& other) const {return IsValid() && other.IsValid() && (m_str==other.m_str || 0==::strcmp(m_str, other.m_str));}
         bool IsValid() const {return nullptr!=m_str;}
