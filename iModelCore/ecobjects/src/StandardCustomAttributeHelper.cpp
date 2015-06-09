@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandardCustomAttributeHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -370,6 +370,342 @@ ECClassCP StandardCustomAttributeHelper::GetCustomAttributeClass(WCharCP attribu
 IECInstancePtr StandardCustomAttributeHelper::CreateCustomAttributeInstance(WCharCP attributeName)
     {
     return StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
+    }
+
+//*****************************************************************
+//ECDbMapHelper
+//*****************************************************************
+struct CustomAttributeReader
+    {
+private:
+    CustomAttributeReader();
+    ~CustomAttributeReader();
+
+public:
+    static IECInstanceCP Read(IECCustomAttributeContainer const& caContainer, WCharCP customAttributeSchemaName, WCharCP customAttributeName);
+    static bool TryGetTrimmedValue(Utf8StringR val, IECInstanceCR ca, WCharCP ecPropertyName);
+    static bool TryGetTrimmedValue(Utf8StringR val, IECInstanceCR ca, uint32_t propIndex, uint32_t arrayIndex);
+    static bool TryGetBooleanValue(bool& val, IECInstanceCR ca, WCharCP ecPropertyName);
+    };
+
+//*****************************************************************
+//ECDbMapCustomAttributeHelper
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryReadSchemaMap(ECDbSchemaMap& schemaMap, ECSchemaCR schema)
+    {
+    IECInstanceCP ca = CustomAttributeReader::Read(schema, L"ECDbMap", L"SchemaMap");
+    if (ca == nullptr)
+        return false;
+
+    schemaMap = ECDbSchemaMap(schema, ca);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryReadClassMap(ECDbClassMap& classMap, ECClassCR ecClass)
+    {
+    IECInstanceCP ca = CustomAttributeReader::Read(ecClass, L"ECDbMap", L"ClassMap");
+    if (ca == nullptr)
+        return false;
+
+    classMap = ECDbClassMap(ecClass, ca);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryReadPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty)
+    {
+    IECInstanceCP ca = CustomAttributeReader::Read(ecProperty, L"ECDbMap", L"PropertyMap");
+    if (ca == nullptr)
+        return false;
+
+    propertyMap = ECDbPropertyMap(ecProperty, ca);
+    return true;
+    }
+
+//*****************************************************************
+//ECDbSchemaMap
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbSchemaMap::ECDbSchemaMap(ECSchemaCR schema, IECInstanceCP ca) : m_schema(&schema), m_ca(ca) {}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbSchemaMap::TryReadTablePrefix(Utf8String& tablePrefix) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    if (CustomAttributeReader::TryGetTrimmedValue(tablePrefix, *m_ca, L"TablePrefix"))
+        {
+        if (ECNameValidation::Validate(WString(tablePrefix.c_str(), BentleyCharEncoding::Utf8).c_str()) == ECNameValidation::RESULT_Valid)
+            return true;
+
+        LOG.errorv("Custom attribute '%s' on the ECSchema '%s' has an invalid value for the property 'TablePrefix': %s. "
+                   "The table prefix should be a few characters long and can only contain [a-zA-Z_0-9] and must start with a non-numeric character.",
+                   Utf8String(m_ca->GetClass().GetName()).c_str(),
+                   Utf8String(m_schema->GetName()).c_str(), tablePrefix.c_str());
+
+        tablePrefix.clear();
+        }
+
+    return false;
+    }
+
+
+//*****************************************************************
+//ECDbClassMap
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbClassMap::ECDbClassMap(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbClassMap::TryReadMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    const bool foundMapStrategy = CustomAttributeReader::TryGetTrimmedValue(mapStrategy, *m_ca, L"MapStrategy");
+    const bool foundMapStrategyOptions = CustomAttributeReader::TryGetTrimmedValue(mapStrategyOptions, *m_ca, L"MapStrategyOptions");
+    return foundMapStrategy || foundMapStrategyOptions;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbClassMap::TryReadTableName (Utf8String& tableName) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    return CustomAttributeReader::TryGetTrimmedValue(tableName, *m_ca, L"TableName");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbClassMap::TryReadECInstanceIdColumnName(Utf8String& ecInstanceIdColumnName) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    return CustomAttributeReader::TryGetTrimmedValue(ecInstanceIdColumnName, *m_ca, L"ECInstanceIdColumn");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbClassMap::TryReadIndices (bvector<DbIndex>& indices) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    indices.clear();
+
+    uint32_t propIx;
+    if (m_ca->GetEnablerR().GetPropertyIndex(propIx, L"Indexes") != ECOBJECTS_STATUS_Success)
+        {
+        LOG.errorv(L"Failed to get property index for property 'Indexes' of custom attribute '%ls' on ECClass '%ls'.",
+                   m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
+        return false;
+        }
+
+    ECValue indexesVal;
+    if (m_ca->GetValue(indexesVal, propIx) != ECOBJECTS_STATUS_Success || indexesVal.IsNull())
+        return false;
+
+
+    const uint32_t indexCount = indexesVal.GetArrayInfo().GetCount();
+    for (uint32_t i = 0; i < indexCount; i++)
+        {
+        ECValue indexVal;
+        if (m_ca->GetValue(indexVal, propIx, i) != ECOBJECTS_STATUS_Success)
+            {
+            LOG.errorv(L"DbIndex #%d in custom attribute %ls on ECClass %ls could not be retrieved.",
+                       i, m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
+            return false;
+            }
+
+        IECInstancePtr dbIndexCA = indexVal.GetStruct();
+        if (dbIndexCA == nullptr)
+            continue;
+
+        //optional
+        Utf8String indexName;
+        CustomAttributeReader::TryGetTrimmedValue(indexName, *dbIndexCA, L"Name");
+
+        Utf8String whereClause;
+        CustomAttributeReader::TryGetTrimmedValue(whereClause, *dbIndexCA, L"Where");
+
+        bool isUnique = false;
+        CustomAttributeReader::TryGetBooleanValue(isUnique, *dbIndexCA, L"IsUnique");
+
+        //Reject Index if it doesn't have any property
+        uint32_t propertiesPropIdx;
+        if (dbIndexCA->GetEnablerR().GetPropertyIndex(propertiesPropIdx, L"Properties") != ECOBJECTS_STATUS_Success)
+            {
+            LOG.errorv(L"Failed to get property index for property 'Indexes.Properties' of custom attribute '%ls' on ECClass '%ls'.",
+                       m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
+            return false;
+            }
+
+        ECValue propertiesVal;
+        uint32_t propertiesCount = 0;
+        if (dbIndexCA->GetValue(propertiesVal, propertiesPropIdx) != ECOBJECTS_STATUS_Success || !propertiesVal.IsNull() ||
+            (propertiesCount = propertiesVal.GetArrayInfo().GetCount()) == 0)
+            {
+            LOG.errorv(L"DbIndex #%d in custom attribute %ls on ECClass %ls is invalid. At least one property must be specified.",
+                       i, m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
+            return false;
+            }
+
+        DbIndex dbIndex(indexName.c_str(), isUnique, whereClause.c_str());
+        for (uint32_t j = 0; j < propertiesCount; j++)
+            {
+            Utf8String propName;
+            if (CustomAttributeReader::TryGetTrimmedValue(propName, *dbIndexCA, propertiesPropIdx, j))
+                dbIndex.AddProperty(propName);
+            }
+        }
+
+    return true;
+    }
+
+
+//*****************************************************************
+//ECDbPropertyMap
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbPropertyMap::ECDbPropertyMap(ECPropertyCR ecProperty, IECInstanceCP ca) : m_property(&ecProperty), m_ca(ca) {}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbPropertyMap::TryReadColumnName(Utf8StringR columnName) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    return CustomAttributeReader::TryGetTrimmedValue(columnName, *m_ca, L"ColumnName");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbPropertyMap::TryReadIsNullable(bool& isNullable) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    return CustomAttributeReader::TryGetBooleanValue(isNullable, *m_ca, L"IsNullable");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbPropertyMap::TryReadIsUnique(bool& isUnique) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    return CustomAttributeReader::TryGetBooleanValue(isUnique, *m_ca, L"IsUnique");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbPropertyMap::TryReadCollation(Utf8StringR collation) const
+    {
+    if (m_ca == nullptr)
+        return false;
+
+    return CustomAttributeReader::TryGetTrimmedValue(collation, *m_ca, L"Collation");
+    }
+
+//*****************************************************************
+//CustomAttributeReader
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+IECInstanceCP CustomAttributeReader::Read(IECCustomAttributeContainer const& caContainer, WCharCP customAttributeSchemaName, WCharCP customAttributeName)
+    {
+    for (IECInstancePtr const& ca : caContainer.GetCustomAttributes(false))
+        {
+        ECClassCR caClass = ca->GetClass();
+        if (caClass.GetName().Equals(customAttributeName) && caClass.GetSchema().GetName().Equals(customAttributeSchemaName))
+            return ca.get();
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+bool CustomAttributeReader::TryGetTrimmedValue(Utf8StringR val, IECInstanceCR ca, WCharCP ecPropertyName)
+    {
+    ECValue v;
+
+    if (ca.GetValue(v, ecPropertyName) != ECOBJECTS_STATUS_Success || v.IsNull())
+        return false;
+
+    val = v.GetUtf8CP();
+    val.Trim();
+    return true;
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+bool CustomAttributeReader::TryGetTrimmedValue(Utf8StringR val, IECInstanceCR ca, uint32_t propIndex, uint32_t arrayIndex)
+    {
+    ECValue v;
+    if (ca.GetValue(v, propIndex, arrayIndex) != ECOBJECTS_STATUS_Success || v.IsNull())
+        return false;
+
+    val = v.GetUtf8CP();
+    val.Trim();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+bool CustomAttributeReader::TryGetBooleanValue(bool& val, IECInstanceCR ca, WCharCP ecPropertyName)
+    {
+    ECValue v;
+    if (ca.GetValue(v, ecPropertyName) == ECOBJECTS_STATUS_Success && !v.IsNull())
+        {
+        val = v.GetBoolean();
+        return true;
+        }
+
+    return false;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
