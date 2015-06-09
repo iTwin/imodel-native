@@ -76,7 +76,7 @@ static inline double   timeGetSeconds()
 
 //#define DRT_DEBUGGING
 
-#if defined(DRT_DEBUGGING)
+#if defined (DRT_DEBUGGING)
 #define INCLUDE_TIMER(t)            IncludeTimer  includer(t)
 #define EXCLUDE_TIMER(t)            ExcludeTimer  excluder(t)
 #define TIMER_OVERHEAD s_statistics.m_timerOverhead.m_value
@@ -108,7 +108,7 @@ struct DRTStatistics
         size_t  m_modelCount;
         size_t  m_leafNodeBytes;
         size_t  m_internalNodeBytes;
-        void Clear() { memset (this, 0, sizeof (*this)); }
+        void Clear() { memset(this, 0, sizeof (*this)); }
         } m_create;
 
     struct Traversal
@@ -138,7 +138,7 @@ struct DRTStatistics
         size_t  m_lodFilteredElementCount;
         size_t  m_lodFilteredNodeCount;
         double  m_lodArea;
-        void Clear() { memset (this, 0, sizeof (*this)); }
+        void Clear() { memset(this, 0, sizeof (*this)); }
         } m_traverse;
 
     void ClearCreate()   { m_create.Clear(); m_timerOverhead.DoTest(); GetLogger();}
@@ -147,40 +147,40 @@ struct DRTStatistics
     void GetLogger()
         {
         if (nullptr == m_myLogger)
-            m_myLogger = LoggingManager::GetLogger (L"DgnCore.DgnRangeTree");
+            m_myLogger = LoggingManager::GetLogger(L"DgnCore.DgnRangeTree");
         }
 
-    void Log (WCharCP msg, ...)
+    void Log(WCharCP msg, ...)
         {
         va_list arglist;
-        va_start (arglist, msg);
-        m_myLogger->messageva (Logging::SEVERITY.LOG_INFO, msg, arglist);
-        va_end (arglist);
+        va_start(arglist, msg);
+        m_myLogger->messageva(Logging::SEVERITY.LOG_INFO, msg, arglist);
+        va_end(arglist);
         }
 
-    void Log (WString& string) {Log (string.c_str());}
-    void Log (char* string) {Log (WString (string));}
+    void Log(WString& string) {Log(string.c_str());}
+    void Log(char* string) {Log(WString(string));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString   TimeString (double timer)
+WString   TimeString(double timer)
     {
     double  seconds = timer / timerGetResolution();
     char    string[1024];
 
     if (seconds > 60.0)
-        sprintf (string, "%f Minutes", seconds / 60.0);
+        sprintf(string, "%f Minutes", seconds / 60.0);
     else
-        sprintf (string, "%f Seconds", seconds);
+        sprintf(string, "%f Seconds", seconds);
 
-    return WString (string);
+    return WString(string);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-double SecondsPer (double timer, size_t count)
+double SecondsPer(double timer, size_t count)
     {
     if (0 == count)
         return 0.0;
@@ -193,26 +193,26 @@ double SecondsPer (double timer, size_t count)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DumpTraverse()
     {
-    Log (L"Total: %ls, Delta: %ls, Visited: Bins: %d (of %d) Elements: %d (of %d)", TimeString (m_traverse.m_totalTime).c_str(), TimeString (m_deltaTime).c_str(), m_traverse.m_leafVisitCount, m_traverse.m_leavesGathered, m_traverse.m_elementVisitCount, m_traverse.m_elementTargetCount);
+    Log(L"Total: %ls, Delta: %ls, Visited: Bins: %d (of %d) Elements: %d (of %d)", TimeString(m_traverse.m_totalTime).c_str(), TimeString(m_deltaTime).c_str(), m_traverse.m_leafVisitCount, m_traverse.m_leavesGathered, m_traverse.m_elementVisitCount, m_traverse.m_elementTargetCount);
     if (s_prefs.m_completeStatistics)
         {
-        Log (L"Element Seconds: %f (Max: %ls), Model Change Seconds: %f", SecondsPer (m_traverse.m_elementTime, m_traverse.m_elementVisitCount), TimeString (m_traverse.m_maxElementTime).c_str(), SecondsPer (m_traverse.m_newModelTime, m_traverse.m_modelChangeCount));
-        Log (L"LOD Filter Area:    %f, LOD FIlter Count (Node:Element): %d:%d", m_traverse.m_lodArea, m_traverse.m_lodFilteredNodeCount, m_traverse.m_lodFilteredElementCount);
-        Log (L"Gather Time: %ls\t    (%f percent)", TimeString (m_traverse.m_gatherTime).c_str(), PERCENT (m_traverse.m_gatherTime, m_traverse.m_totalTime));
-        Log (L"Sort Time: %ls\t      (%f percent)", TimeString (m_traverse.m_sortTime).c_str(), PERCENT (m_traverse.m_sortTime, m_traverse.m_totalTime));
-        Log (L"Model Time: %ls\t     (%f percent)", TimeString (m_traverse.m_newModelTime).c_str(), PERCENT (m_traverse.m_newModelTime, m_traverse.m_totalTime));
-        Log (L"Push Time: %ls\t      (%f percent)", TimeString (m_traverse.m_pushModelTime).c_str(), PERCENT (m_traverse.m_pushModelTime, m_traverse.m_totalTime));
-        Log (L"Score Time: %ls\t     (%f percent)", TimeString (m_traverse.m_scoringTime).c_str(), PERCENT (m_traverse.m_scoringTime, m_traverse.m_totalTime));
-        Log (L"Process Time: %ls\t   (%f percent)", TimeString (m_traverse.m_elementTime).c_str(), PERCENT (m_traverse.m_elementTime, m_traverse.m_totalTime));
-        Log (L"Occlusion Time: %ls\t (%f percent) Max: %ls", TimeString (m_traverse.m_occlusionTime).c_str(), PERCENT (m_traverse.m_occlusionTime, m_traverse.m_totalTime), TimeString (m_traverse.m_maxOcclusionTime).c_str());
-        Log (L"Accounted Time:      (%f percent)", PERCENT((m_traverse.m_newModelTime + m_traverse.m_scoringTime + m_traverse.m_gatherTime + m_traverse.m_elementTime + m_traverse.m_sortTime + m_traverse.m_occlusionTime + m_traverse.m_timerOverhead), m_traverse.m_totalTime));
-        Log (L"Timer Overhead: %ls\t (%f percent)", TimeString (m_traverse.m_timerOverhead).c_str(), PERCENT (m_traverse.m_timerOverhead, m_traverse.m_totalTime));
-        Log (L"Nodes Occlusion Tested: %d, Nodes Occluded: %d, Elements Occluded: %d, Occlusion Calls: %d", m_traverse.m_leavesOcclusionTested, m_traverse.m_leavesOccluded, m_traverse.m_elementsOccluded, m_traverse.m_occlusionCalls);
+        Log(L"Element Seconds: %f (Max: %ls), Model Change Seconds: %f", SecondsPer(m_traverse.m_elementTime, m_traverse.m_elementVisitCount), TimeString(m_traverse.m_maxElementTime).c_str(), SecondsPer(m_traverse.m_newModelTime, m_traverse.m_modelChangeCount));
+        Log(L"LOD Filter Area:    %f, LOD FIlter Count (Node:Element): %d:%d", m_traverse.m_lodArea, m_traverse.m_lodFilteredNodeCount, m_traverse.m_lodFilteredElementCount);
+        Log(L"Gather Time: %ls\t    (%f percent)", TimeString(m_traverse.m_gatherTime).c_str(), PERCENT (m_traverse.m_gatherTime, m_traverse.m_totalTime));
+        Log(L"Sort Time: %ls\t      (%f percent)", TimeString(m_traverse.m_sortTime).c_str(), PERCENT (m_traverse.m_sortTime, m_traverse.m_totalTime));
+        Log(L"Model Time: %ls\t     (%f percent)", TimeString(m_traverse.m_newModelTime).c_str(), PERCENT (m_traverse.m_newModelTime, m_traverse.m_totalTime));
+        Log(L"Push Time: %ls\t      (%f percent)", TimeString(m_traverse.m_pushModelTime).c_str(), PERCENT (m_traverse.m_pushModelTime, m_traverse.m_totalTime));
+        Log(L"Score Time: %ls\t     (%f percent)", TimeString(m_traverse.m_scoringTime).c_str(), PERCENT (m_traverse.m_scoringTime, m_traverse.m_totalTime));
+        Log(L"Process Time: %ls\t   (%f percent)", TimeString(m_traverse.m_elementTime).c_str(), PERCENT (m_traverse.m_elementTime, m_traverse.m_totalTime));
+        Log(L"Occlusion Time: %ls\t (%f percent) Max: %ls", TimeString(m_traverse.m_occlusionTime).c_str(), PERCENT (m_traverse.m_occlusionTime, m_traverse.m_totalTime), TimeString(m_traverse.m_maxOcclusionTime).c_str());
+        Log(L"Accounted Time:      (%f percent)", PERCENT((m_traverse.m_newModelTime + m_traverse.m_scoringTime + m_traverse.m_gatherTime + m_traverse.m_elementTime + m_traverse.m_sortTime + m_traverse.m_occlusionTime + m_traverse.m_timerOverhead), m_traverse.m_totalTime));
+        Log(L"Timer Overhead: %ls\t (%f percent)", TimeString(m_traverse.m_timerOverhead).c_str(), PERCENT (m_traverse.m_timerOverhead, m_traverse.m_totalTime));
+        Log(L"Nodes Occlusion Tested: %d, Nodes Occluded: %d, Elements Occluded: %d, Occlusion Calls: %d", m_traverse.m_leavesOcclusionTested, m_traverse.m_leavesOccluded, m_traverse.m_elementsOccluded, m_traverse.m_occlusionCalls);
         }
-    Log (L"______________________________________________________________");
+    Log(L"______________________________________________________________");
     }
 
-    void DumpCreate (DgnRangeTreeR tree);
+    void DumpCreate(DgnRangeTreeR tree);
 };
 
 DRTStatistics  s_statistics;
@@ -220,17 +220,17 @@ DRTStatistics  s_statistics;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString memoryString (size_t bytes)
+static WString memoryString(size_t bytes)
     {
     double mb = (1024.0 * 1024.0), gb = (1024.0 * mb);
     char   string[1024];
 
     if ((double) bytes > .5 * gb)
-        sprintf (string, "%f Gb.", (double) bytes / gb);
+        sprintf(string, "%f Gb.", (double) bytes / gb);
     else
-        sprintf (string, "%f Mb.", (double) bytes / mb);
+        sprintf(string, "%f Mb.", (double) bytes / mb);
 
-    return WString (string);
+    return WString(string);
     }
 
 /*=================================================================================**//**
@@ -239,7 +239,7 @@ static WString memoryString (size_t bytes)
 struct      IncludeTimer
 {
     double&             m_time;
-    IncludeTimer (double& time) : m_time (time) { m_time -= (timeGetTime() +  TIMER_OVERHEAD); }
+    IncludeTimer(double& time) : m_time(time) { m_time -= (timeGetTime() +  TIMER_OVERHEAD); }
     ~IncludeTimer()                            { m_time += timeGetTime(); }
 };
 
@@ -249,24 +249,24 @@ struct      IncludeTimer
 struct      ExcludeTimer
 {
     double&             m_time;
-    ExcludeTimer (double& time) : m_time (time) { m_time += timeGetTime(); }
+    ExcludeTimer(double& time) : m_time(time) { m_time += timeGetTime(); }
     ~ExcludeTimer()                            { m_time -= timeGetTime(); }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DRTStatistics::DumpCreate (DgnRangeTreeR tree)
+void DRTStatistics::DumpCreate(DgnRangeTreeR tree)
     {
     if (0 == m_create.m_modelCount)
         return;
 
-    Log (L"*=======================================================================================================================");
-    Log (L"Create Time:     %ls", TimeString (m_create.m_createTime).c_str());
-    Log (L"Gather Time:     %ls", TimeString (m_create.m_gatherTime).c_str());
-    Log (L"Tree Time:       %ls", TimeString (m_create.m_treeTime).c_str());
-    Log (L"Model Count:     %d", m_create.m_modelCount);
-    Log (L"Max Internal Children: %d, Max Leaf Children: %d", tree.GetInternalNodeSize(), tree.GetLeafNodeSize());
+    Log(L"*=======================================================================================================================");
+    Log(L"Create Time:     %ls", TimeString(m_create.m_createTime).c_str());
+    Log(L"Gather Time:     %ls", TimeString(m_create.m_gatherTime).c_str());
+    Log(L"Tree Time:       %ls", TimeString(m_create.m_treeTime).c_str());
+    Log(L"Model Count:     %d", m_create.m_modelCount);
+    Log(L"Max Internal Children: %d, Max Leaf Children: %d", tree.GetInternalNodeSize(), tree.GetLeafNodeSize());
 
     Log(L"LeafNode Memory:     %ls", memoryString(m_create.m_leafNodeBytes));
     Log(L"InternalNode Memory: %ls", memoryString(m_create.m_internalNodeBytes));

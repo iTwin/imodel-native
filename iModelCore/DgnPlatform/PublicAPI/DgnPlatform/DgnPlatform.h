@@ -165,7 +165,6 @@ DGNPLATFORM_TYPEDEFS (FenceManager)
 DGNPLATFORM_TYPEDEFS (FenceParams)
 DGNPLATFORM_TYPEDEFS (Frustum)
 DGNPLATFORM_TYPEDEFS (GeomDetail)
-//DGNPLATFORM_TYPEDEFS (GradientSettings)
 DGNPLATFORM_TYPEDEFS (HatchLinkage)
 DGNPLATFORM_TYPEDEFS (HitList)
 DGNPLATFORM_TYPEDEFS (HitDetail)
@@ -189,7 +188,7 @@ DGNPLATFORM_TYPEDEFS (ISprite)
 DGNPLATFORM_TYPEDEFS (ISubEntity)
 DGNPLATFORM_TYPEDEFS (ITiledRaster)
 DGNPLATFORM_TYPEDEFS (ITransactionHandler)
-DGNPLATFORM_TYPEDEFS (ITxnManager)
+DGNPLATFORM_TYPEDEFS (TxnManager)
 DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
 DGNPLATFORM_TYPEDEFS (IViewTransients)
 DGNPLATFORM_TYPEDEFS (IndexedViewSet)
@@ -271,6 +270,7 @@ DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
 DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
+DGNPLATFORM_REF_COUNTED_PTR (TxnManager)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
@@ -430,6 +430,7 @@ typedef ElementItemKey const& ElementItemKeyCR;
 //! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.
 //! @note A BoundingBox3d makes no guarantee that the box is the minimum (smallest) box possible, just that no portion of the object
 //! described by it will extend beyond its values.
+// @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct BoundingBox3d : DRange3d
 {
@@ -440,6 +441,7 @@ struct BoundingBox3d : DRange3d
 
 //=======================================================================================
 //! A BoundingBox3d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
+// @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct AxisAlignedBox3d : BoundingBox3d
 {
@@ -451,6 +453,7 @@ struct AxisAlignedBox3d : BoundingBox3d
 
 //=======================================================================================
 //! A BoundingBox3d that is aligned with the local coordinate system of a DgnElement.
+// @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct ElementAlignedBox3d : BoundingBox3d
 {
@@ -479,6 +482,7 @@ struct ElementAlignedBox3d : BoundingBox3d
 //! A DRange2d that holds min/max values for an object in each of x and y in some coordinate system.
 //! @note A BoundingBox2d makes no guarantee that the box is the minimum (smallest) box possible, just that no portion of the object
 //! described by it will extend beyond its values.
+// @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct BoundingBox2d : DRange2d
 {
@@ -488,7 +492,7 @@ struct BoundingBox2d : DRange2d
 
 //=======================================================================================
 //! A BoundingBox2d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
-// @bsiclass
+// @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct AxisAlignedBox2d : BoundingBox2d
 {
@@ -499,7 +503,7 @@ struct AxisAlignedBox2d : BoundingBox2d
 
 //=======================================================================================
 //! A BoundingBox2d that is aligned with the local coordinate system of a DgnElement.
-// @bsiclass
+// @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct ElementAlignedBox2d : BoundingBox2d
 {
