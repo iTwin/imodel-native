@@ -9,7 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnCore/ITxnManager.h>
+#include <DgnPlatform/DgnCore/TxnManager.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -26,25 +26,25 @@ protected:
     friend struct DgnElementDependencyGraph;
 
     //! Called by DgnElementDependencyGraph after the source DgnElement's content has changed. 
-    //! This base class implementation of _OnRootChanged calls ITxnManager::ReportValidationError to indicate a missing handler.
+    //! This base class implementation of _OnRootChanged calls Txns::ReportValidationError to indicate a missing handler.
     //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
     //! @param[in] relationshipId       The ECRelationship instance ID
     //! @param[in] source               The ECRelationship's Source DgnElement
     //! @param[in] target               The ECRelationship's Target DgnElement
     //! @param[in] summary              Summary of all DgnElements that were *directly* changed
-    //! Call ITxnManager::ReportValidationError to reject an invalid change. The reported error can be classified as fatal or just a warning.
-    DGNPLATFORM_EXPORT virtual void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR summary);
+    //! Call Txns::ReportValidationError to reject an invalid change. The reported error can be classified as fatal or just a warning.
+    DGNPLATFORM_EXPORT virtual void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary);
 
     //! Called by DgnElementDependencyGraph after all _OnRootChanged have been invoked, in the case where the output of this dependency is also the output of other dependencies.
     //! The dependency handler should check that its requirements is still enforced. 
-    //! Call ITxnManager::ReportValidationError to report a validation error. The ElementDependencyGraph::DependencyValidationError error should normally be used. The reported error can be classified as fatal or just a warning.
+    //! Call Txns::ReportValidationError to report a validation error. The ElementDependencyGraph::DependencyValidationError error should normally be used. The reported error can be classified as fatal or just a warning.
     //! @note The dependency handler should *not* modify the target element.
     //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
     //! @param[in] relationshipId       The ECRelationship instance ID
     //! @param[in] source               The ECRelationship's Source DgnElement
     //! @param[in] target               The ECRelationship's Target DgnElement
     //! @param[in] summary              Summary of all DgnElements that were *directly* changed, plus all dependencies that failed.
-    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR summary) {}
+    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary) {}
 
 public:
     //! Looks up a registered DgnElementDrivesElementDependencyHandler by its ECRelationship class ID.
@@ -56,7 +56,7 @@ public:
 
 //=======================================================================================
 //! Element dependency graph calls DgnElementDrivesElementDependencyHandler in the correct order when a transaction is "validated".
-//! Called by ITxnManager::CheckTxnBoundary.
+//! Called by Txns::CheckTxnBoundary.
 //! 
 //! <h3>Only ElementDrivesElement ECRelationships can have Dependency Handlers</h3>
 //! Only an ECRelationship derived from dgn.ElementDrivesElement can have a dependency handler.
@@ -88,11 +88,11 @@ public:
 //! <h3>Errors</h3>
 //! Circular dependencies are not permitted. If a cycle is detected, that is treated as a fatal error.
 //! A missing dependency handler is treated as a warning.
-//! A dependency handler's _OnRootChanged method may call ITxnManager::ReportValidationError to reject an invalid change. It can classify the error as fatal or just a warning.
+//! A dependency handler's _OnRootChanged method may call TxnSummary::ReportError to reject an invalid change. It can classify the error as fatal or just a warning.
 //! 
-//! If it detects any fatal transaction validation error, ITxnManager will roll back the transaction as a whole.
+//! If it detects any fatal transaction validation error, Txns will roll back the transaction as a whole.
 //! 
-//! See ITxnManager::IValidationError, DgnElementDependencyGraph::CyclesDetectedError, DgnElementDependencyGraph::MissingHandlerError
+//! See Txns::IValidationError, DgnElementDependencyGraph::CyclesDetectedError, DgnElementDependencyGraph::MissingHandlerError
 //=======================================================================================
 struct DgnElementDependencyGraph
 {
@@ -104,33 +104,33 @@ struct DgnElementDependencyGraph
     //! This means that the constraints imposed on Elements by the current set of ECRelationships and their dependency handlers cannot be satisfied. Some
     //! ECRelationships must be removed. 
     //! This error is always fatal. The application should cancel the current transaction.
-    struct CyclesDetectedError : ITxnManager::ValidationError
+    struct CyclesDetectedError : TxnSummary::ValidationError
         {
-        CyclesDetectedError(Utf8CP path) : ITxnManager::ValidationError(Severity::Fatal, path) {}
+        CyclesDetectedError(Utf8CP path) : TxnSummary::ValidationError(Severity::Fatal, path) {}
         };
 
     //! An Element dependency was triggered, but the handler for it was not registered.
     //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
     //! This error should be reported to the user for follow up.
-    struct MissingHandlerError : ITxnManager::ValidationError
+    struct MissingHandlerError : TxnSummary::ValidationError
         {
-        MissingHandlerError(Utf8CP handlerId) : ITxnManager::ValidationError(Severity::Warning, handlerId) {}
+        MissingHandlerError(Utf8CP handlerId) : TxnSummary::ValidationError(Severity::Warning, handlerId) {}
         };
     
     //! The requirements of an Element dependency were violated by the actions taken by another dependency handler.
     //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
     //! This error should be reported to the user for follow up.
-    struct DependencyValidationError : ITxnManager::ValidationError
+    struct DependencyValidationError : TxnSummary::ValidationError
         {
-        DependencyValidationError(Utf8CP details) : ITxnManager::ValidationError(Severity::Warning, details) {}
+        DependencyValidationError(Utf8CP details) : TxnSummary::ValidationError(Severity::Warning, details) {}
         };
     
     //! A dependency attempted to propagate changes from a dependent model to a root model. 
     //! This is illegal, and this dependency must be removed.
     //! This error is always fatal. The application should cancel the current transaction.
-    struct DirectionValidationError : ITxnManager::ValidationError
+    struct DirectionValidationError : TxnSummary::ValidationError
         {
-        DirectionValidationError(Utf8CP details) : ITxnManager::ValidationError(Severity::Fatal, details) {}
+        DirectionValidationError(Utf8CP details) : TxnSummary::ValidationError(Severity::Fatal, details) {}
         };
 
     //! Indicates if changes have been propagated through an ECRelationship successfully or not.
@@ -206,21 +206,19 @@ struct DgnElementDependencyGraph
         virtual void _ProcessEdgeForValidation(Edge const& edge, DgnElementDrivesElementDependencyHandler* handler) = 0;
 
         //! Invoked when a validation error such as a cycle is detected.
-        virtual void _OnValidationError(ITxnManager::ValidationError const& error, Edge const* edge) = 0;
+        virtual void _OnValidationError(TxnSummary::ValidationError const& error, Edge const* edge) = 0;
         };
 
 private:
     enum class EdgeColor {White, Gray, Black};  // NB: White must be the default (0) value
 
     DgnDbR                         m_db;
-    Utf8String                     m_directChangesTableName;
-    Utf8String                     m_directChangesToElementDrivesElementTableName;
-    TxnSummaryP                    m_summary;
+    TxnSummaryR                    m_summary;
     ElementDrivesElement*          m_elementDrivesElement;
     EdgeQueue*                     m_edgeQueue;
     IEdgeProcessor*                m_processor;
 
-    void Init(TxnSummaryP);
+    void Init();
 
     // Debugging
     void WriteDot(BeFileNameCR dotFilename, bvector<bvector<uint64_t>> const& cyclePaths);
@@ -237,7 +235,7 @@ private:
     // working with handlers
     void InvokeHandler(Edge const& rh, size_t indentLevel);
     void InvokeHandlerForValidation(Edge const& rh);
-    void ReportValidationError (ITxnManager::ValidationError&, Edge const*);
+    void ReportValidationError (TxnSummary::ValidationError&, Edge const*);
 
     void DiscoverEdges(DgnModelId mid);
 
@@ -253,19 +251,16 @@ private:
     BentleyStatus CheckDirection(Edge const&);
 
 public:
-//__PUBLISH_SECTION_END__
-    DgnElementDependencyGraph(DgnDbR, TxnSummaryP);
-//__PUBLISH_SECTION_START__
-    DGNPLATFORM_EXPORT explicit DgnElementDependencyGraph(DgnDbR);
+    DGNPLATFORM_EXPORT DgnElementDependencyGraph(DgnDbR, TxnSummaryR);
     DGNPLATFORM_EXPORT ~DgnElementDependencyGraph();
 
     DgnDbR GetDgnDb() const {return m_db;}
 
 //__PUBLISH_SECTION_END__
-    //! TxnManager calls this when closing a txn
+    //! Txns calls this when closing a txn
     void InvokeAffectedDependencyHandlers(TxnSummaryCR summary);
 
-    //! TxnManager calls this when validating a txn
+    //! Txns calls this when validating a txn
     void UpdateModelDependencyIndex();
 //__PUBLISH_SECTION_START__
 
@@ -284,12 +279,6 @@ public:
     //! @param[in] isDeferred   set the dependency to deferred?
     //! @see Edge::IsDeferred
     DGNPLATFORM_EXPORT BentleyStatus SetEdgeDeferred(Edge& edge, bool isDeferred);
-
-    //! Get the name of the temp table that contains a list of the Entities that were directly changed during the current transaction.
-    Utf8CP GetDirectChangesTableName() const {return m_directChangesTableName.c_str();}
-
-    //! Get the name of the temp table that contains a list of the ElementDrivesElement ECRelationships that were directly changed during the current transaction.
-    Utf8CP GetDirectChangesToElementDrivesElementTableName() const {return m_directChangesToElementDrivesElementTableName.c_str();}
 
     //! Get a list of the dependencies, in order, that would be evaluated if the specified element and/or ElementDrivesElement relationship were directly changed
     DGNPLATFORM_EXPORT BentleyStatus WhatIfChanged(IEdgeProcessor& processor, bvector<DgnElementId> const& directlyChangedEntities, bvector<BeSQLite::EC::ECInstanceId> const& directlyChangedDepRels);

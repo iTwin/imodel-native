@@ -26,7 +26,7 @@ struct SnapContext : ViewContext
 protected:
 
     NullOutput      m_output;
-    SnapPathP       m_snapPath; // result of the snap
+    SnapDetailP       m_snapPath; // result of the snap
     double          m_snapAperture;
     SnapMode        m_snapMode;
     int             m_snapDivisor;
@@ -41,17 +41,17 @@ public:
 public:
 
 void SetAdjustedSnapPoint (DPoint3dCR adjustedPt);
-DGNVIEW_EXPORT SnapStatus IntersectPaths (SnapPathP* snappedPath, HitPathCP first, HitPathCP second, DPoint3dCP testPoint, bool allowSelfIntersections);
-DGNVIEW_EXPORT SnapStatus SnapToPath (SnapPathP* snappedPath, HitPathCP thisPath, SnapMode snapMode, int snapDivisor, double hotAperture);
+DGNVIEW_EXPORT SnapStatus IntersectDetails (SnapDetailP* snappedPath, HitDetailCP first, HitDetailCP second, DPoint3dCP testPoint, bool allowSelfIntersections);
+DGNVIEW_EXPORT SnapStatus SnapToPath (SnapDetailP* snappedPath, HitDetailCP thisPath, SnapMode snapMode, int snapDivisor, double hotAperture);
 
 DGNPLATFORM_EXPORT void SetSnapPoint (DPoint3dCR snapPt, bool forceHot);
 DGNPLATFORM_EXPORT static KeypointType GetSnapKeypointType (SnapMode);
 
 //! Get the snap path created by calling element's draw method, and
 //! representing "nearest" snap.
-//! @return SnapPathP won't return NULL.
+//! @return SnapDetailP won't return NULL.
 //! @bsimethod
-DGNPLATFORM_EXPORT SnapPathP GetSnapPath ();
+DGNPLATFORM_EXPORT SnapDetailP GetSnapDetail ();
 
 //! Get the snap mode that the handler is being asked to adjust the snap path for.
 //! @return SnapMode to use for this snap.

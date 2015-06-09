@@ -34,7 +34,7 @@ struct ElemIdRange
             m_high = newKey;
         }
 
-    bool Contains(uint64_t key) const {return (key >= m_low) && (key <= m_high);}
+    bool Contains(uint64_t key) const {return (key >= m_low) &&(key <= m_high);}
     bool Contains(ElemIdRange const& range) const {return (range.m_high <= m_high) && (range.m_low >= m_low);}
 };
 
@@ -47,7 +47,7 @@ typedef struct ElemIdRangeNode* ElemIdRangeNodeP;
 typedef ElemIdRangeNode const * ElemIdRangeNodeCP;
 typedef ElemIdRangeNodeP*       ElemIdRangeNodeH;
 typedef ElemIdRangeNodeP const* ElemIdRangeNodeCH;
-typedef bool (*T_NodeSortFunc)(ElemIdRangeNodeP, ElemIdRangeNodeP);
+typedef bool(*T_NodeSortFunc)(ElemIdRangeNodeP, ElemIdRangeNodeP);
 
 /*=================================================================================**//**
 * a node in the tree that has children
@@ -113,7 +113,7 @@ struct ElemIdLeafNode : ElemIdRangeNode
 private:
     DgnElementP m_elems[NUM_LEAFENTRIES];
 
-    void CalculateLeafRange() const {InitRange(m_elems[0]->GetElementId().GetValue(),(*LastEntry())->GetElementId().GetValue());}
+    void CalculateLeafRange() const {if (0==m_nEntries) {InitRange(); return;} InitRange(m_elems[0]->GetElementId().GetValue(),(*LastEntry())->GetElementId().GetValue());}
 
     virtual ElemIdLeafNode const* _GetFirstNode() const {return this;}
     virtual void _CalculateNodeRange() const override {CalculateLeafRange();}
@@ -178,8 +178,7 @@ void Reset() {m_newElements=m_unReferenced=m_reReferenced=m_purged = 0 ;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline DgnElementP ElemIdRangeNode::Find(uint64_t key, bool setFreeEntryFlag) const
    {
-   return m_isLeaf ?((ElemIdLeafNode const*) this)->FindLeaf(key,setFreeEntryFlag) :
-                    ((ElemIdInternalNode const*) this)->FindInternal(key,setFreeEntryFlag);
+   return m_isLeaf ?((ElemIdLeafNode const*) this)->FindLeaf(key,setFreeEntryFlag) : ((ElemIdInternalNode const*) this)->FindInternal(key,setFreeEntryFlag);
    }
 
 //=======================================================================================
@@ -202,8 +201,8 @@ struct ElemIdTree : public ElemIdParent
     virtual void _AddChildNode(ElemIdRangeNodeP newNode) override;
     virtual ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP curr) const override {return nullptr;}
 
-    ElemIdInternalNode* NewInternalNode(ElemIdParent* parent) {return new ((ElemIdInternalNode*) m_internalPool.malloc()) ElemIdInternalNode(*this, parent);}
-    ElemIdLeafNode* NewLeafNode(ElemIdParent* parent)         {return new ((ElemIdLeafNode*) m_leafPool.malloc()) ElemIdLeafNode(*this, parent);}
+    ElemIdInternalNode* NewInternalNode(ElemIdParent* parent) {return new((ElemIdInternalNode*) m_internalPool.malloc()) ElemIdInternalNode(*this, parent);}
+    ElemIdLeafNode* NewLeafNode(ElemIdParent* parent)         {return new((ElemIdLeafNode*) m_leafPool.malloc()) ElemIdLeafNode(*this, parent);}
     void FreeNode(ElemIdRangeNodeP child, bool leaf);
 
 public:
@@ -240,7 +239,7 @@ ElemPurge ElemIdLeafNode::_Drop(uint64_t key)
     {
     for (int begin=0, end=m_nEntries; begin < end;)
         {
-        int index = begin + (end - begin - 1)/2;
+        int index = begin +(end - begin - 1)/2;
         uint64_t thisId = m_elems[index]->GetElementId().GetValue();
         if (key < thisId)
             end = index;
@@ -281,7 +280,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
 
     for (;curr < end; ++curr)
         {
-        if (0 == (*curr)->GetRefCount()) // is the element garbage?
+        if (0 ==(*curr)->GetRefCount()) // is the element garbage?
             {
             //  Do not kill the element here.  If the element's app data holds a reference to another
             //  element -- possibly a symbol element -- killing the element here may cause the reference
@@ -296,7 +295,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
 
     m_isSloppy = true;           // we can't tell whether we may have dropped the first or last entry.
     m_allReferenced = true;      // since we know we've eliminated any garbage entries, mark this node as "all referenced"
-    m_nEntries = (int)(used - m_elems);
+    m_nEntries =(int)(used - m_elems);
 
     // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
     for (unsigned i = 0; i < killedIndex; i++)
@@ -392,7 +391,7 @@ ElemPurge ElemIdInternalNode::_Purge(int64_t memTarget)
     m_isSloppy = true;
 
     // we've now potentially dropped entries in this node. See what happened
-    int nLeft = (int)(used - purgeOrder);
+    int nLeft =(int)(used - purgeOrder);
     if (m_nEntries == nLeft)
         return ElemPurge::Kept;      // we didn't drop any, we're done
 
@@ -413,7 +412,7 @@ ElemPurge ElemIdInternalNode::_Purge(int64_t memTarget)
 //---------------------------------------------------------------------------------------
 void ElemIdTree::DropElement(DgnElementCR element)
     {
-    if (nullptr == m_root || (ElemPurge::Deleted != m_root->_Drop(element.GetElementId().GetValue())))
+    if (nullptr == m_root ||(ElemPurge::Deleted != m_root->_Drop(element.GetElementId().GetValue())))
         return;
 
     // tree is now empty
@@ -532,7 +531,7 @@ void ElemIdLeafNode::SplitLeafNode()
     newNode->m_lastUnreferenced = m_lastUnreferenced;
 
     int numEntries  = GetCount();
-    int start       = (numEntries -(numEntries / 5)) + 1;
+    int start       =(numEntries -(numEntries / 5)) + 1;
 
     for (int i = start; i < numEntries; i++)
         newNode->AddEntry(*GetEntry(i));
@@ -565,19 +564,19 @@ ElemIdRangeNodeP ElemIdInternalNode::ChooseBestNode(uint64_t key)
     for (ElemIdRangeNodeH curr = FirstEntry(), last = LastEntry(); curr <= last ; ++curr)
         {
         ElemIdRange  thisRange;
-       (*curr)->GetExactNodeRange(thisRange);
+        (*curr)->GetExactNodeRange(thisRange);
 
         if (key >= thisRange.m_low)
             {
             if (key <= thisRange.m_high)
                 return *curr;
 
-            lastDist = (key - thisRange.m_high);
+            lastDist =(key - thisRange.m_high);
             lastNode = *curr;
             }
         else
             {
-            distance = (thisRange.m_low - key);
+            distance =(thisRange.m_low - key);
             return (distance < lastDist) ? *curr : lastNode;
             }
         }
@@ -686,7 +685,7 @@ void ElemIdInternalNode::SplitInternalNode()
 
     ElemIdInternalNode*  newNode = m_treeRoot.NewInternalNode(m_parent);
     int                 nEntries = GetCount();
-    int                 start = (nEntries -(nEntries/4)) + 1;
+    int                 start =(nEntries -(nEntries/4)) + 1;
 
     newNode->m_lastUnreferenced = m_lastUnreferenced;
 
@@ -709,7 +708,7 @@ void ElemIdInternalNode::_CalculateNodeRange() const
     ElemIdRange currRange;
     for (ElemIdRangeNodeCH curr = FirstEntryC(), last = LastEntryC(); curr <= last ; ++curr)
         {
-       (*curr)->GetExactNodeRange(currRange);
+        (*curr)->GetExactNodeRange(currRange);
         m_range.Extend(currRange);
         }
     }
@@ -764,7 +763,7 @@ void ElemIdTree::RemoveElement(DgnElementCR element, bool killingWholeTree)
         ++m_stats.m_purged;
         }
 
-    m_dgndb.Elements().ChangeMemoryUsed(0 - (int32_t) element._GetMemSize());
+    m_dgndb.Elements().ChangeMemoryUsed(0 -(int32_t) element._GetMemSize());
     element.SetInPool(false);
     }
 
@@ -832,7 +831,7 @@ void ElemIdInternalNode::_Empty()
     ElemIdRangeNodeH end = m_children + m_nEntries;
 
     for (ElemIdRangeNodeH curr = m_children; curr < end; ++curr)
-       (*curr)->_Empty();
+        (*curr)->_Empty();
 
     m_nEntries = 0;
     }
@@ -1092,8 +1091,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
     CachedStatementPtr stmt;
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
-    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,LastMod=6,};
+    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1113,7 +1112,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     stmt->GetValueText(Column::Label), 
                     stmt->GetValueText(Column::Code), 
                     elementId, 
-                    stmt->GetValueId<DgnElementId>(Column::ParentId)), makePersistent);
+                    stmt->GetValueId<DgnElementId>(Column::ParentId),
+                    stmt->GetValueDouble(Column::LastMod)), makePersistent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1173,7 +1173,7 @@ DgnElementId DgnElements::GetHighestElementId()
         int64_t currMax = stmt.GetValueInt64(0);
 
         BeRepositoryBasedId firstId(m_dgndb.GetRepositoryId(), 0);
-        m_highestElementId.m_id = (currMax < firstId.m_id) ? firstId.m_id : currMax;
+        m_highestElementId.m_id =(currMax < firstId.m_id) ? firstId.m_id : currMax;
         }
 
     return m_highestElementId;
@@ -1208,7 +1208,7 @@ DgnElementId DgnElements::MakeNewElementId()
         {
         val.CreateRandom();
         val.m_luid.i[1] = m_dgndb.GetRepositoryId().GetValue();
-        } while(IsElementIdUsed(DgnElementId(val.m_luid.u)));
+        } while (IsElementIdUsed(DgnElementId(val.m_luid.u)));
 
     return DgnElementId(val.m_luid.u);
     }
@@ -1336,7 +1336,7 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
 
     DgnElementR element = const_cast<DgnElementR>(*orig.get());
     DgnModelR model = element.GetDgnModel();
-    if ((&model.GetDgnDb() != &m_dgndb) || (&model != &replacement.GetDgnModel()))
+    if ((&model.GetDgnDb() != &m_dgndb) ||(&model != &replacement.GetDgnModel()))
         {
         stat = DGNMODEL_STATUS_WrongModel;
         return nullptr;

@@ -15,7 +15,7 @@ Classes for working with %DgnElements in memory.
 
 */
 
-BENTLEY_API_TYPEDEFS (HeapZone);
+BENTLEY_API_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
 
@@ -66,8 +66,10 @@ public:
         Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
-        CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-                    m_model(model), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
+        double          m_lastModTime;
+        CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), 
+                     DgnElementId parent=DgnElementId(), double lastModTime=0.0) :
+                    m_model(model), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
 
         void SetLabel(Utf8CP label) {m_label = label;}  //!< Set the label for DgnElements created with this CreateParams
         void SetCode(Utf8CP code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
@@ -128,6 +130,9 @@ public:
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
+private:
+    void UpdateLastModTime();
+
 protected:
 
     struct Flags
@@ -151,6 +156,7 @@ protected:
     DgnCategoryId   m_categoryId;
     Utf8String      m_code;
     Utf8String      m_label;
+    double          m_lastModTime;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -274,7 +280,7 @@ protected:
 
     //! Construct a DgnElement from its params
     explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId) {}
+             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_lastModTime(params.m_lastModTime) {}
 
     DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
 
@@ -609,7 +615,7 @@ protected:
     GeometricElementCP _ToGeometricElement() const override {return this;}
     DgnModelStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {}
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
 public:
@@ -619,7 +625,7 @@ public:
     T_QvElemSet* GetQvElems(bool createIfNotPresent) const;
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
-    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitPathCR, ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
     bool HasGeometry() const {return m_geom.HasGeometry();}  //!< return false if this GeometricElement currently has no geometry (is empty).
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
 
@@ -722,7 +728,7 @@ protected:
     DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
     DgnElement2dCP _ToElement2d() const override {return this;}
     AxisAlignedBox3d _CalculateRange3d() const override {return m_placement.CalculateRange();}
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super));}
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
     explicit DgnElement2d(CreateParams const& params) : T_Super(params) {}
 
 public:

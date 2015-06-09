@@ -122,7 +122,7 @@ virtual void    _PopTransClip () override
 * @bsimethod                                                    BrienBastings   11/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GetTestPointFrustum (DPoint3dR fencePt, ClipPrimitiveCR clipPrimitive)
-    {    
+    {
     ClipPolygonCP   clipPolygon;
 
     fencePt.Zero ();
@@ -393,7 +393,7 @@ virtual StatusInt _ProcessCurvePrimitive (ICurvePrimitiveCR primitive, bool clos
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
             {
             MSBsplineCurveCP bcurve = primitive.GetProxyBsplineCurveCP ();
-        
+
             return ProcessCurve (bcurve, filled);
             }
 
@@ -916,7 +916,7 @@ BentleyStatus   GetContents (FenceParamsP fp, DgnElementIdSet& contents)
 
     Transform       clipToWorld;
 
-    if (transformedClip.IsValid() && 
+    if (transformedClip.IsValid() &&
         NULL != fp->GetTransform() &&
         clipToWorld.InverseOf (*fp->GetTransform()))
         transformedClip->TransformInPlace (clipToWorld);
@@ -1197,7 +1197,7 @@ int             nPoints
         DEllipse3d          ellipse;
 
         RotMatrix   rMatrix;
-        
+
         rMatrix.initIdentity ();
         ellipse.initFromScaledRotMatrix (&center, &rMatrix, radius, radius, 0.0, msGeomConst_2pi);
 
@@ -1304,7 +1304,7 @@ StatusInt       FenceParams::StoreClippingVector (ClipVectorCR clip, bool outsid
 
     if (!m_clip.IsValid ())
         return ERROR;
-    
+
     m_camera = false;
     m_transform.InitIdentity ();
     m_clipOwned = true;
@@ -1726,14 +1726,14 @@ bool            FenceParams::ArcIntersect (DPoint2dCP lineSegP, DEllipse3dCR ell
         if (pointIsInBlock (range, primitive.ClipZLow(), primitive.ClipZHigh(), m_onTolerance, isPnt[i]))
             {
             double  fraction = ellipse.angleToFraction (isAngle[i]);
-            
+
             if (fraction > 1.0)
                 fraction = 1.0;          // TR# 291396. The ellipse.IsAngleInSweep() function will return true for angles slightly outside of span so apply limits here.
             else if (fraction < 0.0)     // This should probably be applied upstream (so overlap is consistent) but this change is right before RC for SS2.
                 fraction = 0.0;
 
             DPoint3d        worldPoint = DPoint3d::FromSumOf (isPnt[i], ellipse.center);
-            
+
             primitive.TransformFromClip (worldPoint);
             intersectFound |= StoreIntersectionIfInsideClip (fraction, &worldPoint, &primitive);
             }
@@ -1765,7 +1765,7 @@ bool            FenceParams::ArcFenceIntersect (ClipPrimitiveCR clipPrimitive, D
 
     if (clipPrimitive.ClipZHigh())
         intersectFound |= ClipPlaneArcIntersect (clipPrimitive, clipPrimitive.GetZHigh() + s_zPlaneToleranceRatio * m_onTolerance, rotatedEllipse);
-    
+
     T_ClipPolygon const*    polygon;
 
     if (NULL != (polygon = clipPrimitive.GetPolygon ()))
@@ -1877,13 +1877,13 @@ double          onTolerance
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool     clipPlaneLineIntersect
 (
-DPoint3dR       intClipPnt,              
+DPoint3dR       intClipPnt,
 DPoint3dR       intWorldPnt,
-double*         intParamP,            
+double*         intParamP,
 ClipPrimitiveCR clipPrimitive,
-double          z,                    
-double          onTolerance,          
-DPoint3dCP      lineP                 
+double          z,
+double          onTolerance,
+DPoint3dCP      lineP
 )
     {
     DPoint3d    delta;
@@ -1915,7 +1915,7 @@ bool            FenceParams::LinearFenceIntersect (ClipPrimitiveCR clipPrimitive
     bool            intersectFound = false;
     double          intParam, paramDelta, paramBase = 0.0;
     ClipPolygonCP   polygon = clipPrimitive.GetPolygon();
-    
+
     DPoint3d*   pRotatedPoints;
 
     if (NULL != clipPrimitive.GetTransformToClip())
@@ -2144,7 +2144,7 @@ bool            FenceParams::CurveFenceIntersect (ClipPrimitiveCR clipPrimitive,
         BeAssert (false);
         return false;
         }
-        
+
 
     for (size_t i = 0; i < point0.size (); i++)
         {
@@ -2355,7 +2355,7 @@ void            FenceParams::PushClip (ViewContextP context, DgnViewportP vp, bo
                         plane = ClipPlane (DVec3d::From (normal.x * cosTheta, normal.y  * cosTheta, sin (theta)), 0.0);
                         }
                     }
-                convexPlaneSet.TransformInPlace (inverse);     
+                convexPlaneSet.TransformInPlace (inverse);
                 }
 
             context->PushClip (*ClipVector::CreateFromPrimitive (ClipPrimitive::CreateFromClipPlanes (clipPlaneSet, !displayCut)));
@@ -2528,13 +2528,13 @@ StatusInt       FenceParams::PushClip (ViewContextR context, TransformCP localTo
     clip->TransformInPlace (clipToLocal);
     context.PushClip (*clip);
 
-    return SUCCESS; 
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool        FenceParams::IsOutsideClip () const 
+bool        FenceParams::IsOutsideClip () const
     {
     return m_clip.IsValid() &&
            1 == m_clip->size() &&
@@ -2602,7 +2602,7 @@ static void shiftEllipseSplineParameters (double *paramP, size_t nParams, MSBspl
             }
         }
     }
- 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2618,11 +2618,11 @@ static void     calculateSegmentIntersections (FenceParamsR fp, ICurvePrimitive*
         size_t  originalNumSplitParams = fp.GetNumSplitParams();
 
         fp.AcceptCurve (&curve);
-    
+
         // Defect 88045 - shift from spline to ellipse angle parameters. This should all be deprecated and work on CurveVectors directly.
         if (fp.GetNumSplitParams() > originalNumSplitParams && NULL != curvePrimitive->GetArcCP ())
             shiftEllipseSplineParameters (fp.GetSplitParamsP() + originalNumSplitParams, fp.GetNumSplitParams() - originalNumSplitParams, curve, *curvePrimitive->GetArcCP());
-        
+
         curve.ReleaseMem ();
         return;
         }

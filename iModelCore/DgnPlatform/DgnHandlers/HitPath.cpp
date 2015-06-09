@@ -16,10 +16,8 @@ void GeomDetail::Init ()
     m_localToWorld.InitIdentity ();
     m_localPoint.Zero ();
     m_geomType      = HitGeomType::None;
-    m_detailType    = 0;
+    m_detailSource  = HitDetailSource::None;
     m_hitPriority   = HitPriority::Highest;
-    m_patternIndex  = 0;
-    m_elemArg       = 0;
     m_nonSnappable  = false;
     m_viewDist      = 0.0;
     m_viewZ         = 0.0;
@@ -395,7 +393,7 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt HitPath::GetHitLocalToContextLocal (TransformR hitLocalToContextLocalTrans, ViewContextR context) const
+StatusInt HitDetail::GetHitLocalToContextLocal (TransformR hitLocalToContextLocalTrans, ViewContextR context) const
     {
     DMatrix4d   contextLocalToWorld;
 
@@ -416,7 +414,7 @@ StatusInt HitPath::GetHitLocalToContextLocal (TransformR hitLocalToContextLocalT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt HitPath::GetContextLocalToHitLocal (TransformR contextLocalToHitLocalTrans, ViewContextR context) const
+StatusInt HitDetail::GetContextLocalToHitLocal (TransformR contextLocalToHitLocalTrans, ViewContextR context) const
     {
     Transform   hitLocalToContextLocalTrans;
     StatusInt   status = GetHitLocalToContextLocal (hitLocalToContextLocalTrans, context);
@@ -429,15 +427,14 @@ StatusInt HitPath::GetContextLocalToHitLocal (TransformR contextLocalToHitLocalT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPath::HitPath
+HitDetail::HitDetail
 (
 DgnViewportR        viewport,
 GeometricElementCR  element,
 DPoint3dCR          testPoint,
 HitSource           source,
 ViewFlagsCR         viewFlags,
-GeomDetailCR        geomDetail,
-IElemTopologyCP     elemTopo
+GeomDetailCR        geomDetail
 ) : m_viewport(viewport)
     {
     m_elementId     = element.GetElementId();
@@ -445,36 +442,32 @@ IElemTopologyCP     elemTopo
     m_testPoint     = testPoint;
     m_viewFlags     = viewFlags;
     m_geomDetail    = geomDetail;
-    m_elemTopo      = elemTopo;
-    m_componentMode = false;
+    m_componentMode = ComponentMode::None;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPath::HitPath (HitPath const& from) : m_viewport(from.m_viewport)
+HitDetail::HitDetail (HitDetail const& from) : m_viewport(from.m_viewport)
     {
     m_elementId     = from.m_elementId;
     m_locateSource  = from.m_locateSource;
     m_testPoint     = from.m_testPoint;
     m_viewFlags     = from.m_viewFlags;
     m_geomDetail    = from.m_geomDetail;
-    m_elemTopo      = (NULL == from.m_elemTopo) ? NULL : from.m_elemTopo->_Clone ();
+    m_elemTopo      = from.m_elemTopo.IsValid() ? from.m_elemTopo->_Clone() : nullptr;
     m_componentMode = from.m_componentMode;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPath::~HitPath ()
-    {
-    ClearElemTopology ();
-    }
+HitDetail::~HitDetail () {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void HitDetail::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
     if (vp->IsActive())
         T_HOST.GetGraphicsAdmin()._DrawPathInVp (this, vp, drawMode, drawPurpose, stopFlag);
@@ -483,7 +476,7 @@ void HitPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose draw
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitPath::_GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const
+void HitDetail::_GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const
     {
     T_HOST.GetGraphicsAdmin()._GetInfoString (this, pathDescr, delimiter);
     }
@@ -491,7 +484,7 @@ void HitPath::_GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbR HitPath::GetDgnDb() const
+DgnDbR HitDetail::GetDgnDb() const
     {
     return m_viewport.GetViewController().GetDgnDb();
     }
@@ -499,7 +492,7 @@ DgnDbR HitPath::GetDgnDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelR HitPath::GetDgnModel() const
+DgnModelR HitDetail::GetDgnModel() const
     {
     GeometricElementCPtr element = GetElement();
 
@@ -509,7 +502,7 @@ DgnModelR HitPath::GetDgnModel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricElementCPtr HitPath::GetElement() const
+GeometricElementCPtr HitDetail::GetElement() const
     {
     DgnElementCP element = GetDgnDb().Elements().FindElement(m_elementId);
 
@@ -519,7 +512,7 @@ GeometricElementCPtr HitPath::GetElement() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitPath::IsInSelectionSet () const
+bool HitDetail::IsInSelectionSet () const
     {
     GeometricElementCPtr element = GetElement();
 
@@ -529,7 +522,7 @@ bool HitPath::IsInSelectionSet () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Hilited HitPath::IsHilited () const
+DgnElement::Hilited HitDetail::IsHilited () const
     {
     GeometricElementCPtr element = GetElement();
 
@@ -539,7 +532,7 @@ DgnElement::Hilited HitPath::IsHilited () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitPath::_SetHilited (DgnElement::Hilited newState) const
+void HitDetail::_SetHilited (DgnElement::Hilited newState) const
     {
     GeometricElementCPtr element = GetElement();
 
@@ -556,32 +549,20 @@ void HitPath::_SetHilited (DgnElement::Hilited newState) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HitPath::ClearElemTopology()
-    {
-    DELETE_AND_CLEAR (m_elemTopo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitPath::_IsSameHit (HitPathCP otherHit) const
+bool HitDetail::_IsSameHit (HitDetailCP otherHit) const
     {
-    // check element...
     if (nullptr == otherHit || m_elementId != otherHit->GetElementId())
         return false;
 
-    // if other path is also hit path allow for elem topo compare...otherwise paths are the same
-    if (DisplayPathType::Hit != otherHit->GetPathType())
+    if (!m_elemTopo.IsValid() && !otherHit->m_elemTopo.IsValid())
         return true;
 
-    IElemTopology const *thisTopo, *otherTopo;
+    if (m_elemTopo.IsValid() != otherHit->m_elemTopo.IsValid())
+        return false;
 
-    if (nullptr == (thisTopo = GetElemTopology()) || nullptr == (otherTopo = otherHit->GetElemTopology()))
-        return true;
-
-    if (0 != thisTopo->_Compare (*otherTopo))
+    if (!m_elemTopo->_IsEqual(*otherHit->m_elemTopo))
         return false;
 
     return true;
@@ -590,7 +571,7 @@ bool HitPath::_IsSameHit (HitPathCP otherHit) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapPath::SnapPath (HitPath const* from) : HitPath (*from)
+SnapDetail::SnapDetail (HitDetail const* from) : HitDetail (*from)
     {
     m_heat   = SNAP_HEAT_None;
     m_sprite = NULL;
@@ -604,9 +585,9 @@ SnapPath::SnapPath (HitPath const* from) : HitPath (*from)
     m_adjustedPt = m_snapPoint;
     m_snapMode = m_originalSnapMode = SnapMode::First;
 
-    if (DisplayPathType::Snap == from->GetPathType())
+    if (HitDetailType::Snap == from->GetHitType())
         {
-        SnapPathCP  fromSnap = (SnapPathCP) from;
+        SnapDetailCP  fromSnap = (SnapDetailCP) from;
 
         m_minScreenDist = fromSnap->m_minScreenDist;
         }
@@ -620,7 +601,7 @@ SnapPath::SnapPath (HitPath const* from) : HitPath (*from)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapPath::SnapPath (SnapPath const& from) : HitPath (from)
+SnapDetail::SnapDetail (SnapDetail const& from) : HitDetail (from)
     {
     m_heat              = from.m_heat;
     m_screenPt          = from.m_screenPt;
@@ -653,7 +634,7 @@ SnapPath::SnapPath (SnapPath const& from) : HitPath (from)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapPath::~SnapPath ()
+SnapDetail::~SnapDetail ()
     {
     if (m_sprite)
         m_sprite->Release ();
@@ -665,17 +646,17 @@ SnapPath::~SnapPath ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ShaunSewall     12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapPath* SnapPath::_Clone () const 
+SnapDetail* SnapDetail::_Clone () const 
     {
-    return new SnapPath (*this);
+    return new SnapDetail (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @return  the "hit" point for this snapPath. If this path is "hot", this function will return
 * the snapped point, otherwise it returns the closest point on the element.
-* @bsimethod    HitPath                                         KeithBentley    12/97
+* @bsimethod    HitDetail                                         KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SnapPath::_GetHitPoint (DPoint3dR pt) const
+void SnapDetail::_GetHitPoint (DPoint3dR pt) const
     {
     if (IsHot ())
         pt = m_snapPoint;
@@ -685,9 +666,9 @@ void SnapPath::_GetHitPoint (DPoint3dR pt) const
 
 /*---------------------------------------------------------------------------------**//**
 * @return whether point has been adjusted
-* @bsimethod    SnapPath                                        BrienBastings   08/01
+* @bsimethod    SnapDetail                                        BrienBastings   08/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SnapPath::PointWasAdjusted () const
+bool SnapDetail::PointWasAdjusted () const
     {
     return (!bsiDPoint3d_pointEqualTolerance (&m_snapPoint, &m_adjustedPt, 1.0e-10));
     }
@@ -695,7 +676,7 @@ bool SnapPath::PointWasAdjusted () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SnapPath::_SetHitPoint (DPoint3dCR hitPoint)
+void SnapDetail::_SetHitPoint (DPoint3dCR hitPoint)
     {
     m_snapPoint  = hitPoint;
     m_adjustedPt = hitPoint;
@@ -704,9 +685,9 @@ void SnapPath::_SetHitPoint (DPoint3dCR hitPoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-IntersectPath::IntersectPath (HitPathCP firstHit, HitPathCP secondHit, DPoint3dCR pt) : SnapPath (firstHit)
+IntersectDetail::IntersectDetail (HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR pt) : SnapDetail (firstHit)
     {
-    m_secondHit = (HitPathP) secondHit;
+    m_secondHit = (HitDetailP) secondHit;
 
     if (m_secondHit)
         m_secondHit->AddRef();
@@ -717,7 +698,7 @@ IntersectPath::IntersectPath (HitPathCP firstHit, HitPathCP secondHit, DPoint3dC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-IntersectPath::IntersectPath (IntersectPath const& i2) : SnapPath (i2)
+IntersectDetail::IntersectDetail (IntersectDetail const& i2) : SnapDetail (i2)
     {
     m_secondHit = i2.m_secondHit;
     m_secondHit->AddRef ();
@@ -726,7 +707,7 @@ IntersectPath::IntersectPath (IntersectPath const& i2) : SnapPath (i2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-IntersectPath::~IntersectPath ()
+IntersectDetail::~IntersectDetail ()
     {
     if (m_secondHit)
         m_secondHit->Release();
@@ -737,9 +718,9 @@ IntersectPath::~IntersectPath ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ShaunSewall     12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapPath* IntersectPath::_Clone () const 
+SnapDetail* IntersectDetail::_Clone () const 
     {
-    return new IntersectPath (*this);
+    return new IntersectDetail (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -747,18 +728,18 @@ SnapPath* IntersectPath::_Clone () const
 * both paths of both hits are the same.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IntersectPath::_IsSameHit (HitPathCP otherPath) const
+bool IntersectDetail::_IsSameHit (HitDetailCP otherPath) const
     {
     // check base paths
     if (!T_Super::_IsSameHit(otherPath))
         return false;
 
-    // for IntersectPaths, it can't be the same hit unless both are of type InteresctPath and BOTH paths match
-    if (DisplayPathType::Intersection != otherPath->GetPathType())
+    // for IntersectDetails, it can't be the same hit unless both are of type InteresctPath and BOTH paths match
+    if (HitDetailType::Intersection != otherPath->GetHitType())
         return false;
 
     // now check the "second" paths
-    HitPathCP o2 = ((IntersectPath*) otherPath)->GetSecondHit();
+    HitDetailCP o2 = ((IntersectDetail*) otherPath)->GetSecondHit();
 
     return GetSecondHit()->IsSameHit(o2);
     }
@@ -766,7 +747,7 @@ bool IntersectPath::_IsSameHit (HitPathCP otherPath) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectPath::_SetHilited (DgnElement::Hilited newState) const
+void IntersectDetail::_SetHilited (DgnElement::Hilited newState) const
     {
     T_Super::_SetHilited (newState);
 
@@ -783,32 +764,32 @@ void IntersectPath::_SetHilited (DgnElement::Hilited newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectPath::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void IntersectDetail::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
     // start by drawing the first path normally
     T_Super::_DrawInVp (vp, drawMode, drawPurpose, stopFlag);
 
-    SnapPath tmpSnapPath (m_secondHit); // So display handlers know this is from a snap...
+    SnapDetail tmpSnapDetail (m_secondHit); // So display handlers know this is from a snap...
 
     // NOTE: When we're flashing, the hilite flags are not necessarily set on the elementRefs. So to get the second path
     //       drawn with dashed symbology, we need to turn on its "dashed hilite" flag temporarily, and then restore it.
-    DgnElement::Hilited currHilite = tmpSnapPath.IsHilited ();
+    DgnElement::Hilited currHilite = tmpSnapDetail.IsHilited ();
 
     if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapPath.SetHilited (DgnElement::Hilited::Dashed);
+        tmpSnapDetail.SetHilited (DgnElement::Hilited::Dashed);
 
-    tmpSnapPath.SetComponentMode (GetComponentMode ()); // Set correct component flash mode...
-    tmpSnapPath.DrawInVp (vp, drawMode, drawPurpose, stopFlag);
+    tmpSnapDetail.SetComponentMode (GetComponentMode ()); // Set correct component flash mode...
+    tmpSnapDetail.DrawInVp (vp, drawMode, drawPurpose, stopFlag);
 
     if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapPath.SetHilited (currHilite);
+        tmpSnapDetail.SetHilited (currHilite);
     }
 
 /*=================================================================================**//**
 * The result of a "locate" is a sorted list of objects that
 * satisfied the search  criteria (a HitList). Earlier hits in the list
 * are somehow "better" than those later on.
-* @see          IHitPath
+* @see          IHitDetail
 * @bsiclass                                                     KeithBentley    12/97
 +===============+===============+===============+===============+===============+======*/
 /*---------------------------------------------------------------------------------**//**
@@ -825,7 +806,7 @@ int HitList::GetCount () const {return (int) size ();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPathP HitList::Get (int i)
+HitDetailP HitList::Get (int i)
     {
     if (i < 0)                  // ***NEEDS WORK: the old ObjectArray used to support -1 == END
         i = (int) size ();
@@ -837,7 +818,7 @@ HitPathP HitList::Get (int i)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitList::Set (int i, HitPathP p)
+void HitList::Set (int i, HitDetailP p)
     {
     if (i < 0 || i >= GetCount())
         {
@@ -850,7 +831,7 @@ void HitList::Set (int i, HitPathP p)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitList::Insert (int i, HitPathP p)
+void HitList::Insert (int i, HitDetailP p)
     {
     if (i < 0 || i == (int)size())
         push_back (p);
@@ -863,7 +844,7 @@ void HitList::Insert (int i, HitPathP p)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitList::DropNulls()
     {
-    erase (std::remove(begin(), end(), (HitPathP)NULL), end());
+    erase (std::remove(begin(), end(), (HitDetailP)NULL), end());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -903,7 +884,7 @@ void HitList::RemoveHit (int hitNum)
 * @return       the requested hit from the HitList
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPathP HitList::GetHit (int hitNum) const
+HitDetailP HitList::GetHit (int hitNum) const
     {
     if (hitNum < 0)                     // *** NEEDS WORK: The old ObjectArray used to support -1 == END
         hitNum = (int) size() - 1;
@@ -925,11 +906,11 @@ void HitList::RemoveCurrentHit()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitList::SetCurrentHit (HitPathCP hit)
+void HitList::SetCurrentHit (HitDetailCP hit)
     {
     ResetCurrentHit();
 
-    for (HitPathCP thisHit; NULL != (thisHit=GetNextHit());)
+    for (HitDetailCP thisHit; NULL != (thisHit=GetNextHit());)
         {
         if (thisHit == hit)
             return;
@@ -948,7 +929,7 @@ static const double s_tooCloseTolerance = 1.0e-5;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool is2dHitCompare (HitPathCR oHit1, HitPathCR oHit2)
+static bool is2dHitCompare (HitDetailCR oHit1, HitDetailCR oHit2)
     {
     return (!oHit1.GetViewport().Is3dView() && !oHit2.GetViewport().Is3dView());
     }
@@ -956,7 +937,7 @@ static bool is2dHitCompare (HitPathCR oHit1, HitPathCR oHit2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int doZCompareOfSurfaceAndEdge (HitPathCR oHitSurf, HitPathCR oHitEdge)
+static int doZCompareOfSurfaceAndEdge (HitDetailCR oHitSurf, HitDetailCR oHitEdge)
     {
     DgnViewportR vp = oHitSurf.GetViewport ();
     DPoint4d     homogeneousPlane;
@@ -1004,7 +985,7 @@ static int doZCompareOfSurfaceAndEdge (HitPathCR oHitSurf, HitPathCR oHitEdge)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int doZCompare (HitPathCR oHit1, HitPathCR oHit2)
+static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
     {
     double  z1 = oHit1.GetGeomDetail ().GetZValue ();
     double  z2 = oHit2.GetGeomDetail ().GetZValue ();
@@ -1019,11 +1000,11 @@ static int doZCompare (HitPathCR oHit1, HitPathCR oHit2)
         }
 
     // Point clouds already output only a single best z for a screen location...only compare using screen distance, not z...
-    if (HIT_DETAIL_PointCloud == oHit1.GetGeomDetail ().GetDetailType () && HIT_DETAIL_PointCloud == oHit2.GetGeomDetail ().GetDetailType ())
+    if (HitDetailSource::PointCloud == oHit1.GetGeomDetail ().GetDetailSource () && HitDetailSource::PointCloud == oHit2.GetGeomDetail ().GetDetailSource ())
         return 0;
 
     // Always prioritize sprites (ex. HUD markers) over surface hits...
-    if (HIT_DETAIL_Sprite == oHit1.GetGeomDetail ().GetDetailType () || HIT_DETAIL_Sprite == oHit2.GetGeomDetail ().GetDetailType ())
+    if (HitDetailSource::Sprite == oHit1.GetGeomDetail ().GetDetailSource () || HitDetailSource::Sprite == oHit2.GetGeomDetail ().GetDetailSource ())
         return 0;
 
     DVec3d  normal1 = oHit1.GetGeomDetail ().GetSurfaceNormal ();
@@ -1074,7 +1055,7 @@ static int doZCompare (HitPathCR oHit1, HitPathCR oHit2)
 * calling GetLocatePriority() and then GetLocateDistance() on each.
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-int HitList::Compare (HitPathCP oHit1, HitPathCP oHit2, bool comparePriority, bool compareElemClass, bool compareZ) const
+int HitList::Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareZ) const
     {
     if (NULL == oHit1 || NULL == oHit2)
         return 0;
@@ -1101,7 +1082,7 @@ int HitList::Compare (HitPathCP oHit1, HitPathCP oHit2, bool comparePriority, bo
     COMPARE_RELATIVE (dist1, dist2);
 
     // Linestyle/pattern/thickness hits have lower priority...
-    COMPARE_RELATIVE (oHit1->GetGeomDetail ().GetDetailType (), oHit2->GetGeomDetail ().GetDetailType ());
+    COMPARE_RELATIVE (oHit1->GetGeomDetail ().GetDetailSource (), oHit2->GetGeomDetail ().GetDetailSource ());
 
     //// everything else is the same, higher filepos wins because w/file order display (2d) it's the one on top always.        removed in graphite
     //if (oHit1->GetRoot () == oHit2->GetRoot ())                                                                              removed in graphite
@@ -1116,24 +1097,23 @@ int HitList::Compare (HitPathCP oHit1, HitPathCP oHit2, bool comparePriority, bo
 +---------------+---------------+---------------+---------------+---------------+------*/
 int             HitList::AddHit
 (
-HitPath*        newHit,
+HitDetail*      newHit,
 bool            allowDuplicates,
-bool            comparePriority,
-bool            compareElemClass
+bool            comparePriority
 )
     {
     HitList::iterator currHit = begin ();
 
-    HitPath*    oldHit;
+    HitDetail*    oldHit;
     int         count = GetCount();
     int         index = 0;
     int         comparison;
 
     while (index < count)
         {
-        oldHit = (HitPath*) currHit->get ();
+        oldHit = (HitDetail*) currHit->get ();
 
-        comparison = Compare (newHit, oldHit, comparePriority, compareElemClass, true);
+        comparison = Compare (newHit, oldHit, comparePriority, true);
 
         // Caller can establish a policy to only ever allow one hit for a given path. However, we want to make sure
         // that the one hit we do save is the "best" hit for that path. Therefore, every time we get another hit
@@ -1160,9 +1140,9 @@ bool            compareElemClass
 #if defined (NOT_NOT_DUMP)
     printf ("HIT LIST COUNT: %d\n", GetCount ());
 
-    HitPathP    thisPath;
+    HitDetailP    thisPath;
 
-    for (int i=0; NULL != (thisPath = (HitPathP) GetHit (i)); i++)
+    for (int i=0; NULL != (thisPath = (HitDetailP) GetHit (i)); i++)
         printf ("(%d) Elem: %I64d, GeomType: %d Z: %lf Normal: (%lf %lf %lf)\n", i, thisPath->GetHeadElem ()->GetElementId (), thisPath->GetGeomDetail ().GetGeomType (), thisPath->GetGeomDetail ().GetZValue (), thisPath->GetGeomDetail ().GetSurfaceNormal ().x, thisPath->GetGeomDetail ().GetSurfaceNormal ().y, thisPath->GetGeomDetail ().GetSurfaceNormal ().z);
 
     printf ("\n\n");
@@ -1174,7 +1154,7 @@ bool            compareElemClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPathP HitList::GetCurrentHit () const
+HitDetailP HitList::GetCurrentHit () const
     {
     if (-1 == m_currHit)
         return NULL;
@@ -1185,7 +1165,7 @@ HitPathP HitList::GetCurrentHit () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPathP HitList::GetNextHit ()
+HitDetailP HitList::GetNextHit ()
     {
     m_currHit++;
 
@@ -1196,9 +1176,9 @@ HitPathP HitList::GetNextHit ()
 * search through hitlist and remove any hits that match a specified path.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitList::RemoveHitsFrom (HitPathCR hit)
+bool HitList::RemoveHitsFrom (HitDetailCR hit)
     {
-    HitPathP    thisHit;
+    HitDetailP    thisHit;
     bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
@@ -1220,7 +1200,7 @@ bool HitList::RemoveHitsFrom (HitPathCR hit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HitList::RemoveHitsFrom (DgnElementCR element)
     {
-    HitPathP    thisHit;
+    HitDetailP    thisHit;
     bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
@@ -1242,7 +1222,7 @@ bool HitList::RemoveHitsFrom (DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool     HitList::RemoveHitsFrom (DgnModelR model)
     {
-    HitPathP    thisHit;
+    HitDetailP    thisHit;
     bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
@@ -1265,7 +1245,7 @@ void HitList::Dump (WCharCP label) const
     {
     printf ("%ls %d", label, GetCount());
 
-    HitPathP thisHit;
+    HitDetailP thisHit;
 
     for (int i=0; NULL != (thisHit = GetHit(i)); i++)
         printf ("\n -> ElementId : %llu", (long long unsigned int) thisHit->GetElementId().GetValue());
@@ -1277,7 +1257,7 @@ void HitList::Dump (WCharCP label) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       HitPath::GetLinearParameters (DSegment3dP hitSeg, int* vertex, int* segmentNumber) const
+StatusInt       HitDetail::GetLinearParameters (DSegment3dP hitSeg, int* vertex, int* segmentNumber) const
     {
     GeomDetail const&  detail = GetGeomDetail ();
 
@@ -1304,14 +1284,14 @@ StatusInt       HitPath::GetLinearParameters (DSegment3dP hitSeg, int* vertex, i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnActionItemContext::DgnActionItemContext (HitPathCP hitPath, DPoint3dCP point, DgnViewportP view)
+DgnActionItemContext::DgnActionItemContext (HitDetailCP hitPath, DPoint3dCP point, DgnViewportP view)
     :m_hitPathPtr(NULL), m_pointPtr (NULL), m_view (view)
     {
     if (NULL != point)
         m_pointPtr = std::shared_ptr<DPoint3d>(new DPoint3d(*point));
 
     if (NULL != hitPath)
-        m_hitPathPtr = new HitPath(*hitPath);
+        m_hitPathPtr = new HitDetail(*hitPath);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1356,7 +1336,7 @@ void    IEditActionSource::_GetCommand (bvector<ECN::IUICommandPtr>& cmds, ECN::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitPathCP       DgnActionItemContext::GetHitPath() const {return  m_hitPathPtr.get();}
+HitDetailCP       DgnActionItemContext::GetHitDetail() const {return  m_hitPathPtr.get();}
 DgnViewportP       DgnActionItemContext::GetView() const 
     {
     return (NULL == m_hitPathPtr.get()) ? m_view : m_hitPathPtr->GetViewport();
