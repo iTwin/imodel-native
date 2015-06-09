@@ -228,7 +228,7 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     if (nullptr != m_context->GetElemTopology())
         thisHit->SetElemTopology(m_context->GetElemTopology()->_Clone());
 
-    m_hitList->AddHit (thisHit.get(), true, true, m_options.GetHitsSortedByClass ());
+    m_hitList->AddHit (thisHit.get(), true, true);
 
     // if we've got too many, throw away the last one
     if (m_hitList->GetCount() <= (int) m_options.GetMaxHits ())
@@ -1319,7 +1319,7 @@ void    PickContext::InitNpcSubRect (DPoint3dCR pickPointWorldIn, double pickApe
 StatusInt PickContext::_VisitDgnModel (DgnModelP inDgnModel)
     {
     // Ignore elements that are not from view controller's target project unless tool specifically requests otherwise...
-    if (&inDgnModel->GetDgnDb () != &GetDgnDb () && !m_options.GetDisableDgnProjectFilter ())
+    if (&inDgnModel->GetDgnDb () != &GetDgnDb () && !m_options.GetDisableDgnDbFilter ())
         return ERROR;
 
     // Make sure the test point is within the clipping region of this file.
@@ -1428,12 +1428,12 @@ TestHitStatus PickContext::TestHit (HitDetailCR hit, DgnViewportR vp, DPoint3dCR
     GeometricElementCPtr element = hit.GetElement();
 
     if (!element.IsValid())
-        return TESTHIT_NotOnPath;
+        return TestHitStatus::NotOn;
 
     InitNpcSubRect(pickPointWorld, pickApertureScreen, vp); // Initialize prior to attach so frustum planes are set correctly.
 
     if (SUCCESS != Attach(&vp, DrawPurpose::Pick))
-        return TESTHIT_TestAborted;
+        return TestHitStatus::Aborted;
 
     // Re-test using same hit source as input path (See _AddHit locate behavior for linestyle components)...
     m_options.SetHitSource (HitDetailType::Hit <= hit.GetHitType() ? hit.GetLocateSource() : HitSource::None);
@@ -1442,5 +1442,5 @@ TestHitStatus PickContext::TestHit (HitDetailCR hit, DgnViewportR vp, DPoint3dCR
     VisitElement(*element);
     _Detach();
 
-    return WasAborted() ? TESTHIT_TestAborted : ((m_output.GetHitList()->GetCount() > 0) ? TESTHIT_IsOnPath : TESTHIT_NotOnPath);
+    return WasAborted() ? TestHitStatus::Aborted : ((m_output.GetHitList()->GetCount() > 0) ? TestHitStatus::IsOn : TestHitStatus::NotOn);
     }

@@ -7,57 +7,53 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include    <DgnPlatform/DgnCore/HitPath.h>
+#include <DgnPlatform/DgnCore/HitPath.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    04/01
 +===============+===============+===============+===============+===============+======*/
-enum class ComponentMode
+enum class TestHitStatus
     {
-    None      = 0, //! Select entire element.
-    Innermost = 1, //! Select single segment.
+    NotOn       = 0,
+    IsOn        = 1,
+    Aborted     = 2
     };
 
 /*=================================================================================**//**
-* @bsiclass                                                     KeithBentley    04/01
-+===============+===============+===============+===============+===============+======*/
-enum TestHitStatus
-    {
-    TESTHIT_NotOnPath      = 0,
-    TESTHIT_IsOnPath       = 1,
-    TESTHIT_TestAborted    = 2,
-    };
-
-/*=================================================================================**//**
-* The possible actions for which a LocateFunc_locateFilter filter can be called.
+* The possible actions for which a locate filter can be called.
 * @bsiclass                                                     KeithBentley    03/01
 +===============+===============+===============+===============+===============+======*/
-enum LOCATE_Action
+enum class LocateAction
     {
-    GLOBAL_LOCATE_IDENTIFY          = 1,
-    GLOBAL_LOCATE_SELECTIONSET      = 2,
-    GLOBAL_LOCATE_FENCE             = 3,
-    GLOBAL_LOCATE_FENCECLIP         = 4,
-    GLOBAL_LOCATE_SNAP              = 5,
-    GLOBAL_LOCATE_AUTOLOCATE        = 6,
+    Identify    = 0,
+    AutoLocate  = 1
     };
 
 /*=================================================================================**//**
-* Values to return from ~tLocateFunc_locateFilter.
-* @note It would be rare and extreme for a ~tLocateFunc_locateFilter to ever return LOCATE_FILTER_STATUS_Accept.
-* <p>Usually, filters will return LOCATE_FILTER_STATUS_Reject to indicate the element is unacceptable, or LOCATE_FILTER_STATUS_Neutral to
-* indicate that the element is acceptable <i>as far as this filter is concerned.</i> By returning LOCATE_FILTER_STATUS_Accept, a
+* Values to return from a locate filter.
+* @note It would be rare and extreme for a locate filter to ever return Accept.
+* <p>Usually, filters will return Reject to indicate the element is unacceptable, or LNeutral to
+* indicate that the element is acceptable <i>as far as this filter is concerned.</i> By returning Accept, a
 * single filter can cause the element to be accepted, <b>without calling other filters</b> that might otherwise reject the element.
 * Indicates the reason an element was rejected by a filter.
 * @bsiclass                                                     KeithBentley    03/01
 +===============+===============+===============+===============+===============+======*/
-enum LocateFilterStatus
+enum class LocateFilterStatus
     {
-    LOCATE_FILTER_STATUS_Reject     = 0,
-    LOCATE_FILTER_STATUS_Neutral    = 1,
-    LOCATE_FILTER_STATUS_Accept     = 2
+    Reject      = 0,
+    Neutral     = 1,
+    Accept      = 2
+    };
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+enum class SnapType 
+    {
+    Points      = 1, 
+    Constraints = 2
     };
 
 /*=================================================================================**//**
@@ -92,12 +88,6 @@ enum LocateFailureValue
     LOCATE_FAILURE_RefNotNowActive   = 24,  // ref is read/write, but is not currently the active ref.
     };
 
-enum SnapTypeEnum 
-    {
-    SNAP_TYPE_Points=1, 
-    SNAP_TYPE_Constraints=2
-    };
-
 //__PUBLISH_SECTION_END__
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/10
@@ -115,8 +105,7 @@ struct LocateOptions
 {
 private:
 
-bool                m_disableProjectFilter;
-bool                m_wantSortHitsByClass;
+bool                m_disableDgnDbFilter;
 uint32_t            m_maxHits;
 HitSource           m_hitSource;
 LocateSurfacesPref  m_locateSurface;
@@ -125,8 +114,7 @@ public:
     
 LocateOptions ()
     {
-    m_disableProjectFilter  = false;
-    m_wantSortHitsByClass   = true;
+    m_disableDgnDbFilter    = false;
     m_maxHits               = 20;
     m_hitSource             = HitSource::DataPoint;
     m_locateSurface         = LocateSurfacesPref::ByView;
@@ -134,24 +122,21 @@ LocateOptions ()
 
 LocateOptions (HitSource hitSource, uint32_t maxHits)
     {
-    m_disableProjectFilter  = false;
-    m_wantSortHitsByClass   = true;
+    m_disableDgnDbFilter    = false;
     m_maxHits               = maxHits;
     m_hitSource             = hitSource;
     m_locateSurface         = LocateSurfacesPref::ByView;
     }
 
-void SetDisableDgnProjectFilter (bool disableProjectFilter) {m_disableProjectFilter = disableProjectFilter;}
-void SetHitsSortedByClass (bool sortByClass) {m_wantSortHitsByClass = sortByClass;}
+void SetDisableDgnDbFilter (bool disableDgnDbFilter) {m_disableDgnDbFilter = disableDgnDbFilter;}
 void SetMaxHits (uint32_t maxHits) {m_maxHits = maxHits;}
 void SetHitSource (HitSource hitSource) {m_hitSource = hitSource;}
 void SetLocateSurfaces (LocateSurfacesPref locateSurface) {m_locateSurface = locateSurface;}
 
-bool GetDisableDgnProjectFilter () const {return m_disableProjectFilter;}
-bool GetHitsSortedByClass () const {return m_wantSortHitsByClass;}
-uint32_t GetMaxHits () const {return m_maxHits;}
-HitSource GetHitSource () const {return m_hitSource;}
-LocateSurfacesPref GetLocateSurfaces () const {return m_locateSurface;}
+bool GetDisableDgnDbFilter () const {return m_disableDgnDbFilter;}
+uint32_t GetMaxHits() const {return m_maxHits;}
+HitSource GetHitSource() const {return m_hitSource;}
+LocateSurfacesPref GetLocateSurfaces() const {return m_locateSurface;}
 
 }; // LocateOptions
 
@@ -161,7 +146,7 @@ LocateSurfacesPref GetLocateSurfaces () const {return m_locateSurface;}
 struct  ElementPicker
 {
 private:
-    DgnViewportP       m_viewport;
+    DgnViewportP    m_viewport;
     DPoint3d        m_pickPointWorld;
     HitList*        m_hitList;
     bool            m_lastPickAborted;
@@ -169,14 +154,14 @@ private:
 public:
     DGNVIEW_EXPORT ElementPicker ();
 
-    DGNVIEW_EXPORT void      Empty ();
-    DGNVIEW_EXPORT void      ClearFrom (DgnModelP modelRef);
-    DGNVIEW_EXPORT HitDetail*  GetNextHit ();
-    DGNVIEW_EXPORT HitDetail*  GetHit (int i);
-    DGNVIEW_EXPORT HitList*  GetHitList (bool takeOwnership);
-    DGNVIEW_EXPORT void      ResetCurrentHit ();
+    DGNVIEW_EXPORT void       Empty ();
+    DGNVIEW_EXPORT void       ClearFrom (DgnModelP modelRef);
+    DGNVIEW_EXPORT HitDetail* GetNextHit ();
+    DGNVIEW_EXPORT HitDetail* GetHit (int i);
+    DGNVIEW_EXPORT HitList*   GetHitList (bool takeOwnership);
+    DGNVIEW_EXPORT void       ResetCurrentHit ();
     
-    DGNVIEW_EXPORT int DoPickElements (bool* wasAborted, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, StopLocateTest*, LocateOptions const& options);
+    DGNVIEW_EXPORT int DoPick (bool* wasAborted, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, StopLocateTest*, LocateOptions const& options);
     DGNVIEW_EXPORT TestHitStatus TestHit (HitDetailCR hit, HitListP hitList, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, StopLocateTest*, LocateOptions const& options);
 
 }; // ElementPicker
@@ -188,8 +173,6 @@ public:
 struct  ElementLocateManager
 {
 //__PUBLISH_SECTION_END__
-    typedef enum LocateFilterStatus (*LocateFilterFunc)(Utf8StringP, GeometricElementCP, HitDetailCP);
-
     friend struct ElementPicker;
     friend struct SnapContext;
     friend struct TentativePoint;
@@ -209,22 +192,19 @@ protected:
 
     DGNVIEW_EXPORT virtual void _Clear ();
     DGNVIEW_EXPORT virtual HitDetailCP _DoLocate (LocateFailureValue* reasonCode, Utf8StringP cantAcceptExplanation, bool newSearch, DPoint3dCR, DgnViewportP, ComponentMode mode, bool filterHits);
-    DGNVIEW_EXPORT virtual bool _FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, ComponentMode mode, LOCATE_Action);
+    DGNVIEW_EXPORT virtual bool _FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, ComponentMode mode, LocateAction);
     DGNVIEW_EXPORT virtual void _InitToolLocate ();
     DGNVIEW_EXPORT virtual void _InitLocateOptions (); // Called from _InitToolLocate to establish defaults.
     DGNVIEW_EXPORT virtual double _GetAperture(); // in graphite, we need the help of the tool admin to set the aperture
-    virtual int _GetCursorColor() {return 7;}
-    virtual int _GetKeypointDivisor() {return 1;}
     DGNVIEW_EXPORT virtual void _GetLocateError (Utf8StringR reasonString, int reason);
     DGNVIEW_EXPORT virtual void _AdjustSnapDetail (SnapContext&);
     virtual bool _IsSnappableModel(DgnModelP modelRef) {return true;}
-    virtual LocateFilterStatus _AppFilterHit (LocateFailureValue*, Utf8StringP explanation, HitDetailCP hit, LocateFilterFunc internalFilter, bool preLocate, LOCATE_Action action) {return LOCATE_FILTER_STATUS_Neutral;}
     virtual SnapStatus _PerformConstraintSnap(SnapDetailP, double hotDistance, HitSource snapSource) {return SnapStatus::Success;}
     DGNVIEW_EXPORT virtual void _GetPreferredPointSnapModes (bvector<SnapMode>& snaps, HitSource source);
+    virtual uint32_t _GetKeypointDivisor() {return 1;}
     virtual bool _IsConstraintSnapActive () {return false;}
-    virtual void _SetChosenSnapMode (SnapTypeEnum snapType, SnapMode snapMode) {}
+    virtual void _SetChosenSnapMode (SnapType snapType, SnapMode snapMode) {}
     virtual void _SynchSnapMode() {}
-    virtual bool _WantSnapLock() {return true;}
     virtual void _OnFlashHit(SnapDetailP) {}
     virtual void _OnAccuSnapMotion(SnapDetailP, bool wasHot, DgnButtonEventCR) {}
 
@@ -237,8 +217,7 @@ public:
     ElementPicker& GetElementPicker() {return m_picker;}
     LocateOptions& GetLocateOptions() {return m_options;}
     DGNVIEW_EXPORT double ComputeSnapTolerance (DgnViewportCR, double);
-    int GetKeypointDivisor();
-    LocateFilterStatus AppFilterHit (LocateFailureValue*, Utf8StringP, HitDetailCP, LocateFilterFunc, bool, LOCATE_Action);
+    uint32_t GetKeypointDivisor();
     void DoHilite (HitDetailCP, bool doGroups);
     DGNVIEW_EXPORT bool IsElementHilited () const;
     DGNVIEW_EXPORT HitDetailCP GetHilitedHit (int index) const;
@@ -251,13 +230,12 @@ public:
     DGNVIEW_EXPORT void HiliteAndSave (HitDetailCP, bool doHilite, bool checkHilited);
     DGNVIEW_EXPORT void ClearFrom (DgnModelP);
     DGNVIEW_EXPORT void DropFromHilited (DgnModelP modelRef);
-    DGNVIEW_EXPORT bool FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, ComponentMode mode, LOCATE_Action);
+    DGNVIEW_EXPORT bool FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, ComponentMode mode, LocateAction);
     DGNVIEW_EXPORT double GetAperture();
     DGNVIEW_EXPORT void GetLocateError (Utf8StringR reasonString, int reason);
     DGNVIEW_EXPORT void InitToolLocate ();
     DGNVIEW_EXPORT void ShowErrorExplanation (Utf8CP cantAcceptExplanation, int reason);
     DGNVIEW_EXPORT void ShowHitInfo (HitDetailCP);
-    DGNVIEW_EXPORT void SetComponentMode (HitDetailP hit, ComponentMode mode);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__

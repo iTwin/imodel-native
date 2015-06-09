@@ -15,6 +15,15 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+/*=================================================================================**//**
+* @bsiclass                                                     KeithBentley    04/01
++===============+===============+===============+===============+===============+======*/
+enum class ComponentMode
+    {
+    None        = 0, //! Select entire element.
+    Innermost   = 1, //! Select single segment of linestrings, etc.
+    };
+
 //=======================================================================================
 //!  Lower numbers are "better" (more important) Hits than ones with higher numbers.
 //=======================================================================================
@@ -158,12 +167,12 @@ protected:
     ViewFlags           m_viewFlags;            // view flags in effect when hit was generated.
     GeomDetail          m_geomDetail;           // element specific hit details.
     IElemTopologyPtr    m_elemTopo;             // details about the topology of the element.
-    bool                m_componentMode;        // component hilite/flash mode.
+    ComponentMode       m_componentMode;        // segment hilite/flash mode.
 
     virtual HitDetailType _GetHitType () const {return HitDetailType::Hit;}
     virtual void _GetInfoString (Utf8StringR descr, Utf8CP delimiter) const;
-    virtual bool _GetComponentMode () const {return m_componentMode; }
-    virtual void _SetComponentMode (bool componentMode) {m_componentMode = componentMode; }
+    virtual ComponentMode _GetComponentMode () const {return m_componentMode; }
+    virtual void _SetComponentMode (ComponentMode mode) {m_componentMode = mode; }
     virtual void _GetHitPoint (DPoint3dR pt) const {m_geomDetail.GetClosestPoint (pt);}
     virtual void _SetHitPoint (DPoint3dCR pt) {m_geomDetail.SetClosestPoint (pt);}
     virtual void _SetTestPoint (DPoint3dCR pt) {m_testPoint = pt;}
@@ -183,7 +192,7 @@ public:
     void SetHitPoint (DPoint3dCR pt) {_SetHitPoint(pt);}
     void SetTestPoint (DPoint3dCR pt) {_SetTestPoint(pt);}
     void SetHilited (DgnElement::Hilited state) const {_SetHilited(state);}
-    void SetComponentMode (bool componentMode) {_SetComponentMode(componentMode);}
+    void SetComponentMode (ComponentMode mode) {_SetComponentMode(mode);}
 
     DGNPLATFORM_EXPORT StatusInt OnCreateAssociationToSnap (DgnModelP);
 
@@ -210,7 +219,7 @@ public:
 
     void GetHitPoint (DPoint3dR pt) const {_GetHitPoint(pt);}
     HitDetailType GetHitType() const {return _GetHitType();}
-    bool GetComponentMode() const {return _GetComponentMode(); }
+    ComponentMode GetComponentMode() const {return _GetComponentMode(); }
     bool IsSameHit (HitDetailCP otherHit) const {return _IsSameHit(otherHit);}
 
     DGNPLATFORM_EXPORT GeomDetailCR    GetGeomDetail() const;
@@ -240,9 +249,9 @@ public:
     DGNPLATFORM_EXPORT void RemoveHit (int hitNum);
     DGNPLATFORM_EXPORT void RemoveCurrentHit ();
     DGNPLATFORM_EXPORT HitDetailP GetHit (int hitNum) const;
-    DGNPLATFORM_EXPORT int Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareElemClass, bool compareZ) const;
+    DGNPLATFORM_EXPORT int Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareZ) const;
     DGNPLATFORM_EXPORT void SetCurrentHit (HitDetailCP);
-    DGNPLATFORM_EXPORT int AddHit (HitDetailP, bool allowDuplicates, bool comparePriority, bool compareElemClass);
+    DGNPLATFORM_EXPORT int AddHit (HitDetailP, bool allowDuplicates, bool comparePriority);
     DGNPLATFORM_EXPORT void Empty ();
     DGNPLATFORM_EXPORT void ResetCurrentHit () {m_currHit = -1;}
     DGNPLATFORM_EXPORT HitDetailP GetCurrentHit () const;

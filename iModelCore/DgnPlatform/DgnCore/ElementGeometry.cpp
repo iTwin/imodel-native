@@ -2428,7 +2428,7 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
     if (DrawPurpose::Flash != context.GetDrawPurpose())
         return false;
 
-    if (!hit.GetComponentMode())
+    if (ComponentMode::None == hit.GetComponentMode())
         return false;
 
     ICurvePrimitiveCP primitive = hit.GetGeomDetail().GetCurvePrimitive();

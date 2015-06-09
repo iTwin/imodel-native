@@ -442,7 +442,7 @@ GeomDetailCR        geomDetail
     m_testPoint     = testPoint;
     m_viewFlags     = viewFlags;
     m_geomDetail    = geomDetail;
-    m_componentMode = false;
+    m_componentMode = ComponentMode::None;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1055,7 +1055,7 @@ static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
 * calling GetLocatePriority() and then GetLocateDistance() on each.
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-int HitList::Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareElemClass, bool compareZ) const
+int HitList::Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareZ) const
     {
     if (NULL == oHit1 || NULL == oHit2)
         return 0;
@@ -1099,8 +1099,7 @@ int             HitList::AddHit
 (
 HitDetail*      newHit,
 bool            allowDuplicates,
-bool            comparePriority,
-bool            compareElemClass
+bool            comparePriority
 )
     {
     HitList::iterator currHit = begin ();
@@ -1114,7 +1113,7 @@ bool            compareElemClass
         {
         oldHit = (HitDetail*) currHit->get ();
 
-        comparison = Compare (newHit, oldHit, comparePriority, compareElemClass, true);
+        comparison = Compare (newHit, oldHit, comparePriority, true);
 
         // Caller can establish a policy to only ever allow one hit for a given path. However, we want to make sure
         // that the one hit we do save is the "best" hit for that path. Therefore, every time we get another hit

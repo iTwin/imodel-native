@@ -476,6 +476,7 @@ DG_INLINE void              ElemDisplayParams::SetLineColor(ColorDef color) {m_a
 DG_INLINE void              ElemDisplayParams::SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_fillColor = color;}
 DG_INLINE void              ElemDisplayParams::SetFillDisplay(FillDisplay display) {m_fillDisplay = display;}
 DG_INLINE void              ElemDisplayParams::SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
+DG_INLINE void              ElemDisplayParams::SetPatternParams (PatternParamsP pattern) {m_pattern = pattern;}
 DG_INLINE void              ElemDisplayParams::SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}
 DG_INLINE void              ElemDisplayParams::SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
 DG_INLINE void              ElemDisplayParams::SetGeometryClass (DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
